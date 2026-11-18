@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vp dev",
-    "build": "tsc -b && vp build",
+    "build": "tsc -b && vp build --base /shippy/",
     "preview": "vp preview"
   },
   "dependencies": {

@@ -15,6 +15,14 @@ const BASE = import.meta.env.BASE_URL; // "/" or "/sub/path/"
 export const API_ROUTE = `${BASE}api`;
 /** The dashboard lives at the site root ("" for "/", "/sub" for "/sub/"). */
 export const DASHBOARD_ROUTE = BASE.replace(/\/$/, "");
+/**
+ * A dashboard path written from the site root (`/collections/…`, as endpoints and seeds write
+ * links) under the base path the site is served from (e.g. `/shippy/collections/…` on GitHub Pages).
+ */
+export const withBase = (path: string) =>
+  !DASHBOARD_ROUTE || !path.startsWith("/") || path === DASHBOARD_ROUTE || path.startsWith(`${DASHBOARD_ROUTE}/`)
+    ? path
+    : `${DASHBOARD_ROUTE}${path}`;
 
 let started: Promise<void> | undefined;
 

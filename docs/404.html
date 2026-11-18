@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/shippy/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Golden Sea</title>
+    <!-- Apply the saved theme and colour scheme (ui-theme-controller) before the first paint. -->
+    <script>
+      try {
+        const theme = localStorage.getItem("ui-theme");
+        if (theme === "dark" || theme === "light") document.documentElement.dataset.theme = theme;
+        const scheme = localStorage.getItem("ui-scheme");
+        if (scheme && scheme !== "default") document.documentElement.dataset.scheme = scheme;
+      } catch {}
+      // Liquid glass refraction (SVG filters in backdrop-filter) is drawn by Chromium only.
+      if (navigator.userAgentData) document.documentElement.dataset.glass = "refract";
+    </script>
+    <script type="module" crossorigin src="/shippy/assets/index-BnX6_bi7.js"></script>
+    <link rel="stylesheet" crossorigin href="/shippy/assets/index-CXpfWwXQ.css">
+  </head>
+  <body>
+    <!-- The liquid-glass material's refraction (src/styles/theme.css): soft fractal noise, lit and
+         used as a displacement map, so the blurred backdrop ripples like it's seen through glass. -->
+    <svg width="0" height="0" aria-hidden="true" style="position: absolute">
+      <filter id="liquid-glass-refraction" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="0.008 0.008" numOctaves="2" seed="92" result="noise" />
+        <feGaussianBlur in="noise" stdDeviation="2" result="map" />
+        <feDisplacementMap in="SourceGraphic" in2="map" scale="70" xChannelSelector="R" yChannelSelector="G" />
+      </filter>
+    </svg>
+    <dashboard-app></dashboard-app>
+  </body>
+</html>

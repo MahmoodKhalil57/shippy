@@ -3,7 +3,7 @@ import { LightElement } from "../../components/base/light-element.ts";
 import { html, nothing } from "lit";
 import { customElement, query, state } from "lit/decorators.js";
 import { keyed } from "lit/directives/keyed.js";
-import { API_ROUTE, api, startMockBackend } from "../../cms/client.ts";
+import { API_ROUTE, api, startMockBackend, withBase } from "../../cms/client.ts";
 import type { Doc } from "../../cms/types.ts";
 import type { MenuItem } from "../../components/primitives/navigation/menu.ts";
 import type { IconName } from "../../components/primitives/media/icon.ts";
@@ -79,9 +79,11 @@ export class DashboardApp extends LightElement {
     if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     const a = e.composedPath().find((n): n is HTMLAnchorElement => n instanceof HTMLAnchorElement);
     if (!a || a.target === "_blank" || a.hasAttribute("download") || a.origin !== location.origin) return;
-    if (!isDashboardPath(a.pathname)) return;
+    // Links written from the site root (`/collections/…`) belong under the base path too.
+    const path = withBase(a.pathname);
+    if (!isDashboardPath(path)) return;
     e.preventDefault();
-    navigate(a.pathname + a.search);
+    navigate(path + a.search);
   };
 
   private async _start() {

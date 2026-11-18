@@ -1,5 +1,6 @@
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { withBase } from "../../cms/client.ts";
 import { LightElement } from "../../components/base/light-element.ts";
 import "../../components/index.ts";
 import { StoreController, endTour, tour } from "../../stores/index.ts";
@@ -93,7 +94,7 @@ export class DashboardTour extends LightElement {
 
   private async _prepare(step: TourStep) {
     if (step.as && step.as !== this.userId) await this.switchTo(step.as);
-    if (step.go && location.pathname !== step.go) navigate(step.go);
+    if (step.go && location.pathname !== withBase(step.go)) navigate(step.go);
     if (step.open) await this.openPanel(step.open);
     if (step.click) {
       const button = await waitFor(

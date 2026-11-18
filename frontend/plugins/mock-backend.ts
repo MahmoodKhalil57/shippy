@@ -1,3 +1,4 @@
+import { copyFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { build, type Plugin, type ResolvedConfig } from "vite-plus";
 
@@ -66,6 +67,11 @@ export default function mockBackend(): Plugin {
           },
         },
       });
+      // Static hosting (GitHub Pages): a first visit to a deep link (before the worker is
+      // installed) gets the 404 page, so make that the dashboard too; and serve every file as is.
+      const out = path.resolve(config.root, config.build.outDir);
+      await copyFile(path.join(out, "index.html"), path.join(out, "404.html"));
+      await writeFile(path.join(out, ".nojekyll"), "");
     },
   };
 }

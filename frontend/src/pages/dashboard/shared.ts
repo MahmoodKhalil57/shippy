@@ -1,7 +1,7 @@
 import type { IconName } from "../../components/primitives/media/icon.ts";
 import { text } from "../../cms/runtime/util.ts";
 import type { CollectionConfig, GlobalConfig } from "payload";
-import { API_ROUTE, DASHBOARD_ROUTE, api } from "../../cms/client.ts";
+import { API_ROUTE, DASHBOARD_ROUTE, api, withBase } from "../../cms/client.ts";
 import { bookmarks, type Bookmark } from "../../stores/index.ts";
 import config from "../../cms/config.ts";
 import type { Doc, FieldLike } from "../../cms/types.ts";
@@ -199,7 +199,8 @@ export function editTabs(c: CollectionConfig): EditTab[] {
 export const rootViews = () => Object.entries(config.admin?.components?.views ?? {}).map(([key, v]) => ({ key, ...v }));
 
 /** Client-side navigation inside the dashboard (listened to by `<dashboard-app>`). */
-export function navigate(path: string, replace = false) {
+export function navigate(to: string, replace = false) {
+  const path = withBase(to);
   if (replace) history.replaceState(null, "", path);
   else history.pushState(null, "", path);
   window.dispatchEvent(new PopStateEvent("popstate"));
@@ -216,7 +217,7 @@ export function toast(message: string, color: AlertVariants["color"] = "success"
 /** Loads the signed-in user's bookmarks (their `bookmarks` documents) into the store. */
 export async function loadBookmarks() {
   const { docs } = await api.find("bookmarks", { limit: 0, depth: 0, sort: "createdAt" }).catch(() => ({ docs: [] }));
-  bookmarks.set({ items: docs.map((d) => ({ id: d.id, href: text(d.href), label: text(d.label) })) });
+  bookmarks.set({ items: docs.map((d) => ({ id: d.id, href: withBase(text(d.href)), label: text(d.label) })) });
 }
 
 /** Adds the page to the signed-in user's bookmarks, or removes it. */

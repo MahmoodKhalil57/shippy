@@ -78,4 +78,7 @@ export default defineConfig({
   test: {
     include: ["tests/**/*.test.ts"],
   },
+  // The build is the demo website: GitHub Pages serves the repository's docs/ folder (at
+  // /shippy/, set by `--base` in the package.json build script).
+  build: { outDir: "../docs", emptyOutDir: true },
 });

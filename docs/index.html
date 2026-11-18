@@ -1,95 +1,34 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light dark">
-  <title>Golden Sea · Sourcing Desk (demo)</title>
-  <link rel="stylesheet" href="styles.css?v=8">
-</head>
-<body>
-  <a class="skip-link" href="#main">Skip to content</a>
-
-  <div class="shell">
-    <aside class="sidebar" aria-label="Primary">
-      <a class="brand" href="#/dashboard" aria-label="Golden Sea home">
-        <span class="brand-mark" aria-hidden="true">GS</span>
-        <span class="brand-text"><strong>Golden Sea</strong><small>Sourcing Desk</small></span>
-      </a>
-      <nav>
-        <ul class="nav-list" id="nav">
-          <li class="nav-group" aria-hidden="true">Work</li>
-          <li><a href="#/dashboard" data-route="dashboard"><span class="ico" aria-hidden="true">◎</span>My day</a></li>
-          <li><a href="#/followups" data-route="followups"><span class="ico" aria-hidden="true">⏰</span>Follow-ups</a></li>
-          <li><a href="#/inbox" data-route="inbox"><span class="ico" aria-hidden="true">✉</span>Inbox intake <span class="pill" id="nav-inbox-count">0</span></a></li>
-          <li><a href="#/cases" data-route="cases"><span class="ico" aria-hidden="true">▤</span>RFQ cases</a></li>
-          <li><a href="#/approvals" data-route="approvals"><span class="ico" aria-hidden="true">✓</span>Approvals <span class="pill pill-warn" id="nav-approval-count">0</span></a></li>
-          <li class="nav-group" aria-hidden="true">Records</li>
-          <li><a href="#/customers" data-route="customers"><span class="ico" aria-hidden="true">⛴</span>Customers &amp; fleets</a></li>
-          <li><a href="#/suppliers" data-route="suppliers"><span class="ico" aria-hidden="true">⚓</span>Suppliers</a></li>
-          <li><a href="#/products" data-route="products"><span class="ico" aria-hidden="true">▣</span>Products</a></li>
-          <li><a href="#/growth" data-route="growth"><span class="ico" aria-hidden="true">↗</span>Growth CRM</a></li>
-          <li class="nav-group" aria-hidden="true">Management</li>
-          <li><a href="#/management" data-route="management"><span class="ico" aria-hidden="true">▥</span>Dashboard</a></li>
-          <li><a href="#/automations" data-route="automations"><span class="ico" aria-hidden="true">⚙</span>Automations <span class="pill pill-warn" id="nav-ex-count">0</span></a></li>
-          <li><a href="#/integrations" data-route="integrations"><span class="ico" aria-hidden="true">⇄</span>Integrations</a></li>
-          <li><a href="#/settings" data-route="settings"><span class="ico" aria-hidden="true">⚑</span>Settings &amp; audit</a></li>
-          <li class="nav-group" aria-hidden="true">Proposal</li>
-          <li><a href="#/coverage" data-route="coverage"><span class="ico" aria-hidden="true">☑</span>Requirement coverage</a></li>
-          <li><a href="#/pilot" data-route="pilot"><span class="ico" aria-hidden="true">▦</span>Pilot plan &amp; costs</a></li>
-          <li><a href="#/demo-script" data-route="demo-script"><span class="ico" aria-hidden="true">▶</span>Demo script</a></li>
-        </ul>
-      </nav>
-      <p class="sidebar-foot">Odoo 19 Enterprise · demo data<br>All customers &amp; suppliers are fictional<br>✦ = AI step (stubbed in ai.js)</p>
-    </aside>
-
-    <div class="workspace">
-      <header class="topbar">
-        <label class="search">
-          <span class="visually-hidden">Search cases, vessels, suppliers, products, part numbers</span>
-          <input type="search" id="global-search" placeholder="Search case, vessel, IMO, part no., supplier…  (Ctrl K)">
-        </label>
-        <div class="topbar-actions">
-          <button type="button" class="btn btn-ghost btn-sm" id="palette-btn" aria-label="Open command palette"><span class="kbd">Ctrl K</span></button>
-          <label class="role-switch">
-            <span class="text-2 small">Viewing as</span>
-            <select id="role">
-              <option value="ky">Karim Youssef · Supply chain</option>
-              <option value="kb">Karim Balbaa · Approver</option>
-              <option value="sa">Soaad Amer · Sales</option>
-              <option value="ah">Ahmedy · Operations &amp; finance</option>
-              <option value="mh">Mohamed Helmy · Financial Director</option>
-              <option value="em">Esraa Mohamed · Office Manager</option>
-            </select>
-          </label>
-          <button type="button" class="btn btn-ghost icon-btn" id="theme-toggle" aria-label="Toggle dark mode">◐</button>
-        </div>
-      </header>
-
-      <main id="main" tabindex="-1"></main>
-    </div>
-  </div>
-
-  <dialog id="dialog" aria-labelledby="dialog-title">
-    <form method="dialog" class="dialog-inner" id="dialog-form"></form>
-  </dialog>
-
-  <div class="toast-region" id="toasts" role="status" aria-live="polite"></div>
-
-  <script src="data.js?v=8"></script>
-  <script src="data-ops.js?v=8"></script>
-  <script src="data-analytics.js?v=8"></script>
-  <script src="data-tailored.js?v=8"></script>
-  <script src="charts.js?v=8"></script>
-  <script src="ai.js?v=8"></script>
-  <script src="core.js?v=8"></script>
-  <script src="views/home.js?v=8"></script>
-  <script src="views/intake.js?v=8"></script>
-  <script src="views/case.js?v=8"></script>
-  <script src="views/records.js?v=8"></script>
-  <script src="views/admin.js?v=8"></script>
-  <script src="views/proposal.js?v=8"></script>
-  <script src="tour.js?v=8"></script>
-  <script>App.start();</script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/shippy/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Golden Sea</title>
+    <!-- Apply the saved theme and colour scheme (ui-theme-controller) before the first paint. -->
+    <script>
+      try {
+        const theme = localStorage.getItem("ui-theme");
+        if (theme === "dark" || theme === "light") document.documentElement.dataset.theme = theme;
+        const scheme = localStorage.getItem("ui-scheme");
+        if (scheme && scheme !== "default") document.documentElement.dataset.scheme = scheme;
+      } catch {}
+      // Liquid glass refraction (SVG filters in backdrop-filter) is drawn by Chromium only.
+      if (navigator.userAgentData) document.documentElement.dataset.glass = "refract";
+    </script>
+    <script type="module" crossorigin src="/shippy/assets/index-BnX6_bi7.js"></script>
+    <link rel="stylesheet" crossorigin href="/shippy/assets/index-CXpfWwXQ.css">
+  </head>
+  <body>
+    <!-- The liquid-glass material's refraction (src/styles/theme.css): soft fractal noise, lit and
+         used as a displacement map, so the blurred backdrop ripples like it's seen through glass. -->
+    <svg width="0" height="0" aria-hidden="true" style="position: absolute">
+      <filter id="liquid-glass-refraction" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="0.008 0.008" numOctaves="2" seed="92" result="noise" />
+        <feGaussianBlur in="noise" stdDeviation="2" result="map" />
+        <feDisplacementMap in="SourceGraphic" in2="map" scale="70" xChannelSelector="R" yChannelSelector="G" />
+      </filter>
+    </svg>
+    <dashboard-app></dashboard-app>
+  </body>
 </html>
