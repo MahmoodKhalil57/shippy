@@ -1,0 +1,91 @@
+[
+  {
+    "id": "msg-helios-star",
+    "channel": "Email",
+    "mailbox": "sales@",
+    "receivedAt": "2026-11-17T09:48:00.000Z",
+    "from": "purchasing@helios-bulk.example",
+    "fromName": "Helios Bulk Carriers",
+    "subject": "RFQ – MV Helios Star – engine stores – urgent",
+    "body": "Please quote the following for MV Helios Star (IMO 9811204), ETA Suez 19 Nov…",
+    "messageId": "<a1@helios-bulk.example>",
+    "classification": "New RFQ",
+    "status": "New"
+  },
+  {
+    "id": "msg-horizon-reply",
+    "channel": "Email",
+    "mailbox": "purchasing@",
+    "receivedAt": "2026-11-16T08:55:00.000Z",
+    "from": "sales@horizon-trading.example",
+    "fromName": "Horizon Trading",
+    "subject": "RE: Price enquiry – belt grip spray",
+    "body": "CRC Belt Grip 400 ml: USD 9.80 / can, 24 cans available ex-stock Damietta…",
+    "messageId": "<h1@horizon-trading.example>",
+    "classification": "Supplier reply",
+    "status": "Linked",
+    "match": {
+      "case": "gs-rfq-0142",
+      "confidence": 0.99,
+      "basis": "Supplier RFQ reference GS-SRFQ-0142-C in body"
+    }
+  },
+  {
+    "id": "msg-delta-uncertain",
+    "channel": "Email",
+    "mailbox": "purchasing@",
+    "receivedAt": "2026-11-16T15:20:00.000Z",
+    "from": "info@delta-marine.example",
+    "fromName": "Delta Marine Stores",
+    "subject": "prices as requested",
+    "messageId": "<d7@delta-marine.example>",
+    "classification": "Supplier reply",
+    "status": "Needs review",
+    "match": {
+      "confidence": 0.62,
+      "basis": "No reference; 4/5 lines resemble GS-RFQ-0142; supplier also invited on GS-RFQ-0140"
+    }
+  },
+  {
+    "id": "msg-nordvik-fw",
+    "channel": "Email",
+    "mailbox": "sales@",
+    "receivedAt": "2026-11-16T11:02:00.000Z",
+    "from": "purchasing@nordvik.example",
+    "fromName": "Nordvik Ship Management",
+    "subject": "FW: RFQ NSM-REQ-55821 MV Aurora Crest",
+    "messageId": "<n2@nordvik.example>",
+    "attachmentHash": "sha256:9f1c…",
+    "classification": "Duplicate",
+    "status": "Linked",
+    "match": {
+      "case": "gs-rfq-0142",
+      "confidence": 1,
+      "basis": "Same customer ref + attachment hash"
+    }
+  },
+  {
+    "id": "msg-web-petro",
+    "channel": "Website form",
+    "receivedAt": "2026-11-17T06:40:00.000Z",
+    "from": "purchasing@petro-delta.example",
+    "fromName": "Hossam R. (Petro Delta)",
+    "subject": "Quick quote — Lalizas life jackets & lifebuoys, Abu Qir rig",
+    "body": "Need 30 SOLAS life jackets (Lalizas preferred) and 6 lifebuoys…",
+    "messageId": "web-form-20261117-0640",
+    "classification": "New RFQ",
+    "status": "New"
+  },
+  {
+    "id": "msg-awb",
+    "channel": "Email",
+    "mailbox": "sales@",
+    "receivedAt": "2026-11-16T17:30:00.000Z",
+    "from": "superintendent@nordvik.example",
+    "fromName": "Capt. Erik H.",
+    "subject": "Spares for MV Aurora Crest — DHL AWB 41 2233 9081 — please clear & deliver with stores",
+    "messageId": "<e5@nordvik.example>",
+    "classification": "Service request",
+    "status": "New"
+  }
+]

@@ -1,0 +1,44 @@
+{
+  "connections": [
+    {
+      "kind": "Outlook mailbox",
+      "account": "sales@",
+      "status": "Connected",
+      "pollEveryMinutes": 2
+    },
+    {
+      "kind": "Outlook mailbox",
+      "account": "purchasing@",
+      "status": "Token expired"
+    },
+    {
+      "kind": "Gmail mailbox",
+      "account": "purchasing intake",
+      "status": "Connected"
+    },
+    {
+      "kind": "Website form",
+      "account": "Request a quick quote",
+      "status": "To connect"
+    },
+    {
+      "kind": "AI extraction",
+      "status": "Sandbox",
+      "notes": "Server-side LLM with vision; confidence + audit log"
+    },
+    {
+      "kind": "E-invoicing (tax authority)",
+      "status": "Sandbox"
+    }
+  ],
+  "emailImport": {
+    "days": 90,
+    "status": "Dry run ready",
+    "scanned": 1284,
+    "rfqThreads": 312,
+    "duplicates": 41,
+    "exceptions": 9,
+    "confidential": 23,
+    "excludeConfidential": true
+  }
+}

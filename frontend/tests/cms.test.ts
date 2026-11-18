@@ -264,6 +264,8 @@ describe("query semantics", () => {
 describe("config", () => {
   it("is a real Payload config", () => {
     const c: MockConfig = config;
-    expect(c.collections.map((x) => x.slug)).toEqual(["cases", "customers", "suppliers", "users", "media"]);
+    expect(c.collections.map((x) => x.slug).slice(0, 5)).toEqual(["cases", "customers", "suppliers", "users", "media"]);
+    expect(c.collections).toHaveLength(28);
+    expect(c.globals).toHaveLength(8);
   });
 });

@@ -1,0 +1,20 @@
+[
+  {
+    "id": "pl-vecom-2026",
+    "title": "Vecom Marine 2026",
+    "principal": "S10",
+    "currency": "EUR",
+    "discountPct": 15,
+    "leadDays": 9,
+    "validFrom": "2026-01-01T00:00:00.000Z",
+    "validUntil": "2026-12-31T00:00:00.000Z",
+    "status": "Approved",
+    "items": [
+      {
+        "product": "P3",
+        "code": "VC-EC250",
+        "listPrice": 5.41
+      }
+    ]
+  }
+]

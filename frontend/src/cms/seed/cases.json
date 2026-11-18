@@ -43,7 +43,159 @@
         "unitPrice": 14,
         "supplier": "S4"
       }
-    ]
+    ],
+    "caseType": "rfq",
+    "customerRef": "NSM-REQ-55821",
+    "currency": "USD",
+    "backup": "sa",
+    "agent": "Canal Link Agency · ops desk",
+    "decision": "Quotation prepared",
+    "items": [
+      {
+        "lineNo": 1,
+        "description": "CRC Belt Grip spray for mud pump V-belts, 400 ml aerosol",
+        "product": "P1",
+        "brand": "CRC",
+        "qty": 24,
+        "unit": "EA",
+        "packSize": 1,
+        "store": "Engine stores",
+        "impa": "450652",
+        "certificates": "SDS",
+        "status": "Offer selected",
+        "confidence": 0.97,
+        "originalText": "LOCAL CRC BELT GRIP SPRAY FOR MUD PUMP V-BELTS | local | 24 | Each",
+        "selection": {
+          "marginPct": 25
+        }
+      },
+      {
+        "lineNo": 2,
+        "description": "LOCTITE 243 threadlocker, medium strength, 50 ml",
+        "product": "P2",
+        "brand": "Loctite",
+        "exactBrand": true,
+        "partNo": "243",
+        "qty": 3,
+        "unit": "EA",
+        "packSize": 1,
+        "store": "Engine stores",
+        "impa": "812561",
+        "certificates": "TDS",
+        "status": "Offer selected",
+        "confidence": 0.99,
+        "originalText": "LOCTITE PRODUCT 243 HEAVY COAT | 243 | 3 | Each",
+        "selection": {
+          "marginPct": 22
+        }
+      },
+      {
+        "lineNo": 3,
+        "description": "Electrical contact cleaner, 250 ml aerosol — 50 L total",
+        "product": "P3",
+        "qty": 200,
+        "unit": "can",
+        "packSize": 0.25,
+        "store": "Electrical stores",
+        "impa": "450713",
+        "certificates": "SDS · min. 18 months shelf life",
+        "status": "Awaiting customer acceptance",
+        "confidence": 0.91,
+        "originalText": "CONTACT CLEANER AEROSOL 250ML | — | 200 | CAN",
+        "selection": {
+          "marginPct": 25
+        }
+      },
+      {
+        "lineNo": 4,
+        "description": "Welding electrodes E6013, Ø3.2 mm, 5 kg pack",
+        "product": "P4",
+        "partNo": "E6013-3.2",
+        "qty": 4,
+        "unit": "pack",
+        "packSize": 5,
+        "store": "Engine stores",
+        "impa": "850542",
+        "certificates": "EN ISO 2560 mill certificate",
+        "status": "Awaiting supplier",
+        "confidence": 0.94,
+        "originalText": "ELECTRODE E6013 3.2MM | — | 20 | KG"
+      },
+      {
+        "lineNo": 5,
+        "description": "Safety helmet EN 397, white, with chin strap",
+        "product": "P5",
+        "qty": 15,
+        "unit": "EA",
+        "packSize": 1,
+        "store": "Safety stores",
+        "impa": "310102",
+        "certificates": "EN 397 certificate",
+        "status": "Split offer selected",
+        "confidence": 0.96,
+        "originalText": "SAFETY HELMET WHITE W/ CHIN STRAP | — | 15 | PCS",
+        "selection": {
+          "marginPct": 28,
+          "reason": "Split: Nile Safety only has 10 — cheaper than 15 from Delta"
+        }
+      },
+      {
+        "lineNo": 6,
+        "description": "Flame-retardant coverall, navy, EN ISO 11612",
+        "product": "P6",
+        "qty": 10,
+        "unit": "EA",
+        "packSize": 1,
+        "store": "Safety stores",
+        "impa": "190451",
+        "status": "Clarification needed",
+        "confidence": 0.58,
+        "missing": "Size breakdown not specified",
+        "originalText": "COVERALL FR NAVY | — | 10 | PCS"
+      }
+    ],
+    "clarifications": [
+      {
+        "lineNo": 6,
+        "to": "Customer",
+        "via": "Email",
+        "question": "Please confirm size breakdown (S/M/L/XL/XXL) for 10 FR coveralls.",
+        "askedAt": "2026-11-15T10:40:00.000Z",
+        "askedBy": "ky"
+      },
+      {
+        "lineNo": 2,
+        "to": "Customer",
+        "via": "Phone",
+        "question": "Customer wrote “heavy coat” — confirm standard LOCTITE 243, 50 ml?",
+        "askedAt": "2026-11-15T10:45:00.000Z",
+        "askedBy": "ky",
+        "answer": "Confirmed: 243, 50 ml, 3 pcs (phone 15 Nov 12:10)",
+        "answeredAt": "2026-11-15T12:10:00.000Z"
+      }
+    ],
+    "pricing": {
+      "allocation": "value",
+      "discountPct": 0,
+      "fxRateUSD": 48.6,
+      "charges": [
+        {
+          "label": "Port Said launch delivery to vessel",
+          "amountEGP": 4200,
+          "status": "Estimate"
+        },
+        {
+          "label": "Horizon freight Damietta → Port Said",
+          "amountEGP": 600,
+          "status": "Confirmed"
+        },
+        {
+          "label": "Bank transfer charges",
+          "amountEGP": 350,
+          "status": "Confirmed"
+        }
+      ]
+    }
   },
   {
     "id": "gs-rfq-0141",

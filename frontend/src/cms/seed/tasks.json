@@ -1,0 +1,48 @@
+[
+  {
+    "id": "t-remind-s3",
+    "title": "Reminder 2 to Port Said Welding (GS-SRFQ-0142-E)",
+    "type": "Supplier reminder",
+    "channel": "Email",
+    "due": "2026-11-17T15:00:00.000Z",
+    "case": "gs-rfq-0142",
+    "supplier": "S3",
+    "owner": "ky",
+    "createdByRule": "Supplier reminder",
+    "stopCondition": "Reply, decline, line cancelled, case closed"
+  },
+  {
+    "id": "t-atlas-internal",
+    "title": "Internal: no reply on GS-Q-0139 — check vessel schedule",
+    "type": "Internal reminder",
+    "channel": "Internal",
+    "due": "2026-11-18T09:00:00.000Z",
+    "case": "gs-rfq-0139",
+    "customer": "atlas",
+    "internalOnly": true,
+    "owner": "ky",
+    "createdByRule": "Customer follow-up"
+  },
+  {
+    "id": "t-erik-sizes",
+    "title": "WhatsApp Capt. Erik for coverall sizes (line 6)",
+    "type": "Clarification",
+    "channel": "WhatsApp",
+    "due": "2026-11-17T11:00:00.000Z",
+    "case": "gs-rfq-0142",
+    "customer": "nordvik",
+    "who": "Capt. Erik H. (Nordvik technical)",
+    "script": "Could you share the S/M/L/XL split for the 10 FR coveralls? We can still deliver with the 21 Nov call.",
+    "owner": "ky"
+  },
+  {
+    "id": "t-gulfstar",
+    "title": "Call Gulf Star — registration decision date",
+    "type": "Sales next step",
+    "channel": "Call",
+    "due": "2026-11-17T11:00:00.000Z",
+    "who": "Procurement lead",
+    "script": "We submitted our vendor registration on 2 Nov — is anything missing, and when will the committee decide?",
+    "owner": "ky"
+  }
+]

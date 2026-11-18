@@ -1,0 +1,12 @@
+[
+  {
+    "id": "cmp-suez",
+    "name": "Suez transit — 24/7 supply (Q1 2027)",
+    "audience": "Ship managers — consented",
+    "recipients": 212,
+    "consentOnly": true,
+    "contentStatus": "Approved",
+    "scheduledAt": "2026-11-20T09:00:00.000Z",
+    "status": "Scheduled"
+  }
+]

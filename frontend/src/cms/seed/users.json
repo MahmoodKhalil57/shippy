@@ -30,5 +30,32 @@
     "role": "operations",
     "email": "ahmedy@goldensea.test",
     "password": "demo1234"
+  },
+  {
+    "id": "mh",
+    "name": "Mohamed Helmy",
+    "initials": "MH",
+    "role": "finance-director",
+    "email": "mohamed.helmy@goldensea.test",
+    "password": "demo1234",
+    "office": "Cairo"
+  },
+  {
+    "id": "em",
+    "name": "Esraa Mohamed",
+    "initials": "EM",
+    "role": "office-admin",
+    "email": "esraa.mohamed@goldensea.test",
+    "password": "demo1234",
+    "office": "Cairo"
+  },
+  {
+    "id": "ne",
+    "name": "Nancy Elsobhy",
+    "initials": "NE",
+    "role": "office-admin",
+    "email": "nancy.elsobhy@goldensea.test",
+    "password": "demo1234",
+    "office": "Cairo"
   }
 ]

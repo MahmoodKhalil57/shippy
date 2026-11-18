@@ -1,0 +1,165 @@
+[
+  {
+    "id": "P1",
+    "name": "CRC Belt Grip spray 400 ml",
+    "aliases": [
+      {
+        "alias": "Belt dressing spray"
+      },
+      {
+        "alias": "BELT GRIP SPRAY FOR MUD PUMP"
+      }
+    ],
+    "store": "Engine stores",
+    "impaSeries": "45",
+    "brand": "CRC",
+    "oemPartNo": "BG-400",
+    "impa": "450652",
+    "issa": "53.235.01",
+    "hsCode": "3403.19",
+    "unit": "EA",
+    "packs": [
+      {
+        "label": "Can 400 ml",
+        "baseQty": 1
+      },
+      {
+        "label": "Carton 12",
+        "baseQty": 12
+      }
+    ],
+    "certificates": ["SDS"],
+    "shelfLifeMonths": 36
+  },
+  {
+    "id": "P2",
+    "name": "LOCTITE 243 threadlocker 50 ml",
+    "aliases": [
+      {
+        "alias": "Loctite blue medium strength"
+      },
+      {
+        "alias": "LOCTITE PRODUCT 243 HEAVY COAT"
+      }
+    ],
+    "store": "Engine stores",
+    "impaSeries": "81",
+    "brand": "Loctite",
+    "oemPartNo": "243",
+    "impa": "812561",
+    "issa": "75.112.43",
+    "hsCode": "3506.91",
+    "unit": "EA",
+    "certificates": ["TDS", "SDS"],
+    "shelfLifeMonths": 24
+  },
+  {
+    "id": "P3",
+    "name": "Electrical contact cleaner",
+    "aliases": [
+      {
+        "alias": "Contact cleaner aerosol"
+      }
+    ],
+    "store": "Electrical stores",
+    "impaSeries": "79",
+    "impa": "450713",
+    "issa": "53.240.12",
+    "hsCode": "3814.00",
+    "unit": "L",
+    "packs": [
+      {
+        "label": "Can 250 ml",
+        "baseQty": 0.25
+      },
+      {
+        "label": "Can 500 ml",
+        "baseQty": 0.5
+      },
+      {
+        "label": "Bottle 1 L",
+        "baseQty": 1
+      }
+    ],
+    "certificates": ["SDS"],
+    "shelfLifeMonths": 36,
+    "minShelfLifeMonths": 18,
+    "agency": "S10"
+  },
+  {
+    "id": "P4",
+    "name": "Welding electrode E6013 Ø3.2 mm",
+    "aliases": [
+      {
+        "alias": "Rutile electrode 3.2"
+      }
+    ],
+    "store": "Engine stores",
+    "impaSeries": "85",
+    "oemPartNo": "E6013-3.2",
+    "impa": "850542",
+    "hsCode": "8311.10",
+    "unit": "kg",
+    "packs": [
+      {
+        "label": "Pack 5 kg",
+        "baseQty": 5
+      }
+    ],
+    "certificates": ["Mill certificate"]
+  },
+  {
+    "id": "P5",
+    "name": "Safety helmet EN 397 white + chin strap",
+    "aliases": [
+      {
+        "alias": "Hard hat white"
+      }
+    ],
+    "store": "Safety stores",
+    "impaSeries": "31",
+    "impa": "310102",
+    "hsCode": "6506.10",
+    "unit": "EA",
+    "certificates": ["EN 397"],
+    "shelfLifeMonths": 60
+  },
+  {
+    "id": "P6",
+    "name": "FR coverall navy EN ISO 11612",
+    "aliases": [
+      {
+        "alias": "Fire retardant boiler suit"
+      }
+    ],
+    "store": "Safety stores",
+    "impaSeries": "19",
+    "impa": "190451",
+    "hsCode": "6211.33",
+    "unit": "EA",
+    "certificates": ["EN ISO 11612"]
+  },
+  {
+    "id": "P7",
+    "name": "Chicken breast boneless, frozen",
+    "aliases": [
+      {
+        "alias": "Frozen chicken fillet"
+      }
+    ],
+    "store": "Provision stores",
+    "impaSeries": "Frozen",
+    "unit": "kg",
+    "certificates": ["Health certificate", "Halal"],
+    "shelfLifeMonths": 12,
+    "coldChain": true
+  },
+  {
+    "id": "P8",
+    "name": "Cigarettes (bond), carton 200",
+    "store": "Bond stores",
+    "unit": "carton",
+    "certificates": ["Customs bond release"],
+    "bonded": true
+  }
+]

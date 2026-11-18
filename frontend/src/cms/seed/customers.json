@@ -4,34 +4,78 @@
     "name": "Nordvik Ship Management",
     "country": "Norway",
     "contactEmail": "purchasing@nordvik.test",
-    "doNotChase": false
+    "doNotChase": false,
+    "type": "Ship manager",
+    "segment": "Marine",
+    "contactRule": "one-follow-up",
+    "currency": "USD",
+    "paymentTermsDays": 60,
+    "billingEntity": "Nordvik Ship Management AS",
+    "portPreferences": ["Port Said", "Suez", "Alexandria"],
+    "accountOwner": "ky",
+    "registration": {
+      "status": "Approved vendor",
+      "portal": "Nordvik supplier portal"
+    }
   },
   {
     "id": "helios",
     "name": "Helios Bulk Carriers",
     "country": "Greece",
     "contactEmail": "supply@helios.test",
-    "doNotChase": false
+    "doNotChase": false,
+    "type": "Shipowner",
+    "segment": "Marine",
+    "contactRule": "allowed",
+    "currency": "USD",
+    "paymentTermsDays": 30,
+    "portPreferences": ["Suez"],
+    "accountOwner": "sa"
   },
   {
     "id": "mare-nostrum",
     "name": "Mare Nostrum Shipping",
     "country": "Italy",
     "contactEmail": "ops@marenostrum.test",
-    "doNotChase": false
+    "doNotChase": false,
+    "type": "Ship manager",
+    "segment": "Marine",
+    "contactRule": "allowed",
+    "currency": "EUR",
+    "paymentTermsDays": 60,
+    "portPreferences": ["Damietta"],
+    "accountOwner": "sa"
   },
   {
     "id": "atlas",
     "name": "Atlas Tankers",
     "country": "Cyprus",
     "contactEmail": "procurement@atlas.test",
-    "doNotChase": true
+    "doNotChase": true,
+    "type": "Shipowner",
+    "segment": "Marine",
+    "contactRule": "do-not-chase",
+    "currency": "USD",
+    "paymentTermsDays": 45,
+    "portPreferences": ["Alexandria"],
+    "accountOwner": "ky",
+    "registration": {
+      "status": "Renewal overdue",
+      "portal": "Customer procurement portal"
+    }
   },
   {
     "id": "delta-offshore",
     "name": "Delta Offshore Services",
     "country": "Egypt",
     "contactEmail": "stores@deltaoffshore.test",
-    "doNotChase": false
+    "doNotChase": false,
+    "type": "Offshore / oil & gas",
+    "segment": "Offshore",
+    "contactRule": "allowed",
+    "currency": "EGP",
+    "paymentTermsDays": 90,
+    "portPreferences": ["Abu Qir"],
+    "accountOwner": "ah"
   }
 ]

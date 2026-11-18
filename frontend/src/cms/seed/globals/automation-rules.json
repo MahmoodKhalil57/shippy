@@ -1,0 +1,66 @@
+{
+  "rules": [
+    {
+      "name": "Create case from RFQ email",
+      "enabled": true,
+      "mode": "auto",
+      "usesAI": true,
+      "trigger": "New email to sales@ / purchasing@ classified as RFQ",
+      "action": "Create case, link email & files, extract draft lines",
+      "owner": "Assignment rule",
+      "due": "Ack within 30 min",
+      "approval": "None — drafts only",
+      "retry": "3 retries, then exception queue",
+      "stop": "Duplicate → link instead",
+      "confidenceThreshold": 0.85
+    },
+    {
+      "name": "RFQ acknowledgement",
+      "enabled": true,
+      "mode": "pre-approved",
+      "trigger": "Case created from external email",
+      "action": "Send branded acknowledgement",
+      "owner": "Case owner",
+      "due": "Immediate",
+      "approval": "Template approved by management",
+      "retry": "3×, then exception",
+      "stop": "Already acknowledged in thread",
+      "template": "rfq-ack"
+    },
+    {
+      "name": "Match supplier reply",
+      "enabled": true,
+      "mode": "auto",
+      "usesAI": true,
+      "trigger": "Inbound email from supplier",
+      "action": "Match by reference / thread / sender; extract offer lines",
+      "owner": "Case owner",
+      "approval": "Low confidence never overwrites approved values",
+      "retry": "Idempotent by message-id",
+      "stop": "Matched or routed to review",
+      "confidenceThreshold": 0.85
+    },
+    {
+      "name": "Supplier reminder",
+      "enabled": true,
+      "mode": "pre-approved",
+      "trigger": "Supplier RFQ due in 2 h with no reply",
+      "action": "Send follow-up; second after 24 h",
+      "owner": "Case owner",
+      "approval": "Template pre-approved",
+      "stop": "Reply, decline, case closed",
+      "template": "supplier-reminder"
+    },
+    {
+      "name": "After-hours & weekend RFQ",
+      "enabled": true,
+      "mode": "auto",
+      "trigger": "Urgent RFQ outside Sun–Thu 08:00–17:00 or ETA < 24 h",
+      "action": "Alert on-duty person by WhatsApp / SMS",
+      "owner": "On-call roster",
+      "due": "15 min",
+      "retry": "Escalate to next on roster",
+      "stop": "Owner acknowledges"
+    }
+  ]
+}

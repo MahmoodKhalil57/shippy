@@ -1,0 +1,41 @@
+{
+  "templates": [
+    {
+      "key": "rfq-ack",
+      "name": "RFQ received – marine",
+      "channel": "Email",
+      "subject": "We received your RFQ {{customerRef}}",
+      "body": "Dear {{contact}},\n\nThank you — your request for {{vessel}} is registered as {{caseId}}. We will revert by {{dueAt}}.",
+      "status": "Approved",
+      "version": 3,
+      "approvedBy": "kb"
+    },
+    {
+      "key": "supplier-rfq",
+      "name": "Supplier RFQ (anonymised)",
+      "channel": "Email",
+      "subject": "Request for quotation {{reference}} — reply by {{dueAt}}",
+      "body": "Please quote the following…\n{{lines}}",
+      "status": "Approved",
+      "version": 1,
+      "approvedBy": "kb",
+      "neverIncludeClientIdentity": true
+    },
+    {
+      "key": "supplier-reminder",
+      "name": "Supplier reminder",
+      "channel": "Email",
+      "status": "Approved",
+      "version": 1,
+      "approvedBy": "kb",
+      "neverIncludeClientIdentity": true
+    },
+    {
+      "key": "collection",
+      "name": "Collection reminder",
+      "channel": "Email",
+      "status": "Draft",
+      "version": 1
+    }
+  ]
+}

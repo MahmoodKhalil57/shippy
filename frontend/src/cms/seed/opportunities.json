@@ -1,0 +1,36 @@
+[
+  {
+    "id": "op-baltic",
+    "name": "Baltic Reefer Management",
+    "kind": "Ship manager · 14 reefers",
+    "segment": "Marine",
+    "source": "Inbound",
+    "estimatedValue": "EUR 40k / yr",
+    "stage": "First RFQ",
+    "owner": "sa",
+    "nextStep": "Quote MV Polar Bay requisition",
+    "nextStepDue": "2026-11-18T00:00:00.000Z"
+  },
+  {
+    "id": "op-gulfstar",
+    "name": "Gulf Star Shipping",
+    "kind": "Shipowner · 6 bulkers",
+    "segment": "Marine",
+    "source": "Canal agent intro",
+    "estimatedValue": "USD 60k / yr",
+    "stage": "Registration submitted",
+    "owner": "ky",
+    "nextStep": "Chase registration decision",
+    "nextStepDue": "2026-11-20T00:00:00.000Z"
+  },
+  {
+    "id": "op-medline",
+    "name": "Medline Tankers",
+    "kind": "Ship manager · 22 tankers",
+    "segment": "Marine",
+    "source": "Trade fair contact",
+    "estimatedValue": "USD 120k / yr",
+    "stage": "Introduced",
+    "owner": "sa"
+  }
+]

@@ -1,0 +1,42 @@
+[
+  {
+    "id": "dn-0133-1",
+    "number": "DN-0001",
+    "case": "gs-rfq-0133",
+    "plannedAt": "2026-11-14T08:00:00.000Z",
+    "place": "Abu Qir base → DOS Falcon (supply boat)",
+    "status": "Dispatched",
+    "dispatchedAt": "2026-11-14T08:30:00.000Z",
+    "plan": {
+      "vehicle": "Golden Sea truck 2",
+      "boardingStaff": "Ahmed R."
+    },
+    "lines": [
+      {
+        "lineNo": 1,
+        "qty": 40
+      },
+      {
+        "lineNo": 2,
+        "qty": 180
+      }
+    ]
+  },
+  {
+    "id": "dn-0133-2",
+    "number": "DN-0002",
+    "case": "gs-rfq-0133",
+    "plannedAt": "2026-11-21T08:00:00.000Z",
+    "place": "Abu Qir base → DOS Falcon (supply boat)",
+    "status": "Planned",
+    "plan": {
+      "vehicle": "Golden Sea truck 2"
+    },
+    "lines": [
+      {
+        "lineNo": 2,
+        "qty": 20
+      }
+    ]
+  }
+]

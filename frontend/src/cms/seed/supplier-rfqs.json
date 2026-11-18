@@ -1,0 +1,64 @@
+[
+  {
+    "id": "srfq-0142-a",
+    "reference": "GS-SRFQ-0142-A",
+    "case": "gs-rfq-0142",
+    "supplier": "S1",
+    "lineNos": [1, 2, 3, 4, 5],
+    "sentAt": "2026-11-15T11:05:00.000Z",
+    "dueAt": "2026-11-17T12:00:00.000Z",
+    "status": "Replied",
+    "lastEvent": "Full offer received 16 Nov 10:22",
+    "sentBy": "ky"
+  },
+  {
+    "id": "srfq-0142-b",
+    "reference": "GS-SRFQ-0142-B",
+    "case": "gs-rfq-0142",
+    "supplier": "S2",
+    "lineNos": [1, 2, 3],
+    "sentAt": "2026-11-15T11:05:00.000Z",
+    "dueAt": "2026-11-17T12:00:00.000Z",
+    "status": "Revised offer received",
+    "lastEvent": "v2 received after correction request",
+    "sentBy": "ky"
+  },
+  {
+    "id": "srfq-0142-c",
+    "reference": "GS-SRFQ-0142-C",
+    "case": "gs-rfq-0142",
+    "supplier": "S5",
+    "lineNos": [1],
+    "sentAt": "2026-11-15T11:40:00.000Z",
+    "dueAt": "2026-11-17T12:00:00.000Z",
+    "status": "Replied",
+    "lastEvent": "New supplier — offer captured from email",
+    "sentBy": "ky"
+  },
+  {
+    "id": "srfq-0142-d",
+    "reference": "GS-SRFQ-0142-D",
+    "case": "gs-rfq-0142",
+    "supplier": "S4",
+    "lineNos": [5],
+    "sentAt": "2026-11-15T11:05:00.000Z",
+    "dueAt": "2026-11-17T12:00:00.000Z",
+    "status": "Replied",
+    "lastEvent": "10 of 15 available",
+    "sentBy": "ky"
+  },
+  {
+    "id": "srfq-0142-e",
+    "reference": "GS-SRFQ-0142-E",
+    "case": "gs-rfq-0142",
+    "supplier": "S3",
+    "lineNos": [4],
+    "sentAt": "2026-11-15T11:05:00.000Z",
+    "dueAt": "2026-11-17T12:00:00.000Z",
+    "status": "Awaiting reply",
+    "reminders": 1,
+    "nextReminderAt": "2026-11-17T15:00:00.000Z",
+    "lastEvent": "Reminder 1 sent 16 Nov 15:00",
+    "sentBy": "ky"
+  }
+]

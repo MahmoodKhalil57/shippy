@@ -32,8 +32,11 @@ const json = (body: unknown, status = 200, headers: Record<string, string> = {})
   new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json", ...headers } });
 
 const errorResponse = (e: unknown) => {
-  if (e instanceof APIError) {
-    return json({ errors: [{ name: e.name, message: e.message, ...(e.data ? { data: e.data } : {}) }] }, e.status);
+  // Like Payload: APIError, or any error carrying an HTTP status (hooks throw Payload's APIError(msg, 400)).
+  const status = e instanceof Error ? (e as { status?: unknown }).status : undefined;
+  if (e instanceof APIError || (e instanceof Error && typeof status === "number" && status >= 400 && status < 600)) {
+    const { data } = e as { data?: unknown };
+    return json({ errors: [{ name: e.name, message: e.message, ...(data ? { data } : {}) }] }, status as number);
   }
   console.error("[mock backend]", e);
   return json({ errors: [{ message: e instanceof Error ? e.message : "Something went wrong." }] }, 500);

@@ -1,0 +1,25 @@
+[
+  {
+    "id": "bill-dm-5512",
+    "billNumber": "DM-5512",
+    "supplier": "S1",
+    "purchaseOrder": "po-0418",
+    "amount": 96400,
+    "currency": "EGP",
+    "dueDate": "2026-12-08T00:00:00.000Z",
+    "match": [
+      {
+        "lineNo": 1,
+        "ordered": 40,
+        "received": 40,
+        "billed": 40
+      },
+      {
+        "lineNo": 2,
+        "ordered": 200,
+        "received": 180,
+        "billed": 200
+      }
+    ]
+  }
+]

@@ -1,0 +1,13 @@
+[
+  {
+    "id": "pay-helios-1",
+    "direction": "in",
+    "reference": "TRX-77120",
+    "paidAt": "2026-11-12T00:00:00.000Z",
+    "amount": 10000,
+    "currency": "USD",
+    "invoice": "inv-0412",
+    "kind": "Installment",
+    "status": "Reconciled"
+  }
+]

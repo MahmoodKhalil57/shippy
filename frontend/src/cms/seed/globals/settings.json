@@ -1,5 +1,16 @@
 {
   "companyName": "Golden Sea",
+  "workingHours": "Sun–Thu 08:00–17:00",
+  "timezone": "Africa/Cairo",
+  "baseCurrency": "EGP",
+  "defaultQuoteCurrency": "USD",
+  "service24x7": true,
   "marginFloor": 15,
-  "workingHours": "Sun–Thu 08:00–17:00"
+  "vatRatePct": 14,
+  "quoteValidityDays": 7,
+  "defaultPaymentTerms": "90 days from invoice date",
+  "rfqPrefix": "GS-RFQ-",
+  "servicePrefix": "GS-SVC-",
+  "quotePrefix": "GS-Q-",
+  "supplierRfqPrefix": "GS-SRFQ-"
 }

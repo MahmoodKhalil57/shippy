@@ -1,9 +1,10 @@
 import type { CollectionConfig } from "payload";
+import { ROLES, WAREHOUSES } from "./shared.ts";
 
 export const Users: CollectionConfig = {
   slug: "users",
   auth: true,
-  admin: { useAsTitle: "name", defaultColumns: ["name", "email", "role"], group: "Team" },
+  admin: { useAsTitle: "name", defaultColumns: ["name", "email", "role", "office"], group: "Team" },
   access: {
     read: ({ req }) => Boolean(req.user),
     create: ({ req }) => req.user?.role === "management",
@@ -18,11 +19,28 @@ export const Users: CollectionConfig = {
       type: "select",
       required: true,
       defaultValue: "sales",
-      options: [
-        { label: "Supply chain & customer service", value: "supply-chain" },
-        { label: "Management approver", value: "management" },
-        { label: "Sales", value: "sales" },
-        { label: "Operations & finance", value: "operations" },
+      options: ROLES,
+      // Only management changes roles (users may edit their own profile otherwise).
+      access: { update: ({ req }) => req.user?.role === "management" },
+    },
+    {
+      type: "row",
+      fields: [
+        { name: "phone", type: "text", admin: { description: "Used for WhatsApp / SMS alerts (after-hours RFQs)." } },
+        { name: "office", type: "select", options: [...WAREHOUSES.map((w) => w.split(" ")[0]), "Greece", "US"] },
+      ],
+    },
+    {
+      name: "notifications",
+      type: "group",
+      fields: [
+        { name: "dailyBriefing", type: "checkbox", label: "Daily briefing at 07:00", defaultValue: true },
+        {
+          name: "afterHoursAlerts",
+          type: "checkbox",
+          label: "After-hours RFQ alerts when on call",
+          defaultValue: false,
+        },
       ],
     },
   ],

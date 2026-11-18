@@ -1,0 +1,40 @@
+[
+  {
+    "id": "vr-gulfstar",
+    "company": "Gulf Star Shipping",
+    "opportunity": "op-gulfstar",
+    "portal": "Supplier onboarding form (email)",
+    "submittedAt": "2026-11-02T00:00:00.000Z",
+    "status": "Under review",
+    "nextStep": "Follow up 20 Nov",
+    "documents": [
+      {
+        "name": "Commercial register",
+        "status": "Submitted"
+      },
+      {
+        "name": "Tax card",
+        "status": "Submitted"
+      },
+      {
+        "name": "Bank letter",
+        "status": "Submitted"
+      }
+    ]
+  },
+  {
+    "id": "vr-atlas",
+    "company": "Atlas Tankers",
+    "customer": "atlas",
+    "portal": "Customer procurement portal",
+    "renewBy": "2026-06-30T00:00:00.000Z",
+    "status": "Renewal overdue",
+    "nextStep": "Submit updated tax card 20 Nov",
+    "documents": [
+      {
+        "name": "Tax card (2026)",
+        "status": "Missing"
+      }
+    ]
+  }
+]

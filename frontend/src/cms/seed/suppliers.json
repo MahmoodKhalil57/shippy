@@ -8,7 +8,8 @@
     "replyHrs": 6,
     "onTime": 94,
     "terms": "30 days",
-    "contact": "Hany S. · +20 10 0000 1101"
+    "contact": "Hany S. · +20 10 0000 1101",
+    "kind": "local"
   },
   {
     "id": "S2",
@@ -19,7 +20,8 @@
     "replyHrs": 14,
     "onTime": 88,
     "terms": "15 days",
-    "contact": "Mona A. · +20 10 0000 1102"
+    "contact": "Mona A. · +20 10 0000 1102",
+    "kind": "local"
   },
   {
     "id": "S3",
@@ -30,7 +32,8 @@
     "replyHrs": 30,
     "onTime": 81,
     "terms": "Cash",
-    "contact": "Sherif K. · +20 10 0000 1103"
+    "contact": "Sherif K. · +20 10 0000 1103",
+    "kind": "local"
   },
   {
     "id": "S4",
@@ -41,6 +44,42 @@
     "replyHrs": 9,
     "onTime": 97,
     "terms": "30 days",
-    "contact": "Rania F. · +20 10 0000 1104"
+    "contact": "Rania F. · +20 10 0000 1104",
+    "kind": "local"
+  },
+  {
+    "id": "S5",
+    "name": "Horizon Trading",
+    "city": "Damietta",
+    "kind": "local",
+    "categories": ["Chemicals"],
+    "status": "New",
+    "replyHrs": 3,
+    "terms": "50% advance",
+    "currency": "USD",
+    "source": "Auto-created from email reply to GS-RFQ-0142 (16 Nov 2026)",
+    "emailDomain": "horizon-trading.example"
+  },
+  {
+    "id": "S10",
+    "name": "Vecom Marine",
+    "city": "Maassluis",
+    "country": "Netherlands",
+    "kind": "agency",
+    "categories": ["Chemicals"],
+    "status": "Approved",
+    "onTime": 91,
+    "compliance": 100,
+    "terms": "45 days",
+    "currency": "EUR"
+  },
+  {
+    "id": "GS",
+    "name": "Golden Sea stock — Alexandria",
+    "city": "Alexandria",
+    "kind": "own-stock",
+    "categories": ["Chemicals", "Safety & PPE"],
+    "status": "Approved",
+    "currency": "EGP"
   }
 ]

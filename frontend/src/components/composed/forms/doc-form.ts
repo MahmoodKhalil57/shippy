@@ -294,6 +294,26 @@ export class UiDocForm extends LightElement {
         ></ui-text-input>`;
         break;
       case "number":
+        // hasMany numbers (e.g. line numbers 1, 2, 5) are edited as a comma-separated list.
+        if (f.hasMany) {
+          control = html`<ui-text-input
+            .legend=${label}
+            .hint=${hint ?? "Comma-separated numbers"}
+            .value=${Array.isArray(v) ? v.join(", ") : v == null ? "" : text(v)}
+            .readonly=${disabled}
+            field-width="full"
+            width="full"
+            @input=${(e: Event) =>
+              set(
+                target(e)
+                  .value.split(",")
+                  .map((s) => s.trim())
+                  .filter(Boolean)
+                  .map(Number),
+              )}
+          ></ui-text-input>`;
+          break;
+        }
         control = html`<ui-text-input
           .legend=${label}
           .hint=${hint}

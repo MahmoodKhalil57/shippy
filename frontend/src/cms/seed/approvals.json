@@ -1,0 +1,45 @@
+[
+  {
+    "id": "ap-margin-0137",
+    "title": "Quote v2 to Mare Nostrum — 12.4% margin (min 15%)",
+    "type": "Quotation margin exception",
+    "case": "gs-rfq-0137",
+    "detail": "Customer target price on 2 paint lines.",
+    "requestedBy": "sa",
+    "approvers": ["kb"]
+  },
+  {
+    "id": "ap-deposit-0133",
+    "title": "50% advance to Delta Marine Stores — EGP 96,400",
+    "type": "Supplier deposit (payment)",
+    "case": "gs-rfq-0133",
+    "detail": "PO P0418 · pro forma attached · bank details unchanged since 2025.",
+    "requestedBy": "ah",
+    "approvers": ["kb", "mh"]
+  },
+  {
+    "id": "ap-bank-s3",
+    "title": "Port Said Welding requests new beneficiary bank account",
+    "type": "Bank detail change",
+    "detail": "Call-back to the number on file required. Two-person rule.",
+    "requestedBy": "ah",
+    "approvers": ["kb", "mh"],
+    "twoPerson": true,
+    "decisions": [
+      {
+        "user": "mh",
+        "decision": "Approve",
+        "at": "2026-11-17T09:10:00.000Z",
+        "reason": "Call-back done on number on file."
+      }
+    ]
+  },
+  {
+    "id": "ap-fx-usd",
+    "title": "New USD rate 48.95 (from 48.60)",
+    "type": "Exchange rate",
+    "detail": "Affects 3 open quotations.",
+    "requestedBy": "ah",
+    "approvers": ["kb"]
+  }
+]

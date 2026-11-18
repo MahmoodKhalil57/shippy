@@ -1,0 +1,59 @@
+[
+  {
+    "id": "q-0142-v1",
+    "number": "GS-Q-0142 v1",
+    "case": "gs-rfq-0142",
+    "version": 1,
+    "currency": "USD",
+    "fxRate": 48.6,
+    "discountPct": 0,
+    "status": "Draft",
+    "decision": "Quotation prepared",
+    "preparedBy": "ky",
+    "validUntil": "2026-11-24T00:00:00.000Z",
+    "paymentTerms": "90 days from invoice date",
+    "deliveryTerms": "On board at Port Said on arrival",
+    "lines": [
+      {
+        "lineNo": 1,
+        "partNo": "IMPA 450652",
+        "description": "CRC Belt Grip spray for mud pump V-belts, 400 ml aerosol",
+        "unit": "EA",
+        "qty": 24,
+        "unitPrice": 14.05
+      },
+      {
+        "lineNo": 2,
+        "partNo": "243",
+        "description": "LOCTITE 243 threadlocker, medium strength, 50 ml",
+        "unit": "EA",
+        "qty": 3,
+        "unitPrice": 68.2
+      },
+      {
+        "lineNo": 3,
+        "partNo": "IMPA 450713",
+        "description": "Electrical contact cleaner, 500 ml aerosol (alternative pack, accepted)",
+        "unit": "can",
+        "qty": 100,
+        "unitPrice": 10.92,
+        "alternative": true
+      },
+      {
+        "lineNo": 5,
+        "partNo": "IMPA 310102",
+        "description": "Safety helmet EN 397, white, with chin strap",
+        "unit": "EA",
+        "qty": 15,
+        "unitPrice": 10.44
+      }
+    ],
+    "internal": {
+      "landedCostEGP": 66021,
+      "grossProfitEGP": 21920,
+      "marginPct": 24.9,
+      "exceptions": "L1 new supplier 50% advance; L3 alternative pack needs written customer acceptance"
+    },
+    "remarks": "Items 4 and 6 will follow in a revised quotation."
+  }
+]

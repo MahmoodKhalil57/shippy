@@ -1,0 +1,29 @@
+[
+  {
+    "id": "inv-0412",
+    "number": "INV/2026/0412",
+    "case": "gs-rfq-0131",
+    "customer": "helios",
+    "basis": "Delivery",
+    "currency": "USD",
+    "issuedAt": "2026-11-10T00:00:00.000Z",
+    "dueDate": "2026-11-30T00:00:00.000Z",
+    "status": "Open",
+    "vatTreatment": "0% — foreign vessel in transit",
+    "lines": [
+      {
+        "lineNo": 1,
+        "description": "Engine spares — 7 lines as per DN-0131-1",
+        "qty": 1,
+        "deliveredQty": 1,
+        "unitPrice": 14200
+      }
+    ],
+    "paid": 10000,
+    "eInvoice": {
+      "status": "Valid",
+      "uuid": "5F2C-…-91A",
+      "submittedAt": "2026-11-10T00:00:00.000Z"
+    }
+  }
+]

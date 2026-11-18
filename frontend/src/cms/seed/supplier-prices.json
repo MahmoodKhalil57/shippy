@@ -1,0 +1,26 @@
+[
+  {
+    "id": "sp-1",
+    "product": "P1",
+    "supplier": "S5",
+    "price": 9.8,
+    "currency": "USD",
+    "per": "EA",
+    "quotedAt": "2026-11-16T00:00:00.000Z",
+    "validUntil": "2026-11-26T00:00:00.000Z",
+    "source": "Email reply",
+    "case": "gs-rfq-0142"
+  },
+  {
+    "id": "sp-2",
+    "product": "P4",
+    "supplier": "S1",
+    "price": 1010,
+    "currency": "EGP",
+    "per": "Pack 5 kg",
+    "quotedAt": "2026-09-02T00:00:00.000Z",
+    "validUntil": "2026-09-09T00:00:00.000Z",
+    "source": "Purchase order",
+    "ordered": true
+  }
+]

@@ -1,0 +1,225 @@
+[
+  {
+    "id": "off-l1-s5",
+    "case": "gs-rfq-0142",
+    "lineNo": 1,
+    "supplierRfq": "srfq-0142-c",
+    "supplier": "S5",
+    "product": "P1",
+    "price": 9.8,
+    "currency": "USD",
+    "packs": 24,
+    "packSize": 1,
+    "leadDays": 2,
+    "validUntil": "2026-11-26T00:00:00.000Z",
+    "paymentTerms": "50% advance",
+    "deliveryBasis": "Ex-stock Damietta",
+    "source": "Email",
+    "compliance": "Confirmed",
+    "enteredBy": "ky"
+  },
+  {
+    "id": "off-l1-s1",
+    "case": "gs-rfq-0142",
+    "lineNo": 1,
+    "supplierRfq": "srfq-0142-a",
+    "supplier": "S1",
+    "product": "P1",
+    "price": 520,
+    "currency": "EGP",
+    "packs": 24,
+    "packSize": 1,
+    "leadDays": 3,
+    "validUntil": "2026-11-24T00:00:00.000Z",
+    "paymentTerms": "30 days",
+    "deliveryBasis": "Delivered Port Said",
+    "source": "Email",
+    "compliance": "Confirmed"
+  },
+  {
+    "id": "off-l2-s2-v1",
+    "case": "gs-rfq-0142",
+    "lineNo": 2,
+    "supplierRfq": "srfq-0142-b",
+    "supplier": "S2",
+    "offeredDescription": "LOCTITE 242, 50 ml",
+    "price": 2190,
+    "currency": "EGP",
+    "packs": 3,
+    "packSize": 1,
+    "leadDays": 4,
+    "validUntil": "2026-11-30T00:00:00.000Z",
+    "source": "Email",
+    "compliance": "Rejected",
+    "superseded": true,
+    "deviations": [
+      {
+        "type": "Wrong brand / part",
+        "severity": "Blocks use",
+        "detail": "Offered LOCTITE 242, requested 243 (exact part required)",
+        "detectedBy": "Rules"
+      }
+    ]
+  },
+  {
+    "id": "off-l2-s2-v2",
+    "case": "gs-rfq-0142",
+    "lineNo": 2,
+    "supplierRfq": "srfq-0142-b",
+    "supplier": "S2",
+    "product": "P2",
+    "version": 2,
+    "supersedes": "off-l2-s2-v1",
+    "price": 2350,
+    "currency": "EGP",
+    "packs": 3,
+    "packSize": 1,
+    "leadDays": 4,
+    "validUntil": "2026-11-30T00:00:00.000Z",
+    "source": "Email",
+    "compliance": "Confirmed"
+  },
+  {
+    "id": "off-l2-s1",
+    "case": "gs-rfq-0142",
+    "lineNo": 2,
+    "supplierRfq": "srfq-0142-a",
+    "supplier": "S1",
+    "product": "P2",
+    "price": 2405,
+    "currency": "EGP",
+    "packs": 3,
+    "packSize": 1,
+    "leadDays": 3,
+    "validUntil": "2026-11-24T00:00:00.000Z",
+    "source": "Email",
+    "compliance": "Confirmed"
+  },
+  {
+    "id": "off-l3-s1",
+    "case": "gs-rfq-0142",
+    "lineNo": 3,
+    "supplierRfq": "srfq-0142-a",
+    "supplier": "S1",
+    "product": "P3",
+    "price": 185,
+    "currency": "EGP",
+    "packs": 200,
+    "packSize": 0.25,
+    "packLabel": "200 × 250 ml",
+    "leadDays": 3,
+    "validUntil": "2026-11-24T00:00:00.000Z",
+    "expiry": "2027-02",
+    "source": "Email",
+    "compliance": "Pending",
+    "deviations": [
+      {
+        "type": "Shelf life",
+        "severity": "Warning",
+        "detail": "Batch expires Feb 2027 (15 months) — below 18-month requirement"
+      }
+    ]
+  },
+  {
+    "id": "off-l3-s2",
+    "case": "gs-rfq-0142",
+    "lineNo": 3,
+    "supplierRfq": "srfq-0142-b",
+    "supplier": "S2",
+    "product": "P3",
+    "price": 330,
+    "currency": "EGP",
+    "packs": 100,
+    "packSize": 0.5,
+    "packLabel": "100 × 500 ml",
+    "leadDays": 4,
+    "validUntil": "2026-11-30T00:00:00.000Z",
+    "expiry": "2028-06",
+    "source": "Email",
+    "compliance": "Pending",
+    "deviations": [
+      {
+        "type": "Pack size",
+        "severity": "Needs customer acceptance",
+        "detail": "100 × 500 ml instead of 200 × 250 ml — same 50 L"
+      }
+    ]
+  },
+  {
+    "id": "off-l3-s10",
+    "case": "gs-rfq-0142",
+    "lineNo": 3,
+    "supplier": "S10",
+    "product": "P3",
+    "price": 4.6,
+    "currency": "EUR",
+    "packs": 200,
+    "packSize": 0.25,
+    "packLabel": "200 × 250 ml",
+    "leadDays": 9,
+    "validUntil": "2026-12-31T00:00:00.000Z",
+    "source": "Agency pricelist",
+    "compliance": "Confirmed",
+    "deviations": [
+      {
+        "type": "Lead time vs ETA",
+        "severity": "Blocks use",
+        "detail": "9-day import misses vessel ETA 21 Nov"
+      }
+    ]
+  },
+  {
+    "id": "off-l5-s4",
+    "case": "gs-rfq-0142",
+    "lineNo": 5,
+    "supplierRfq": "srfq-0142-d",
+    "supplier": "S4",
+    "product": "P5",
+    "price": 340,
+    "currency": "EGP",
+    "packs": 10,
+    "packSize": 1,
+    "leadDays": 2,
+    "validUntil": "2026-12-01T00:00:00.000Z",
+    "source": "Email",
+    "compliance": "Confirmed",
+    "deviations": [
+      {
+        "type": "Quantity shortfall",
+        "severity": "Warning",
+        "detail": "Only 10 of 15 available"
+      }
+    ]
+  },
+  {
+    "id": "off-l5-s1",
+    "case": "gs-rfq-0142",
+    "lineNo": 5,
+    "supplierRfq": "srfq-0142-a",
+    "supplier": "S1",
+    "product": "P5",
+    "price": 365,
+    "currency": "EGP",
+    "packs": 15,
+    "packSize": 1,
+    "leadDays": 3,
+    "validUntil": "2026-11-24T00:00:00.000Z",
+    "source": "Email",
+    "compliance": "Confirmed"
+  },
+  {
+    "id": "off-l5-gs",
+    "case": "gs-rfq-0142",
+    "lineNo": 5,
+    "supplier": "GS",
+    "product": "P5",
+    "price": 295,
+    "currency": "EGP",
+    "packs": 4,
+    "packSize": 1,
+    "leadDays": 1,
+    "validUntil": "2026-12-31T00:00:00.000Z",
+    "source": "Own stock",
+    "compliance": "Confirmed"
+  }
+]

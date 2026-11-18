@@ -1,0 +1,26 @@
+[
+  {
+    "id": "rc-0418-1",
+    "case": "gs-rfq-0133",
+    "purchaseOrder": "po-0418",
+    "lineNo": 1,
+    "ordered": 40,
+    "received": 40,
+    "receivedAt": "2026-11-12T00:00:00.000Z",
+    "warehouse": "Alexandria",
+    "lot": "FR-2611",
+    "qc": "OK"
+  },
+  {
+    "id": "rc-0418-2",
+    "case": "gs-rfq-0133",
+    "purchaseOrder": "po-0418",
+    "lineNo": 2,
+    "ordered": 200,
+    "received": 180,
+    "receivedAt": "2026-11-12T00:00:00.000Z",
+    "warehouse": "Alexandria",
+    "qc": "Short",
+    "backorderDate": "2026-11-20T00:00:00.000Z"
+  }
+]

@@ -1,0 +1,33 @@
+[
+  {
+    "id": "act-1",
+    "at": "2026-11-15T09:12:00.000Z",
+    "case": "gs-rfq-0142",
+    "kind": "auto",
+    "text": "RFQ email received (sales@, Outlook). 1 PDF attachment linked.",
+    "rule": "Create case from RFQ email"
+  },
+  {
+    "id": "act-2",
+    "at": "2026-11-15T09:14:00.000Z",
+    "case": "gs-rfq-0142",
+    "kind": "auto",
+    "text": "Acknowledgement sent using approved template “RFQ received – marine”.",
+    "rule": "RFQ acknowledgement"
+  },
+  {
+    "id": "act-3",
+    "at": "2026-11-16T09:30:00.000Z",
+    "case": "gs-rfq-0142",
+    "kind": "alert",
+    "text": "Suez Industrial offer line 2: LOCTITE 242 offered, 243 requested. Line blocked from pricing."
+  },
+  {
+    "id": "act-4",
+    "at": "2026-11-16T09:41:00.000Z",
+    "case": "gs-rfq-0142",
+    "kind": "human",
+    "actor": "ky",
+    "text": "Correction request sent to Suez Industrial (client not disclosed)."
+  }
+]
