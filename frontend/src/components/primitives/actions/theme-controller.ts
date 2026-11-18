@@ -191,6 +191,8 @@ export class UiThemeController extends LightElement {
   @property({ attribute: false }) schemes: Scheme[] = SCHEMES;
   /** `background` mode: the images offered (besides none and your own upload). */
   @property({ attribute: false }) backgrounds: BackgroundImage[] = [];
+  /** `background`: photo credit shown in the picker's heading. */
+  @property() credit = "";
   /** Selected theme (multi-choice modes) or "" for the page default. */
   @property() value = "";
   @property({ type: Boolean }) checked = false;
@@ -354,7 +356,8 @@ export class UiThemeController extends LightElement {
       >
         <div class=${themeControllerBackgroundsBody()}>
           <div class=${themeControllerBackgroundsHead()}>
-            <span>Background</span><span class=${themeControllerBackgroundsCredit()}>Photos: Pexels</span>
+            <span>Background</span
+            >${this.credit ? html`<span class=${themeControllerBackgroundsCredit()}>${this.credit}</span>` : nothing}
           </div>
           <div class=${themeControllerBackgroundGrid()} role="listbox" aria-label="Background image">
             <button

@@ -3,7 +3,7 @@ import { LightElement } from "../../components/base/light-element.ts";
 import { html, nothing } from "lit";
 import { customElement, query, state } from "lit/decorators.js";
 import { keyed } from "lit/directives/keyed.js";
-import { API_ROUTE, api, startMockBackend, withBase } from "../../cms/client.ts";
+import { api, startMockBackend, withBase } from "../../cms/client.ts";
 import type { Doc } from "../../cms/types.ts";
 import type { MenuItem } from "../../components/primitives/navigation/menu.ts";
 import type { IconName } from "../../components/primitives/media/icon.ts";
@@ -15,7 +15,6 @@ import "./tour.ts";
 import { viewElement } from "./views.ts";
 import "./edit-view.ts";
 import "./list-view.ts";
-import "./mock-data.ts";
 import "./command.ts";
 import { asideRail, expandAsideSection, type AsideSection } from "./aside.ts";
 import { roleLabel, roleLogins, seedUsers, type SeedUser } from "./demo-users.ts";
@@ -44,18 +43,23 @@ import {
 export type Access = Awaited<ReturnType<typeof api.access>>;
 
 /** Background images offered in the header (public/backgrounds, from Pexels), with thumbnails. */
-const backgroundUrl = (file: string) => `${import.meta.env.BASE_URL}backgrounds/${file}`;
+const asset = (file: string) => `${import.meta.env.BASE_URL}${file}`;
+/** Golden Sea's own photos first, then the Pexels set. Each has a `-thumb.jpg` for the picker. */
 const BACKGROUNDS = [
-  ["waves", "Ocean waves"],
-  ["night-ship", "Ship at night"],
-  ["seaport", "Seaport at sunset"],
-  ["lighthouse", "Lighthouse storm"],
-  ["fluid", "Fluid"],
-].map(([id, label]) => ({
-  id: id!,
+  ["goldensea/Slider1", "Container port at dusk"],
+  ["goldensea/Slider7", "Ships in harbour"],
+  ["goldensea/Slider8", "Bollard at sunset"],
+  ["goldensea/Slider6", "Mooring line"],
+  ["backgrounds/waves", "Ocean waves"],
+  ["backgrounds/night-ship", "Ship at night"],
+  ["backgrounds/seaport", "Seaport at sunset"],
+  ["backgrounds/lighthouse", "Lighthouse storm"],
+  ["backgrounds/fluid", "Fluid"],
+].map(([path, label]) => ({
+  id: path!.split("/").pop()!,
   label: label!,
-  src: backgroundUrl(`${id}.jpg`),
-  thumb: backgroundUrl(`${id}-thumb.jpg`),
+  src: asset(`${path}.jpg`),
+  thumb: asset(`${path}-thumb.jpg`),
 }));
 
 @customElement("dashboard-app")
@@ -246,10 +250,6 @@ export class DashboardApp extends LightElement {
       const href = dashboardPath(v.path.slice(1));
       groups.set(v.nav.group, [{ label: v.nav.label, href, active: here(href) }, ...(groups.get(v.nav.group) ?? [])]);
     }
-    groups.set("Mock backend", [
-      { label: "Mock data", href: dashboardPath("mock-data"), active: this.route.name === "mock-data" },
-      { label: "API", href: `${API_ROUTE}/access` },
-    ]);
     // The order work flows in: from the first email to the last payment, then insight and setup.
     const ORDER = [
       "Sourcing desk",
@@ -263,7 +263,6 @@ export class DashboardApp extends LightElement {
       "Catalogue",
       "Team",
       "Configuration",
-      "Mock backend",
     ];
     const rank = (g: string) => (ORDER.indexOf(g) + 1 || ORDER.length) - 1;
     return [...groups]
@@ -337,8 +336,6 @@ export class DashboardApp extends LightElement {
           .docId=${this.user!.id}
           .access=${access}
         ></dashboard-edit-view>`;
-      case "mock-data":
-        return html`<dashboard-mock-data></dashboard-mock-data>`;
       default:
         return html`<ui-flex direction="col" align="start" gap="4">
           <ui-heading level="1" size="2xl">Nothing found</ui-heading>
@@ -396,7 +393,12 @@ export class DashboardApp extends LightElement {
           .onLogout=${() => void this._logout()}
         ></dashboard-command>
         <ui-flex slot="actions" align="center" gap="1">
-          <ui-theme-controller as="background" persist .backgrounds=${BACKGROUNDS}></ui-theme-controller>
+          <ui-theme-controller
+            as="background"
+            persist
+            credit="Photos: Golden Sea, Pexels"
+            .backgrounds=${BACKGROUNDS}
+          ></ui-theme-controller>
           <ui-theme-controller as="scheme" persist></ui-theme-controller>
           <ui-theme-controller as="cycle" persist></ui-theme-controller>
           <ui-dropdown

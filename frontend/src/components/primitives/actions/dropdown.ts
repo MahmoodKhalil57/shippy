@@ -40,7 +40,8 @@ export const dropdown = rcva("dropdown", {
 });
 
 /** The floating panel (`dropdown-content`). Combine with `dropdownPanel` for its look. */
-export const dropdownContent = rcva("dropdown-content z-1");
+/** Above everything in the page layer (indicator badges are `z-1` too and would paint over a later-opened panel). */
+export const dropdownContent = rcva("dropdown-content z-50");
 
 /** Look of the panel, as in the daisyUI examples. */
 export const dropdownPanel = rcva("", {

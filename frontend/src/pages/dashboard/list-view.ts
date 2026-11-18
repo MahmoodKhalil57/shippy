@@ -195,7 +195,7 @@ export class DashboardListView extends LightElement {
         .open=${this.confirming}
         @ui-close=${() => (this.confirming = false)}
       >
-        <ui-text>This can't be undone (except by resetting the mock data to its seed).</ui-text>
+        <ui-text>This can't be undone.</ui-text>
         <ui-flex slot="actions" gap="2">
           <ui-button variant="ghost" @click=${() => (this.confirming = false)}>Cancel</ui-button>
           <ui-button color="error" @click=${() => this._deleteSelected()}>Delete</ui-button>

@@ -138,17 +138,6 @@ export class DashboardCommand extends LightElement {
         },
         "user",
       ),
-      this._entry(
-        {
-          id: "page:mock-data",
-          kind: "page",
-          title: "Mock data",
-          group: "Mock backend",
-          description: "Export, import or reset the demo data",
-          href: dashboardPath("mock-data"),
-        },
-        "database",
-      ),
     ];
     const here = isBookmarked(this.path);
     const actions = [

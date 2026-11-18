@@ -140,7 +140,6 @@ export type Route =
   | { name: "view"; key: string }
   | { name: "global"; slug: string }
   | { name: "account" }
-  | { name: "mock-data" }
   | { name: "not-found" };
 
 /** `/collections/cases/123` style URLs (Payload's admin URLs, at the site root). */
@@ -162,7 +161,6 @@ export function parseRoute(pathname: string): Route {
   if (a === "login" && !b) return { name: "login" };
   if (a === "create-first-user" && !b) return { name: "create-first-user" };
   if (a === "account" && !b) return { name: "account" };
-  if (a === "mock-data" && !b) return { name: "mock-data" };
   if (a === "collections" && b && collectionOf(b)) {
     if (!c) return { name: "list", slug: b };
     if (c === "create" && parts.length === 3) return { name: "create", slug: b };
@@ -247,7 +245,6 @@ export const GROUP_ICONS: Record<string, IconName> = {
   Growth: "trending-up",
   Team: "user",
   Configuration: "settings",
-  "Mock backend": "database",
 };
 
 /** A collection's group (`admin.group`), as shown in the navigation. */
