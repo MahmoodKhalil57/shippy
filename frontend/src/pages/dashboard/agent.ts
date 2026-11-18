@@ -17,6 +17,7 @@ type Line =
   | { kind: "you"; text: string }
   | { kind: "helper"; text: string }
   | { kind: "tool"; title: string; status: Extract<CodexEvent, { type: "tool" }>["status"] }
+  | { kind: "status"; text: string }
   | { kind: "error"; text: string };
 
 const SUGGESTIONS = [
@@ -84,7 +85,12 @@ export class DashboardAgent extends LightElement {
           }),
         onEvent: (e) => {
           if (e.type === "text") this.lines = [...this.lines, { kind: "helper", text: e.text }];
-          else if (e.status === "running")
+          else if (e.type === "status") {
+            // One progress line, updated in place.
+            const last = this.lines.at(-1);
+            const line: Line = { kind: "status", text: e.text };
+            this.lines = last?.kind === "status" ? [...this.lines.slice(0, -1), line] : [...this.lines, line];
+          } else if (e.status === "running")
             this.lines = [...this.lines, { kind: "tool", title: e.title, status: e.status }];
           else {
             // Update the running line of this tool (or add one: declined calls never ran).
@@ -129,6 +135,8 @@ export class DashboardAgent extends LightElement {
           ${l.status === "running" ? html`<ui-loading variant="dots" size="xs" label="Working"></ui-loading>` : nothing}
           <ui-text size="xs" color="muted">${l.title} ${l.status === "running" ? "" : STATUS[l.status]}</ui-text>
         </ui-flex>`;
+      case "status":
+        return html`<ui-text size="xs" color="muted">${l.text}</ui-text>`;
       case "error":
         return html`<ui-alert color="error" variant="soft">${l.text}</ui-alert>`;
     }

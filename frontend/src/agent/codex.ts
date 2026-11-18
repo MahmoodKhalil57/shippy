@@ -1,29 +1,37 @@
+import { BrowserModelChat } from "./browser-model.ts";
 import { agentTools, callAgentTool, type AgentTool } from "./webmcp.ts";
 
 /**
- * The in-page helper's brain: an OpenAI Codex model (Responses API) that sees and works the app
- * only through its WebMCP tools (./webmcp.ts) — the same ones a browser agent gets — never the
- * DOM, scripts or screenshots.
+ * The in-page helper's brain: a model that sees and works the app only through its WebMCP tools
+ * (./webmcp.ts) — the same ones a browser agent gets — never the DOM, scripts or screenshots.
  *
- * Configuration lives in index.html, for a developer to fill in when running locally:
- *   <meta name="openai-api-key" content="sk-…">   (empty in the repository: the site is public)
- *   <meta name="openai-model" content="luna">      (the default of CODEX_MODELS; the person can pick)
- * Nothing is checked up front: a missing or wrong key or model comes back as OpenAI's own error.
+ * - OpenAI (Codex, Responses API). Configuration lives in index.html, for a developer to fill in
+ *   when running locally:
+ *     <meta name="openai-api-key" content="sk-…">   (empty in the repository: the site is public)
+ *     <meta name="openai-model" content="luna">      (the default of CODEX_MODELS; the person can pick)
+ *   Nothing is checked up front: a missing or wrong key or model comes back as OpenAI's own error.
+ *   The conversation continues on the server (`previous_response_id`), so only new messages and
+ *   tool results are sent.
+ * - "AIbrowser": the browser's own on-device model (Chrome's Prompt API, ./browser-model.ts) —
+ *   no key, nothing leaves the machine.
  *
- * One turn = the user's message, then as many tool calls as the model needs (each confirmed by the
- * user first when the tool changes something), then its answer. The conversation continues on
- * the server (`previous_response_id`), so only new messages and tool results are sent.
+ * One turn = the person's message, then as many tool calls as the model needs (each confirmed by
+ * the person first when the tool changes something), then its answer.
  */
 
 const meta = (name: string) => document.querySelector<HTMLMetaElement>(`meta[name="${name}"]`)?.content.trim() ?? "";
 
-/** The models the person can choose between (sent to OpenAI as the model id). */
+/** The models the person can choose between (OpenAI model ids, and the on-device one). */
 export const CODEX_MODELS = [
   { id: "luna", label: "Luna" },
   { id: "terra", label: "Terra" },
   { id: "sol", label: "Sol" },
   { id: "astra", label: "Astra" },
+  { id: "aibrowser", label: "AIbrowser" },
 ] as const;
+
+/** The on-device model (Chrome's Prompt API) rather than OpenAI. */
+const BROWSER_MODEL = "aibrowser";
 
 export const codexConfig = () => ({
   apiKey: meta("openai-api-key"),
@@ -75,7 +83,9 @@ export type CodexEvent =
       input: Record<string, unknown>;
       status: "running" | "done" | "declined" | "failed";
     }
-  | { type: "text"; text: string };
+  | { type: "text"; text: string }
+  /** Progress that isn't a tool (e.g. the on-device model downloading). */
+  | { type: "status"; text: string };
 
 export interface TurnOptions {
   /** Model id (default: index.html's openai-model). */
@@ -89,11 +99,43 @@ export interface TurnOptions {
 /** A conversation with the model. */
 export class CodexConversation {
   #previous: string | undefined;
+  #browser = new BrowserModelChat();
 
   /** Forget the conversation (start over). */
   reset() {
     this.#previous = undefined;
+    this.#browser.reset();
   }
+
+  /** Send the person's message; runs tool calls until the model answers. Returns its answer. */
+  async send(message: string, options: TurnOptions): Promise<string> {
+    const model = options.model ?? codexConfig().model;
+    if (model === BROWSER_MODEL) return this.#browserTurn(message, options);
+    // A turn that fails part-way leaves tool calls unanswered on the server: continue from before it.
+    const before = this.#previous;
+    try {
+      return await this.#openAiTurn(message, model, options);
+    } catch (e) {
+      this.#previous = before;
+      throw e;
+    }
+  }
+
+  /** Run one tool call the model asked for (after the person's OK when it changes something). */
+  async #runTool(name: string, args: Record<string, unknown>, { confirm, onEvent, signal }: TurnOptions) {
+    const tool = agentTools().find((t) => t.name === name);
+    const event = { type: "tool" as const, name, title: tool?.title ?? name, input: args };
+    if (tool?.annotations?.consequentialHint && !(await confirm(tool, args))) {
+      onEvent({ ...event, status: "declined" });
+      return "The person declined this action.";
+    }
+    onEvent({ ...event, status: "running" });
+    const r = await callAgentTool(name, args, signal);
+    onEvent({ ...event, status: r.isError ? "failed" : "done" });
+    return r.content.map((c) => c.text).join("\n");
+  }
+
+  /* ---------------------------------------------------------------- OpenAI */
 
   async #create(input: unknown[], model: string, signal?: AbortSignal): Promise<ResponseBody> {
     const { apiKey } = codexConfig();
@@ -115,22 +157,10 @@ export class CodexConversation {
     return body;
   }
 
-  /** Send the person's message; runs tool calls until the model answers. Returns its answer. */
-  async send(message: string, { confirm, onEvent, signal, model = codexConfig().model }: TurnOptions): Promise<string> {
-    // A turn that fails part-way leaves tool calls unanswered on the server: continue from before it.
-    const before = this.#previous;
-    try {
-      return await this.#turn(message, model, { confirm, onEvent, signal });
-    } catch (e) {
-      this.#previous = before;
-      throw e;
-    }
-  }
-
-  async #turn(message: string, model: string, { confirm, onEvent, signal }: TurnOptions): Promise<string> {
+  async #openAiTurn(message: string, model: string, options: TurnOptions): Promise<string> {
     let input: unknown[] = [{ role: "user", content: message }];
     for (let step = 0; step < 16; step++) {
-      const response = await this.#create(input, model, signal);
+      const response = await this.#create(input, model, options.signal);
       const output = response.output ?? [];
       const text = output
         .filter((o): o is OutputMessage => o.type === "message")
@@ -140,7 +170,7 @@ export class CodexConversation {
         .trim();
       const calls = output.filter((o): o is FunctionCall => o.type === "function_call");
       if (!calls.length) return text;
-      if (text) onEvent({ type: "text", text });
+      if (text) options.onEvent({ type: "text", text });
       input = [];
       for (const call of calls) {
         let args: Record<string, unknown> = {};
@@ -149,20 +179,29 @@ export class CodexConversation {
         } catch {
           /* the tool reports the missing input */
         }
-        const tool = agentTools().find((t) => t.name === call.name);
-        const event = { type: "tool" as const, name: call.name, title: tool?.title ?? call.name, input: args };
-        let result: string;
-        if (tool?.annotations?.consequentialHint && !(await confirm(tool, args))) {
-          onEvent({ ...event, status: "declined" });
-          result = "The person declined this action.";
-        } else {
-          onEvent({ ...event, status: "running" });
-          const r = await callAgentTool(call.name, args, signal);
-          result = r.content.map((c) => c.text).join("\n");
-          onEvent({ ...event, status: r.isError ? "failed" : "done" });
-        }
-        input.push({ type: "function_call_output", call_id: call.call_id, output: result });
+        const output = await this.#runTool(call.name, args, options);
+        input.push({ type: "function_call_output", call_id: call.call_id, output });
       }
+    }
+    return "I stopped after many steps without finishing. Could you narrow the request?";
+  }
+
+  /* ---------------------------------------------------------------- on-device (AIbrowser) */
+
+  /** A turn on the on-device model: it replies with a tool call or an answer, step by step. */
+  async #browserTurn(message: string, options: TurnOptions): Promise<string> {
+    let input = message;
+    for (let step = 0; step < 10; step++) {
+      const next = await this.#browser.step(input, {
+        instructions: INSTRUCTIONS,
+        tools: agentTools(),
+        onStatus: (text) => options.onEvent({ type: "status", text }),
+        signal: options.signal,
+      });
+      if (next.action === "answer") return next.answer;
+      const result = await this.#runTool(next.tool, next.arguments, options);
+      // Cut to the room left in the on-device model's context (./browser-model.ts).
+      input = `Result of ${next.tool}:\n${result}`;
     }
     return "I stopped after many steps without finishing. Could you narrow the request?";
   }

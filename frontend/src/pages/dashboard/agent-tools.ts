@@ -13,6 +13,7 @@ import {
   collectionOf,
   columnsOf,
   config,
+  dashboardPath,
   dataFields,
   editTabs,
   fieldsOf,
@@ -256,6 +257,133 @@ function matchEndpoint(method: string, path: string) {
   });
 }
 
+/* ---------------------------------------------------------------- finding a page by name */
+
+/** Lower-case words only: "/Collections/Supplier-RFQs " → "collections supplier rfqs". */
+const words = (s: string) =>
+  s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+const singular = (w: string) => w.replace(/ies$/, "y").replace(/(?<!s)s$/, "");
+const same = (a: string, b: string) =>
+  a === b || a.split(" ").map(singular).join(" ") === b.split(" ").map(singular).join(" ");
+
+/** Words around a page's name in a request ("go to the invoices page"). */
+const FILLER = new Set(
+  "go to open show me take the a an my page screen view please navigate visit bring up list of all".split(" "),
+);
+const request = (s: string) =>
+  words(s)
+    .split(" ")
+    .filter((w) => !FILLER.has(w))
+    .join(" ") || words(s);
+
+/** How well what someone said (`query`) names `name`: 100 exact … 0 unrelated. */
+function nameScore(query: string, name: string) {
+  const q = request(query);
+  const n = words(name);
+  if (!q || !n) return 0;
+  if (same(q, n)) return 100;
+  if (n.length > 2 && (n.startsWith(q) || q.startsWith(n) || n.includes(q))) return 75;
+  const qw = new Set(q.split(" ").map(singular));
+  const nw = n.split(" ").map(singular);
+  const common = nw.filter((w) => qw.has(w)).length;
+  return common ? Math.round((60 * common) / Math.max(qw.size, nw.length)) : 0;
+}
+
+interface PageEntry {
+  label: string;
+  path: string;
+  names: string[];
+  /** A purpose-built screen: wins a tie with a raw list ("approvals" means the Approvals queue). */
+  screen?: boolean;
+}
+
+/** Every page the user can open, under all the names people use for it. */
+function pageIndex(host: AgentHost): PageEntry[] {
+  const pages: PageEntry[] = [
+    {
+      label: "Dashboard",
+      path: dashboardPath(),
+      names: ["home", "dashboard", "index", "start", "my day", "main page"],
+    },
+    { label: "Account", path: dashboardPath("account"), names: ["account", "my account", "profile", "me"] },
+  ];
+  for (const g of host.navigation())
+    for (const i of g.items)
+      if (i.href && i.href !== dashboardPath())
+        pages.push({ label: i.label, path: i.href, names: [i.label, `${g.label} ${i.label}`] });
+  for (const v of rootViews())
+    pages.push({
+      label: str(v.meta?.title) || v.key,
+      path: dashboardPath(v.path.slice(1)),
+      names: [v.key, v.path, str(v.meta?.title), v.nav?.label ?? ""],
+      screen: true,
+    });
+  for (const c of config.collections)
+    if (host.access()?.collections[c.slug]?.read.permission)
+      pages.push({
+        label: labels(c).plural,
+        path: dashboardPath("collections", c.slug),
+        names: [c.slug, labels(c).plural, labels(c).singular],
+      });
+  for (const g of config.globals ?? [])
+    if (host.access()?.globals[g.slug]?.read.permission)
+      pages.push({ label: globalLabel(g), path: dashboardPath("globals", g.slug), names: [g.slug, globalLabel(g)] });
+  return pages;
+}
+
+/** A record named by its number or title (e.g. "GS-RFQ-0136"), with a tab if one is named too. */
+async function findRecordPage(query: string, host: AgentHost): Promise<string | null> {
+  const token = query.match(/[A-Za-z0-9]+(?:[-/][A-Za-z0-9]+)*\d[A-Za-z0-9-/]*/)?.[0];
+  if (!token) return null;
+  const searchable = config.collections.filter(
+    (c) => useAsTitle(c) !== "id" && host.access()?.collections[c.slug]?.read.permission,
+  );
+  const hits = await Promise.all(
+    searchable.map(async (c) => {
+      const r = await api
+        .find(c.slug, { where: { [useAsTitle(c)]: { like: token } }, limit: 1, depth: 0 })
+        .catch(() => ({ docs: [] as Doc[] }));
+      return r.docs[0] ? { c, doc: r.docs[0] } : null;
+    }),
+  );
+  const hit = hits.find(Boolean);
+  if (!hit) return null;
+  const rest = query.replace(token, "");
+  const tab = editTabs(hit.c)
+    .map((t) => ({ t, score: Math.max(nameScore(rest, t.label), nameScore(rest, t.path)) }))
+    .sort((a, b) => b.score - a.score)[0];
+  const base = dashboardPath("collections", hit.c.slug, hit.doc.id);
+  return tab && tab.score >= 50 ? `${base}${tab.t.path}` : base;
+}
+
+/**
+ * Where to go for what someone asked: a path as is; else a record ("GS-RFQ-0136 pricing"); else
+ * the page whose name fits best ("home", "invoices", "pricing policy"). No good fit: an error
+ * naming the closest pages, so the agent can pick one.
+ */
+async function resolvePage(query: string, host: AgentHost): Promise<string> {
+  const q = query.trim() || "/";
+  if (q.startsWith("/")) {
+    const to = withBase(q);
+    if (parseRoute(to.split("?")[0]!).name !== "not-found") return to;
+  }
+  if (/\d/.test(q)) {
+    const record = await findRecordPage(q, host);
+    if (record) return record;
+  }
+  const ranked = pageIndex(host)
+    .map((p) => ({ p, score: Math.max(...p.names.map((n) => nameScore(q, n))) }))
+    .sort((a, b) => b.score - a.score || Number(!!b.p.screen) - Number(!!a.p.screen));
+  if (ranked[0] && ranked[0].score >= 50) return ranked[0].p.path;
+  const closest = [...new Set(ranked.filter((r) => r.score > 0).map((r) => `${r.p.label} (${r.p.path})`))].slice(0, 5);
+  throw new Error(
+    `No page matches "${query}".${closest.length ? ` Closest: ${closest.join(", ")}.` : ""} Call list_pages for all of them.`,
+  );
+}
+
 /* ---------------------------------------------------------------- tools */
 
 const READ = { readOnlyHint: true } as const;
@@ -347,12 +475,12 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
       name: "navigate",
       title: "Go to a page",
       description:
-        "Open a page in the app, as clicking a link would (paths from list_pages, e.g. /inbox, /collections/cases, /collections/cases/gs-rfq-0136/compare). Returns the new screen (as get_screen).",
-      inputSchema: schema({ path: { type: "string", description: "Dashboard path, starting with /" } }, ["path"]),
+        'Open a page in the app, as clicking a link would. Give a path (e.g. /inbox, /collections/invoices) or simply what the person called it: a page or screen name ("home", "invoices", "approvals", "pricing policy"), or a record and optionally its tab ("GS-RFQ-0136", "GS-RFQ-0142 compare offers"). Returns the new screen (as get_screen).',
+      inputSchema: schema({ path: { type: "string", description: "A path, or the page / record the person named" } }, [
+        "path",
+      ]),
       execute: async ({ path }) => {
-        const to = withBase(str(path) || "/");
-        if (parseRoute(to.split("?")[0]!).name === "not-found")
-          throw new Error(`No page at ${str(path)} (see list_pages).`);
+        const to = await resolvePage(str(path), host);
         navigate(to);
         await new Promise((r) => setTimeout(r, 50));
         return screen(host);
