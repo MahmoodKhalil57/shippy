@@ -1,6 +1,6 @@
 import { html, nothing } from "lit";
 import { customElement, state } from "lit/decorators.js";
-import { CodexConversation, codexConfig, codexReady, type CodexEvent } from "../../agent/codex.ts";
+import { CODEX_MODELS, CodexConversation, codexConfig, type CodexEvent } from "../../agent/codex.ts";
 import type { AgentTool } from "../../agent/webmcp.ts";
 import { LightElement } from "../../components/base/light-element.ts";
 import "../../components/index.ts";
@@ -9,7 +9,8 @@ import "../../components/index.ts";
  * The Golden Sea helper (bottom right): a chat with an OpenAI Codex model that sees and uses the
  * platform only through its WebMCP tools (src/agent/codex.ts, ./agent-tools.ts) — so it knows the
  * screen, the records and the workflows the way the person's role does, without the DOM. Actions
- * that change something wait for the person's "Allow". Needs an API key in index.html.
+ * that change something wait for the person's "Allow". The person picks the model; the API key is
+ * in index.html, and nothing is checked before sending: a missing key shows OpenAI's own error.
  */
 
 type Line =
@@ -25,6 +26,17 @@ const SUGGESTIONS = [
   "Who owes us money?",
 ];
 
+/** The last model picked (remembered per browser), else index.html's default. */
+function savedModel(): string {
+  try {
+    const saved = localStorage.getItem("gs:helper-model");
+    if (saved && CODEX_MODELS.some((m) => m.id === saved)) return saved;
+  } catch {
+    /* storage unavailable */
+  }
+  return codexConfig().model;
+}
+
 const STATUS = { running: "…", done: "✓", declined: "declined", failed: "failed" } as const;
 
 @customElement("dashboard-agent")
@@ -33,9 +45,19 @@ export class DashboardAgent extends LightElement {
   @state() private lines: Line[] = [];
   @state() private draft = "";
   @state() private busy = false;
+  @state() private model = savedModel();
   @state() private pending: { tool: AgentTool; input: Record<string, unknown>; answer: (ok: boolean) => void } | null =
     null;
   #conversation = new CodexConversation();
+
+  private _pickModel(id: string) {
+    this.model = id;
+    try {
+      localStorage.setItem("gs:helper-model", id);
+    } catch {
+      /* storage unavailable */
+    }
+  }
   #abort: AbortController | null = null;
 
   private async _send(text = this.draft) {
@@ -47,6 +69,7 @@ export class DashboardAgent extends LightElement {
     this.#abort = new AbortController();
     try {
       const answer = await this.#conversation.send(message, {
+        model: this.model,
         signal: this.#abort.signal,
         confirm: (tool, input) =>
           new Promise<boolean>((resolve) => {
@@ -112,17 +135,6 @@ export class DashboardAgent extends LightElement {
   }
 
   private _body() {
-    if (!codexReady())
-      return html`<ui-alert color="info" variant="soft">
-        <ui-flex direction="col" gap="1">
-          <ui-text size="sm" weight="semibold">The helper needs an OpenAI API key</ui-text>
-          <ui-text size="sm"
-            >Add it to <strong>index.html</strong>:
-            <strong>&lt;meta name="openai-api-key" content="sk-…"&gt;</strong> (model: ${codexConfig().model}). Only on
-            your machine — the published site is public.</ui-text
-          >
-        </ui-flex>
-      </ui-alert>`;
     return html`${
       this.lines.length
         ? this.lines.map((l) => this._line(l))
@@ -164,36 +176,45 @@ export class DashboardAgent extends LightElement {
     >
       <ui-icon slot="trigger" name="sparkles"></ui-icon>
       ${this._body()}
-      ${
-        codexReady()
-          ? html`<ui-flex slot="footer" gap="2" align="center">
-              <ui-text-input
-                width="fill"
-                size="sm"
-                autocomplete="off"
-                placeholder=${this.busy ? "Working…" : "Ask or tell the helper…"}
-                .value=${this.draft}
-                ?disabled=${this.busy}
-                @input=${(e: Event) => (this.draft = (e.target as HTMLInputElement).value)}
-                @keydown=${(e: KeyboardEvent) => {
-                  if (e.key === "Enter") void this._send();
-                }}
-              ></ui-text-input>
-              ${
-                this.busy
-                  ? html`<ui-button size="sm" variant="ghost" @click=${() => this._stop()}>Stop</ui-button>`
-                  : html`<ui-button size="sm" color="primary" label="Send" @click=${() => void this._send()}
-                      ><ui-icon name="send" size="sm"></ui-icon
-                    ></ui-button>`
-              }
-              ${
-                this.lines.length && !this.busy
-                  ? html`<ui-button size="sm" variant="ghost" @click=${() => this._restart()}>New</ui-button>`
-                  : nothing
-              }
-            </ui-flex>`
-          : nothing
-      }
+      <ui-flex slot="footer" direction="col" gap="2">
+        <ui-flex gap="2" align="center">
+          <ui-text-input
+            width="fill"
+            size="sm"
+            autocomplete="off"
+            placeholder=${this.busy ? "Working…" : "Ask or tell the helper…"}
+            .value=${this.draft}
+            ?disabled=${this.busy}
+            @input=${(e: Event) => (this.draft = (e.target as HTMLInputElement).value)}
+            @keydown=${(e: KeyboardEvent) => {
+              if (e.key === "Enter") void this._send();
+            }}
+          ></ui-text-input>
+          ${
+            this.busy
+              ? html`<ui-button size="sm" variant="ghost" @click=${() => this._stop()}>Stop</ui-button>`
+              : html`<ui-button size="sm" color="primary" label="Send" @click=${() => void this._send()}
+                  ><ui-icon name="send" size="sm"></ui-icon
+                ></ui-button>`
+          }
+        </ui-flex>
+        <ui-flex gap="2" align="center" justify="between">
+          <ui-select
+            size="xs"
+            width="auto"
+            leading="Model"
+            .options=${CODEX_MODELS.map((m) => ({ label: m.label, value: m.id }))}
+            .value=${this.model}
+            ?disabled=${this.busy}
+            @change=${(e: Event) => this._pickModel((e.target as HTMLSelectElement).value)}
+          ></ui-select>
+          ${
+            this.lines.length && !this.busy
+              ? html`<ui-button size="xs" variant="ghost" @click=${() => this._restart()}>New chat</ui-button>`
+              : nothing
+          }
+        </ui-flex>
+      </ui-flex>
     </ui-fab>`;
   }
 }

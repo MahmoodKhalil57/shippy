@@ -117,6 +117,17 @@ export class CodexConversation {
 
   /** Send the person's message; runs tool calls until the model answers. Returns its answer. */
   async send(message: string, { confirm, onEvent, signal, model = codexConfig().model }: TurnOptions): Promise<string> {
+    // A turn that fails part-way leaves tool calls unanswered on the server: continue from before it.
+    const before = this.#previous;
+    try {
+      return await this.#turn(message, model, { confirm, onEvent, signal });
+    } catch (e) {
+      this.#previous = before;
+      throw e;
+    }
+  }
+
+  async #turn(message: string, model: string, { confirm, onEvent, signal }: TurnOptions): Promise<string> {
     let input: unknown[] = [{ role: "user", content: message }];
     for (let step = 0; step < 16; step++) {
       const response = await this.#create(input, model, signal);
