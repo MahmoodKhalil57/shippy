@@ -465,7 +465,7 @@ export class DashboardApp extends LightElement {
         <ui-menu slot="rail" layout="rail" surface="false" .items=${this._rail()}></ui-menu>
         ${this._userSwitcher()}
         <ui-text slot="nav-footer" size="xs" color="muted"
-          >Demo<br />Powered by<br /><strong>SaastemlyCms</strong></ui-text
+          >Demo<br />Powered by<br /><strong>SaastemlyCRM</strong></ui-text
         >
         <ui-menu
           slot="aside-rail"

@@ -10,27 +10,32 @@ import { rcva } from "../../base/variants.ts";
  * Purpose: Navigation · Kind: primitive
  * Docs: https://daisyui.com/components/breadcrumbs/
  *
- * `.breadcrumbs` wraps a `<ul>` of `<li>` links. It scrolls horizontally when
- * it doesn't fit; `width="xs"` gives the docs "max-width" example.
+ * `.breadcrumbs` wraps a `<ul>` of `<li>` links. Crumbs that don't fit wrap onto the next line
+ * (each crumb stays whole) instead of daisyUI's horizontal scrolling, and without daisyUI's 4px
+ * outdent (which cancels its own padding): in a column sized to its content the outdent made the
+ * trail 4px too wide for its box, so it always showed a scrollbar and clipped the last crumb. `width="xs"` gives the docs "max-width" example.
  */
-export const breadcrumbs = rcva("breadcrumbs", {
-  variants: {
-    size: {
-      xs: "text-xs",
-      sm: "text-sm",
-      md: "text-base",
-      lg: "text-lg",
+export const breadcrumbs = rcva(
+  "breadcrumbs ms-0 overflow-visible [&>ul]:flex-wrap [&>ul]:ps-0 [&>ul]:whitespace-normal [&>ul>li]:whitespace-nowrap",
+  {
+    variants: {
+      size: {
+        xs: "text-xs",
+        sm: "text-sm",
+        md: "text-base",
+        lg: "text-lg",
+      },
+      /** Max width (the crumbs wrap when they don't fit). */
+      width: {
+        xs: "max-w-xs",
+        sm: "max-w-sm",
+        md: "max-w-md",
+        full: "",
+      },
     },
-    /** Max width (scrolls when the crumbs don't fit). */
-    width: {
-      xs: "max-w-xs",
-      sm: "max-w-sm",
-      md: "max-w-md",
-      full: "",
-    },
+    defaultVariants: { size: "sm" },
   },
-  defaultVariants: { size: "sm" },
-});
+);
 
 /** Wraps an icon + label in a crumb; sizes the icon like the docs. */
 export const breadcrumbsItem = rcva("inline-flex items-center gap-2 [&_svg]:h-4 [&_svg]:w-4 [&_svg]:stroke-current");
