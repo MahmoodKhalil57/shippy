@@ -1,0 +1,4 @@
+/* Shared design-system setup: the daisyUI plugin plus any @theme / daisyUI
+   theme customisation. Imported by index.css (emitted) and by reference.css
+   (reference only), so app code and component CSS always agree. */
+@plugin "daisyui";

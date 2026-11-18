@@ -1,0 +1,4 @@
+/* Theme + plugins for per-component stylesheets, without scanning any files.
+   Use via `@reference`, so nothing in here is emitted. */
+@import "tailwindcss" source(none);
+@import "./theme.css";

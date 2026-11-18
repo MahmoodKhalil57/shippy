@@ -1,0 +1,27 @@
+/* App stylesheet: Tailwind's base (preflight + theme variables) and daisyUI's
+   themes, and nothing else.
+
+   `source(none)`: no utility classes are generated from app code. Pages are
+   composed from components only. Every component's own stylesheet is
+   generated next to it by plugins/component-css.ts, so only imported
+   components ship CSS. Custom classes and inline styles outside
+   src/components/primitives are rejected by tests/architecture.test.ts. */
+@import "tailwindcss" source(none);
+@import "./styles/theme.css";
+
+@layer base {
+  /* Component hosts (<ui-*>) add no box of their own, so their rendered markup
+     takes part directly in the parent's flex/grid layout. */
+  [data-ui] {
+    display: contents;
+  }
+
+  body {
+    min-width: 320px;
+    min-height: 100svh;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}

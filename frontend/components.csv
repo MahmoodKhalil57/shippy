@@ -1,0 +1,76 @@
+purpose,name,kind,composed_of,category,url,description
+Layout & page structure,Drawer sidebar,primitive,,Layout,https://daisyui.com/components/drawer/,Grid layout that shows or hides a sidebar on the left or right.
+Layout & page structure,Hero,primitive,,Layout,https://daisyui.com/components/hero/,Large box or image with a title and description.
+Layout & page structure,Footer,primitive,,Layout,https://daisyui.com/components/footer/,"Logo, copyright notice and links to other pages."
+Layout & page structure,Divider,primitive,,Layout,https://daisyui.com/components/divider/,Separates content vertically or horizontally.
+Layout & page structure,Join (group items),primitive,,Layout,https://daisyui.com/components/join/,"Groups buttons, inputs and similar items in a horizontal or vertical row."
+Layout & page structure,Stack,primitive,,Layout,https://daisyui.com/components/stack/,Visually stacks elements on top of each other.
+Layout & page structure,Indicator,primitive,,Layout,https://daisyui.com/components/indicator/,Places an element on the corner of another element.
+Layout & page structure,Flex,primitive,,Shippy (not daisyUI),,"Row/column layout with gap, alignment, wrapping and padding."
+Layout & page structure,Grid,primitive,,Shippy (not daisyUI),,Column/row grid with gap and spanning cells.
+Layout & page structure,Container,primitive,,Shippy (not daisyUI),,"Centered, max-width page container with padding."
+Layout & page structure,Box,primitive,,Shippy (not daisyUI),,"Generic surface: background, border, radius, shadow, padding, size."
+Navigation,Navbar,primitive,,Navigation,https://daisyui.com/components/navbar/,Navigation bar at the top of the page.
+Navigation,Menu,primitive,,Navigation,https://daisyui.com/components/menu/,Displays a list of links vertically or horizontally.
+Navigation,Megamenu,primitive,,Navigation,https://daisyui.com/components/megamenu/,Large horizontal menu whose items open popovers with navigation links.
+Navigation,Breadcrumbs,primitive,,Navigation,https://daisyui.com/components/breadcrumbs/,Helps users navigate the website.
+Navigation,Tabs,primitive,,Navigation,https://daisyui.com/components/tab/,Shows a list of links in a tabbed format.
+Navigation,Steps,primitive,,Navigation,https://daisyui.com/components/steps/,Shows a list of steps in a process.
+Navigation,Pagination,composed,Join + Button,Navigation,https://daisyui.com/components/pagination/,Group of buttons for moving between related content.
+Navigation,Dock,primitive,,Navigation,https://daisyui.com/components/dock/,Bottom navigation bar that sticks to the bottom of the screen.
+Navigation,Link,primitive,,Navigation,https://daisyui.com/components/link/,Adds the missing underline style to links.
+Actions,Button,primitive,,Actions,https://daisyui.com/components/button/,Lets users take actions or make choices.
+Actions,Dropdown,primitive,,Actions,https://daisyui.com/components/dropdown/,Opens a menu or other element when a button is clicked.
+Actions,FAB / Speed Dial,primitive,,Actions,https://daisyui.com/components/fab/,Floating button in a bottom corner that reveals extra buttons when activated.
+Actions,Swap,primitive,,Actions,https://daisyui.com/components/swap/,Toggles visibility of two elements via a checkbox or class name.
+Actions,Theme Controller,primitive,,Actions,https://daisyui.com/components/theme-controller/,Sets the page theme from a checked checkbox or radio input.
+Forms & input,Fieldset,primitive,,Data input,https://daisyui.com/components/fieldset/,Container for grouping related form elements.
+Forms & input,Label,primitive,,Data input,https://daisyui.com/components/label/,"Name or title for an input field, placed before or after it."
+Forms & input,Text Input,primitive,,Data input,https://daisyui.com/components/input/,Simple input field.
+Forms & input,Textarea,primitive,,Data input,https://daisyui.com/components/textarea/,Multi-line text entry.
+Forms & input,Select,primitive,,Data input,https://daisyui.com/components/select/,Picks a value from a list of options.
+Forms & input,Checkbox,primitive,,Data input,https://daisyui.com/components/checkbox/,Selects or deselects a value.
+Forms & input,Radio,primitive,,Data input,https://daisyui.com/components/radio/,Lets the user select one option from a set.
+Forms & input,Toggle,primitive,,Data input,https://daisyui.com/components/toggle/,Checkbox styled as a switch.
+Forms & input,Range slider,primitive,,Data input,https://daisyui.com/components/range/,Selects a value by sliding a handle.
+Forms & input,Rating,primitive,,Data input,https://daisyui.com/components/rating/,Set of radio buttons for rating something.
+Forms & input,File Input,primitive,,Data input,https://daisyui.com/components/file-input/,Input field for uploading files.
+Forms & input,OTP,primitive,,Data input,https://daisyui.com/components/otp/,"Input for verification codes (usually 4 to 6 digits), e.g. for 2FA."
+Forms & input,Calendar,primitive,,Data input,https://daisyui.com/components/calendar/,Styles for different calendar libraries.
+Forms & input,Filter,primitive,,Data input,https://daisyui.com/components/filter/,Group of radio buttons; choosing one hides the others and shows a reset button.
+Forms & input,Validator,primitive,,Data input,https://daisyui.com/components/validator/,Changes form element colors to error or success based on validation rules.
+Data & metrics,Stat,primitive,,Data display,https://daisyui.com/components/stat/,Shows numbers and data in a block.
+Data & metrics,Table,primitive,,Data display,https://daisyui.com/components/table/,Shows a list of data in a table format.
+Data & metrics,List,primitive,,Data display,https://daisyui.com/components/list/,Vertical layout that displays information in rows.
+Data & metrics,Progress,primitive,,Feedback,https://daisyui.com/components/progress/,Progress bar for a task or the passing of time.
+Data & metrics,Radial progress,primitive,,Feedback,https://daisyui.com/components/radial-progress/,Circular progress indicator for a task or the passing of time.
+Data & metrics,Countdown,primitive,,Data display,https://daisyui.com/components/countdown/,Transition effect when a number from 0 to 999 changes.
+Data & metrics,Timeline,primitive,,Data display,https://daisyui.com/components/timeline/,Shows a list of events in chronological order.
+Data & metrics,Status,primitive,,Data display,https://daisyui.com/components/status/,"Small icon showing an element's status (online, offline, error, etc.)."
+Data & metrics,Badge,primitive,,Data display,https://daisyui.com/components/badge/,Shows the status of specific data.
+Content containers & disclosure,Card,primitive,,Data display,https://daisyui.com/components/card/,Groups and displays content in a readable way.
+Content containers & disclosure,Collapse,primitive,,Data display,https://daisyui.com/components/collapse/,Shows and hides content.
+Content containers & disclosure,Accordion,composed,Collapse + Join,Data display,https://daisyui.com/components/accordion/,"Shows and hides content, with only one item open at a time."
+Content containers & disclosure,Modal,primitive,,Actions,https://daisyui.com/components/modal/,Shows a dialog or box when a button is clicked.
+Content containers & disclosure,Carousel,primitive,,Data display,https://daisyui.com/components/carousel/,Shows images or content in a scrollable area.
+Feedback & system status,Alert,primitive,,Feedback,https://daisyui.com/components/alert/,Informs users about important events.
+Feedback & system status,Toast,primitive,,Feedback,https://daisyui.com/components/toast/,Wrapper that stacks elements in a page corner.
+Feedback & system status,Loading,primitive,,Feedback,https://daisyui.com/components/loading/,Animation indicating that something is loading.
+Feedback & system status,Skeleton,primitive,,Feedback,https://daisyui.com/components/skeleton/,Shows a loading state for a component.
+Feedback & system status,Tooltip,primitive,,Feedback,https://daisyui.com/components/tooltip/,Shows a message when hovering over an element.
+People & conversation,Avatar,primitive,,Data display,https://daisyui.com/components/avatar/,Thumbnail representation of a person or business.
+People & conversation,Chat bubble,primitive,,Data display,https://daisyui.com/components/chat/,Shows one line of conversation with its author and time data.
+Media & visual effects,Mask,primitive,,Layout,https://daisyui.com/components/mask/,Crops the element's content to common shapes.
+Media & visual effects,Aura,primitive,,Data display,https://daisyui.com/components/aura/,Border light effect that can wrap around any component.
+Media & visual effects,Hover 3D card,primitive,,Data display,https://daisyui.com/components/hover-3d/,Wrapper that adds a 3D tilt effect following the mouse.
+Media & visual effects,Hover Gallery,primitive,,Data display,https://daisyui.com/components/hover-gallery/,Image container where hovering reveals other images (up to 10).
+Media & visual effects,Text Rotate,primitive,,Data display,https://daisyui.com/components/text-rotate/,Cycles through up to 6 lines of text with an animation.
+Media & visual effects,Icon,primitive,,Shippy (not daisyUI),,"Sized, coloured inline SVG icons (built-in set or authored SVG)."
+Showcase & docs,Browser mockup,primitive,,Mockup,https://daisyui.com/components/mockup-browser/,Box that looks like a browser window.
+Showcase & docs,Code mockup,primitive,,Mockup,https://daisyui.com/components/mockup-code/,Block of code in a box that looks like a code editor.
+Showcase & docs,Phone mockup,primitive,,Mockup,https://daisyui.com/components/mockup-phone/,Mockup of an iPhone.
+Showcase & docs,Window mockup,primitive,,Mockup,https://daisyui.com/components/mockup-window/,Box that looks like an operating system window.
+Showcase & docs,Kbd,primitive,,Data display,https://daisyui.com/components/kbd/,Displays keyboard shortcuts.
+Showcase & docs,Diff,primitive,,Data display,https://daisyui.com/components/diff/,Side-by-side comparison of two items.
+Typography,Heading,primitive,,Shippy (not daisyUI),,"Section titles h1–h6 with size, weight, colour and alignment."
+Typography,Text,primitive,,Shippy (not daisyUI),,"Body copy, captions and inline emphasis with size, weight, colour, clamp."
