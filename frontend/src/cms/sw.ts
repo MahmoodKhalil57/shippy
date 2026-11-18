@@ -16,7 +16,9 @@ import { IndexedDbStore } from "./runtime/store.ts";
  * scripts, styles, icons, picker thumbnails), so once the app has loaded it works without a
  * network; the data is already local (IndexedDB). The full-size background photos are fetched in
  * the background after activation, and anything else the page loads is cached when first used.
- * A new deploy changes the list's version, so the worker updates and drops the old caches.
+ * The page (index.html) is network first, so a deploy shows on the next load without clearing
+ * anything; a new deploy also changes the list's version, so the worker updates (the page reloads
+ * once when it takes over, src/cms/client.ts) and drops the old caches.
  * In dev there is no precache (Vite serves modules live).
  */
 
@@ -92,6 +94,24 @@ async function cached(request: Request): Promise<Response> {
   return response;
 }
 
+/**
+ * The page itself (index.html, for every dashboard URL): network first, so a deploy shows on the
+ * next load — `no-cache` revalidates past the host's HTTP cache (GitHub Pages: 10 minutes). It
+ * names the new hashed scripts, which `cached()` then fetches. Offline, or when the network takes
+ * longer than a few seconds, the saved copy.
+ */
+async function fresh(): Promise<Response> {
+  const cache = await caches.open(CACHE);
+  const network = fetch(shell, { cache: "no-cache" }).then((response) => {
+    if (response.ok) void cache.put(shell, response.clone());
+    return response;
+  });
+  const saved = await cache.match(shell, { ignoreVary: true });
+  if (!saved) return network;
+  const slow = new Promise<undefined>((resolve) => setTimeout(resolve, 3000, undefined));
+  return (await Promise.race([network.catch(() => undefined), slow])) ?? saved;
+}
+
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
   if (url.origin !== location.origin) return;
@@ -101,9 +121,11 @@ self.addEventListener("fetch", (event) => {
   }
   // Deep links into the dashboard (e.g. /collections/cases/123) load index.html.
   const isDashboardPage =
-    event.request.mode === "navigate" && url.pathname.startsWith(base) && !/\.\w+$/.test(url.pathname);
+    event.request.mode === "navigate" &&
+    url.pathname.startsWith(base) &&
+    (!/\.\w+$/.test(url.pathname) || url.pathname === shell);
   if (isDashboardPage) {
-    event.respondWith(precache ? cached(new Request(shell)) : fetch(shell));
+    event.respondWith(precache ? fresh() : fetch(shell));
     return;
   }
   if (precache && event.request.method === "GET" && url.pathname.startsWith(base))

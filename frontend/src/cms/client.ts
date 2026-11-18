@@ -39,10 +39,15 @@ export function startMockBackend(): Promise<void> {
       await new Promise<void>((resolve) =>
         navigator.serviceWorker.addEventListener("controllerchange", () => resolve(), { once: true }),
       );
-    } else if (import.meta.env.DEV) {
-      // Config / runtime edits produce a new worker: reload once it takes over.
+    } else {
+      // A new deploy (or, in dev, a config / runtime edit) installs a new worker — the mock backend
+      // and the offline copy: reload once it takes over, so page and backend match. Check for one
+      // now and whenever the tab comes back into view (a tab left open across a deploy).
       navigator.serviceWorker.addEventListener("controllerchange", () => location.reload(), { once: true });
       void registration.update();
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") void registration.update().catch(() => undefined);
+      });
     }
   })();
   return started;
