@@ -1,4 +1,5 @@
-import { copyFile, writeFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { copyFile, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { build, type Plugin, type ResolvedConfig } from "vite-plus";
 
@@ -9,6 +10,10 @@ import { build, type Plugin, type ResolvedConfig } from "vite-plus";
  *   imports src/cms/sw.ts through Vite (stamped, so editing the config or
  *   runtime installs a new worker and reloads the page). In `vp build` it's
  *   bundled into one classic script next to the app.
+ *
+ * The build also writes the worker's offline precache (`__PRECACHE__`, see src/cms/sw.ts): every
+ * built file, versioned by a hash of their contents; full-size background photos are cached
+ * after the app has started rather than before.
  *
  * Deep links into the dashboard (`<base>collections/cases/123`) load index.html
  * through Vite's SPA fallback in dev / preview, and through the worker once
@@ -50,11 +55,13 @@ export default function mockBackend(): Plugin {
 
     async closeBundle() {
       if (config.command !== "build") return;
+      const out = path.resolve(config.root, config.build.outDir);
       await build({
         configFile: false,
         root: config.root,
         base: config.base,
         logLevel: "warn",
+        define: { __PRECACHE__: JSON.stringify(await precacheOf(out)) },
         build: {
           outDir: config.build.outDir,
           emptyOutDir: false,
@@ -69,9 +76,28 @@ export default function mockBackend(): Plugin {
       });
       // Static hosting (GitHub Pages): a first visit to a deep link (before the worker is
       // installed) gets the 404 page, so make that the dashboard too; and serve every file as is.
-      const out = path.resolve(config.root, config.build.outDir);
       await copyFile(path.join(out, "index.html"), path.join(out, "404.html"));
       await writeFile(path.join(out, ".nojekyll"), "");
     },
+  };
+}
+
+/** Big images the app can start without: background photos (their `-thumb` previews stay core). */
+const LATER = /\.(jpe?g|png|webp|avif)$/i;
+
+/** The built files to cache for offline use, relative to the output folder, plus their version. */
+async function precacheOf(out: string) {
+  const files = (await readdir(out, { recursive: true, withFileTypes: true }))
+    .filter((d) => d.isFile())
+    .map((d) => path.relative(out, path.join(d.parentPath, d.name)).split(path.sep).join("/"))
+    .filter((f) => !["cms-sw.js", "404.html", ".nojekyll"].includes(f))
+    .sort();
+  const hash = createHash("sha256");
+  for (const f of files) hash.update(f).update(await readFile(path.join(out, f)));
+  const later = (f: string) => LATER.test(f) && !f.includes("-thumb.") && !f.startsWith("icons/");
+  return {
+    version: hash.digest("hex").slice(0, 12),
+    core: files.filter((f) => !later(f)),
+    later: files.filter(later),
   };
 }

@@ -146,7 +146,7 @@ export type Route =
 export const dashboardPath = (...parts: string[]) =>
   [DASHBOARD_ROUTE, ...parts.map(encodeURIComponent)].join("/").replace(/\/+$/, "") || "/";
 
-/** A dashboard page (not the API, not a file such as /favicon.svg). */
+/** A dashboard page (not the API, not a file such as /manifest.webmanifest). */
 export const isDashboardPath = (pathname: string) =>
   (pathname === (DASHBOARD_ROUTE || "/") || pathname.startsWith(`${DASHBOARD_ROUTE}/`)) &&
   !pathname.startsWith(`${API_ROUTE}/`) &&
