@@ -4,9 +4,16 @@
  * Every component compiles its own Tailwind/daisyUI CSS (see
  * src/components/<group>/<name>.css), so only imported components ship styles.
  * The cost is that two components using the same class (e.g. `btn`) each emit
- * that rule. This pass keeps the first copy of every rule and drops later
+ * that rule. This pass keeps the LAST copy of every rule and drops earlier
  * identical copies that sit under the same at-rule path
- * (`@layer` / `@media` / `@supports` ...), so earlier rules keep their order.
+ * (`@layer` / `@media` / `@supports` ...).
+ *
+ * Why the last: Tailwind writes some utilities as a pair — a fallback, then an
+ * `@supports` enhancement (`bg-primary/20`: solid primary, then the 20% color-mix).
+ * The minifier may merge one sheet's fallback into a combined selector, so that
+ * copy no longer looks like a duplicate. Keeping first copies then left a later
+ * sheet's lone fallback *after* the surviving enhancement, overriding it (solid
+ * highlights in production). Keeping last copies keeps each sheet's pair in order.
  */
 
 interface Node {
@@ -71,9 +78,11 @@ function parse(css: string, start = 0, end = css.length): Node[] {
   return nodes;
 }
 
+/** Walks the tree from the end, so the last copy of a rule is the one kept. */
 function dedupe(nodes: Node[], path: string, seen: Set<string>): Node[] {
   const out: Node[] = [];
-  for (const n of nodes) {
+  for (let i = nodes.length - 1; i >= 0; i--) {
+    const n = nodes[i]!;
     if (n.children) {
       const children = dedupe(n.children, `${path}\u0000${n.prelude}`, seen);
       // Keep empty `@layer` blocks: they still declare layer order.
@@ -86,7 +95,7 @@ function dedupe(nodes: Node[], path: string, seen: Set<string>): Node[] {
     seen.add(key);
     out.push(n);
   }
-  return out;
+  return out.reverse();
 }
 
 function stringify(nodes: Node[]): string {

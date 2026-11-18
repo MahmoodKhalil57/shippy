@@ -1,7 +1,7 @@
 import type { Where } from "payload";
 import { html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { api } from "../../cms/client.ts";
+import { DASHBOARD_ROUTE, api } from "../../cms/client.ts";
 import type { Doc } from "../../cms/types.ts";
 import { LightElement } from "../../components/base/light-element.ts";
 import type { IconName } from "../../components/primitives/media/icon.ts";
@@ -92,14 +92,16 @@ const WIDGET_HINTS: Record<string, string> = {
 };
 
 /** A bookmark's kind, from its address: a record, a list, settings or a screen. */
-const bookmarkKind = (href: string) =>
-  /^\/collections\/[^/]+\/[^/]+/.test(href)
+const bookmarkKind = (href: string) => {
+  const path = href.slice(href.startsWith(DASHBOARD_ROUTE) ? DASHBOARD_ROUTE.length : 0);
+  return /^\/collections\/[^/]+\/[^/]+/.test(path)
     ? "Record"
-    : href.startsWith("/collections/")
+    : path.startsWith("/collections/")
       ? "List"
-      : href.startsWith("/globals/")
+      : path.startsWith("/globals/")
         ? "Settings"
         : "Screen";
+};
 
 const LIVE: Where = { stage: { not_in: ["Lost", "Expired", "Closed — settled"] } };
 const PENDING: Where = { status: { not_in: ["Approved", "Rejected"] } };

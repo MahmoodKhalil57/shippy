@@ -439,12 +439,14 @@ export class UiMenu extends LightElement {
         width: this.width,
         iconSize: this.iconSize,
         nav: this.layout !== "list",
-        fold: this.layout === "nav",
+        // Panes scroll each group on its own; a highlight anchored across them would float over
+        // other panes' titles, so the active item carries its own tint there.
+        fold: this.layout === "nav" && !this.panes,
         rail: this.layout === "rail",
       })}
     >
       ${this.items.length ? this._list(this.items, []) : this.content}
-      ${this.layout === "nav" ? html`<li class=${menuIndicator()} role="presentation"></li>` : nothing}
+      ${this.layout === "nav" && !this.panes ? html`<li class=${menuIndicator()} role="presentation"></li>` : nothing}
     </ul>`;
   }
 }
