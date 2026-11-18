@@ -7,7 +7,8 @@ import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { button } from "../actions/button.ts";
 import { iconSvg, type IconName } from "../media/icon.ts";
-import { cssLuminance, lumaOf, sampleBehind, scrimFor, type Luma, type Rect } from "./legibility.ts";
+import { auditContrast } from "../feedback/contrast-audit.ts";
+import { cssLuminance, lumaOf, sampleBehind, type Luma, type Rect } from "./legibility.ts";
 
 /**
  * App shell: the application frame — a header (brand, centred search, actions), a
@@ -222,8 +223,13 @@ export const appShellBackdrop = rcva(
 /**
  * A column's footer (`slot="nav-footer"` / `"aside-footer"`): pinned under the menus, on the same
  * icon axis as the column's toggle (e.g. an account switcher), in every state — rail, open, sheet.
+ * Its first element always shows; anything after it (e.g. a "Powered by" line) shows beside it
+ * while the column is open and fades out with the labels when it closes to its rail.
  */
-export const appShellFooter = rcva("flex shrink-0 ps-0.5 pb-1");
+export const appShellFooter = rcva(
+  "flex shrink-0 items-center gap-2 overflow-hidden ps-0.5 pb-1 whitespace-nowrap [&>:not(:first-child)]:min-w-0 [&>:not(:first-child)]:transition-opacity [&>:not(:first-child)]:duration-(--duration-effects) [&>:not(:first-child)]:ease-effects motion-reduce:[&>:not(:first-child)]:transition-none",
+  { variants: { collapsed: { true: "[&>:not(:first-child)]:invisible [&>:not(:first-child)]:opacity-0" } } },
+);
 
 /** Wrapper that keeps a slot's nodes mounted while hidden. */
 export const appShellSlot = rcva("flex min-h-0 w-full flex-col gap-3", {
@@ -342,8 +348,11 @@ export class UiAppShell extends LightElement {
     requestAnimationFrame(() => requestAnimationFrame(() => (this._settling = false)));
     for (const el of this.querySelectorAll(
       ":scope > div > header, :scope > div > div > nav, :scope > div > div > aside",
-    ))
+    )) {
       this.#regions.observe(el);
+      // What's drawn over the image changes too (a group opens, a notification arrives).
+      this.#content.observe(el, { childList: true, subtree: true, characterData: true });
+    }
     void this._onBackground();
   }
 
@@ -358,8 +367,9 @@ export class UiAppShell extends LightElement {
    */
   @state() private _chrome: Record<string, string> = {};
   #luma: { src: string; luma: Luma } | null = null;
-  #frame = 0;
+  #timer: ReturnType<typeof setTimeout> | undefined;
   #regions = new ResizeObserver(() => this._measureSoon());
+  #content = new MutationObserver(() => this._measureSoon());
 
   private _onBackground = async () => {
     const value = getComputedStyle(document.documentElement).getPropertyValue("--app-background").trim();
@@ -386,29 +396,41 @@ export class UiAppShell extends LightElement {
   #themeAttrs = new MutationObserver(() => this._measureSoon());
   private _measureSoonBound = () => this._measureSoon();
 
+  /** Re-measure once things settle: measuring audits the frame's text (tens of ms), so not on every frame of a column's animation. */
   private _measureSoon() {
-    cancelAnimationFrame(this.#frame);
-    this.#frame = requestAnimationFrame(() => this._measure());
+    if (!this.#luma) return;
+    clearTimeout(this.#timer);
+    this.#timer = setTimeout(() => this._measure(), 200);
   }
 
+  /**
+   * The least scrim (as much of the photo as possible) at which every text drawn over the image
+   * in the header and both columns passes WCAG AA — judged exactly as `<ui-contrast-audit>` judges
+   * it (the text's own colour, the cards and glass under it, the image pixels behind each text),
+   * found by bisection. A floor keeps a hint of the theme's surface so the frame reads as one.
+   */
   private _measure() {
     const shell = this.firstElementChild;
     if (!this.#luma || !shell) return;
-    const frame = shell.getBoundingClientRect();
-    const samples = [":scope > header", ":scope > div > nav", ":scope > div > aside"].flatMap((sel) => {
-      const r = shell.querySelector(sel)?.getBoundingClientRect();
-      return r && r.width && r.height ? sampleBehind(this.#luma!.luma, frame, r) : [];
-    });
-    if (!samples.length) return;
     // The shell's own colour and background are the theme's base-content and base-200.
     const css = getComputedStyle(shell);
     this.#scrim = { ink: cssLuminance(css.color), surface: cssLuminance(css.backgroundColor) };
-    // Plan for the faintest text the frame uses (muted labels at ~65% of the ink, so their
-    // luminance sits ~35% of the way to the surface), at AA plus headroom, over 95% of the pixels.
-    const muted = this.#scrim.ink + 0.35 * (this.#scrim.surface - this.#scrim.ink);
-    this.#scrim.alpha = scrimFor(samples, muted, this.#scrim.surface, 5, 0.12, 0.94, 0.95);
+    const regions = [...shell.querySelectorAll(":scope > header, :scope > div > nav, :scope > div > aside")];
+    const fails = (alpha: number) => {
+      this.#scrim.alpha = alpha;
+      return regions.some((r) => auditContrast(r).some((i) => i.overImage));
+    };
+    let [lo, hi] = [0.05, 0.94];
+    if (!fails(lo)) hi = lo;
+    else if (!fails(hi))
+      for (let i = 0; i < 7; i++) {
+        const mid = (lo + hi) / 2;
+        if (fails(mid)) lo = mid;
+        else hi = mid;
+      }
+    this.#scrim.alpha = hi;
     this._chrome = {
-      "--app-scrim": `color-mix(in oklab, var(--color-base-200) ${(this.#scrim.alpha * 100).toFixed(1)}%, transparent)`,
+      "--app-scrim": `color-mix(in oklab, var(--color-base-200) ${(hi * 100).toFixed(1)}%, transparent)`,
     };
   }
 
@@ -416,15 +438,26 @@ export class UiAppShell extends LightElement {
 
   /**
    * Luminances of what the frame shows behind `rect` (the background image under its scrim), or
-   * `null` without a background image — for contrast audits (`<ui-contrast-audit>`).
+   * `null` without a background image — for contrast audits (`<ui-contrast-audit>`). `blur` (a CSS
+   * `blur()` radius) is for text on frosted glass: each sample becomes the mean of the image
+   * around it (a box with the same spread as the Gaussian).
    */
-  backdropAt(rect: Rect): number[] | null {
+  backdropAt(rect: Rect, blur = 0): number[] | null {
     const shell = this.firstElementChild;
     if (!this.#luma || !shell || this.#scrim.alpha == null) return null;
     const a = this.#scrim.alpha;
-    return sampleBehind(this.#luma.luma, shell.getBoundingClientRect(), rect, 8).map(
-      (l) => a * this.#scrim.surface + (1 - a) * l,
-    );
+    const frame = shell.getBoundingClientRect();
+    const luma = this.#luma.luma;
+    const h = blur * 1.7;
+    const raw = h
+      ? Array.from({ length: 64 }, (_, i) => {
+          const x = rect.x + ((i % 8) + 0.5) * (rect.width / 8);
+          const y = rect.y + (Math.floor(i / 8) + 0.5) * (rect.height / 8);
+          const around = sampleBehind(luma, frame, { x: x - h, y: y - h, width: 2 * h, height: 2 * h }, 5);
+          return around.reduce((s, l) => s + l, 0) / around.length;
+        })
+      : sampleBehind(luma, frame, rect, 8);
+    return raw.map((l) => a * this.#scrim.surface + (1 - a) * l);
   }
 
   /** The theme or colour scheme changed (a theme controller in the header): re-measure once it's applied. */
@@ -544,7 +577,8 @@ export class UiAppShell extends LightElement {
     this.#dark.removeEventListener("change", this._measureSoonBound);
     this.#resize.disconnect();
     this.#regions.disconnect();
-    cancelAnimationFrame(this.#frame);
+    this.#content.disconnect();
+    clearTimeout(this.#timer);
   }
 
   private _toggle(label: string, icon: "menu" | "menu-panel", onClick: () => void, column: "start" | "end") {
@@ -579,7 +613,7 @@ export class UiAppShell extends LightElement {
           ${this.slotted(rail)}
         </div>
       </div>
-      ${this.hasSlotted(`${list}-footer`) ? html`<div class=${appShellFooter()}>${this.slotted(`${list}-footer`)}</div>` : nothing}
+      ${this.hasSlotted(`${list}-footer`) ? html`<div class=${appShellFooter({ collapsed: !open })}>${this.slotted(`${list}-footer`)}</div>` : nothing}
     </div>`;
   }
 

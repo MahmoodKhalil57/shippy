@@ -71,7 +71,7 @@ const over = (top: [number, number, number, number], under: Rgb): Rgb => [
 const css = ([r, g, b]: Rgb) => `rgb(${Math.round(r)} ${Math.round(g)} ${Math.round(b)})`;
 
 interface Backdrop {
-  backdropAt(rect: Rect): number[] | null;
+  backdropAt(rect: Rect, blur?: number): number[] | null;
 }
 
 /** Audit every visible text node under `root`. */
@@ -106,15 +106,20 @@ export function auditContrast(root: Element = document.body): ContrastIssue[] {
     const layers: [number, number, number, number][] = [];
     let base: Rgb[] = [page];
     let overImage = false;
+    // Frosted glass between the text and the image (`backdrop-filter: blur()`) evens the image out.
+    let blur = 0;
     for (let e: Element | null = el; e; e = e.parentElement) {
       const shell = e.parentElement?.tagName === "UI-APP-SHELL" ? (e.parentElement as unknown as Backdrop) : null;
-      const image = shell?.backdropAt(box);
+      const image = shell?.backdropAt(box, blur);
       if (image?.length) {
         base = image.map((l) => [greyOf(l), greyOf(l), greyOf(l)] as Rgb);
         overImage = true;
         break;
       }
-      const bg = rgba(getComputedStyle(e).backgroundColor);
+      const layerStyle = getComputedStyle(e);
+      const frosted = /blur\(([\d.]+)px\)/.exec(layerStyle.backdropFilter);
+      if (frosted) blur = Math.max(blur, parseFloat(frosted[1]!));
+      const bg = rgba(layerStyle.backgroundColor);
       if (bg[3] > 0) layers.push(bg);
       if (bg[3] >= 0.99) {
         base = [[bg[0], bg[1], bg[2]]];
