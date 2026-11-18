@@ -26,6 +26,29 @@ export const withBase = (path: string) =>
 
 let started: Promise<void> | undefined;
 
+/** At most one update check per this long while navigating (a check is one small conditional request). */
+const UPDATE_CHECK_INTERVAL = 30_000;
+
+/**
+ * A new deploy (or, in dev, a config / runtime edit) installs a new worker — the mock backend and
+ * the offline copy. The app checks for one in the background as the user moves around — on every
+ * navigation (in-app links and back/forward both fire `popstate`, at most every 30 s), when the
+ * tab comes back into view, and now — and when the new worker takes over, the page reloads where
+ * the user is, so page and backend always match the latest deploy.
+ */
+function keepUpToDate(registration: ServiceWorkerRegistration) {
+  navigator.serviceWorker.addEventListener("controllerchange", () => location.reload(), { once: true });
+  let last = 0;
+  const check = () => {
+    if (Date.now() - last < UPDATE_CHECK_INTERVAL) return;
+    last = Date.now();
+    void registration.update().catch(() => undefined); // offline: try again on a later navigation
+  };
+  check();
+  window.addEventListener("popstate", check);
+  document.addEventListener("visibilitychange", () => document.visibilityState === "visible" && check());
+}
+
 export function startMockBackend(): Promise<void> {
   started ??= (async () => {
     if (!("serviceWorker" in navigator)) throw new Error("This browser has no Service Worker support.");
@@ -39,16 +62,8 @@ export function startMockBackend(): Promise<void> {
       await new Promise<void>((resolve) =>
         navigator.serviceWorker.addEventListener("controllerchange", () => resolve(), { once: true }),
       );
-    } else {
-      // A new deploy (or, in dev, a config / runtime edit) installs a new worker — the mock backend
-      // and the offline copy: reload once it takes over, so page and backend match. Check for one
-      // now and whenever the tab comes back into view (a tab left open across a deploy).
-      navigator.serviceWorker.addEventListener("controllerchange", () => location.reload(), { once: true });
-      void registration.update();
-      document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === "visible") void registration.update().catch(() => undefined);
-      });
     }
+    keepUpToDate(registration);
   })();
   return started;
 }
