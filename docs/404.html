@@ -4,19 +4,14 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/shippy/icons/icon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <!-- Installable app (PWA): the manifest, plus what iOS reads instead of it. Offline support is
-         the service worker's precache (src/cms/sw.ts, list written by plugins/mock-backend.ts). -->
-    <link rel="manifest" href="/shippy/manifest.webmanifest" />
+    <!-- Offline support is the service worker's precache (src/cms/sw.ts, list written by
+         plugins/mock-backend.ts). -->
     <meta name="theme-color" content="#0b1a26" />
     <meta
       name="description"
       content="Golden Sea marine supply: sourcing, quotations, fulfilment and finance in one workspace."
     />
     <link rel="apple-touch-icon" href="/shippy/icons/apple-touch-icon.png" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="Golden Sea" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>Golden Sea</title>
     <!-- Apply the saved theme and colour scheme (ui-theme-controller) before the first paint. -->
     <script>

@@ -11,7 +11,7 @@ import { IndexedDbStore } from "./runtime/store.ts";
  * Registered by src/cms/client.ts; built/served as `<base>cms-sw.js` by
  * plugins/mock-backend.ts.
  *
- * Offline (the installable app, public/manifest.webmanifest): in the build, the plugin writes the
+ * Offline: in the build, the plugin writes the
  * list of built files into `__PRECACHE__`. Installing caches them all (the app shell: index.html,
  * scripts, styles, icons, picker thumbnails), so once the app has loaded it works without a
  * network; the data is already local (IndexedDB). The full-size background photos are fetched in
