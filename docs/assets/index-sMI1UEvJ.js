@@ -5328,9 +5328,6 @@ Thank you — your request for {{vessel}} is registered as {{caseId}}. We will r
         switched off there. Your data is always yours: export everything at any time.</ui-text
       >
       <ui-flex gap="2" wrap>
-        <ui-button size="sm" color="primary" href=${`${Lt}/_mock/export`} target="_blank"
-          >Download full export (JSON)</ui-button
-        >
         ${this.busy===`staging`?w`<ui-loading size="sm" color="primary"></ui-loading>`:w`<ui-button size="sm" variant="soft" ?disabled=${!r} @click=${()=>this._staging()}
                 >Refresh staging copy</ui-button
               >`}
@@ -5981,18 +5978,18 @@ Thank you — your request for {{vessel}} is registered as {{caseId}}. We will r
             >`:E}
     </ui-flex>`}render(){if(this.loading)return w`<ui-flex justify="center" padding="8"><ui-loading></ui-loading></ui-flex>`;let e=this.globalSlug?wS(this.globalSlug):void 0,t=this.globalSlug?void 0:CS(this.slug),n=t?this.access.collections[t.slug]:void 0,r=e?this.access.globals[e.slug]?.update.permission:this.docId?n?.update.permission:n?.create.permission,i=t?.slug===xS&&location.pathname.endsWith(`/account`);if(this.docId&&!this.doc)return w`<ui-alert color="warning" heading="Not found"
         >This document doesn't exist or you can't read it.</ui-alert
-      >`;let{main:a,sidebar:o}=AS(this._fields),s=!r,c=e?ES(e):this.docId?MS(t,this.doc):`Create new ${TS(t).singular}`,l=e?[{label:`Dashboard`,href:LS()},{label:c}]:i?[{label:`Dashboard`,href:LS()},{label:`Account`}]:[{label:`Dashboard`,href:LS()},{label:TS(t).plural,href:LS(`collections`,this.slug)},{label:c}],u=e?`${Lt}/globals/${e.slug}`:this.docId?`${Lt}/${this.slug}/${encodeURIComponent(this.docId)}`:``,d=t&&this.docId?BS(t):[],f=t&&this.docId?LS(`collections`,t.slug,this.docId):``,p=d.length?w`<ui-tabs
+      >`;let{main:a,sidebar:o}=AS(this._fields),s=!r,c=e?ES(e):this.docId?MS(t,this.doc):`Create new ${TS(t).singular}`,l=e?[{label:`Dashboard`,href:LS()},{label:c}]:i?[{label:`Dashboard`,href:LS()},{label:`Account`}]:[{label:`Dashboard`,href:LS()},{label:TS(t).plural,href:LS(`collections`,this.slug)},{label:c}],u=t&&this.docId?BS(t):[],d=t&&this.docId?LS(`collections`,t.slug,this.docId):``,f=u.length?w`<ui-tabs
           variant="border"
           label=${`${c} sections`}
-          .active=${this.tab?d.findIndex(e=>e.key===this.tab)+1:0}
-          .items=${[{label:`Details`,href:f},...d.map(e=>({label:e.label,href:`${f}${e.path}`}))]}
-        ></ui-tabs>`:E,m=d.find(e=>e.key===this.tab);if(m&&this.user)return w`<ui-flex direction="col" gap="6">
+          .active=${this.tab?u.findIndex(e=>e.key===this.tab)+1:0}
+          .items=${[{label:`Details`,href:d},...u.map(e=>({label:e.label,href:`${d}${e.path}`}))]}
+        ></ui-tabs>`:E,p=u.find(e=>e.key===this.tab);if(p&&this.user)return w`<ui-flex direction="col" gap="6">
         <ui-flex direction="col" gap="1">
           <ui-breadcrumbs .items=${l}></ui-breadcrumbs>
           <ui-heading level="1" size="page">${c}</ui-heading>
         </ui-flex>
-        ${p} ${dT(m.Component,{access:this.access,user:this.user,slug:t.slug,docId:this.docId})??w`<ui-alert color="info" heading=${m.label}>This screen is loading.</ui-alert>`}
-      </ui-flex>`;let h=w`<ui-flex direction="col" gap="4">
+        ${f} ${dT(p.Component,{access:this.access,user:this.user,slug:t.slug,docId:this.docId})??w`<ui-alert color="info" heading=${p.label}>This screen is loading.</ui-alert>`}
+      </ui-flex>`;let m=w`<ui-flex direction="col" gap="4">
       ${t?.upload?this._upload():E} ${o.length?this._form(o,s):E}
       ${t?.auth?w`<ui-text-input
                 .legend=${this.docId?`New password`:`Password *`}
@@ -6024,7 +6021,6 @@ Thank you — your request for {{vessel}} is registered as {{caseId}}. We will r
             </ui-flex>
           </ui-flex>
           <ui-flex gap="2" wrap>
-            ${u?w`<ui-button variant="ghost" size="sm" href=${u} target="_blank">API</ui-button>`:E}
             ${this.docId&&!i&&n?.delete.permission?w`<ui-button variant="ghost" color="error" size="sm" @click=${()=>this.confirmDelete=!0}
                     >Delete</ui-button
                   >`:E}
@@ -6035,11 +6031,11 @@ Thank you — your request for {{vessel}} is registered as {{caseId}}. We will r
         </ui-flex>
 
         ${t?.admin?.description&&typeof t.admin.description==`string`?w`<ui-text color="muted">${t.admin.description}</ui-text>`:E}
-        ${p}
+        ${f}
         <ui-grid
           sidebar
           gap="8"
-          .items=${[{content:this._form(a,s),role:`main`},{content:h,role:`side`}]}
+          .items=${[{content:this._form(a,s),role:`main`},{content:m,role:`side`}]}
         ></ui-grid>
       </ui-flex>
 

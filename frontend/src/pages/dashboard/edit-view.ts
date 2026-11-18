@@ -2,7 +2,7 @@ import { text } from "../../cms/runtime/util.ts";
 import { LightElement } from "../../components/base/light-element.ts";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { API_ROUTE, api, ApiError } from "../../cms/client.ts";
+import { api, ApiError } from "../../cms/client.ts";
 import type { Doc, FieldLike } from "../../cms/types.ts";
 import { setIn, type DocFormChange, type RelationOption } from "../../components/composed/forms/doc-form.ts";
 import "../../components/index.ts";
@@ -263,11 +263,6 @@ export class DashboardEditView extends LightElement {
             { label: labels(c!).plural, href: dashboardPath("collections", this.slug) },
             { label: heading },
           ];
-    const apiUrl = g
-      ? `${API_ROUTE}/globals/${g.slug}`
-      : this.docId
-        ? `${API_ROUTE}/${this.slug}/${encodeURIComponent(this.docId)}`
-        : "";
 
     // Custom edit tabs (e.g. the case workspace): "Details" is the form, the rest are views.
     const tabs = c && this.docId ? editTabs(c) : [];
@@ -342,7 +337,6 @@ export class DashboardEditView extends LightElement {
             </ui-flex>
           </ui-flex>
           <ui-flex gap="2" wrap>
-            ${apiUrl ? html`<ui-button variant="ghost" size="sm" href=${apiUrl} target="_blank">API</ui-button>` : nothing}
             ${
               this.docId && !isAccount && collectionPerms?.delete.permission
                 ? html`<ui-button variant="ghost" color="error" size="sm" @click=${() => (this.confirmDelete = true)}

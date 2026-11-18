@@ -1,6 +1,6 @@
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { API_ROUTE, api } from "../../../cms/client.ts";
+import { api } from "../../../cms/client.ts";
 import type { IntegrationsView } from "../../../cms/endpoints/platform.ts";
 import { LightElement } from "../../../components/base/light-element.ts";
 import type { TableColumn } from "../../../components/primitives/data/table.ts";
@@ -355,9 +355,6 @@ export class GsIntegrations extends LightElement implements ViewProps {
         switched off there. Your data is always yours: export everything at any time.</ui-text
       >
       <ui-flex gap="2" wrap>
-        <ui-button size="sm" color="primary" href=${`${API_ROUTE}/_mock/export`} target="_blank"
-          >Download full export (JSON)</ui-button
-        >
         ${
           this.busy === "staging"
             ? html`<ui-loading size="sm" color="primary"></ui-loading>`
