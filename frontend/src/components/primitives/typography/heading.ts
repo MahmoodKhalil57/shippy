@@ -18,6 +18,8 @@ import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts
 export const heading = rcva("", {
   variants: {
     size: {
+      /** Page title: 1.5rem → 1.875rem as the space it sits in grows (container units). */
+      page: "text-[clamp(1.5rem,1.2rem_+_1.6cqi,1.875rem)] leading-tight",
       xs: "text-xs",
       sm: "text-sm",
       base: "text-base",

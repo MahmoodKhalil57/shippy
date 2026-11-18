@@ -46,7 +46,7 @@ export class DashboardOverview extends LightElement {
         ([group, collections]) =>
           html`<ui-flex direction="col" gap="3">
             <ui-heading level="2" size="lg" color="muted">${group}</ui-heading>
-            <ui-grid cols="1 sm:2 lg:3" gap="4">
+            <ui-grid fit="sm" gap="4">
               ${collections.map((c) => {
                 const canCreate = this.access.collections[c.slug]?.create.permission;
                 return html`<ui-card variant="border" .heading=${labels(c).plural} actions-align="start">
@@ -74,7 +74,7 @@ export class DashboardOverview extends LightElement {
         globals.length
           ? html`<ui-flex direction="col" gap="3">
               <ui-heading level="2" size="lg" color="muted">Globals</ui-heading>
-              <ui-grid cols="1 sm:2 lg:3" gap="4">
+              <ui-grid fit="sm" gap="4">
                 ${globals.map(
                   (g) =>
                     html`<ui-card variant="border" .heading=${globalLabel(g)}>

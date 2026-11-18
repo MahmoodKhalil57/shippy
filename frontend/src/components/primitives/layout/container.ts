@@ -29,6 +29,8 @@ export const container = rcva("w-full", {
     },
     centered: { true: "mx-auto" },
     paddingX: {
+      /** Scales with the space it sits in (the app's main panel): 1rem → 2.5rem. */
+      fluid: "px-[clamp(1rem,5cqi,2.5rem)]",
       "0": "px-0",
       "1": "px-1",
       "2": "px-2",
@@ -42,6 +44,8 @@ export const container = rcva("w-full", {
       "16": "px-16",
     },
     paddingY: {
+      /** Scales with the space it sits in: 1.5rem → 2.5rem. */
+      fluid: "py-[clamp(1.5rem,4cqi,2.5rem)]",
       "0": "py-0",
       "1": "py-1",
       "2": "py-2",

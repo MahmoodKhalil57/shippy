@@ -51,6 +51,8 @@ export const dropdownPanel = rcva("", {
       card: "card card-sm",
     },
     surface: {
+      /** Frosted glass (src/styles/theme.css): menus float above the page. The default. */
+      glass: "liquid-glass",
       "base-100": "bg-base-100",
       "base-200": "bg-base-200",
       "base-300": "bg-base-300",
@@ -139,8 +141,8 @@ export type DropdownMode = "focus" | "details" | "popover";
 
 /** Panel look per kind, from the docs examples. */
 const PANEL_DEFAULTS: Record<DropdownPanelKind, DropdownPanelVariants> = {
-  menu: { kind: "menu", surface: "base-100", rounded: true, width: "52", padding: "2", shadow: "sm" },
-  card: { kind: "card", surface: "base-100", width: "64", shadow: "md" },
+  menu: { kind: "menu", surface: "glass", rounded: true, width: "52", padding: "2", shadow: "sm" },
+  card: { kind: "card", surface: "glass", width: "64", shadow: "md" },
   plain: {},
 };
 

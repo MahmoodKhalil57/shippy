@@ -60,7 +60,7 @@ export class DashboardLogin extends LightElement {
 
   render() {
     return html`<ui-flex justify="center" padding="4">
-      <ui-box width="full md:md" padding="4 md:16">
+      <ui-box width="full" max="md" padding="fluid">
         <ui-card heading="Log in" variant="border">
           <ui-form label="Log in" @ui-submit=${(e: CustomEvent<{ data: FormData }>) => this._submit(e.detail.data)}>
             <ui-flex direction="col" gap="3">
@@ -137,7 +137,7 @@ export class DashboardFirstUser extends LightElement {
   render() {
     const c = collectionOf(userSlug)!;
     return html`<ui-flex justify="center" padding="4">
-      <ui-box width="full md:lg" padding="4 md:16">
+      <ui-box width="full" max="lg" padding="fluid">
         <ui-card heading="Create the first user" variant="border">
           <ui-form label="Create the first user" @ui-submit=${() => this._submit()}>
             <ui-flex direction="col" gap="4">

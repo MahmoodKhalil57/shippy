@@ -6,6 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Golden Sea</title>
     <link rel="stylesheet" href="./src/index.css" />
+    <!-- Apply the saved theme and colour scheme (ui-theme-controller) before the first paint. -->
+    <script>
+      try {
+        const theme = localStorage.getItem("ui-theme");
+        if (theme === "dark" || theme === "light") document.documentElement.dataset.theme = theme;
+        const scheme = localStorage.getItem("ui-scheme");
+        if (scheme && scheme !== "default") document.documentElement.dataset.scheme = scheme;
+      } catch {}
+    </script>
     <script type="module" src="/src/pages/dashboard/app.ts"></script>
   </head>
   <body>

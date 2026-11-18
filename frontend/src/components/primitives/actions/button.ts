@@ -15,57 +15,64 @@ import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts
  * Every variant is responsive, e.g. the docs' responsive button:
  * `size="xs sm:sm md:md lg:lg xl:xl"`.
  */
-export const button = rcva("btn", {
-  variants: {
-    color: {
-      neutral: "btn-neutral",
-      primary: "btn-primary",
-      secondary: "btn-secondary",
-      accent: "btn-accent",
-      info: "btn-info",
-      success: "btn-success",
-      warning: "btn-warning",
-      error: "btn-error",
-    },
-    variant: {
-      outline: "btn-outline",
-      dash: "btn-dash",
-      soft: "btn-soft",
-      ghost: "btn-ghost",
-      link: "btn-link",
-      /**
-       * Looks like a search field (the app header's command-palette trigger): rounded, filled,
-       * placeholder-coloured text, a trailing `<ui-kbd>` hint. Below `sm` it shrinks to an
-       * icon-only circle.
-       */
-      field:
-        "btn-ghost h-11 w-full max-w-xl justify-start gap-2 rounded-full border border-base-content/10 bg-base-100 px-4 font-normal text-base-content/60 shadow-none hover:border-base-content/25 hover:bg-base-100 hover:text-base-content [&>ui-kbd>span]:ms-auto max-sm:size-10 max-sm:justify-center max-sm:px-0 max-sm:[&>ui-kbd]:hidden max-sm:[&>ui-text]:hidden",
-    },
-    size: {
-      xs: "btn-xs",
-      sm: "btn-sm",
-      md: "btn-md",
-      lg: "btn-lg",
-      xl: "btn-xl",
-    },
-    shape: {
-      square: "btn-square",
-      circle: "btn-circle",
-    },
-    wide: { true: "btn-wide" },
-    block: { true: "btn-block" },
-    active: { true: "btn-active" },
-    disabled: { true: "btn-disabled" },
-    /** Hide the button, e.g. `hide="lg"` where a sidebar it toggles is always open. */
-    hide: { true: "hidden" },
-    /** Content alignment, e.g. for full-width buttons in menus. */
-    justify: {
-      start: "justify-start",
-      center: "justify-center",
-      end: "justify-end",
+/**
+ * Every button squashes a little when pressed and springs back (M3 expressive fast spatial
+ * spring, src/styles/motion.css); daisyUI's colour/shadow transitions are kept.
+ */
+export const button = rcva(
+  "btn [transition:color_0.2s,background-color_0.2s,border-color_0.2s,box-shadow_0.2s,scale_var(--duration-spatial-fast)_var(--ease-spatial-fast)] active:scale-[0.94] motion-reduce:active:scale-100",
+  {
+    variants: {
+      color: {
+        neutral: "btn-neutral",
+        primary: "btn-primary",
+        secondary: "btn-secondary",
+        accent: "btn-accent",
+        info: "btn-info",
+        success: "btn-success",
+        warning: "btn-warning",
+        error: "btn-error",
+      },
+      variant: {
+        outline: "btn-outline",
+        dash: "btn-dash",
+        soft: "btn-soft",
+        ghost: "btn-ghost",
+        link: "btn-link",
+        /**
+         * Looks like a search field (the app header's command-palette trigger): rounded, filled,
+         * placeholder-coloured text, a trailing `<ui-kbd>` hint. When its container (an `@container`)
+         * has less than 13rem, it shrinks to an icon-only circle at the start (beside the brand) — no screen breakpoint.
+         */
+        field:
+          "btn-ghost liquid-glass-clear h-11 w-full max-w-xl justify-start gap-2 rounded-full border-transparent px-4 font-normal text-base-content/60 hover:bg-base-100/60 hover:text-base-content [&>ui-kbd>span]:ms-auto @max-[13rem]:me-auto @max-[13rem]:size-10 @max-[13rem]:justify-center @max-[13rem]:px-0 @max-[13rem]:[&>ui-kbd]:hidden @max-[13rem]:[&>ui-text]:hidden",
+      },
+      size: {
+        xs: "btn-xs",
+        sm: "btn-sm",
+        md: "btn-md",
+        lg: "btn-lg",
+        xl: "btn-xl",
+      },
+      shape: {
+        square: "btn-square",
+        circle: "btn-circle",
+      },
+      wide: { true: "btn-wide" },
+      block: { true: "btn-block" },
+      active: { true: "btn-active" },
+      disabled: { true: "btn-disabled" },
+      /** Hide the button, e.g. `hide="lg"` where a sidebar it toggles is always open. */
+      hide: { true: "hidden" },
+      /** Content alignment, e.g. for full-width buttons in menus. */
+      justify: {
+        start: "justify-start",
+        center: "justify-center",
+        end: "justify-end",
+      },
     },
   },
-});
+);
 
 export type ButtonVariants = VariantProps<typeof button>;
 

@@ -92,9 +92,6 @@ export function setIn(root: Data, path: Path, value: unknown): Data {
   return copy as Data;
 }
 
-/** Literal responsive specs (so their CSS is generated) for rows of 2–4 fields. */
-const ROW_COLS = { 1: "1", 2: "1 md:2", 3: "1 md:3", 4: "1 md:2 lg:4" } as const;
-
 /** ISO string <-> `<input type=date|datetime-local>` value, in local time. */
 const toInputDate = (iso: unknown, dayOnly: boolean) => {
   if (typeof iso !== "string" || !iso) return "";
@@ -143,8 +140,8 @@ export class UiDocForm extends LightElement {
     switch (f.type) {
       case "row": {
         const visible = (f.fields ?? []).filter((x) => !x.hidden && !x.admin?.hidden);
-        const cols = ROW_COLS[Math.min(4, Math.max(1, visible.length)) as keyof typeof ROW_COLS];
-        return html`<ui-grid .cols=${cols} gap="4">${visible.map((x) => this._field(x, data, path))}</ui-grid>`;
+        // As many fields side by side as fit (each at least 12rem): no breakpoints.
+        return html`<ui-grid fit="xs" gap="4">${visible.map((x) => this._field(x, data, path))}</ui-grid>`;
       }
       case "collapsible":
         return html`<ui-collapse mode="checkbox" icon="arrow" open .heading=${labelOf(f) || "Details"}>

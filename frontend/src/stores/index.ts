@@ -95,6 +95,11 @@ export const ui = createStore({
   briefing: null as string | null,
 });
 
+/* ---------------------------------------------------------------- notifications */
+
+/** Unread notifications (approvals, exceptions, alerts), counted by the side panel; shown on the bell. */
+export const notifications = createStore({ unread: 0 });
+
 /* ---------------------------------------------------------------- command palette */
 
 export const palette = createStore({ open: false, query: "", highlighted: 0 });

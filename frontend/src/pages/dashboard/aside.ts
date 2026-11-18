@@ -7,7 +7,14 @@ import { LightElement } from "../../components/base/light-element.ts";
 import type { IconName } from "../../components/primitives/media/icon.ts";
 import type { MenuItem } from "../../components/primitives/navigation/menu.ts";
 import "../../components/index.ts";
-import { StoreController, bookmarks, isBookmarked, preferences, toggleBookmark } from "../../stores/index.ts";
+import {
+  StoreController,
+  bookmarks,
+  isBookmarked,
+  notifications,
+  preferences,
+  toggleBookmark,
+} from "../../stores/index.ts";
 import type { Access } from "./app.ts";
 import { dashboardPath, formatDate } from "./shared.ts";
 
@@ -19,11 +26,21 @@ export const ASIDE_SECTIONS = [
 ] as const satisfies readonly { id: string; label: string; icon: IconName }[];
 export type AsideSection = (typeof ASIDE_SECTIONS)[number]["id"];
 
-const icon = (name: IconName) => html`<ui-icon name=${name}></ui-icon>`;
+/** A section's icon; the bell carries the unread count, so it shows even when the section (or the panel) is closed. */
+const icon = (name: IconName, count = 0) =>
+  count
+    ? html`<ui-indicator item=${count > 99 ? "99+" : String(count)} badge="warning" size="xs"
+        ><ui-icon name=${name}></ui-icon
+      ></ui-indicator>`
+    : html`<ui-icon name=${name}></ui-icon>`;
 
 /** The side panel's rail: one icon per section (selecting one opens the panel on it). */
-export const asideRail = (): MenuItem[] =>
-  ASIDE_SECTIONS.map((s) => ({ label: s.label, icon: icon(s.icon), value: s.id }));
+export const asideRail = (unread = 0): MenuItem[] =>
+  ASIDE_SECTIONS.map((s) => ({
+    label: unread && s.id === "notifications" ? `${s.label} (${unread})` : s.label,
+    icon: icon(s.icon, s.id === "notifications" ? unread : 0),
+    value: s.id,
+  }));
 
 /** Expands a section (the shell opens the panel itself, choosing push or sheet). */
 export const expandAsideSection = (id: AsideSection) =>
@@ -101,6 +118,7 @@ export class DashboardAside extends LightElement {
       },
     ];
     this.loaded = true;
+    notifications.set({ unread: this.notifications.length });
   }
 
   private _remember(id: AsideSection, open: boolean) {
@@ -126,16 +144,13 @@ export class DashboardAside extends LightElement {
       ],
       widgets: this.loaded ? this.widgets : loading,
     };
-    const counts: Partial<Record<AsideSection, number>> = {
-      notifications: this.notifications.length,
-      bookmarks: marks.length,
-    };
+    // Notifications show their count on the bell; bookmarks next to the label.
+    const counts: Partial<Record<AsideSection, number>> = { bookmarks: marks.length };
     return ASIDE_SECTIONS.map((s) => ({
       label: s.label,
-      icon: icon(s.icon),
+      icon: icon(s.icon, s.id === "notifications" ? this.notifications.length : 0),
       value: s.id,
       badge: counts[s.id] || undefined,
-      badgeColor: s.id === "notifications" ? ("warning" as const) : undefined,
       open: !collapsed.includes(s.id),
       children: children[s.id],
     }));

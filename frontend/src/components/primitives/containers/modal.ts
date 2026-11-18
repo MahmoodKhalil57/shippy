@@ -21,7 +21,7 @@ export const modal = rcva("modal", {
       middle: "modal-middle",
       bottom: "modal-bottom",
       /** Near the top, centred (command palettes): the box keeps its place as results change. */
-      spotlight: "items-start pt-2 sm:pt-[12dvh]",
+      spotlight: "items-start pt-[clamp(0.5rem,12dvh_-_3rem,7rem)]",
     },
     /** Horizontal placement. */
     align: {
@@ -33,20 +33,27 @@ export const modal = rcva("modal", {
   },
 });
 
-export const modalBox = rcva("modal-box", {
-  variants: {
-    /** Box width ("dialog modal with custom width"). Default: daisyUI's. */
-    width: {
-      wide: "w-11/12 max-w-5xl",
-      /** Command palette. */
-      palette: "w-[calc(100%-1rem)] max-w-2xl",
-    },
-    /** `header` / body / `footer` sections; only the body scrolls. */
-    sections: {
-      true: "flex max-h-[min(36rem,calc(100dvh-1rem))] flex-col overflow-hidden p-0 sm:max-h-[min(36rem,76dvh)]",
+/**
+ * The box is glass (it floats above the page; src/styles/theme.css) and pops in on M3's
+ * expressive fast spatial spring (a little bounce), fading on the effects spring.
+ */
+export const modalBox = rcva(
+  "modal-box liquid-glass [transition:translate_var(--duration-spatial-fast)_var(--ease-spatial-fast),scale_var(--duration-spatial-fast)_var(--ease-spatial-fast),opacity_var(--duration-effects-fast)_var(--ease-effects-fast),box-shadow_0.3s] motion-reduce:transition-none",
+  {
+    variants: {
+      /** Box width ("dialog modal with custom width"). Default: daisyUI's. */
+      width: {
+        wide: "w-11/12 max-w-5xl",
+        /** Command palette. */
+        palette: "w-[calc(100%-1rem)] max-w-2xl",
+      },
+      /** `header` / body / `footer` sections; only the body scrolls. */
+      sections: {
+        true: "flex max-h-[min(36rem,calc(100dvh_-_1rem),76dvh_+_4rem)] flex-col overflow-hidden p-0",
+      },
     },
   },
-});
+);
 export const modalHeader = rcva("shrink-0 border-b border-base-content/10");
 export const modalBody = rcva("min-h-0 flex-1 overflow-y-auto overscroll-contain p-2");
 export const modalFooter = rcva("shrink-0 border-t border-base-content/10 px-4 py-2.5");
@@ -117,6 +124,17 @@ export class UiModal extends LightElement {
     }
   }
 
+  /**
+   * A click on the dialog itself — anywhere outside the box that the backdrop doesn't cover
+   * (e.g. a placement's padding, like `spotlight`'s top band over the app header) — closes it too.
+   */
+  private _onDialogClick(e: MouseEvent) {
+    if (this.backdropClose && this.#pressedOutside && e.target === e.currentTarget) this.close();
+  }
+
+  /** The press started on the dialog itself (not a drag that began inside the box). */
+  #pressedOutside = false;
+
   private _onClose() {
     this.open = false;
     this.dispatchEvent(
@@ -130,6 +148,8 @@ export class UiModal extends LightElement {
       class=${modal({ placement: this.placement, align: this.align })}
       aria-label=${typeof this.heading === "string" && this.heading ? this.heading : nothing}
       @close=${this._onClose}
+      @pointerdown=${(e: PointerEvent) => (this.#pressedOutside = e.target === e.currentTarget)}
+      @click=${this._onDialogClick}
     >
       <div class=${modalBox({ width: this.width, sections: this.sections })}>
         ${

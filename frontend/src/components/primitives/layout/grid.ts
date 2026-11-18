@@ -3,7 +3,7 @@ import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
-import { rcva, type Responsive } from "../../base/variants.ts";
+import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
 
 /**
  * Grid: lays its children out in columns and rows.
@@ -14,6 +14,21 @@ import { rcva, type Responsive } from "../../base/variants.ts";
  */
 export const grid = rcva("grid", {
   variants: {
+    /**
+     * Intrinsic columns, no breakpoints: as many as fit the space, each at least this wide (and
+     * never wider than the grid), sharing what's left.
+     */
+    fit: {
+      xs: "grid-cols-[repeat(auto-fit,minmax(min(100%,12rem),1fr))]",
+      sm: "grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))]",
+      md: "grid-cols-[repeat(auto-fit,minmax(min(100%,20rem),1fr))]",
+      lg: "grid-cols-[repeat(auto-fit,minmax(min(100%,26rem),1fr))]",
+    },
+    /**
+     * Main content and a sidebar (`items` with `role: "main"` / `"side"`), side by side while the
+     * main part keeps at least 30rem, otherwise the sidebar wraps underneath. No breakpoints.
+     */
+    sidebar: { true: "flex! flex-wrap items-start" },
     cols: {
       "1": "grid-cols-1",
       "2": "grid-cols-2",
@@ -85,6 +100,11 @@ export const grid = rcva("grid", {
 /** A cell spanning several columns. */
 export const gridItem = rcva("", {
   variants: {
+    /** In a `sidebar` grid: the part that takes the room, or the sidebar (18rem, growing when alone). */
+    role: {
+      main: "min-w-[min(100%,30rem)] grow-[999] basis-0",
+      side: "min-w-0 grow basis-72",
+    },
     span: {
       "1": "col-span-1",
       "2": "col-span-2",
@@ -108,11 +128,15 @@ export type GridItemVariants = VariantProps<typeof gridItem>;
 
 export interface GridItem {
   content: Renderable;
+  /** In a `sidebar` grid: which part this is. */
+  role?: GridItemVariants["role"];
   /** Columns to span; responsive, e.g. "full md:2". */
   span?: Responsive<NonNullable<GridItemVariants["span"]>>;
 }
 
 /**
+ * @example <ui-grid fit="sm" gap="4">…cards…</ui-grid>   (as many 16rem+ columns as fit)
+ * @example <ui-grid sidebar gap="8" .items=${[{ content: form, role: "main" }, { content: side, role: "side" }]}></ui-grid>
  * @example <ui-grid cols="1 md:2 lg:4" gap="4">…cards…</ui-grid>
  * @example <ui-grid cols="3" gap="6" .items=${[{ content: chart, span: "full md:2" }, { content: stats }]}></ui-grid>
  *
@@ -123,6 +147,8 @@ export interface GridItem {
 @customElement("ui-grid")
 export class UiGrid extends LightElement {
   @property() cols: GridVariants["cols"];
+  @property() fit: GridVariants["fit"];
+  @property({ converter: responsiveBoolean }) sidebar: Responsive<boolean> = false;
   @property() rows: GridVariants["rows"];
   @property() gap: GridVariants["gap"];
   @property() align: GridVariants["align"];
@@ -134,6 +160,8 @@ export class UiGrid extends LightElement {
   render() {
     const cls = grid({
       cols: this.cols,
+      fit: this.fit,
+      sidebar: this.sidebar,
       rows: this.rows,
       gap: this.gap,
       align: this.align,
@@ -147,7 +175,7 @@ export class UiGrid extends LightElement {
           ? repeat(
               this.items,
               (_, i) => i,
-              (item) => html`<div class=${gridItem({ span: item.span })}>${item.content}</div>`,
+              (item) => html`<div class=${gridItem({ span: item.span, role: item.role })}>${item.content}</div>`,
             )
           : this.content
       }

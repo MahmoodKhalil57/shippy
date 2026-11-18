@@ -41,6 +41,8 @@ export const box = rcva("", {
       "2xl": "shadow-2xl",
     },
     padding: {
+      /** Scales with the window: 1rem → 4rem. */
+      fluid: "p-[clamp(1rem,6vw,4rem)]",
       "0": "p-0",
       "1": "p-1",
       "2": "p-2",
@@ -53,6 +55,8 @@ export const box = rcva("", {
       "12": "p-12",
       "16": "p-16",
     },
+    /** Width cap, so `width="full"` boxes stop growing (no breakpoint needed). */
+    max: { sm: "max-w-sm", md: "max-w-md", lg: "max-w-lg", xl: "max-w-xl" },
     width: {
       auto: "w-auto",
       full: "w-full",
@@ -120,6 +124,7 @@ export class UiBox extends LightElement {
   @property() shadow: BoxVariants["shadow"];
   @property() padding: BoxVariants["padding"];
   @property() width: BoxVariants["width"];
+  @property() max: BoxVariants["max"];
   @property() height: BoxVariants["height"];
   @property() overflow: BoxVariants["overflow"];
   @property({ converter: responsiveBoolean }) center: Responsive<boolean> = false;
@@ -133,6 +138,7 @@ export class UiBox extends LightElement {
       shadow: this.shadow,
       padding: this.padding,
       width: this.width,
+      max: this.max,
       height: this.height,
       overflow: this.overflow,
       center: this.center,

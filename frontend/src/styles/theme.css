@@ -17,3 +17,97 @@
   inherits: true;
   initial-value: 1;
 }
+
+/* The app frame's fluid sizes (<ui-app-shell>): they scale smoothly with the window instead of
+   jumping at breakpoints, from a 320px phone to a 1280px desktop:
+     --frame-rail  closed column     48px → 96px  (a 44px icon pill plus its inset)
+     --frame-gap   between columns    2px →  8px
+     --frame-edge  to the screen edge 2px → 12px
+   The shell registers them as lengths (CSS.registerProperty) so script reads them resolved. */
+:root {
+  --frame-rail: clamp(3rem, 2rem + 5vw, 6rem);
+  --frame-gap: clamp(0.125rem, 0.625vw, 0.5rem);
+  --frame-edge: clamp(0.125rem, 1.042vw - 0.083rem, 0.75rem);
+}
+
+/* ---------------------------------------------------------------- glass
+   The floating layer's material (after Apple's Liquid Glass): sheets, dialogs, menus, toasts —
+   controls and navigation that float above content. Content itself stays solid, and glass never
+   sits on glass. Three layers, as Apple describes it:
+     highlight     a specular top edge and a faint lower one (inset shadows)
+     illumination  a soft top-lit sheen inside the surface (a radial gradient)
+     shadow        depth that lifts it off what's beneath
+   over a translucent tint of the theme's own surface, with the backdrop blurred and saturated so
+   what's behind reads as colour, not detail (legibility first: Apple raised the frost for that).
+   `liquid-glass` is the regular, frosted material; `liquid-glass-clear` lets more through, for
+   small controls. (Not `glass`: daisyUI has its own `.glass` class.)
+   Both adapt to light and dark (light-dark() follows each theme's color-scheme), and become solid
+   with Reduce transparency, Increase contrast, or without backdrop-filter support. */
+:root {
+  --glass-highlight: light-dark(rgb(255 255 255 / 0.8), rgb(255 255 255 / 0.16));
+  --glass-lowlight: light-dark(rgb(255 255 255 / 0.35), rgb(255 255 255 / 0.05));
+  --glass-edge: light-dark(rgb(0 0 0 / 0.08), rgb(255 255 255 / 0.08));
+  --glass-sheen: light-dark(rgb(255 255 255 / 0.45), rgb(255 255 255 / 0.06));
+  --glass-depth: light-dark(rgb(15 23 42 / 0.18), rgb(0 0 0 / 0.45));
+}
+
+@utility liquid-glass {
+  background-color: color-mix(in oklab, var(--color-base-100) 68%, transparent);
+  background-image: radial-gradient(140% 70% at 50% -12%, var(--glass-sheen), transparent 62%);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  backdrop-filter: blur(22px) saturate(180%);
+  --tw-inset-shadow: inset 0 1px 0 0 var(--glass-highlight), inset 0 -1px 0 0 var(--glass-lowlight);
+  --tw-inset-ring-shadow: inset 0 0 0 1px var(--glass-edge);
+  box-shadow:
+    var(--tw-inset-shadow),
+    var(--tw-inset-ring-shadow),
+    0 1px 2px var(--glass-depth),
+    0 18px 44px -16px var(--glass-depth);
+
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    background-color: color-mix(in oklab, var(--color-base-100) 97%, transparent);
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    background-color: var(--color-base-100);
+    background-image: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  @media (prefers-contrast: more) {
+    background-color: var(--color-base-100);
+    background-image: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    --tw-inset-ring-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-base-content) 45%, transparent);
+  }
+}
+
+@utility liquid-glass-clear {
+  background-color: color-mix(in oklab, var(--color-base-100) 40%, transparent);
+  background-image: radial-gradient(140% 80% at 50% -20%, var(--glass-sheen), transparent 60%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  backdrop-filter: blur(14px) saturate(160%);
+  --tw-inset-shadow: inset 0 1px 0 0 var(--glass-highlight);
+  --tw-inset-ring-shadow: inset 0 0 0 1px var(--glass-edge);
+  box-shadow:
+    var(--tw-inset-shadow),
+    var(--tw-inset-ring-shadow),
+    0 1px 2px var(--glass-depth);
+
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    background-color: color-mix(in oklab, var(--color-base-100) 92%, transparent);
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    background-color: var(--color-base-100);
+    background-image: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  @media (prefers-contrast: more) {
+    background-color: var(--color-base-100);
+    background-image: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    --tw-inset-ring-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-base-content) 45%, transparent);
+  }
+}

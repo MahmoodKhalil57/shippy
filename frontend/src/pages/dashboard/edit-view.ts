@@ -300,11 +300,11 @@ export class DashboardEditView extends LightElement {
 
     return html`<ui-form label=${heading} @ui-submit=${() => this._save()}>
       <ui-flex direction="col" gap="6">
-        <ui-flex direction="col md:row" justify="between" align="start md:end" gap="4">
+        <ui-flex justify="between" align="end" gap="4" wrap>
           <ui-flex direction="col" gap="1">
             <ui-breadcrumbs .items=${crumbs}></ui-breadcrumbs>
             <ui-flex align="center" gap="3" wrap>
-              <ui-heading level="1" size="2xl md:3xl">${heading}</ui-heading>
+              <ui-heading level="1" size="page">${heading}</ui-heading>
               ${this.dirty ? html`<ui-badge color="warning" variant="soft" size="sm">Unsaved changes</ui-badge>` : nothing}
             </ui-flex>
           </ui-flex>
@@ -334,11 +334,11 @@ export class DashboardEditView extends LightElement {
         }
 
         <ui-grid
-          cols="1 lg:3"
+          sidebar
           gap="8"
           .items=${[
-            { content: this._form(main, readonly), span: "full lg:2" },
-            { content: side, span: "full lg:1" },
+            { content: this._form(main, readonly), role: "main" },
+            { content: side, role: "side" },
           ]}
         ></ui-grid>
       </ui-flex>

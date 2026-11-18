@@ -65,7 +65,7 @@ export class DashboardMockData extends LightElement {
           : nothing
       }
 
-      <ui-grid cols="1 md:2" gap="6">
+      <ui-grid fit="md" gap="6">
         <ui-card heading="Stored documents" variant="border">
           ${
             s

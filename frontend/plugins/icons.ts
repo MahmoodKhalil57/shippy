@@ -7,7 +7,8 @@ import Icons from "unplugin-icons/vite";
  * Allowed collections: line-md (animated outline icons, preferred), material-symbols-light,
  * devicon and logos (technology / brand logos). Anything else fails the build.
  *
- * Each icon compiles to a static Lit template, `{ viewBox, body }` (`body` is an `svg` template),
+ * Each icon compiles to `{ viewBox, body }`: `body(uid)` returns a static Lit `svg` template, its
+ * internal ids prefixed with `uid` so several copies can share a page,
  * so primitives render it inside their own `<svg>` (see `iconSvg` in
  * src/components/primitives/media/icon.ts) with no `unsafeSVG`.
  */
@@ -22,8 +23,15 @@ export default function icons() {
         if (!(ICON_COLLECTIONS as readonly string[]).includes(collection))
           throw new Error(`Icon "${collection}/${icon}": only ${ICON_COLLECTIONS.join(", ")} are allowed.`);
         const viewBox = /viewBox="([^"]+)"/.exec(svg)?.[1] ?? "0 0 24 24";
-        const body = svg.replace(/^<svg[^>]*>/, "").replace(/<\/svg>\s*$/, "");
-        return `import { svg } from "lit";\nexport default { viewBox: ${JSON.stringify(viewBox)}, body: svg\`${escapeTemplate(body)}\` };\n`;
+        let body = escapeTemplate(svg.replace(/^<svg[^>]*>/, "").replace(/<\/svg>\s*$/, ""));
+        // Internal ids (masks, gradients) must be unique per copy on the page, or a second copy's
+        // url(#id) resolves to the first (possibly hidden) one and the icon breaks. So `body` takes
+        // a prefix (`iconSvg` passes a fresh one per render) and the ids are rewritten with it.
+        const ids = [...body.matchAll(/\bid="([^"]+)"/g)].map((m) => m[1]!);
+        ids.forEach((id, i) => {
+          body = body.replaceAll(`id="${id}"`, `id="\${uid}-${i}"`).replaceAll(`#${id}`, `#\${uid}-${i}`);
+        });
+        return `import { svg } from "lit";\nexport default { viewBox: ${JSON.stringify(viewBox)}, body: (uid) => svg\`${body}\` };\n`;
       },
     },
   });

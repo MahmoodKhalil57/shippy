@@ -96,10 +96,10 @@ export class DashboardListView extends LightElement {
     const r = this.result;
 
     return html`<ui-flex direction="col" gap="6">
-      <ui-flex direction="col md:row" justify="between" align="start md:end" gap="4">
+      <ui-flex justify="between" align="end" gap="4" wrap>
         <ui-flex direction="col" gap="1">
           <ui-breadcrumbs .items=${[{ label: "Dashboard", href: dashboardPath() }, { label: plural }]}></ui-breadcrumbs>
-          <ui-heading level="1" size="3xl">${plural}</ui-heading>
+          <ui-heading level="1" size="page">${plural}</ui-heading>
           ${
             typeof c.admin?.description === "string"
               ? html`<ui-text color="muted">${c.admin.description}</ui-text>`
@@ -115,11 +115,11 @@ export class DashboardListView extends LightElement {
         }
       </ui-flex>
 
-      <ui-flex direction="col sm:row" gap="3" align="start sm:center">
+      <ui-flex gap="3" align="center" wrap>
         <ui-text-input
           icon="search"
           type="search"
-          width="full sm:xs"
+          width="fill"
           placeholder=${`Search by ${titleLabel.toLowerCase()}`}
           .value=${this.search}
           @input=${(e: Event) => {

@@ -6,7 +6,7 @@ import { API_ROUTE, api, startMockBackend } from "../../cms/client.ts";
 import type { Doc } from "../../cms/types.ts";
 import type { MenuItem } from "../../components/primitives/navigation/menu.ts";
 import type { IconName } from "../../components/primitives/media/icon.ts";
-import { StoreController, preferences } from "../../stores/index.ts";
+import { StoreController, preferences, notifications } from "../../stores/index.ts";
 import "../../components/index.ts";
 import "./auth-views.ts";
 import "./overview.ts";
@@ -47,6 +47,9 @@ export class DashboardApp extends LightElement {
   @query("ui-app-shell") private _shell?: HTMLElementTagNameMap["ui-app-shell"];
   @state() private failure = "";
   #prefs = new StoreController(this, preferences);
+  /** Navigation groups that have held the current page (kept open: navigating never closes a group). */
+  #openedGroups = new Set<string>();
+  #unread = new StoreController(this, notifications);
 
   connectedCallback() {
     super.connectedCallback();
@@ -148,12 +151,17 @@ export class DashboardApp extends LightElement {
   private _menu(): MenuItem[] {
     return [
       { label: "Dashboard", icon: this._icon("home"), href: dashboardPath(), active: this.route.name === "dashboard" },
-      ...this._groups().map((g) => ({
-        label: g.label,
-        icon: this._icon(GROUP_ICONS[g.label] ?? "grid"),
-        open: g.active,
-        children: g.items,
-      })),
+      ...this._groups().map((g) => {
+        // Navigating opens the group of the page you went to, and never closes one (the user
+        // closes groups by hand).
+        if (g.active) this.#openedGroups.add(g.label);
+        return {
+          label: g.label,
+          icon: this._icon(GROUP_ICONS[g.label] ?? "grid"),
+          open: this.#openedGroups.has(g.label),
+          children: g.items,
+        };
+      }),
     ];
   }
 
@@ -234,8 +242,12 @@ export class DashboardApp extends LightElement {
         ?nav-open=${navOpen}
         ?aside-open=${asideOpen}
         aside-label="Side panel"
-        @ui-change=${(e: CustomEvent<{ nav: boolean; aside: boolean }>) =>
-          preferences.set({ navOpen: e.detail.nav, asideOpen: e.detail.aside })}
+        @ui-change=${(e: CustomEvent<{ nav: boolean; aside: boolean }>) => {
+          // Only the shell's own change: `ui-change` from anything inside it (the theme toggle,
+          // inputs…) bubbles here too and isn't about the columns.
+          if (e.target !== e.currentTarget) return;
+          preferences.set({ navOpen: e.detail.nav, asideOpen: e.detail.aside });
+        }}
       >
         <dashboard-command
           slot="search"
@@ -245,7 +257,8 @@ export class DashboardApp extends LightElement {
           .onLogout=${() => void this._logout()}
         ></dashboard-command>
         <ui-flex slot="actions" align="center" gap="1">
-          <ui-theme-controller as="icon" theme="dark" persist></ui-theme-controller>
+          <ui-theme-controller as="scheme" persist></ui-theme-controller>
+          <ui-theme-controller as="cycle" persist></ui-theme-controller>
           <ui-dropdown
             align="end"
             panel="card"
@@ -271,7 +284,7 @@ export class DashboardApp extends LightElement {
           slot="aside-rail"
           layout="rail"
           surface="false"
-          .items=${asideRail()}
+          .items=${asideRail(this.#unread.value.unread)}
           @ui-select=${(e: CustomEvent<{ item: MenuItem }>) => {
             expandAsideSection(e.detail.item.value as AsideSection);
             void this._shell?.toggleAside(true);
@@ -284,7 +297,7 @@ export class DashboardApp extends LightElement {
           .path=${location.pathname}
           .pageTitle=${this._title()}
         ></dashboard-aside>
-        <ui-container width="6xl" padding-x="4 md:8" padding-y="6 md:10">${this._view()}</ui-container>
+        <ui-container width="6xl" padding-x="fluid" padding-y="fluid">${this._view()}</ui-container>
       </ui-app-shell>
       ${toaster}
     `;

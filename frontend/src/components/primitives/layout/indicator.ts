@@ -31,6 +31,10 @@ export const indicatorItem = rcva("indicator-item", {
       middle: "indicator-middle",
       bottom: "indicator-bottom",
     },
+    /** Badge size: `xs` for a count on an icon (tabular, compact). */
+    size: {
+      xs: "badge-xs h-4 min-w-4 px-1 text-[0.625rem] font-semibold tabular-nums",
+    },
     /** Badge look for plain-text indicators (docs "Badge as indicator"). */
     badge: {
       plain: "badge",
@@ -55,6 +59,7 @@ export interface IndicatorItem extends IndicatorItemVariants {
 /**
  * @example
  * <ui-indicator item="new" badge="secondary"><ui-button>Inbox</ui-button></ui-indicator>
+ * @example <ui-indicator item="7" badge="warning" size="xs"><ui-icon name="bell"></ui-icon></ui-indicator>
  * @example
  * <ui-indicator horizontal="center" vertical="bottom">
  *   <ui-status slot="item" color="success"></ui-status>
@@ -73,6 +78,8 @@ export class UiIndicator extends LightElement {
   @property() badge: IndicatorItemVariants["badge"];
   @property() horizontal: IndicatorItemVariants["horizontal"];
   @property() vertical: IndicatorItemVariants["vertical"];
+  /** Size of the `item` badge (`xs`: a count on an icon). */
+  @property() size: IndicatorItemVariants["size"];
   @property({ attribute: false }) items: IndicatorItem[] = [];
 
   render() {
@@ -81,7 +88,8 @@ export class UiIndicator extends LightElement {
     return html`<div class=${indicator()}>
       ${
         this.item
-          ? html`<span class=${indicatorItem({ ...pos, badge: this.badge ?? (text ? "secondary" : undefined) })}
+          ? html`<span
+              class=${indicatorItem({ ...pos, size: this.size, badge: this.badge ?? (text ? "secondary" : undefined) })}
               >${this.item}</span
             >`
           : ""

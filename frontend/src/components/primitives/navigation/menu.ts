@@ -58,7 +58,7 @@ export const menu = rcva("menu", {
      * no shadow. One column that never wraps, so rows keep the menu's width and long labels truncate.
      */
     nav: {
-      true: "flex-nowrap max-md:ps-0 text-sm font-medium [&_.menu-active]:bg-primary/20 [&_.menu-active]:text-primary [&_.menu-active]:shadow-none [&_.menu-title]:text-base-content/60 [interpolate-size:allow-keywords] [&_details::details-content]:overflow-hidden [&_details::details-content]:[block-size:0] [&_details::details-content]:[transition:block-size_var(--duration-spatial)_var(--ease-spatial),content-visibility_var(--duration-spatial)_allow-discrete] [&_details[open]::details-content]:[block-size:auto] motion-reduce:[&_details::details-content]:transition-none",
+      true: "flex-nowrap px-0 text-sm font-medium [&_.menu-active]:bg-primary/20 [&_.menu-active]:text-primary [&_.menu-active]:shadow-none [&_.menu-title]:text-base-content/60 [interpolate-size:allow-keywords] [&_details::details-content]:overflow-hidden [&_details::details-content]:[block-size:0] [&_details::details-content]:[transition:block-size_var(--duration-spatial)_var(--ease-spatial),content-visibility_var(--duration-spatial)_allow-discrete] [&_details[open]::details-content]:[block-size:auto] motion-reduce:[&_details::details-content]:transition-none",
     },
     /**
      * Open navigation list that can fold into the rail's look with motion: set
@@ -236,7 +236,6 @@ export class UiMenu extends LightElement {
   @property() tooltip: "top" | "right" | "bottom" | "none" = "right";
   /** `nav`: app navigation list; `rail`: the same items, icons only (collapsed navigation column). */
   @property() layout: "list" | "nav" | "rail" = "list";
-
   /** Keep the keyboard-focused item (`focus: true`, e.g. a palette's highlighted result) in view. */
   protected updated() {
     this.querySelector(".menu-focus")?.scrollIntoView({ block: "nearest" });

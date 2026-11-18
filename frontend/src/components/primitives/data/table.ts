@@ -39,7 +39,7 @@ export const table = rcva("table", {
 export const tableWrapper = rcva("overflow-x-auto", {
   variants: {
     /** "Table with border and background". */
-    bordered: { true: "rounded-box border border-base-content/5 bg-base-100" },
+    bordered: { true: "rounded-box border border-base-content/5 bg-base-100 [--scrollbar-inset:var(--radius-box)]" },
     /** Fixed scroll height (the pinned examples use `h-96`). */
     height: { sm: "h-64", md: "h-80", lg: "h-96" },
     /** Fixed scroll width (the pinned-cols example uses `w-96`). */

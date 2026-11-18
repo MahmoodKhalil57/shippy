@@ -43,6 +43,8 @@ export const textInput = rcva("input", {
     /** Turns on `:user-invalid` colouring + `validator-hint` (see Validator). */
     validator: { true: "validator" },
     width: {
+      /** Grows to fill a wrapping row, never narrower than 16rem (or the row). */
+      fill: "min-w-[min(100%,16rem)] flex-1",
       auto: "w-auto",
       "64": "w-64",
       xs: "w-xs",

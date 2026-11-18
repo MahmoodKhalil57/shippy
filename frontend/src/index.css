@@ -8,6 +8,8 @@
    src/components/primitives are rejected by tests/architecture.test.ts. */
 @import "tailwindcss" source(none);
 @import "./styles/theme.css";
+/* Colour schemes (tweakcn, as daisyUI tokens): data-scheme on <html>. */
+@import "./styles/schemes.css";
 
 @layer base {
   /* Component hosts (<ui-*>) add no box of their own, so their rendered markup
@@ -23,5 +25,95 @@
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Scrollbars, everywhere: thin, minimal, in the theme's colours, with no arrow buttons.
+     A 10px gutter holding a 4px rounded thumb (the transparent border insets it), faint until
+     hovered. Chromium/Safari draw it from ::-webkit-scrollbar — but Chromium ignores those
+     whenever the standard `scrollbar-color` / `scrollbar-width` apply (daisyUI sets them on the
+     root), so they're reset there. Firefox (no ::-webkit-scrollbar, no arrows on thin bars) gets
+     the standard properties. */
+  @supports selector(::-webkit-scrollbar) {
+    ::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+      background: transparent;
+    }
+    ::-webkit-scrollbar-track,
+    ::-webkit-scrollbar-corner {
+      background: transparent;
+    }
+    /* A rounded scroll container sets --scrollbar-inset to its corner radius, so its bar stays
+       inside the curve instead of poking past it (scrollbars aren't clipped by border-radius).
+       Each element starts at 0, so only that container's own bar is inset, not its children's. */
+    * {
+      --scrollbar-inset: 0px;
+    }
+    ::-webkit-scrollbar-track:vertical {
+      margin-block: var(--scrollbar-inset);
+    }
+    ::-webkit-scrollbar-track:horizontal {
+      margin-inline: var(--scrollbar-inset);
+    }
+    ::-webkit-scrollbar-button {
+      display: none;
+      width: 0;
+      height: 0;
+    }
+    ::-webkit-scrollbar-thumb {
+      border: 3px solid transparent;
+      border-radius: 9999px;
+      background-clip: padding-box;
+      background-color: color-mix(in oklab, var(--color-base-content) 22%, transparent);
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background-color: color-mix(in oklab, var(--color-base-content) 40%, transparent);
+    }
+    ::-webkit-scrollbar-thumb:active {
+      background-color: color-mix(in oklab, var(--color-primary) 70%, transparent);
+    }
+  }
+  @supports not selector(::-webkit-scrollbar) {
+    :root,
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: color-mix(in oklab, var(--color-base-content) 25%, transparent) transparent;
+    }
+  }
+}
+
+/* Outside any layer, and doubled on the root, so it beats daisyUI's root `scrollbar-color`
+   (which would make Chromium ignore the ::-webkit-scrollbar styling above, arrows included). */
+@supports selector(::-webkit-scrollbar) {
+  :root:root,
+  * {
+    scrollbar-color: auto;
+    scrollbar-width: auto;
+  }
+}
+
+/* Theme change (<ui-theme-controller as="cycle">): the new theme is revealed by a circle growing
+   from the click point (--theme-reveal-x / -y) until it covers the screen (--theme-reveal-r), on
+   Material Design 3's expressive slow spatial spring (full-screen motion: src/styles/motion.css).
+   The old snapshot stays put underneath. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-new(root) {
+  animation: theme-reveal var(--duration-spatial-slow) var(--ease-spatial-slow);
+}
+@keyframes theme-reveal {
+  from {
+    clip-path: circle(0 at var(--theme-reveal-x, 50%) var(--theme-reveal-y, 50%));
+  }
+  to {
+    clip-path: circle(var(--theme-reveal-r, 150%) at var(--theme-reveal-x, 50%) var(--theme-reveal-y, 50%));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-new(root) {
+    animation: none;
   }
 }

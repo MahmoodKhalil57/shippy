@@ -47,6 +47,9 @@ import iLink from "~icons/line-md/link";
 import iBolt from "~icons/material-symbols-light/bolt-outline";
 import iArchive from "~icons/material-symbols-light/archive-outline";
 import iAnchor from "~icons/material-symbols-light/anchor";
+import iContrast from "~icons/line-md/light-dark";
+import iPalette from "~icons/material-symbols-light/palette-outline";
+import iPasskey from "~icons/material-symbols-light/passkey";
 
 /**
  * Icon: a sized, coloured inline SVG icon.
@@ -138,6 +141,10 @@ export const ICONS = {
   bolt: iBolt,
   archive: iArchive,
   anchor: iAnchor,
+  /** Half light, half dark: "follow the system". */
+  contrast: iContrast,
+  palette: iPalette,
+  passkey: iPasskey,
 } as const;
 
 export type IconName = keyof typeof ICONS;
@@ -147,8 +154,12 @@ export type IconName = keyof typeof ICONS;
  * with an accessible name; otherwise it's decorative. `class` replaces the size/colour recipe
  * when a primitive sizes its icons itself.
  */
+/** Icon copies rendered so far, for unique ids inside icons. */
+let iconCopies = 0;
+
 export function iconSvg(name: IconName, variants: IconVariants = {}, opts: { label?: string; class?: string } = {}) {
   const { viewBox, body } = ICONS[name];
+  const uid = `icon-${++iconCopies}`; // unique ids inside this copy (see plugins/icons.ts)
   return html`<svg
     class=${opts.class ?? icon(variants)}
     xmlns="http://www.w3.org/2000/svg"
@@ -157,7 +168,7 @@ export function iconSvg(name: IconName, variants: IconVariants = {}, opts: { lab
     aria-label=${ifDefined(opts.label)}
     aria-hidden=${opts.label ? nothing : "true"}
   >
-    ${body}
+    ${body(uid)}
   </svg>`;
 }
 
