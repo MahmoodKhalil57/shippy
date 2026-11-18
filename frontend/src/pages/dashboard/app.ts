@@ -12,10 +12,13 @@ import "../../components/index.ts";
 import "./auth-views.ts";
 import "./home.ts";
 import "./tour.ts";
+import "./agent.ts";
 import { viewElement } from "./views.ts";
 import "./edit-view.ts";
 import "./list-view.ts";
 import "./command.ts";
+import { provideTools } from "../../agent/webmcp.ts";
+import { dashboardTools, type AgentHost, type Appearance } from "./agent-tools.ts";
 import { asideRail, expandAsideSection, type AsideSection } from "./aside.ts";
 import { roleLabel, roleLogins, seedUsers, type SeedUser } from "./demo-users.ts";
 import {
@@ -119,6 +122,44 @@ export class DashboardApp extends LightElement {
     this.user = (await api.me(userSlug)).user;
     this.access = await api.access();
     await this._guard();
+    // The agent's tools follow who's signed in: only what this user may see and do.
+    provideTools(dashboardTools(this.#agentHost));
+  }
+
+  /** The running app, as the WebMCP tools see it (./agent-tools.ts): state and actions, never the DOM. */
+  #agentHost: AgentHost = {
+    user: () => this.user,
+    access: () => this.access,
+    title: () => this._title(),
+    navigation: () => [
+      { label: "Home", items: [{ label: "Dashboard", href: dashboardPath() }] },
+      ...this._groups().map((g) => ({
+        label: g.label,
+        items: g.items.map((i) => ({ label: text(i.label), href: i.href })),
+      })),
+    ],
+    switchUser: async (id) => {
+      const u = seedUsers.find((x) => x.id === id);
+      if (!u) return false;
+      await this._switchTo(u);
+      return true;
+    },
+    setPanel: async (panel, open) => {
+      await (panel === "aside" ? this._shell?.toggleAside(open) : this._shell?.toggleNav(open));
+    },
+    appearance: () => ({
+      theme: this._controller("theme")?.options() ?? { selected: "", choices: [] },
+      scheme: this._controller("scheme")?.options() ?? { selected: "", choices: [] },
+      background: this._controller("background")?.options() ?? { selected: "", choices: [] },
+    }),
+    setAppearance: async (kind, id) => (await this._controller(kind)?.select(id)) ?? false,
+  };
+
+  /** The header's theme controllers (signed in only). */
+  private _controller(kind: Appearance) {
+    return this.querySelector<HTMLElementTagNameMap["ui-theme-controller"]>(
+      `ui-theme-controller[as="${kind === "theme" ? "cycle" : kind}"]`,
+    );
   }
 
   /** Logged out: login (or create-first-user when there are no users). Logged in: away from those. */
@@ -452,6 +493,7 @@ export class DashboardApp extends LightElement {
       </ui-app-shell>
       ${toaster}
       <ui-contrast-audit></ui-contrast-audit>
+      <dashboard-agent></dashboard-agent>
       <dashboard-tour .userId=${user.id} .switchTo=${this._switchToId} .openPanel=${this._openPanel}></dashboard-tour>
     `;
   }

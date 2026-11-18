@@ -37,6 +37,7 @@ declare const self: {
   skipWaiting(): Promise<void>;
   addEventListener(type: "install" | "activate", listener: (event: ExtendableEvent) => void): void;
   addEventListener(type: "fetch", listener: (event: FetchEvent) => void): void;
+  addEventListener(type: "message", listener: (event: ExtendableEvent & { data: unknown }) => void): void;
 };
 
 const base = new URL(self.registration.scope).pathname; // e.g. "/" or "/mock/"
@@ -63,6 +64,12 @@ self.addEventListener("install", (event) =>
     })(),
   ),
 );
+
+// A page loaded with a hard reload ("Empty cache and hard reload", Shift+reload) starts without a
+// controller even though this worker is active; it asks to be taken over (src/cms/client.ts).
+self.addEventListener("message", (event) => {
+  if (event.data === "claim") event.waitUntil(self.clients.claim());
+});
 
 self.addEventListener("activate", (event) =>
   event.waitUntil(

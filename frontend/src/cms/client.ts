@@ -59,9 +59,23 @@ export function startMockBackend(): Promise<void> {
       updateViaCache: "none",
     });
     if (!navigator.serviceWorker.controller) {
-      await new Promise<void>((resolve) =>
+      const controlled = new Promise<void>((resolve) =>
         navigator.serviceWorker.addEventListener("controllerchange", () => resolve(), { once: true }),
       );
+      // First visit: the worker claims the page when it activates. A hard reload ("Empty cache and
+      // hard reload", Shift+reload) bypasses an already-active worker instead, and nothing would
+      // claim the page: ask it to. If the page still isn't controlled after a few seconds, a normal
+      // reload is (the browser hands normal loads to the active worker).
+      const active = (await navigator.serviceWorker.ready).active;
+      if (!navigator.serviceWorker.controller) active?.postMessage("claim");
+      const timedOut = await Promise.race([
+        controlled.then(() => false),
+        new Promise<boolean>((resolve) => setTimeout(resolve, 4000, true)),
+      ]);
+      if (timedOut && !navigator.serviceWorker.controller) {
+        location.reload();
+        await new Promise(() => {}); // the page is going away
+      }
     }
     keepUpToDate(registration);
   })();

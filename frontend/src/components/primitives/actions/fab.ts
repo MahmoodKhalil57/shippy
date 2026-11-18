@@ -5,6 +5,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { booleanAttribute, isOn, rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
 import { button, type ButtonVariants } from "./button.ts";
+import { iconSvg } from "../media/icon.ts";
 
 /**
  * FAB / Speed Dial: Floating button in a bottom corner that reveals extra
@@ -41,6 +42,24 @@ export const fabTooltip = rcva("tooltip", {
   },
 });
 
+/**
+ * `panel` mode: the button opens a floating glass panel above it (an assistant, a help chat) that
+ * stays open while the page is used, until closed. Header (title + close), a scrolling body
+ * (the children), and a footer (`slot="footer"`, e.g. a message box).
+ */
+export const fabDock = rcva(
+  "fixed end-4 bottom-4 z-[60] flex flex-col items-end gap-3 pointer-events-none [&>*]:pointer-events-auto",
+);
+export const fabPanel = rcva(
+  "liquid-glass flex h-[min(38rem,calc(100dvh-7rem))] w-[min(26rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-box origin-bottom-right transition-[opacity,scale] duration-(--duration-effects) ease-effects starting:scale-95 starting:opacity-0 motion-reduce:transition-none",
+);
+export const fabPanelHead = rcva("flex shrink-0 items-center gap-2 border-b border-base-content/10 px-4 py-2.5");
+export const fabPanelTitle = rcva("min-w-0 flex-1 truncate text-sm font-semibold");
+export const fabPanelBody = rcva(
+  "flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain px-4 py-3 [--scrollbar-inset:var(--radius-box)]",
+);
+export const fabPanelFooter = rcva("shrink-0 border-t border-base-content/10 px-3 py-2.5");
+
 export type FabVariants = VariantProps<typeof fab>;
 
 export interface FabAction {
@@ -67,6 +86,17 @@ export interface FabAction {
  * The trigger can be rich markup via `slot="trigger"`. Without `actions`, the
  * authored children are rendered as the speed-dial items. `ui-select`
  * (detail: { action, index }) fires on click; `mainAction` click fires `ui-main`.
+ *
+ * @example
+ * <ui-fab panel heading="Assistant" trigger-label="Open the assistant" .open=${open}
+ *   @ui-toggle=${(e) => (open = e.detail.open)}>
+ *   <ui-icon slot="trigger" name="sparkles"></ui-icon>
+ *   …messages…
+ *   <ui-flex slot="footer">…message box…</ui-flex>
+ * </ui-fab>
+ *
+ * `panel`: the button toggles a floating panel (`open`; `ui-toggle` with { open } on change). The
+ * body scrolls to its end when its content grows (a conversation).
  */
 @customElement("ui-fab")
 export class UiFab extends LightElement {
@@ -82,6 +112,58 @@ export class UiFab extends LightElement {
   /** Text for a `fab-close` replacement while open (true = no text). */
   @property() close: string | boolean = false;
   @property({ attribute: false }) mainAction?: FabAction;
+  /** Panel mode: the button opens a floating panel (see `fabPanel`). */
+  @property({ type: Boolean }) panel = false;
+  /** Panel mode: whether the panel is open. */
+  @property({ type: Boolean, reflect: true }) open = false;
+  /** Panel mode: the panel's title. */
+  @property() heading: Renderable = "";
+
+  private _toggle(open = !this.open) {
+    this.open = open;
+    this.dispatchEvent(new CustomEvent("ui-toggle", { detail: { open }, bubbles: true }));
+  }
+
+  /** Keep a conversation scrolled to its newest message. */
+  protected updated() {
+    if (!this.panel || !this.open) return;
+    const body = this.querySelector<HTMLElement>("[data-fab-body]");
+    if (body) body.scrollTop = body.scrollHeight;
+  }
+
+  private _renderPanel() {
+    const trigger = this.hasSlotted("trigger") ? this.slotted("trigger") : this.trigger;
+    return html`<div class=${fabDock()}>
+      ${
+        this.open
+          ? html`<section class=${fabPanel()} role="dialog" aria-label=${ifDefined(this.triggerLabel)}>
+              <header class=${fabPanelHead()}>
+                <span class=${fabPanelTitle()}>${this.heading}</span>
+                <button
+                  type="button"
+                  class=${button({ variant: "ghost", size: "sm", shape: "circle" })}
+                  aria-label="Close"
+                  @click=${() => this._toggle(false)}
+                >
+                  ${iconSvg("x", { size: "sm" })}
+                </button>
+              </header>
+              <div class=${fabPanelBody()} data-fab-body>${this.slotted()}</div>
+              ${this.hasSlotted("footer") ? html`<footer class=${fabPanelFooter()}>${this.slotted("footer")}</footer>` : nothing}
+            </section>`
+          : nothing
+      }
+      <button
+        type="button"
+        class=${button({ size: this.size, color: this.color, shape: "circle", class: "shadow-lg" })}
+        aria-label=${ifDefined(this.triggerLabel)}
+        aria-expanded=${this.open ? "true" : "false"}
+        @click=${() => this._toggle()}
+      >
+        ${trigger}
+      </button>
+    </div>`;
+  }
 
   private _btn(a: FabAction, onClick: () => void, extra = "") {
     const cls = button({
@@ -121,6 +203,7 @@ export class UiFab extends LightElement {
   }
 
   render() {
+    if (this.panel) return this._renderPanel();
     const triggerContent = this.hasSlotted("trigger") ? this.slotted("trigger") : this.trigger;
     const triggerCls = button({ size: this.size, color: this.color, shape: "circle" });
     const items = this.actions.length ? this.actions.map((a, i) => this._action(a, i)) : this.slotted();

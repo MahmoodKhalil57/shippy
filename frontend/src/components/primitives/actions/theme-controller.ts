@@ -249,6 +249,47 @@ export class UiThemeController extends LightElement {
     this.dispatchEvent(new CustomEvent("ui-change", { detail: { theme }, bubbles: true }));
   }
 
+  /**
+   * The choices this controller offers, for code (an agent's tools): `cycle` themes, `scheme`
+   * colour schemes or `background` images (with `none`), and which one is selected.
+   */
+  options(): { selected: string; choices: { id: string; label: string }[] } {
+    const choices =
+      this.as === "cycle"
+        ? CYCLE.map((id) => ({ id, label: id }))
+        : this.as === "scheme"
+          ? [{ id: "default", label: "Default" }, ...this.schemes.map((s) => ({ id: s.id, label: s.label }))]
+          : this.as === "background"
+            ? [{ id: "none", label: "No image" }, ...this.backgrounds.map((b) => ({ id: b.id, label: b.label }))]
+            : this.themes.map((id) => ({ id, label: id }));
+    const none = this.as === "background" ? "none" : this.as === "cycle" ? "system" : "default";
+    return { selected: this.value || none, choices };
+  }
+
+  /**
+   * Select a choice from code, exactly as picking it would (applied, remembered, `ui-change`;
+   * a new background keeps its reveal). Returns false when `id` isn't one of `options()`.
+   */
+  async select(id: string): Promise<boolean> {
+    if (!this.options().choices.some((c) => c.id === id)) return false;
+    if (this.as === "background") {
+      const src = id === "none" ? null : (this.backgrounds.find((b) => b.id === id)?.src ?? null);
+      await this._pickBackground(new MouseEvent("click"), id, src);
+    } else if (this.as === "scheme") {
+      applyScheme(id);
+      this.value = id;
+      this._changed(id);
+    } else if (this.as === "cycle") {
+      applyTheme(id);
+      this.value = id;
+      this._changed(id);
+    } else {
+      this.value = id;
+      this._changed(id);
+    }
+    return true;
+  }
+
   /** A theme reveal is playing; clicks wait until it's done. */
   #revealing = false;
 
@@ -308,7 +349,7 @@ export class UiThemeController extends LightElement {
   /** `background`: show an image (or none), revealed from the click point; the picker closes. */
   private _pickBackground(e: MouseEvent, id: string, src: string | null) {
     const from = (e.currentTarget as HTMLElement | null) ?? this;
-    void this._reveal(e, from, () => {
+    return this._reveal(e, from, () => {
       (document.activeElement as HTMLElement | null)?.blur();
       applyBackground(src);
       if (this.persist) {
@@ -330,7 +371,7 @@ export class UiThemeController extends LightElement {
     input.value = "";
     if (!file?.type.startsWith("image/")) return;
     const src = await shrinkImage(file);
-    this._pickBackground(new MouseEvent("click"), "custom", src);
+    await this._pickBackground(new MouseEvent("click"), "custom", src);
   }
 
   private _backgroundMenu() {

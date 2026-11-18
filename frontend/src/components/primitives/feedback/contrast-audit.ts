@@ -186,6 +186,11 @@ export class UiContrastAudit extends LightElement {
     cancelAnimationFrame(this.#frame);
   }
 
+  /** Audit the page without showing anything (for code, e.g. an agent's tool): the failures, worst first. */
+  measure(): ContrastIssue[] {
+    return auditContrast();
+  }
+
   /** Audit the page now (closes any open dialog-free overlay first). */
   run() {
     this.issues = null;

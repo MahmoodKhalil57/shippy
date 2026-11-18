@@ -71,6 +71,8 @@ export const text = rcva("", {
     mono: { true: "font-mono" },
     italic: { true: "italic" },
     uppercase: { true: "uppercase" },
+    /** Keep the text's own line breaks and wrap long words (messages, generated answers). */
+    "pre-line": { true: "whitespace-pre-line [overflow-wrap:anywhere]" },
     /** A search match inside a result (with `as="mark"`). */
     highlight: { true: "rounded-sm bg-primary/20 px-0.5 text-primary" },
   },
@@ -111,6 +113,7 @@ export class UiText extends LightElement {
   @property({ converter: responsiveBoolean }) italic: Responsive<boolean> = false;
   @property({ converter: responsiveBoolean }) uppercase: Responsive<boolean> = false;
   @property({ converter: responsiveBoolean }) highlight: Responsive<boolean> = false;
+  @property({ attribute: "pre-line", converter: responsiveBoolean }) preLine: Responsive<boolean> = false;
 
   render() {
     const tag = TEXT_TAGS[this.as] ?? TEXT_TAGS.p;
@@ -126,6 +129,7 @@ export class UiText extends LightElement {
       italic: this.italic,
       uppercase: this.uppercase,
       highlight: this.highlight,
+      "pre-line": this.preLine,
     });
     return html`<${tag} class=${cls}>${this.content}</${tag}>`;
   }

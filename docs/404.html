@@ -11,6 +11,11 @@
       name="description"
       content="Golden Sea marine supply: sourcing, quotations, fulfilment and finance in one workspace."
     />
+    <!-- The Golden Sea helper (bottom right) runs on an OpenAI Codex model (src/agent/codex.ts). A
+         developer adds an API key here when running locally. Never commit or deploy a real key:
+         this page is published as is (docs/). -->
+    <meta name="openai-api-key" content="" />
+    <meta name="openai-model" content="gpt-5-codex" />
     <link rel="apple-touch-icon" href="/shippy/icons/apple-touch-icon.png" />
     <title>Golden Sea</title>
     <!-- Apply the saved theme and colour scheme (ui-theme-controller) before the first paint. -->
@@ -28,8 +33,8 @@
       // Liquid glass refraction (SVG filters in backdrop-filter) is drawn by Chromium only.
       if (navigator.userAgentData) document.documentElement.dataset.glass = "refract";
     </script>
-    <script type="module" crossorigin src="/shippy/assets/index-CV0q-TTo.js"></script>
-    <link rel="stylesheet" crossorigin href="/shippy/assets/index-BLVSwaMD.css">
+    <script type="module" crossorigin src="/shippy/assets/index-CCsjq5bF.js"></script>
+    <link rel="stylesheet" crossorigin href="/shippy/assets/index-M5cIYcMf.css">
   </head>
   <body>
     <!-- The liquid-glass material's refraction (src/styles/theme.css): soft fractal noise, lit and
