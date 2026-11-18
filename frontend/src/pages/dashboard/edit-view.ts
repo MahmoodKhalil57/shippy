@@ -7,6 +7,7 @@ import type { Doc, FieldLike } from "../../cms/types.ts";
 import { setIn, type DocFormChange, type RelationOption } from "../../components/composed/forms/doc-form.ts";
 import "../../components/index.ts";
 import type { Access } from "./app.ts";
+import { viewElement } from "./views.ts";
 import {
   dashboardPath,
   collectionOf,
@@ -14,6 +15,7 @@ import {
   formatDate,
   formFields,
   globalLabel,
+  editTabs,
   globalOf,
   labels,
   navigate,
@@ -82,6 +84,9 @@ export class DashboardEditView extends LightElement {
   @property() docId = "";
   @property() globalSlug = "";
   @property({ attribute: false }) access!: Access;
+  @property({ attribute: false }) user: (Doc & { collection: string }) | null = null;
+  /** A custom edit tab (`admin.components.views.edit.<key>`) to show instead of the form. */
+  @property() tab = "";
 
   @state() private doc: Doc | null = null;
   @state() private value: Data = {};
@@ -264,6 +269,34 @@ export class DashboardEditView extends LightElement {
         ? `${API_ROUTE}/${this.slug}/${encodeURIComponent(this.docId)}`
         : "";
 
+    // Custom edit tabs (e.g. the case workspace): "Details" is the form, the rest are views.
+    const tabs = c && this.docId ? editTabs(c) : [];
+    const base = c && this.docId ? dashboardPath("collections", c.slug, this.docId) : "";
+    const tabBar = tabs.length
+      ? html`<ui-tabs
+          variant="border"
+          label=${`${heading} sections`}
+          .active=${this.tab ? tabs.findIndex((t) => t.key === this.tab) + 1 : 0}
+          .items=${[{ label: "Details", href: base }, ...tabs.map((t) => ({ label: t.label, href: `${base}${t.path}` }))]}
+        ></ui-tabs>`
+      : nothing;
+    const active = tabs.find((t) => t.key === this.tab);
+    if (active && this.user) {
+      const el = viewElement(active.Component, {
+        access: this.access,
+        user: this.user,
+        slug: c!.slug,
+        docId: this.docId,
+      });
+      return html`<ui-flex direction="col" gap="6">
+        <ui-flex direction="col" gap="1">
+          <ui-breadcrumbs .items=${crumbs}></ui-breadcrumbs>
+          <ui-heading level="1" size="page">${heading}</ui-heading>
+        </ui-flex>
+        ${tabBar} ${el ?? html`<ui-alert color="info" heading=${active.label}>This screen is loading.</ui-alert>`}
+      </ui-flex>`;
+    }
+
     const side = html`<ui-flex direction="col" gap="4">
       ${c?.upload ? this._upload() : nothing} ${sidebar.length ? this._form(sidebar, readonly) : nothing}
       ${
@@ -332,7 +365,7 @@ export class DashboardEditView extends LightElement {
             ? html`<ui-text color="muted">${c.admin.description}</ui-text>`
             : nothing
         }
-
+        ${tabBar}
         <ui-grid
           sidebar
           gap="8"

@@ -81,5 +81,50 @@
     "categories": ["Chemicals", "Safety & PPE"],
     "status": "Approved",
     "currency": "EGP"
+  },
+  {
+    "id": "S11",
+    "name": "Nile Lubricants",
+    "city": "Alexandria",
+    "country": "Egypt",
+    "categories": ["Lubricants"],
+    "status": "Approved",
+    "replyHrs": 8,
+    "onTime": 91,
+    "terms": "30 days",
+    "contact": "Amr N. · sales@nile-lube.example",
+    "emailDomain": "nile-lube.example",
+    "kind": "local",
+    "currency": "EGP"
+  },
+  {
+    "id": "S12",
+    "name": "Red Sea Safety",
+    "city": "Suez",
+    "country": "Egypt",
+    "categories": ["Safety & PPE"],
+    "status": "Approved",
+    "replyHrs": 5,
+    "onTime": 96,
+    "terms": "Cash",
+    "contact": "Mona K. · rfq@redsea-safety.example",
+    "emailDomain": "redsea-safety.example",
+    "kind": "local",
+    "currency": "EGP"
+  },
+  {
+    "id": "S13",
+    "name": "Canal Marine Ropes",
+    "city": "Port Said",
+    "country": "Egypt",
+    "categories": ["Deck stores"],
+    "status": "Approved",
+    "replyHrs": 12,
+    "onTime": 88,
+    "terms": "Cash",
+    "contact": "Tarek F. · sales@canal-ropes.example",
+    "emailDomain": "canal-ropes.example",
+    "kind": "local",
+    "currency": "EGP"
   }
 ]

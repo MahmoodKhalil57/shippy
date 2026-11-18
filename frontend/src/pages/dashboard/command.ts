@@ -6,14 +6,7 @@ import { LightElement } from "../../components/base/light-element.ts";
 import type { IconName } from "../../components/primitives/media/icon.ts";
 import type { MenuItem } from "../../components/primitives/navigation/menu.ts";
 import "../../components/index.ts";
-import {
-  StoreController,
-  closePalette,
-  isBookmarked,
-  openPalette,
-  palette,
-  toggleBookmark,
-} from "../../stores/index.ts";
+import { StoreController, closePalette, isBookmarked, openPalette, palette } from "../../stores/index.ts";
 import type { Access } from "./app.ts";
 import { highlightParts, search, type EntryKind, type SearchEntry, type SearchHit } from "./command-search.ts";
 import {
@@ -27,6 +20,7 @@ import {
   labels,
   navigate,
   titleOf,
+  toggleBookmark,
   useAsTitle,
 } from "./shared.ts";
 

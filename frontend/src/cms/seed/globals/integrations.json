@@ -4,31 +4,73 @@
       "kind": "Outlook mailbox",
       "account": "sales@",
       "status": "Connected",
-      "pollEveryMinutes": 2
+      "pollEveryMinutes": 2,
+      "lastSyncAt": "2026-11-17T09:28:00.000Z",
+      "tokenExpiresAt": "2027-02-10T00:00:00.000Z",
+      "emailsImported": 1840,
+      "notes": "Microsoft 365 OAuth · attachments kept on the case"
     },
     {
       "kind": "Outlook mailbox",
       "account": "purchasing@",
-      "status": "Token expired"
+      "status": "Token expired",
+      "pollEveryMinutes": 2,
+      "lastSyncAt": "2026-11-17T06:10:00.000Z",
+      "tokenExpiresAt": "2026-11-17T06:12:00.000Z",
+      "emailsImported": 1312,
+      "notes": "12 emails waiting since 06:12 — reconnect to resume"
     },
     {
       "kind": "Gmail mailbox",
       "account": "purchasing intake",
-      "status": "Connected"
+      "status": "Connected",
+      "pollEveryMinutes": 5,
+      "lastSyncAt": "2026-11-17T09:25:00.000Z",
+      "tokenExpiresAt": "2027-05-14T00:00:00.000Z",
+      "emailsImported": 406,
+      "notes": "Google OAuth · previously discussed intake, verified 14 Nov"
     },
     {
       "kind": "Website form",
       "account": "Request a quick quote",
-      "status": "To connect"
+      "status": "Connected",
+      "lastSyncAt": "2026-11-17T06:40:00.000Z",
+      "emailsImported": 37,
+      "notes": "Form creates a draft case; falls back to an email to sales@"
+    },
+    {
+      "kind": "WhatsApp",
+      "account": "+20 3 000 0000 (Golden Sea)",
+      "status": "Manual",
+      "notes": "Messages logged on the case with screenshot + who logged it; WhatsApp Business API optional later"
     },
     {
       "kind": "AI extraction",
+      "account": "Server-side LLM with vision",
       "status": "Sandbox",
-      "notes": "Server-side LLM with vision; confidence + audit log"
+      "notes": "Confidence on every value; every call in the audit log; drafts only"
     },
     {
       "kind": "E-invoicing (tax authority)",
-      "status": "Sandbox"
+      "account": "Egyptian Tax Authority (ETA) · Golden Sea tax ID 000-000-000",
+      "status": "Sandbox",
+      "lastSyncAt": "2026-11-16T18:40:00.000Z",
+      "tokenExpiresAt": "2027-09-30T00:00:00.000Z",
+      "notes": "Odoo Egypt localisation · signing token set up with finance"
+    },
+    {
+      "kind": "Odoo",
+      "account": "Odoo 19 Enterprise · Odoo.sh",
+      "status": "Staging",
+      "lastSyncAt": "2026-11-17T09:00:00.000Z",
+      "modules": "CRM, Sales, Purchase, Contacts, Inventory, Accounting",
+      "notes": "Odoo for the books, SaaSTEMLY for the way you work"
+    },
+    {
+      "kind": "Document storage",
+      "account": "Odoo Documents",
+      "status": "Connected",
+      "notes": "One folder per case: RFQ files, offers, certificates, proofs of delivery"
     }
   ],
   "emailImport": {
@@ -40,5 +82,13 @@
     "exceptions": 9,
     "confidential": 23,
     "excludeConfidential": true
+  },
+  "backups": {
+    "schedule": "Daily 02:00 Cairo",
+    "locations": 3,
+    "retentionDays": 30,
+    "lastBackupAt": "2026-11-17T00:00:00.000Z",
+    "restoreTestedAt": "2026-11-12T00:00:00.000Z",
+    "stagingRefreshedAt": "2026-11-15T22:00:00.000Z"
   }
 }

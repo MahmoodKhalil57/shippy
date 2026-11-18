@@ -31,6 +31,17 @@ export const Users: CollectionConfig = {
       ],
     },
     {
+      name: "language",
+      type: "select",
+      label: "Language",
+      defaultValue: "en",
+      options: [
+        { label: "English", value: "en" },
+        { label: "العربية (Arabic)", value: "ar" },
+      ],
+      admin: { position: "sidebar", description: "Dashboard language for this person." },
+    },
+    {
       name: "notifications",
       type: "group",
       fields: [

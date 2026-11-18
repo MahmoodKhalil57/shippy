@@ -19,6 +19,18 @@ export const Quotations: CollectionConfig = {
     useAsTitle: "number",
     defaultColumns: ["number", "case", "version", "status", "totalExVat", "currency", "validUntil"],
     group: "Commercial",
+    // The quotation as the customer receives it (Payload custom edit view).
+    components: {
+      views: {
+        edit: {
+          preview: {
+            Component: "gs-quote-preview",
+            path: "/preview",
+            tab: { label: "Preview & send", href: "/preview" },
+          },
+        },
+      },
+    },
   },
   access: deskAccess,
   hooks: {
@@ -190,7 +202,12 @@ export const Quotations: CollectionConfig = {
       options: ["Draft", "Awaiting approval", "Approved", "Returned", "Submitted", "Superseded"],
       admin: { position: "sidebar" },
     },
-    { name: "decision", type: "select", options: QUOTE_DECISIONS, admin: { position: "sidebar" } },
+    {
+      name: "decision",
+      type: "select",
+      options: [...QUOTE_DECISIONS, "Partially won"],
+      admin: { position: "sidebar" },
+    },
     { name: "preparedBy", type: "relationship", relationTo: "users", admin: { position: "sidebar" } },
     { name: "approvedBy", type: "relationship", relationTo: "users", admin: { position: "sidebar", readOnly: true } },
   ],

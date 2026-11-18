@@ -1,0 +1,322 @@
+[
+  {
+    "id": "n-ky-1",
+    "user": "ky",
+    "kind": "Reply",
+    "title": "Mare Nostrum: corrected offer received (RAL 7038)",
+    "detail": "GS-RFQ-0140 · line 4 can be priced again",
+    "href": "/collections/cases/gs-rfq-0140",
+    "at": "2026-11-17T08:52:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-ky-2",
+    "user": "ky",
+    "kind": "Reminder",
+    "title": "Port Said Welding hasn't replied",
+    "detail": "GS-SRFQ-0142-E · reminder 2 goes out at 15:00",
+    "href": "/collections/supplier-rfqs/srfq-0142-e",
+    "at": "2026-11-17T08:30:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-ky-3",
+    "user": "ky",
+    "kind": "Alert",
+    "title": "Customer PO mismatch on GS-RFQ-0136",
+    "detail": "Line 3 uses the expired v1 price — commitment blocked",
+    "href": "/collections/cases/gs-rfq-0136",
+    "at": "2026-11-17T07:45:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-ky-4",
+    "user": "ky",
+    "kind": "Reply",
+    "title": "Capt. Erik forwarded the Aurora Crest requisition",
+    "detail": "Matched to GS-RFQ-0142 by message thread",
+    "href": "/collections/intake-messages/msg-nordvik-fw",
+    "at": "2026-11-16T17:10:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-ky-5",
+    "user": "ky",
+    "kind": "Update",
+    "title": "Soaad Amer is your backup on GS-RFQ-0142",
+    "detail": "Handover note added",
+    "href": "/collections/cases/gs-rfq-0142",
+    "at": "2026-11-16T15:02:00.000Z",
+    "read": true
+  },
+  {
+    "id": "n-kb-1",
+    "user": "kb",
+    "kind": "Approval",
+    "title": "Margin exception: Mare Nostrum quote v2 at 12.4%",
+    "detail": "Requested by Soaad Amer · policy minimum 15%",
+    "href": "/collections/approvals/ap-margin-0137",
+    "at": "2026-11-17T08:40:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-kb-2",
+    "user": "kb",
+    "kind": "Approval",
+    "title": "Bank change for Port Said Welding needs your second approval",
+    "detail": "Mohamed Helmy approved after the call-back",
+    "href": "/collections/approvals/ap-bank-s3",
+    "at": "2026-11-17T09:12:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-kb-3",
+    "user": "kb",
+    "kind": "Approval",
+    "title": "Supplier deposit: 50% advance to Delta Marine Stores",
+    "detail": "EGP 96,400 · requested by Ahmedy",
+    "href": "/collections/approvals/ap-deposit-0133",
+    "at": "2026-11-16T16:20:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-kb-4",
+    "user": "kb",
+    "kind": "Approval",
+    "title": "New USD rate 48.95 (from 48.60)",
+    "detail": "Proposed by Ahmedy for this week's quotes",
+    "href": "/collections/approvals/ap-fx-usd",
+    "at": "2026-11-17T07:05:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-kb-5",
+    "user": "kb",
+    "kind": "Alert",
+    "title": "Two quotes are past their deadline",
+    "detail": "DOS Falcon (GS-RFQ-0135) and MT Atlas Pearl (GS-RFQ-0139)",
+    "href": "/collections/cases",
+    "at": "2026-11-17T07:00:00.000Z",
+    "read": true
+  },
+  {
+    "id": "n-sa-1",
+    "user": "sa",
+    "kind": "Update",
+    "title": "Your margin exception is with Karim Balbaa",
+    "detail": "Quote v2 to Mare Nostrum · 12.4% vs 15% minimum",
+    "href": "/collections/approvals/ap-margin-0137",
+    "at": "2026-11-17T08:41:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-sa-2",
+    "user": "sa",
+    "kind": "Reply",
+    "title": "Helios Bulk sent a new urgent RFQ",
+    "detail": "MV Helios Star · engine stores · in the inbox",
+    "href": "/collections/intake-messages/msg-helios-star",
+    "at": "2026-11-17T09:48:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-sa-3",
+    "user": "sa",
+    "kind": "Reminder",
+    "title": "Baltic Reefer: quote MV Polar Bay by tomorrow",
+    "detail": "Pipeline next step",
+    "href": "/collections/opportunities/op-baltic",
+    "at": "2026-11-17T07:00:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-sa-4",
+    "user": "sa",
+    "kind": "Alert",
+    "title": "DOS Falcon quote is 6 days overdue",
+    "detail": "GS-RFQ-0135 · prepare v2 with the ESAB alternative",
+    "href": "/collections/cases/gs-rfq-0135",
+    "at": "2026-11-17T07:00:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-sa-5",
+    "user": "sa",
+    "kind": "Update",
+    "title": "Quick-quote request from the website",
+    "detail": "Petro Delta · Lalizas life jackets for the Abu Qir rig",
+    "href": "/collections/intake-messages/msg-web-petro",
+    "at": "2026-11-16T19:32:00.000Z",
+    "read": true
+  },
+  {
+    "id": "n-ah-1",
+    "user": "ah",
+    "kind": "Alert",
+    "title": "Outlook: purchasing@ mailbox token expired",
+    "detail": "12 emails not imported yet · safe retry available",
+    "href": "/collections/integration-exceptions/ex-outlook",
+    "at": "2026-11-17T06:12:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-ah-2",
+    "user": "ah",
+    "kind": "Alert",
+    "title": "E-invoice INV/2026/0419 not submitted",
+    "detail": "Signature service unreachable · retry queued",
+    "href": "/collections/integration-exceptions/ex-eta",
+    "at": "2026-11-17T06:40:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-ah-3",
+    "user": "ah",
+    "kind": "Update",
+    "title": "DN-0001 dispatched to DOS Falcon",
+    "detail": "Drop 1 of 2 · proof of delivery still missing",
+    "href": "/collections/deliveries/dn-0133-1",
+    "at": "2026-11-14T08:30:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-ah-4",
+    "user": "ah",
+    "kind": "Approval",
+    "title": "Your deposit request is waiting for approval",
+    "detail": "Delta Marine Stores · EGP 96,400",
+    "href": "/collections/approvals/ap-deposit-0133",
+    "at": "2026-11-16T16:21:00.000Z",
+    "read": true
+  },
+  {
+    "id": "n-ah-5",
+    "user": "ah",
+    "kind": "Payment",
+    "title": "Helios Bulk paid USD 10,000",
+    "detail": "TRX-77120 reconciled to INV/2026/0412",
+    "href": "/collections/payments/pay-helios-1",
+    "at": "2026-11-12T11:05:00.000Z",
+    "read": true
+  },
+  {
+    "id": "n-mh-1",
+    "user": "mh",
+    "kind": "Approval",
+    "title": "Supplier deposit: 50% advance to Delta Marine Stores",
+    "detail": "EGP 96,400 · two-person approval with Karim Balbaa",
+    "href": "/collections/approvals/ap-deposit-0133",
+    "at": "2026-11-16T16:20:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-mh-2",
+    "user": "mh",
+    "kind": "Update",
+    "title": "Bank change: your approval is recorded",
+    "detail": "Waiting for Karim Balbaa's second approval",
+    "href": "/collections/approvals/ap-bank-s3",
+    "at": "2026-11-17T09:10:00.000Z",
+    "read": true
+  },
+  {
+    "id": "n-mh-3",
+    "user": "mh",
+    "kind": "Payment",
+    "title": "Helios Bulk paid USD 10,000",
+    "detail": "USD 4,200 balance due 30 Nov",
+    "href": "/collections/invoices/inv-0412",
+    "at": "2026-11-12T11:05:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-mh-4",
+    "user": "mh",
+    "kind": "Alert",
+    "title": "E-invoice INV/2026/0419 not submitted to the tax authority",
+    "detail": "Signature service unreachable",
+    "href": "/collections/integration-exceptions/ex-eta",
+    "at": "2026-11-17T06:40:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-em-1",
+    "user": "em",
+    "kind": "Reply",
+    "title": "4 new messages to file",
+    "detail": "Helios Bulk, Petro Delta, Capt. Erik, Delta Marine Stores",
+    "href": "/collections/intake-messages",
+    "at": "2026-11-17T09:50:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-em-2",
+    "user": "em",
+    "kind": "Alert",
+    "title": "Delta Marine reply needs review",
+    "detail": "\"prices as requested\" — AI isn't sure which case it belongs to",
+    "href": "/collections/intake-messages/msg-delta-uncertain",
+    "at": "2026-11-17T08:15:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-em-3",
+    "user": "em",
+    "kind": "Reminder",
+    "title": "Spares for MV Aurora Crest arrive by DHL",
+    "detail": "AWB 41 2233 9081 · clear and deliver with the stores",
+    "href": "/collections/intake-messages/msg-awb",
+    "at": "2026-11-16T14:00:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-em-4",
+    "user": "em",
+    "kind": "Alert",
+    "title": "Outlook: purchasing@ mailbox token expired",
+    "detail": "12 emails not imported yet",
+    "href": "/collections/integration-exceptions/ex-outlook",
+    "at": "2026-11-17T06:12:00.000Z",
+    "read": true
+  },
+  {
+    "id": "n-ne-1",
+    "user": "ne",
+    "kind": "Reply",
+    "title": "4 new messages to file",
+    "detail": "Helios Bulk, Petro Delta, Capt. Erik, Delta Marine Stores",
+    "href": "/collections/intake-messages",
+    "at": "2026-11-17T09:50:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-ne-2",
+    "user": "ne",
+    "kind": "Alert",
+    "title": "Delta Marine reply needs review",
+    "detail": "\"prices as requested\" — AI isn't sure which case it belongs to",
+    "href": "/collections/intake-messages/msg-delta-uncertain",
+    "at": "2026-11-17T08:15:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-ne-3",
+    "user": "ne",
+    "kind": "Reminder",
+    "title": "Spares for MV Aurora Crest arrive by DHL",
+    "detail": "AWB 41 2233 9081 · clear and deliver with the stores",
+    "href": "/collections/intake-messages/msg-awb",
+    "at": "2026-11-16T14:00:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-ne-4",
+    "user": "ne",
+    "kind": "Alert",
+    "title": "Outlook: purchasing@ mailbox token expired",
+    "detail": "12 emails not imported yet",
+    "href": "/collections/integration-exceptions/ex-outlook",
+    "at": "2026-11-17T06:12:00.000Z",
+    "read": true
+  }
+]

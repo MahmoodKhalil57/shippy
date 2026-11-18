@@ -6,6 +6,9 @@
     "summary": "purchasing@ mailbox token expired",
     "impact": "12 emails not yet imported",
     "idempotencyKey": "mailbox:purchasing@",
+    "payload": { "pending": 12, "alreadyLinked": 0 },
+    "retries": 3,
+    "lastRetryAt": "2026-11-17T06:20:00.000Z",
     "status": "Open"
   },
   {
@@ -15,6 +18,9 @@
     "summary": "INV/2026/0419 — signature service unreachable",
     "impact": "Invoice not submitted to tax authority",
     "idempotencyKey": "invoice:INV/2026/0419",
+    "payload": { "submitted": false },
+    "retries": 3,
+    "lastRetryAt": "2026-11-16T19:10:00.000Z",
     "status": "Open"
   },
   {
@@ -25,5 +31,15 @@
     "impact": "None — no new case, no second acknowledgement",
     "idempotencyKey": "<n2@nordvik.example>",
     "status": "Auto-resolved"
+  },
+  {
+    "id": "ex-ai-polarbay",
+    "occurredAt": "2026-11-15T14:22:00.000Z",
+    "source": "AI extraction",
+    "summary": "Low confidence on 3 fields (PolarBay .docx)",
+    "impact": "Fields left blank for review — nothing overwritten",
+    "idempotencyKey": "attachment:polarbay-req-1115.docx",
+    "payload": { "fields": ["IMPA line 4", "Unit line 7", "Delivery date"], "confidence": [0.62, 0.55, 0.7] },
+    "status": "Waiting for review"
   }
 ]

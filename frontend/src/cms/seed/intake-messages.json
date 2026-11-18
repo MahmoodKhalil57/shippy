@@ -7,10 +7,18 @@
     "from": "purchasing@helios-bulk.example",
     "fromName": "Helios Bulk Carriers",
     "subject": "RFQ – MV Helios Star – engine stores – urgent",
-    "body": "Please quote the following for MV Helios Star (IMO 9811204), ETA Suez 19 Nov…",
+    "body": "Dear Golden Sea team,\n\nPlease quote the following for MV Helios Star (IMO 9811204), ETA Suez 19 Nov, northbound transit. Quotation needed by 18 Nov 12:00.\n\n1. Mechanical seal for main SW pump, Grundfos NB 65-200, part 96534915 – 2 pcs\n2. V-belt SPB 2360 – 6 pcs\n3. Rags, white cotton – 50 kg\n4. Hand cleaner gel, 4.5 L – 4 cans\n5. Thermometer bi-metal 0–120 °C, 100 mm dial – 2 pcs\n\nOriginal brand only for item 1. See attached spec sheet.\n\nBest regards,\nChief Engineer / Purchasing",
     "messageId": "<a1@helios-bulk.example>",
     "classification": "New RFQ",
-    "status": "New"
+    "status": "New",
+    "files": [
+      {
+        "name": "HeliosStar_engine_stores_RFQ.xlsx",
+        "kind": "Excel",
+        "note": "5 lines"
+      }
+    ],
+    "scenario": "helios-star"
   },
   {
     "id": "msg-horizon-reply",
@@ -20,14 +28,16 @@
     "from": "sales@horizon-trading.example",
     "fromName": "Horizon Trading",
     "subject": "RE: Price enquiry – belt grip spray",
-    "body": "CRC Belt Grip 400 ml: USD 9.80 / can, 24 cans available ex-stock Damietta…",
+    "body": "Hello,\n\nThank you for your enquiry ref GS-SRFQ-0142-C.\nCRC Belt Grip 400 ml: USD 9.80 / can, 24 cans available ex-stock Damietta.\nDelivery 2 days. Valid until 26 Nov. Payment 50% advance.\n\nRegards,\nHorizon Trading",
     "messageId": "<h1@horizon-trading.example>",
     "classification": "Supplier reply",
     "status": "Linked",
     "match": {
       "case": "gs-rfq-0142",
+      "supplierRfq": "srfq-0142-c",
+      "reference": "GS-SRFQ-0142-C",
       "confidence": 0.99,
-      "basis": "Supplier RFQ reference GS-SRFQ-0142-C in body"
+      "basis": "Reference GS-SRFQ-0142-C found in the body\nSubject changed (“RE: Price enquiry – belt grip spray”) — matched by reference, not by subject\nSender horizon-trading.example was not in the supplier list — supplier created automatically"
     }
   },
   {
@@ -43,8 +53,28 @@
     "status": "Needs review",
     "match": {
       "confidence": 0.62,
-      "basis": "No reference; 4/5 lines resemble GS-RFQ-0142; supplier also invited on GS-RFQ-0140"
-    }
+      "basis": "No supplier-RFQ reference in subject or body\nSubject changed (“prices as requested”)\nSender domain delta-marine.example = Delta Marine Stores, invited on GS-RFQ-0142 and GS-RFQ-0140\n4 of 5 lines resemble GS-RFQ-0142",
+      "candidates": [
+        {
+          "case": "gs-rfq-0142",
+          "confidence": 0.62,
+          "reason": "4 of 5 offered lines resemble GS-RFQ-0142 (GS-SRFQ-0142-A)"
+        },
+        {
+          "case": "gs-rfq-0140",
+          "confidence": 0.38,
+          "reason": "Delta Marine was also asked on GS-RFQ-0140"
+        }
+      ]
+    },
+    "body": "Hi Karim, see attached our prices as discussed on the phone. Rgds Hany",
+    "files": [
+      {
+        "name": "DMS_quote_1611.pdf",
+        "kind": "PDF",
+        "note": "1 page"
+      }
+    ]
   },
   {
     "id": "msg-nordvik-fw",
@@ -61,8 +91,16 @@
     "match": {
       "case": "gs-rfq-0142",
       "confidence": 1,
-      "basis": "Same customer ref + attachment hash"
-    }
+      "basis": "Same customer reference NSM-REQ-55821 and identical attachment hash as the original\nAlready linked to GS-RFQ-0142 — no new case, no second acknowledgement"
+    },
+    "body": "(forwarded copy of the original RFQ already received 15 Nov 09:12)\n\n---------- Forwarded message ----------\nRFQ NSM-REQ-55821 — MV Aurora Crest, Port Said, ETA 21 Nov.",
+    "files": [
+      {
+        "name": "NSM-REQ-55821.pdf",
+        "kind": "PDF",
+        "note": "identical to the original"
+      }
+    ]
   },
   {
     "id": "msg-web-petro",
@@ -71,10 +109,11 @@
     "from": "purchasing@petro-delta.example",
     "fromName": "Hossam R. (Petro Delta)",
     "subject": "Quick quote — Lalizas life jackets & lifebuoys, Abu Qir rig",
-    "body": "Need 30 SOLAS life jackets (Lalizas preferred) and 6 lifebuoys…",
+    "body": "Name: Hossam R.\nCompany: Petro Delta\nDelivery: Platform PD-3, offshore Abu Qir (supply boat), 24 Nov\n\nItems: Need 30 SOLAS life jackets (Lalizas preferred) and 6 lifebuoys with light and smoke signal.\n\nPhone: +20 3 000 0000",
     "messageId": "web-form-20261117-0640",
     "classification": "New RFQ",
-    "status": "New"
+    "status": "New",
+    "scenario": "petro-web"
   },
   {
     "id": "msg-awb",
@@ -86,6 +125,59 @@
     "subject": "Spares for MV Aurora Crest — DHL AWB 41 2233 9081 — please clear & deliver with stores",
     "messageId": "<e5@nordvik.example>",
     "classification": "Service request",
-    "status": "New"
+    "status": "New",
+    "body": "Dear Golden Sea,\n\nOwner's spares for MV Aurora Crest are on DHL AWB 41 2233 9081, arriving Cairo airport 19 Nov. Please clear them as ship spares in transit and deliver on board together with the stores you are supplying for our Port Said call.\n\nBest regards,\nCapt. Erik H., Superintendent",
+    "files": [
+      {
+        "name": "AWB_41-2233-9081.pdf",
+        "kind": "PDF",
+        "note": "air waybill"
+      }
+    ],
+    "scenario": "aurora-awb"
+  },
+  {
+    "id": "msg-baltic-word",
+    "channel": "Email",
+    "mailbox": "Gmail · purchasing intake",
+    "receivedAt": "2026-11-17T08:31:00.000Z",
+    "from": "procurement@baltic-reefer.example",
+    "fromName": "Baltic Reefer Management",
+    "subject": "Inquiry MV Polar Bay – provisions & cabin stores",
+    "body": "Good day,\n\nKindly find attached our requisition (Word) for MV Polar Bay, calling Alexandria approx. 26 Nov.\nPlease quote in EUR, delivered on board.\n\nRegards,\nSuperintendent",
+    "files": [
+      {
+        "name": "PolarBay_requisition_Nov.docx",
+        "kind": "Word",
+        "note": "3 lines"
+      }
+    ],
+    "messageId": "<b4@baltic-reefer.example>",
+    "classification": "New RFQ",
+    "status": "New",
+    "scenario": "baltic-word",
+    "source": "Live"
+  },
+  {
+    "id": "msg-atlas-whatsapp",
+    "channel": "WhatsApp",
+    "mailbox": "forwarded by Karim Youssef",
+    "receivedAt": "2026-11-17T07:55:00.000Z",
+    "from": "WhatsApp · +30 69 0000 0000",
+    "fromName": "Capt. Nikos (Atlas Tankers)",
+    "subject": "Photo of requisition list (WhatsApp)",
+    "body": "[Image: handwritten requisition list, 7 lines — photographed on board]\n“Pls quote asap, MT Atlas Pearl, Alex 28/11. Thx”",
+    "files": [
+      {
+        "name": "whatsapp_IMG_2207.jpg",
+        "kind": "Image",
+        "note": "OCR"
+      }
+    ],
+    "messageId": "wa-20261117-0755-nikos",
+    "classification": "New RFQ",
+    "status": "New",
+    "scenario": "atlas-whatsapp",
+    "source": "Live"
   }
 ]

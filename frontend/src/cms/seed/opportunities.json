@@ -9,7 +9,16 @@
     "stage": "First RFQ",
     "owner": "sa",
     "nextStep": "Quote MV Polar Bay requisition",
-    "nextStepDue": "2026-11-18T00:00:00.000Z"
+    "nextStepDue": "2026-11-18T00:00:00.000Z",
+    "contact": "Lena K., fleet purchasing (Riga)",
+    "channel": "Email",
+    "script": "Thank Lena for the Polar Bay requisition; confirm Alexandria delivery on arrival ≈ 26 Nov; ask for the IMO and a quote deadline. Mention our cold-chain trucks for provisions and the 24/7 Suez transit desk.",
+    "fleetSize": 14,
+    "fleet": [
+      { "name": "MV Polar Bay", "imo": "9356107", "vesselType": "Reefer" },
+      { "name": "MV Arctic Dawn", "imo": "9356119", "vesselType": "Reefer" },
+      { "name": "MV Baltic Frost", "imo": "9402277", "vesselType": "Reefer" }
+    ]
   },
   {
     "id": "op-gulfstar",
@@ -21,7 +30,16 @@
     "stage": "Registration submitted",
     "owner": "ky",
     "nextStep": "Chase registration decision",
-    "nextStepDue": "2026-11-20T00:00:00.000Z"
+    "nextStepDue": "2026-11-20T00:00:00.000Z",
+    "contact": "Procurement lead (Dubai office)",
+    "channel": "Call",
+    "script": "We submitted our vendor registration on 2 Nov. Is anything missing on your side, and when will the committee decide? Mention: 24/7 Suez Canal transit supply and on-board delivery at anchorage.",
+    "fleetSize": 6,
+    "fleet": [
+      { "name": "MV Gulf Star", "imo": "9441201", "vesselType": "Bulk carrier" },
+      { "name": "MV Gulf Pearl", "imo": "9441213", "vesselType": "Bulk carrier" },
+      { "name": "MV Desert Wind", "imo": "9512876", "vesselType": "Bulk carrier" }
+    ]
   },
   {
     "id": "op-medline",
@@ -31,6 +49,63 @@
     "source": "Trade fair contact",
     "estimatedValue": "USD 120k / yr",
     "stage": "Introduced",
-    "owner": "sa"
+    "owner": "sa",
+    "contact": "Fleet procurement (Piraeus)",
+    "channel": "Email",
+    "script": "Follow up the Posidonia meeting: send the approved “Intro — ship managers” email with our Suez/Alexandria coverage, then ask which documents their vendor registration needs.",
+    "fleetSize": 22,
+    "fleet": [
+      { "name": "MT Medline Aurora", "imo": "9623341", "vesselType": "Tanker" },
+      { "name": "MT Medline Spirit", "imo": "9623353", "vesselType": "Tanker" }
+    ]
+  },
+  {
+    "id": "op-aegean",
+    "name": "Aegean Ferries",
+    "kind": "Operator · 4 ferries",
+    "segment": "Marine",
+    "source": "Research list",
+    "estimatedValue": "EUR 25k / yr",
+    "stage": "Prospect",
+    "owner": "kb",
+    "nextStep": "Intro call with the fleet superintendent",
+    "nextStepDue": "2026-11-24T00:00:00.000Z",
+    "contact": "Fleet superintendent",
+    "channel": "Call",
+    "script": "Introduce Golden Sea: cabin and provision stores for their Alexandria calls, one quotation within 24 h, Arabic/English documents. Ask who approves new suppliers and when their next Alexandria call is.",
+    "fleetSize": 4,
+    "fleet": [{ "name": "MV Aegean Star", "imo": "9184421", "vesselType": "Ferry" }]
+  },
+  {
+    "id": "op-redsea",
+    "name": "Red Sea Dredging",
+    "kind": "Industrial · dredging fleet",
+    "segment": "Industrial",
+    "source": "Existing contact",
+    "estimatedValue": "EGP 1.2M / yr",
+    "stage": "Approved vendor",
+    "owner": "ah",
+    "nextStep": "Send capability deck and first price list",
+    "nextStepDue": "2026-11-19T00:00:00.000Z",
+    "contact": "Eng. Tarek, stores manager",
+    "channel": "Email",
+    "script": "We're now on your approved vendor list — attached our capability deck and price list for engine stores, PPE and welding. Could we visit the Suez base next week to see the store room?"
+  },
+  {
+    "id": "op-nordvik",
+    "name": "Nordvik Ship Management",
+    "kind": "Ship manager · 9 vessels",
+    "segment": "Marine",
+    "source": "Referral",
+    "estimatedValue": "USD 90k / yr",
+    "stage": "Active account",
+    "owner": "ky",
+    "customer": "nordvik",
+    "nextStep": "Quarterly review call with Ingrid L.",
+    "nextStepDue": "2026-11-25T00:00:00.000Z",
+    "contact": "Ingrid L., purchasing officer",
+    "channel": "Call",
+    "script": "Review the quarter: 9 RFQs, quote turnaround down to 1.6 days. Ask about MV Fjord Spirit and the rest of the fleet we don't supply yet, and whether a fleet price agreement for engine stores would help.",
+    "fleetSize": 9
   }
 ]

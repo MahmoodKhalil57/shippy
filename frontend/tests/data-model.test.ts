@@ -53,7 +53,9 @@ describe("seed data", () => {
     warn.mockRestore();
     for (const [slug, docs] of Object.entries(seeds.collections)) {
       const { body } = await call("GET", `/api/${slug}/count`);
-      expect(body.totalDocs, slug).toBe(docs.length);
+      // Per-user collections (notifications, bookmarks) show only the signed-in user's own.
+      const visible = docs.some((d) => "user" in d) ? docs.filter((d) => d.user === "kb") : docs;
+      expect(body.totalDocs, slug).toBe(visible.length);
     }
   });
 
@@ -272,9 +274,9 @@ describe("frontend stores", () => {
   it("updates nested case filters, tours and toasts", () => {
     setCaseFilters({ view: "board" });
     expect(filters.get().cases).toMatchObject({ view: "board", scope: "all" });
-    startTour(4);
+    startTour("morning");
     endTour(true);
-    expect(tour.get()).toMatchObject({ active: null, completed: [4] });
+    expect(tour.get()).toMatchObject({ active: null, completed: ["morning"] });
     const id = toast("Saved", "success", 0);
     expect(toasts.get().items.map((t) => t.id)).toContain(id);
   });

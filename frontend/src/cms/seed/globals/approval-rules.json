@@ -32,6 +32,18 @@
       "type": "Exchange rate",
       "approvers": ["kb"],
       "always": true
+    },
+    {
+      "type": "Quotation margin exception",
+      "approvers": ["kb"],
+      "always": true,
+      "note": "Below the policy's minimum margin"
+    },
+    {
+      "type": "Alternative product (internal)",
+      "approvers": ["kb"],
+      "always": true,
+      "note": "Technical equivalence confirmed by a person"
     }
   ]
 }

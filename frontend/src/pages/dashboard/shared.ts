@@ -1,7 +1,8 @@
 import type { IconName } from "../../components/primitives/media/icon.ts";
 import { text } from "../../cms/runtime/util.ts";
 import type { CollectionConfig, GlobalConfig } from "payload";
-import { API_ROUTE, DASHBOARD_ROUTE } from "../../cms/client.ts";
+import { API_ROUTE, DASHBOARD_ROUTE, api } from "../../cms/client.ts";
+import { bookmarks, type Bookmark } from "../../stores/index.ts";
 import config from "../../cms/config.ts";
 import type { Doc, FieldLike } from "../../cms/types.ts";
 import type { AlertVariants } from "../../components/primitives/feedback/alert.ts";
@@ -135,7 +136,8 @@ export type Route =
   | { name: "create-first-user" }
   | { name: "list"; slug: string }
   | { name: "create"; slug: string }
-  | { name: "edit"; slug: string; id: string }
+  | { name: "edit"; slug: string; id: string; tab?: string }
+  | { name: "view"; key: string }
   | { name: "global"; slug: string }
   | { name: "account" }
   | { name: "mock-data" }
@@ -165,10 +167,36 @@ export function parseRoute(pathname: string): Route {
     if (!c) return { name: "list", slug: b };
     if (c === "create" && parts.length === 3) return { name: "create", slug: b };
     if (parts.length === 3) return { name: "edit", slug: b, id: c };
+    const tab = editTabs(collectionOf(b)!).find((t) => t.path === `/${parts[3]}`);
+    if (parts.length === 4 && tab) return { name: "edit", slug: b, id: c, tab: tab.key };
   }
+  const view = rootViews().find((v) => v.path === `/${parts.join("/")}`);
+  if (view) return { name: "view", key: view.key };
   if (a === "globals" && b && globalOf(b) && !c) return { name: "global", slug: b };
   return { name: "not-found" };
 }
+
+// ---------------------------------------------------------------- custom views (Payload admin.components.views)
+
+/** A collection's custom edit tabs (`admin.components.views.edit`), e.g. the case workspace. */
+export interface EditTab {
+  key: string;
+  Component: string;
+  path: string;
+  label: string;
+}
+export function editTabs(c: CollectionConfig): EditTab[] {
+  const edit = (c.admin?.components?.views?.edit ?? {}) as Record<string, unknown>;
+  return Object.entries(edit).flatMap(([key, v]) => {
+    const view = v as { Component?: unknown; path?: string; tab?: { label?: unknown } } | undefined;
+    return typeof view?.Component === "string" && view.path
+      ? [{ key, Component: view.Component, path: view.path, label: text(view.tab?.label ?? key) }]
+      : [];
+  });
+}
+
+/** The custom root views (`admin.components.views`), with their keys. */
+export const rootViews = () => Object.entries(config.admin?.components?.views ?? {}).map(([key, v]) => ({ key, ...v }));
 
 /** Client-side navigation inside the dashboard (listened to by `<dashboard-app>`). */
 export function navigate(path: string, replace = false) {
@@ -183,6 +211,26 @@ export function toast(message: string, color: AlertVariants["color"] = "success"
   document.querySelector("ui-toast")?.push(message, { color, timeout: 4000 });
 }
 
+// ---------------------------------------------------------------- bookmarks
+
+/** Loads the signed-in user's bookmarks (their `bookmarks` documents) into the store. */
+export async function loadBookmarks() {
+  const { docs } = await api.find("bookmarks", { limit: 0, depth: 0, sort: "createdAt" }).catch(() => ({ docs: [] }));
+  bookmarks.set({ items: docs.map((d) => ({ id: d.id, href: text(d.href), label: text(d.label) })) });
+}
+
+/** Adds the page to the signed-in user's bookmarks, or removes it. */
+export async function toggleBookmark(b: Bookmark) {
+  const existing = bookmarks.get().items.find((x) => x.href === b.href);
+  try {
+    if (existing?.id) await api.delete("bookmarks", existing.id);
+    else await api.create("bookmarks", { href: b.href, label: b.label });
+  } catch (e) {
+    toast(`Couldn't update bookmarks: ${(e as Error).message}`, "error");
+  }
+  await loadBookmarks();
+}
+
 // ---------------------------------------------------------------- icons
 
 /** Navigation icons per `admin.group`. */
@@ -194,6 +242,7 @@ export const GROUP_ICONS: Record<string, IconName> = {
   Catalogue: "cube",
   Directory: "users",
   Work: "clipboard",
+  Insights: "chart",
   Growth: "trending-up",
   Team: "user",
   Configuration: "settings",

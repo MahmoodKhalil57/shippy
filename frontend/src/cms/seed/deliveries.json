@@ -9,16 +9,30 @@
     "dispatchedAt": "2026-11-14T08:30:00.000Z",
     "plan": {
       "vehicle": "Golden Sea truck 2",
-      "boardingStaff": "Ahmed R."
+      "boardingStaff": "Ahmed R.",
+      "launch": "Supply boat Delta Star 2 — loading slot 14 Nov 10:00",
+      "readyAt": "2026-11-13T16:00:00.000Z",
+      "clearance": "Ship-stores declaration via the base agent — documents ready"
     },
     "lines": [
       {
         "lineNo": 1,
-        "qty": 40
+        "qty": 40,
+        "lot": "FR-2611"
       },
       {
         "lineNo": 2,
         "qty": 180
+      },
+      {
+        "lineNo": 3,
+        "qty": 8,
+        "lot": "NS-H-2611"
+      },
+      {
+        "lineNo": 4,
+        "qty": 6,
+        "lot": "HV68-2609"
       }
     ]
   },
@@ -30,13 +44,41 @@
     "place": "Abu Qir base → DOS Falcon (supply boat)",
     "status": "Planned",
     "plan": {
-      "vehicle": "Golden Sea truck 2"
+      "vehicle": "Golden Sea truck 2",
+      "boardingStaff": "Ahmed R.",
+      "launch": "Supply boat Delta Star 2 — slot to be confirmed by the agent",
+      "readyAt": "2026-11-20T20:00:00.000Z",
+      "clearance": "Ship-stores declaration — to file with drop 2"
     },
     "lines": [
       {
         "lineNo": 2,
         "qty": 20
+      },
+      {
+        "lineNo": 3,
+        "qty": 2
       }
     ]
+  },
+  {
+    "id": "dn-0131-1",
+    "number": "DN-0131",
+    "case": "gs-rfq-0131",
+    "plannedAt": "2026-11-09T14:00:00.000Z",
+    "place": "Suez anchorage → MV Helios Dawn (launch)",
+    "status": "Delivered — confirmed",
+    "dispatchedAt": "2026-11-09T11:00:00.000Z",
+    "confirmedAt": "2026-11-09T15:20:00.000Z",
+    "confirmedBy": "Chief Engineer P. Andreou",
+    "proof": "pod-dn-0131-1",
+    "plan": {
+      "vehicle": "Golden Sea van 1",
+      "boardingStaff": "Mostafa H.",
+      "launch": "Launch Suez Star — 09 Nov 13:30",
+      "readyAt": "2026-11-08T16:00:00.000Z",
+      "clearance": "Ship spares in transit — cleared"
+    },
+    "lines": [{ "lineNo": 1, "qty": 1, "lot": "ES-0131" }]
   }
 ]

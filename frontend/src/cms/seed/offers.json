@@ -37,6 +37,25 @@
     "compliance": "Confirmed"
   },
   {
+    "id": "off-l1-s2",
+    "case": "gs-rfq-0142",
+    "lineNo": 1,
+    "supplierRfq": "srfq-0142-b",
+    "supplier": "S2",
+    "product": "P1",
+    "offeredDescription": "CRC Belt Grip 400 ml (price list Oct)",
+    "price": 470,
+    "currency": "EGP",
+    "packs": 24,
+    "packSize": 1,
+    "leadDays": 2,
+    "validUntil": "2026-11-15T00:00:00.000Z",
+    "paymentTerms": "15 days",
+    "deliveryBasis": "Delivered Port Said",
+    "source": "Email",
+    "compliance": "Pending"
+  },
+  {
     "id": "off-l2-s2-v1",
     "case": "gs-rfq-0142",
     "lineNo": 2,

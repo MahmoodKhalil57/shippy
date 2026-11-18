@@ -68,6 +68,29 @@ export const Cases: CollectionConfig = {
     defaultColumns: ["caseId", "customer", "vessel", "stage", "deadline", "owner", "value"],
     group: "Sourcing desk",
     description: "Client RFQs and everything that follows: supplier RFQs, quotes, POs, delivery and payment.",
+    // The case workspace: one tab per step from first email to last payment (Payload custom
+    // edit views; elements in src/pages/dashboard/views).
+    components: {
+      views: {
+        edit: {
+          overview: { Component: "gs-case-overview", path: "/overview", tab: { label: "Overview", href: "/overview" } },
+          rfqs: { Component: "gs-case-rfqs", path: "/rfqs", tab: { label: "Supplier RFQs", href: "/rfqs" } },
+          compare: {
+            Component: "gs-case-compare",
+            path: "/compare",
+            tab: { label: "Compare offers", href: "/compare" },
+          },
+          pricing: { Component: "gs-case-pricing", path: "/pricing", tab: { label: "Pricing", href: "/pricing" } },
+          order: { Component: "gs-case-order", path: "/order", tab: { label: "Order & purchasing", href: "/order" } },
+          delivery: {
+            Component: "gs-case-delivery",
+            path: "/delivery",
+            tab: { label: "Delivery & billing", href: "/delivery" },
+          },
+          profit: { Component: "gs-case-profit", path: "/profit", tab: { label: "Profit & close", href: "/profit" } },
+        },
+      },
+    },
   },
   defaultSort: "deadline",
   access: {
@@ -95,8 +118,13 @@ export const Cases: CollectionConfig = {
             await logActivity(req, { case: doc.id, text: `Stage: ${previousDoc?.stage ?? "—"} → ${doc.stage}.` });
           const prevOwner = typeof previousDoc?.owner === "object" ? previousDoc?.owner?.id : previousDoc?.owner;
           const owner = typeof doc.owner === "object" ? doc.owner?.id : doc.owner;
-          if (prevOwner && prevOwner !== owner)
-            await logActivity(req, { case: doc.id, text: `Reassigned to ${owner}. ${doc.handoverNote ?? ""}`.trim() });
+          if (prevOwner && prevOwner !== owner) {
+            const user = await req.payload
+              .findByID({ collection: "users", id: String(owner), depth: 0 })
+              .catch(() => null);
+            const name = typeof user?.name === "string" ? user.name : String(owner);
+            await logActivity(req, { case: doc.id, text: `Reassigned to ${name}. ${doc.handoverNote ?? ""}`.trim() });
+          }
         }
         return doc;
       },
@@ -498,7 +526,7 @@ export const Cases: CollectionConfig = {
       name: "decision",
       type: "select",
       label: "Customer decision",
-      options: QUOTE_DECISIONS,
+      options: [...QUOTE_DECISIONS, "Partially won"],
       admin: { position: "sidebar" },
     },
     { name: "wait", type: "select", label: "Waiting for", options: WAITS, admin: { position: "sidebar" } },

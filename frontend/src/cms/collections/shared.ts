@@ -135,9 +135,13 @@ export const autoNumber =
   async ({ data, operation, req }: { data?: Record<string, unknown>; operation: string; req: PayloadRequest }) => {
     if (operation !== "create" || !data || data[field]) return data;
     const { docs } = await req.payload.find({ collection: collection as never, limit: 0, depth: 0 });
+    // The running number is what follows the prefix (`INV/2026/0412` → 412), not every digit.
     const last = Math.max(
       0,
-      ...docs.map((d) => Number(scalar((d as Record<string, unknown>)[field]).replace(/\D/g, "")) || 0),
+      ...docs.map((d) => {
+        const v = scalar((d as Record<string, unknown>)[field]);
+        return v.startsWith(prefix) ? Number(/\d+/.exec(v.slice(prefix.length))?.[0] ?? 0) : 0;
+      }),
     );
     return { ...data, [field]: `${prefix}${String(last + 1).padStart(4, "0")}` };
   };

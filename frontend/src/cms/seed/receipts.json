@@ -22,5 +22,45 @@
     "warehouse": "Alexandria",
     "qc": "Short",
     "backorderDate": "2026-11-20T00:00:00.000Z"
+  },
+  {
+    "id": "rc-0417-1",
+    "case": "gs-rfq-0133",
+    "purchaseOrder": "po-0417",
+    "lineNo": 3,
+    "ordered": 10,
+    "received": 8,
+    "receivedAt": "2026-11-12T00:00:00.000Z",
+    "warehouse": "Alexandria",
+    "lot": "NS-H-2611",
+    "expiry": "2031-10-01T00:00:00.000Z",
+    "qc": "Short",
+    "claim": "Supplier late: 2 pcs promised 12 Nov, now 22 Nov",
+    "backorderDate": "2026-11-22T00:00:00.000Z"
+  },
+  {
+    "id": "rc-0416-1",
+    "case": "gs-rfq-0133",
+    "purchaseOrder": "po-0416",
+    "lineNo": 4,
+    "ordered": 6,
+    "received": 6,
+    "receivedAt": "2026-11-14T07:10:00.000Z",
+    "warehouse": "Direct to vessel",
+    "lot": "HV68-2609",
+    "expiry": "2029-09-01T00:00:00.000Z",
+    "qc": "OK"
+  },
+  {
+    "id": "rc-0402-1",
+    "case": "gs-rfq-0131",
+    "purchaseOrder": "po-0402",
+    "lineNo": 1,
+    "ordered": 1,
+    "received": 1,
+    "receivedAt": "2026-11-06T00:00:00.000Z",
+    "warehouse": "Cairo (6th October)",
+    "lot": "ES-0131",
+    "qc": "OK"
   }
 ]

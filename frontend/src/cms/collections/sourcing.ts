@@ -17,7 +17,7 @@ import {
  */
 export const IntakeMessages: CollectionConfig = {
   slug: "intake-messages",
-  labels: { singular: "Intake message", plural: "Inbox" },
+  labels: { singular: "Intake message", plural: "Intake messages" },
   admin: {
     useAsTitle: "subject",
     defaultColumns: ["subject", "fromName", "channel", "classification", "status", "receivedAt"],
@@ -61,6 +61,22 @@ export const IntakeMessages: CollectionConfig = {
             { name: "body", type: "textarea" },
             { name: "attachments", type: "upload", relationTo: "media", hasMany: true },
             {
+              name: "files",
+              type: "array",
+              labels: { singular: "Attachment", plural: "Attachments (as received)" },
+              admin: { description: "The original attachments, kept with the message." },
+              fields: [
+                {
+                  type: "row",
+                  fields: [
+                    { name: "name", type: "text", required: true },
+                    { name: "kind", type: "select", options: ["Excel", "PDF", "Word", "Image", "Other"] },
+                    { name: "note", type: "text" },
+                  ],
+                },
+              ],
+            },
+            {
               name: "messageId",
               type: "text",
               unique: true,
@@ -70,6 +86,11 @@ export const IntakeMessages: CollectionConfig = {
               },
             },
             { name: "attachmentHash", type: "text", admin: { readOnly: true } },
+            {
+              name: "scenario",
+              type: "text",
+              admin: { hidden: true, description: "Demo: which canned AI result this message gets." },
+            },
           ],
         },
         {
@@ -107,14 +128,52 @@ export const IntakeMessages: CollectionConfig = {
                         { name: "brand", type: "text" },
                         { name: "partNo", type: "text" },
                         { name: "impa", type: "text" },
+                        { name: "issa", type: "text" },
                         { name: "qty", type: "text" },
+                        { name: "unit", type: "text" },
                         { name: "brandRule", type: "select", options: ["Any", "Preferred brand", "Exact brand"] },
                         { name: "confidence", type: "number", min: 0, max: 1 },
                       ],
                     },
+                    {
+                      type: "row",
+                      fields: [
+                        { name: "store", type: "text" },
+                        { name: "source", type: "text", label: "Source attachment" },
+                        { name: "flag", type: "text", label: "Missing / unclear" },
+                      ],
+                    },
+                    { name: "originalText", type: "text" },
                   ],
                 },
                 { name: "missing", type: "array", fields: [{ name: "item", type: "text", required: true }] },
+                { name: "clarification", type: "textarea", label: "Drafted clarification request (not sent)" },
+                {
+                  name: "assignment",
+                  type: "group",
+                  label: "Suggested by the assignment rules",
+                  fields: [
+                    {
+                      type: "row",
+                      fields: [
+                        { name: "owner", type: "relationship", relationTo: "users" },
+                        { name: "backup", type: "relationship", relationTo: "users" },
+                        { name: "deadline", type: "date" },
+                      ],
+                    },
+                    { name: "rule", type: "text" },
+                  ],
+                },
+                {
+                  name: "acknowledgement",
+                  type: "group",
+                  label: "Acknowledgement draft",
+                  fields: [
+                    { name: "subject", type: "text" },
+                    { name: "body", type: "textarea" },
+                    { name: "manual", type: "checkbox", label: "Owner sends it by hand (WhatsApp / phone)" },
+                  ],
+                },
                 { name: "model", type: "text", admin: { readOnly: true, description: "Model / version used" } },
                 { name: "extractedAt", type: "date", admin: { readOnly: true } },
               ],
@@ -143,9 +202,77 @@ export const IntakeMessages: CollectionConfig = {
       admin: { position: "sidebar" },
       fields: [
         { name: "case", type: "relationship", relationTo: "cases" },
+        { name: "supplierRfq", type: "relationship", relationTo: "supplier-rfqs" },
+        { name: "reference", type: "text", label: "Reference found" },
         { name: "confidence", type: "number", min: 0, max: 1 },
         { name: "basis", type: "textarea" },
+        {
+          name: "candidates",
+          type: "array",
+          admin: { description: "Below 85% confidence a person picks the case (review queue)." },
+          fields: [
+            { name: "case", type: "relationship", relationTo: "cases", required: true },
+            { name: "confidence", type: "number", min: 0, max: 1 },
+            { name: "reason", type: "text" },
+          ],
+        },
         { name: "reviewedBy", type: "relationship", relationTo: "users" },
+        { name: "reviewedAt", type: "date" },
+      ],
+    },
+    {
+      name: "offerDraft",
+      type: "array",
+      labels: { singular: "Offer line", plural: "Offer read from the reply" },
+      admin: {
+        position: "sidebar",
+        description: "Supplier offer lines read from a reply; saved as offers once matched.",
+      },
+      fields: [
+        {
+          type: "row",
+          fields: [
+            { name: "lineNo", type: "number", required: true, min: 1 },
+            { name: "price", type: "number", min: 0, access: { read: costVisible } },
+            { name: "currency", type: "select", options: CURRENCIES, defaultValue: "EGP" },
+          ],
+        },
+        {
+          type: "row",
+          fields: [
+            { name: "packs", type: "number", min: 0 },
+            { name: "packSize", type: "number", min: 0 },
+            { name: "packLabel", type: "text" },
+            { name: "leadDays", type: "number", min: 0 },
+            { name: "validDays", type: "number", min: 0 },
+          ],
+        },
+        { name: "offeredDescription", type: "text" },
+        { name: "uncertain", type: "text", label: "What a person should confirm" },
+        { name: "confidence", type: "number", min: 0, max: 1 },
+      ],
+    },
+    {
+      name: "source",
+      type: "select",
+      defaultValue: "Live",
+      options: ["Live", "History import"],
+      admin: {
+        position: "sidebar",
+        description: "History import: a past email organised by the inbox-history import.",
+      },
+    },
+    {
+      name: "history",
+      type: "group",
+      label: "History import review",
+      admin: { position: "sidebar", condition: (data) => data?.source === "History import" },
+      fields: [
+        { name: "kind", type: "select", options: ["Customer", "Vessel", "Supplier", "Price", "Confidential"] },
+        { name: "question", type: "text" },
+        { name: "proposal", type: "text" },
+        { name: "confidence", type: "number", min: 0, max: 1 },
+        { name: "decision", type: "select", options: ["Confirmed", "Rejected"] },
       ],
     },
     { name: "createdCase", type: "relationship", relationTo: "cases", admin: { position: "sidebar", readOnly: true } },
@@ -228,6 +355,18 @@ export const SupplierRfqs: CollectionConfig = {
       ],
     },
     { name: "lastEvent", type: "text" },
+    {
+      type: "row",
+      fields: [
+        {
+          name: "mode",
+          type: "select",
+          options: ["Split by category", "Full list"],
+          defaultValue: "Split by category",
+        },
+        { name: "category", type: "text", admin: { description: "The category this supplier was asked for." } },
+      ],
+    },
     {
       name: "supplierQuestion",
       type: "textarea",

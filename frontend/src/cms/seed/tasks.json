@@ -44,5 +44,29 @@
     "who": "Procurement lead",
     "script": "We submitted our vendor registration on 2 Nov — is anything missing, and when will the committee decide?",
     "owner": "ky"
+  },
+  {
+    "id": "t-0142-price",
+    "title": "Price lines 1–5 and send GS-Q-0142 v1 for approval",
+    "type": "Internal reminder",
+    "channel": "Internal",
+    "due": "2026-11-18T10:00:00.000Z",
+    "case": "gs-rfq-0142",
+    "internalOnly": true,
+    "owner": "ky",
+    "createdByRule": "Assign owner",
+    "stopCondition": "Quotation sent for approval"
+  },
+  {
+    "id": "t-0133-pod",
+    "title": "Collect signed delivery note for drop 1 (DOS Falcon)",
+    "type": "Delivery task",
+    "channel": "Internal",
+    "due": "2026-11-17T13:00:00.000Z",
+    "case": "gs-rfq-0133",
+    "internalOnly": true,
+    "owner": "ah",
+    "createdByRule": "ETA change",
+    "stopCondition": "Proof of delivery uploaded"
   }
 ]

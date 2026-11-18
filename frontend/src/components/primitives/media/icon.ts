@@ -40,6 +40,19 @@ import iClipboard from "~icons/line-md/clipboard-list";
 import iTrendingUp from "~icons/material-symbols-light/trending-up";
 import iDatabase from "~icons/material-symbols-light/database-outline";
 import iPlay from "~icons/line-md/play";
+import iChart from "~icons/material-symbols-light/monitoring";
+import iCompass from "~icons/line-md/compass";
+import iSparkles from "~icons/material-symbols-light/stars";
+import iShield from "~icons/line-md/security";
+import iChat from "~icons/material-symbols-light/forum-outline";
+import iSend from "~icons/material-symbols-light/send-outline";
+import iUpload from "~icons/material-symbols-light/upload";
+import iPrint from "~icons/material-symbols-light/print-outline";
+import iTranslate from "~icons/material-symbols-light/translate";
+import iSync from "~icons/material-symbols-light/cloud-sync-outline";
+import iHistory from "~icons/material-symbols-light/history";
+import iFlag from "~icons/material-symbols-light/flag";
+import iRoute from "~icons/material-symbols-light/route";
 import iFile from "~icons/line-md/document";
 import iKey from "~icons/material-symbols-light/key-outline";
 import iPhone from "~icons/line-md/phone";
@@ -134,6 +147,22 @@ export const ICONS = {
   "trending-up": iTrendingUp,
   database: iDatabase,
   play: iPlay,
+  /** Dashboards and analytics. */
+  chart: iChart,
+  /** Guided tours. */
+  compass: iCompass,
+  /** AI: drafted or read by the assistant. */
+  sparkles: iSparkles,
+  shield: iShield,
+  chat: iChat,
+  send: iSend,
+  upload: iUpload,
+  print: iPrint,
+  translate: iTranslate,
+  sync: iSync,
+  history: iHistory,
+  flag: iFlag,
+  route: iRoute,
   file: iFile,
   key: iKey,
   phone: iPhone,

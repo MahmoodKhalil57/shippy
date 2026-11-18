@@ -66,7 +66,9 @@
         "confidence": 0.97,
         "originalText": "LOCAL CRC BELT GRIP SPRAY FOR MUD PUMP V-BELTS | local | 24 | Each",
         "selection": {
-          "marginPct": 25
+          "marginPct": 25,
+          "offers": ["off-l1-s5"],
+          "reason": "Best fit (landed cost): Horizon ex-stock Damietta incl. freight"
         }
       },
       {
@@ -86,7 +88,9 @@
         "confidence": 0.99,
         "originalText": "LOCTITE PRODUCT 243 HEAVY COAT | 243 | 3 | Each",
         "selection": {
-          "marginPct": 22
+          "marginPct": 22,
+          "offers": ["off-l2-s2-v2"],
+          "reason": "Corrected v2 — exact LOCTITE 243"
         }
       },
       {
@@ -103,7 +107,10 @@
         "confidence": 0.91,
         "originalText": "CONTACT CLEANER AEROSOL 250ML | — | 200 | CAN",
         "selection": {
-          "marginPct": 25
+          "marginPct": 25,
+          "offers": ["off-l3-s2"],
+          "reason": "Alternative pack fixes shelf life (2028) and is cheaper per litre",
+          "customerAccepted": false
         }
       },
       {
@@ -136,7 +143,18 @@
         "originalText": "SAFETY HELMET WHITE W/ CHIN STRAP | — | 15 | PCS",
         "selection": {
           "marginPct": 28,
-          "reason": "Split: Nile Safety only has 10 — cheaper than 15 from Delta"
+          "reason": "Split: Nile Safety only has 10 — cheaper than 15 from Delta",
+          "offers": ["off-l5-s4", "off-l5-s1"],
+          "splitQty": [
+            {
+              "offer": "off-l5-s4",
+              "qty": 10
+            },
+            {
+              "offer": "off-l5-s1",
+              "qty": 5
+            }
+          ]
         }
       },
       {

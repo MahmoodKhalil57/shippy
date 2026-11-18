@@ -110,15 +110,15 @@ export const closePalette = () => palette.set({ open: false });
 
 export const tour = createStore(
   {
-    /** Index of the running demo scenario tour, or null. */
-    active: null as number | null,
+    /** Id of the running guided tour (pages/dashboard/tours.ts), or null. */
+    active: null as string | null,
     step: 0,
-    /** Scenarios already shown (demo-script ticks). */
-    completed: [] as number[],
+    /** Tours already shown (demo-script ticks). */
+    completed: [] as string[],
   },
   { persist: "gs:tour", persistKeys: ["completed"] },
 );
-export const startTour = (i: number) => tour.set({ active: i, step: 0 });
+export const startTour = (id: string) => tour.set({ active: id, step: 0 });
 export const endTour = (finished = false) =>
   tour.set((s) => ({
     active: null,
@@ -144,15 +144,13 @@ export function toast(message: string, tone: Toast["tone"] = "success", ms = 450
 }
 export const dismissToast = (id: number) => toasts.set((s) => ({ items: s.items.filter((t) => t.id !== id) }));
 
-/* ---------------------------------------------------------------- bookmarks (persisted) */
+/* ---------------------------------------------------------------- bookmarks */
 
+/** The signed-in user's bookmarks: a cache of their `bookmarks` documents (loaded per user, see pages/dashboard/shared.ts). */
 export interface Bookmark {
+  id?: string;
   href: string;
   label: string;
 }
-export const bookmarks = createStore({ items: [] as Bookmark[] }, { persist: "gs:bookmarks" });
+export const bookmarks = createStore({ items: [] as Bookmark[] });
 export const isBookmarked = (href: string) => bookmarks.get().items.some((b) => b.href === href);
-export const toggleBookmark = (b: Bookmark) =>
-  bookmarks.set((s) => ({
-    items: s.items.some((x) => x.href === b.href) ? s.items.filter((x) => x.href !== b.href) : [...s.items, b],
-  }));

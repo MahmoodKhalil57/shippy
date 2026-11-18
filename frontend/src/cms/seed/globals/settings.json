@@ -12,5 +12,93 @@
   "rfqPrefix": "GS-RFQ-",
   "servicePrefix": "GS-SVC-",
   "quotePrefix": "GS-Q-",
-  "supplierRfqPrefix": "GS-SRFQ-"
+  "supplierRfqPrefix": "GS-SRFQ-",
+  "defaultLanguage": "en",
+  "documentLanguages": ["en", "ar"],
+  "permissions": [
+    {
+      "role": "supply-chain",
+      "note": "Runs the sourcing desk: RFQs, comparison, quotations",
+      "clientInfo": true,
+      "supplierCosts": true,
+      "margins": true,
+      "approveQuotes": false,
+      "approvePOs": false,
+      "approvePayments": false,
+      "sendExternal": true,
+      "accounting": false
+    },
+    {
+      "role": "sales",
+      "note": "Customers and growth; never sees costs or margins",
+      "clientInfo": true,
+      "supplierCosts": false,
+      "margins": false,
+      "approveQuotes": false,
+      "approvePOs": false,
+      "approvePayments": false,
+      "sendExternal": true,
+      "accounting": false
+    },
+    {
+      "role": "operations",
+      "note": "Purchasing, delivery, invoicing and collections",
+      "clientInfo": true,
+      "supplierCosts": true,
+      "margins": true,
+      "approveQuotes": false,
+      "approvePOs": false,
+      "approvePayments": false,
+      "sendExternal": true,
+      "accounting": true
+    },
+    {
+      "role": "management",
+      "note": "CEO — approves quotations, discounts, supplier POs and exceptions",
+      "clientInfo": true,
+      "supplierCosts": true,
+      "margins": true,
+      "approveQuotes": true,
+      "approvePOs": true,
+      "approvePayments": true,
+      "sendExternal": true,
+      "accounting": true
+    },
+    {
+      "role": "finance-director",
+      "note": "Approves payments; bank changes together with the CEO",
+      "clientInfo": true,
+      "supplierCosts": true,
+      "margins": true,
+      "approveQuotes": false,
+      "approvePOs": true,
+      "approvePayments": true,
+      "sendExternal": false,
+      "accounting": true
+    },
+    {
+      "role": "office-admin",
+      "note": "Office manager; keeps the on-call roster",
+      "clientInfo": true,
+      "supplierCosts": false,
+      "margins": false,
+      "approveQuotes": false,
+      "approvePOs": false,
+      "approvePayments": false,
+      "sendExternal": true,
+      "accounting": false
+    },
+    {
+      "role": "system",
+      "note": "Reads incoming mail; sends only approved acknowledgements",
+      "clientInfo": true,
+      "supplierCosts": false,
+      "margins": false,
+      "approveQuotes": false,
+      "approvePOs": false,
+      "approvePayments": false,
+      "sendExternal": false,
+      "accounting": false
+    }
+  ]
 }

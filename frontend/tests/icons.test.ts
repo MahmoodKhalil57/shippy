@@ -9,6 +9,8 @@ import { ICON_COLLECTIONS } from "../plugins/icons.ts";
  */
 const SRC = path.resolve(import.meta.dirname, "../src");
 const REGISTRY = path.join(SRC, "components/primitives/media/icon.ts");
+/** Charts draw data, not icons: lines need an <svg>. */
+const CHART = path.join(SRC, "components/primitives/data/chart.ts");
 
 const files = (dir: string): string[] =>
   readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
@@ -23,7 +25,7 @@ const code = (file: string) =>
 describe("icons", () => {
   it("only the icon registry renders an <svg>; nothing hand-draws icons", () => {
     const offenders = files(SRC)
-      .filter((f) => f !== REGISTRY)
+      .filter((f) => f !== REGISTRY && f !== CHART)
       .filter((f) => /<svg[\s>]|\bsvg`|<path\s/.test(code(f)))
       .map((f) => path.relative(SRC, f));
     expect(offenders).toEqual([]);

@@ -16,7 +16,8 @@
     "registration": {
       "status": "Approved vendor",
       "portal": "Nordvik supplier portal"
-    }
+    },
+    "fleetSize": 9
   },
   {
     "id": "helios",
@@ -30,7 +31,8 @@
     "currency": "USD",
     "paymentTermsDays": 30,
     "portPreferences": ["Suez"],
-    "accountOwner": "sa"
+    "accountOwner": "sa",
+    "fleetSize": 2
   },
   {
     "id": "mare-nostrum",
@@ -44,7 +46,8 @@
     "currency": "EUR",
     "paymentTermsDays": 60,
     "portPreferences": ["Damietta"],
-    "accountOwner": "sa"
+    "accountOwner": "sa",
+    "fleetSize": 3
   },
   {
     "id": "atlas",
@@ -62,7 +65,8 @@
     "registration": {
       "status": "Renewal overdue",
       "portal": "Customer procurement portal"
-    }
+    },
+    "fleetSize": 4
   },
   {
     "id": "delta-offshore",
@@ -76,6 +80,7 @@
     "currency": "EGP",
     "paymentTermsDays": 90,
     "portPreferences": ["Abu Qir"],
-    "accountOwner": "ah"
+    "accountOwner": "ah",
+    "fleetSize": 5
   }
 ]

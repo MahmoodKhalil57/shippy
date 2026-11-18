@@ -13,9 +13,26 @@ export interface MockConfig {
     /** Slug of the auth collection used to log into the dashboard (default: the first auth collection). */
     user?: string;
     meta?: { titleSuffix?: string };
+    /**
+     * Payload's custom admin views (`admin.components.views`): extra dashboard screens at
+     * `path`, rendered by the custom element named in `Component` (Payload: a component path).
+     * `nav` places a link in the navigation (Payload does this with `afterNavLinks`).
+     */
+    components?: { views?: Record<string, RootView> };
   };
   /** Signs auth tokens. Generated and kept in the browser when omitted. */
   secret?: string;
+}
+
+/** A custom root view (Payload `admin.components.views.<key>`). */
+export interface RootView {
+  /** Custom element that renders the view (Payload: the component's import path). */
+  Component: string;
+  /** URL path below the dashboard root, e.g. `/inbox`. */
+  path: string;
+  meta?: { title: string; description?: string };
+  /** Navigation link: its group (an `admin.group`) and label. */
+  nav?: { group: string; label: string };
 }
 
 export const defineConfig = (config: MockConfig): MockConfig => config;

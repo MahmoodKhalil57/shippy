@@ -2,6 +2,7 @@ import { text } from "../../cms/runtime/util.ts";
 import { LightElement } from "../../components/base/light-element.ts";
 import { html, nothing } from "lit";
 import { customElement, query, state } from "lit/decorators.js";
+import { keyed } from "lit/directives/keyed.js";
 import { API_ROUTE, api, startMockBackend } from "../../cms/client.ts";
 import type { Doc } from "../../cms/types.ts";
 import type { MenuItem } from "../../components/primitives/navigation/menu.ts";
@@ -9,13 +10,15 @@ import type { IconName } from "../../components/primitives/media/icon.ts";
 import { StoreController, preferences, notifications } from "../../stores/index.ts";
 import "../../components/index.ts";
 import "./auth-views.ts";
-import "./overview.ts";
+import "./home.ts";
+import "./tour.ts";
+import { viewElement } from "./views.ts";
 import "./edit-view.ts";
 import "./list-view.ts";
 import "./mock-data.ts";
 import "./command.ts";
 import { asideRail, expandAsideSection, type AsideSection } from "./aside.ts";
-import { roleLabel, roleLogins, type SeedUser } from "./demo-users.ts";
+import { roleLabel, roleLogins, seedUsers, type SeedUser } from "./demo-users.ts";
 import {
   dashboardPath,
   config,
@@ -23,6 +26,7 @@ import {
   humanize,
   labels,
   navigate,
+  rootViews,
   GROUP_ICONS,
   isDashboardPath,
   parseRoute,
@@ -113,8 +117,20 @@ export class DashboardApp extends LightElement {
       return r.name === "list" ? labels(c).plural : `${r.name === "create" ? "Create" : "Edit"} ${labels(c).singular}`;
     }
     if (r.name === "global") return humanize(r.slug);
+    if (r.name === "view") return rootViews().find((v) => v.key === r.key)?.meta?.title ?? humanize(r.key);
     return humanize(r.name);
   }
+
+  /** Guided tours: sign in as a seeded user by id (a tour step's `as`). */
+  private _switchToId = async (id: string) => {
+    const u = seedUsers.find((x) => x.id === id);
+    if (u) await this._switchTo(u);
+  };
+
+  /** Guided tours: open a side column (its sections hold the step's target). */
+  private _openPanel = async (panel: "aside" | "nav") => {
+    await (panel === "aside" ? this._shell?.toggleAside(true) : this._shell?.toggleNav(true));
+  };
 
   /**
    * Demo: become another user in place (sign out, sign in as them behind the scenes; no login
@@ -207,11 +223,35 @@ export class DashboardApp extends LightElement {
         return { label: globalLabel(g), href, active: here(href) };
       });
     if (globals.length) groups.set("Configuration", [...(groups.get("Configuration") ?? []), ...globals]);
+    // Custom views go first in their group (they're the purpose-built screens).
+    for (const v of [...rootViews()].reverse()) {
+      if (!v.nav) continue;
+      const href = dashboardPath(v.path.slice(1));
+      groups.set(v.nav.group, [{ label: v.nav.label, href, active: here(href) }, ...(groups.get(v.nav.group) ?? [])]);
+    }
     groups.set("Mock backend", [
       { label: "Mock data", href: dashboardPath("mock-data"), active: this.route.name === "mock-data" },
       { label: "API", href: `${API_ROUTE}/access` },
     ]);
-    return [...groups].map(([label, items]) => ({ label, items, active: items.some((i) => i.active) }));
+    // The order work flows in: from the first email to the last payment, then insight and setup.
+    const ORDER = [
+      "Sourcing desk",
+      "Commercial",
+      "Fulfilment",
+      "Finance",
+      "Insights",
+      "Growth",
+      "Work",
+      "Directory",
+      "Catalogue",
+      "Team",
+      "Configuration",
+      "Mock backend",
+    ];
+    const rank = (g: string) => (ORDER.indexOf(g) + 1 || ORDER.length) - 1;
+    return [...groups]
+      .sort(([a], [b]) => rank(a) - rank(b))
+      .map(([label, items]) => ({ label, items, active: items.some((i) => i.active) }));
   }
 
   private _icon = (name: IconName) => html`<ui-icon name=${name}></ui-icon>`;
@@ -252,13 +292,26 @@ export class DashboardApp extends LightElement {
     const access = this.access!;
     switch (r.name) {
       case "dashboard":
-        return html`<dashboard-overview .access=${access}></dashboard-overview>`;
+        return html`<dashboard-home></dashboard-home>`;
       case "list":
         return html`<dashboard-list-view .slug=${r.slug} .access=${access}></dashboard-list-view>`;
       case "create":
         return html`<dashboard-edit-view .slug=${r.slug} .access=${access}></dashboard-edit-view>`;
       case "edit":
-        return html`<dashboard-edit-view .slug=${r.slug} .docId=${r.id} .access=${access}></dashboard-edit-view>`;
+        return html`<dashboard-edit-view
+          .slug=${r.slug}
+          .docId=${r.id}
+          .tab=${r.tab ?? ""}
+          .access=${access}
+          .user=${this.user}
+        ></dashboard-edit-view>`;
+      case "view": {
+        const view = rootViews().find((v) => v.key === r.key)!;
+        return (
+          viewElement(view.Component, { access, user: this.user! }) ??
+          html`<ui-alert color="info" heading=${view.meta?.title ?? view.key}>This screen is loading.</ui-alert>`
+        );
+      }
       case "global":
         return html`<dashboard-edit-view .globalSlug=${r.slug} .access=${access}></dashboard-edit-view>`;
       case "account":
@@ -367,9 +420,15 @@ export class DashboardApp extends LightElement {
           .path=${location.pathname}
           .pageTitle=${this._title()}
         ></dashboard-aside>
-        <ui-container width="6xl" padding-x="fluid" padding-y="fluid">${this._view()}</ui-container>
+        <ui-container width="6xl" padding-x="fluid" padding-y="fluid"
+          >${
+            // Keyed by user: switching users mounts the page afresh, so it loads their data.
+            keyed(user.id, this._view())
+          }</ui-container
+        >
       </ui-app-shell>
       ${toaster}
+      <dashboard-tour .userId=${user.id} .switchTo=${this._switchToId} .openPanel=${this._openPanel}></dashboard-tour>
     `;
   }
 }

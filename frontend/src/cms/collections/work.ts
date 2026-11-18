@@ -1,4 +1,4 @@
-import type { CollectionConfig } from "payload";
+import type { Access, CollectionConfig } from "payload";
 import { deskAccess, idOf, loggedIn, management, ruleError } from "./shared.ts";
 
 /** Case timeline + audit log: every automatic step and human decision. Append-only. */
@@ -196,5 +196,81 @@ export const IntegrationExceptions: CollectionConfig = {
       admin: { position: "sidebar" },
     },
     { name: "resolvedBy", type: "relationship", relationTo: "users", admin: { position: "sidebar" } },
+  ],
+};
+
+/** Only the signed-in user's own documents (a Payload Where-returning access function). */
+const own: Access = ({ req }) => (req.user ? { user: { equals: req.user.id } } : false);
+
+/**
+ * Per-user notifications (the side panel's bell): what happened that needs this person —
+ * approvals routed to them, replies on their cases, failures in their area. Each person sees
+ * only their own; opening one marks it read.
+ */
+export const Notifications: CollectionConfig = {
+  slug: "notifications",
+  labels: { singular: "Notification", plural: "Notifications" },
+  admin: { useAsTitle: "title", defaultColumns: ["at", "title", "kind", "read"], group: "Work" },
+  defaultSort: "-at",
+  access: { read: own, create: loggedIn, update: own, delete: own },
+  fields: [
+    {
+      name: "user",
+      type: "relationship",
+      relationTo: "users",
+      required: true,
+      index: true,
+      defaultValue: ({ user }: { user?: { id?: string } }) => user?.id,
+      admin: { position: "sidebar" },
+    },
+    { name: "title", type: "text", required: true },
+    { name: "detail", type: "text" },
+    {
+      type: "row",
+      fields: [
+        {
+          name: "kind",
+          type: "select",
+          required: true,
+          defaultValue: "Update",
+          options: ["Approval", "Reply", "Reminder", "Alert", "Payment", "Update"],
+        },
+        {
+          name: "href",
+          type: "text",
+          label: "Link",
+          admin: { description: "Dashboard path it opens, e.g. /collections/cases/gs-rfq-0142." },
+        },
+      ],
+    },
+    {
+      name: "at",
+      type: "date",
+      required: true,
+      defaultValue: () => new Date().toISOString(),
+      admin: { position: "sidebar", date: { pickerAppearance: "dayAndTime" } },
+    },
+    { name: "read", type: "checkbox", defaultValue: false, admin: { position: "sidebar" } },
+  ],
+};
+
+/** Per-user bookmarks (the side panel's star): pages a person keeps coming back to. */
+export const Bookmarks: CollectionConfig = {
+  slug: "bookmarks",
+  labels: { singular: "Bookmark", plural: "Bookmarks" },
+  admin: { useAsTitle: "label", defaultColumns: ["label", "href"], group: "Work", hidden: true },
+  defaultSort: "createdAt",
+  access: { read: own, create: loggedIn, update: own, delete: own },
+  fields: [
+    {
+      name: "user",
+      type: "relationship",
+      relationTo: "users",
+      required: true,
+      index: true,
+      defaultValue: ({ user }: { user?: { id?: string } }) => user?.id,
+    },
+    { name: "label", type: "text", required: true },
+    { name: "href", type: "text", required: true },
   ],
 };

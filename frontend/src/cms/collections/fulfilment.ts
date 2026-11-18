@@ -4,6 +4,7 @@ import {
   WAREHOUSES,
   autoNumber,
   caseRef,
+  costVisible,
   deskAccess,
   evidence,
   financeAccess,
@@ -71,7 +72,8 @@ export const PurchaseOrders: CollectionConfig = {
           type: "row",
           fields: [
             { name: "qty", type: "number", min: 0, required: true },
-            { name: "unitPrice", type: "number", min: 0, required: true },
+            // Supplier costs: never shown to Sales.
+            { name: "unitPrice", type: "number", min: 0, required: true, access: { read: costVisible } },
             { name: "scheduledFor", type: "date", label: "Scheduled for" },
           ],
         },
@@ -81,7 +83,7 @@ export const PurchaseOrders: CollectionConfig = {
       type: "row",
       fields: [
         { name: "currency", type: "select", options: CURRENCIES, required: true, defaultValue: "EGP" },
-        { name: "total", type: "number", min: 0, admin: { readOnly: true } },
+        { name: "total", type: "number", min: 0, access: { read: costVisible }, admin: { readOnly: true } },
         { name: "deliverTo", type: "select", options: [...WAREHOUSES, "Direct to vessel (dropship)"] },
       ],
     },
@@ -207,9 +209,15 @@ export const SupplierBills: CollectionConfig = {
     {
       type: "row",
       fields: [
-        { name: "amount", type: "number", min: 0, required: true },
+        { name: "amount", type: "number", min: 0, required: true, access: { read: costVisible } },
         { name: "currency", type: "select", options: CURRENCIES, defaultValue: "EGP" },
-        { name: "vatAmount", type: "number", min: 0, label: "Input VAT (recoverable)" },
+        {
+          name: "vatAmount",
+          type: "number",
+          min: 0,
+          label: "Input VAT (recoverable)",
+          access: { read: costVisible },
+        },
         { name: "dueDate", type: "date" },
       ],
     },

@@ -3,6 +3,7 @@ import { cellText, collectionOf, dataFields, fieldsOf, userSlug } from "./shared
 /** Demo sign-in helpers: the seeded users (src/cms/seed/<users>.json) and their roles. */
 
 export interface SeedUser {
+  id: string;
   name?: string;
   initials?: string;
   email: string;

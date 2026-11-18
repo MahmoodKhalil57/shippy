@@ -81,6 +81,14 @@ export const menu = rcva(
        * width the open list's highlight folds to.
        */
       rail: { true: "[&_li>*]:w-11" },
+      /**
+       * Panes (like VS Code's side bar): the menu fills its container's height, every top-level
+       * group's title stays on screen, and each open group scrolls inside its own share of the
+       * height: open groups share it equally, and a group needing less gives the rest away.
+       */
+      panes: {
+        true: "min-h-0 flex-1 [&>li]:min-h-8 [&>li]:shrink-0 [&>li]:max-h-max [&>li:has(>details[open])]:flex-[1_1_0%] [&>li>details]:h-full [&>li>details[open]::details-content]:[block-size:calc(100%_-_2rem)] [&>li>details>ul]:max-h-full [&>li>details>ul]:overflow-y-auto [&>li>details>ul]:overscroll-contain",
+      },
     },
     defaultVariants: { surface: true, rounded: true, iconSize: "md" },
   },
@@ -115,6 +123,14 @@ export const menuLink = rcva("", {
       root: "[anchor-name:--menu-active-root] [:not([open])>&]:[anchor-name:--menu-active-root,--menu-target] [:not([open])>&]:text-primary [@container_style(--menu-expanded:0)]:text-primary [transition:color_var(--duration-effects)_var(--ease-effects)]",
       both: "[anchor-name:--menu-active-root,--menu-target]",
     },
+    /**
+     * A card instead of a one-line row (`card: true` on the item): the whole title wraps, with an
+     * optional description under it and the badge kept at full size — for items whose text
+     * matters (notifications, tours…). Spaced from its neighbours; still a link or button.
+     */
+    card: {
+      true: "my-1 flex! flex-col items-stretch! gap-0.5 rounded-box border border-base-content/10 bg-base-100/50 px-3 py-2 whitespace-normal hover:bg-base-100",
+    },
     /** Icon-only items show a tooltip with the label. */
     tooltip: {
       top: `tooltip ${TOOLTIP_GLASS}`,
@@ -139,6 +155,14 @@ export const menuNavLabel = rcva(
   "inline-block truncate [opacity:calc(1_-_var(--menu-collapse,0))] [translate:calc(var(--menu-collapse,0)_*_-1rem)_0] [transition:opacity_var(--duration-effects-fast)_var(--ease-effects-fast),translate_var(--duration-spatial-fast)_var(--ease-spatial-fast)] motion-reduce:transition-none",
 );
 
+/** A card item's parts: title row (title + badge), and the description under it. */
+export const menuCardHead = rcva("flex items-start gap-2");
+export const menuCardTitle = rcva("min-w-0 flex-1 text-sm leading-snug font-medium [overflow-wrap:anywhere]");
+export const menuCardDescription = rcva("text-xs leading-snug text-base-content/65 [overflow-wrap:anywhere]");
+export const menuCardBody = rcva(
+  "flex flex-col gap-0.5 [opacity:calc(1_-_var(--menu-collapse,0))] [transition:opacity_var(--duration-effects-fast)_var(--ease-effects-fast)] motion-reduce:transition-none",
+);
+
 /** Trailing badge (docs "Menu with icons and badge"). */
 export const menuBadge = rcva("badge badge-xs", {
   variants: {
@@ -152,6 +176,8 @@ export const menuBadge = rcva("badge badge-xs", {
       warning: "badge-warning",
       error: "badge-error",
     },
+    /** In a card: never squeezed, on the title's first line. */
+    card: { true: "mt-0.5 shrink-0 whitespace-nowrap" },
   },
 });
 
@@ -177,6 +203,10 @@ export interface MenuItem {
   href?: string;
   /** Leading icon, e.g. an inline `<svg>` (sized by the menu's `icon-size`). */
   icon?: Renderable;
+  /** Show the item as a card: the whole label wraps, with `description` under it. */
+  card?: boolean;
+  /** A card's second line (e.g. a notification's detail, a tour's summary). */
+  description?: Renderable;
   /** Trailing badge text, rendered as `badge badge-xs`. */
   badge?: Renderable;
   badgeColor?: MenuBadgeVariants["color"];
@@ -230,6 +260,8 @@ export class UiMenu extends LightElement {
   @property() direction: MenuVariants["direction"];
   @property({ converter: responsiveBoolean }) paged: Responsive<boolean> = false;
   @property({ converter: responsiveBoolean }) nowrap: Responsive<boolean> = false;
+  /** Fill the container's height; group titles stay visible and each open group scrolls on its own. */
+  @property({ type: Boolean }) panes = false;
   @property({ converter: responsiveBoolean }) surface: Responsive<boolean> = true;
   @property({ converter: responsiveBoolean }) rounded: Responsive<boolean> = true;
   @property({ converter: responsiveBoolean }) flush: Responsive<boolean> = false;
@@ -260,6 +292,16 @@ export class UiMenu extends LightElement {
     if (this.layout === "rail") {
       return html`${item.icon ?? nothing}`;
     }
+    if (item.card) {
+      return html`<span class=${menuCardBody()}>
+        <span class=${menuCardHead()}>
+          ${item.icon ?? nothing}
+          <span class=${menuCardTitle()}>${item.label ?? nothing}</span>
+          ${item.badge != null ? html`<span class=${menuBadge({ color: item.badgeColor, card: true })}>${item.badge}</span>` : nothing}
+        </span>
+        ${item.description != null ? html`<span class=${menuCardDescription()}>${item.description}</span>` : nothing}
+      </span>`;
+    }
     const text = this.iconOnly && item.icon ? nothing : (item.label ?? nothing);
     const label = this.layout === "nav" && text !== nothing ? html`<span class=${menuNavLabel()}>${text}</span>` : text;
     return html`${item.icon ?? nothing} ${label}
@@ -272,7 +314,13 @@ export class UiMenu extends LightElement {
     // The rail scrolls (and would clip a CSS tooltip), so it uses the native one.
     const tip = iconOnly && !rail && this.tooltip !== "none" ? this.tooltip : undefined;
     const title = rail && typeof item.label === "string" ? item.label : undefined;
-    const cls = menuLink({ active: item.active, focus: item.focus, tooltip: tip, anchor: this._anchor(item, path) });
+    const cls = menuLink({
+      active: item.active,
+      focus: item.focus,
+      tooltip: tip,
+      anchor: this._anchor(item, path),
+      card: !!item.card && !rail,
+    });
     const dataTip = tip && typeof item.label === "string" ? item.label : undefined;
     const ariaLabel = iconOnly && typeof item.label === "string" ? item.label : undefined;
     if (item.href && !item.disabled) {
@@ -384,6 +432,7 @@ export class UiMenu extends LightElement {
         direction: this.direction,
         paged: this.paged,
         nowrap: this.nowrap,
+        panes: this.panes,
         surface: this.surface,
         rounded: this.rounded,
         flush: this.flush,

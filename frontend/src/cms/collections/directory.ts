@@ -165,6 +165,13 @@ export const Customers: CollectionConfig = {
     },
     { name: "accountOwner", type: "relationship", relationTo: "users", admin: { position: "sidebar" } },
     {
+      name: "fleetSize",
+      type: "number",
+      label: "Vessels in fleet (total)",
+      min: 0,
+      admin: { position: "sidebar", description: "All vessels they own or manage — not only the ones we supply." },
+    },
+    {
       name: "vessels",
       type: "join",
       collection: "vessels",

@@ -265,7 +265,7 @@ describe("config", () => {
   it("is a real Payload config", () => {
     const c: MockConfig = config;
     expect(c.collections.map((x) => x.slug).slice(0, 5)).toEqual(["cases", "customers", "suppliers", "users", "media"]);
-    expect(c.collections).toHaveLength(28);
+    expect(c.collections).toHaveLength(30);
     expect(c.globals).toHaveLength(8);
   });
 });
@@ -284,5 +284,80 @@ describe("seed top-up", () => {
     const { status, body } = await login("mohamed.helmy@goldensea.test");
     expect(status).toBe(200);
     expect(body.user).toMatchObject({ email: "mohamed.helmy@goldensea.test", role: "finance-director" });
+  });
+});
+
+describe("role dashboards (GET /api/home)", () => {
+  // oxlint-disable-next-line typescript/no-explicit-any
+  const kinds = (body: any) => body.widgets.map((w: { kind: string; id: string }) => `${w.kind}:${w.id}`);
+
+  it("needs a signed-in user", async () => {
+    expect((await call("GET", "/api/home")).status).toBe(401);
+  });
+
+  it("puts the approver's decisions first, and only theirs", async () => {
+    await login("karim.balbaa@goldensea.test");
+    const { body } = await call("GET", "/api/home");
+    expect(body).toMatchObject({ role: "management", greeting: "Good morning, Karim" });
+    expect(kinds(body)[0]).toBe("lists:decisions");
+    const decisions = body.widgets[0].lists[0].items.map((i: { title: string }) => i.title);
+    expect(decisions.length).toBeGreaterThan(0);
+    // The finance director already decided the bank change; the CEO still has to.
+    await login("mohamed.helmy@goldensea.test");
+    const fd = (await call("GET", "/api/home")).body;
+    expect(fd.widgets[0].lists[0].items.every((i: { title: string }) => !/bank/i.test(i.title))).toBe(true);
+  });
+
+  it("gives each role its own day, and never sends Sales a value", async () => {
+    const seen = new Set<string>();
+    for (const email of [
+      "karim.youssef@goldensea.test",
+      "soaad.amer@goldensea.test",
+      "ahmedy@goldensea.test",
+      "esraa.mohamed@goldensea.test",
+    ]) {
+      await login(email);
+      seen.add(kinds((await call("GET", "/api/home")).body).join());
+    }
+    expect(seen.size).toBe(4);
+    await login("soaad.amer@goldensea.test");
+    const sales = (await call("GET", "/api/home")).body;
+    const queue = sales.widgets.find((w: { kind: string }) => w.kind === "queue");
+    expect(queue.value).toBe(false);
+    expect(queue.cases.every((c: { value?: number }) => c.value === undefined)).toBe(true);
+    expect(JSON.stringify(sales)).not.toMatch(/Gross profit|EGP \d/);
+  });
+});
+
+describe("per-user notifications and bookmarks", () => {
+  it("each user sees only their own, seeded for every user", async () => {
+    const users = ["ky", "kb", "sa", "ah", "mh", "em", "ne"];
+    const emails: Record<string, string> = {
+      ky: "karim.youssef@goldensea.test",
+      kb: "karim.balbaa@goldensea.test",
+      sa: "soaad.amer@goldensea.test",
+      ah: "ahmedy@goldensea.test",
+      mh: "mohamed.helmy@goldensea.test",
+      em: "esraa.mohamed@goldensea.test",
+      ne: "nancy.elsobhy@goldensea.test",
+    };
+    for (const id of users) {
+      await login(emails[id]);
+      for (const slug of ["notifications", "bookmarks"]) {
+        const { body } = await call("GET", `/api/${slug}?limit=0&depth=0`);
+        expect(body.docs.length, `${id} ${slug}`).toBeGreaterThan(0);
+        expect(body.docs.every((d: { user: string }) => d.user === id)).toBe(true);
+      }
+    }
+    // Someone else's notification can't be read or marked read.
+    await login(emails.sa);
+    expect([403, 404]).toContain((await call("GET", "/api/notifications/n-kb-1")).status);
+    expect([403, 404]).toContain((await call("PATCH", "/api/notifications/n-kb-1", { read: true })).status);
+    await login(emails.kb);
+    expect((await call("GET", "/api/notifications/n-kb-1")).body.read).toBe(false);
+    await login(emails.sa);
+    // A new bookmark belongs to whoever made it.
+    const { body } = await call("POST", "/api/bookmarks", { label: "Invoices", href: "/collections/invoices" });
+    expect(body.doc.user.id ?? body.doc.user).toBe("sa");
   });
 });

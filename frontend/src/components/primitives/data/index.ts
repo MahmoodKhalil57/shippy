@@ -1,4 +1,5 @@
 export * from "./badge.ts";
+export * from "./chart.ts";
 export * from "./countdown.ts";
 export * from "./list.ts";
 export * from "./progress.ts";

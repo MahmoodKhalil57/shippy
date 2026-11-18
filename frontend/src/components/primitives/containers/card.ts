@@ -14,7 +14,11 @@ import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts
  * Every variant is responsive, e.g. the docs' responsive card:
  * `side="lg"` (vertical on small screens, image beside the body from `lg`).
  */
-export const card = rcva("card", {
+/**
+ * daisyUI grows every `<p>` in a card (`.card p { flex-grow: 1 }`, to push actions down), which
+ * spreads text out whenever a card is stretched by its grid row; ours stay their natural height.
+ */
+export const card = rcva("card [&_p]:grow-0", {
   variants: {
     variant: {
       border: "card-border",
@@ -48,6 +52,10 @@ export const card = rcva("card", {
     },
     /** Item of a Join ("selectable cards" example). */
     joinItem: { true: "join-item" },
+    /** The whole card is a link (`href`): it lifts on hover with a spring, and shows focus. */
+    link: {
+      true: "transition-[translate,box-shadow] duration-(--duration-spatial-fast) ease-spatial-fast hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary motion-reduce:transition-none",
+    },
   },
   defaultVariants: { color: "base", shadow: true },
 });
@@ -107,6 +115,8 @@ export class UiCard extends LightElement {
   @property({ converter: responsiveBoolean }) shadow: Responsive<boolean> = true;
   @property({ converter: responsiveBoolean, attribute: "join-item" }) joinItem: Responsive<boolean> = false;
   @property() heading: Renderable = "";
+  /** Make the whole card a link. */
+  @property() href?: string;
   @property({ attribute: "image-src" }) imageSrc?: string;
   @property({ attribute: "image-alt" }) imageAlt = "";
   /** Put the image below the body. */
@@ -146,6 +156,7 @@ export class UiCard extends LightElement {
       shadow: this.shadow,
       width: this.width,
       joinItem: this.joinItem,
+      link: !!this.href,
     });
     const inner = html`${this.imagePosition === "top" ? figure : nothing}
       <div class=${cardBody({ centered: this.centered, muted: this.disabled && !!this.selectable })}>
@@ -168,6 +179,7 @@ export class UiCard extends LightElement {
         ${inner}
       </label>`;
     }
+    if (this.href) return html`<a href=${this.href} class=${cls}>${inner}</a>`;
     return html`<div class=${cls}>${inner}</div>`;
   }
 }

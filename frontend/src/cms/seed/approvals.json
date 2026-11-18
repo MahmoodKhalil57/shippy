@@ -4,9 +4,13 @@
     "title": "Quote v2 to Mare Nostrum — 12.4% margin (min 15%)",
     "type": "Quotation margin exception",
     "case": "gs-rfq-0137",
-    "detail": "Customer target price on 2 paint lines.",
+    "detail": "Customer target price on the 2 Hempel paint lines; competitor quoted EUR 395 per kit.",
     "requestedBy": "sa",
-    "approvers": ["kb"]
+    "approvers": ["kb"],
+    "subject": {
+      "relationTo": "quotations",
+      "value": "q-0137-v2"
+    }
   },
   {
     "id": "ap-deposit-0133",
@@ -41,5 +45,48 @@
     "detail": "Affects 3 open quotations.",
     "requestedBy": "ah",
     "approvers": ["kb"]
+  },
+  {
+    "id": "ap-quote-0135",
+    "title": "Quote GS-Q-0135 v2 to Delta Offshore Services — USD 9,694.40",
+    "type": "Customer quotation",
+    "case": "gs-rfq-0135",
+    "detail": "v2 with the ESAB alternative on line 1, as the customer asked (email 12 Nov).",
+    "subject": {
+      "relationTo": "quotations",
+      "value": "q-0135-v2"
+    },
+    "requestedBy": "sa",
+    "approvers": ["kb"]
+  },
+  {
+    "id": "ap-alt-0135",
+    "title": "ESAB OK 46.00 instead of Lincoln Omnia 46 (GS-RFQ-0135 line 1)",
+    "type": "Alternative product (internal)",
+    "case": "gs-rfq-0135",
+    "detail": "Same AWS E6013 class; mill certificate attached. Saves USD 4.60 per pack.",
+    "requestedBy": "sa",
+    "approvers": ["kb"]
+  },
+  {
+    "id": "ap-quote-0139",
+    "title": "Quote GS-Q-0139 v1 to Atlas Tankers — USD 4,446.40",
+    "type": "Customer quotation",
+    "case": "gs-rfq-0139",
+    "detail": "Submission through the customer's procurement portal.",
+    "subject": {
+      "relationTo": "quotations",
+      "value": "q-0139-v1"
+    },
+    "requestedBy": "ky",
+    "approvers": ["kb"],
+    "decisions": [
+      {
+        "user": "kb",
+        "decision": "Approve",
+        "at": "2026-11-12T08:40:00.000Z",
+        "reason": "OK. Check the portal's payment terms before submitting."
+      }
+    ]
   }
 ]

@@ -17,6 +17,11 @@
   [data-ui] {
     display: contents;
   }
+  /* A host's `align` is its layout token (e.g. <ui-flex align="end">), not HTML's legacy align
+     attribute, which Chromium would otherwise turn into text-align for everything inside. */
+  [data-ui][align] {
+    text-align: inherit;
+  }
 
   body {
     min-width: 320px;

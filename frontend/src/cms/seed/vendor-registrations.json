@@ -19,8 +19,14 @@
       {
         "name": "Bank letter",
         "status": "Submitted"
+      },
+      {
+        "name": "ISO 9001 certificate",
+        "status": "Submitted"
       }
-    ]
+    ],
+    "committeeDate": "2026-11-24T00:00:00.000Z",
+    "contact": "Procurement lead (Dubai office)"
   },
   {
     "id": "vr-atlas",
@@ -34,6 +40,57 @@
       {
         "name": "Tax card (2026)",
         "status": "Missing"
+      }
+    ]
+  },
+  {
+    "id": "vr-medline",
+    "company": "Medline Tankers",
+    "opportunity": "op-medline",
+    "portal": "Customer procurement portal",
+    "status": "Documents requested",
+    "nextStep": "Collect the insurance certificate and 2 customer references",
+    "documents": [
+      {
+        "name": "Commercial register",
+        "status": "Ready"
+      },
+      {
+        "name": "Tax card",
+        "status": "Ready"
+      },
+      {
+        "name": "Liability insurance certificate",
+        "status": "Missing"
+      },
+      {
+        "name": "2 customer references",
+        "status": "Missing"
+      }
+    ]
+  },
+  {
+    "id": "vr-redsea",
+    "company": "Red Sea Dredging",
+    "opportunity": "op-redsea",
+    "portal": "Email (supplier form)",
+    "submittedAt": "2026-10-12T00:00:00.000Z",
+    "committeeDate": "2026-11-10T00:00:00.000Z",
+    "renewBy": "2027-11-10T00:00:00.000Z",
+    "status": "Approved",
+    "nextStep": "Send first price list",
+    "documents": [
+      {
+        "name": "Commercial register",
+        "status": "Submitted"
+      },
+      {
+        "name": "Tax card",
+        "status": "Submitted"
+      },
+      {
+        "name": "Bank letter",
+        "status": "Submitted"
       }
     ]
   }

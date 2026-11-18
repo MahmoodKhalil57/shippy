@@ -4,8 +4,10 @@
       "key": "rfq-ack",
       "name": "RFQ received – marine",
       "channel": "Email",
-      "subject": "We received your RFQ {{customerRef}}",
-      "body": "Dear {{contact}},\n\nThank you — your request for {{vessel}} is registered as {{caseId}}. We will revert by {{dueAt}}.",
+      "subject": "We received your RFQ {{customerRef}} — {{vessel}} ({{caseId}})",
+      "body": "Dear {{contact}},\n\nThank you for your request for {{vessel}} at {{port}}. It is registered with us as {{caseId}} (your reference {{customerRef}}), and {{owner}} is looking after it.\n\nWe will send our quotation by {{dueAt}}. If anything changes on board — quantities, ETA or delivery point — simply reply to this email and it will reach the same case.\n\nKind regards,\n{{owner}}\nGolden Sea for Trading & Marketing\nShip chandlers · Port Said · Suez · Alexandria · Damietta\n24/7 for urgent requests: +20 3 000 0000",
+      "subjectAr": "تم استلام طلب التسعير {{customerRef}} — {{vessel}} ({{caseId}})",
+      "bodyAr": "السيد/ة {{contact}}،\n\nنشكركم على طلبكم الخاص بالسفينة {{vessel}} في ميناء {{port}}. تم تسجيله لدينا برقم {{caseId}} (مرجعكم {{customerRef}})، ويتابعه {{owner}}.\n\nسنرسل عرض السعر قبل {{dueAt}}. لأي تغيير في الكميات أو موعد الوصول أو مكان التسليم، يكفي الرد على هذه الرسالة.\n\nمع خالص التحية،\n{{owner}}\nجولدن سي للتجارة والتسويق\nتموين السفن · بورسعيد · السويس · الإسكندرية · دمياط",
       "status": "Approved",
       "version": 3,
       "approvedBy": "kb"
@@ -15,7 +17,7 @@
       "name": "Supplier RFQ (anonymised)",
       "channel": "Email",
       "subject": "Request for quotation {{reference}} — reply by {{dueAt}}",
-      "body": "Please quote the following…\n{{lines}}",
+      "body": "Dear {{supplierContact}},\n\nPlease quote the following lines, delivered to our {{warehouse}} warehouse:\n{{lines}}\n\nPlease state unit price and currency, pack size, lead time, validity, payment terms and include SDS / TDS where applicable.\n\nKind regards,\n{{user}}\nGolden Sea purchasing",
       "status": "Approved",
       "version": 1,
       "approvedBy": "kb",
@@ -25,17 +27,51 @@
       "key": "supplier-reminder",
       "name": "Supplier reminder",
       "channel": "Email",
+      "subject": "Reminder: {{reference}} due {{dueAt}}",
+      "body": "Dear {{supplierContact}},\n\nA friendly reminder that our request {{reference}} is due {{dueAt}}. A partial offer is welcome.\n\nKind regards,\n{{user}}",
       "status": "Approved",
       "version": 1,
       "approvedBy": "kb",
       "neverIncludeClientIdentity": true
     },
     {
+      "key": "supplier-correction",
+      "name": "Supplier correction request",
+      "channel": "Email",
+      "subject": "{{reference}} — please correct line {{lineNo}}",
+      "body": "Dear {{supplierContact}},\n\nOn line {{lineNo}} we requested {{requested}}; your offer shows {{offered}}. Please send a corrected offer or confirm you cannot supply.\n\nKind regards,\n{{user}}",
+      "status": "Approved",
+      "version": 1,
+      "approvedBy": "kb",
+      "neverIncludeClientIdentity": true
+    },
+    {
+      "key": "customer-follow-up",
+      "name": "Customer follow-up (quotation)",
+      "channel": "Email",
+      "subject": "Our quotation {{quoteNo}} for {{vessel}}",
+      "body": "Dear {{contact}},\n\nFollowing up on our quotation {{quoteNo}} for {{vessel}}, valid until {{validUntil}}. Happy to adjust anything before the vessel's call.\n\nKind regards,\n{{user}}",
+      "status": "Approved",
+      "version": 2,
+      "approvedBy": "kb"
+    },
+    {
       "key": "collection",
       "name": "Collection reminder",
       "channel": "Email",
+      "subject": "Invoice {{invoiceNo}} — due {{dueDate}}",
+      "body": "Dear {{contact}},\n\nThis is a reminder that invoice {{invoiceNo}} ({{balance}}) is due on {{dueDate}}.\n\nKind regards,\nGolden Sea finance",
       "status": "Draft",
       "version": 1
+    },
+    {
+      "key": "on-call-alert",
+      "name": "After-hours RFQ alert (on-duty)",
+      "channel": "WhatsApp",
+      "body": "Urgent RFQ {{caseId}} from {{customer}} — {{vessel}}, ETA {{eta}}. Please acknowledge within 15 min.",
+      "status": "Approved",
+      "version": 1,
+      "approvedBy": "kb"
     }
   ]
 }

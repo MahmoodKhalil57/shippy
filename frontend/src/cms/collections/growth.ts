@@ -11,6 +11,9 @@ export const GROWTH_STAGES = [
   "Closed",
 ];
 
+export const SALES_CHANNELS = ["Call", "Email", "WhatsApp", "Site visit", "Meeting"];
+export const SALES_RESULTS = ["Reached — positive", "Reached — call back", "No answer", "Not interested", "Sent"];
+
 /** Growth pipeline — kept apart from operational RFQs; linked to the customer once business is won. */
 export const Opportunities: CollectionConfig = {
   slug: "opportunities",
@@ -56,7 +59,62 @@ export const Opportunities: CollectionConfig = {
         { name: "nextStepDue", type: "date" },
       ],
     },
+    {
+      type: "row",
+      fields: [
+        { name: "contact", type: "text", label: "Who", admin: { placeholder: "Procurement lead" } },
+        { name: "channel", type: "select", options: SALES_CHANNELS },
+      ],
+    },
+    {
+      name: "script",
+      type: "textarea",
+      label: "What to say",
+      admin: { description: "Talking points for the next step." },
+    },
     { name: "fleetSize", type: "number", min: 0 },
+    {
+      name: "fleet",
+      type: "array",
+      labels: { singular: "Vessel", plural: "Fleet (known vessels)" },
+      admin: { description: "The prospect's vessels, before they become customer vessel records." },
+      fields: [
+        {
+          type: "row",
+          fields: [
+            { name: "name", type: "text", required: true },
+            {
+              name: "imo",
+              type: "text",
+              label: "IMO",
+              validate: (value: unknown) =>
+                value == null ||
+                value === "" ||
+                (typeof value === "string" && /^\d{7}$/.test(value)) ||
+                "IMO numbers have 7 digits.",
+            },
+            { name: "vesselType", type: "text", label: "Type" },
+          ],
+        },
+      ],
+    },
+    {
+      name: "outcomes",
+      type: "array",
+      labels: { singular: "Outcome", plural: "Outcomes" },
+      admin: { description: "Recorded after each call, visit or email (newest last)." },
+      fields: [
+        {
+          type: "row",
+          fields: [
+            { name: "at", type: "date" },
+            { name: "result", type: "select", options: SALES_RESULTS },
+            { name: "by", type: "relationship", relationTo: "users" },
+          ],
+        },
+        { name: "note", type: "textarea" },
+      ],
+    },
     {
       name: "customer",
       type: "relationship",
@@ -101,9 +159,11 @@ export const VendorRegistrations: CollectionConfig = {
       type: "row",
       fields: [
         { name: "submittedAt", type: "date" },
+        { name: "committeeDate", type: "date", label: "Committee decides" },
         { name: "renewBy", type: "date" },
       ],
     },
+    { name: "contact", type: "text", label: "Their contact" },
     {
       name: "documents",
       type: "array",

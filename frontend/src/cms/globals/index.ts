@@ -1,8 +1,73 @@
-import type { GlobalConfig } from "payload";
+import type { Field, GlobalConfig } from "payload";
 import { CURRENCIES, ROLES, STORES, anyone, loggedIn, management } from "../collections/shared.ts";
 
 const managementOnly: GlobalConfig["access"] = { read: anyone, update: management };
 const staffRead: GlobalConfig["access"] = { read: loggedIn, update: management };
+
+/** Interface and document languages (English / Arabic). */
+export const LANGUAGES = [
+  { label: "English", value: "en" },
+  { label: "العربية (Arabic)", value: "ar" },
+];
+
+/** The permission columns of the roles matrix, and where each is enforced. */
+export const PERMISSIONS = [
+  { key: "clientInfo", label: "Client info", enforced: "Read access on customers, vessels and cases" },
+  {
+    key: "supplierCosts",
+    label: "Supplier costs",
+    enforced: "Field access on offers, supplier prices and case pricing (hidden from Sales)",
+  },
+  { key: "margins", label: "Margins", enforced: "Field access on line margins and profit (hidden from Sales)" },
+  {
+    key: "approveQuotes",
+    label: "Approve quotes & discounts",
+    enforced: "Approval rules: customer quotation, discount",
+  },
+  { key: "approvePOs", label: "Approve supplier POs", enforced: "Approval rules: supplier PO" },
+  {
+    key: "approvePayments",
+    label: "Approve payments & bank changes",
+    enforced: "Approval rules: deposits and payments; bank changes need two people",
+  },
+  {
+    key: "sendExternal",
+    label: "Send external messages",
+    enforced: "Only approved templates send automatically; anything else is sent by a person",
+  },
+  { key: "accounting", label: "Accounting postings", enforced: "Create / update on invoices, bills and payments" },
+] as const;
+
+/** The roles & permissions matrix (Settings › Roles & permissions; each column is enforced by access rules). */
+const permissionsMatrix = {
+  name: "permissions",
+  type: "array",
+  labels: { singular: "Role", plural: "Roles" },
+  admin: { description: "Who can see and approve what. Shown on /roles." },
+  fields: [
+    {
+      type: "row",
+      fields: [
+        {
+          name: "role",
+          type: "select",
+          required: true,
+          options: [...ROLES, { label: "System mailbox (sales@)", value: "system" }],
+        },
+        { name: "note", type: "text" },
+      ],
+    },
+    {
+      type: "row",
+      fields: PERMISSIONS.map((p) => ({
+        name: p.key,
+        type: "checkbox" as const,
+        label: p.label,
+        defaultValue: false,
+      })),
+    },
+  ],
+} as Field;
 
 /** Company basics, numbering, tax and document defaults. */
 export const Settings: GlobalConfig = {
@@ -32,6 +97,27 @@ export const Settings: GlobalConfig = {
               label: "24/7 service (after-hours routing on)",
               defaultValue: true,
             },
+            {
+              type: "row",
+              fields: [
+                {
+                  name: "defaultLanguage",
+                  type: "select",
+                  label: "Default language",
+                  options: LANGUAGES,
+                  defaultValue: "en",
+                },
+                {
+                  name: "documentLanguages",
+                  type: "select",
+                  hasMany: true,
+                  label: "Customer documents in",
+                  options: LANGUAGES,
+                  defaultValue: ["en", "ar"],
+                  admin: { description: "Acknowledgements, quotations and invoices." },
+                },
+              ],
+            },
           ],
         },
         {
@@ -50,6 +136,7 @@ export const Settings: GlobalConfig = {
             { name: "quoteFooter", type: "text" },
           ],
         },
+        { label: "Roles & permissions", fields: [permissionsMatrix] },
         {
           label: "Numbering",
           fields: [
@@ -316,6 +403,8 @@ export const MessageTemplates: GlobalConfig = {
           type: "textarea",
           admin: { description: "Placeholders: {{caseId}}, {{customer}}, {{vessel}}, {{lines}}, {{dueAt}}, {{user}}" },
         },
+        { name: "subjectAr", type: "text", label: "Subject (Arabic)" },
+        { name: "bodyAr", type: "textarea", label: "Body (Arabic)" },
         {
           type: "row",
           fields: [
@@ -361,13 +450,14 @@ export const Integrations: GlobalConfig = {
                 "AI extraction",
                 "E-invoicing (tax authority)",
                 "Document storage",
+                "Odoo",
               ],
             },
             { name: "account", type: "text", admin: { placeholder: "sales@" } },
             {
               name: "status",
               type: "select",
-              options: ["Connected", "Token expired", "To connect", "Sandbox", "Disabled"],
+              options: ["Connected", "Token expired", "To connect", "Sandbox", "Staging", "Manual", "Disabled"],
               defaultValue: "To connect",
             },
           ],
@@ -375,8 +465,21 @@ export const Integrations: GlobalConfig = {
         {
           type: "row",
           fields: [
-            { name: "lastSyncAt", type: "date" },
+            { name: "lastSyncAt", type: "date", admin: { date: { pickerAppearance: "dayAndTime" } } },
             { name: "pollEveryMinutes", type: "number", min: 1 },
+            { name: "tokenExpiresAt", type: "date", label: "Token / certificate expires" },
+          ],
+        },
+        {
+          type: "row",
+          fields: [
+            {
+              name: "emailsImported",
+              type: "number",
+              min: 0,
+              admin: { description: "Messages imported so far (history + live)." },
+            },
+            { name: "modules", type: "text", admin: { description: "Odoo apps in use, comma-separated." } },
           ],
         },
         { name: "notes", type: "text" },
@@ -416,6 +519,34 @@ export const Integrations: GlobalConfig = {
           access: { update: ({ req }) => req.user?.role === "management" },
         },
         { name: "excludeConfidential", type: "checkbox", defaultValue: true },
+      ],
+    },
+    {
+      name: "backups",
+      type: "group",
+      label: "Backups, staging and export",
+      fields: [
+        {
+          type: "row",
+          fields: [
+            { name: "schedule", type: "text", defaultValue: "Daily 02:00 Cairo" },
+            { name: "locations", type: "number", min: 1, defaultValue: 3 },
+            { name: "retentionDays", type: "number", min: 1, defaultValue: 30 },
+          ],
+        },
+        {
+          type: "row",
+          fields: [
+            { name: "lastBackupAt", type: "date", admin: { date: { pickerAppearance: "dayAndTime" } } },
+            { name: "restoreTestedAt", type: "date" },
+            {
+              name: "stagingRefreshedAt",
+              type: "date",
+              label: "Staging copy refreshed",
+              admin: { date: { pickerAppearance: "dayAndTime" } },
+            },
+          ],
+        },
       ],
     },
   ],
