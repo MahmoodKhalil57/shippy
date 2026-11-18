@@ -37,6 +37,9 @@ export const kbdRow = rcva("flex w-full justify-center", {
   defaultVariants: { gap: "sm" },
 });
 
+/** A key combination (`keys`): its keys and separators kept together as one tight group. */
+export const kbdKeys = rcva("inline-flex items-center gap-1 text-xs text-base-content/50");
+
 export type KbdVariants = VariantProps<typeof kbd> & VariantProps<typeof kbdRow>;
 
 /**
@@ -73,9 +76,9 @@ export class UiKbd extends LightElement {
       );
     }
     if (!this.keys.length) return html`<kbd class=${cls}>${this.content}</kbd>`;
-    return this.keys.map(
-      (k, i) => html`${i && this.separator ? html` ${this.separator} ` : i ? " " : ""}<kbd class=${cls}>${k}</kbd>`,
-    );
+    return html`<span class=${kbdKeys()}
+      >${this.keys.map((k, i) => html`${i && this.separator ? html`<span>${this.separator}</span>` : ""}<kbd class=${cls}>${k}</kbd>`)}</span
+    >`;
   }
 }
 

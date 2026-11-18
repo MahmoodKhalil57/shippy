@@ -4,7 +4,7 @@ import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
-import { iconSvg } from "../media/icon.ts";
+import { iconSvg, type IconName } from "../media/icon.ts";
 
 /**
  * App shell: the application frame — a header (brand, centred search, actions), a
@@ -40,13 +40,17 @@ export const appShell = rcva(
   "grid h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] overflow-hidden bg-base-200 text-base-content",
 );
 
-export const appShellHeader = rcva(
-  "grid h-16 grid-cols-[minmax(0,1fr)_minmax(0,46rem)_minmax(0,1fr)] items-center gap-3 px-3 md:px-4",
-);
-export const appShellHeaderStart = rcva("flex min-w-0 items-center gap-1");
-export const appShellBrand = rcva("btn btn-ghost px-2 text-lg font-semibold");
-export const appShellSearch = rcva("min-w-0 w-full");
-export const appShellActions = rcva("flex items-center justify-end gap-1");
+/**
+ * Header: brand, the search (centred in the room left between brand and actions, shrinking to
+ * an icon on phones), and actions.
+ */
+export const appShellHeader = rcva("flex h-16 items-center gap-2 px-3 md:gap-4 md:px-4");
+export const appShellHeaderStart = rcva("flex min-w-0 shrink-0 items-center gap-1");
+export const appShellBrand = rcva("btn btn-ghost gap-2 rounded-full px-3 text-lg font-semibold tracking-tight");
+/** The brand's mark (`brand-icon`): primary, on a soft primary disc. */
+export const appShellBrandMark = rcva("grid size-8 place-items-center rounded-full bg-primary/15 text-primary");
+export const appShellSearch = rcva("flex min-w-0 flex-1 justify-end sm:justify-center");
+export const appShellActions = rcva("flex shrink-0 items-center justify-end gap-1");
 
 /** Below `md` the frame is compact: 2px gaps and padding, 48px rails (see `appShellColumn`). */
 export const appShellBody = rcva("flex min-h-0 gap-0.5 pb-0.5 pe-0.5 md:gap-2 md:pb-3 md:pe-3");
@@ -97,11 +101,18 @@ export const appShellPanel = rcva(
       sheet: { true: "", false: "" },
     },
     compoundVariants: [
-      /* Explicit lengths, so a width transition never starts from a percentage of another box. */
-      { side: "start", open: false, class: "w-[calc(3rem_+_0.125rem)] md:w-24" },
-      { side: "end", open: false, class: "w-[calc(3rem_+_0.125rem)] md:w-[calc(6rem_+_0.75rem)]" },
-      { side: "start", open: true, sheet: false, class: "w-full" },
-      { side: "end", open: true, sheet: false, class: "w-[calc(100%_+_0.125rem)] md:w-[calc(100%_+_0.75rem)]" },
+      /*
+       * Pushing: the panel is exactly its column (the end one plus the frame's end padding) at
+       * every frame, so its toggle never drifts while the column resizes.
+       */
+      { side: "start", sheet: false, class: "w-full" },
+      { side: "end", sheet: false, class: "w-[calc(100%_+_0.125rem)] md:w-[calc(100%_+_0.75rem)]" },
+      /*
+       * Sheet mode: explicit lengths, so the width transition starts from the rail's width (the
+       * shell switches to sheet mode a frame before opening one).
+       */
+      { side: "start", sheet: true, open: false, class: "w-[calc(3rem_+_0.125rem)] md:w-24" },
+      { side: "end", sheet: true, open: false, class: "w-[calc(3rem_+_0.125rem)] md:w-[calc(6rem_+_0.75rem)]" },
       {
         sheet: true,
         open: true,
@@ -120,11 +131,6 @@ export const appShellPanel = rcva(
         open: false,
         class:
           "[transition:width_var(--duration-spatial)_var(--ease-spatial),position_0s_allow-discrete_var(--settle-spatial),z-index_0s_allow-discrete_var(--settle-spatial)] has-[details[open]]:[transition:width_var(--duration-spatial)_var(--ease-spatial)_var(--settle-spatial),position_0s_allow-discrete_calc(var(--settle-spatial)_*_2),z-index_0s_allow-discrete_calc(var(--settle-spatial)_*_2)]",
-      },
-      {
-        sheet: false,
-        class:
-          "transition-[width] ease-spatial duration-(--duration-spatial) delay-0 has-[details[open]]:delay-(--settle-spatial)",
       },
     ],
   },
@@ -200,7 +206,7 @@ export type AppShellColumnVariants = VariantProps<typeof appShellColumn>;
 
 /**
  * @example
- * <ui-app-shell brand="Golden Sea" brand-href="/" nav-open>
+ * <ui-app-shell brand="Golden Sea" brand-icon="anchor" brand-href="/" nav-open>
  *   <ui-text-input slot="search" type="search" icon="search" width="full"></ui-text-input>
  *   <ui-theme-controller slot="actions" as="swap"></ui-theme-controller>
  *   <ui-menu slot="nav" .items=${items}></ui-menu>
@@ -228,6 +234,8 @@ const MAIN_MIN = 320 - 2 * 48 - (2 * 2 + 2 + 2);
 export class UiAppShell extends LightElement {
   @property() brand: Renderable = "";
   @property({ attribute: "brand-href" }) brandHref?: string;
+  /** Mark shown before the brand name. */
+  @property({ attribute: "brand-icon" }) brandIcon?: IconName;
   @property({ type: Boolean, reflect: true, attribute: "nav-open" }) navOpen = false;
   @property({ type: Boolean, reflect: true, attribute: "aside-open" }) asideOpen = false;
   @property({ attribute: "nav-label" }) navLabel = "Navigation";
@@ -247,26 +255,39 @@ export class UiAppShell extends LightElement {
     return document.documentElement.clientWidth >= nav + aside + frame().chrome + MAIN_MIN;
   }
 
-  toggleNav(open = !this.navOpen) {
+  async toggleNav(open = !this.navOpen) {
     if (!open) return this._set(false, this.asideOpen);
     const aside = this._room("end", this.asideOpen, this._asideSheet);
     if (this._fits(NAV_OPEN, aside)) this._navSheet = false;
     else if (this.asideOpen && !this._asideSheet && this._fits(NAV_OPEN, frame().rail)) {
       this._navSheet = false;
       return this._set(true, false); // make room by closing the side panel
-    } else this._navSheet = true;
+    } else await this._toSheet("start");
     this._set(true, this.asideOpen);
   }
 
-  toggleAside(open = !this.asideOpen) {
+  async toggleAside(open = !this.asideOpen) {
     if (!open) return this._set(this.navOpen, false);
     const nav = this._room("start", this.navOpen, this._navSheet);
     if (this._fits(nav, ASIDE_OPEN)) this._asideSheet = false;
     else if (this.navOpen && !this._navSheet && this._fits(frame().rail, ASIDE_OPEN)) {
       this._asideSheet = false;
       return this._set(false, true); // make room by closing the navigation
-    } else this._asideSheet = true;
+    } else await this._toSheet("end");
     this._set(this.navOpen, true);
+  }
+
+  /**
+   * Switch a closed column to sheet mode and let one frame render it (same look, explicit
+   * width) before opening, so the sheet's width transition starts from the rail's width.
+   */
+  private async _toSheet(side: "start" | "end") {
+    const was = side === "start" ? this._navSheet : this._asideSheet;
+    if (side === "start") this._navSheet = true;
+    else this._asideSheet = true;
+    if (was) return;
+    await this.updateComplete;
+    await new Promise(requestAnimationFrame);
   }
 
   /** Window resized (or first layout): close pushing columns, side panel first, until the main panel fits. */
@@ -290,8 +311,8 @@ export class UiAppShell extends LightElement {
   /** Escape closes an open sheet. */
   private _onKey = (e: KeyboardEvent) => {
     if (e.key !== "Escape") return;
-    if (this.navOpen && this._navSheet) this.toggleNav(false);
-    else if (this.asideOpen && this._asideSheet) this.toggleAside(false);
+    if (this.navOpen && this._navSheet) void this.toggleNav(false);
+    else if (this.asideOpen && this._asideSheet) void this.toggleAside(false);
   };
 
   connectedCallback() {
@@ -342,7 +363,11 @@ export class UiAppShell extends LightElement {
 
   render() {
     const brand = this.brand
-      ? html`<a class=${appShellBrand()} href=${ifDefined(this.brandHref)}>${this.brand}</a>`
+      ? html`<a class=${appShellBrand()} href=${ifDefined(this.brandHref)}
+          >${this.brandIcon ? html`<span class=${appShellBrandMark()}>${iconSvg(this.brandIcon, { size: "md" })}</span>` : nothing}<span
+            >${this.brand}</span
+          ></a
+        >`
       : nothing;
     const navSheet = this.navOpen && this._navSheet;
     const asideSheet = this.asideOpen && this._asideSheet;

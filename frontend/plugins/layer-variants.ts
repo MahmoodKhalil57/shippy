@@ -1,3 +1,6 @@
+import { readdirSync, readFileSync } from "node:fs";
+import { createRequire } from "node:module";
+import path from "node:path";
 import postcss, { type AtRule, type ChildNode, type Container, type Root, type Rule } from "postcss";
 
 /**
@@ -18,7 +21,36 @@ import postcss, { type AtRule, type ChildNode, type Container, type Root, type R
  *
  * Layer order is decided by first mention, so every sheet starts with the
  * full `@layer …;` statement; the order is then the same whichever loads first.
+ *
+ * daisyUI has the same problem one level down: a component's base rule (`.btn`) and its
+ * modifiers (`.btn-ghost`, `.btn-primary`) share a layer, so a later sheet repeating `.btn`
+ * silently undoes another sheet's `btn-ghost`. Base rules therefore move to `components`,
+ * below every modifier and state (which stay in `utilities`), whichever sheet loads first.
  */
+
+/** daisyUI's component base classes (`btn`, `input`, `menu`…): the shortest class each component file defines. */
+export const DAISY_BASES: Set<string> = (() => {
+  try {
+    const dir = path.join(path.dirname(createRequire(import.meta.url).resolve("daisyui/package.json")), "components");
+    const bases = new Set<string>();
+    for (const file of readdirSync(dir).filter((f) => f.endsWith(".css"))) {
+      const classes = [
+        ...readFileSync(path.join(dir, file), "utf8").matchAll(/(?:^|[{}\s,(])\.([a-z][a-z0-9-]*)(?=[\s{,):])/g),
+      ].map((m) => m[1]!);
+      const base = classes.sort((a, b) => a.length - b.length)[0];
+      if (base) bases.add(base);
+    }
+    return bases;
+  } catch {
+    return new Set();
+  }
+})();
+
+/** A daisyUI base rule: `.btn` or `:where(.btn)`, nothing more specific. */
+const isDaisyBase = (selector: string) => {
+  const m = /^(?::where\()?\.([a-z][a-z0-9-]*)\)?$/.exec(selector.trim());
+  return !!m && DAISY_BASES.has(m[1]!);
+};
 
 export const BREAKPOINT_REM: Record<string, string> = {
   "40rem": "sm",
@@ -74,12 +106,30 @@ function wrappers(rule: Rule): AtRule[] {
   return chain;
 }
 
+/** Whether a rule sits in the top-level `@layer utilities` (where daisyUI emits its components). */
+function insideUtilities(rule: Rule): boolean {
+  for (
+    let p = rule.parent as ChildNode | Root | undefined;
+    p && p.type !== "root";
+    p = p.parent as ChildNode | Root | undefined
+  ) {
+    if (
+      p.type === "atrule" &&
+      (p as AtRule).name === "layer" &&
+      (p as AtRule).params.trim() === "utilities" &&
+      p.parent?.type === "root"
+    )
+      return true;
+  }
+  return false;
+}
+
 export function layerVariantsCss(css: string): string {
   const root = postcss.parse(css);
   const targets = new Map<string, AtRule>();
   const moves: [Rule, string][] = [];
   root.walkRules((rule) => {
-    const layer = layerOf(rule);
+    const layer = layerOf(rule) ?? (isDaisyBase(rule.selector) && insideUtilities(rule) ? "components" : null);
     if (layer) moves.push([rule, layer]);
   });
   if (!moves.length) return css;
@@ -104,7 +154,7 @@ export function layerVariantsCss(css: string): string {
   root.walkAtRules((at) => {
     if (at.nodes && at.nodes.length === 0) at.remove();
   });
-  for (const layer of VARIANT_LAYERS) if (targets.has(layer)) root.append(targets.get(layer)!);
+  for (const layer of ["components", ...VARIANT_LAYERS]) if (targets.has(layer)) root.append(targets.get(layer)!);
   root.prepend(postcss.parse(LAYER_ORDER));
   return root.toString();
 }

@@ -71,6 +71,8 @@ export const text = rcva("", {
     mono: { true: "font-mono" },
     italic: { true: "italic" },
     uppercase: { true: "uppercase" },
+    /** A search match inside a result (with `as="mark"`). */
+    highlight: { true: "rounded-sm bg-primary/20 px-0.5 text-primary" },
   },
 });
 
@@ -84,6 +86,7 @@ const TEXT_TAGS = {
   strong: literal`strong`,
   em: literal`em`,
   code: literal`code`,
+  mark: literal`mark`,
 } satisfies Record<string, StaticValue>;
 
 export type TextTag = keyof typeof TEXT_TAGS;
@@ -92,6 +95,7 @@ export type TextTag = keyof typeof TEXT_TAGS;
  * @example <ui-text color="muted">Last updated 5 minutes ago</ui-text>
  * @example <ui-text as="span" size="sm md:base" weight="semibold" truncate>Long label…</ui-text>
  * @example <ui-text as="code" mono size="sm">npm i daisyui</ui-text>
+ * @example <ui-text as="mark" highlight>rpc</ui-text>  (a search match)
  */
 @customElement("ui-text")
 export class UiText extends LightElement {
@@ -106,6 +110,7 @@ export class UiText extends LightElement {
   @property({ converter: responsiveBoolean }) mono: Responsive<boolean> = false;
   @property({ converter: responsiveBoolean }) italic: Responsive<boolean> = false;
   @property({ converter: responsiveBoolean }) uppercase: Responsive<boolean> = false;
+  @property({ converter: responsiveBoolean }) highlight: Responsive<boolean> = false;
 
   render() {
     const tag = TEXT_TAGS[this.as] ?? TEXT_TAGS.p;
@@ -120,6 +125,7 @@ export class UiText extends LightElement {
       mono: this.mono,
       italic: this.italic,
       uppercase: this.uppercase,
+      highlight: this.highlight,
     });
     return html`<${tag} class=${cls}>${this.content}</${tag}>`;
   }

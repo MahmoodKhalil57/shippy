@@ -46,6 +46,7 @@ import iPhone from "~icons/line-md/phone";
 import iLink from "~icons/line-md/link";
 import iBolt from "~icons/material-symbols-light/bolt-outline";
 import iArchive from "~icons/material-symbols-light/archive-outline";
+import iAnchor from "~icons/material-symbols-light/anchor";
 
 /**
  * Icon: a sized, coloured inline SVG icon.
@@ -136,6 +137,7 @@ export const ICONS = {
   link: iLink,
   bolt: iBolt,
   archive: iArchive,
+  anchor: iAnchor,
 } as const;
 
 export type IconName = keyof typeof ICONS;

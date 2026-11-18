@@ -1,3 +1,4 @@
+import type { IconName } from "../../components/primitives/media/icon.ts";
 import { text } from "../../cms/runtime/util.ts";
 import type { CollectionConfig, GlobalConfig } from "payload";
 import { API_ROUTE, DASHBOARD_ROUTE } from "../../cms/client.ts";
@@ -181,3 +182,23 @@ export function navigate(path: string, replace = false) {
 export function toast(message: string, color: AlertVariants["color"] = "success") {
   document.querySelector("ui-toast")?.push(message, { color, timeout: 4000 });
 }
+
+// ---------------------------------------------------------------- icons
+
+/** Navigation icons per `admin.group`. */
+export const GROUP_ICONS: Record<string, IconName> = {
+  "Sourcing desk": "inbox",
+  Commercial: "briefcase",
+  Fulfilment: "truck",
+  Finance: "banknotes",
+  Catalogue: "cube",
+  Directory: "users",
+  Work: "clipboard",
+  Growth: "trending-up",
+  Team: "user",
+  Configuration: "settings",
+  "Mock backend": "database",
+};
+
+/** A collection's group (`admin.group`), as shown in the navigation. */
+export const groupOf = (c: CollectionConfig) => (typeof c.admin?.group === "string" ? c.admin.group : "Collections");

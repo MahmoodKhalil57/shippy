@@ -25,9 +25,9 @@ const icon = (name: IconName) => html`<ui-icon name=${name}></ui-icon>`;
 export const asideRail = (): MenuItem[] =>
   ASIDE_SECTIONS.map((s) => ({ label: s.label, icon: icon(s.icon), value: s.id }));
 
-/** Opens the side panel with a section expanded. */
-export const openAsideSection = (id: AsideSection) =>
-  preferences.set((p) => ({ asideOpen: true, asideCollapsed: (p.asideCollapsed ?? []).filter((x) => x !== id) }));
+/** Expands a section (the shell opens the panel itself, choosing push or sheet). */
+export const expandAsideSection = (id: AsideSection) =>
+  preferences.set((p) => ({ asideCollapsed: (p.asideCollapsed ?? []).filter((x) => x !== id) }));
 
 const BOOKMARK_THIS = "bookmark-this";
 const loading: MenuItem[] = [{ label: "Loading…", disabled: true }];

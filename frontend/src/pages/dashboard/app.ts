@@ -1,7 +1,7 @@
 import { text } from "../../cms/runtime/util.ts";
 import { LightElement } from "../../components/base/light-element.ts";
 import { html } from "lit";
-import { customElement, state } from "lit/decorators.js";
+import { customElement, query, state } from "lit/decorators.js";
 import { API_ROUTE, api, startMockBackend } from "../../cms/client.ts";
 import type { Doc } from "../../cms/types.ts";
 import type { MenuItem } from "../../components/primitives/navigation/menu.ts";
@@ -13,8 +13,8 @@ import "./overview.ts";
 import "./edit-view.ts";
 import "./list-view.ts";
 import "./mock-data.ts";
-import "./search.ts";
-import { asideRail, openAsideSection, type AsideSection } from "./aside.ts";
+import "./command.ts";
+import { asideRail, expandAsideSection, type AsideSection } from "./aside.ts";
 import {
   dashboardPath,
   config,
@@ -22,6 +22,7 @@ import {
   humanize,
   labels,
   navigate,
+  GROUP_ICONS,
   isDashboardPath,
   parseRoute,
   toast,
@@ -37,27 +38,13 @@ import {
 
 export type Access = Awaited<ReturnType<typeof api.access>>;
 
-/** Navigation icons per `admin.group`. */
-const GROUP_ICONS: Record<string, IconName> = {
-  "Sourcing desk": "inbox",
-  Commercial: "briefcase",
-  Fulfilment: "truck",
-  Finance: "banknotes",
-  Catalogue: "cube",
-  Directory: "users",
-  Work: "clipboard",
-  Growth: "trending-up",
-  Team: "user",
-  Configuration: "settings",
-  "Mock backend": "database",
-};
-
 @customElement("dashboard-app")
 export class DashboardApp extends LightElement {
   @state() private route: Route = parseRoute(location.pathname);
   @state() private user: (Doc & { collection: string }) | null = null;
   @state() private access: Access | null = null;
   @state() private ready = false;
+  @query("ui-app-shell") private _shell?: HTMLElementTagNameMap["ui-app-shell"];
   @state() private failure = "";
   #prefs = new StoreController(this, preferences);
 
@@ -242,6 +229,7 @@ export class DashboardApp extends LightElement {
     return html`
       <ui-app-shell
         brand="Golden Sea"
+        brand-icon="anchor"
         brand-href=${dashboardPath()}
         ?nav-open=${navOpen}
         ?aside-open=${asideOpen}
@@ -249,11 +237,25 @@ export class DashboardApp extends LightElement {
         @ui-change=${(e: CustomEvent<{ nav: boolean; aside: boolean }>) =>
           preferences.set({ navOpen: e.detail.nav, asideOpen: e.detail.aside })}
       >
-        <dashboard-search slot="search" .access=${this.access}></dashboard-search>
+        <dashboard-command
+          slot="search"
+          .access=${this.access}
+          .path=${location.pathname}
+          .pageTitle=${this._title()}
+          .onLogout=${() => void this._logout()}
+        ></dashboard-command>
         <ui-flex slot="actions" align="center" gap="1">
-          <ui-theme-controller as="swap" theme="dark" persist></ui-theme-controller>
-          <ui-dropdown align="end" panel="card" panel-shadow="lg" .heading=${text(user.name ?? user.email)}>
-            <ui-avatar slot="trigger" .initials=${initials} size="sm"></ui-avatar>
+          <ui-theme-controller as="icon" theme="dark" persist></ui-theme-controller>
+          <ui-dropdown
+            align="end"
+            panel="card"
+            panel-shadow="lg"
+            trigger-variant="ghost"
+            trigger-shape="circle"
+            trigger-spaced="false"
+            .heading=${text(user.name ?? user.email)}
+          >
+            <ui-avatar slot="trigger" .initials=${initials} size="xs"></ui-avatar>
             <ui-text size="xs" color="muted">${text(user.email)}</ui-text>
             <ui-menu
               width="full"
@@ -270,7 +272,10 @@ export class DashboardApp extends LightElement {
           layout="rail"
           surface="false"
           .items=${asideRail()}
-          @ui-select=${(e: CustomEvent<{ item: MenuItem }>) => openAsideSection(e.detail.item.value as AsideSection)}
+          @ui-select=${(e: CustomEvent<{ item: MenuItem }>) => {
+            expandAsideSection(e.detail.item.value as AsideSection);
+            void this._shell?.toggleAside(true);
+          }}
         ></ui-menu>
         <dashboard-aside
           slot="aside"

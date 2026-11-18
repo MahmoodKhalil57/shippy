@@ -33,6 +33,13 @@ export const button = rcva("btn", {
       soft: "btn-soft",
       ghost: "btn-ghost",
       link: "btn-link",
+      /**
+       * Looks like a search field (the app header's command-palette trigger): rounded, filled,
+       * placeholder-coloured text, a trailing `<ui-kbd>` hint. Below `sm` it shrinks to an
+       * icon-only circle.
+       */
+      field:
+        "btn-ghost h-11 w-full max-w-xl justify-start gap-2 rounded-full border border-base-content/10 bg-base-100 px-4 font-normal text-base-content/60 shadow-none hover:border-base-content/25 hover:bg-base-100 hover:text-base-content [&>ui-kbd>span]:ms-auto max-sm:size-10 max-sm:justify-center max-sm:px-0 max-sm:[&>ui-kbd]:hidden max-sm:[&>ui-text]:hidden",
     },
     size: {
       xs: "btn-xs",

@@ -35,6 +35,8 @@ export const themeController = cva("theme-controller", {
       toggle: toggle(),
       checkbox: checkbox(),
       swap: "",
+      /** The swap as a compact ghost icon button (app headers). */
+      icon: "",
       radio: radio({ size: "sm" }),
       buttons: button({ class: joinItem() }),
       dropdown: button({ size: "sm", block: true, variant: "ghost", justify: "start" }),
@@ -42,6 +44,9 @@ export const themeController = cva("theme-controller", {
   },
   defaultVariants: { as: "toggle" },
 });
+
+/** The `icon` look: a ghost circle button sized like the header's other actions. */
+export const themeControllerIcon = cva("btn btn-ghost btn-circle");
 
 export type ThemeControllerVariants = VariantProps<typeof themeController>;
 export type ThemeControllerAs = NonNullable<ThemeControllerVariants["as"]>;
@@ -142,6 +147,12 @@ export class UiThemeController extends LightElement {
     switch (this.as) {
       case "checkbox":
         return this._single();
+      case "icon":
+        return html`<label class=${swap({ variant: "rotate", class: themeControllerIcon() })}>
+          ${this._single()}
+          <span class=${swapOff()}>${iconSvg("sun", { size: "md" })}</span>
+          <span class=${swapOn()}>${iconSvg("moon", { size: "md" })}</span>
+        </label>`;
       case "swap":
         return html`<label class=${swap({ variant: "rotate" })}>
           ${this._single()}

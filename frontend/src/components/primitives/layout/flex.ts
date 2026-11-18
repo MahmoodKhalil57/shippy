@@ -65,6 +65,8 @@ export const flex = rcva("", {
     },
     wrap: { true: "flex-wrap" },
     grow: { true: "grow" },
+    /** Let text inside truncate instead of widening the row (min-width: 0). */
+    shrink: { true: "min-w-0" },
     fullWidth: { true: "w-full" },
     fullHeight: { true: "h-full" },
   },
@@ -106,6 +108,7 @@ export class UiFlex extends LightElement {
   @property() padding: FlexVariants["padding"];
   @property({ converter: responsiveBoolean }) wrap: Responsive<boolean> = false;
   @property({ converter: responsiveBoolean }) grow: Responsive<boolean> = false;
+  @property({ converter: responsiveBoolean }) shrink: Responsive<boolean> = false;
   @property({ attribute: "full-width", converter: responsiveBoolean }) fullWidth: Responsive<boolean> = false;
   @property({ attribute: "full-height", converter: responsiveBoolean }) fullHeight: Responsive<boolean> = false;
 
@@ -120,6 +123,7 @@ export class UiFlex extends LightElement {
       padding: this.padding,
       wrap: this.wrap,
       grow: this.grow,
+      shrink: this.shrink,
       fullWidth: this.fullWidth,
       fullHeight: this.fullHeight,
     });

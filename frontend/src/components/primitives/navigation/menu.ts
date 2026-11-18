@@ -27,6 +27,8 @@ export const menu = rcva("menu", {
       vertical: "menu-vertical",
       horizontal: "menu-horizontal",
     },
+    /** One column that never wraps: rows keep the menu's width, so long labels can truncate. */
+    nowrap: { true: "flex-nowrap [&_li>*]:min-w-0" },
     /** Show one level at a time; the open `<summary>` becomes a back button. */
     paged: { true: "menu-paged" },
     /** Background used in the docs examples. */
@@ -223,6 +225,7 @@ export class UiMenu extends LightElement {
   @property() size: MenuVariants["size"];
   @property() direction: MenuVariants["direction"];
   @property({ converter: responsiveBoolean }) paged: Responsive<boolean> = false;
+  @property({ converter: responsiveBoolean }) nowrap: Responsive<boolean> = false;
   @property({ converter: responsiveBoolean }) surface: Responsive<boolean> = true;
   @property({ converter: responsiveBoolean }) rounded: Responsive<boolean> = true;
   @property({ converter: responsiveBoolean }) flush: Responsive<boolean> = false;
@@ -233,6 +236,11 @@ export class UiMenu extends LightElement {
   @property() tooltip: "top" | "right" | "bottom" | "none" = "right";
   /** `nav`: app navigation list; `rail`: the same items, icons only (collapsed navigation column). */
   @property() layout: "list" | "nav" | "rail" = "list";
+
+  /** Keep the keyboard-focused item (`focus: true`, e.g. a palette's highlighted result) in view. */
+  protected updated() {
+    this.querySelector(".menu-focus")?.scrollIntoView({ block: "nearest" });
+  }
 
   /** Open state of `js` submenus, keyed by item. */
   private _shown = new WeakMap<MenuItem, boolean>();
@@ -372,6 +380,7 @@ export class UiMenu extends LightElement {
         size: this.size,
         direction: this.direction,
         paged: this.paged,
+        nowrap: this.nowrap,
         surface: this.surface,
         rounded: this.rounded,
         flush: this.flush,
