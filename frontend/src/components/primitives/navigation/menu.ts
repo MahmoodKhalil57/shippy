@@ -50,6 +50,32 @@ export const menu = rcva("menu", {
       sm: "[&_svg]:size-4",
       md: "[&_svg]:size-5",
     },
+    /**
+     * App navigation look, shared by the expanded list (`layout="nav"`) and the rail
+     * (`layout="rail"`): same text size and weight, active item in primary on a primary tint,
+     * no shadow. One column that never wraps, so rows keep the menu's width and long labels truncate.
+     */
+    nav: {
+      true: "flex-nowrap max-md:ps-0 text-sm font-medium [&_.menu-active]:bg-primary/20 [&_.menu-active]:text-primary [&_.menu-active]:shadow-none [&_.menu-title]:text-base-content/60 [interpolate-size:allow-keywords] [&_details::details-content]:overflow-hidden [&_details::details-content]:[block-size:0] [&_details::details-content]:[transition:block-size_var(--duration-spatial)_var(--ease-spatial),content-visibility_var(--duration-spatial)_allow-discrete] [&_details[open]::details-content]:[block-size:auto] motion-reduce:[&_details::details-content]:transition-none",
+    },
+    /**
+     * Open navigation list that can fold into the rail's look with motion: set
+     * the flags `--menu-collapse` (1: folded into the rail's look) and `--menu-expanded` (0: groups
+     * held shut, e.g. while a column opens) on an ancestor (registered in src/styles/theme.css,
+     * so it can flip them on a schedule; the menu reacts at once). Folding
+     * slides and fades the labels and chevrons away, and the highlight (`menuIndicator`)
+     * slides from the active page to its top-level item and shrinks to the rail's icon pill.
+     * Where anchor positioning is missing, the active item keeps its own background.
+     */
+    fold: {
+      true: "relative isolate [anchor-scope:all] supports-[anchor-name:--a]:[&_.menu-active]:bg-transparent [&_summary]:after:[opacity:calc(1_-_var(--menu-collapse,0))] [&_summary]:after:[transition:opacity_var(--duration-effects-fast)_var(--ease-effects-fast),rotate_var(--duration-spatial-fast)_var(--ease-spatial-fast),translate_var(--duration-spatial-fast)_var(--ease-spatial-fast)] motion-reduce:[&_summary]:after:transition-none",
+    },
+    /**
+     * Navigation rail: exactly the open list's items with the labels left out, so each icon and
+     * highlight sits where it does in the open list. Items are the icon pill (`w-11`), the
+     * width the open list's highlight folds to.
+     */
+    rail: { true: "[&_li>*]:w-11" },
   },
   defaultVariants: { surface: true, rounded: true, iconSize: "md" },
 });
@@ -64,24 +90,48 @@ export const menuLi = rcva("", {
   },
 });
 
-/** The `<a>` / `<button>` inside a menu `<li>`. */
+/** The `<a>` / `<button>` inside a menu `<li>` (and a submenu's `<summary>`). */
 export const menuLink = rcva("", {
   variants: {
     active: { true: "menu-active" },
     focus: { true: "menu-focus" },
+    /**
+     * Anchors for the `fold` highlight: the active page (`page`), the top-level item it sits
+     * under (`root`), or a top-level active page (`both`).
+     */
+    anchor: {
+      /** The highlight's target while its group is open. */
+      page: "[[open]_&]:[anchor-name:--menu-target]",
+      /**
+       * The group holding the active page: the highlight's target while the group is closed
+       * (or held shut), and drawn like the active item then, as in the rail.
+       */
+      root: "[anchor-name:--menu-active-root] [:not([open])>&]:[anchor-name:--menu-active-root,--menu-target] [:not([open])>&]:text-primary [@container_style(--menu-expanded:0)]:text-primary [transition:color_var(--duration-effects)_var(--ease-effects)]",
+      both: "[anchor-name:--menu-active-root,--menu-target]",
+    },
     /** Icon-only items show a tooltip with the label. */
     tooltip: {
       top: "tooltip",
       right: "tooltip tooltip-right",
       bottom: "tooltip tooltip-bottom",
-      /** Only while a drawer is closed (docs icon-only drawer sidebar). */
-      drawer: "is-drawer-close:tooltip is-drawer-close:tooltip-right",
     },
   },
 });
 
-/** Label hidden while a drawer is closed (docs icon-only drawer sidebar). */
-export const menuDrawerLabel = rcva("is-drawer-close:hidden");
+/**
+ * The `fold` list's highlight: one element, anchored to the active page while its group is
+ * open, to the group's row while it is closed (or held shut), and folded to the rail's icon
+ * pill on that row — so it slides and resizes between them on M3's default spatial spring.
+ * (`m-0 opacity-100`: daisyUI draws an empty menu `<li>` as a faint divider.)
+ */
+export const menuIndicator = rcva(
+  "pointer-events-none absolute -z-10 m-0 rounded-field opacity-100 bg-primary/20 [position-anchor:--menu-target] [position-visibility:anchors-valid] top-[anchor(top)] left-[anchor(left)] h-[anchor-size(height)] w-[anchor-size(width)] [transition:top_var(--duration-spatial)_var(--ease-spatial),left_var(--duration-spatial)_var(--ease-spatial),width_var(--duration-spatial)_var(--ease-spatial),height_var(--duration-spatial)_var(--ease-spatial)] [@container_style(--menu-expanded:0)]:[position-anchor:--menu-active-root] [@container_style(--menu-collapse:1)]:[position-anchor:--menu-active-root] [@container_style(--menu-collapse:1)]:w-11 not-supports-[anchor-name:--a]:hidden motion-reduce:transition-none",
+);
+
+/** Navigation labels: one line (long ones end in an ellipsis); slide and fade away as the list folds (`--menu-collapse`). */
+export const menuNavLabel = rcva(
+  "inline-block truncate [opacity:calc(1_-_var(--menu-collapse,0))] [translate:calc(var(--menu-collapse,0)_*_-1rem)_0] [transition:opacity_var(--duration-effects-fast)_var(--ease-effects-fast),translate_var(--duration-spatial-fast)_var(--ease-spatial-fast)] motion-reduce:transition-none",
+);
 
 /** Trailing badge (docs "Menu with icons and badge"). */
 export const menuBadge = rcva("badge badge-xs", {
@@ -137,6 +187,11 @@ export interface MenuItem {
   value?: unknown;
 }
 
+type MenuLinkAnchor = NonNullable<VariantProps<typeof menuLink>["anchor"]>;
+
+/** Whether an item or any item under it is the active one. */
+const hasActive = (item: MenuItem): boolean => !!item.active || !!item.children?.some(hasActive);
+
 /**
  * How submenus behave:
  * - `static`: always expanded nested `<ul>`.
@@ -155,10 +210,12 @@ export type MenuSubmenuMode = "static" | "details" | "js";
  *
  * Icon-only menus: give items an `icon` and set `icon-only` (labels become
  * tooltips; `tooltip="top"` for horizontal menus, `"none"` for no tooltip).
- * Drawer sidebar that collapses to icons: `collapse="drawer"` inside
- * `<ui-drawer panel="icon-only">` (labels hide and tooltips show while closed).
+ * App navigation (for `<ui-app-shell>`): `layout="nav"` for the open column and
+ * `layout="rail"` for the collapsed one: the same items with only their icons (labels become
+ * tooltips), so nothing moves between the two. The open list's labels slide in.
  * Without `items`, authored `<li>` children are rendered directly in the `<ul>`.
  * Fires `ui-select` with `{ item, path }` when an item is clicked.
+ * Fires `ui-toggle` with `{ item, path, open }` when a `details` submenu opens or closes.
  */
 @customElement("ui-menu")
 export class UiMenu extends LightElement {
@@ -174,8 +231,8 @@ export class UiMenu extends LightElement {
   @property() submenu: MenuSubmenuMode = "details";
   @property({ type: Boolean, attribute: "icon-only" }) iconOnly = false;
   @property() tooltip: "top" | "right" | "bottom" | "none" = "right";
-  /** `drawer`: collapse to icons while the surrounding `ui-drawer` is closed. */
-  @property() collapse: "none" | "drawer" = "none";
+  /** `nav`: app navigation list; `rail`: the same items, icons only (collapsed navigation column). */
+  @property() layout: "list" | "nav" | "rail" = "list";
 
   /** Open state of `js` submenus, keyed by item. */
   private _shown = new WeakMap<MenuItem, boolean>();
@@ -189,28 +246,30 @@ export class UiMenu extends LightElement {
   }
 
   private _label(item: MenuItem): TemplateResult {
-    const label = this.iconOnly && item.icon ? nothing : (item.label ?? nothing);
-    return html`${item.icon ?? nothing}
-    ${this.collapse === "drawer" && label !== nothing ? html`<span class=${menuDrawerLabel()}>${label}</span>` : label}
+    if (this.layout === "rail") {
+      return html`${item.icon ?? nothing}`;
+    }
+    const text = this.iconOnly && item.icon ? nothing : (item.label ?? nothing);
+    const label = this.layout === "nav" && text !== nothing ? html`<span class=${menuNavLabel()}>${text}</span>` : text;
+    return html`${item.icon ?? nothing} ${label}
     ${item.badge != null ? html`<span class=${menuBadge({ color: item.badgeColor })}>${item.badge}</span>` : nothing}`;
   }
 
   private _link(item: MenuItem, path: number[]) {
-    const tip =
-      this.collapse === "drawer"
-        ? ("drawer" as const)
-        : this.iconOnly && item.icon && this.tooltip !== "none"
-          ? this.tooltip
-          : undefined;
-    const cls = menuLink({ active: item.active, focus: item.focus, tooltip: tip });
+    const rail = this.layout === "rail";
+    const iconOnly = rail || (this.iconOnly && !!item.icon);
+    // The rail scrolls (and would clip a CSS tooltip), so it uses the native one.
+    const tip = iconOnly && !rail && this.tooltip !== "none" ? this.tooltip : undefined;
+    const title = rail && typeof item.label === "string" ? item.label : undefined;
+    const cls = menuLink({ active: item.active, focus: item.focus, tooltip: tip, anchor: this._anchor(item, path) });
     const dataTip = tip && typeof item.label === "string" ? item.label : undefined;
-    const ariaLabel =
-      (this.iconOnly || this.collapse === "drawer") && typeof item.label === "string" ? item.label : undefined;
+    const ariaLabel = iconOnly && typeof item.label === "string" ? item.label : undefined;
     if (item.href && !item.disabled) {
       return html`<a
         class=${cls}
         href=${item.href}
         data-tip=${ifDefined(dataTip)}
+        title=${ifDefined(title)}
         aria-label=${ifDefined(ariaLabel)}
         aria-current=${ifDefined(item.active ? "page" : undefined)}
         @click=${(e: Event) => this._select(item, path, e)}
@@ -222,11 +281,26 @@ export class UiMenu extends LightElement {
       class=${cls}
       ?disabled=${!!item.disabled}
       data-tip=${ifDefined(dataTip)}
+      title=${ifDefined(title)}
       aria-label=${ifDefined(ariaLabel)}
       @click=${(e: Event) => this._select(item, path, e)}
     >
       ${this._label(item)}
     </button>`;
+  }
+
+  /** A `details` submenu opened or closed (by the user or `open`): fires `ui-toggle`. */
+  private _toggled(item: MenuItem, path: number[], e: Event) {
+    const open = (e.currentTarget as HTMLDetailsElement).open;
+    this.dispatchEvent(new CustomEvent("ui-toggle", { detail: { item, path, open }, bubbles: true }));
+  }
+
+  /** Which `fold` highlight anchor an item is (navigation list only). */
+  private _anchor(item: MenuItem, path: number[]): MenuLinkAnchor | undefined {
+    if (this.layout !== "nav") return undefined;
+    const top = path.length === 1;
+    if (item.active) return top ? "both" : "page";
+    return top && hasActive(item) ? "root" : undefined;
   }
 
   private _list(items: MenuItem[], path: number[]): unknown {
@@ -283,8 +357,8 @@ export class UiMenu extends LightElement {
     }
 
     return html`<li class=${li}>
-      <details ?open=${!!item.open}>
-        <summary>${this._label(item)}</summary>
+      <details ?open=${!!item.open} @toggle=${(e: Event) => this._toggled(item, path, e)}>
+        <summary class=${menuLink({ anchor: this._anchor(item, path) })}>${this._label(item)}</summary>
         <ul>
           ${this._list(item.children, path)}
         </ul>
@@ -303,9 +377,13 @@ export class UiMenu extends LightElement {
         flush: this.flush,
         width: this.width,
         iconSize: this.iconSize,
+        nav: this.layout !== "list",
+        fold: this.layout === "nav",
+        rail: this.layout === "rail",
       })}
     >
       ${this.items.length ? this._list(this.items, []) : this.content}
+      ${this.layout === "nav" ? html`<li class=${menuIndicator()} role="presentation"></li>` : nothing}
     </ul>`;
   }
 }

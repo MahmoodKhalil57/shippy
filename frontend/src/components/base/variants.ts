@@ -8,7 +8,7 @@ import { cva, cx } from "class-variance-authority";
  *
  *   size="sm lg:lg"                  -> btn-sm lg:btn-lg
  *   direction="vertical lg:horizontal" -> menu-vertical lg:menu-horizontal
- *   open="lg"   (boolean variant)    -> lg:drawer-open
+ *   wide="lg"   (boolean variant)    -> lg:btn-wide
  *   side="true" / side               -> card-side
  *   compact="max-md"  (boolean)      -> max-md:timeline-compact
  *
@@ -101,7 +101,7 @@ export function rcva<T extends Schema>(base?: ClassValue, config?: RcvaConfig<T>
 
 /**
  * Lit converter for boolean variant properties so they accept responsive
- * specs: `<ui-drawer open>` -> true, `open="lg"` -> "lg", `open="false"` -> false.
+ * specs: `<ui-button wide>` -> true, `wide="lg"` -> "lg", `wide="false"` -> false.
  * Declare as `@property({ converter: responsiveBoolean }) open: Responsive<boolean> = false;`
  */
 export const responsiveBoolean = {

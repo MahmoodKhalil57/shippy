@@ -1,7 +1,8 @@
 import type { VariantProps } from "class-variance-authority";
-import { html, nothing, svg } from "lit";
+import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
+import { iconSvg, type IconName } from "../media/icon.ts";
 import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
 import { button } from "../actions/button.ts";
 
@@ -52,10 +53,8 @@ export const listActionIcon = rcva("size-[1.2em]");
 
 export type ListVariants = VariantProps<typeof list>;
 
-const LIST_ICONS = {
-  play: svg`<g stroke-linejoin="round" stroke-linecap="round" stroke-width="2" fill="none" stroke="currentColor"><path d="M6 3L20 12 6 21 6 3z"></path></g>`,
-  favorite: svg`<g stroke-linejoin="round" stroke-linecap="round" stroke-width="2" fill="none" stroke="currentColor"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></g>`,
-};
+/** The docs' row actions, as system icons. */
+const LIST_ICONS = { play: "play", favorite: "heart" } as const satisfies Record<string, IconName>;
 export type ListIconName = keyof typeof LIST_ICONS;
 
 export interface ListAction {
@@ -107,9 +106,7 @@ export class UiList extends LightElement {
 
   private _icon(icon: ListAction["icon"], label: string) {
     return typeof icon === "string" && icon in LIST_ICONS
-      ? html`<svg aria-label=${label} class=${listActionIcon()} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-          ${LIST_ICONS[icon as ListIconName]}
-        </svg>`
+      ? iconSvg(LIST_ICONS[icon as ListIconName], {}, { label, class: listActionIcon() })
       : icon;
   }
 

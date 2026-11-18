@@ -5,6 +5,7 @@ import { customElement, property, query } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement, uid } from "../../base/light-element.ts";
 import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
+import { iconSvg } from "../media/icon.ts";
 
 /**
  * Calendar: Styles for different calendar libraries.
@@ -40,26 +41,17 @@ export const calendarPopover = rcva("dropdown bg-base-100 rounded-box shadow-lg"
 /** Date-picker trigger button (styled like an input, as in the docs). */
 export const calendarTrigger = rcva("input");
 
+/** The month navigation buttons' icons (cally's `previous` / `next` slots). */
+export const calendarNavIcon = rcva("inline-grid place-items-center");
+
 export type CalendarVariants = VariantProps<typeof calendar>;
 
-const prevIcon = html`<svg
-  aria-label="Previous"
-  class="fill-current size-4"
-  slot="previous"
-  xmlns="http://www.w3.org/2000/svg"
-  viewBox="0 0 24 24"
->
-  <path fill="currentColor" d="M15.75 19.5 8.25 12l7.5-7.5"></path>
-</svg>`;
-const nextIcon = html`<svg
-  aria-label="Next"
-  class="fill-current size-4"
-  slot="next"
-  xmlns="http://www.w3.org/2000/svg"
-  viewBox="0 0 24 24"
->
-  <path fill="currentColor" d="m8.25 4.5 7.5 7.5-7.5 7.5"></path>
-</svg>`;
+const prevIcon = html`<span slot="previous" class=${calendarNavIcon()}
+  >${iconSvg("chevron-left", { size: "sm" }, { label: "Previous" })}</span
+>`;
+const nextIcon = html`<span slot="next" class=${calendarNavIcon()}
+  >${iconSvg("chevron-right", { size: "sm" }, { label: "Next" })}</span
+>`;
 
 /**
  * @example <ui-calendar value="2025-06-01" framed></ui-calendar>

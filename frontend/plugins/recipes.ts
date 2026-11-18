@@ -107,7 +107,7 @@ export function responsiveTokens(source: string): Set<string> {
 /**
  * For a component file: boolean variant name -> the property / attribute names
  * that feed it. Reads `@property({ converter: responsiveBoolean, attribute })`
- * declarations and recipe calls such as `drawer({ open: this.forceOpen })`, so
+ * declarations and recipe calls such as `button({ hide: this.hide })`, so
  * `force-open="lg"` in a page maps to the `open` variant.
  */
 /** Names of `this.<name>` reads anywhere inside an expression. */

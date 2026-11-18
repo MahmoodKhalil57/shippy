@@ -10,7 +10,17 @@ export { createStore, StoreController, type Store } from "./store.ts";
 /* ---------------------------------------------------------------- preferences (persisted) */
 
 export type Theme = "system" | "light" | "dark";
-export const preferences = createStore({ theme: "system" as Theme }, { persist: "gs:preferences" });
+export const preferences = createStore(
+  {
+    theme: "system" as Theme,
+    /** App shell columns: navigation expanded (vs. rail) and side panel open. */
+    navOpen: true,
+    asideOpen: true,
+    /** Side-panel sections that are collapsed, by id (everything else is open). */
+    asideCollapsed: [] as string[],
+  },
+  { persist: "gs:preferences" },
+);
 
 /* ---------------------------------------------------------------- demo session */
 
@@ -128,3 +138,16 @@ export function toast(message: string, tone: Toast["tone"] = "success", ms = 450
   return id;
 }
 export const dismissToast = (id: number) => toasts.set((s) => ({ items: s.items.filter((t) => t.id !== id) }));
+
+/* ---------------------------------------------------------------- bookmarks (persisted) */
+
+export interface Bookmark {
+  href: string;
+  label: string;
+}
+export const bookmarks = createStore({ items: [] as Bookmark[] }, { persist: "gs:bookmarks" });
+export const isBookmarked = (href: string) => bookmarks.get().items.some((b) => b.href === href);
+export const toggleBookmark = (b: Bookmark) =>
+  bookmarks.set((s) => ({
+    items: s.items.some((x) => x.href === b.href) ? s.items.filter((x) => x.href !== b.href) : [...s.items, b],
+  }));

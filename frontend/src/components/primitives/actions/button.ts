@@ -49,6 +49,8 @@ export const button = rcva("btn", {
     block: { true: "btn-block" },
     active: { true: "btn-active" },
     disabled: { true: "btn-disabled" },
+    /** Hide the button, e.g. `hide="lg"` where a sidebar it toggles is always open. */
+    hide: { true: "hidden" },
     /** Content alignment, e.g. for full-width buttons in menus. */
     justify: {
       start: "justify-start",
@@ -82,6 +84,7 @@ export class UiButton extends LightElement {
   @property({ converter: responsiveBoolean }) wide: Responsive<boolean> = false;
   @property({ converter: responsiveBoolean }) block: Responsive<boolean> = false;
   @property({ converter: responsiveBoolean }) active: Responsive<boolean> = false;
+  @property({ converter: responsiveBoolean }) hide: Responsive<boolean> = false;
   /** Behaviour, not just looks: disables the native button / link. */
   @property({ type: Boolean }) disabled = false;
   @property() type: "button" | "submit" | "reset" | "radio" | "checkbox" = "button";
@@ -105,6 +108,7 @@ export class UiButton extends LightElement {
       wide: this.wide,
       block: this.block,
       active: this.active,
+      hide: this.hide,
       disabled: this.disabled && !!this.href,
     });
     if (this.type === "radio" || this.type === "checkbox") {

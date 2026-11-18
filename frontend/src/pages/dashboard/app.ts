@@ -5,12 +5,16 @@ import { customElement, state } from "lit/decorators.js";
 import { API_ROUTE, api, startMockBackend } from "../../cms/client.ts";
 import type { Doc } from "../../cms/types.ts";
 import type { MenuItem } from "../../components/primitives/navigation/menu.ts";
+import type { IconName } from "../../components/primitives/media/icon.ts";
+import { StoreController, preferences } from "../../stores/index.ts";
 import "../../components/index.ts";
 import "./auth-views.ts";
 import "./overview.ts";
 import "./edit-view.ts";
 import "./list-view.ts";
 import "./mock-data.ts";
+import "./search.ts";
+import { asideRail, openAsideSection, type AsideSection } from "./aside.ts";
 import {
   dashboardPath,
   config,
@@ -33,6 +37,21 @@ import {
 
 export type Access = Awaited<ReturnType<typeof api.access>>;
 
+/** Navigation icons per `admin.group`. */
+const GROUP_ICONS: Record<string, IconName> = {
+  "Sourcing desk": "inbox",
+  Commercial: "briefcase",
+  Fulfilment: "truck",
+  Finance: "banknotes",
+  Catalogue: "cube",
+  Directory: "users",
+  Work: "clipboard",
+  Growth: "trending-up",
+  Team: "user",
+  Configuration: "settings",
+  "Mock backend": "database",
+};
+
 @customElement("dashboard-app")
 export class DashboardApp extends LightElement {
   @state() private route: Route = parseRoute(location.pathname);
@@ -40,6 +59,7 @@ export class DashboardApp extends LightElement {
   @state() private access: Access | null = null;
   @state() private ready = false;
   @state() private failure = "";
+  #prefs = new StoreController(this, preferences);
 
   connectedCallback() {
     super.connectedCallback();
@@ -111,8 +131,8 @@ export class DashboardApp extends LightElement {
     await this._refresh();
   }
 
-  private _menu(): MenuItem[] {
-    const r = this.route;
+  /** Navigation: collection groups (`admin.group`) and globals, as collapsible groups with icons. */
+  private _groups() {
     const here = (path: string) => location.pathname === path || location.pathname.startsWith(`${path}/`);
     const groups = new Map<string, MenuItem[]>();
     for (const c of config.collections) {
@@ -127,15 +147,39 @@ export class DashboardApp extends LightElement {
         const href = dashboardPath("globals", g.slug);
         return { label: globalLabel(g), href, active: here(href) };
       });
-    return [
-      { label: "Dashboard", href: dashboardPath(), active: r.name === "dashboard" },
-      ...[...groups].flatMap(([group, items]) => [{ label: group, heading: true }, ...items]),
-      ...(globals.length ? [{ label: "Globals", heading: true }, ...globals] : []),
-      { label: "Mock backend", heading: true },
-      { label: "Mock data", href: dashboardPath("mock-data"), active: r.name === "mock-data" },
+    if (globals.length) groups.set("Configuration", [...(groups.get("Configuration") ?? []), ...globals]);
+    groups.set("Mock backend", [
+      { label: "Mock data", href: dashboardPath("mock-data"), active: this.route.name === "mock-data" },
       { label: "API", href: `${API_ROUTE}/access` },
-      { label: "Account", href: dashboardPath("account"), active: r.name === "account" },
-      { label: "Log out", value: "logout" },
+    ]);
+    return [...groups].map(([label, items]) => ({ label, items, active: items.some((i) => i.active) }));
+  }
+
+  private _icon = (name: IconName) => html`<ui-icon name=${name}></ui-icon>`;
+
+  /** The expanded navigation. */
+  private _menu(): MenuItem[] {
+    return [
+      { label: "Dashboard", icon: this._icon("home"), href: dashboardPath(), active: this.route.name === "dashboard" },
+      ...this._groups().map((g) => ({
+        label: g.label,
+        icon: this._icon(GROUP_ICONS[g.label] ?? "grid"),
+        open: g.active,
+        children: g.items,
+      })),
+    ];
+  }
+
+  /** The collapsed rail: one entry per group, linking to its first page. */
+  private _rail(): MenuItem[] {
+    return [
+      { label: "Dashboard", icon: this._icon("home"), href: dashboardPath(), active: this.route.name === "dashboard" },
+      ...this._groups().map((g) => ({
+        label: g.label,
+        icon: this._icon(GROUP_ICONS[g.label] ?? "grid"),
+        href: g.items[0]?.href,
+        active: g.active,
+      })),
     ];
   }
 
@@ -188,31 +232,55 @@ export class DashboardApp extends LightElement {
       }${toaster}`;
     }
 
+    const user = this.user;
+    const initials = text(user.initials ?? user.email ?? "?").slice(0, 2);
+    const profile: MenuItem[] = [
+      { label: "Account", href: dashboardPath("account"), active: this.route.name === "account" },
+      { label: "Log out", value: "logout" },
+    ];
+    const { navOpen, asideOpen } = this.#prefs.value;
     return html`
-      <ui-drawer force-open="lg" button-hide="lg" button="☰" button-look="icon">
-        <ui-container width="6xl" padding-x="4 md:8" padding-y="6 md:10">${this._view()}</ui-container>
-        <ui-flex slot="side" direction="col" gap="2" padding="4" full-height>
-          <ui-flex align="center" gap="3" padding="2">
-            <ui-avatar
-              .initials=${text(this.user.initials ?? this.user.email ?? "?").slice(0, 2)}
-              size="sm"
-            ></ui-avatar>
-            <ui-flex direction="col">
-              <ui-text weight="semibold" size="sm">${text(this.user.name ?? this.user.email)}</ui-text>
-              <ui-text size="xs" color="muted">${text(this.user.email)}</ui-text>
-            </ui-flex>
-          </ui-flex>
-          <ui-menu
-            width="full"
-            .items=${this._menu()}
-            @ui-select=${(e: CustomEvent<{ item: MenuItem }>) => e.detail.item.value === "logout" && this._logout()}
-          ></ui-menu>
-          <ui-flex justify="between" align="center" padding="2">
-            <ui-text size="xs" color="muted">Theme</ui-text>
-            <ui-theme-controller as="swap" theme="dark" persist></ui-theme-controller>
-          </ui-flex>
+      <ui-app-shell
+        brand="Golden Sea"
+        brand-href=${dashboardPath()}
+        ?nav-open=${navOpen}
+        ?aside-open=${asideOpen}
+        aside-label="Side panel"
+        @ui-change=${(e: CustomEvent<{ nav: boolean; aside: boolean }>) =>
+          preferences.set({ navOpen: e.detail.nav, asideOpen: e.detail.aside })}
+      >
+        <dashboard-search slot="search" .access=${this.access}></dashboard-search>
+        <ui-flex slot="actions" align="center" gap="1">
+          <ui-theme-controller as="swap" theme="dark" persist></ui-theme-controller>
+          <ui-dropdown align="end" panel="card" panel-shadow="lg" .heading=${text(user.name ?? user.email)}>
+            <ui-avatar slot="trigger" .initials=${initials} size="sm"></ui-avatar>
+            <ui-text size="xs" color="muted">${text(user.email)}</ui-text>
+            <ui-menu
+              width="full"
+              surface="false"
+              .items=${profile}
+              @ui-select=${(e: CustomEvent<{ item: MenuItem }>) => e.detail.item.value === "logout" && this._logout()}
+            ></ui-menu>
+          </ui-dropdown>
         </ui-flex>
-      </ui-drawer>
+        <ui-menu slot="nav" layout="nav" width="full" surface="false" .items=${this._menu()}></ui-menu>
+        <ui-menu slot="rail" layout="rail" surface="false" .items=${this._rail()}></ui-menu>
+        <ui-menu
+          slot="aside-rail"
+          layout="rail"
+          surface="false"
+          .items=${asideRail()}
+          @ui-select=${(e: CustomEvent<{ item: MenuItem }>) => openAsideSection(e.detail.item.value as AsideSection)}
+        ></ui-menu>
+        <dashboard-aside
+          slot="aside"
+          .access=${this.access}
+          .user=${user}
+          .path=${location.pathname}
+          .pageTitle=${this._title()}
+        ></dashboard-aside>
+        <ui-container width="6xl" padding-x="4 md:8" padding-y="6 md:10">${this._view()}</ui-container>
+      </ui-app-shell>
       ${toaster}
     `;
   }

@@ -15,6 +15,10 @@
     "qs-esm": "^8.0.2"
   },
   "devDependencies": {
+    "@iconify-json/devicon": "^1.2.82",
+    "@iconify-json/line-md": "^1.2.16",
+    "@iconify-json/logos": "^1.2.20",
+    "@iconify-json/material-symbols-light": "^1.2.102",
     "@tailwindcss/vite": "^4.3.5",
     "@types/node": "^26.6.6",
     "daisyui": "^5.8.1",
@@ -22,6 +26,7 @@
     "postcss": "^8.5.33",
     "tailwindcss": "^4.3.5",
     "typescript": "~7.0.2",
+    "unplugin-icons": "^24.0.0",
     "vite": "npm:@voidzero-dev/vite-plus-core@8.3.8000",
     "vite-plus": "1.7.0"
   },

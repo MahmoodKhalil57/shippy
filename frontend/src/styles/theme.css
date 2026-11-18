@@ -2,3 +2,18 @@
    theme customisation. Imported by index.css (emitted) and by reference.css
    (reference only), so app code and component CSS always agree. */
 @plugin "daisyui";
+@import "./motion.css";
+
+/* State flags a container sets on a navigation menu (<ui-menu layout="nav">). Registered so a
+   container can flip them on a schedule (`transition: --menu-collapse 0s <delay>`), letting the
+   menu react without delays of its own. */
+@property --menu-collapse {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+@property --menu-expanded {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}

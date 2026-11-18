@@ -189,7 +189,7 @@ describe("primitives use theme colours only", () => {
 
 describe("responsive variants", () => {
   // plugins/component-css.ts only generates a responsive boolean's classes
-  // (e.g. `lg:drawer-open` for `force-open="lg"`) when it can see which recipe
+  // (e.g. `lg:hidden` for `hide="lg"`) when it can see which recipe
   // variant the property feeds: `recipe({ variant: ...this.prop... })`.
   it.each(cases(primitives))("%s: responsive booleans feed a recipe variant", (_, file) => {
     const source = read(file);

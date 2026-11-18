@@ -1,7 +1,8 @@
 import type { VariantProps } from "class-variance-authority";
-import { html, nothing, svg } from "lit";
+import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
+import { iconSvg, type IconName } from "../media/icon.ts";
 import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
 import { button, type ButtonVariants } from "../actions/button.ts";
 
@@ -59,15 +60,14 @@ export const statAvatarImage = rcva("w-16 rounded-full");
 export type StatVariants = VariantProps<typeof stats>;
 export type StatColor = keyof typeof textColor;
 
+/** The docs' stat figures, as system icons. */
 const STAT_ICONS = {
-  heart:
-    "M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z",
-  bolt: "M13 10V3L4 14h7v7l9-11h-7z",
-  info: "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
-  adjustments:
-    "M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4",
-  archive: "M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4",
-} as const;
+  heart: "heart",
+  bolt: "bolt",
+  info: "info",
+  adjustments: "settings",
+  archive: "archive",
+} as const satisfies Record<string, IconName>;
 export type StatIconName = keyof typeof STAT_ICONS;
 
 export interface StatAction {
@@ -120,9 +120,7 @@ export class UiStat extends LightElement {
       </div>`;
     }
     if (typeof s.figure === "string" && s.figure in STAT_ICONS) {
-      return html`<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class=${statIcon()}>
-        ${svg`<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d=${STAT_ICONS[s.figure as StatIconName]}></path>`}
-      </svg>`;
+      return iconSvg(STAT_ICONS[s.figure as StatIconName], {}, { class: statIcon() });
     }
     return s.figure;
   }

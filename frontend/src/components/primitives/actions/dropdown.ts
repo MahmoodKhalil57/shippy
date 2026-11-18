@@ -5,6 +5,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement, uid, type Renderable } from "../../base/light-element.ts";
 import { isOn, rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
 import { button, type ButtonVariants } from "./button.ts";
+import { iconSvg } from "../media/icon.ts";
 
 /**
  * Dropdown: Opens a menu or other element when a button is clicked.
@@ -111,20 +112,7 @@ export const dropdownIcon = rcva("h-4 w-4 stroke-current");
 
 /** Icons used as triggers in the docs (`info`: the helper dropdown). */
 export const dropdownIcons = {
-  info: html`<svg
-    aria-label="More info"
-    xmlns="http://www.w3.org/2000/svg"
-    fill="none"
-    viewBox="0 0 24 24"
-    class=${dropdownIcon()}
-  >
-    <path
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      stroke-width="2"
-      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-    ></path>
-  </svg>`,
+  info: iconSvg("info", {}, { label: "More info", class: dropdownIcon() }),
 } as const;
 
 export type DropdownVariants = VariantProps<typeof dropdown>;

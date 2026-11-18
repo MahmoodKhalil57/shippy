@@ -1,5 +1,5 @@
 purpose,name,kind,composed_of,category,url,description
-Layout & page structure,Drawer sidebar,primitive,,Layout,https://daisyui.com/components/drawer/,Grid layout that shows or hides a sidebar on the left or right.
+Layout & page structure,App shell,primitive,,Layout,,"Application frame: header with centred search, rounded main panel, and two columns built alike (navigation, side panel) that collapse to an icon rail (replaces Drawer + Navbar)."
 Layout & page structure,Hero,primitive,,Layout,https://daisyui.com/components/hero/,Large box or image with a title and description.
 Layout & page structure,Footer,primitive,,Layout,https://daisyui.com/components/footer/,"Logo, copyright notice and links to other pages."
 Layout & page structure,Divider,primitive,,Layout,https://daisyui.com/components/divider/,Separates content vertically or horizontally.
@@ -10,7 +10,6 @@ Layout & page structure,Flex,primitive,,Shippy (not daisyUI),,"Row/column layout
 Layout & page structure,Grid,primitive,,Shippy (not daisyUI),,Column/row grid with gap and spanning cells.
 Layout & page structure,Container,primitive,,Shippy (not daisyUI),,"Centered, max-width page container with padding."
 Layout & page structure,Box,primitive,,Shippy (not daisyUI),,"Generic surface: background, border, radius, shadow, padding, size."
-Navigation,Navbar,primitive,,Navigation,https://daisyui.com/components/navbar/,Navigation bar at the top of the page.
 Navigation,Menu,primitive,,Navigation,https://daisyui.com/components/menu/,Displays a list of links vertically or horizontally.
 Navigation,Megamenu,primitive,,Navigation,https://daisyui.com/components/megamenu/,Large horizontal menu whose items open popovers with navigation links.
 Navigation,Breadcrumbs,primitive,,Navigation,https://daisyui.com/components/breadcrumbs/,Helps users navigate the website.
@@ -65,7 +64,7 @@ Media & visual effects,Aura,primitive,,Data display,https://daisyui.com/componen
 Media & visual effects,Hover 3D card,primitive,,Data display,https://daisyui.com/components/hover-3d/,Wrapper that adds a 3D tilt effect following the mouse.
 Media & visual effects,Hover Gallery,primitive,,Data display,https://daisyui.com/components/hover-gallery/,Image container where hovering reveals other images (up to 10).
 Media & visual effects,Text Rotate,primitive,,Data display,https://daisyui.com/components/text-rotate/,Cycles through up to 6 lines of text with an animation.
-Media & visual effects,Icon,primitive,,Shippy (not daisyUI),,"Sized, coloured inline SVG icons (built-in set or authored SVG)."
+Media & visual effects,Icon,primitive,,Shippy (not daisyUI),,"Sized, coloured icons: the system's named icons (Iconify line-md / material-symbols-light / devicon / logos via unplugin-icons, tree-shaken) or an authored SVG."
 Showcase & docs,Browser mockup,primitive,,Mockup,https://daisyui.com/components/mockup-browser/,Box that looks like a browser window.
 Showcase & docs,Code mockup,primitive,,Mockup,https://daisyui.com/components/mockup-code/,Block of code in a box that looks like a code editor.
 Showcase & docs,Phone mockup,primitive,,Mockup,https://daisyui.com/components/mockup-phone/,Mockup of an iPhone.

@@ -2,6 +2,7 @@ import { defineConfig } from "vite-plus";
 import tailwindcss from "@tailwindcss/vite";
 import componentCss from "./plugins/component-css.ts";
 import dedupeCss from "./plugins/dedupe-css.ts";
+import icons from "./plugins/icons.ts";
 import layerVariants from "./plugins/layer-variants.ts";
 import mockBackend from "./plugins/mock-backend.ts";
 
@@ -16,6 +17,8 @@ export default defineConfig({
     dedupeCss(),
     // In-browser Payload-compatible backend (src/cms); its dashboard is the site itself.
     mockBackend(),
+    // `~icons/<collection>/<name>`: tree-shaken Iconify icons as Lit templates.
+    icons(),
   ],
   fmt: {
     ignorePatterns: ["dist/**", "bun.lock"],

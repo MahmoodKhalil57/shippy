@@ -41,6 +41,7 @@ The design system is enforced through the components (`tests/architecture.test.t
   - templates hold `ui-*` elements plus unstyled inline text (`strong`, `em`, `span`, `br`…), nothing else;
   - attribute values must be the primitive's tokens; the test reads each primitive's variants and checks every literal value.
 - **Primitives use theme colours only** (`primary`, `base-200`…), never the Tailwind palette (`red-400`) or literal colours.
+- **Icons come from the registry only**: `ICONS` / `iconSvg()` / `<ui-icon name>` in `src/components/primitives/media/icon.ts`, filled with `import x from "~icons/<collection>/<name>"` (unplugin-icons, tree-shaken) from line-md (preferred, animated), material-symbols-light, devicon or logos. Nothing else draws an `<svg>` (`tests/icons.test.ts`).
 - Missing something? Add a variant (or a new primitive) in `src/components/primitives`, not a workaround in the page.
 
 # Mock backend (Payload-compatible, in the browser)

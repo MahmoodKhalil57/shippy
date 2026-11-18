@@ -6,6 +6,7 @@ import { live } from "lit/directives/live.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
 import { fieldsetField, fieldsetLabel, type FieldsetVariants } from "./fieldset.ts";
+import { iconSvg } from "../media/icon.ts";
 
 /**
  * Toggle: Checkbox styled as a switch.
@@ -43,24 +44,8 @@ export const toggle = rcva("toggle", {
 
 export type ToggleVariants = VariantProps<typeof toggle>;
 
-const toggleIconOn = html`<svg aria-label="enabled" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-  <g stroke-linejoin="round" stroke-linecap="round" stroke-width="4" fill="none" stroke="currentColor">
-    <path d="M20 6 9 17l-5-5"></path>
-  </g>
-</svg>`;
-const toggleIconOff = html`<svg
-  aria-label="disabled"
-  xmlns="http://www.w3.org/2000/svg"
-  viewBox="0 0 24 24"
-  fill="none"
-  stroke="currentColor"
-  stroke-width="4"
-  stroke-linecap="round"
-  stroke-linejoin="round"
->
-  <path d="M18 6 6 18" />
-  <path d="m6 6 12 12" />
-</svg>`;
+const toggleIconOn = iconSvg("check", {}, { label: "enabled", class: "" });
+const toggleIconOff = iconSvg("x", {}, { label: "disabled", class: "" });
 
 /**
  * @example <ui-toggle checked color="success" size="lg"></ui-toggle>

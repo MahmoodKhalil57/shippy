@@ -1,8 +1,9 @@
 import type { VariantProps } from "class-variance-authority";
-import { html, nothing, svg } from "lit";
+import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { booleanAttribute, rcva } from "../../base/variants.ts";
+import { iconSvg, type IconName } from "../media/icon.ts";
 
 /**
  * Alert: Informs users about important events.
@@ -47,26 +48,17 @@ export const alertDescription = rcva("text-xs");
 export const alertActions = rcva("flex gap-2");
 export const alertDismiss = rcva("btn btn-sm btn-ghost btn-circle");
 
-const ICON_PATHS: Record<NonNullable<AlertVariants["color"]> | "default", string> = {
-  default: "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
-  info: "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
-  success: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z",
-  warning:
-    "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z",
-  error: "M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z",
-};
+const ALERT_ICONS = {
+  default: "info",
+  info: "info",
+  success: "success",
+  warning: "warning",
+  error: "error",
+} as const satisfies Record<NonNullable<AlertVariants["color"]> | "default", IconName>;
 
-/** Default status icon for an alert colour (the same SVGs as the daisyUI docs). */
+/** Default status icon for an alert colour. */
 export const alertIconSvg = (color: AlertVariants["color"]) =>
-  html`<svg
-    xmlns="http://www.w3.org/2000/svg"
-    fill="none"
-    viewBox="0 0 24 24"
-    class=${alertIcon({ neutral: !color })}
-    aria-hidden="true"
-  >
-    ${svg`<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d=${ICON_PATHS[color ?? "default"]}></path>`}
-  </svg>`;
+  iconSvg(ALERT_ICONS[(color ?? "default") as keyof typeof ALERT_ICONS], {}, { class: alertIcon({ neutral: !color }) });
 
 /**
  * @example <ui-alert color="success" variant="soft">Your purchase has been confirmed!</ui-alert>

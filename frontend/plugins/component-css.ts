@@ -25,7 +25,7 @@ import { booleanBindings, recipeVariants, responsiveSafelist, responsiveTokens }
  * recipe configs and adds only what's used in src/ (see `responsiveSafelist`
  * in ./recipes.ts): enum options at each breakpoint written as `<bp>:<option>`,
  * and boolean variants at each bare breakpoint assigned to the attribute or
- * property that feeds them (e.g. `force-open="lg"` -> `lg:drawer-open`).
+ * property that feeds them (e.g. `hide="lg"` -> `lg:hidden`).
  * In dev, editing a file that changes those tokens regenerates the stylesheets.
  *
  * Must be listed before tailwindcss() in `plugins`.
