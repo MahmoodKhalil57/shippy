@@ -179,6 +179,18 @@ export class DashboardCommand extends LightElement {
         },
         "star",
       ),
+      this._entry(
+        {
+          id: "action:contrast",
+          kind: "action",
+          title: "Check colour contrast",
+          group: "Accessibility",
+          description: "Outline text on this screen that fails WCAG AA contrast",
+          keywords: ["accessibility", "a11y", "wcag", "contrast", "audit", "legibility", "colour", "color"],
+          run: () => window.dispatchEvent(new Event("ui-contrast-audit")),
+        },
+        "contrast",
+      ),
       ...(this.onLogout
         ? [
             this._entry(

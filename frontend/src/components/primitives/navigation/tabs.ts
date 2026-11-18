@@ -14,7 +14,8 @@ import { booleanAttribute, rcva } from "../../base/variants.ts";
  * Horizontal scroll when there's no room (docs): `scroll-area="xs"` (the max width
  * of the scroll area). Custom active color (docs): `active-color="primary"`.
  */
-export const tabs = rcva("tabs", {
+/** Unselected tabs at 80% ink (daisyUI's faint default falls below WCAG AA). */
+export const tabs = rcva("tabs [&>.tab:not(.tab-active)]:text-base-content/80", {
   variants: {
     variant: {
       box: "tabs-box",

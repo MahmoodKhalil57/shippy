@@ -2,10 +2,12 @@ import type { VariantProps } from "class-variance-authority";
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { styleMap } from "lit/directives/style-map.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { button } from "../actions/button.ts";
 import { iconSvg, type IconName } from "../media/icon.ts";
+import { cssLuminance, lumaOf, sampleBehind, scrimFor, type Luma, type Rect } from "./legibility.ts";
 
 /**
  * App shell: the application frame — a header (brand, centred search, actions), a
@@ -41,8 +43,8 @@ export const appShell = rcva(
   /* A faint wash of the theme's primary / secondary / accent at the corners: the frame the header
      and rails sit on, and what the floating glass (sheets, menus, dialogs) refracts. Under it, the
      chosen background image (`--app-background`, set by `<ui-theme-controller as="background">`)
-     behind a wash of the theme's surface (`--app-background-wash`) so text on it stays readable. */
-  "group/shell grid h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] overflow-hidden bg-base-200 [background-image:radial-gradient(70%_60%_at_0%_0%,color-mix(in_oklab,var(--color-primary)_16%,transparent),transparent_70%),radial-gradient(60%_55%_at_100%_100%,color-mix(in_oklab,var(--color-secondary)_12%,transparent),transparent_70%),radial-gradient(45%_40%_at_100%_0%,color-mix(in_oklab,var(--color-accent)_9%,transparent),transparent_70%),linear-gradient(color-mix(in_oklab,var(--color-base-200)_var(--app-background-wash,0%),transparent)),var(--app-background,none)] bg-cover bg-center text-base-content",
+     behind one scrim (`--app-scrim`, chosen from the image so text on it stays readable). */
+  "group/shell grid h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] overflow-hidden bg-base-200 [background-image:radial-gradient(70%_60%_at_0%_0%,color-mix(in_oklab,var(--color-primary)_16%,transparent),transparent_70%),radial-gradient(60%_55%_at_100%_100%,color-mix(in_oklab,var(--color-secondary)_12%,transparent),transparent_70%),radial-gradient(45%_40%_at_100%_0%,color-mix(in_oklab,var(--color-accent)_9%,transparent),transparent_70%),linear-gradient(var(--app-scrim,transparent),var(--app-scrim,transparent)),var(--app-background,none)] bg-cover bg-center text-base-content",
   {
     variants: {
       /**
@@ -199,7 +201,7 @@ export const appShellMain = rcva(
    * (container units, container queries), not to the window. Its scrollbar stays inside the
    * rounded corners (`--scrollbar-inset`, src/index.css).
    */
-  "@container/main min-w-[13.5rem] flex-1 overflow-y-auto overscroll-contain rounded-(--main-radius) bg-base-100 shadow-sm [--main-radius:clamp(1rem,3vw,2rem)] [--scrollbar-inset:var(--main-radius)]",
+  "@container/main min-w-[13.5rem] flex-1 overflow-y-auto overscroll-contain rounded-(--main-radius) liquid-glass-surface [--main-radius:clamp(1rem,3vw,2rem)] [--scrollbar-inset:var(--main-radius)]",
 );
 
 /**
@@ -338,7 +340,98 @@ export class UiAppShell extends LightElement {
   protected firstUpdated() {
     // Two frames: the first paint happens with transitions off, then they come on.
     requestAnimationFrame(() => requestAnimationFrame(() => (this._settling = false)));
+    for (const el of this.querySelectorAll(
+      ":scope > div > header, :scope > div > div > nav, :scope > div > div > aside",
+    ))
+      this.#regions.observe(el);
+    void this._onBackground();
   }
+
+  /* ------------------------------------------------------------ legible chrome over a background image */
+
+  /**
+   * Text over the background image stays readable whatever the image, in the theme's own colours:
+   * one scrim of the theme's surface (base-200) over the whole image, just strong enough that the
+   * theme's text (base-content) keeps its contrast over the pixels behind all the text regions
+   * together (header, both columns; ./legibility.ts). Re-measured when the image, the theme or
+   * colour scheme, or a region's size changes.
+   */
+  @state() private _chrome: Record<string, string> = {};
+  #luma: { src: string; luma: Luma } | null = null;
+  #frame = 0;
+  #regions = new ResizeObserver(() => this._measureSoon());
+
+  private _onBackground = async () => {
+    const value = getComputedStyle(document.documentElement).getPropertyValue("--app-background").trim();
+    const src = /^url\((['"]?)(.*)\1\)$/.exec(value)?.[2];
+    if (!src) {
+      this.#luma = null;
+      this._chrome = {};
+      return;
+    }
+    if (this.#luma?.src !== src) {
+      const image = new Image();
+      image.src = src;
+      try {
+        await image.decode();
+      } catch {
+        return;
+      }
+      this.#luma = { src, luma: lumaOf(image) };
+    }
+    this._measure();
+  };
+
+  #dark = matchMedia("(prefers-color-scheme: dark)");
+  #themeAttrs = new MutationObserver(() => this._measureSoon());
+  private _measureSoonBound = () => this._measureSoon();
+
+  private _measureSoon() {
+    cancelAnimationFrame(this.#frame);
+    this.#frame = requestAnimationFrame(() => this._measure());
+  }
+
+  private _measure() {
+    const shell = this.firstElementChild;
+    if (!this.#luma || !shell) return;
+    const frame = shell.getBoundingClientRect();
+    const samples = [":scope > header", ":scope > div > nav", ":scope > div > aside"].flatMap((sel) => {
+      const r = shell.querySelector(sel)?.getBoundingClientRect();
+      return r && r.width && r.height ? sampleBehind(this.#luma!.luma, frame, r) : [];
+    });
+    if (!samples.length) return;
+    // The shell's own colour and background are the theme's base-content and base-200.
+    const css = getComputedStyle(shell);
+    this.#scrim = { ink: cssLuminance(css.color), surface: cssLuminance(css.backgroundColor) };
+    // Plan for the faintest text the frame uses (muted labels at ~65% of the ink, so their
+    // luminance sits ~35% of the way to the surface), at AA plus headroom, over 95% of the pixels.
+    const muted = this.#scrim.ink + 0.35 * (this.#scrim.surface - this.#scrim.ink);
+    this.#scrim.alpha = scrimFor(samples, muted, this.#scrim.surface, 5, 0.12, 0.94, 0.95);
+    this._chrome = {
+      "--app-scrim": `color-mix(in oklab, var(--color-base-200) ${(this.#scrim.alpha * 100).toFixed(1)}%, transparent)`,
+    };
+  }
+
+  #scrim: { ink: number; surface: number; alpha?: number } = { ink: 0, surface: 0 };
+
+  /**
+   * Luminances of what the frame shows behind `rect` (the background image under its scrim), or
+   * `null` without a background image — for contrast audits (`<ui-contrast-audit>`).
+   */
+  backdropAt(rect: Rect): number[] | null {
+    const shell = this.firstElementChild;
+    if (!this.#luma || !shell || this.#scrim.alpha == null) return null;
+    const a = this.#scrim.alpha;
+    return sampleBehind(this.#luma.luma, shell.getBoundingClientRect(), rect, 8).map(
+      (l) => a * this.#scrim.surface + (1 - a) * l,
+    );
+  }
+
+  /** The theme or colour scheme changed (a theme controller in the header): re-measure once it's applied. */
+  private _onThemeChange = (e: Event) => {
+    if ((e.target as Element | null)?.tagName !== "UI-THEME-CONTROLLER") return;
+    setTimeout(() => this._measureSoon(), 50);
+  };
 
   /** Room a column takes in the layout: open width when pushing, else its rail. */
   private _room(side: "start" | "end", open: boolean, sheet: boolean) {
@@ -433,6 +526,11 @@ export class UiAppShell extends LightElement {
     super.connectedCallback();
     this.addEventListener("keydown", this._onKey);
     window.addEventListener("popstate", this._onNavigate);
+    window.addEventListener("ui-background", this._onBackground);
+    this.addEventListener("ui-change", this._onThemeChange);
+    // Any theme or colour-scheme change (however it's made) changes the ink the scrim is sized for.
+    this.#themeAttrs.observe(document.documentElement, { attributeFilter: ["data-theme", "data-scheme"] });
+    this.#dark.addEventListener("change", this._measureSoonBound);
     this.#resize.observe(document.documentElement);
   }
 
@@ -440,7 +538,13 @@ export class UiAppShell extends LightElement {
     super.disconnectedCallback();
     this.removeEventListener("keydown", this._onKey);
     window.removeEventListener("popstate", this._onNavigate);
+    window.removeEventListener("ui-background", this._onBackground);
+    this.removeEventListener("ui-change", this._onThemeChange);
+    this.#themeAttrs.disconnect();
+    this.#dark.removeEventListener("change", this._measureSoonBound);
     this.#resize.disconnect();
+    this.#regions.disconnect();
+    cancelAnimationFrame(this.#frame);
   }
 
   private _toggle(label: string, icon: "menu" | "menu-panel", onClick: () => void, column: "start" | "end") {
@@ -489,7 +593,7 @@ export class UiAppShell extends LightElement {
       : nothing;
     const navSheet = this.navOpen && this._navSheet;
     const asideSheet = this.asideOpen && this._asideSheet;
-    return html`<div class=${appShell({ settling: this._settling })}>
+    return html`<div class=${appShell({ settling: this._settling })} style=${styleMap(this._chrome)}>
       <header class=${appShellHeader()}>
         <div class=${appShellHeaderStart({ class: appShellLift({ side: "start", lifted: navSheet }) })}>
           ${brand} ${this.slotted("start")}

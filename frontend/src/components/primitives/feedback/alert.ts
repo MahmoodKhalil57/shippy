@@ -23,9 +23,11 @@ export const alert = rcva("alert", {
       error: "alert-error",
     },
     variant: {
-      outline: "alert-outline",
-      dash: "alert-dash",
-      soft: "alert-soft",
+      /** Outline, dash and soft draw text in the alert's colour: mixed toward the ink so it reads at AA. */
+      outline:
+        "alert-outline [color:color-mix(in_oklab,var(--alert-color,var(--color-base-content))_35%,var(--color-base-content))]",
+      dash: "alert-dash [color:color-mix(in_oklab,var(--alert-color,var(--color-base-content))_35%,var(--color-base-content))]",
+      soft: "alert-soft [color:color-mix(in_oklab,var(--alert-color,var(--color-base-content))_35%,var(--color-base-content))]",
     },
     direction: {
       vertical: "alert-vertical",

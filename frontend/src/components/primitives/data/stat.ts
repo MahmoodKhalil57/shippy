@@ -37,13 +37,13 @@ export const statItem = rcva("stat", {
 
 const textColor = {
   neutral: "text-neutral",
-  primary: "text-primary",
-  secondary: "text-secondary",
-  accent: "text-accent",
-  info: "text-info",
-  success: "text-success",
-  warning: "text-warning",
-  error: "text-error",
+  primary: "text-primary-ink",
+  secondary: "text-secondary-ink",
+  accent: "text-accent-ink",
+  info: "text-info-ink",
+  success: "text-success-ink",
+  warning: "text-warning-ink",
+  error: "text-error-ink",
 } as const;
 
 export const statTitle = rcva("stat-title");

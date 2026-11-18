@@ -38,7 +38,7 @@ export const kbdRow = rcva("flex w-full justify-center", {
 });
 
 /** A key combination (`keys`): its keys and separators kept together as one tight group. */
-export const kbdKeys = rcva("inline-flex items-center gap-1 text-xs text-base-content/50");
+export const kbdKeys = rcva("inline-flex items-center gap-1 text-xs text-base-content/75");
 
 export type KbdVariants = VariantProps<typeof kbd> & VariantProps<typeof kbdRow>;
 

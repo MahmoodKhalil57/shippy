@@ -20,7 +20,7 @@ import { rcva } from "../../base/variants.ts";
  * - the numbers as a table for screen readers.
  * The only `<svg>` drawn outside the icon registry (tests/icons.test.ts): lines need one.
  */
-export const chart = rcva("relative flex w-full flex-col gap-2 text-xs text-base-content/60 select-none", {
+export const chart = rcva("relative flex w-full flex-col gap-2 text-xs text-base-content/75 select-none", {
   variants: {
     /** Plot height: `spark` for KPI tiles, `md` for cards. */
     height: { spark: "[--chart-h:2.5rem]", sm: "[--chart-h:7rem]", md: "[--chart-h:11rem]" },
@@ -93,7 +93,7 @@ export const chartSwatch = rcva("inline-block size-2 shrink-0 rounded-full bg-cu
 });
 export const chartAxis = rcva("flex justify-between gap-1 tabular-nums [&>span]:min-w-0 [&>span]:truncate");
 export const chartMax = rcva("pointer-events-none absolute -top-1 start-0 -translate-y-full tabular-nums");
-export const chartLegend = rcva("flex flex-wrap gap-x-3 gap-y-1 text-base-content/70");
+export const chartLegend = rcva("flex flex-wrap gap-x-3 gap-y-1 text-base-content/80");
 export const chartLegendItem = rcva("inline-flex items-center gap-1.5");
 export const chartTable = rcva("sr-only");
 

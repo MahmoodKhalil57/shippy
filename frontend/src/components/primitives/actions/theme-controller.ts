@@ -68,7 +68,7 @@ export const themeControllerBackgroundsBody = cva("flex flex-col gap-2");
 export const themeControllerBackgroundsHead = cva(
   "flex items-baseline justify-between gap-2 px-1 text-sm font-semibold",
 );
-export const themeControllerBackgroundsCredit = cva("text-xs font-normal text-base-content/60");
+export const themeControllerBackgroundsCredit = cva("text-xs font-normal text-base-content/75");
 export const themeControllerBackgroundGrid = cva("grid grid-cols-2 gap-2");
 export const themeControllerBackground = cva(
   "group/tile relative isolate grid aspect-[16/10] cursor-pointer place-items-center overflow-hidden rounded-field bg-base-200 text-base-content/70 ring-1 ring-base-content/10 transition-[box-shadow,scale] duration-(--duration-spatial-fast) ease-spatial-fast hover:ring-2 hover:ring-primary/50 active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary motion-reduce:transition-none",
@@ -102,11 +102,11 @@ export function applyBackground(src: string | null) {
   const root = document.documentElement.style;
   if (src) {
     root.setProperty("--app-background", `url("${src}")`);
-    root.setProperty("--app-background-wash", "35%");
   } else {
     root.removeProperty("--app-background");
-    root.removeProperty("--app-background-wash");
   }
+  // The app shell re-measures its text contrast against the new image.
+  window.dispatchEvent(new Event("ui-background"));
 }
 
 /** An uploaded image, scaled to at most `max` px on its long side, as a JPEG data URL (fits localStorage). */

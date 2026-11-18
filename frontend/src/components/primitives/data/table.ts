@@ -14,7 +14,8 @@ import { badge } from "./badge.ts";
  *
  * All variants are responsive (e.g. `size="xs md:md"`, `pin-rows="lg"`).
  */
-export const table = rcva("table", {
+/** Header cells at 75% ink (daisyUI's 60% falls below WCAG AA on light pages). */
+export const table = rcva("table [&_:where(thead,tfoot)]:text-base-content/75", {
   variants: {
     zebra: { true: "table-zebra" },
     /** Sticky rows inside `<thead>` / `<tfoot>`. */

@@ -16,7 +16,6 @@
         const background = localStorage.getItem("ui-background-src");
         if (background) {
           document.documentElement.style.setProperty("--app-background", `url("${background}")`);
-          document.documentElement.style.setProperty("--app-background-wash", "35%");
         }
       } catch {}
       // Liquid glass refraction (SVG filters in backdrop-filter) is drawn by Chromium only.

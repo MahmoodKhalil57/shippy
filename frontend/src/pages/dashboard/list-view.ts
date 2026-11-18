@@ -81,7 +81,7 @@ export class DashboardListView extends LightElement {
             : f.name![0].toUpperCase() + f.name!.slice(1),
       render: (doc: Doc) =>
         f.name === title || (f === columns[0] && !columns.some((x) => x.name === title))
-          ? html`<ui-link href=${dashboardPath("collections", this.slug, doc.id)} color="primary"
+          ? html`<ui-link href=${dashboardPath("collections", this.slug, doc.id)}
               >${cellText(f, doc[f.name!])}</ui-link
             >`
           : html`<ui-text size="sm">${cellText(f, doc[f.name!])}</ui-text>`,

@@ -14,10 +14,11 @@ import { TOOLTIP_GLASS } from "../feedback/tooltip.ts";
  *
  * Responsive (docs): `direction="vertical lg:horizontal"`, `width="sm lg:auto"`.
  * Without padding and border radius (docs): `flush`.
- * The active item is primary on a primary tint (the app's selection look), not daisyUI's neutral.
+ * The active item sits on a primary tint (the app's selection look, not daisyUI's neutral), in the
+ * text colour: primary text on its own tint falls below WCAG AA in many schemes (ui-contrast-audit).
  */
 export const menu = rcva(
-  "menu [&_.menu-active]:bg-primary/20 [&_.menu-active]:text-primary [&_.menu-active]:shadow-none",
+  "menu [&_.menu-active]:bg-primary/20 [&_.menu-active]:text-base-content [&_.menu-active]:shadow-none",
   {
     variants: {
       size: {
@@ -61,7 +62,7 @@ export const menu = rcva(
        * (`layout="rail"`): same text size and weight. One column that never wraps, so rows keep the menu's width and long labels truncate.
        */
       nav: {
-        true: "flex-nowrap px-0 text-sm font-medium [&_.menu-title]:text-base-content/60 [interpolate-size:allow-keywords] [&_details::details-content]:overflow-hidden [&_details::details-content]:[block-size:0] [&_details::details-content]:[transition:block-size_var(--duration-spatial)_var(--ease-spatial),content-visibility_var(--duration-spatial)_allow-discrete] [&_details[open]::details-content]:[block-size:auto] motion-reduce:[&_details::details-content]:transition-none",
+        true: "flex-nowrap px-0 text-sm font-medium [&_.menu-title]:text-base-content/75 [interpolate-size:allow-keywords] [&_details::details-content]:overflow-hidden [&_details::details-content]:[block-size:0] [&_details::details-content]:[transition:block-size_var(--duration-spatial)_var(--ease-spatial),content-visibility_var(--duration-spatial)_allow-discrete] [&_details[open]::details-content]:[block-size:auto] motion-reduce:[&_details::details-content]:transition-none",
       },
       /**
        * Open navigation list that can fold into the rail's look with motion: set
@@ -158,7 +159,9 @@ export const menuNavLabel = rcva(
 /** A card item's parts: title row (title + badge), and the description under it. */
 export const menuCardHead = rcva("flex items-start gap-2");
 export const menuCardTitle = rcva("min-w-0 flex-1 text-sm leading-snug font-medium [overflow-wrap:anywhere]");
-export const menuCardDescription = rcva("text-xs leading-snug text-base-content/65 [overflow-wrap:anywhere]");
+export const menuCardDescription = rcva(
+  "text-xs leading-snug text-base-content/75 [overflow-wrap:anywhere] [.menu-active_&]:text-base-content",
+);
 export const menuCardBody = rcva(
   "flex flex-col gap-0.5 [opacity:calc(1_-_var(--menu-collapse,0))] [transition:opacity_var(--duration-effects-fast)_var(--ease-effects-fast)] motion-reduce:transition-none",
 );

@@ -446,6 +446,7 @@ export class DashboardApp extends LightElement {
         >
       </ui-app-shell>
       ${toaster}
+      <ui-contrast-audit></ui-contrast-audit>
       <dashboard-tour .userId=${user.id} .switchTo=${this._switchToId} .openPanel=${this._openPanel}></dashboard-tour>
     `;
   }

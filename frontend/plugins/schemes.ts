@@ -21,6 +21,7 @@
  * web fonts the app doesn't load.
  */
 import { readFileSync, writeFileSync } from "node:fs";
+import { readableInk } from "./contrast.ts";
 import path from "node:path";
 
 type Vars = Record<string, string>;
@@ -52,13 +53,32 @@ const TOKENS: [daisy: string, shadcn: string, fallback?: string][] = [
  * around the main panel); where a theme's sidebar is just its background, it is derived so.
  */
 function palette(vars: Vars, mode: "light" | "dark"): string[] {
-  return TOKENS.flatMap(([daisy, shadcn, fallback]) => {
+  const tokens = new Map<string, string>();
+  for (const [daisy, shadcn, fallback] of TOKENS) {
     let value = vars[shadcn] ?? (fallback && (vars[fallback] ?? fallback));
     if (daisy === "base-200" && (!vars.sidebar || vars.sidebar === vars.background))
       value = `color-mix(in oklab, ${vars.background}, black ${mode === "light" ? 4 : 22}%)`;
-    return value ? [`--color-${daisy}: ${value};`] : [];
-  });
+    if (value) tokens.set(daisy, value);
+  }
+  // Accessibility: every ink must read on its fill at WCAG AA (4.5:1). Where a scheme's own
+  // foreground doesn't, use near-white or near-black instead (tests/contrast.test.ts checks this).
+  for (const [ink, fill] of INK_ON) {
+    const i = tokens.get(ink);
+    const f = tokens.get(fill);
+    if (i && f) tokens.set(ink, readableInk(i, f));
+  }
+  return [...tokens].map(([daisy, value]) => `--color-${daisy}: ${value};`);
 }
+
+/** Ink / fill pairs that must contrast (text on buttons, badges, alerts and the page). */
+export const INK_ON: [ink: string, fill: string][] = [
+  ["base-content", "base-100"],
+  ["primary-content", "primary"],
+  ["secondary-content", "secondary"],
+  ["accent-content", "accent"],
+  ["neutral-content", "neutral"],
+  ["error-content", "error"],
+];
 
 function radii(item: RegistryItem): string[] {
   const r = item.cssVars.theme?.radius ?? item.cssVars.light.radius;

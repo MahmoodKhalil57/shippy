@@ -17,9 +17,11 @@ import { iconSvg } from "../media/icon.ts";
 export const badge = rcva("badge", {
   variants: {
     variant: {
-      outline: "badge-outline",
-      dash: "badge-dash",
-      soft: "badge-soft",
+      /** Outline, dash and soft draw text in the badge's colour: mixed toward the ink so it reads at AA. */
+      outline:
+        "badge-outline [color:color-mix(in_oklab,var(--badge-color,var(--color-base-content))_25%,var(--color-base-content))]",
+      dash: "badge-dash [color:color-mix(in_oklab,var(--badge-color,var(--color-base-content))_25%,var(--color-base-content))]",
+      soft: "badge-soft [color:color-mix(in_oklab,var(--badge-color,var(--color-base-content))_25%,var(--color-base-content))]",
       ghost: "badge-ghost",
     },
     color: {
