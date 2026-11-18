@@ -36,7 +36,7 @@ export const calendar = rcva("", {
 });
 
 /** Popover panel holding the calendar in date-picker mode. */
-export const calendarPopover = rcva("dropdown bg-base-100 rounded-box shadow-lg");
+export const calendarPopover = rcva("dropdown liquid-glass rounded-box");
 
 /** Date-picker trigger button (styled like an input, as in the docs). */
 export const calendarTrigger = rcva("input");

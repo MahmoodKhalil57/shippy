@@ -13,7 +13,8 @@ import { label as labelRecipe } from "./label.ts";
  * Purpose: Forms & input · Kind: primitive
  * Docs: https://daisyui.com/components/select/
  */
-export const select = rcva("select", {
+/** The options picker floats over the page, so it is liquid glass (src/styles/theme.css). */
+export const select = rcva("select [&::picker(select)]:liquid-glass", {
   variants: {
     color: {
       neutral: "select-neutral",

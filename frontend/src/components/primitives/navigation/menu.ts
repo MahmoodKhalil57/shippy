@@ -4,6 +4,7 @@ import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
+import { TOOLTIP_GLASS } from "../feedback/tooltip.ts";
 
 /**
  * Menu: Displays a list of links vertically or horizontally.
@@ -116,9 +117,9 @@ export const menuLink = rcva("", {
     },
     /** Icon-only items show a tooltip with the label. */
     tooltip: {
-      top: "tooltip",
-      right: "tooltip tooltip-right",
-      bottom: "tooltip tooltip-bottom",
+      top: `tooltip ${TOOLTIP_GLASS}`,
+      right: `tooltip tooltip-right ${TOOLTIP_GLASS}`,
+      bottom: `tooltip tooltip-bottom ${TOOLTIP_GLASS}`,
     },
   },
 });

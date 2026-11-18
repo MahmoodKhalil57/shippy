@@ -21,7 +21,8 @@ import { booleanAttribute, rcva, type Responsive, responsiveBoolean } from "../.
  * defaults to `"max-sm:vertical"` = `max-sm:megamenu-vertical` (spelled out
  * here so Tailwind generates it for this primitive default).
  */
-export const megamenu = rcva("megamenu", {
+/** Its popovers float over the page, so they are liquid glass (src/styles/theme.css). */
+export const megamenu = rcva("megamenu [&_[popover]]:liquid-glass", {
   variants: {
     size: {
       xs: "megamenu-xs",

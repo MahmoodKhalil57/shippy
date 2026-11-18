@@ -14,22 +14,29 @@ import { alert, alertDismiss, alertIconSvg, type AlertVariants } from "./alert.t
  *
  * daisyUI defaults to `toast-end toast-bottom`.
  */
-export const toast = rcva("toast z-50", {
-  variants: {
-    /** Horizontal placement. */
-    align: {
-      start: "toast-start",
-      center: "toast-center",
-      end: "toast-end",
-    },
-    /** Vertical placement. */
-    position: {
-      top: "toast-top",
-      middle: "toast-middle",
-      bottom: "toast-bottom",
+/**
+ * Toasts float above everything, so each one is liquid glass (src/styles/theme.css) with its
+ * status shown by the icon's colour rather than a solid fill.
+ */
+export const toast = rcva(
+  "toast z-50 [&>.alert]:liquid-glass [&>.alert]:border-transparent [&>.alert]:text-base-content [&>.alert>svg]:text-(--alert-color)",
+  {
+    variants: {
+      /** Horizontal placement. */
+      align: {
+        start: "toast-start",
+        center: "toast-center",
+        end: "toast-end",
+      },
+      /** Vertical placement. */
+      position: {
+        top: "toast-top",
+        middle: "toast-middle",
+        bottom: "toast-bottom",
+      },
     },
   },
-});
+);
 
 export type ToastVariants = VariantProps<typeof toast>;
 

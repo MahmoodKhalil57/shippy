@@ -14,6 +14,10 @@ import { rcva, responsiveBoolean, type Breakpoint, type Responsive } from "../..
  * Every variant is responsive, e.g. the docs' responsive position:
  * `align="start md:center" placement="md:right"`.
  */
+/** The glass bubble, shared with the menu's icon-only tooltips. */
+export const TOOLTIP_GLASS =
+  "[&::before]:liquid-glass-clear [&::before]:text-base-content [&>.tooltip-content]:liquid-glass-clear [&>.tooltip-content]:text-base-content [&::after]:invisible";
+
 export const tooltip = rcva("", {
   variants: {
     /**
@@ -45,6 +49,11 @@ export const tooltip = rcva("", {
     },
     /** Force open. */
     open: { true: "tooltip-open" },
+    /**
+     * Clear liquid glass (src/styles/theme.css) instead of a solid bubble, without the arrow:
+     * the floating layer's material. On unless a `color` is set.
+     */
+    glass: { true: TOOLTIP_GLASS },
   },
   defaultVariants: { enabled: true },
 });
@@ -83,6 +92,7 @@ export class UiTooltip extends LightElement {
         placement: this.placement,
         align: this.align,
         color: this.color,
+        glass: !this.color,
         open: this.open,
         enabled: this.from ? `false ${this.from}` : true,
       })}

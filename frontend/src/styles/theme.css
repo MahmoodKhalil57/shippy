@@ -31,39 +31,49 @@
 }
 
 /* ---------------------------------------------------------------- glass
-   The floating layer's material (after Apple's Liquid Glass): sheets, dialogs, menus, toasts —
-   controls and navigation that float above content. Content itself stays solid, and glass never
-   sits on glass. Three layers, as Apple describes it:
-     highlight     a specular top edge and a faint lower one (inset shadows)
-     illumination  a soft top-lit sheen inside the surface (a radial gradient)
-     shadow        depth that lifts it off what's beneath
-   over a translucent tint of the theme's own surface, with the backdrop blurred and saturated so
-   what's behind reads as colour, not detail (legibility first: Apple raised the frost for that).
-   `liquid-glass` is the regular, frosted material; `liquid-glass-clear` lets more through, for
-   small controls. (Not `glass`: daisyUI has its own `.glass` class.)
+   The floating layer's material (after Apple's Liquid Glass, as rebuilt in CSS by
+   css-tricks.com/getting-clarity-on-apples-liquid-glass): sheets, dialogs, menus, popovers,
+   tooltips, toasts — everything that floats above content. Content itself stays solid, and glass
+   never sits on glass. One element, four layers:
+     effect   the backdrop, lightly blurred and saturated, and bent by a displacement map
+              (the SVG filter #liquid-glass-refraction in index.html) so what's behind ripples
+              like it's seen through a lens
+     tint     a thin, translucent wash of the theme's own surface (base-100)
+     shine    the specular rim: a bright inset edge top-left and a softer one bottom-right
+     shadow   depth that lifts it off what's beneath (Tailwind's `shadow-*` replace only this
+              layer: the shine lives in --tw-inset-shadow, so it survives them)
+   `liquid-glass` is the regular material for panels; `liquid-glass-clear` is the clearer one
+   for small controls (buttons, pills, tooltips).
+   Refraction needs SVG filters in backdrop-filter, which only Chromium draws; index.html sets
+   `data-glass="refract"` there. Elsewhere the glass is the same, minus the ripple.
    Both adapt to light and dark (light-dark() follows each theme's color-scheme), and become solid
-   with Reduce transparency, Increase contrast, or without backdrop-filter support. */
+   with Reduce transparency, Increase contrast, or without backdrop-filter support.
+   (Not `glass`: daisyUI has its own `.glass` class.) */
 :root {
-  --glass-highlight: light-dark(rgb(255 255 255 / 0.8), rgb(255 255 255 / 0.16));
-  --glass-lowlight: light-dark(rgb(255 255 255 / 0.35), rgb(255 255 255 / 0.05));
-  --glass-edge: light-dark(rgb(0 0 0 / 0.08), rgb(255 255 255 / 0.08));
-  --glass-sheen: light-dark(rgb(255 255 255 / 0.45), rgb(255 255 255 / 0.06));
-  --glass-depth: light-dark(rgb(15 23 42 / 0.18), rgb(0 0 0 / 0.45));
+  --glass-shine: light-dark(rgb(255 255 255 / 0.7), rgb(255 255 255 / 0.22));
+  --glass-shine-soft: light-dark(rgb(255 255 255 / 0.45), rgb(255 255 255 / 0.08));
+  --glass-edge: light-dark(rgb(0 0 0 / 0.06), rgb(255 255 255 / 0.06));
+  --glass-sheen: light-dark(rgb(255 255 255 / 0.35), rgb(255 255 255 / 0.05));
+  --glass-depth: light-dark(rgb(0 0 0 / 0.16), rgb(0 0 0 / 0.4));
+  --glass-depth-soft: light-dark(rgb(0 0 0 / 0.08), rgb(0 0 0 / 0.25));
+  --glass-refraction: url(#liquid-glass-refraction);
 }
 
 @utility liquid-glass {
-  background-color: color-mix(in oklab, var(--color-base-100) 68%, transparent);
-  background-image: radial-gradient(140% 70% at 50% -12%, var(--glass-sheen), transparent 62%);
-  -webkit-backdrop-filter: blur(22px) saturate(180%);
-  backdrop-filter: blur(22px) saturate(180%);
-  --tw-inset-shadow: inset 0 1px 0 0 var(--glass-highlight), inset 0 -1px 0 0 var(--glass-lowlight);
+  background-color: color-mix(in oklab, var(--color-base-100) 45%, transparent);
+  background-image: radial-gradient(140% 70% at 30% -10%, var(--glass-sheen), transparent 60%);
+  -webkit-backdrop-filter: blur(8px) saturate(170%);
+  backdrop-filter: blur(8px) saturate(170%);
+  --tw-inset-shadow: inset 2px 2px 1px 0 var(--glass-shine), inset -1px -1px 1px 1px var(--glass-shine-soft);
   --tw-inset-ring-shadow: inset 0 0 0 1px var(--glass-edge);
+  --tw-shadow: 0 6px 6px var(--glass-depth), 0 0 20px var(--glass-depth-soft);
   box-shadow:
-    var(--tw-inset-shadow),
-    var(--tw-inset-ring-shadow),
-    0 1px 2px var(--glass-depth),
-    0 18px 44px -16px var(--glass-depth);
+    var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow, 0 0 #0000),
+    var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 
+  :root[data-glass="refract"] & {
+    backdrop-filter: blur(6px) saturate(170%) var(--glass-refraction);
+  }
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     background-color: color-mix(in oklab, var(--color-base-100) 97%, transparent);
   }
@@ -71,29 +81,32 @@
     background-color: var(--color-base-100);
     background-image: none;
     -webkit-backdrop-filter: none;
-    backdrop-filter: none;
+    backdrop-filter: none !important;
   }
   @media (prefers-contrast: more) {
     background-color: var(--color-base-100);
     background-image: none;
     -webkit-backdrop-filter: none;
-    backdrop-filter: none;
+    backdrop-filter: none !important;
     --tw-inset-ring-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-base-content) 45%, transparent);
   }
 }
 
 @utility liquid-glass-clear {
-  background-color: color-mix(in oklab, var(--color-base-100) 40%, transparent);
-  background-image: radial-gradient(140% 80% at 50% -20%, var(--glass-sheen), transparent 60%);
-  -webkit-backdrop-filter: blur(14px) saturate(160%);
-  backdrop-filter: blur(14px) saturate(160%);
-  --tw-inset-shadow: inset 0 1px 0 0 var(--glass-highlight);
+  background-color: color-mix(in oklab, var(--color-base-100) 22%, transparent);
+  background-image: radial-gradient(140% 80% at 30% -20%, var(--glass-sheen), transparent 60%);
+  -webkit-backdrop-filter: blur(3px) saturate(160%);
+  backdrop-filter: blur(3px) saturate(160%);
+  --tw-inset-shadow: inset 2px 2px 1px 0 var(--glass-shine), inset -1px -1px 1px 1px var(--glass-shine-soft);
   --tw-inset-ring-shadow: inset 0 0 0 1px var(--glass-edge);
+  --tw-shadow: 0 3px 4px var(--glass-depth-soft), 0 0 12px var(--glass-depth-soft);
   box-shadow:
-    var(--tw-inset-shadow),
-    var(--tw-inset-ring-shadow),
-    0 1px 2px var(--glass-depth);
+    var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow, 0 0 #0000),
+    var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 
+  :root[data-glass="refract"] & {
+    backdrop-filter: blur(2px) saturate(160%) var(--glass-refraction);
+  }
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     background-color: color-mix(in oklab, var(--color-base-100) 92%, transparent);
   }
@@ -101,13 +114,13 @@
     background-color: var(--color-base-100);
     background-image: none;
     -webkit-backdrop-filter: none;
-    backdrop-filter: none;
+    backdrop-filter: none !important;
   }
   @media (prefers-contrast: more) {
     background-color: var(--color-base-100);
     background-image: none;
     -webkit-backdrop-filter: none;
-    backdrop-filter: none;
+    backdrop-filter: none !important;
     --tw-inset-ring-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-base-content) 45%, transparent);
   }
 }

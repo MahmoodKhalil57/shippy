@@ -24,12 +24,15 @@ export const dock = rcva("dock", {
       xl: "dock-xl",
     },
     color: {
+      /** Liquid glass (src/styles/theme.css): the dock floats over the page. The default. */
+      glass: "liquid-glass",
       neutral: "bg-neutral text-neutral-content",
       primary: "bg-primary text-primary-content",
       "base-200": "bg-base-200",
       "base-300": "bg-base-300",
     },
   },
+  defaultVariants: { color: "glass" },
 });
 
 /** A dock button/link; `active` adds `dock-active`. Sizes its icon like the docs. */
