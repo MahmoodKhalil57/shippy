@@ -12,12 +12,17 @@
         if (theme === "dark" || theme === "light") document.documentElement.dataset.theme = theme;
         const scheme = localStorage.getItem("ui-scheme");
         if (scheme && scheme !== "default") document.documentElement.dataset.scheme = scheme;
+        const background = localStorage.getItem("ui-background-src");
+        if (background) {
+          document.documentElement.style.setProperty("--app-background", `url("${background}")`);
+          document.documentElement.style.setProperty("--app-background-wash", "35%");
+        }
       } catch {}
       // Liquid glass refraction (SVG filters in backdrop-filter) is drawn by Chromium only.
       if (navigator.userAgentData) document.documentElement.dataset.glass = "refract";
     </script>
-    <script type="module" crossorigin src="/shippy/assets/index-B1ZfFo1C.js"></script>
-    <link rel="stylesheet" crossorigin href="/shippy/assets/index-CGDIC-nz.css">
+    <script type="module" crossorigin src="/shippy/assets/index-DZd3dC6C.js"></script>
+    <link rel="stylesheet" crossorigin href="/shippy/assets/index-COxuvcBa.css">
   </head>
   <body>
     <!-- The liquid-glass material's refraction (src/styles/theme.css): soft fractal noise, lit and

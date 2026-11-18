@@ -42,6 +42,8 @@ export const themeController = cva("theme-controller", {
       cycle: "",
       /** A ghost icon button opening the colour-scheme menu (app headers); see `scheme` below. */
       scheme: "",
+      /** A ghost icon button opening the background-image picker (app headers); see `background` below. */
+      background: "",
       radio: radio({ size: "sm" }),
       buttons: button({ class: joinItem() }),
       dropdown: button({ size: "sm", block: true, variant: "ghost", justify: "start" }),
@@ -56,6 +58,66 @@ export const themeControllerIcon = cva("btn btn-ghost btn-circle");
 export const themeControllerGlyph = cva(
   "grid place-items-center transition-[scale,rotate,opacity] duration-(--duration-spatial-fast) ease-spatial-fast starting:-rotate-90 starting:scale-40 starting:opacity-0 motion-reduce:transition-none",
 );
+
+/** `background`: the picker panel (a glass dropdown), its tiles, and their parts. */
+export const themeControllerBackgrounds = cva(
+  "flex w-80 max-w-[calc(100vw-2rem)] flex-col gap-2 p-3 max-h-[min(30rem,75dvh)] overflow-y-auto [--scrollbar-inset:var(--radius-box)]",
+);
+export const themeControllerBackgroundsHead = cva(
+  "flex items-baseline justify-between gap-2 px-1 text-sm font-semibold",
+);
+export const themeControllerBackgroundsCredit = cva("text-xs font-normal text-base-content/60");
+export const themeControllerBackgroundGrid = cva("grid grid-cols-2 gap-2");
+export const themeControllerBackground = cva(
+  "group/tile relative isolate grid aspect-[16/10] cursor-pointer place-items-center overflow-hidden rounded-field bg-base-200 text-base-content/70 ring-1 ring-base-content/10 transition-[box-shadow,scale] duration-(--duration-spatial-fast) ease-spatial-fast hover:ring-2 hover:ring-primary/50 active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary motion-reduce:transition-none",
+  {
+    variants: {
+      active: { true: "ring-2 ring-primary hover:ring-primary" },
+      upload: { true: "border-2 border-dashed border-base-content/20 bg-transparent ring-0" },
+    },
+  },
+);
+export const themeControllerBackgroundImage = cva("absolute inset-0 -z-10 size-full object-cover");
+export const themeControllerBackgroundLabel = cva(
+  "absolute inset-x-0 bottom-0 bg-neutral/65 px-2 py-1 text-start text-xs font-medium text-neutral-content",
+);
+export const themeControllerBackgroundEmpty = cva("flex flex-col items-center gap-1 text-xs font-medium");
+export const themeControllerBackgroundCheck = cva(
+  "absolute top-1.5 end-1.5 grid size-5 place-items-center rounded-full bg-primary text-primary-content",
+);
+export const themeControllerFile = cva("sr-only");
+
+/** A background image offered by `as="background"`: a full-size `src` and a small `thumb`. */
+export interface BackgroundImage {
+  id: string;
+  label: string;
+  src: string;
+  thumb?: string;
+}
+
+/** Show a background image behind the app (`null` for none); the shell paints `--app-background`. */
+export function applyBackground(src: string | null) {
+  const root = document.documentElement.style;
+  if (src) {
+    root.setProperty("--app-background", `url("${src}")`);
+    root.setProperty("--app-background-wash", "35%");
+  } else {
+    root.removeProperty("--app-background");
+    root.removeProperty("--app-background-wash");
+  }
+}
+
+/** An uploaded image, scaled to at most `max` px on its long side, as a JPEG data URL (fits localStorage). */
+async function shrinkImage(file: File, max = 2048): Promise<string> {
+  const bitmap = await createImageBitmap(file);
+  const k = Math.min(1, max / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * k);
+  canvas.height = Math.round(bitmap.height * k);
+  canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  return canvas.toDataURL("image/jpeg", 0.82);
+}
 
 /** `scheme`: the menu (a glass dropdown panel, scrolling), each entry, and its swatches. */
 export const themeControllerSchemes = cva(
@@ -91,6 +153,9 @@ export type ThemeControllerAs = NonNullable<ThemeControllerVariants["as"]>;
 
 const STORAGE_KEY = "ui-theme";
 const SCHEME_KEY = "ui-scheme";
+/** `background`: the chosen image's id, and its URL (read before the first paint, see index.html). */
+const BACKGROUND_KEY = "ui-background";
+const BACKGROUND_SRC_KEY = "ui-background-src";
 
 /**
  * @example <ui-theme-controller theme="dark"></ui-theme-controller>          <!-- toggle -->
@@ -122,6 +187,8 @@ export class UiThemeController extends LightElement {
   @property({ attribute: false }) themes: string[] = ["default", "light", "dark"];
   /** `scheme` mode: the colour schemes offered (besides "default"). */
   @property({ attribute: false }) schemes: Scheme[] = SCHEMES;
+  /** `background` mode: the images offered (besides none and your own upload). */
+  @property({ attribute: false }) backgrounds: BackgroundImage[] = [];
   /** Selected theme (multi-choice modes) or "" for the page default. */
   @property() value = "";
   @property({ type: Boolean }) checked = false;
@@ -140,11 +207,15 @@ export class UiThemeController extends LightElement {
     if (!this.persist) return;
     let saved: string | null = null;
     try {
-      saved = localStorage.getItem(this.as === "scheme" ? SCHEME_KEY : STORAGE_KEY);
+      saved = localStorage.getItem(this._key);
     } catch {
       /* storage unavailable */
     }
     if (saved == null) return;
+    if (this.as === "background") {
+      this.value = saved;
+      return;
+    }
     if (this.as === "scheme") {
       this.value = this.schemes.some((x) => x.id === saved) ? saved : "default";
       applyScheme(this.value);
@@ -155,6 +226,10 @@ export class UiThemeController extends LightElement {
     else this.checked = saved === this.theme;
   }
 
+  private get _key() {
+    return this.as === "scheme" ? SCHEME_KEY : this.as === "background" ? BACKGROUND_KEY : STORAGE_KEY;
+  }
+
   private get _multi() {
     return this.as === "radio" || this.as === "buttons" || this.as === "dropdown";
   }
@@ -162,7 +237,7 @@ export class UiThemeController extends LightElement {
   private _changed(theme: string) {
     if (this.persist) {
       try {
-        localStorage.setItem(this.as === "scheme" ? SCHEME_KEY : STORAGE_KEY, theme);
+        localStorage.setItem(this._key, theme);
       } catch {
         /* storage unavailable */
       }
@@ -224,6 +299,95 @@ export class UiThemeController extends LightElement {
       this.value = id;
       this._changed(id);
     });
+  }
+
+  /** `background`: show an image (or none), revealed from the click point; the picker closes. */
+  private _pickBackground(e: MouseEvent, id: string, src: string | null) {
+    const from = (e.currentTarget as HTMLElement | null) ?? this;
+    void this._reveal(e, from, () => {
+      (document.activeElement as HTMLElement | null)?.blur();
+      applyBackground(src);
+      if (this.persist) {
+        try {
+          if (src) localStorage.setItem(BACKGROUND_SRC_KEY, src);
+          else localStorage.removeItem(BACKGROUND_SRC_KEY);
+        } catch {
+          /* too big for storage (or storage off): shown for this visit only */
+        }
+      }
+      this.value = id;
+      this._changed(id);
+    });
+  }
+
+  private async _upload(e: Event) {
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = "";
+    if (!file?.type.startsWith("image/")) return;
+    const src = await shrinkImage(file);
+    this._pickBackground(new MouseEvent("click"), "custom", src);
+  }
+
+  private _backgroundMenu() {
+    const current = this.value || "none";
+    const check = (id: string) =>
+      id === current
+        ? html`<span class=${themeControllerBackgroundCheck()}>${iconSvg("check", { size: "xs" })}</span>`
+        : nothing;
+    const custom = current === "custom";
+    return html`<div class=${dropdown({ align: "end" })}>
+      <div
+        tabindex="0"
+        role="button"
+        class=${themeControllerIcon()}
+        aria-label="Background image"
+        title="Background image"
+      >
+        ${iconSvg("wallpaper", { size: "md" })}
+      </div>
+      <div
+        tabindex="-1"
+        class=${dropdownContent({ class: dropdownPanel({ surface: "glass", rounded: true, shadow: "lg", class: themeControllerBackgrounds() }) })}
+      >
+        <div class=${themeControllerBackgroundsHead()}>
+          <span>Background</span><span class=${themeControllerBackgroundsCredit()}>Photos: Pexels</span>
+        </div>
+        <div class=${themeControllerBackgroundGrid()} role="listbox" aria-label="Background image">
+          <button
+            type="button"
+            role="option"
+            aria-selected=${current === "none"}
+            class=${themeControllerBackground({ active: current === "none" })}
+            @click=${(e: MouseEvent) => this._pickBackground(e, "none", null)}
+          >
+            <span class=${themeControllerBackgroundEmpty()}>${iconSvg("no-image", { size: "lg" })}No image</span>
+            ${check("none")}
+          </button>
+          ${this.backgrounds.map(
+            (b) =>
+              html`<button
+                type="button"
+                role="option"
+                aria-selected=${current === b.id}
+                class=${themeControllerBackground({ active: current === b.id })}
+                @click=${(e: MouseEvent) => this._pickBackground(e, b.id, b.src)}
+              >
+                <img class=${themeControllerBackgroundImage()} src=${b.thumb ?? b.src} alt="" loading="lazy" />
+                <span class=${themeControllerBackgroundLabel()}>${b.label}</span>
+                ${check(b.id)}
+              </button>`,
+          )}
+          <label class=${themeControllerBackground({ active: custom, upload: !custom })}>
+            <input class=${themeControllerFile()} type="file" accept="image/*" @change=${this._upload} />
+            <span class=${themeControllerBackgroundEmpty()}>
+              ${iconSvg("upload", { size: "lg" })}${custom ? "Replace your image" : "Upload your own"}
+            </span>
+            ${check("custom")}
+          </label>
+        </div>
+      </div>
+    </div>`;
   }
 
   private _schemeMenu() {
@@ -302,6 +466,8 @@ export class UiThemeController extends LightElement {
     switch (this.as) {
       case "checkbox":
         return this._single();
+      case "background":
+        return this._backgroundMenu();
       case "scheme":
         return this._schemeMenu();
       case "cycle": {

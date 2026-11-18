@@ -62,6 +62,8 @@ import iArchive from "~icons/material-symbols-light/archive-outline";
 import iAnchor from "~icons/material-symbols-light/anchor";
 import iContrast from "~icons/line-md/light-dark";
 import iPalette from "~icons/material-symbols-light/palette-outline";
+import iWallpaper from "~icons/material-symbols-light/wallpaper";
+import iNoImage from "~icons/material-symbols-light/hide-image-outline";
 import iPasskey from "~icons/material-symbols-light/passkey";
 
 /**
@@ -173,6 +175,9 @@ export const ICONS = {
   /** Half light, half dark: "follow the system". */
   contrast: iContrast,
   palette: iPalette,
+  /** Background image picker. */
+  wallpaper: iWallpaper,
+  "no-image": iNoImage,
   passkey: iPasskey,
 } as const;
 

@@ -39,8 +39,10 @@ import { iconSvg, type IconName } from "../media/icon.ts";
 /** One column that never grows past the viewport, whatever the page inside needs. */
 export const appShell = rcva(
   /* A faint wash of the theme's primary / secondary / accent at the corners: the frame the header
-     and rails sit on, and what the floating glass (sheets, menus, dialogs) refracts. */
-  "group/shell grid h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] overflow-hidden bg-base-200 [background-image:radial-gradient(70%_60%_at_0%_0%,color-mix(in_oklab,var(--color-primary)_16%,transparent),transparent_70%),radial-gradient(60%_55%_at_100%_100%,color-mix(in_oklab,var(--color-secondary)_12%,transparent),transparent_70%),radial-gradient(45%_40%_at_100%_0%,color-mix(in_oklab,var(--color-accent)_9%,transparent),transparent_70%)] text-base-content",
+     and rails sit on, and what the floating glass (sheets, menus, dialogs) refracts. Under it, the
+     chosen background image (`--app-background`, set by `<ui-theme-controller as="background">`)
+     behind a wash of the theme's surface (`--app-background-wash`) so text on it stays readable. */
+  "group/shell grid h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] overflow-hidden bg-base-200 [background-image:radial-gradient(70%_60%_at_0%_0%,color-mix(in_oklab,var(--color-primary)_16%,transparent),transparent_70%),radial-gradient(60%_55%_at_100%_100%,color-mix(in_oklab,var(--color-secondary)_12%,transparent),transparent_70%),radial-gradient(45%_40%_at_100%_0%,color-mix(in_oklab,var(--color-accent)_9%,transparent),transparent_70%),linear-gradient(color-mix(in_oklab,var(--color-base-200)_var(--app-background-wash,0%),transparent)),var(--app-background,none)] bg-cover bg-center text-base-content",
   {
     variants: {
       /**

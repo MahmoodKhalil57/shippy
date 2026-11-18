@@ -13,6 +13,11 @@
         if (theme === "dark" || theme === "light") document.documentElement.dataset.theme = theme;
         const scheme = localStorage.getItem("ui-scheme");
         if (scheme && scheme !== "default") document.documentElement.dataset.scheme = scheme;
+        const background = localStorage.getItem("ui-background-src");
+        if (background) {
+          document.documentElement.style.setProperty("--app-background", `url("${background}")`);
+          document.documentElement.style.setProperty("--app-background-wash", "35%");
+        }
       } catch {}
       // Liquid glass refraction (SVG filters in backdrop-filter) is drawn by Chromium only.
       if (navigator.userAgentData) document.documentElement.dataset.glass = "refract";

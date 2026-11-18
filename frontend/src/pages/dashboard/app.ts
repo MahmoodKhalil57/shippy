@@ -43,6 +43,21 @@ import {
 
 export type Access = Awaited<ReturnType<typeof api.access>>;
 
+/** Background images offered in the header (public/backgrounds, from Pexels), with thumbnails. */
+const backgroundUrl = (file: string) => `${import.meta.env.BASE_URL}backgrounds/${file}`;
+const BACKGROUNDS = [
+  ["waves", "Ocean waves"],
+  ["night-ship", "Ship at night"],
+  ["seaport", "Seaport at sunset"],
+  ["lighthouse", "Lighthouse storm"],
+  ["fluid", "Fluid"],
+].map(([id, label]) => ({
+  id: id!,
+  label: label!,
+  src: backgroundUrl(`${id}.jpg`),
+  thumb: backgroundUrl(`${id}-thumb.jpg`),
+}));
+
 @customElement("dashboard-app")
 export class DashboardApp extends LightElement {
   @state() private route: Route = parseRoute(location.pathname);
@@ -381,6 +396,7 @@ export class DashboardApp extends LightElement {
           .onLogout=${() => void this._logout()}
         ></dashboard-command>
         <ui-flex slot="actions" align="center" gap="1">
+          <ui-theme-controller as="background" persist .backgrounds=${BACKGROUNDS}></ui-theme-controller>
           <ui-theme-controller as="scheme" persist></ui-theme-controller>
           <ui-theme-controller as="cycle" persist></ui-theme-controller>
           <ui-dropdown
