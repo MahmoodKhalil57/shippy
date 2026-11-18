@@ -42,3 +42,14 @@ The design system is enforced through the components (`tests/architecture.test.t
   - attribute values must be the primitive's tokens; the test reads each primitive's variants and checks every literal value.
 - **Primitives use theme colours only** (`primary`, `base-200`…), never the Tailwind palette (`red-400`) or literal colours.
 - Missing something? Add a variant (or a new primitive) in `src/components/primitives`, not a workaround in the page.
+
+# Mock backend (Payload-compatible, in the browser)
+
+Mock apps get a real-feeling backend with nothing deployed: a Service Worker serves Payload's REST API from IndexedDB.
+
+- **Data model**: `src/cms/config.ts` and `src/cms/collections/*.ts`, written with Payload's own types (`CollectionConfig`, `GlobalConfig`, `Endpoint`). Hooks, access control, validation, defaults, `admin.*` options and custom endpoints work like in Payload, so these files can be copied into a real `payload.config.ts` later. (`admin` there is Payload's config key and configures the dashboard; in our own code "admin" is never a page, component or route — it can only be a role.)
+- **API**: `fetch("/api/<collection>?where[...]&depth=1")`, `/api/<collection>/<id>`, `/api/globals/<slug>`, `/api/<auth-collection>/login|logout|me`, custom endpoints. Same routes, query syntax and response shapes as Payload. From pages, call `startMockBackend()` once (or use `api` from `src/cms/client.ts`, which does it for you).
+- **Dashboard**: the site root (`/`, `/collections/<slug>/<id>`, `/globals/<slug>`, `/account`, `/mock-data`), generated from the config and built from `ui-*` components (`src/pages/dashboard`, `ui-doc-form`). Seeded users log in with `demo1234`.
+- **Seed data**: `src/cms/seed/<collection>.json` and `src/cms/seed/globals/<slug>.json`, loaded on first run. Give documents an `id` to reference them from relationships. Local edits stay in the browser; `/mock-data` exports, imports and resets to the seed.
+- **Not emulated**: drafts/versions, localization, `richText` (edited as plain text), querying through relationships (`author.name`), `select`/`populate` options, login with username, email flows (verify/forgot password), GraphQL. Default access is Payload's: logged-in users only, unless a collection says otherwise.
+- **Tests**: `tests/cms.test.ts` exercises the REST API in Node with an in-memory store.

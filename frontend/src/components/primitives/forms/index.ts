@@ -13,3 +13,4 @@ export * from "./text-input.ts";
 export * from "./textarea.ts";
 export * from "./toggle.ts";
 export * from "./validator.ts";
+export * from "./form.ts";

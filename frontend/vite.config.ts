@@ -2,13 +2,20 @@ import { defineConfig } from "vite-plus";
 import tailwindcss from "@tailwindcss/vite";
 import componentCss from "./plugins/component-css.ts";
 import dedupeCss from "./plugins/dedupe-css.ts";
+import layerVariants from "./plugins/layer-variants.ts";
+import mockBackend from "./plugins/mock-backend.ts";
 
 export default defineConfig({
   plugins: [
     // Must come before tailwindcss(): generates each component's stylesheet.
     componentCss(),
     tailwindcss(),
+    // After tailwindcss(): variant rules into ordered cascade layers, so they
+    // beat base utilities whichever component stylesheet loads first.
+    layerVariants(),
     dedupeCss(),
+    // In-browser Payload-compatible backend (src/cms); its dashboard is the site itself.
+    mockBackend(),
   ],
   fmt: {
     ignorePatterns: ["dist/**", "bun.lock"],

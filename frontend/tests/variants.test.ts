@@ -1,3 +1,4 @@
+import { LAYER_ORDER, layerVariantsCss } from "../plugins/layer-variants.ts";
 import { describe, expect, it } from "vite-plus/test";
 import { booleanBindings, recipeVariants, responsiveSafelist, responsiveTokens } from "../plugins/recipes.ts";
 import { isOn, parseResponsive, rcva, responsiveBoolean } from "../src/components/base/variants.ts";
@@ -139,5 +140,31 @@ describe("plugin recipe analysis", () => {
     ]);
     // an unrelated attribute with a bare breakpoint doesn't switch the boolean on
     expect(responsiveSafelist(recipes, new Set(["size|lg"]), bindings)).toEqual([]);
+  });
+});
+
+describe("layerVariantsCss (per-component sheets keep Tailwind's variant order)", () => {
+  const css = String.raw`@layer utilities {
+  .flex-col { flex-direction: column; }
+  .peer-checked\:block:is(:where(.peer):checked ~ *) { display: block; }
+  @layer daisyui.l1 { .footer { display: grid; } }
+  @media (width >= 48rem) { .md\:flex-row { flex-direction: row; } }
+  @media (width < 40rem) { .max-sm\:hidden { display: none; } }
+  @media (prefers-reduced-motion: reduce) { .footer { transition: none; } }
+}`;
+  const out = layerVariantsCss(css);
+
+  it("declares the layer order first", () => {
+    expect(out.startsWith(LAYER_ORDER)).toBe(true);
+  });
+
+  it("moves variant rules into ordered layers and leaves base / component rules", () => {
+    const flat = out.replace(/\s+/g, " ").replace(/\s*\{/g, " {");
+    expect(flat).toContain("@layer utilities { .flex-col { flex-direction: column; }");
+    expect(flat).toContain(String.raw`@layer v-variants { .peer-checked\:block`);
+    expect(flat).toContain(String.raw`@layer v-md { @media (width >= 48rem) { .md\:flex-row`);
+    expect(flat).toContain(String.raw`@layer v-max-sm { @media (width < 40rem) { .max-sm\:hidden`);
+    expect(flat).toContain("@media (prefers-reduced-motion: reduce) { .footer");
+    expect(flat.indexOf("@layer v-max-sm")).toBeLessThan(flat.indexOf("@layer v-md"));
   });
 });

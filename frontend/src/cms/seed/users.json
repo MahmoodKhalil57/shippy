@@ -1,0 +1,34 @@
+[
+  {
+    "id": "ky",
+    "name": "Karim Youssef",
+    "initials": "KY",
+    "role": "supply-chain",
+    "email": "karim.youssef@goldensea.test",
+    "password": "demo1234"
+  },
+  {
+    "id": "kb",
+    "name": "Karim Balbaa",
+    "initials": "KB",
+    "role": "management",
+    "email": "karim.balbaa@goldensea.test",
+    "password": "demo1234"
+  },
+  {
+    "id": "sa",
+    "name": "Soaad Amer",
+    "initials": "SA",
+    "role": "sales",
+    "email": "soaad.amer@goldensea.test",
+    "password": "demo1234"
+  },
+  {
+    "id": "ah",
+    "name": "Ahmedy",
+    "initials": "AH",
+    "role": "operations",
+    "email": "ahmedy@goldensea.test",
+    "password": "demo1234"
+  }
+]

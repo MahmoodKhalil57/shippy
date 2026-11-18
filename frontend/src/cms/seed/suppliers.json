@@ -1,0 +1,46 @@
+[
+  {
+    "id": "S1",
+    "name": "Delta Marine Stores",
+    "city": "Alexandria",
+    "categories": ["Chemicals", "Deck & engine stores", "Welding", "Safety & PPE"],
+    "status": "Approved",
+    "replyHrs": 6,
+    "onTime": 94,
+    "terms": "30 days",
+    "contact": "Hany S. · +20 10 0000 1101"
+  },
+  {
+    "id": "S2",
+    "name": "Suez Industrial Supply",
+    "city": "Suez",
+    "categories": ["Chemicals", "Adhesives"],
+    "status": "Approved",
+    "replyHrs": 14,
+    "onTime": 88,
+    "terms": "15 days",
+    "contact": "Mona A. · +20 10 0000 1102"
+  },
+  {
+    "id": "S3",
+    "name": "Port Said Welding Co.",
+    "city": "Port Said",
+    "categories": ["Welding"],
+    "status": "Approved",
+    "replyHrs": 30,
+    "onTime": 81,
+    "terms": "Cash",
+    "contact": "Sherif K. · +20 10 0000 1103"
+  },
+  {
+    "id": "S4",
+    "name": "Nile Safety Equipment",
+    "city": "Cairo",
+    "categories": ["Safety & PPE"],
+    "status": "Approved",
+    "replyHrs": 9,
+    "onTime": 97,
+    "terms": "30 days",
+    "contact": "Rania F. · +20 10 0000 1104"
+  }
+]

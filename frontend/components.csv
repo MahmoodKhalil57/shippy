@@ -74,3 +74,5 @@ Showcase & docs,Kbd,primitive,,Data display,https://daisyui.com/components/kbd/,
 Showcase & docs,Diff,primitive,,Data display,https://daisyui.com/components/diff/,Side-by-side comparison of two items.
 Typography,Heading,primitive,,Shippy (not daisyUI),,"Section titles h1–h6 with size, weight, colour and alignment."
 Typography,Text,primitive,,Shippy (not daisyUI),,"Body copy, captions and inline emphasis with size, weight, colour, clamp."
+Forms & input,Form,primitive,,Shippy (not daisyUI),,"Native form wrapper: Enter submits, ui-submit carries FormData. No styling."
+Forms & input,Doc form,composed,Text input / Textarea / Select / Checkbox / Radio / Fieldset / Collapse / Tabs / Grid / Box / Button,Shippy (not daisyUI),,"Edits a document described by Payload fields (used by the mock backend admin)."

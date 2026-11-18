@@ -1,0 +1,37 @@
+[
+  {
+    "id": "nordvik",
+    "name": "Nordvik Ship Management",
+    "country": "Norway",
+    "contactEmail": "purchasing@nordvik.test",
+    "doNotChase": false
+  },
+  {
+    "id": "helios",
+    "name": "Helios Bulk Carriers",
+    "country": "Greece",
+    "contactEmail": "supply@helios.test",
+    "doNotChase": false
+  },
+  {
+    "id": "mare-nostrum",
+    "name": "Mare Nostrum Shipping",
+    "country": "Italy",
+    "contactEmail": "ops@marenostrum.test",
+    "doNotChase": false
+  },
+  {
+    "id": "atlas",
+    "name": "Atlas Tankers",
+    "country": "Cyprus",
+    "contactEmail": "procurement@atlas.test",
+    "doNotChase": true
+  },
+  {
+    "id": "delta-offshore",
+    "name": "Delta Offshore Services",
+    "country": "Egypt",
+    "contactEmail": "stores@deltaoffshore.test",
+    "doNotChase": false
+  }
+]

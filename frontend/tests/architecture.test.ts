@@ -61,7 +61,8 @@ const read = (f: string) => readFileSync(f, "utf8");
 const rel = (f: string) => path.relative(src, f).split(path.sep).join("/");
 const cases = (files: string[]) => files.map((f) => [rel(f), f]);
 
-const apis = elementApis([...primitives, ...composed].map((file) => ({ file, source: read(file) })));
+/** Every custom element: primitives, composed components and page elements (which follow the consumer rules). */
+const apis = elementApis(all.map((file) => ({ file, source: read(file) })));
 
 /** Unstyled inline text elements consumers may use (Tailwind's preflight leaves them alone). */
 const TEXT_ELEMENTS = new Set([
@@ -146,7 +147,7 @@ describe("only primitives style things", () => {
   it("finds the files", () => {
     expect(primitives.length).toBeGreaterThan(60);
     expect(composed.length).toBeGreaterThan(0);
-    expect(consumers).toContain(path.join(src, "pages", "home.ts"));
+    expect(consumers).toContain(path.join(src, "pages", "dashboard", "app.ts"));
     expect(apis.size).toBeGreaterThan(70);
   });
 
