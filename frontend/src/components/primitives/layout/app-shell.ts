@@ -223,9 +223,10 @@ export const appShellBackdrop = rcva(
 /**
  * A column's footer (`slot="nav-footer"` / `"aside-footer"`): pinned under the menus, on the same
  * icon axis as the column's toggle (e.g. an account switcher), in every state — rail, open, sheet.
- * Several elements stack, each always shown in full (a short note under the switcher fits the rail).
+ * Several elements stack, each always shown in full: they centre on the icon axis (the footer is one
+ * icon wide), so a short note under the switcher spreads evenly either side of it and fits the rail.
  */
-export const appShellFooter = rcva("flex shrink-0 flex-col items-start gap-1 ps-0.5 pb-1");
+export const appShellFooter = rcva("flex w-10 shrink-0 flex-col items-center gap-1 ms-0.5 pb-1 text-center");
 
 /** Wrapper that keeps a slot's nodes mounted while hidden. */
 export const appShellSlot = rcva("flex min-h-0 w-full flex-col gap-3", {
