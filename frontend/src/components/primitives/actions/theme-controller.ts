@@ -60,9 +60,11 @@ export const themeControllerGlyph = cva(
 );
 
 /** `background`: the picker panel (a glass dropdown), its tiles, and their parts. */
+/** No `display` here: the dropdown shows and hides the panel itself (a display utility would keep it clickable while closed). */
 export const themeControllerBackgrounds = cva(
-  "flex w-80 max-w-[calc(100vw-2rem)] flex-col gap-2 p-3 max-h-[min(30rem,75dvh)] overflow-y-auto [--scrollbar-inset:var(--radius-box)]",
+  "w-80 max-w-[calc(100vw-2rem)] p-3 max-h-[min(30rem,75dvh)] overflow-y-auto [--scrollbar-inset:var(--radius-box)]",
 );
+export const themeControllerBackgroundsBody = cva("flex flex-col gap-2");
 export const themeControllerBackgroundsHead = cva(
   "flex items-baseline justify-between gap-2 px-1 text-sm font-semibold",
 );
@@ -350,41 +352,43 @@ export class UiThemeController extends LightElement {
         tabindex="-1"
         class=${dropdownContent({ class: dropdownPanel({ surface: "glass", rounded: true, shadow: "lg", class: themeControllerBackgrounds() }) })}
       >
-        <div class=${themeControllerBackgroundsHead()}>
-          <span>Background</span><span class=${themeControllerBackgroundsCredit()}>Photos: Pexels</span>
-        </div>
-        <div class=${themeControllerBackgroundGrid()} role="listbox" aria-label="Background image">
-          <button
-            type="button"
-            role="option"
-            aria-selected=${current === "none"}
-            class=${themeControllerBackground({ active: current === "none" })}
-            @click=${(e: MouseEvent) => this._pickBackground(e, "none", null)}
-          >
-            <span class=${themeControllerBackgroundEmpty()}>${iconSvg("no-image", { size: "lg" })}No image</span>
-            ${check("none")}
-          </button>
-          ${this.backgrounds.map(
-            (b) =>
-              html`<button
-                type="button"
-                role="option"
-                aria-selected=${current === b.id}
-                class=${themeControllerBackground({ active: current === b.id })}
-                @click=${(e: MouseEvent) => this._pickBackground(e, b.id, b.src)}
-              >
-                <img class=${themeControllerBackgroundImage()} src=${b.thumb ?? b.src} alt="" loading="lazy" />
-                <span class=${themeControllerBackgroundLabel()}>${b.label}</span>
-                ${check(b.id)}
-              </button>`,
-          )}
-          <label class=${themeControllerBackground({ active: custom, upload: !custom })}>
-            <input class=${themeControllerFile()} type="file" accept="image/*" @change=${this._upload} />
-            <span class=${themeControllerBackgroundEmpty()}>
-              ${iconSvg("upload", { size: "lg" })}${custom ? "Replace your image" : "Upload your own"}
-            </span>
-            ${check("custom")}
-          </label>
+        <div class=${themeControllerBackgroundsBody()}>
+          <div class=${themeControllerBackgroundsHead()}>
+            <span>Background</span><span class=${themeControllerBackgroundsCredit()}>Photos: Pexels</span>
+          </div>
+          <div class=${themeControllerBackgroundGrid()} role="listbox" aria-label="Background image">
+            <button
+              type="button"
+              role="option"
+              aria-selected=${current === "none"}
+              class=${themeControllerBackground({ active: current === "none" })}
+              @click=${(e: MouseEvent) => this._pickBackground(e, "none", null)}
+            >
+              <span class=${themeControllerBackgroundEmpty()}>${iconSvg("no-image", { size: "lg" })}No image</span>
+              ${check("none")}
+            </button>
+            ${this.backgrounds.map(
+              (b) =>
+                html`<button
+                  type="button"
+                  role="option"
+                  aria-selected=${current === b.id}
+                  class=${themeControllerBackground({ active: current === b.id })}
+                  @click=${(e: MouseEvent) => this._pickBackground(e, b.id, b.src)}
+                >
+                  <img class=${themeControllerBackgroundImage()} src=${b.thumb ?? b.src} alt="" loading="lazy" />
+                  <span class=${themeControllerBackgroundLabel()}>${b.label}</span>
+                  ${check(b.id)}
+                </button>`,
+            )}
+            <label class=${themeControllerBackground({ active: custom, upload: !custom })}>
+              <input class=${themeControllerFile()} type="file" accept="image/*" @change=${this._upload} />
+              <span class=${themeControllerBackgroundEmpty()}>
+                ${iconSvg("upload", { size: "lg" })}${custom ? "Replace your image" : "Upload your own"}
+              </span>
+              ${check("custom")}
+            </label>
+          </div>
         </div>
       </div>
     </div>`;
