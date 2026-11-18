@@ -112,6 +112,7 @@ export class DashboardLogin extends LightElement {
           <ui-text weight="medium">Authenticator code</ui-text>
           <ui-text size="sm" color="muted">Enter the ${CODE_LENGTH}-digit code from your authenticator app.</ui-text>
           <ui-otp
+            focus-on-show
             name="code"
             length=${CODE_LENGTH}
             color="primary"

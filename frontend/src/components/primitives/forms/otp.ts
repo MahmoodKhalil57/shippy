@@ -60,6 +60,12 @@ export class UiOtp extends LightElement {
   @property() label = "One-time code";
   @property({ converter: booleanAttribute }) required = true;
   @property({ type: Boolean }) disabled = false;
+  /** Focus the code as soon as it appears, so typing (or pasting) starts straight away. */
+  @property({ type: Boolean, attribute: "focus-on-show" }) focusOnShow = false;
+
+  protected firstUpdated() {
+    if (this.focusOnShow) this.querySelector("input")?.focus();
+  }
 
   private _onInput(e: Event) {
     const input = e.target as HTMLInputElement;
