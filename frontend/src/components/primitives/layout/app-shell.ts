@@ -223,13 +223,9 @@ export const appShellBackdrop = rcva(
 /**
  * A column's footer (`slot="nav-footer"` / `"aside-footer"`): pinned under the menus, on the same
  * icon axis as the column's toggle (e.g. an account switcher), in every state — rail, open, sheet.
- * Its first element always shows; anything after it (e.g. a "Powered by" line) shows beside it
- * while the column is open and fades out with the labels when it closes to its rail.
+ * Several elements stack, each always shown in full (a short note under the switcher fits the rail).
  */
-export const appShellFooter = rcva(
-  "flex shrink-0 items-center gap-2 overflow-hidden ps-0.5 pb-1 whitespace-nowrap [&>:not(:first-child)]:min-w-0 [&>:not(:first-child)]:transition-opacity [&>:not(:first-child)]:duration-(--duration-effects) [&>:not(:first-child)]:ease-effects motion-reduce:[&>:not(:first-child)]:transition-none",
-  { variants: { collapsed: { true: "[&>:not(:first-child)]:invisible [&>:not(:first-child)]:opacity-0" } } },
-);
+export const appShellFooter = rcva("flex shrink-0 flex-col items-start gap-1 ps-0.5 pb-1");
 
 /** Wrapper that keeps a slot's nodes mounted while hidden. */
 export const appShellSlot = rcva("flex min-h-0 w-full flex-col gap-3", {
@@ -613,7 +609,7 @@ export class UiAppShell extends LightElement {
           ${this.slotted(rail)}
         </div>
       </div>
-      ${this.hasSlotted(`${list}-footer`) ? html`<div class=${appShellFooter({ collapsed: !open })}>${this.slotted(`${list}-footer`)}</div>` : nothing}
+      ${this.hasSlotted(`${list}-footer`) ? html`<div class=${appShellFooter()}>${this.slotted(`${list}-footer`)}</div>` : nothing}
     </div>`;
   }
 
