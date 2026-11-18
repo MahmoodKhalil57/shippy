@@ -269,3 +269,20 @@ describe("config", () => {
     expect(c.globals).toHaveLength(8);
   });
 });
+
+describe("seed top-up", () => {
+  it("adds seed documents a store has never loaded (e.g. users added to the seed later)", async () => {
+    const store = new MemoryStore();
+    const users = seeds.collections.users ?? [];
+    const older = {
+      ...seeds,
+      collections: { ...seeds.collections, users: users.filter((u) => u.email !== "mohamed.helmy@goldensea.test") },
+    };
+    await new RestApi(new Engine(config, store), older).ready();
+    // The seed has grown since: starting again tops the store up, keeping what was there.
+    api = new RestApi(new Engine(config, store), seeds);
+    const { status, body } = await login("mohamed.helmy@goldensea.test");
+    expect(status).toBe(200);
+    expect(body.user).toMatchObject({ email: "mohamed.helmy@goldensea.test", role: "finance-director" });
+  });
+});

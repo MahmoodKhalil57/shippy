@@ -3,114 +3,148 @@ import { LightElement } from "../../components/base/light-element.ts";
 import { customElement, state } from "lit/decorators.js";
 import { api, ApiError } from "../../cms/client.ts";
 import "../../components/index.ts";
-import { cellText, collectionOf, dataFields, fieldsOf, formFields, toast, userSlug } from "./shared.ts";
+import { defaultLogin, demoPassword } from "./demo-users.ts";
+import { collectionOf, formFields, toast, userSlug } from "./shared.ts";
 
 /** Login and create-first-user. Both fire `dashboard-auth` once signed in. */
 
 const signedIn = (el: HTMLElement) => el.dispatchEvent(new CustomEvent("dashboard-auth", { bubbles: true }));
 
-interface SeedUser {
-  name?: string;
-  email: string;
-  password: string;
-  role?: string;
-}
+/** Demo second factor: any 6-digit code is accepted (no authenticator is set up). */
+const CODE_LENGTH = 6;
+/** How long the simulated passkey prompt takes. */
+const PASSKEY_MS = 1200;
 
-/** Seeded users with their passwords (src/cms/seed/<users>.json). */
-const seeds = import.meta.glob<SeedUser[]>("../../cms/seed/*.json", { eager: true, import: "default" });
-const seedUsers = (seeds[`../../cms/seed/${userSlug}.json`] ?? []).filter((u) => u.email && u.password);
-
-/** A role's option label ("Sales", "Management approver"…), when the user collection has a `role` field. */
-const roleField = dataFields(fieldsOf(collectionOf(userSlug)!)).find((f) => f.name === "role");
-const roleLabel = (role?: string) => (roleField && role ? cellText(roleField, role) : (role ?? ""));
-
-/** One-click login: one seeded user per role (the first one seeded with it). */
-const roleLogins = seedUsers.filter((u, i, all) => u.role && all.findIndex((x) => x.role === u.role) === i);
-
+/**
+ * Two-step login (a demo of passwordless sign-in): 1. email; 2. a 6-digit authenticator code or
+ * the device's passkey. Both second factors are simulated — any 6 digits pass, the passkey
+ * prompt resolves after a moment — and then the user is signed in to the mock backend with
+ * their seeded password, which never appears in the UI.
+ */
 @customElement("dashboard-login")
 export class DashboardLogin extends LightElement {
+  @state() private step: "email" | "verify" = "email";
+  /** Pre-filled with a demo user (switch roles from the dashboard afterwards). */
+  @state() private email = defaultLogin?.email ?? "";
+  @state() private code = "";
   @state() private error = "";
-  @state() private busy = false;
-  @state() private email = "";
-  @state() private password = "";
+  /** The second factor in progress, if any. */
+  @state() private busy: "" | "code" | "passkey" = "";
 
-  private _fill(user: SeedUser) {
-    this.email = user.email;
-    this.password = user.password;
+  private _continue(email: string) {
+    this.email = email.trim();
     this.error = "";
+    this.code = "";
+    if (this.email) this.step = "verify";
   }
 
-  private async _submit(data: FormData) {
-    this.busy = true;
+  private _back() {
+    this.step = "email";
     this.error = "";
+    this.busy = "";
+  }
+
+  /** Second factor passed: sign in to the backend. */
+  private async _signIn() {
     try {
-      await api.login(
-        userSlug,
-        (data.get("email") as string | null) ?? "",
-        (data.get("password") as string | null) ?? "",
-      );
+      await api.login(userSlug, this.email, demoPassword(this.email));
       toast("Welcome back.");
       signedIn(this);
     } catch (e) {
       this.error = (e as Error).message;
-    } finally {
-      this.busy = false;
+      this.busy = "";
     }
+  }
+
+  private async _verifyCode(code = this.code) {
+    if (this.busy) return;
+    if (!new RegExp(`^\\d{${CODE_LENGTH}}$`).test(code)) {
+      this.error = `Enter the ${CODE_LENGTH}-digit code from your authenticator app.`;
+      return;
+    }
+    this.error = "";
+    this.busy = "code";
+    await this._signIn();
+  }
+
+  private async _passkey() {
+    if (this.busy) return;
+    this.error = "";
+    this.busy = "passkey";
+    await new Promise((r) => setTimeout(r, PASSKEY_MS));
+    await this._signIn();
+  }
+
+  private _emailStep() {
+    return html`<ui-form
+      label="Log in"
+      @ui-submit=${(e: CustomEvent<{ data: FormData }>) => this._continue((e.detail.data.get("email") as string | null) ?? "")}
+    >
+      <ui-flex direction="col" gap="3">
+        <ui-text size="sm" color="muted"
+          >Golden Sea dashboard. A demo user is filled in; switch roles any time from the dashboard.</ui-text
+        >
+        ${this.error ? html`<ui-alert color="error" variant="soft">${this.error}</ui-alert>` : nothing}
+        <ui-text-input
+          legend="Email"
+          name="email"
+          type="email"
+          autocomplete="username webauthn"
+          .value=${this.email}
+          required
+          field-width="full"
+          width="full"
+        ></ui-text-input>
+        <ui-button type="submit" color="primary" block>Continue</ui-button>
+      </ui-flex>
+    </ui-form>`;
+  }
+
+  private _verifyStep() {
+    return html`<ui-form label="Verify it's you" @ui-submit=${() => this._verifyCode()}>
+      <ui-flex direction="col" gap="4">
+        <ui-flex align="center" justify="between" gap="2" wrap>
+          <ui-text size="sm" color="muted">Signing in as <strong>${this.email}</strong></ui-text>
+          <ui-button variant="ghost" size="xs" .disabled=${!!this.busy} @click=${() => this._back()}>Change</ui-button>
+        </ui-flex>
+        ${this.error ? html`<ui-alert color="error" variant="soft">${this.error}</ui-alert>` : nothing}
+        <ui-flex direction="col" gap="2">
+          <ui-text weight="medium">Authenticator code</ui-text>
+          <ui-text size="sm" color="muted">Enter the ${CODE_LENGTH}-digit code from your authenticator app.</ui-text>
+          <ui-otp
+            name="code"
+            length=${CODE_LENGTH}
+            color="primary"
+            label="Authenticator code"
+            .value=${this.code}
+            .disabled=${!!this.busy}
+            @ui-change=${(e: CustomEvent<{ value: string }>) => (this.code = e.detail.value)}
+            @ui-complete=${(e: CustomEvent<{ value: string }>) => this._verifyCode(e.detail.value)}
+          ></ui-otp>
+          <ui-button type="submit" color="primary" block .disabled=${!!this.busy}>
+            ${this.busy === "code" ? html`<ui-loading size="sm"></ui-loading> Verifying…` : "Verify and log in"}
+          </ui-button>
+        </ui-flex>
+        <ui-divider>or</ui-divider>
+        <ui-button variant="outline" block .disabled=${!!this.busy} @click=${() => this._passkey()}>
+          ${
+            this.busy === "passkey"
+              ? html`<ui-loading size="sm"></ui-loading> Waiting for your device…`
+              : html`<ui-icon name="passkey"></ui-icon> Use a passkey`
+          }
+        </ui-button>
+        <ui-text size="xs" color="muted" align="center"
+          >Demo: any ${CODE_LENGTH}-digit code works, and the passkey prompt is simulated.</ui-text
+        >
+      </ui-flex>
+    </ui-form>`;
   }
 
   render() {
     return html`<ui-flex justify="center" padding="4">
       <ui-box width="full" max="md" padding="fluid">
-        <ui-card heading="Log in" variant="border">
-          <ui-form label="Log in" @ui-submit=${(e: CustomEvent<{ data: FormData }>) => this._submit(e.detail.data)}>
-            <ui-flex direction="col" gap="3">
-              <ui-text size="sm" color="muted"
-                >Golden Sea dashboard. Pick a role below to fill in a seeded login for it.</ui-text
-              >
-              ${this.error ? html`<ui-alert color="error" variant="soft">${this.error}</ui-alert>` : nothing}
-              <ui-text-input
-                legend="Email"
-                name="email"
-                type="email"
-                autocomplete="email"
-                .value=${this.email}
-                required
-                field-width="full"
-                width="full"
-              ></ui-text-input>
-              <ui-text-input
-                legend="Password"
-                name="password"
-                type="password"
-                autocomplete="current-password"
-                .value=${this.password}
-                required
-                field-width="full"
-                width="full"
-              ></ui-text-input>
-              <ui-button type="submit" color="primary" block .disabled=${this.busy}>Log in</ui-button>
-              ${
-                roleLogins.length
-                  ? html`<ui-divider>Log in as</ui-divider>
-                      <ui-flex direction="col" gap="2">
-                        ${roleLogins.map(
-                          (u) =>
-                            html`<ui-button
-                              variant="outline"
-                              size="sm"
-                              justify="start"
-                              block
-                              .label=${`Fill in the ${roleLabel(u.role)} login (${u.name ?? u.email})`}
-                              @click=${() => this._fill(u)}
-                            >
-                              ${roleLabel(u.role)}
-                            </ui-button>`,
-                        )}
-                      </ui-flex>`
-                  : nothing
-              }
-            </ui-flex>
-          </ui-form>
+        <ui-card heading=${this.step === "email" ? "Log in" : "Verify it's you"} variant="border">
+          ${this.step === "email" ? this._emailStep() : this._verifyStep()}
         </ui-card>
       </ui-box>
     </ui-flex>`;

@@ -215,6 +215,12 @@ export const appShellBackdrop = rcva(
   "fixed inset-0 z-30 bg-neutral/30 transition-opacity ease-effects duration-(--duration-effects) starting:opacity-0 motion-reduce:transition-none",
 );
 
+/**
+ * A column's footer (`slot="nav-footer"` / `"aside-footer"`): pinned under the menus, on the same
+ * icon axis as the column's toggle (e.g. an account switcher), in every state — rail, open, sheet.
+ */
+export const appShellFooter = rcva("flex shrink-0 ps-0.5 pb-1");
+
 /** Wrapper that keeps a slot's nodes mounted while hidden. */
 export const appShellSlot = rcva("flex min-h-0 w-full flex-col gap-3", {
   variants: {
@@ -467,6 +473,7 @@ export class UiAppShell extends LightElement {
           ${this.slotted(rail)}
         </div>
       </div>
+      ${this.hasSlotted(`${list}-footer`) ? html`<div class=${appShellFooter()}>${this.slotted(`${list}-footer`)}</div>` : nothing}
     </div>`;
   }
 

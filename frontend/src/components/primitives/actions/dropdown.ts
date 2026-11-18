@@ -216,6 +216,21 @@ export class UiDropdown extends LightElement {
     this.open = true;
   }
 
+  /** Choosing an item in a menu inside the panel (its `ui-select`) closes the dropdown. */
+  #closeOnSelect = (e: Event) => {
+    if (e.target !== this) this.hide();
+  };
+
+  connectedCallback() {
+    super.connectedCallback();
+    this.addEventListener("ui-select", this.#closeOnSelect);
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.removeEventListener("ui-select", this.#closeOnSelect);
+  }
+
   hide() {
     if (this.mode === "focus") (document.activeElement as HTMLElement | null)?.blur();
     else if (this.mode === "popover") this._popover?.hidePopover();
@@ -278,7 +293,10 @@ export class UiDropdown extends LightElement {
   private _panelBody() {
     if (!this.items.length) {
       if (this._kind !== "card") return this.slotted();
-      return html`<div tabindex="0" class=${dropdownCardBody()}>
+      // No tabindex: in popover mode this body is the `.dropdown`'s first child, and daisyUI's
+      // "click the trigger again to close" rule (`.dropdown:focus-within > [tabindex]:first-child
+      // { pointer-events: none }`) would make the whole card unclickable once focus is inside it.
+      return html`<div class=${dropdownCardBody()}>
         ${this.heading ? html`<h2 class=${dropdownCardTitle()}>${this.heading}</h2>` : nothing} ${this.slotted()}
       </div>`;
     }

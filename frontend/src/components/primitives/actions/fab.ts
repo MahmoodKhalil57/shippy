@@ -22,6 +22,14 @@ export const fab = rcva("fab [&_svg]:size-6", {
   },
 });
 
+/**
+ * A speed-dial action's text label: a glass pill (src/styles/theme.css), so it reads on any
+ * background the FAB opens over.
+ */
+export const fabLabel = rcva(
+  "liquid-glass rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap text-base-content",
+);
+
 /** Replaces the trigger with a close button while open (visual only, not focusable). */
 export const fabClose = rcva("fab-close");
 /** Replaces the trigger with a main action button while open. */
@@ -109,7 +117,7 @@ export class UiFab extends LightElement {
       // No room for text in a quarter circle: labels become tooltips.
       return html`<div class=${fabTooltip({ left: i < 2 })} data-tip=${a.label}>${this._btn(a, onClick)}</div>`;
     }
-    return html`<div>${a.label} ${this._btn(a, onClick)}</div>`;
+    return html`<div><span class=${fabLabel()}>${a.label}</span> ${this._btn(a, onClick)}</div>`;
   }
 
   render() {

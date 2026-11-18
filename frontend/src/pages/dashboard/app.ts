@@ -1,6 +1,6 @@
 import { text } from "../../cms/runtime/util.ts";
 import { LightElement } from "../../components/base/light-element.ts";
-import { html } from "lit";
+import { html, nothing } from "lit";
 import { customElement, query, state } from "lit/decorators.js";
 import { API_ROUTE, api, startMockBackend } from "../../cms/client.ts";
 import type { Doc } from "../../cms/types.ts";
@@ -15,6 +15,7 @@ import "./list-view.ts";
 import "./mock-data.ts";
 import "./command.ts";
 import { asideRail, expandAsideSection, type AsideSection } from "./aside.ts";
+import { roleLabel, roleLogins, type SeedUser } from "./demo-users.ts";
 import {
   dashboardPath,
   config,
@@ -113,6 +114,74 @@ export class DashboardApp extends LightElement {
     }
     if (r.name === "global") return humanize(r.slug);
     return humanize(r.name);
+  }
+
+  /**
+   * Demo: become another user in place (sign out, sign in as them behind the scenes; no login
+   * page). Users keep their own role — this changes who you are, never anyone's role.
+   */
+  private async _switchTo(u: SeedUser) {
+    if (u.email === this.user?.email) return;
+    try {
+      // Signing in replaces the session; no logout first, so a failure leaves you signed in.
+      await api.login(userSlug, u.email, u.password);
+      toast(`Signed in as ${u.name ?? u.email} (${roleLabel(u.role)})`, "info");
+      await this._refresh();
+    } catch (e) {
+      toast(`Couldn't switch to ${u.name ?? u.email}: ${(e as Error).message}`, "error");
+    }
+  }
+
+  /**
+   * Demo user switcher, docked in the navigation's footer (never over the menu): the current
+   * user's avatar opens a "Switch user" card — one seeded user per role, name and role on two
+   * lines, the current one highlighted.
+   */
+  private _userSwitcher() {
+    if (!this.user || !roleLogins.length) return nothing;
+    const initials = (user: object) => {
+      const u = user as Record<string, unknown>;
+      return text(u.initials ?? u.name ?? u.email ?? "?")
+        .slice(0, 2)
+        .toUpperCase();
+    };
+    const items: MenuItem[] = roleLogins.map((u) => ({
+      icon: html`<ui-avatar size="xs" .initials=${initials(u)}></ui-avatar>`,
+      label: html`<ui-flex direction="col" gap="0" shrink>
+        <ui-text as="div" size="sm" weight="semibold" truncate>${u.name ?? u.email}</ui-text>
+        <ui-text as="div" size="xs" color="muted" truncate>${roleLabel(u.role)}</ui-text>
+      </ui-flex>`,
+      active: u.email === this.user?.email,
+      value: u.email,
+    }));
+    return html`<ui-dropdown
+      slot="nav-footer"
+      mode="popover"
+      side="top"
+      align="start"
+      panel="card"
+      panel-width="72"
+      panel-shadow="lg"
+      trigger-variant="ghost"
+      trigger-shape="circle"
+      trigger-spaced="false"
+      .label=${`Switch user (demo) — signed in as ${text(this.user.name ?? this.user.email)}`}
+      .heading=${html`<ui-flex align="center" justify="between" gap="2"
+        >Switch user <ui-badge size="xs" variant="soft" color="primary">Demo</ui-badge></ui-flex
+      >`}
+    >
+      <ui-avatar slot="trigger" size="xs" .initials=${initials(this.user)}></ui-avatar>
+      <ui-menu
+        width="full"
+        surface="false"
+        nowrap
+        .items=${items}
+        @ui-select=${(e: CustomEvent<{ item: MenuItem }>) => {
+          const u = roleLogins.find((x) => x.email === e.detail.item.value);
+          if (u) void this._switchTo(u);
+        }}
+      ></ui-menu>
+    </ui-dropdown>`;
   }
 
   private async _logout() {
@@ -280,6 +349,7 @@ export class DashboardApp extends LightElement {
         </ui-flex>
         <ui-menu slot="nav" layout="nav" width="full" surface="false" .items=${this._menu()}></ui-menu>
         <ui-menu slot="rail" layout="rail" surface="false" .items=${this._rail()}></ui-menu>
+        ${this._userSwitcher()}
         <ui-menu
           slot="aside-rail"
           layout="rail"

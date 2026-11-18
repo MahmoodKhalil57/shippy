@@ -13,74 +13,77 @@ import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts
  *
  * Responsive (docs): `direction="vertical lg:horizontal"`, `width="sm lg:auto"`.
  * Without padding and border radius (docs): `flush`.
+ * The active item is primary on a primary tint (the app's selection look), not daisyUI's neutral.
  */
-export const menu = rcva("menu", {
-  variants: {
-    size: {
-      xs: "menu-xs",
-      sm: "menu-sm",
-      md: "menu-md",
-      lg: "menu-lg",
-      xl: "menu-xl",
+export const menu = rcva(
+  "menu [&_.menu-active]:bg-primary/20 [&_.menu-active]:text-primary [&_.menu-active]:shadow-none",
+  {
+    variants: {
+      size: {
+        xs: "menu-xs",
+        sm: "menu-sm",
+        md: "menu-md",
+        lg: "menu-lg",
+        xl: "menu-xl",
+      },
+      direction: {
+        vertical: "menu-vertical",
+        horizontal: "menu-horizontal",
+      },
+      /** One column that never wraps: rows keep the menu's width, so long labels can truncate. */
+      nowrap: { true: "flex-nowrap [&_li>*]:min-w-0" },
+      /** Show one level at a time; the open `<summary>` becomes a back button. */
+      paged: { true: "menu-paged" },
+      /** Background used in the docs examples. */
+      surface: { true: "bg-base-200" },
+      /** Rounded corners (docs default; off in the "without radius" example). */
+      rounded: { true: "rounded-box" },
+      /** No padding and square items (docs "Menu without padding and border radius"). */
+      flush: { true: "p-0 [&_li>*]:rounded-none" },
+      /** Widths used in the docs examples. */
+      width: {
+        sm: "w-56",
+        xs: "w-full max-w-xs",
+        full: "w-full",
+        /** Fill the remaining space (docs drawer icon-only sidebar). */
+        grow: "w-full grow",
+        auto: "w-auto",
+        max: "min-w-max",
+      },
+      /** Icon size (docs: `h-5 w-5`, `h-4 w-4` in small menus). */
+      iconSize: {
+        sm: "[&_svg]:size-4",
+        md: "[&_svg]:size-5",
+      },
+      /**
+       * App navigation look, shared by the expanded list (`layout="nav"`) and the rail
+       * (`layout="rail"`): same text size and weight. One column that never wraps, so rows keep the menu's width and long labels truncate.
+       */
+      nav: {
+        true: "flex-nowrap px-0 text-sm font-medium [&_.menu-title]:text-base-content/60 [interpolate-size:allow-keywords] [&_details::details-content]:overflow-hidden [&_details::details-content]:[block-size:0] [&_details::details-content]:[transition:block-size_var(--duration-spatial)_var(--ease-spatial),content-visibility_var(--duration-spatial)_allow-discrete] [&_details[open]::details-content]:[block-size:auto] motion-reduce:[&_details::details-content]:transition-none",
+      },
+      /**
+       * Open navigation list that can fold into the rail's look with motion: set
+       * the flags `--menu-collapse` (1: folded into the rail's look) and `--menu-expanded` (0: groups
+       * held shut, e.g. while a column opens) on an ancestor (registered in src/styles/theme.css,
+       * so it can flip them on a schedule; the menu reacts at once). Folding
+       * slides and fades the labels and chevrons away, and the highlight (`menuIndicator`)
+       * slides from the active page to its top-level item and shrinks to the rail's icon pill.
+       * Where anchor positioning is missing, the active item keeps its own background.
+       */
+      fold: {
+        true: "relative isolate [anchor-scope:all] supports-[anchor-name:--a]:[&_.menu-active]:bg-transparent [&_summary]:after:[opacity:calc(1_-_var(--menu-collapse,0))] [&_summary]:after:[transition:opacity_var(--duration-effects-fast)_var(--ease-effects-fast),rotate_var(--duration-spatial-fast)_var(--ease-spatial-fast),translate_var(--duration-spatial-fast)_var(--ease-spatial-fast)] motion-reduce:[&_summary]:after:transition-none",
+      },
+      /**
+       * Navigation rail: exactly the open list's items with the labels left out, so each icon and
+       * highlight sits where it does in the open list. Items are the icon pill (`w-11`), the
+       * width the open list's highlight folds to.
+       */
+      rail: { true: "[&_li>*]:w-11" },
     },
-    direction: {
-      vertical: "menu-vertical",
-      horizontal: "menu-horizontal",
-    },
-    /** One column that never wraps: rows keep the menu's width, so long labels can truncate. */
-    nowrap: { true: "flex-nowrap [&_li>*]:min-w-0" },
-    /** Show one level at a time; the open `<summary>` becomes a back button. */
-    paged: { true: "menu-paged" },
-    /** Background used in the docs examples. */
-    surface: { true: "bg-base-200" },
-    /** Rounded corners (docs default; off in the "without radius" example). */
-    rounded: { true: "rounded-box" },
-    /** No padding and square items (docs "Menu without padding and border radius"). */
-    flush: { true: "p-0 [&_li>*]:rounded-none" },
-    /** Widths used in the docs examples. */
-    width: {
-      sm: "w-56",
-      xs: "w-full max-w-xs",
-      full: "w-full",
-      /** Fill the remaining space (docs drawer icon-only sidebar). */
-      grow: "w-full grow",
-      auto: "w-auto",
-      max: "min-w-max",
-    },
-    /** Icon size (docs: `h-5 w-5`, `h-4 w-4` in small menus). */
-    iconSize: {
-      sm: "[&_svg]:size-4",
-      md: "[&_svg]:size-5",
-    },
-    /**
-     * App navigation look, shared by the expanded list (`layout="nav"`) and the rail
-     * (`layout="rail"`): same text size and weight, active item in primary on a primary tint,
-     * no shadow. One column that never wraps, so rows keep the menu's width and long labels truncate.
-     */
-    nav: {
-      true: "flex-nowrap px-0 text-sm font-medium [&_.menu-active]:bg-primary/20 [&_.menu-active]:text-primary [&_.menu-active]:shadow-none [&_.menu-title]:text-base-content/60 [interpolate-size:allow-keywords] [&_details::details-content]:overflow-hidden [&_details::details-content]:[block-size:0] [&_details::details-content]:[transition:block-size_var(--duration-spatial)_var(--ease-spatial),content-visibility_var(--duration-spatial)_allow-discrete] [&_details[open]::details-content]:[block-size:auto] motion-reduce:[&_details::details-content]:transition-none",
-    },
-    /**
-     * Open navigation list that can fold into the rail's look with motion: set
-     * the flags `--menu-collapse` (1: folded into the rail's look) and `--menu-expanded` (0: groups
-     * held shut, e.g. while a column opens) on an ancestor (registered in src/styles/theme.css,
-     * so it can flip them on a schedule; the menu reacts at once). Folding
-     * slides and fades the labels and chevrons away, and the highlight (`menuIndicator`)
-     * slides from the active page to its top-level item and shrinks to the rail's icon pill.
-     * Where anchor positioning is missing, the active item keeps its own background.
-     */
-    fold: {
-      true: "relative isolate [anchor-scope:all] supports-[anchor-name:--a]:[&_.menu-active]:bg-transparent [&_summary]:after:[opacity:calc(1_-_var(--menu-collapse,0))] [&_summary]:after:[transition:opacity_var(--duration-effects-fast)_var(--ease-effects-fast),rotate_var(--duration-spatial-fast)_var(--ease-spatial-fast),translate_var(--duration-spatial-fast)_var(--ease-spatial-fast)] motion-reduce:[&_summary]:after:transition-none",
-    },
-    /**
-     * Navigation rail: exactly the open list's items with the labels left out, so each icon and
-     * highlight sits where it does in the open list. Items are the icon pill (`w-11`), the
-     * width the open list's highlight folds to.
-     */
-    rail: { true: "[&_li>*]:w-11" },
+    defaultVariants: { surface: true, rounded: true, iconSize: "md" },
   },
-  defaultVariants: { surface: true, rounded: true, iconSize: "md" },
-});
+);
 
 /** Non-interactive title `<li>` (or `<h2>` inside an `<li>` that has a submenu). */
 export const menuTitle = rcva("menu-title");

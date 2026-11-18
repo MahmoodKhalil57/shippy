@@ -54,6 +54,47 @@ export async function seedStore(engine: Engine, seeds: Seeds) {
   for (const [slug, data] of Object.entries(seeds.globals)) {
     if (engine.hasGlobal(slug)) await engine.updateGlobal({ slug, data, context, depth: 0 });
   }
+  await engine.store.setMeta("seededIds", seedIds(seeds));
   await engine.store.setMeta("seededAt", new Date().toISOString());
+  await engine.store.setMeta("seedHash", seedHash(seeds));
+}
+
+/** The seed documents' ids, per collection (documents without an id can't be tracked). */
+function seedIds(seeds: Seeds): Record<string, string[]> {
+  return Object.fromEntries(
+    Object.entries(seeds.collections).map(([slug, docs]) => [
+      slug,
+      docs.filter((d) => d.id != null).map((d) => text(d.id)),
+    ]),
+  );
+}
+
+/**
+ * The seed grew since this store was seeded (new users, cases…): add the documents it has never
+ * loaded, leaving everything else — edits, and seed documents deleted on purpose — as it is.
+ * Stores seeded before ids were tracked add whichever seed documents are missing, once.
+ */
+export async function topUpSeed(engine: Engine, seeds: Seeds) {
+  if ((await engine.store.getMeta<string>("seedHash")) === seedHash(seeds)) return;
+  const loaded = (await engine.store.getMeta<Record<string, string[]>>("seededIds")) ?? {};
+  const context = { seed: true };
+  const order = [...engine.config.collections].sort((a, b) => Number(!!b.auth) - Number(!!a.auth));
+  const added: string[] = [];
+  for (const c of order) {
+    const known = new Set(loaded[c.slug] ?? []);
+    for (const data of seeds.collections[c.slug] ?? []) {
+      if (data.id == null) continue;
+      const id = text(data.id);
+      if (known.has(id) || (await engine.store.get(c.slug, id))) continue;
+      try {
+        await engine.create({ collection: c.slug, data, context, depth: 0 });
+        added.push(`${c.slug}/${id}`);
+      } catch (e) {
+        console.warn(`[mock backend] seed ${c.slug}/${id} skipped:`, (e as Error).message, e);
+      }
+    }
+  }
+  if (added.length) console.info(`[mock backend] added ${added.length} new seed documents:`, added.join(", "));
+  await engine.store.setMeta("seededIds", seedIds(seeds));
   await engine.store.setMeta("seedHash", seedHash(seeds));
 }

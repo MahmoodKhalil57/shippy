@@ -2,7 +2,7 @@ import type { Endpoint, Where } from "payload";
 import { parse } from "qs-esm";
 import type { Doc } from "../types.ts";
 import { Engine, type FileInput, type MockRequest } from "./engine.ts";
-import { seedHash, seedStore, type Seeds } from "./seed.ts";
+import { seedHash, seedStore, topUpSeed, type Seeds } from "./seed.ts";
 import type { Snapshot } from "./store.ts";
 import { APIError, isObject, notFound, unauthorized } from "./util.ts";
 
@@ -97,10 +97,11 @@ export class RestApi {
     this.seeds = seeds;
   }
 
-  /** Loads the seed on first use (empty store). */
+  /** Loads the seed on first use (empty store); later, adds seed documents the store never loaded. */
   ready() {
     this.seeded ??= (async () => {
       if (!(await this.engine.store.getMeta("seededAt"))) await seedStore(this.engine, this.seeds);
+      else await topUpSeed(this.engine, this.seeds);
     })();
     return this.seeded;
   }
