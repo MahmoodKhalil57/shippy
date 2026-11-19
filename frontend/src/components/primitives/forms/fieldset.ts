@@ -36,7 +36,7 @@ export const fieldsetLegend = rcva("fieldset-legend");
 export const fieldsetLabel = rcva("label", {
   variants: {
     /** Label wrapping a checkbox / radio / toggle: the whole row is clickable. */
-    control: { true: "cursor-pointer" },
+    control: { true: "cursor-pointer touch-target" },
   },
 });
 /** Buttons at the end of a form (the docs' login button with `mt-4`). */

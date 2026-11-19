@@ -24,6 +24,8 @@ export const preferences = createStore(
     listColumnOrder: {} as Record<string, string[]>,
     /** Collection tables: the widths someone set, by collection, then column key (px). */
     listColumnWidths: {} as Record<string, Record<string, number>>,
+    /** Collection tables' row height (M3 density: 0 default, -1 compact, -2 dense), for every table. */
+    listDensity: "0" as "0" | "-1" | "-2",
     /** Collection lists shown as cards instead of a table, by collection. */
     listView: {} as Record<string, "table" | "cards">,
   },

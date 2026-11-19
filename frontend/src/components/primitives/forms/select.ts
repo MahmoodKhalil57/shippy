@@ -14,7 +14,11 @@ import { label as labelRecipe } from "./label.ts";
  * Docs: https://daisyui.com/components/select/
  */
 /** The options picker floats over the page, so it is liquid glass (src/styles/theme.css). */
-export const select = rcva("select [&::picker(select)]:liquid-glass", {
+/**
+ * The open list (`::picker(select)`) is frosted glass for every select in the app, set once in
+ * src/styles/daisy-m3.css: here the class sits on a wrapping label, where `::picker` can't reach.
+ */
+export const select = rcva("select", {
   variants: {
     color: {
       neutral: "select-neutral",
@@ -50,10 +54,10 @@ export const select = rcva("select [&::picker(select)]:liquid-glass", {
     },
     /** Max height of the options picker (the docs' "custom dropdown height" uses `max-h-26`). */
     pickerHeight: {
-      "26": "[&::picker(select)]:max-h-26",
-      "40": "[&::picker(select)]:max-h-40",
-      "60": "[&::picker(select)]:max-h-60",
-      "80": "[&::picker(select)]:max-h-80",
+      "26": "[&_select::picker(select)]:max-h-26 [&::picker(select)]:max-h-26",
+      "40": "[&_select::picker(select)]:max-h-40 [&::picker(select)]:max-h-40",
+      "60": "[&_select::picker(select)]:max-h-60 [&::picker(select)]:max-h-60",
+      "80": "[&_select::picker(select)]:max-h-80 [&::picker(select)]:max-h-80",
     },
   },
 });

@@ -5,6 +5,7 @@ import "../../primitives/actions/button.ts";
 import "../../primitives/actions/dropdown.ts";
 import "../../primitives/forms/checkbox.ts";
 import "../../primitives/layout/flex.ts";
+import "../../primitives/layout/join.ts";
 import "../../primitives/media/icon.ts";
 import "../../primitives/typography/text.ts";
 
@@ -19,6 +20,7 @@ import "../../primitives/typography/text.ts";
  * `ui-change` carries `{ hidden, order, reset }`: hidden column keys, every key in the new order,
  * and `reset: true` when Reset was chosen (the page also clears what else it keeps, like widths).
  * Columns marked `required` (the one that links to the record) are always shown and stay first.
+ * With `density`, it also offers the row height (M3 density: Default, Compact, Dense).
  */
 export interface PickerColumn {
   key: string;
@@ -41,6 +43,16 @@ export class UiColumnPicker extends LightElement {
   @property({ attribute: false }) defaults: string[] = [];
   /** Something else differs from the defaults (the order, a width), so Reset is offered. */
   @property({ type: Boolean }) customized = false;
+  /**
+   * Row density (M3: 0, -1, -2), shown as "Row height" when set; `ui-density` carries
+   * `{ density }`. Leave unset for tables without a density choice.
+   */
+  @property() density?: "0" | "-1" | "-2";
+
+  private _density(density: "0" | "-1" | "-2") {
+    this.density = density;
+    this.dispatchEvent(new CustomEvent("ui-density", { detail: { density }, bubbles: true }));
+  }
 
   private _emit(hidden: string[], order = this.columns.map((c) => c.key), reset = false) {
     this.hiddenColumns = hidden;
@@ -121,6 +133,31 @@ export class UiColumnPicker extends LightElement {
             </ui-flex>`,
         )}
       </ui-flex>
+      ${
+        this.density === undefined
+          ? nothing
+          : html`<ui-flex direction="col" gap="2">
+              <ui-text variant="label-md" color="muted">Row height</ui-text>
+              <ui-join label="Row height">
+                ${(
+                  [
+                    ["0", "Default"],
+                    ["-1", "Compact"],
+                    ["-2", "Dense"],
+                  ] as const
+                ).map(
+                  ([value, label]) =>
+                    html`<ui-button
+                      size="xs"
+                      variant="ghost"
+                      ?active=${this.density === value}
+                      @click=${() => this._density(value)}
+                      >${label}</ui-button
+                    >`,
+                )}
+              </ui-join>
+            </ui-flex>`
+      }
     </ui-dropdown>`;
   }
 }

@@ -375,7 +375,12 @@ export class GsCaseDelivery extends LightElement implements ViewProps {
         }
         ${
           delivered && !x.invoice && d.canFinance
-            ? html`<ui-button size="xs" color="primary" ?disabled=${Boolean(this.busy)} @click=${() => this._invoice(x)}
+            ? html`<ui-button
+                size="xs"
+                color="primary"
+                variant="soft"
+                ?disabled=${Boolean(this.busy)}
+                @click=${() => this._invoice(x)}
                 >${this.busy === `inv-${x.id}` ? html`<ui-loading size="xs"></ui-loading>` : nothing} Invoice delivered
                 quantities</ui-button
               >`

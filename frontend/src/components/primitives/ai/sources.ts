@@ -13,14 +13,14 @@ import { iconSvg } from "../media/icon.ts";
  */
 export const sources = rcva("group/sources text-body-sm");
 export const sourcesSummary = rcva(
-  "flex w-fit cursor-pointer list-none items-center gap-1.5 rounded-field px-1.5 py-1 -ms-1.5 font-medium text-on-surface-variant hover:bg-on-surface/(--state-hover) focus-visible:outline-2 focus-visible:outline-primary [&::-webkit-details-marker]:hidden",
+  "touch-target flex w-fit cursor-pointer list-none items-center gap-1.5 rounded-field px-1.5 py-1 -ms-1.5 font-medium text-on-surface-variant state-layer focus-visible:outline-2 focus-visible:outline-primary [&::-webkit-details-marker]:hidden",
 );
 export const sourcesChevron = rcva(
   "transition-transform duration-(--duration-spatial-fast) ease-spatial-fast group-open/sources:rotate-180 motion-reduce:transition-none",
 );
 export const sourcesList = rcva("mt-1 flex flex-col gap-0.5 border-s-2 border-outline-variant ps-3");
 export const sourcesLink = rcva(
-  "flex items-center gap-1.5 rounded-field px-1.5 py-1 -ms-1.5 hover:bg-on-surface/(--state-hover) focus-visible:outline-2 focus-visible:outline-primary",
+  "touch-target flex items-center gap-1.5 rounded-field px-1.5 py-1 -ms-1.5 state-layer focus-visible:outline-2 focus-visible:outline-primary",
 );
 export const sourcesLabel = rcva("min-w-0 truncate");
 

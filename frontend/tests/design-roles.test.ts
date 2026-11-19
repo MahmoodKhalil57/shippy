@@ -49,9 +49,10 @@ export function roleProblems(cls: string, displayScale = false): string[] {
   if (/^bg-base-100(?:\/\S+)?$/.test(b)) out.push(`${cls}: use bg-surface`);
   // A state layer is the content colour at the M3 opacities, from tokens.
   if (/(?:^|:)(?:hover|focus|focus-visible|active)\]?:/.test(cls) || /:(?:hover|focus|active)\]:/.test(cls)) {
-    const m =
-      /^bg-(on-surface|base-content|primary|secondary|accent|neutral|info|success|warning|error)\/([\d.[\]]+)$/.exec(b);
-    if (m) out.push(`${cls}: use a state token (bg-${m[1]}/(--state-hover)) or state-layer`);
+    const m = /^bg-(on-surface|base-content|primary|secondary|accent|neutral|info|success|warning|error)\/(\S+)$/.exec(
+      b,
+    );
+    if (m) out.push(`${cls}: use the state-layer utility (hover, focus and press at M3's opacities)`);
   }
   if (!displayScale && /^text-(?:xs|sm|base|lg|xl|[2-9]xl)$/.test(b))
     out.push(`${cls}: use a type role (text-body-md, text-title-sm…)`);
@@ -68,6 +69,46 @@ describe("primitives use colour and type roles", () => {
       expect([...new Set(bad)]).toEqual([]);
     },
   );
+});
+
+describe("controls are easy to hit (M3 48px touch, WCAG 24px pointer targets)", () => {
+  it.each(files(primitivesDir).map((f) => [path.relative(primitivesDir, f).split(path.sep).join("/"), f]))(
+    "%s: every control with a state layer has a touch target",
+    (rel, file) => {
+      const { classes } = classStrings(readFileSync(file, "utf8"), file);
+      // Table rows are full-width targets already (and a ::before hit area doesn't belong on a <tr>).
+      const row = (c: string) => rel === "data/table.ts" && c.trim() === "state-layer";
+      const bad = classes.filter(
+        (c) => c.split(/\s+/).includes("state-layer") && !c.split(/\s+/).includes("touch-target") && !row(c),
+      );
+      expect(bad, "add `touch-target` next to `state-layer`").toEqual([]);
+    },
+  );
+  it("buttons always have a touch target", () => {
+    const { classes } = classStrings(readFileSync(path.join(primitivesDir, "actions/button.ts"), "utf8"), "button.ts");
+    expect(classes.some((c) => /(?:^|\s)btn\s/.test(c) && c.includes("touch-target"))).toBe(true);
+  });
+});
+
+describe("everything that floats is glass", () => {
+  const read = (rel: string) => readFileSync(path.join(primitivesDir, rel), "utf8");
+  // A primitive that renders a popover or a dialog draws it with the glass material.
+  it.each(
+    files(primitivesDir)
+      .map((f) => [path.relative(primitivesDir, f).split(path.sep).join("/"), f] as const)
+      .filter(([, f]) => /\spopover(?:[\s=>]|$)|<dialog\b/m.test(readFileSync(f, "utf8"))),
+  )("%s renders a floating surface in glass", (_, file) => {
+    expect(readFileSync(file, "utf8")).toMatch(/liquid-glass/);
+  });
+  it("dropdown panels are always glass (no solid surface option)", () => {
+    const src = read("actions/dropdown.ts");
+    expect(src).toMatch(/dropdownPanel = rcva\(\s*"liquid-glass /);
+    expect(src).not.toMatch(/"base-[123]00": "bg-/);
+  });
+  it("every select's open list is glass (set once for all selects)", () => {
+    const css = readFileSync(path.join(root, "styles/daisy-m3.css"), "utf8");
+    expect(css).toMatch(/select::picker\(select\)\s*\{[^}]*@apply liquid-glass/);
+  });
 });
 
 describe("pages and composed components set text by role", () => {
@@ -87,7 +128,9 @@ describe("the role checks themselves", () => {
       "text-on-surface-variant",
       "border-outline-variant",
       "bg-surface-container-low",
-      "hover:bg-on-surface/(--state-hover)",
+      "state-layer",
+      "[&_tbody_tr]:state-layer",
+      "bg-on-surface/(--state-focus)",
       "bg-primary-container",
       "text-body-md",
       "[&_thead_th]:text-label-md",
@@ -100,6 +143,7 @@ describe("the role checks themselves", () => {
       "bg-base-200",
       "hover:bg-primary/12",
       "hover:bg-base-content/5",
+      "hover:bg-on-surface/(--state-hover)",
       "text-sm",
       "[&_th]:text-xs",
       "text-[13px]",

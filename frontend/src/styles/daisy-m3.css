@@ -78,6 +78,20 @@
     ) {
       --input-color: var(--color-outline);
     }
+    /* Menu items hover with M3's state layer (the item's own colour at 8%), not daisyUI's 10%
+       of the ink, so they match every other interactive row. */
+    @media (hover: hover) {
+      .menu
+        li:not(.menu-title, .disabled)
+        > :not(ul, details, .menu-title):not(.menu-active, :active, .btn, [aria-current="page"]):hover,
+      .menu
+        li:not(.menu-title, .disabled)
+        > details
+        > summary:not(.menu-title):not(.menu-active, :active, .btn, [aria-current="page"]):hover {
+        background-color: color-mix(in oklab, currentColor var(--state-hover), transparent);
+      }
+    }
+
     /* Dividers are decorative separation: outline-variant (M3 divider.color). */
     .divider:not(
       .divider-neutral,
@@ -92,6 +106,34 @@
       --divider-color: var(--color-outline-variant);
     }
   }
+}
+
+/* The default colour scheme (daisyUI's own light and dark themes, no data-scheme): two fills whose
+   text falls below WCAG AA (4.5:1), darkened at the same hue and chroma so the button text stays
+   as daisyUI drew it — dark primary 58% → 55% (4.14 → 4.71:1), secondary 65% → 53% in both
+   themes (3.05 → 4.69:1). `tests/contrast.test.ts` checks the default themes with these.
+   Outside any layer, so it beats daisyUI's theme rules. */
+:root:not([data-scheme]) {
+  --color-secondary: oklch(53% 0.241 354.308);
+}
+:root:not([data-scheme])[data-theme="dark"] {
+  --color-primary: oklch(55% 0.233 277.117);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-scheme]):not([data-theme]) {
+    --color-primary: oklch(55% 0.233 277.117);
+  }
+}
+
+/* A select's open list floats, so it's glass like every other floating panel (AGENTS.md):
+   every <select> in the app, whatever wraps it (<ui-select> puts the `.select` class on a label,
+   where a utility can't reach `::picker(select)`). The glass's own default shadow is set with
+   `:where()`, which can't hold a pseudo-element, so the M3 +2 elevation is given here.
+   `tests/design-roles.test.ts` keeps this rule in place. */
+select::picker(select) {
+  @apply liquid-glass rounded-box;
+  --tw-shadow: var(--shadow-elevation-2);
+  border-color: transparent;
 }
 
 /* No built-in depth: daisyUI's `--depth: 1` gives every button, input and toggle a small shadow

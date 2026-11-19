@@ -26,7 +26,7 @@ import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts
  * button stays at `md`, as M3's toggle buttons do.
  */
 export const button = rcva(
-  "btn active:scale-[0.94] motion-reduce:active:scale-100 active:rounded-[min(var(--radius-sm),var(--radius-field))] [&.btn-circle]:active:rounded-md",
+  "btn touch-target active:scale-[0.94] motion-reduce:active:scale-100 active:rounded-[min(var(--radius-sm),var(--radius-field))] [&.btn-circle]:active:rounded-md",
   {
     variants: {
       color: {

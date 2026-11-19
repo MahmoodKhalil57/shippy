@@ -35,12 +35,12 @@ export const chip = rcva("inline-flex max-w-full items-center", {
 });
 /** The chip's content when it's pressable. */
 export const chipBody = rcva(
-  "flex min-w-0 items-baseline gap-1 truncate text-start focus-visible:outline-2 focus-visible:outline-primary",
+  "touch-target flex min-w-0 items-baseline gap-1 truncate text-start focus-visible:outline-2 focus-visible:outline-primary",
   {
     variants: {
       variant: {
         soft: "rounded-full",
-        outline: "rounded-s-field py-1 ps-2.5 pe-1 hover:bg-on-surface/(--state-hover)",
+        outline: "touch-target rounded-s-field py-1 ps-2.5 pe-1 state-layer",
       },
     },
   },
@@ -50,12 +50,12 @@ export const chipLabel = rcva("min-w-0", {
   variants: { variant: { soft: "", outline: "truncate py-1 ps-2.5 pe-1" } },
 });
 export const chipRemove = rcva(
-  "grid shrink-0 place-items-center text-on-surface-variant hover:text-on-surface focus-visible:outline-2 focus-visible:outline-primary",
+  "touch-target grid shrink-0 place-items-center text-on-surface-variant hover:text-on-surface focus-visible:outline-2 focus-visible:outline-primary",
   {
     variants: {
       variant: {
-        soft: "size-4 rounded-full hover:bg-on-surface/(--state-hover)",
-        outline: "size-7 rounded-e-field hover:bg-on-surface/(--state-hover)",
+        soft: "touch-target size-4 rounded-full state-layer",
+        outline: "touch-target size-7 rounded-e-field state-layer",
       },
     },
   },

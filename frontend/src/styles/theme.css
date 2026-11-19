@@ -236,6 +236,11 @@
   initial-value: 0%;
 }
 @utility state-layer {
+  /* The layer fades on the effects spring. A default with no specificity (`:where`), so a
+     component's own `transition` always wins (it then simply doesn't fade). */
+  :where(&) {
+    transition: --state-layer var(--duration-effects-fast) var(--ease-effects-fast);
+  }
   background-image: linear-gradient(
     color-mix(in oklab, currentColor var(--state-layer), transparent),
     color-mix(in oklab, currentColor var(--state-layer), transparent)
@@ -255,6 +260,34 @@
   &:disabled,
   &[aria-disabled="true"] {
     --state-layer: 0%;
+  }
+}
+
+/* ---------------------------------------------------------------- target sizes
+   Every control is easy to hit, whatever it looks like (M3 foundations/designing/target-sizes;
+   Apple: 44pt; WCAG 2.5.8): an invisible hit area centred on the control, at least 48px on touch
+   screens (M3's touch target) and 24px with a mouse or pen (WCAG AA), never smaller than the
+   control. The control keeps its visual size, so dense desktop layouts stay dense. `touch-target`
+   uses ::before; daisyUI's .btn uses only ::after, and the checkbox / radio / toggle inputs (which
+   draw with ::before) are reached through their labels instead. */
+@utility touch-target {
+  :where(&) {
+    position: relative;
+  }
+  &::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, 24px);
+    height: max(100%, 24px);
+    translate: -50% -50%;
+  }
+  @media (pointer: coarse) {
+    &::before {
+      width: max(100%, 48px);
+      height: max(100%, 48px);
+    }
   }
 }
 

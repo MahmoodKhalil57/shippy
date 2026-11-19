@@ -17,11 +17,11 @@ export const trace = rcva("flex flex-col gap-0.5 border-s-2 border-outline-varia
 
 export const traceLine = rcva("group/trace text-body-sm");
 export const traceSummary = rcva(
-  "flex min-h-7 items-center gap-2 rounded-field px-1.5 py-1 -ms-1.5 list-none [&::-webkit-details-marker]:hidden",
+  "touch-target flex min-h-7 items-center gap-2 rounded-field px-1.5 py-1 -ms-1.5 list-none [&::-webkit-details-marker]:hidden",
   {
     variants: {
       interactive: {
-        true: "cursor-pointer hover:bg-on-surface/(--state-hover) focus-visible:outline-2 focus-visible:outline-primary",
+        true: "touch-target cursor-pointer state-layer focus-visible:outline-2 focus-visible:outline-primary",
       },
     },
   },

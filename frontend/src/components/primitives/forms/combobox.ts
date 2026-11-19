@@ -34,7 +34,7 @@ export const combobox = rcva(
 export const comboboxInput = rcva("min-w-20 flex-1 bg-transparent outline-none");
 export const comboboxIcon = rcva("ms-auto flex shrink-0 items-center gap-0.5 text-on-surface-variant");
 export const comboboxClear = rcva(
-  "grid size-6 place-items-center rounded-full hover:bg-on-surface/(--state-hover) hover:text-on-surface focus-visible:outline-2 focus-visible:outline-primary",
+  "touch-target grid size-6 place-items-center rounded-full state-layer hover:text-on-surface focus-visible:outline-2 focus-visible:outline-primary",
 );
 /** The options: a glass popover under the field, growing down from it (M3 enter / exit). */
 export const comboboxList = rcva(

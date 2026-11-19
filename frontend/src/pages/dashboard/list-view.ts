@@ -589,6 +589,9 @@ export class DashboardListView extends LightElement {
               .hiddenColumns=${this.hiddenKeys}
               .defaults=${this.hiddenDefaults}
               ?customized=${arranged}
+              .density=${view === "table" ? this.#prefs.value.listDensity : undefined}
+              @ui-density=${(e: CustomEvent<{ density: "0" | "-1" | "-2" }>) =>
+                preferences.set({ listDensity: e.detail.density })}
               @ui-change=${(e: CustomEvent<{ hidden: string[]; order: string[]; reset: boolean }>) => {
                 const { hidden, order, reset } = e.detail;
                 const slug = this.slug;
@@ -654,6 +657,7 @@ export class DashboardListView extends LightElement {
           ? this._cards(empty)
           : html`<ui-table
               size="md"
+              density=${this.#prefs.value.listDensity}
               nowrap="max-lg"
               bordered
               hover

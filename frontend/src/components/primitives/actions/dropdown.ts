@@ -44,47 +44,47 @@ export const dropdown = rcva("dropdown", {
 export const dropdownContent = rcva("dropdown-content z-50");
 
 /** Look of the panel, as in the daisyUI examples. */
-/** Nested corners inside the panel (its menu items) follow its own: `rounded-inner` (src/styles/theme.css). */
-export const dropdownPanel = rcva("[--outer-radius:var(--radius-box)] [--outer-padding:var(--space-100)]", {
-  variants: {
-    /** `menu` for item lists; `card` for free content (the docs' "Card as dropdown"). */
-    kind: {
-      menu: "menu",
-      card: "card card-sm",
-    },
-    surface: {
-      /** Frosted glass (src/styles/theme.css): menus float above the page. The default. */
-      glass: "liquid-glass",
-      "base-100": "bg-surface",
-      "base-200": "bg-surface-container",
-      "base-300": "bg-surface-container-highest",
-    },
-    rounded: { true: "rounded-box" },
-    width: {
-      "52": "w-52",
-      "64": "w-64",
-      "72": "w-72",
-      "80": "w-80",
-    },
-    padding: {
-      "0": "p-0",
-      "2": "p-2",
-      "4": "p-4",
-    },
-    /** M3 elevation: menus rest at +2 (the default); +3 for pickers that hold a task (date, search). */
-    elevation: {
-      "1": "shadow-elevation-1",
-      "2": "shadow-elevation-2",
-      "3": "shadow-elevation-3",
-    },
-    /** Gap between trigger and panel (the docs' navbar dropdown uses `mt-4`). */
-    offset: {
-      "1": "mt-1",
-      "2": "mt-2",
-      "4": "mt-4",
+/**
+ * Always frosted glass (src/styles/theme.css): a panel floats above the page, and everything that
+ * floats is glass (AGENTS.md, "Glass is for the floating layer only"). There's no solid option.
+ * Nested corners inside the panel (its menu items) follow its own: `rounded-inner`.
+ */
+export const dropdownPanel = rcva(
+  "liquid-glass [--outer-radius:var(--radius-box)] [--outer-padding:var(--space-100)]",
+  {
+    variants: {
+      /** `menu` for item lists; `card` for free content (the docs' "Card as dropdown"). */
+      kind: {
+        menu: "menu",
+        card: "card card-sm",
+      },
+      rounded: { true: "rounded-box" },
+      width: {
+        "52": "w-52",
+        "64": "w-64",
+        "72": "w-72",
+        "80": "w-80",
+      },
+      padding: {
+        "0": "p-0",
+        "2": "p-2",
+        "4": "p-4",
+      },
+      /** M3 elevation: menus rest at +2 (the default); +3 for pickers that hold a task (date, search). */
+      elevation: {
+        "1": "shadow-elevation-1",
+        "2": "shadow-elevation-2",
+        "3": "shadow-elevation-3",
+      },
+      /** Gap between trigger and panel (the docs' navbar dropdown uses `mt-4`). */
+      offset: {
+        "1": "mt-1",
+        "2": "mt-2",
+        "4": "mt-4",
+      },
     },
   },
-});
+);
 
 /** Card body inside a `card` panel. */
 export const dropdownCardBody = rcva("card-body");
@@ -143,8 +143,8 @@ export type DropdownMode = "focus" | "details" | "popover";
 
 /** Panel look per kind, from the docs examples. */
 const PANEL_DEFAULTS: Record<DropdownPanelKind, DropdownPanelVariants> = {
-  menu: { kind: "menu", surface: "glass", rounded: true, width: "52", padding: "2", elevation: "2" },
-  card: { kind: "card", surface: "glass", width: "64", elevation: "2" },
+  menu: { kind: "menu", rounded: true, width: "52", padding: "2", elevation: "2" },
+  card: { kind: "card", width: "64", elevation: "2" },
   plain: {},
 };
 
@@ -155,7 +155,7 @@ const PANEL_DEFAULTS: Record<DropdownPanelKind, DropdownPanelVariants> = {
  *   @ui-select=${(e) => console.log(e.detail.item)}></ui-dropdown>
  * @example
  * <ui-dropdown label="Dropdown" align="end" trigger-variant="ghost" trigger-rounded="field"
- *   trigger-spaced="false" panel-surface="base-200" panel-offset="4" .items=${items}></ui-dropdown>
+ *   trigger-spaced="false" panel-offset="4" .items=${items}></ui-dropdown>
  * @example
  * <ui-dropdown panel="card" heading="You needed more info?" align="end" panel-shadow="sm" panel-rounded
  *   trigger-icon="info" trigger-shape="circle" trigger-variant="ghost" trigger-size="xs" trigger-tone="info"
@@ -197,7 +197,6 @@ export class UiDropdown extends LightElement {
   /** Card panel: title above the children. */
   @property() heading: Renderable = "";
   /** Override the panel kind's default look. */
-  @property({ attribute: "panel-surface" }) panelSurface: DropdownPanelVariants["surface"];
   @property({ attribute: "panel-rounded", converter: responsiveBoolean }) panelRounded?: Responsive<boolean>;
   @property({ attribute: "panel-width" }) panelWidth: DropdownPanelVariants["width"];
   @property({ attribute: "panel-padding" }) panelPadding: DropdownPanelVariants["padding"];
@@ -271,7 +270,6 @@ export class UiDropdown extends LightElement {
     const d = PANEL_DEFAULTS[this._kind];
     return dropdownPanel({
       kind: d.kind,
-      surface: this.panelSurface ?? d.surface,
       rounded: this.panelRounded ?? d.rounded,
       width: this.panelWidth ?? d.width,
       // The docs' popover menu has no padding.

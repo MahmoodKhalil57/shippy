@@ -4,6 +4,7 @@ import { styleMap } from "lit/directives/style-map.js";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { auditContrast, type ContrastIssue } from "../../base/contrast.ts";
+import { auditProminence, type ProminenceIssue } from "../../base/prominence.ts";
 
 export { auditContrast, type ContrastIssue } from "../../base/contrast.ts";
 
@@ -21,8 +22,15 @@ export { auditContrast, type ContrastIssue } from "../../base/contrast.ts";
  * command palette's "Check colour contrast"), or by adding `?audit` to the URL.
  */
 export const contrastAuditBox = rcva(
-  "pointer-events-none fixed z-[70] rounded-xs ring-2 ring-error ring-offset-1 ring-offset-base-100 top-(--top) left-(--left) h-(--h) w-(--w)",
-  { variants: { focus: { true: "ring-4 animate-pulse motion-reduce:animate-none" } } },
+  "pointer-events-none fixed z-[70] rounded-xs ring-2 ring-offset-1 ring-offset-base-100 top-(--top) left-(--left) h-(--h) w-(--w)",
+  {
+    variants: {
+      focus: { true: "ring-4 animate-pulse motion-reduce:animate-none" },
+      /** Contrast failures in error, extra prominent buttons in warning. */
+      kind: { contrast: "ring-error", prominence: "ring-warning" },
+    },
+    defaultVariants: { kind: "contrast" },
+  },
 );
 export const contrastAuditLabel = rcva(
   "absolute -top-2 left-0 -translate-y-full rounded-xs bg-error px-1 text-label-sm font-semibold whitespace-nowrap text-error-content",
@@ -37,9 +45,12 @@ export const contrastAuditList = rcva(
   "-mx-1 flex min-h-0 flex-col overflow-y-auto px-1 [--scrollbar-inset:var(--radius-box)]",
 );
 export const contrastAuditItem = rcva(
-  "flex items-center gap-2 rounded-field px-2 py-1 text-start hover:bg-on-surface/(--state-hover) focus-visible:outline-2 focus-visible:outline-primary",
+  "touch-target flex items-center gap-2 rounded-field px-2 py-1 text-start state-layer focus-visible:outline-2 focus-visible:outline-primary",
 );
-export const contrastAuditRatio = rcva("w-14 shrink-0 font-mono text-label-md text-error");
+export const contrastAuditRatio = rcva("w-14 shrink-0 font-mono text-label-md", {
+  variants: { kind: { contrast: "text-error-ink", prominence: "text-warning-ink" } },
+  defaultVariants: { kind: "contrast" },
+});
 export const contrastAuditText = rcva("min-w-0 flex-1 truncate");
 export const contrastAuditSwatch = rcva("size-4 shrink-0 rounded-full ring-1 ring-outline-variant bg-(--swatch)");
 export const contrastAuditButton = rcva("btn btn-xs", {
@@ -53,6 +64,8 @@ export const contrastAuditButton = rcva("btn btn-xs", {
 @customElement("ui-contrast-audit")
 export class UiContrastAudit extends LightElement {
   @state() private issues: ContrastIssue[] | null = null;
+  /** Surfaces with more filled buttons than one or two (Apple HIG; base/prominence.ts). */
+  @state() private prominence: ProminenceIssue[] = [];
   @state() private selected = -1;
   @state() private _tick = 0;
   #frame = 0;
@@ -90,6 +103,7 @@ export class UiContrastAudit extends LightElement {
     this.selected = -1;
     requestAnimationFrame(() => {
       const issues = auditContrast();
+      this.prominence = auditProminence();
       this.issues = issues;
       // oxlint-disable-next-line no-console
       console.table(
@@ -114,21 +128,27 @@ export class UiContrastAudit extends LightElement {
     this.issues?.[i]?.element.scrollIntoView({ block: "center", behavior: "smooth" });
   }
 
+  private _box(element: Element, kind: "contrast" | "prominence", label: string, focus = false) {
+    const r = element.getBoundingClientRect();
+    if (!r.width || r.bottom < 0 || r.top > innerHeight) return nothing;
+    return html`<div
+      class=${contrastAuditBox({ focus, kind })}
+      style=${styleMap({ "--top": `${r.top}px`, "--left": `${r.left}px`, "--h": `${r.height}px`, "--w": `${r.width}px` })}
+    >
+      <span class=${contrastAuditLabel()}>${label}</span>
+    </div>`;
+  }
+
   render() {
     const issues = this.issues;
     if (!issues) return nothing;
     void this._tick;
     const overImage = issues.filter((i) => i.overImage).length;
-    return html`${issues.slice(0, 200).map((issue, i) => {
-        const r = issue.element.getBoundingClientRect();
-        if (!r.width || r.bottom < 0 || r.top > innerHeight) return nothing;
-        return html`<div
-          class=${contrastAuditBox({ focus: i === this.selected })}
-          style=${styleMap({ "--top": `${r.top}px`, "--left": `${r.left}px`, "--h": `${r.height}px`, "--w": `${r.width}px` })}
-        >
-          <span class=${contrastAuditLabel()}>${issue.ratio.toFixed(1)}:1</span>
-        </div>`;
-      })}
+    const prominent = this.prominence.flatMap((p) => p.buttons);
+    return html`${issues
+        .slice(0, 200)
+        .map((issue, i) => this._box(issue.element, "contrast", `${issue.ratio.toFixed(1)}:1`, i === this.selected))}
+      ${prominent.map((b) => this._box(b, "prominence", "filled"))}
       <div class=${contrastAuditPanel()} role="dialog" aria-label="Contrast audit">
         <div class=${contrastAuditHead()}>
           <div>
@@ -138,6 +158,17 @@ export class UiContrastAudit extends LightElement {
                 issues.length
                   ? `${issues.length} text ${issues.length === 1 ? "element fails" : "elements fail"} WCAG AA${overImage ? ` · ${overImage} over the background image` : ""}`
                   : "Everything on screen passes WCAG AA (4.5:1, large text 3:1)."
+              }
+              ${
+                this.prominence.length
+                  ? html`<br />${this.prominence
+                        .map(
+                          (p) =>
+                            `${p.buttons.length} filled buttons on ${p.surface.matches("main") ? "the page" : "a dialog"}`,
+                        )
+                        .join(" · ")}:
+                      keep one or two, make the rest tonal (variant="soft").`
+                  : nothing
               }
             </div>
           </div>
@@ -151,6 +182,18 @@ export class UiContrastAudit extends LightElement {
           </div>
         </div>
         <div class=${contrastAuditList()}>
+          ${prominent.map(
+            (b) =>
+              html`<button
+                type="button"
+                class=${contrastAuditItem()}
+                title="A filled button: keep one or two per screen"
+                @click=${() => b.scrollIntoView({ block: "center", behavior: "smooth" })}
+              >
+                <span class=${contrastAuditRatio({ kind: "prominence" })}>filled</span>
+                <span class=${contrastAuditText()}>${b.textContent?.trim() || b.getAttribute("aria-label")}</span>
+              </button>`,
+          )}
           ${issues.map(
             (issue, i) =>
               html`<button
