@@ -96,7 +96,7 @@ export interface FabAction {
  * </ui-fab>
  *
  * `panel`: the button toggles a floating panel (`open`; `ui-toggle` with { open } on change). The
- * body scrolls to its end when its content grows (a conversation).
+ * body scrolls; a conversation inside (`<ui-message-scroller>`) fills it and scrolls itself.
  */
 @customElement("ui-fab")
 export class UiFab extends LightElement {
@@ -124,13 +124,6 @@ export class UiFab extends LightElement {
     this.dispatchEvent(new CustomEvent("ui-toggle", { detail: { open }, bubbles: true }));
   }
 
-  /** Keep a conversation scrolled to its newest message. */
-  protected updated() {
-    if (!this.panel || !this.open) return;
-    const body = this.querySelector<HTMLElement>("[data-fab-body]");
-    if (body) body.scrollTop = body.scrollHeight;
-  }
-
   private _renderPanel() {
     const trigger = this.hasSlotted("trigger") ? this.slotted("trigger") : this.trigger;
     return html`<div class=${fabDock()}>
@@ -148,7 +141,7 @@ export class UiFab extends LightElement {
                   ${iconSvg("x", { size: "sm" })}
                 </button>
               </header>
-              <div class=${fabPanelBody()} data-fab-body>${this.slotted()}</div>
+              <div class=${fabPanelBody()}>${this.slotted()}</div>
               ${this.hasSlotted("footer") ? html`<footer class=${fabPanelFooter()}>${this.slotted("footer")}</footer>` : nothing}
             </section>`
           : nothing

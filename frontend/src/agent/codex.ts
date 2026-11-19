@@ -82,6 +82,8 @@ export type CodexEvent =
       title: string;
       input: Record<string, unknown>;
       status: "running" | "done" | "declined" | "failed";
+      /** The tool's result (done / failed). */
+      output?: string;
     }
   | { type: "text"; text: string }
   /** Progress that isn't a tool (e.g. the on-device model downloading). */
@@ -105,6 +107,11 @@ export class CodexConversation {
   reset() {
     this.#previous = undefined;
     this.#browser.reset();
+  }
+
+  /** Get a model ready ahead of the first message (the on-device one: prepare / download it). */
+  warmUp(model: string) {
+    if (model === BROWSER_MODEL) this.#browser.warmUp(INSTRUCTIONS, agentTools());
   }
 
   /** Send the person's message; runs tool calls until the model answers. Returns its answer. */
@@ -131,8 +138,9 @@ export class CodexConversation {
     }
     onEvent({ ...event, status: "running" });
     const r = await callAgentTool(name, args, signal);
-    onEvent({ ...event, status: r.isError ? "failed" : "done" });
-    return r.content.map((c) => c.text).join("\n");
+    const output = r.content.map((c) => c.text).join("\n");
+    onEvent({ ...event, status: r.isError ? "failed" : "done", output });
+    return output;
   }
 
   /* ---------------------------------------------------------------- OpenAI */

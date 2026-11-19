@@ -50,6 +50,18 @@ import iAssistant from "~icons/material-symbols-light/smart-toy-outline";
 import iCloud from "~icons/material-symbols-light/cloud-outline";
 import iDevice from "~icons/material-symbols-light/computer-outline";
 import iUnfold from "~icons/material-symbols-light/unfold-more";
+import iCopy from "~icons/material-symbols-light/content-copy-outline";
+import iThumbUp from "~icons/material-symbols-light/thumb-up-outline";
+import iThumbDown from "~icons/material-symbols-light/thumb-down-outline";
+import iRetry from "~icons/material-symbols-light/refresh-rounded";
+import iEdit from "~icons/material-symbols-light/edit-outline";
+import iStop from "~icons/material-symbols-light/stop-rounded";
+import iExternal from "~icons/material-symbols-light/open-in-new";
+import iArrowDown from "~icons/material-symbols-light/arrow-downward-rounded";
+import iThinking from "~icons/material-symbols-light/neurology-outline";
+import iTool from "~icons/material-symbols-light/build-outline";
+import iBlock from "~icons/material-symbols-light/block";
+import iGlobe from "~icons/material-symbols-light/language";
 import iUpload from "~icons/material-symbols-light/upload";
 import iPrint from "~icons/material-symbols-light/print-outline";
 import iTranslate from "~icons/material-symbols-light/translate";
@@ -166,6 +178,18 @@ export const ICONS = {
   cloud: iCloud,
   device: iDevice,
   unfold: iUnfold,
+  copy: iCopy,
+  "thumb-up": iThumbUp,
+  "thumb-down": iThumbDown,
+  retry: iRetry,
+  edit: iEdit,
+  stop: iStop,
+  external: iExternal,
+  "arrow-down": iArrowDown,
+  thinking: iThinking,
+  tool: iTool,
+  block: iBlock,
+  globe: iGlobe,
   upload: iUpload,
   print: iPrint,
   translate: iTranslate,

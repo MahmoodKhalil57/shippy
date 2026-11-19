@@ -1,24 +1,46 @@
-import { html, nothing } from "lit";
-import { customElement, state } from "lit/decorators.js";
+import { html, nothing, type TemplateResult } from "lit";
+import { customElement, query, state } from "lit/decorators.js";
 import { CODEX_MODELS, CodexConversation, codexConfig, type CodexEvent } from "../../agent/codex.ts";
-import type { AgentTool } from "../../agent/webmcp.ts";
-import type { MenuItem } from "../../components/primitives/navigation/menu.ts";
+import { agentTools, type AgentTool } from "../../agent/webmcp.ts";
 import { LightElement } from "../../components/base/light-element.ts";
+import type { ConfirmationState } from "../../components/primitives/ai/confirmation.ts";
+import type { MessageRating } from "../../components/primitives/ai/message.ts";
+import type { ModelGroup } from "../../components/primitives/ai/model-selector.ts";
+import type { Source } from "../../components/primitives/ai/sources.ts";
+import type { TraceStatus } from "../../components/primitives/ai/trace.ts";
 import "../../components/index.ts";
 
 /**
- * The Golden Sea helper (bottom right): a chat with an OpenAI Codex model that sees and uses the
- * platform only through its WebMCP tools (src/agent/codex.ts, ./agent-tools.ts) — so it knows the
- * screen, the records and the workflows the way the person's role does, without the DOM. Actions
- * that change something wait for the person's "Allow". The person picks the model; the API key is
- * in index.html, and nothing is checked before sending: a missing key shows OpenAI's own error.
+ * The Golden Sea helper (bottom right): a chat with a model that sees and uses the platform only
+ * through its WebMCP tools (src/agent/codex.ts, ./agent-tools.ts) — so it knows the screen, the
+ * records and the workflows the way the person's role does, without the DOM.
+ *
+ * Built from the AI primitives (src/components/primitives/ai): the thread scrolls with the reply;
+ * each turn shows what the agent did as a trace (thinking, each tool with its input and result);
+ * actions that change something wait in a confirmation card for the person's Allow; answers are
+ * formatted, list the records they came from, and can be copied, rated or retried. The person
+ * picks the model; the API key is in index.html, and a missing key shows OpenAI's own error.
  */
 
-type Line =
-  | { kind: "you"; text: string }
-  | { kind: "helper"; text: string }
-  | { kind: "tool"; title: string; status: Extract<CodexEvent, { type: "tool" }>["status"] }
-  | { kind: "status"; text: string }
+type Item =
+  | { kind: "user"; text: string }
+  | { kind: "assistant"; text: string; sources: Source[]; rating: MessageRating }
+  | { kind: "thinking"; started: number; seconds?: number }
+  | {
+      kind: "tool";
+      title: string;
+      input: Record<string, unknown>;
+      status: TraceStatus;
+      output?: string;
+    }
+  | { kind: "progress"; text: string }
+  | {
+      kind: "approval";
+      title: string;
+      input: Record<string, unknown>;
+      state: ConfirmationState;
+      answer?: (ok: boolean) => void;
+    }
   | { kind: "error"; text: string };
 
 const SUGGESTIONS = [
@@ -26,6 +48,22 @@ const SUGGESTIONS = [
   "What's waiting for me today?",
   "Take me to the offer comparison for Aurora Crest",
   "Who owes us money?",
+];
+
+const MODEL_GROUPS: ModelGroup[] = [
+  {
+    label: "OpenAI · API key",
+    models: CODEX_MODELS.filter((m) => m.id !== "aibrowser").map((m) => ({ id: m.id, label: m.label, icon: "cloud" })),
+  },
+  {
+    label: "On this device",
+    models: CODEX_MODELS.filter((m) => m.id === "aibrowser").map((m) => ({
+      id: m.id,
+      label: m.label,
+      icon: "device",
+      description: "Chrome's built-in model · private, no key",
+    })),
+  },
 ];
 
 /** The last model picked (remembered per browser), else index.html's default. */
@@ -39,186 +77,295 @@ function savedModel(): string {
   return codexConfig().model;
 }
 
-const STATUS = { running: "…", done: "✓", declined: "declined", failed: "failed" } as const;
+/** Records an answer drew on: `sources` in a tool's result (e.g. ask_assistant), or a record path. */
+function sourcesIn(output: string): Source[] {
+  try {
+    const value = JSON.parse(output) as { sources?: unknown; path?: unknown; document?: { id?: unknown } };
+    const list = Array.isArray(value.sources) ? value.sources : [];
+    const found = list.flatMap((s) => {
+      const o = s as { label?: unknown; href?: unknown };
+      return typeof o.label === "string" && typeof o.href === "string" ? [{ label: o.label, href: o.href }] : [];
+    });
+    if (typeof value.path === "string" && value.document)
+      found.push({ label: typeof value.document.id === "string" ? value.document.id : value.path, href: value.path });
+    return found;
+  } catch {
+    return [];
+  }
+}
+
+/** A tool's input in a few words (the trace line's description). */
+const gist = (input: Record<string, unknown>) =>
+  Object.values(input)
+    .filter((v): v is string => typeof v === "string")
+    .join(" · ")
+    .slice(0, 60);
+
+const fenced = (label: string, text: string) => `**${label}**\n\`\`\`\n${text}\n\`\`\``;
 
 @customElement("dashboard-agent")
 export class DashboardAgent extends LightElement {
   @state() private open = false;
-  @state() private lines: Line[] = [];
+  @state() private items: Item[] = [];
   @state() private draft = "";
   @state() private busy = false;
   @state() private model = savedModel();
-  @state() private pending: { tool: AgentTool; input: Record<string, unknown>; answer: (ok: boolean) => void } | null =
-    null;
+  @query("ui-message-scroller") private _scroller?: HTMLElementTagNameMap["ui-message-scroller"];
+  @query("ui-prompt-input") private _input?: HTMLElementTagNameMap["ui-prompt-input"];
   #conversation = new CodexConversation();
+  #abort: AbortController | null = null;
+  #sources: Source[] = [];
+
+  /**
+   * Have the chosen model ready before the first message: once the tools exist (signed in) and
+   * whenever the model is picked (the on-device model prepares, or downloads at the next click).
+   */
+  private _warmUp = () => {
+    if (agentTools().length > 3) this.#conversation.warmUp(this.model);
+  };
+
+  connectedCallback() {
+    super.connectedCallback();
+    addEventListener("agent-tools-change", this._warmUp);
+    // Once the page has settled (an idle moment), not during its first paint.
+    if ("requestIdleCallback" in window) requestIdleCallback(this._warmUp);
+    else setTimeout(this._warmUp, 1000);
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    removeEventListener("agent-tools-change", this._warmUp);
+  }
 
   private _pickModel(id: string) {
     this.model = id;
+    this._warmUp();
     try {
       localStorage.setItem("gs:helper-model", id);
     } catch {
       /* storage unavailable */
     }
   }
-  #abort: AbortController | null = null;
 
-  private async _send(text = this.draft) {
+  /* ---------------------------------------------------------------- the thread */
+
+  #push(item: Item) {
+    this.items = [...this.items, item];
+  }
+
+  #replace(i: number, item: Item) {
+    this.items = this.items.map((x, j) => (j === i ? item : x));
+  }
+
+  /** The agent is working out its next step. */
+  #think() {
+    this.#push({ kind: "thinking", started: Date.now() });
+  }
+
+  /** Close the running "thinking" line with how long it took. */
+  #settle() {
+    const i = this.items.findLastIndex((x) => x.kind === "thinking" && x.seconds == null);
+    if (i < 0) return;
+    const t = this.items[i] as Extract<Item, { kind: "thinking" }>;
+    this.#replace(i, { ...t, seconds: Math.max(1, Math.round((Date.now() - t.started) / 1000)) });
+  }
+
+  private _onEvent = (e: CodexEvent) => {
+    if (e.type === "status") {
+      const last = this.items.at(-1);
+      if (last?.kind === "progress") this.#replace(this.items.length - 1, { kind: "progress", text: e.text });
+      else this.#push({ kind: "progress", text: e.text });
+      return;
+    }
+    if (e.type === "text") {
+      this.#settle();
+      this.#push({ kind: "assistant", text: e.text, sources: [], rating: "" });
+      return;
+    }
+    if (e.status === "running") {
+      this.#settle();
+      this.#push({ kind: "tool", title: e.title, input: e.input, status: "running" });
+      return;
+    }
+    if (e.status === "declined") {
+      this.#push({ kind: "tool", title: e.title, input: e.input, status: "denied" });
+      this.#think();
+      return;
+    }
+    const i = this.items.findLastIndex((x) => x.kind === "tool" && x.status === "running");
+    const tool: Item = {
+      kind: "tool",
+      title: e.title,
+      input: e.input,
+      status: e.status === "failed" ? "error" : "done",
+      output: e.output,
+    };
+    if (i < 0) this.#push(tool);
+    else this.#replace(i, tool);
+    if (e.output && e.status === "done") this.#sources.push(...sourcesIn(e.output));
+    this.#think();
+  };
+
+  private _confirm = (tool: AgentTool, input: Record<string, unknown>) =>
+    new Promise<boolean>((resolve) => {
+      this.#settle();
+      const index = this.items.length;
+      this.#push({
+        kind: "approval",
+        title: tool.title ?? tool.name,
+        input,
+        state: "requested",
+        answer: (ok) => {
+          const item = this.items[index] as Extract<Item, { kind: "approval" }>;
+          this.#replace(index, { ...item, state: ok ? "approved" : "denied", answer: undefined });
+          resolve(ok);
+        },
+      });
+    });
+
+  private async _send(text: string) {
     const message = text.trim();
     if (!message || this.busy) return;
-    this.draft = "";
-    this.lines = [...this.lines, { kind: "you", text: message }];
+    this.#push({ kind: "user", text: message });
+    this.#think();
+    this._scroller?.scrollToEnd();
     this.busy = true;
+    this.#sources = [];
     this.#abort = new AbortController();
     try {
       const answer = await this.#conversation.send(message, {
         model: this.model,
         signal: this.#abort.signal,
-        confirm: (tool, input) =>
-          new Promise<boolean>((resolve) => {
-            this.pending = {
-              tool,
-              input,
-              answer: (ok) => {
-                this.pending = null;
-                resolve(ok);
-              },
-            };
-          }),
-        onEvent: (e) => {
-          if (e.type === "text") this.lines = [...this.lines, { kind: "helper", text: e.text }];
-          else if (e.type === "status") {
-            // One progress line, updated in place.
-            const last = this.lines.at(-1);
-            const line: Line = { kind: "status", text: e.text };
-            this.lines = last?.kind === "status" ? [...this.lines.slice(0, -1), line] : [...this.lines, line];
-          } else if (e.status === "running")
-            this.lines = [...this.lines, { kind: "tool", title: e.title, status: e.status }];
-          else {
-            // Update the running line of this tool (or add one: declined calls never ran).
-            const i = this.lines.findLastIndex(
-              (l) => l.kind === "tool" && l.title === e.title && l.status === "running",
-            );
-            const line: Line = { kind: "tool", title: e.title, status: e.status };
-            this.lines = i < 0 ? [...this.lines, line] : this.lines.map((l, j) => (j === i ? line : l));
-          }
-        },
+        confirm: this._confirm,
+        onEvent: this._onEvent,
       });
-      if (answer) this.lines = [...this.lines, { kind: "helper", text: answer }];
+      this.#settle();
+      if (answer) this.#push({ kind: "assistant", text: answer, sources: this.#sources, rating: "" });
     } catch (e) {
-      if ((e as Error).name !== "AbortError")
-        this.lines = [...this.lines, { kind: "error", text: (e as Error).message }];
+      this.#settle();
+      if ((e as Error).name !== "AbortError") this.#push({ kind: "error", text: (e as Error).message });
     } finally {
+      // An unanswered confirmation (stopped mid-way) counts as declined.
+      for (const item of this.items) if (item.kind === "approval" && item.answer) item.answer(false);
       this.busy = false;
-      this.pending = null;
       this.#abort = null;
     }
   }
 
   private _stop() {
-    this.pending?.answer(false);
+    for (const item of this.items) if (item.kind === "approval" && item.answer) item.answer(false);
     this.#abort?.abort();
   }
 
   private _restart() {
     this._stop();
     this.#conversation.reset();
-    this.lines = [];
+    this.items = [];
   }
 
-  private _line(l: Line) {
-    switch (l.kind) {
-      case "you":
-        return html`<ui-chat placement="end">${l.text}</ui-chat>`;
-      case "helper":
-        return html`<ui-chat author="Helper"><ui-text size="sm" pre-line>${l.text}</ui-text></ui-chat>`;
+  /** Retry: send the person's last message again. */
+  private _retry() {
+    const last = this.items.findLast((x) => x.kind === "user");
+    if (last?.kind === "user") void this._send(last.text);
+  }
+
+  /* ---------------------------------------------------------------- rendering */
+
+  private _traceLine(item: Item): TemplateResult | typeof nothing {
+    switch (item.kind) {
+      case "thinking":
+        return html`<ui-trace-line
+          icon="thinking"
+          status=${item.seconds == null ? "running" : "done"}
+          .label=${item.seconds == null ? "Thinking…" : `Thought for ${item.seconds} s`}
+        ></ui-trace-line>`;
+      case "progress":
+        return html`<ui-trace-line icon="device" status="running" .label=${item.text}></ui-trace-line>`;
       case "tool":
-        return html`<ui-flex gap="2" align="center">
-          ${l.status === "running" ? html`<ui-loading variant="dots" size="xs" label="Working"></ui-loading>` : nothing}
-          <ui-text size="xs" color="muted">${l.title} ${l.status === "running" ? "" : STATUS[l.status]}</ui-text>
-        </ui-flex>`;
-      case "status":
-        return html`<ui-text size="xs" color="muted">${l.text}</ui-text>`;
+        return html`<ui-trace-line
+          icon="tool"
+          status=${item.status}
+          .label=${item.title}
+          .description=${gist(item.input)}
+        >
+          <ui-markdown
+            .text=${[
+              Object.keys(item.input).length ? fenced("Input", JSON.stringify(item.input, null, 1)) : "",
+              item.output
+                ? fenced("Result", item.output.length > 1500 ? `${item.output.slice(0, 1500)}…` : item.output)
+                : "",
+            ]
+              .filter(Boolean)
+              .join("\n\n")}
+          ></ui-markdown>
+        </ui-trace-line>`;
+      default:
+        return nothing;
+    }
+  }
+
+  private _item(item: Item, i: number, lastAssistant: number) {
+    switch (item.kind) {
+      case "user":
+        return html`<ui-message
+          from="user"
+          .copyText=${item.text}
+          editable
+          @ui-edit=${() => {
+            this.draft = item.text;
+            this._input?.focus();
+          }}
+          >${item.text}</ui-message
+        >`;
+      case "assistant":
+        return html`<ui-message
+          from="assistant"
+          .copyText=${item.text}
+          rateable
+          .rating=${item.rating}
+          ?retryable=${i === lastAssistant && !this.busy}
+          @ui-rate=${(e: CustomEvent<{ rating: MessageRating }>) => this.#replace(i, { ...item, rating: e.detail.rating })}
+          @ui-retry=${() => this._retry()}
+        >
+          <ui-markdown .text=${item.text}></ui-markdown>
+          ${item.sources.length ? html`<ui-sources .items=${item.sources}></ui-sources>` : nothing}
+        </ui-message>`;
+      case "approval":
+        return html`<ui-confirmation
+          .label=${`Allow: ${item.title}?`}
+          description="The helper wants to make this change for you."
+          state=${item.state}
+          @ui-approve=${() => item.answer?.(true)}
+          @ui-deny=${() => item.answer?.(false)}
+        >
+          <ui-markdown .text=${fenced("Details", JSON.stringify(item.input, null, 1))}></ui-markdown>
+        </ui-confirmation>`;
       case "error":
-        return html`<ui-alert color="error" variant="soft">${l.text}</ui-alert>`;
+        return html`<ui-alert color="error" variant="soft">${item.text}</ui-alert>`;
+      default:
+        return nothing;
     }
   }
 
-  private _body() {
-    return html`${
-      this.lines.length
-        ? this.lines.map((l) => this._line(l))
-        : html`<ui-text size="sm" color="muted"
-              >I can see the screen you're on, find records, explain what's waiting for you, take you anywhere and, with
-              your OK, do things for you.</ui-text
-            >
-            <ui-flex gap="1" wrap>
-              ${SUGGESTIONS.map(
-                (s) => html`<ui-button size="xs" variant="soft" @click=${() => void this._send(s)}>${s}</ui-button>`,
-              )}
-            </ui-flex>`
-    }
-    ${
-      this.pending
-        ? html`<ui-alert color="warning" variant="soft">
-            <ui-flex direction="col" gap="2">
-              <ui-text size="sm" weight="semibold"
-                >Allow: ${this.pending.tool.title ?? this.pending.tool.name}?</ui-text
-              >
-              <ui-text size="xs" pre-line>${JSON.stringify(this.pending.input, null, 1)}</ui-text>
-              <ui-flex gap="2">
-                <ui-button size="sm" color="primary" @click=${() => this.pending?.answer(true)}>Allow</ui-button>
-                <ui-button size="sm" variant="ghost" @click=${() => this.pending?.answer(false)}>Don't</ui-button>
-              </ui-flex>
-            </ui-flex>
-          </ui-alert>`
-        : nothing
-    }`;
-  }
-
-  /**
-   * The model, as a small chip (its icon and name) that opens a menu: the OpenAI models, and the
-   * browser's own on-device one. Opens upward, out of the panel (a popover isn't clipped by it).
-   */
-  private _modelPicker() {
-    const current = CODEX_MODELS.find((m) => m.id === this.model) ?? CODEX_MODELS[0];
-    const onDevice = (id: string) => id === "aibrowser";
-    const item = (m: (typeof CODEX_MODELS)[number]): MenuItem => ({
-      label: m.label,
-      icon: html`<ui-icon name=${onDevice(m.id) ? "device" : "cloud"} size="sm"></ui-icon>`,
-      active: m.id === this.model,
-      value: m.id,
-      ...(onDevice(m.id) ? { card: true, description: "Chrome's built-in model · private, no key" } : {}),
+  /** The thread: consecutive steps (thinking, tools, progress) share one trace. */
+  private _thread() {
+    const out: unknown[] = [];
+    const lastAssistant = this.items.findLastIndex((x) => x.kind === "assistant");
+    let steps: TemplateResult[] = [];
+    const flush = () => {
+      if (steps.length) out.push(html`<ui-trace>${steps}</ui-trace>`);
+      steps = [];
+    };
+    this.items.forEach((item, i) => {
+      const line = this._traceLine(item);
+      if (line !== nothing) steps.push(line as TemplateResult);
+      else {
+        flush();
+        out.push(this._item(item, i, lastAssistant));
+      }
     });
-    const items: MenuItem[] = [
-      { heading: true, label: "OpenAI · API key", children: CODEX_MODELS.filter((m) => !onDevice(m.id)).map(item) },
-      { heading: true, label: "On this device", children: CODEX_MODELS.filter((m) => onDevice(m.id)).map(item) },
-    ];
-    return html`<ui-dropdown
-      mode="popover"
-      side="top"
-      align="start"
-      panel="card"
-      panel-width="64"
-      panel-shadow="lg"
-      trigger-variant="ghost"
-      trigger-size="xs"
-      trigger-spaced="false"
-      .label=${`Model: ${current.label}`}
-    >
-      <ui-flex slot="trigger" gap="1" align="center">
-        <ui-icon name=${onDevice(current.id) ? "device" : "cloud"} size="sm"></ui-icon>
-        <ui-text as="span" size="xs" weight="semibold">${current.label}</ui-text>
-        <ui-icon name="unfold" size="sm"></ui-icon>
-      </ui-flex>
-      <ui-menu
-        width="full"
-        surface="false"
-        .items=${items}
-        @ui-select=${(e: CustomEvent<{ item: MenuItem }>) => {
-          if (typeof e.detail.item.value === "string" && !this.busy) this._pickModel(e.detail.item.value);
-        }}
-      ></ui-menu>
-    </ui-dropdown>`;
+    flush();
+    return out;
   }
 
   render() {
@@ -230,38 +377,49 @@ export class DashboardAgent extends LightElement {
       @ui-toggle=${(e: CustomEvent<{ open: boolean }>) => (this.open = e.detail.open)}
     >
       <ui-icon slot="trigger" name="assistant" size="lg"></ui-icon>
-      ${this._body()}
-      <ui-flex slot="footer" direction="col" gap="2">
-        <ui-flex gap="2" align="center">
-          <ui-text-input
-            width="fill"
-            size="sm"
-            autocomplete="off"
-            placeholder=${this.busy ? "Working…" : "Ask or tell the helper…"}
-            .value=${this.draft}
-            ?disabled=${this.busy}
-            @input=${(e: Event) => (this.draft = (e.target as HTMLInputElement).value)}
-            @keydown=${(e: KeyboardEvent) => {
-              if (e.key === "Enter") void this._send();
-            }}
-          ></ui-text-input>
-          ${
-            this.busy
-              ? html`<ui-button size="sm" variant="ghost" @click=${() => this._stop()}>Stop</ui-button>`
-              : html`<ui-button size="sm" shape="square" color="primary" label="Send" @click=${() => void this._send()}
-                  ><ui-icon name="send" size="md"></ui-icon
-                ></ui-button>`
-          }
+      <ui-message-scroller ?busy=${this.busy} ?empty=${!this.items.length}>
+        <ui-flex slot="empty" direction="col" align="center" gap="3">
+          <ui-icon name="assistant" size="xl" color="primary"></ui-icon>
+          <ui-text weight="semibold">How can I help?</ui-text>
+          <ui-text size="sm" color="muted" align="center"
+            >I see the screen you're on, find records, explain what's waiting for you, take you anywhere and, with your
+            OK, do things for you.</ui-text
+          >
+          <ui-suggestions
+            wrap
+            .items=${SUGGESTIONS}
+            @ui-select=${(e: CustomEvent<{ value: string }>) => void this._send(e.detail.value)}
+          ></ui-suggestions>
         </ui-flex>
-        <ui-flex gap="2" align="center" justify="between">
-          ${this._modelPicker()}
-          ${
-            this.lines.length && !this.busy
-              ? html`<ui-button size="xs" variant="ghost" @click=${() => this._restart()}>New chat</ui-button>`
-              : nothing
-          }
-        </ui-flex>
-      </ui-flex>
+        ${this._thread()}
+      </ui-message-scroller>
+      <ui-prompt-input
+        slot="footer"
+        placeholder=${this.busy ? "Working…" : "Ask or tell the helper…"}
+        status=${this.busy ? "busy" : "ready"}
+        .value=${this.draft}
+        @input=${(e: Event) => (this.draft = (e.target as HTMLTextAreaElement).value ?? "")}
+        @ui-submit=${(e: CustomEvent<{ value: string }>) => {
+          this.draft = "";
+          void this._send(e.detail.value);
+        }}
+        @ui-stop=${() => this._stop()}
+      >
+        <ui-model-selector
+          slot="tools"
+          .groups=${MODEL_GROUPS}
+          .value=${this.model}
+          ?disabled=${this.busy}
+          @ui-change=${(e: CustomEvent<{ value: string }>) => this._pickModel(e.detail.value)}
+        ></ui-model-selector>
+        ${
+          this.items.length && !this.busy
+            ? html`<ui-button slot="tools" size="xs" variant="ghost" @click=${() => this._restart()}
+                >New chat</ui-button
+              >`
+            : nothing
+        }
+      </ui-prompt-input>
     </ui-fab>`;
   }
 }
