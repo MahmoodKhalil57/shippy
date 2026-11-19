@@ -1,5 +1,6 @@
 import type { Field, GlobalConfig } from "payload";
 import { CURRENCIES, ROLES, STORES, anyone, loggedIn, management } from "../collections/shared.ts";
+import { Assistant, Branding } from "./dashboard.ts";
 
 const managementOnly: GlobalConfig["access"] = { read: anyone, update: management };
 const staffRead: GlobalConfig["access"] = { read: loggedIn, update: management };
@@ -584,6 +585,8 @@ export const OnCallRoster: GlobalConfig = {
 };
 
 export const globals = [
+  Branding,
+  Assistant,
   Settings,
   FxRates,
   PricingPolicy,

@@ -2,10 +2,10 @@ import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import config from "../src/cms/config.ts";
-import { Engine } from "../src/cms/runtime/engine.ts";
-import { RestApi } from "../src/cms/runtime/rest.ts";
-import { seedsFromGlob } from "../src/cms/runtime/seed.ts";
-import { MemoryStore } from "../src/cms/runtime/store.ts";
+import { Engine } from "../src/mock/runtime/engine.ts";
+import { RestApi } from "../src/mock/runtime/rest.ts";
+import { seedsFromGlob } from "../src/mock/runtime/seed.ts";
+import { MemoryStore } from "../src/mock/runtime/store.ts";
 import { createStore, endTour, filters, setCaseFilters, startTour, toast, toasts, tour } from "../src/stores/index.ts";
 
 /** The sourcing-desk data model (STATE-AUDIT.md): seeds load cleanly and the business rules hold. */

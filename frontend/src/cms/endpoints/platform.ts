@@ -1,5 +1,5 @@
 import type { Endpoint, PayloadRequest } from "payload";
-import type { Doc } from "../types.ts";
+import type { Doc } from "../../mock/types.ts";
 import { CONTACT_RULES, ROLES } from "../collections/shared.ts";
 import { PERMISSIONS } from "../globals/index.ts";
 import { DEMO_NOW } from "./home.ts";
@@ -516,7 +516,12 @@ const reassign: Endpoint = {
       detail: `Handover from ${str(me(req)?.name)}${moved ? ` · ${moved} open task${moved === 1 ? "" : "s"} moved to you` : ""}`,
       href: `/collections/cases/${id}/overview`,
     });
-    return json({ ok: true, owner: target, movedTasks: moved });
+    return json({
+      ok: true,
+      owner: target,
+      movedTasks: moved,
+      message: `${o.caseId} handed over to ${target.name}${moved ? ` · ${moved} open task${moved === 1 ? "" : "s"} moved` : ""} · note logged on the timeline`,
+    });
   },
 };
 
@@ -688,7 +693,32 @@ const retry: Endpoint = {
   handler: async (req) => {
     if (!req.user) return deny("Please sign in.", 401);
     const r = await safeRetry(req, str(req.routeParams?.id));
-    return r.status === 200 ? json(r) : deny(r.message, r.status);
+    if (r.status !== 200) return deny(r.message, r.status);
+    return json({ ...r, message: r.alreadyDone ? r.message : `Retried safely — ${r.message}` });
+  },
+};
+
+const ruleSwitch: Endpoint = {
+  // POST /api/automations/rule { index, value }: switch a rule on or off (management), logged.
+  path: "/automations/rule",
+  method: "post",
+  handler: async (req) => {
+    if (!req.user) return deny("Please sign in.", 401);
+    if (str(me(req)?.role) !== "management") return deny("Management can pause or enable rules.");
+    const b = await body(req);
+    const enabled = b.value === true;
+    const g = await req.payload.findGlobal({ slug: "automation-rules", depth: 0 } as never);
+    const list = (g.rules as Record<string, unknown>[] | undefined) ?? [];
+    const rule = list[Number(b.index)];
+    if (!rule) return deny("Rule not found.", 404);
+    const rules = list.map((r, i) => (i === Number(b.index) ? { ...r, enabled } : r));
+    await req.payload.updateGlobal({ slug: "automation-rules", data: { rules }, req, overrideAccess: false } as never);
+    await log(req, {
+      kind: "human",
+      text: `${enabled ? "Enabled" : "Paused"} automation “${str(rule.name)}”.`,
+      entity: "globals/automation-rules",
+    });
+    return json({ ok: true, message: `${str(rule.name)} ${enabled ? "enabled" : "paused"} (logged)` });
   },
 };
 
@@ -913,6 +943,64 @@ const route: Endpoint = {
   },
 };
 
+const routeAt: Endpoint = {
+  // GET /api/on-call/route?at=<iso>: who an urgent RFQ arriving then goes to (default: the demo's "now").
+  path: "/on-call/route",
+  method: "get",
+  handler: async (req) => {
+    if (!req.user) return deny("Please sign in.", 401);
+    const at = new Date(str(req.query?.at) || DEMO_NOW.toISOString());
+    return json(await routeUrgent(req, Number.isNaN(at.getTime()) ? DEMO_NOW : at));
+  },
+};
+
+const permission: Endpoint = {
+  // POST /api/roles/permission { role, key, value }: switch one permission of a role (management).
+  path: "/roles/permission",
+  method: "post",
+  handler: async (req) => {
+    if (!req.user) return deny("Please sign in.", 401);
+    if (str(me(req)?.role) !== "management") return deny("Only management edits permissions.");
+    const b = await body(req);
+    const key = str(b.key);
+    if (!PERMISSIONS.some((p) => p.key === key)) return deny("Unknown permission.", 400);
+    const settings = await req.payload.findGlobal({ slug: "settings", depth: 0 } as never);
+    const permissions = ((settings.permissions as Record<string, unknown>[] | undefined) ?? []).map((r) =>
+      r.role === str(b.role) ? { ...r, [key]: b.value === true } : r,
+    );
+    await req.payload.updateGlobal({ slug: "settings", data: { permissions }, req, overrideAccess: false } as never);
+    await log(req, { kind: "human", text: "Updated the roles & permissions matrix.", entity: "globals/settings" });
+    return json({ ok: true });
+  },
+};
+
+const rosterSave: Endpoint = {
+  // POST /api/roles/roster { user<i>, backup<i> }: who is on duty for each shift (management, office manager).
+  path: "/roles/roster",
+  method: "post",
+  handler: async (req) => {
+    if (!req.user) return deny("Please sign in.", 401);
+    if (!["management", "office-admin"].includes(str(me(req)?.role)))
+      return deny("Management and the office manager edit the roster.");
+    const b = await body(req);
+    const roster = await req.payload.findGlobal({ slug: "on-call-roster", depth: 0 } as never);
+    const shifts = ((roster.shifts as Record<string, unknown>[] | undefined) ?? []).map((s, i) => ({
+      from: s.from,
+      to: s.to,
+      user: str(b[`user${i}`]) || s.user,
+      backup: str(b[`backup${i}`]) || null,
+    }));
+    await req.payload.updateGlobal({
+      slug: "on-call-roster",
+      data: { ...roster, shifts },
+      req,
+      overrideAccess: false,
+    } as never);
+    await log(req, { kind: "human", text: "Updated the on-call roster.", entity: "globals/on-call-roster" });
+    return json({ ok: true });
+  },
+};
+
 /* ================================================================ integrations */
 
 export interface IntegrationsView {
@@ -1060,6 +1148,47 @@ const staging: Endpoint = {
       entity: "globals/integrations",
     });
     return json({ ok: true, stagingRefreshedAt: at });
+  },
+};
+
+const language: Endpoint = {
+  // POST /api/integrations/language { field: default | documents | mine, lang?, value }.
+  path: "/integrations/language",
+  method: "post",
+  handler: async (req) => {
+    const user = me(req);
+    if (!user) return deny("Please sign in.", 401);
+    const b = await body(req);
+    const value = b.value;
+    if (b.field === "mine") {
+      const lang = value === "ar" ? "ar" : "en";
+      await req.payload.update({
+        collection: "users",
+        id: user.id,
+        data: { language: lang },
+        req,
+        overrideAccess: false,
+      } as never);
+      return json({
+        ok: true,
+        message:
+          lang === "ar"
+            ? "Your dashboard language: Arabic (applies after go-live translation)"
+            : "Your dashboard language: English",
+      });
+    }
+    if (str(user.role) !== "management") return deny("Company settings are changed by management.");
+    let data: Record<string, unknown>;
+    if (b.field === "default") data = { defaultLanguage: value === "ar" ? "ar" : "en" };
+    else if (b.field === "documents") {
+      const settings = await req.payload.findGlobal({ slug: "settings", depth: 0 } as never);
+      const docs = ((settings.documentLanguages as string[] | undefined) ?? ["en"]).map(str);
+      const l = str(b.lang);
+      const next = value === true ? [...new Set([...docs, l])] : docs.filter((x) => x !== l);
+      data = { documentLanguages: next.length ? next : ["en"] };
+    } else return deny("Unknown setting.", 400);
+    await req.payload.updateGlobal({ slug: "settings", data, req, overrideAccess: false } as never);
+    return json({ ok: true, message: "Language settings saved" });
   },
 };
 
@@ -1560,10 +1689,15 @@ export const platformEndpoints: Endpoint[] = [
   automations,
   retry,
   reviewed,
+  ruleSwitch,
   roles,
   route,
+  routeAt,
+  permission,
+  rosterSave,
   integrations,
   reconnect,
   staging,
+  language,
   project,
 ];

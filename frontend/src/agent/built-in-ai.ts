@@ -1,4 +1,4 @@
-import { BUSINESS, ORG } from "./identity.ts";
+import { business, org } from "./identity.ts";
 /**
  * Chrome's built-in AI task APIs (https://developer.chrome.com/docs/ai/built-in-apis), on the
  * device: Language Detector, Translator, Summarizer, Writer, Rewriter, Proofreader, and the
@@ -145,7 +145,7 @@ export async function write(
       tone,
       format: "plain-text",
       length: "medium",
-      sharedContext: `${ORG}, ${BUSINESS}.`,
+      sharedContext: `${org()}, ${business()}.`,
     },
     onProgress,
   );
@@ -431,7 +431,7 @@ export async function score(text: string, question: string, onProgress?: Progres
 /** Three short replies to an incoming message, for the person to pick and edit. */
 export async function quickReplies(text: string, onProgress?: Progress): Promise<string[]> {
   const r = await promptJson<{ replies?: string[] }>(
-    `You suggest replies for staff of ${ORG}, ${BUSINESS}. Each reply is one or two short, polite, professional sentences. Never promise prices, dates or quantities that aren't in the message.`,
+    `You suggest replies for staff of ${org()}, ${business()}. Each reply is one or two short, polite, professional sentences. Never promise prices, dates or quantities that aren't in the message.`,
     `Suggest three different short replies to this message:\n\n${text.slice(0, 2500)}`,
     {
       type: "object",

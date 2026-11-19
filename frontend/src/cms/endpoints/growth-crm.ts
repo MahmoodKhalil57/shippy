@@ -1,5 +1,5 @@
 import type { Endpoint, PayloadRequest } from "payload";
-import type { Doc } from "../types.ts";
+import type { Doc } from "../../mock/types.ts";
 import { GROWTH_STAGES, SALES_RESULTS } from "../collections/growth.ts";
 import { logActivity } from "../collections/shared.ts";
 import {
@@ -376,7 +376,12 @@ export const growthEndpoints: Endpoint[] = [
         text: `${str(opp.name)}: ${result}${input.note ? ` — ${str(input.note)}` : ""}. ${nextStep ? `Next: ${nextStep} (${due ? fmtDay(due) : ""}).` : `Stage: ${stage}.`}`,
         entity: `opportunities/${id}`,
       });
-      return Response.json(await growth(req));
+      // `message`: what the screen says once it's saved (the action's snackbar).
+      const message =
+        nextStep && due
+          ? `Outcome saved — next step “${nextStep}” planned for ${due.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`
+          : `Outcome saved — ${str(opp.name)} is now “${stage}”`;
+      return Response.json({ ...(await growth(req)), message });
     },
   },
 ];

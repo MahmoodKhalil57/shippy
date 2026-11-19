@@ -1,5 +1,5 @@
 import type { PayloadRequest } from "payload";
-import type { Doc } from "../types.ts";
+import type { Doc } from "../../mock/types.ts";
 
 /**
  * Small helpers shared by the insights endpoints (profit & close, control room, briefing,

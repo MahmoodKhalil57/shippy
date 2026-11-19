@@ -1,6 +1,6 @@
 import type { CollectionConfig } from "payload";
 import { deskAccess, management } from "./shared.ts";
-import type { CollectionSettings } from "../types.ts";
+import type { CollectionSettings } from "../../mock/types.ts";
 
 export const GROWTH_STAGES = [
   "Prospect",

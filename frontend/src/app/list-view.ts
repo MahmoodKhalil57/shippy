@@ -1,13 +1,13 @@
 import { toEnglish } from "../agent/built-in-ai.ts";
-import { text } from "../cms/runtime/util.ts";
+import { text } from "../mock/runtime/util.ts";
 import { LightElement } from "../components/base/light-element.ts";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import type { CollectionConfig, Where } from "payload";
 import { parse, stringify } from "qs-esm";
-import { api, type FindOptions } from "../cms/client.ts";
-import type { Select } from "../cms/runtime/select.ts";
-import type { Doc, FieldLike, PaginatedDocs } from "../cms/types.ts";
+import { api, type FindOptions } from "../mock/client.ts";
+import type { Select } from "../mock/runtime/select.ts";
+import type { Doc, FieldLike, PaginatedDocs } from "../mock/types.ts";
 import "../components/index.ts";
 import type { PickerColumn } from "../components/composed/data/column-picker.ts";
 import {
@@ -478,7 +478,7 @@ export class DashboardListView extends LightElement {
 
   #around = new Map<string, HTMLElement>();
 
-  /** Payload's `admin.components.beforeList` / `afterList`: view endpoints or elements around the list. */
+  /** Payload's `admin.components.beforeList` / `afterList`: screens of widgets or elements around the list. */
   private _around(where: "beforeList" | "afterList") {
     const list = (this.collection.admin?.components as Record<string, unknown> | undefined)?.[where];
     return (Array.isArray(list) ? list : []).map((c, i) => {

@@ -1,0 +1,31 @@
+{
+  "name": "Golden Sea helper",
+  "business": "a ship chandler in Egypt",
+  "ask": "/ask",
+  "roleNotes": [
+    {
+      "role": "supply-chain",
+      "note": "Supply chain & customer service: reads the inbox, creates cases, sends supplier RFQs and chases replies, compares offers, prices lines and prepares quotations."
+    },
+    {
+      "role": "sales",
+      "note": "Sales: owns customer relationships and quotations, follows customer decisions and POs, and grows accounts. Sales never sees costs or margins."
+    },
+    {
+      "role": "management",
+      "note": "Management approver: decides approvals (margin exceptions, payments, bank-detail changes), watches the control room, and steers by blockers, cash and profit."
+    },
+    {
+      "role": "finance-director",
+      "note": "Finance: receivables and payables, collection reminders, payment approvals and bank-detail checks, invoices and e-invoicing."
+    },
+    {
+      "role": "operations",
+      "note": "Operations: supplier POs, receiving, deliveries to vessels, proof of delivery and claims."
+    },
+    {
+      "role": "office-admin",
+      "note": "Office admin: the inbox, contacts, vendor registrations and documents."
+    }
+  ]
+}

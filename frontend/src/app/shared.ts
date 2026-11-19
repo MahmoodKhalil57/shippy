@@ -1,11 +1,11 @@
 import type { Tone } from "../components/primitives/data/tag.ts";
 import type { IconName } from "../components/primitives/media/icon.ts";
-import { text } from "../cms/runtime/util.ts";
+import { text } from "../mock/runtime/util.ts";
 import type { CollectionConfig, GlobalConfig } from "payload";
-import { API_ROUTE, DASHBOARD_ROUTE, api, withBase } from "../cms/client.ts";
+import { API_ROUTE, DASHBOARD_ROUTE, api, withBase } from "../mock/client.ts";
 import { bookmarks, type Bookmark } from "../stores/index.ts";
 import config from "../cms/config.ts";
-import type { CollectionSettings, DashboardSettings, Doc, FieldLike } from "../cms/types.ts";
+import type { CollectionSettings, DashboardSettings, Doc, FieldLike } from "../mock/types.ts";
 
 /** Shared helpers for the dashboard (src/app). */
 

@@ -1,5 +1,5 @@
 import type { Endpoint } from "payload";
-import type { Doc } from "../types.ts";
+import type { Doc } from "../../mock/types.ts";
 import { history as H } from "./history.ts";
 import { MONEY_ROLES, NOW, all, docHref, idOf, meOf, num, str, unauthorized } from "./insights-shared.ts";
 

@@ -1,6 +1,6 @@
 import { BrowserModelChat, type BrowserInput } from "./browser-model.ts";
 import { agentContext, agentTools, callAgentTool, type AgentTool } from "./webmcp.ts";
-import { BUSINESS, HELPER, ORG } from "./identity.ts";
+import { business, helper, org } from "./identity.ts";
 
 /**
  * The in-page helper's brain: a model that sees and works the app only through its WebMCP tools
@@ -42,7 +42,8 @@ export const codexConfig = () => ({
   model: meta("openai-model") || BROWSER_MODEL,
 });
 
-const INSTRUCTIONS = `You are the ${HELPER}, built into the ${ORG} platform (${ORG} is ${BUSINESS}). You help the signed-in person understand and use the platform.
+const instructions =
+  () => `You are the ${helper()}, built into the ${org()} platform (${org()} is ${business()}). You help the signed-in person understand and use the platform.
 
 You perceive and act on the platform only through your tools, which are the platform's own WebMCP tools:
 - Call get_screen first to see what the person is looking at (the page, who they are and their role, and the data on screen). Call it again after anything changes.
@@ -57,7 +58,7 @@ Answer briefly and plainly, in the person's language. Refer to things by their n
  * The on-device model's brief: short, concrete, with an example for each kind of request — a
  * small model follows examples far better than rules. It gets only the simple tools.
  */
-const BROWSER_INSTRUCTIONS = `You are the ${HELPER} inside the ${ORG} platform (${ORG} is ${BUSINESS}).
+const browserInstructions = () => `You are the ${helper()} inside the ${org()} platform (${org()} is ${business()}).
 Each request starts with who is asking, their role, and the page they are on.
 
 Use one tool, read its result, then answer in one to three short sentences. Say only what the tool result says; never invent numbers, names or dates. When the result names a page, say so.
@@ -206,7 +207,7 @@ export class CodexConversation {
 
   /** Get a model ready ahead of the first message (the on-device one: prepare / download it). */
   warmUp(model: string) {
-    if (model === BROWSER_MODEL) this.#browser.warmUp(BROWSER_INSTRUCTIONS, simpleTools());
+    if (model === BROWSER_MODEL) this.#browser.warmUp(browserInstructions(), simpleTools());
   }
 
   /** Send the person's message; runs tool calls until the model answers. Returns its answer. */
@@ -248,7 +249,7 @@ export class CodexConversation {
       headers: { "content-type": "application/json", ...(apiKey ? { authorization: `Bearer ${apiKey}` } : {}) },
       body: JSON.stringify({
         model,
-        instructions: INSTRUCTIONS,
+        instructions: instructions(),
         input,
         tools: agentTools().map(asFunction),
         previous_response_id: this.#previous,
@@ -339,7 +340,7 @@ export class CodexConversation {
     const calls = new Set<string>();
     for (let step = 0; step < 4; step++) {
       const next = await this.#browser.step(input, {
-        instructions: BROWSER_INSTRUCTIONS,
+        instructions: browserInstructions(),
         tools: simpleTools(),
         onStatus: (text) => options.onEvent({ type: "status", text }),
         signal: options.signal,

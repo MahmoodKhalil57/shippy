@@ -1,5 +1,5 @@
 import type { Endpoint, PayloadRequest } from "payload";
-import type { Doc } from "../types.ts";
+import type { Doc } from "../../mock/types.ts";
 import { history as H } from "./history.ts";
 import { caseProfit } from "./profit.ts";
 import {
@@ -31,7 +31,8 @@ import {
  *
  * - GET /api/briefing — the 07:00 daily briefing, written for the signed-in person from the
  *   cases, approvals, supplier RFQs, invoices, bills, FX and exceptions as they stand (`?refresh=1`
- *   is the "Summarise" button: same data, stamped now).
+ *   stamps it now). POST /api/briefing/refresh is the "Summarise" button: it re-reads the records
+ *   and later GETs carry the new time.
  * - POST /api/ask { question } — "Ask Golden Sea": intent matching (case / vessel, approvals,
  *   cash, suppliers, pipeline, deadlines, margin) answered from the records, each answer citing
  *   the records it used. Cost and margin questions are refused for Sales.
@@ -582,6 +583,9 @@ export async function ask(req: PayloadRequest, question: string): Promise<Answer
 
 /* ---------------------------------------------------------------- endpoints */
 
+/** When each person last pressed "Summarise" (until the service worker restarts). */
+const summarised = new Map<string, string>();
+
 export const assistantEndpoints: Endpoint[] = [
   {
     path: "/briefing",
@@ -589,7 +593,20 @@ export const assistantEndpoints: Endpoint[] = [
     handler: async (req) => {
       if (!meOf(req)) return unauthorized();
       const q = (req.query ?? {}) as Record<string, unknown>;
-      return Response.json(await briefing(req, Boolean(q.refresh)));
+      const again = summarised.get(String(meOf(req)!.id));
+      const b = await briefing(req, Boolean(q.refresh));
+      return Response.json(again && !q.refresh ? { ...b, at: again } : b);
+    },
+  },
+  {
+    // "Summarise": re-read the live records now; the next GET /briefing is stamped with this time.
+    path: "/briefing/refresh",
+    method: "post",
+    handler: async (req) => {
+      if (!meOf(req)) return unauthorized();
+      const b = await briefing(req, true);
+      summarised.set(String(meOf(req)!.id), b.at);
+      return Response.json({ ok: true, at: b.at, message: `Summarised again at ${b.at} from ${b.read} live records.` });
     },
   },
   {

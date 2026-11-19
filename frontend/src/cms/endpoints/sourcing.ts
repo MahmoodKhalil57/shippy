@@ -1,5 +1,5 @@
 import type { Endpoint, PayloadRequest } from "payload";
-import type { Doc } from "../types.ts";
+import type { Doc } from "../../mock/types.ts";
 import { idOf, logActivity, scalar } from "../collections/shared.ts";
 import { DEMO_NOW } from "./home.ts";
 import {
@@ -25,12 +25,15 @@ import {
 /**
  * Root endpoints for the sourcing desk (registered in ./index.ts):
  *
- * - Inbox: `GET /inbox`, `POST /inbox/simulate`, `POST /inbox/:id/extract` (AI stub),
+ * - Inbox: `GET /inbox`, `GET /inbox/message?id=` (one message and its draft), `POST /inbox/simulate`,`POST /inbox/:id/extract` (AI stub),
  *   `POST /inbox/:id/match` (reply matching), `POST /inbox/:id/create-case`, `POST /inbox/:id/review`.
  * - Inbox history: `GET /inbox-history`, `POST /inbox-history/organise`,
  *   `POST /inbox-history/review/:id`, `POST /inbox-history/approve` (management only).
- * - Supplier RFQs of a case: `GET /sourcing/cases/:id`, `POST …/plan`, `POST …/send`,
- *   `POST …/simulate-replies`, and `POST /sourcing/rfqs/:id/remind`.
+ * - Supplier RFQs of a case: `GET /sourcing/cases/:id`, `POST …/plan` (drafts the RFQs and keeps
+ *   them as the case's `plan` on the GET), `POST …/plan/remove`, `POST …/plan/discard`,
+ *   `POST …/send` (the kept plan, or the drafts given),
+ *   `POST …/simulate-replies`, and `POST /sourcing/rfqs/:id/remind`; the tab's own
+ *   `POST /case-rfqs/:id/simulate-replies` keeps what arrived (`arrivals` on the GET).
  *
  * AI steps are deterministic stubs (./sourcing-data.ts). Nothing is sent, priced or saved as
  * final without a person: extraction returns a draft; a person creates the case; uncertain
@@ -715,7 +718,12 @@ async function createCaseFrom(req: Req, msg: Doc, input: Json) {
       `/collections/cases/${c.id}`,
       "Update",
     );
-  return { case: { id: c.id, caseId: str(c.caseId) }, acknowledged: firstAck, manualAck: manual };
+  return {
+    case: { id: c.id, caseId: str(c.caseId) },
+    acknowledged: firstAck,
+    manualAck: manual,
+    message: `Case ${str(c.caseId)} created · ${firstAck ? "acknowledgement sent once" : manual ? "acknowledge by hand" : "already acknowledged"}`,
+  };
 }
 
 /* ------------------------------------------------------------------ inbox: list */
@@ -746,6 +754,18 @@ export interface InboxMessage {
   };
   acknowledgedAt: string;
   simulated: boolean;
+  /** How urgent it reads (1–5): a deadline today, "asap", a complaint or a cancellation, still waiting. */
+  urgency: number;
+}
+
+/** Urgency from the message's own words and status (deterministic, for the "Most urgent first" sort). */
+export function urgencyOf(m: Doc): number {
+  const text = `${str(m.subject)}\n${str(m.body)}`;
+  const status = str(m.status);
+  let n = status === "Needs review" ? 3 : status === "New" ? 2 : 1;
+  if (/\burgent|\basap\b|immediately|within 24\s*h|\btoday\b|tonight/i.test(text)) n += 2;
+  if (/complain|cancel|\bstop\b|damaged|wrong (item|delivery)/i.test(text)) n += 2;
+  return Math.min(5, n);
 }
 
 async function toInboxMessage(req: Req, m: Doc): Promise<InboxMessage> {
@@ -801,6 +821,7 @@ async function toInboxMessage(req: Req, m: Doc): Promise<InboxMessage> {
         : undefined,
     acknowledgedAt: str(m.acknowledgedAt),
     simulated: str(m.messageId).startsWith("sim-"),
+    urgency: urgencyOf(m),
   };
 }
 
@@ -1125,7 +1146,25 @@ export interface CaseRfqsPayload {
   }[];
   counts: { total: number; replied: number; waiting: number; closed: number; escalated: number };
   canSeeCosts: boolean;
+  /** What the last "Simulate replies" brought in (`POST /case-rfqs/:id/simulate-replies`), for a while after. */
+  arrivals: ReplyEvent[];
+  /** The supplier RFQs drafted (`POST …/plan`) and not yet sent or discarded. */
+  plan: RfqPlan | null;
 }
+
+/** The drafted supplier RFQs per case, kept until sent or discarded (`POST …/plan`). */
+const plans = new Map<string, RfqPlan>();
+
+/**
+ * The replies the last "Simulate replies" brought in, per case, shown as "Replies arriving" for a
+ * while after (the presenter's moment; the replies themselves are saved as messages and offers).
+ */
+const arrivals = new Map<string, { at: number; events: ReplyEvent[] }>();
+const SHOW_ARRIVALS_MS = 15 * 60_000;
+const arrivalsOf = (caseId: string) => {
+  const last = arrivals.get(caseId);
+  return last && Date.now() - last.at < SHOW_ARRIVALS_MS ? last.events : [];
+};
 
 function scheduleOf(r: Doc): RfqScheduleStep[] {
   const sent = Date.parse(str(r.sentAt));
@@ -1287,6 +1326,8 @@ export async function caseRfqsPayload(req: Req, caseDoc: Doc): Promise<CaseRfqsP
       escalated: rows.filter((r) => r.escalated).length,
     },
     canSeeCosts: !isSales(req),
+    arrivals: arrivalsOf(caseDoc.id),
+    plan: plans.get(caseDoc.id) ?? null,
   };
 }
 
@@ -1695,6 +1736,32 @@ export async function inboxPayload(req: Req): Promise<InboxPayload> {
   };
 }
 
+export interface InboxDetail {
+  /** The message (the newest when none is asked for or it's gone); null when the inbox is empty. */
+  message: InboxMessage | null;
+  /** An RFQ or service request: read into a draft case rather than matched. */
+  rfq: boolean;
+  /** The draft read from it before (saved on the message), for an RFQ. */
+  extraction: ExtractionResult | null;
+}
+
+const isRfqMessage = (m: Doc) => ["New RFQ", "Service request"].includes(str(m.classification));
+
+/** One message of the inbox with its extraction state (`GET /inbox/message?id=`). */
+export async function inboxDetail(req: Req, id: string): Promise<InboxDetail> {
+  const doc =
+    (id ? await byId(req, "intake-messages", id) : null) ??
+    (await all(req, "intake-messages", undefined, "-receivedAt")).find((m) => str(m.source) !== "History import");
+  if (!doc) return { message: null, rfq: false, extraction: null };
+  const rfq = isRfqMessage(doc);
+  const read = list(obj(doc.extraction).header).length > 0;
+  return {
+    message: await toInboxMessage(req, doc),
+    rfq,
+    extraction: rfq && read ? await extraction(req, doc) : null,
+  };
+}
+
 async function messageOr404(req: Req) {
   const msg = await byId(req, "intake-messages", str(req.routeParams?.id));
   if (!msg) throw Object.assign(new Error("Message not found."), { status: 404 });
@@ -1733,8 +1800,15 @@ export const sourcingEndpoints: Endpoint[] = [
         messageId: `sim-${kind}-${totalDocs + 1}@${senderDomain(base.from)}`,
         source: "Live",
       });
-      return json({ doc: await toInboxMessage(req, doc) }, 201);
+      // `href` opens the new message on the inbox (`?message=`), as a fresh arrival would be.
+      return json({ doc: await toInboxMessage(req, doc), href: `?message=${encodeURIComponent(doc.id)}` }, 201);
     }),
+  },
+  {
+    // One message with its extraction state, for the reading pane (the newest without `id`).
+    path: "/inbox/message",
+    method: "get",
+    handler: guard(async (req) => json(await inboxDetail(req, str(req.query?.id)))),
   },
   {
     // AI stub: read the message + attachments into a draft case (or recognise a duplicate).
@@ -1764,7 +1838,14 @@ export const sourcingEndpoints: Endpoint[] = [
       const msg = await messageOr404(req);
       const m = await matchMessage(req, msg);
       await applyMatch(req, msg, m);
-      return json({ match: m, message: await toInboxMessage(req, (await byId(req, "intake-messages", msg.id))!) });
+      const pct = `${Math.round(m.confidence * 100)}%`;
+      const message =
+        m.outcome === "linked"
+          ? `Matched to ${m.caseId} by ${m.reference} (${pct})`
+          : m.outcome === "duplicate"
+            ? `Duplicate — ${m.caseId ? `already linked to ${m.caseId}` : "kept with the original"}`
+            : "Uncertain — sent to the review queue";
+      return json({ match: m, doc: await toInboxMessage(req, (await byId(req, "intake-messages", msg.id))!), message });
     }),
   },
   {
@@ -1775,7 +1856,12 @@ export const sourcingEndpoints: Endpoint[] = [
       const msg = await messageOr404(req);
       if (idOf(msg.createdCase)) {
         const caseId = await caseIdOf(req, msg.createdCase);
-        return json({ case: { id: idOf(msg.createdCase), caseId }, acknowledged: false, already: true });
+        return json({
+          case: { id: idOf(msg.createdCase), caseId },
+          acknowledged: false,
+          already: true,
+          message: `Case ${caseId} was already created from this message`,
+        });
       }
       return json(await createCaseFrom(req, msg, await body(req)), 201);
     }),
@@ -1921,21 +2007,59 @@ export const sourcingEndpoints: Endpoint[] = [
       const c = await caseOr404(req);
       const input = await body(req);
       const mode = str(input.mode) === "full" ? "full" : "split";
-      const only = list<number>(input.lineNos).map(num);
-      return json(await planRfqs(req, c, mode, only));
+      const only = list<number>(input.lineNos).map(num).filter(Boolean);
+      if (Array.isArray(input.lineNos) && !only.length) return fail(400, "Pick at least one line.");
+      const plan = await planRfqs(req, c, mode, only);
+      if (plan.drafts.length) plans.set(c.id, plan);
+      else plans.delete(c.id);
+      const n = plan.drafts.length;
+      const message = n
+        ? `${n} RFQ draft${n === 1 ? "" : "s"} ready — check them before sending`
+        : plan.held.length && !plan.skipped.length
+          ? `Held back until clarified: ${plan.held.map((h) => `L${h.lineNo} (${h.reason})`).join(" · ")}`
+          : "Nothing new to send — every picked line was already asked of these suppliers";
+      return json({ ...plan, message });
     }),
   },
   {
-    // A person confirmed the drafts: one RFQ per supplier, sent, reminders scheduled.
+    // Drop one drafted RFQ (by its reference) before sending.
+    path: "/sourcing/cases/:id/plan/remove",
+    method: "post",
+    handler: guard(async (req) => {
+      const c = await caseOr404(req);
+      const reference = str((await body(req)).reference);
+      const plan = plans.get(c.id);
+      if (!plan?.drafts.some((d) => d.reference === reference)) return fail(404, "That draft is no longer there.");
+      const drafts = plan.drafts.filter((d) => d.reference !== reference);
+      if (drafts.length) plans.set(c.id, { ...plan, drafts });
+      else plans.delete(c.id);
+      return json({ plan: plans.get(c.id) ?? null });
+    }),
+  },
+  {
+    // Throw the drafts away; nothing was sent.
+    path: "/sourcing/cases/:id/plan/discard",
+    method: "post",
+    handler: guard(async (req) => {
+      const c = await caseOr404(req);
+      plans.delete(c.id);
+      return json({ plan: null });
+    }),
+  },
+  {
+    // A person confirmed the drafts: one RFQ per supplier, sent, reminders scheduled. Sends the
+    // drafts given, or else the plan kept by `…/plan`.
     path: "/sourcing/cases/:id/send",
     method: "post",
     handler: guard(async (req) => {
       const c = await caseOr404(req);
       const input = await body(req);
-      const drafts = list<Json>(input.drafts);
+      const kept = plans.get(c.id);
+      const given = list<Json>(input.drafts);
+      const drafts: Json[] = given.length ? given : ((kept?.drafts ?? []) as unknown as Json[]);
       if (!drafts.length) return fail(400, "Nothing to send — draft the RFQs first.");
-      const mode = str(input.mode) === "full" ? "Full list" : "Split by category";
-      const due = str(input.dueAt) || rfqDueAt(c);
+      const mode = str(input.mode || (given.length ? "" : kept?.mode)) === "full" ? "Full list" : "Split by category";
+      const due = str(input.dueAt) || (given.length ? "" : str(kept?.dueAt)) || rfqDueAt(c);
       const sentAt = DEMO_NOW.getTime() + 5 * 60_000;
       const sent: Doc[] = [];
       for (const d of drafts) {
@@ -1959,6 +2083,7 @@ export const sourcingEndpoints: Endpoint[] = [
           }),
         );
       }
+      plans.delete(c.id);
       if (["New", "Validating", "Sourcing"].includes(str(c.stage)))
         await update(req, "cases", c.id, { stage: "Awaiting supplier", wait: "Awaiting supplier" });
       await logActivity(req, {
@@ -1977,6 +2102,18 @@ export const sourcingEndpoints: Endpoint[] = [
       const c = await caseOr404(req);
       const events = await simulateReplies(req, c);
       return json({ events, ...(await caseRfqsPayload(req, c)) });
+    }),
+  },
+  {
+    // The "Supplier RFQs" tab's "Simulate replies": as above, keeping what arrived for the tab to show.
+    path: "/case-rfqs/:id/simulate-replies",
+    method: "post",
+    handler: guard(async (req) => {
+      const c = await caseOr404(req);
+      const events = await simulateReplies(req, c);
+      if (!events.length) return fail(400, "No supplier RFQs are waiting for a reply — send RFQs first");
+      arrivals.set(c.id, { at: Date.now(), events });
+      return json({ events });
     }),
   },
   {

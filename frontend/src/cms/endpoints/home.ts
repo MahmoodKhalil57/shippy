@@ -1,5 +1,5 @@
 import type { Endpoint, PayloadRequest } from "payload";
-import type { Doc } from "../types.ts";
+import type { Doc } from "../../mock/types.ts";
 import { WAITS } from "../collections/cases.ts";
 import { history as H } from "./history.ts";
 

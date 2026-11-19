@@ -2,10 +2,10 @@ import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { beforeEach, describe, expect, it } from "vite-plus/test";
 import config from "../src/cms/config.ts";
-import { Engine } from "../src/cms/runtime/engine.ts";
-import { RestApi } from "../src/cms/runtime/rest.ts";
-import { seedsFromGlob } from "../src/cms/runtime/seed.ts";
-import { MemoryStore } from "../src/cms/runtime/store.ts";
+import { Engine } from "../src/mock/runtime/engine.ts";
+import { RestApi } from "../src/mock/runtime/rest.ts";
+import { seedsFromGlob } from "../src/mock/runtime/seed.ts";
+import { MemoryStore } from "../src/mock/runtime/store.ts";
 import { lineCategory } from "../src/cms/endpoints/sourcing.ts";
 
 /** The sourcing desk's endpoints: inbox (extraction, matching, case creation), inbox history, supplier RFQs. */
@@ -122,6 +122,21 @@ describe("inbox", () => {
     const offers = await call("GET", "/api/offers?where[supplierRfq][equals]=srfq-0142-e&depth=0");
     expect(offers.body.docs).toHaveLength(1);
     expect(offers.body.docs[0]).toMatchObject({ lineNo: 4, price: 980, currency: "EGP" });
+  });
+
+  it("gives the reading pane one message with its saved draft, the newest by default", async () => {
+    await login();
+    const first = await call("GET", "/api/inbox/message");
+    const list = await call("GET", "/api/inbox");
+    expect(first.body.message.id).toBe(list.body.messages[0].id);
+    const sim = await call("POST", "/api/inbox/simulate", { kind: "rfq" });
+    expect(sim.body.href).toBe(`?message=${sim.body.doc.id}`);
+    const before = await call("GET", `/api/inbox/message?id=${sim.body.doc.id}`);
+    expect(before.body).toMatchObject({ rfq: true, extraction: null });
+    await call("POST", `/api/inbox/${sim.body.doc.id}/extract`);
+    const after = await call("GET", `/api/inbox/message?id=${sim.body.doc.id}`);
+    expect(after.body.extraction.lines).toHaveLength(6);
+    expect(after.body.message.urgency).toBeGreaterThanOrEqual(4);
   });
 
   it("links an uncertain match only when a person picks the case", async () => {

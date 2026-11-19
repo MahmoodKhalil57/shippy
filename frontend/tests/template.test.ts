@@ -1,16 +1,19 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vite-plus/test";
-import config from "../src/cms/config.ts";
 
 /**
- * The repository is a template: the project lives in src/cms (data model, endpoints, views,
- * dashboard settings, seed), and everything else draws it. These checks keep it that way:
- * - the app, the agent and the design system import from src/cms only the client, the config,
- *   its types and the mock runtime, never a project's endpoints, collections, views or settings;
- * - none of them names the business (its brand name, from `admin.custom.branding`).
- * A screen that needs project logic is a view endpoint in src/cms/views; a widget the view
- * vocabulary can't draw is a project element in src/cms/components.
+ * The repository is a template: the project lives in src/cms (collections, globals, endpoints,
+ * widgets, seed), and everything else draws it: the app (src/app), the agent (src/agent), the
+ * design system (src/components, src/styles) and the in-browser backend (src/mock). These checks
+ * keep it that way:
+ * - code outside src/cms imports from it only the config (and the seed, for demo sign-in), never
+ *   a project's endpoints, collections or widgets;
+ * - none of it names the business (its brand, from the seeded `branding` global);
+ * - src/cms uses only the pure parts of the template (the widget vocabulary, the config types,
+ *   the mock runtime), because the config also runs in the service worker, and defines no custom
+ *   elements: anything the widget vocabulary can't draw becomes a generic block or a
+ *   design-system component.
  */
 
 const src = path.resolve(import.meta.dirname, "../src");
@@ -22,25 +25,47 @@ const files = (dir: string): string[] =>
 const rel = (f: string) => path.relative(src, f).split(path.sep).join("/");
 const outsideCms = files(src).filter((f) => !rel(f).startsWith("cms/"));
 
-/** The parts of src/cms the app may use: the client, the config and its types, the mock runtime. */
-const ALLOWED = /^cms\/(?:client\.ts|config\.ts|types\.ts|runtime\/|seed\/\*\.json|sw\.ts)/;
+/** The parts of src/cms the rest may use: the config and the seed (demo sign-in, the mock backend). */
+const ALLOWED = /^cms\/(?:config\.ts|seed\/)/;
 
 describe("the app draws the project; it holds none of it", () => {
-  it.each(outsideCms.map((f) => [rel(f), f]))("%s imports only the CMS's client, config and types", (_, file) => {
+  it.each(outsideCms.map((f) => [rel(f), f]))("%s imports only the CMS's config", (_, file) => {
     const source = readFileSync(file, "utf8");
     const imports = [...source.matchAll(/(?:from\s+|import\s*\(?\s*|import\.meta\.glob[^(]*\(\s*)["']([^"']+)["']/g)]
       .map((m) => m[1]!)
       .filter((p) => p.startsWith("."))
       .map((p) => rel(path.resolve(path.dirname(file), p)))
       .filter((p) => p.startsWith("cms/"));
-    // The view host loads the project's own blocks (src/cms/components): the one plug-in point.
-    const bad = imports.filter(
-      (p) => !ALLOWED.test(p) && !(rel(file) === "app/view/view.ts" && p === "cms/components/*.ts"),
-    );
-    expect(bad, "move this into src/cms (a view endpoint, a setting) or read it from the config").toEqual([]);
+    const bad = imports.filter((p) => !ALLOWED.test(p));
+    expect(bad, "move this into src/cms (an endpoint, a widget, a setting) or read it from the config").toEqual([]);
   });
 
-  const brand = config.admin?.custom?.branding?.name;
+  // The config (collections, endpoints, widgets) also runs in the service worker, so the CMS uses
+  // only the app's pure widget vocabulary, and defines no UI of its own.
+  const cmsFiles = files(path.join(src, "cms"));
+  it.each(cmsFiles.map((f) => [rel(f), f]))("%s uses only the pure widget vocabulary from the app", (_, file) => {
+    const source = readFileSync(file, "utf8");
+    const bad = [...source.matchAll(/(?:from\s+|import\s+)["']([^"']+)["']/g)]
+      .map((m) => m[1]!)
+      .filter((p) => p.startsWith("."))
+      .map((p) => rel(path.resolve(path.dirname(file), p)))
+      .filter(
+        (p) =>
+          !p.startsWith("cms/") &&
+          !/^app\/widgets\/(?:schema|widget)\.ts$/.test(p) &&
+          !/^mock\/(?:types\.ts|runtime\/)/.test(p),
+      );
+    expect(bad, "widget code must stay pure (no UI imports): it also runs in the service worker").toEqual([]);
+    expect(/customElement\(|customElements\.define/.test(source), "UI belongs in a block or the design system").toBe(
+      false,
+    );
+  });
+
+  // The business's name, from its seeded `branding` global (src/cms/seed/globals/branding.json).
+  const brandFile = path.join(src, "cms/seed/globals/branding.json");
+  const brand = existsSync(brandFile)
+    ? (JSON.parse(readFileSync(brandFile, "utf8")) as { name?: string }).name
+    : undefined;
   it.each(outsideCms.map((f) => [rel(f), f]))("%s doesn't name the business", (_, file) => {
     if (!brand) return;
     expect(readFileSync(file, "utf8").includes(brand), `"${brand}" belongs in src/cms`).toBe(false);

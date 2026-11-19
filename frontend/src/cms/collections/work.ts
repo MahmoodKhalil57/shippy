@@ -1,6 +1,6 @@
 import type { Access, CollectionConfig } from "payload";
 import { deskAccess, idOf, loggedIn, management, ruleError } from "./shared.ts";
-import { tones, type CollectionSettings } from "../types.ts";
+import { tones, type CollectionSettings } from "../../mock/types.ts";
 
 /** Case timeline + audit log: every automatic step and human decision. Append-only. */
 export const Activities: CollectionConfig = {
@@ -237,6 +237,7 @@ export const Notifications: CollectionConfig = {
           required: true,
           defaultValue: "Update",
           options: ["Approval", "Reply", "Reminder", "Alert", "Payment", "Update"],
+          custom: tones({ Approval: "warning", Alert: "error", Payment: "success", Reply: "info", Reminder: "info" }),
         },
         {
           name: "href",

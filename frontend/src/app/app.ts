@@ -1,10 +1,10 @@
-import { text } from "../cms/runtime/util.ts";
+import { text } from "../mock/runtime/util.ts";
 import { LightElement } from "../components/base/light-element.ts";
 import { html, nothing } from "lit";
 import { customElement, query, state } from "lit/decorators.js";
 import { keyed } from "lit/directives/keyed.js";
-import { api, startMockBackend, withBase } from "../cms/client.ts";
-import type { Doc } from "../cms/types.ts";
+import { api, startMockBackend, withBase } from "../mock/client.ts";
+import type { Doc } from "../mock/types.ts";
 import type { MenuItem } from "../components/primitives/navigation/menu.ts";
 import type { IconName } from "../components/primitives/media/icon.ts";
 import type { PageTransition } from "../components/composed/layout/app-shell.ts";
@@ -43,6 +43,7 @@ import {
   componentOf,
   dashboardView,
 } from "./shared.ts";
+import { loadSite, resetSite, site } from "./site.ts";
 
 /**
  * Which of M3's transition patterns moving from one page to another is (`ui-app-shell`'s
@@ -73,15 +74,15 @@ function pageTransitionOf(from: Route, to: Route): PageTransition | undefined {
 
 export type Access = Awaited<ReturnType<typeof api.access>>;
 
-/** Background images offered in the header (public/backgrounds, from Pexels), with thumbnails. */
 const asset = (file: string) => `${import.meta.env.BASE_URL}${file}`;
-/** Background photos offered in the header (`admin.custom.branding.backgrounds`), with thumbnails. */
-const BACKGROUNDS = (settings.branding?.backgrounds ?? []).map(({ path, label }) => ({
-  id: path.split("/").pop()!,
-  label,
-  src: asset(`${path}.jpg`),
-  thumb: asset(`${path}-thumb.jpg`),
-}));
+/** Background photos offered in the header (the `branding` global), with thumbnails. */
+const backgrounds = () =>
+  site().branding.backgrounds.map(({ path, label }) => ({
+    id: path.split("/").pop()!,
+    label,
+    src: asset(`${path}.jpg`),
+    thumb: asset(`${path}-thumb.jpg`),
+  }));
 
 @customElement("dashboard-app")
 export class DashboardApp extends LightElement {
@@ -143,6 +144,9 @@ export class DashboardApp extends LightElement {
 
   private async _refresh() {
     this.user = (await api.me(userSlug)).user;
+    // The brand (and, signed in, the assistant) come from the project's data.
+    resetSite();
+    await loadSite();
     this.access = await api.access();
     await this._guard();
     // The agent's tools follow who's signed in: only what this user may see and do.
@@ -443,8 +447,8 @@ export class DashboardApp extends LightElement {
     const { navOpen, asideOpen } = this.#prefs.value;
     return html`
       <ui-app-shell
-        .brand=${settings.branding?.name ?? "Dashboard"}
-        .brandIcon=${(settings.branding?.icon ?? "grid") as IconName}
+        .brand=${site().branding.name}
+        .brandIcon=${site().branding.icon as IconName}
         brand-href=${dashboardPath()}
         ?nav-open=${navOpen}
         ?aside-open=${asideOpen}
@@ -467,8 +471,8 @@ export class DashboardApp extends LightElement {
           <ui-appearance
             kind="background"
             persist
-            .credit=${settings.branding?.backgroundCredit ?? ""}
-            .backgrounds=${BACKGROUNDS}
+            .credit=${site().branding.backgroundCredit ?? ""}
+            .backgrounds=${backgrounds()}
           ></ui-appearance>
           <ui-appearance kind="scheme" persist></ui-appearance>
           <ui-appearance kind="theme" persist></ui-appearance>
@@ -495,9 +499,9 @@ export class DashboardApp extends LightElement {
         <ui-menu slot="rail" layout="rail" surface="false" .items=${this._rail()}></ui-menu>
         ${this._userSwitcher()}
         ${
-          settings.branding?.poweredBy
+          site().branding.poweredBy
             ? html`<ui-text slot="footer" variant="body-sm" color="muted"
-                >This Demo Powered by <strong>${settings.branding.poweredBy}</strong></ui-text
+                >This Demo Powered by <strong>${site().branding.poweredBy}</strong></ui-text
               >`
             : nothing
         }

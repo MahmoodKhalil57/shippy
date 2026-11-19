@@ -1,9 +1,9 @@
-import { text } from "../cms/runtime/util.ts";
+import { text } from "../mock/runtime/util.ts";
 import { LightElement } from "../components/base/light-element.ts";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { api, ApiError } from "../cms/client.ts";
-import type { Doc, FieldLike } from "../cms/types.ts";
+import { api, ApiError } from "../mock/client.ts";
+import type { Doc, FieldLike } from "../mock/types.ts";
 import {
   setIn,
   type DocFormChange,
@@ -388,15 +388,15 @@ export class DashboardEditView extends LightElement {
     </ui-flex>`;
   }
 
-  /** The collection's `custom.edit.summary`: a view endpoint drawn above the form. */
-  #summary?: HTMLElement;
+  /** The collection's `custom.edit.before`: widgets about this document, above the form. */
+  #before?: HTMLElement;
   private _summary() {
     const c = this.slug ? collectionOf(this.slug) : undefined;
-    const src = c && collectionSettings(c).edit?.summary;
-    if (!src || !this.docId) return nothing;
-    this.#summary ??= document.createElement("app-view");
-    Object.assign(this.#summary, { src, docId: this.docId });
-    return this.#summary;
+    const before = c && collectionSettings(c).edit?.before;
+    if (!before?.length || !this.docId) return nothing;
+    this.#before ??= document.createElement("app-widgets");
+    Object.assign(this.#before, { page: { widgets: before }, docId: this.docId, slug: this.slug, user: this.user });
+    return this.#before;
   }
 
   render() {

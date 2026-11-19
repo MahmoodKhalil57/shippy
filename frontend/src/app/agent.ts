@@ -10,7 +10,7 @@ import type { ModelGroup } from "../components/composed/ai/model-selector.ts";
 import type { Source } from "../components/primitives/ai/sources.ts";
 import type { TraceStatus } from "../components/primitives/ai/trace.ts";
 import "../components/index.ts";
-import { HELPER } from "../agent/identity.ts";
+import { helper } from "../agent/identity.ts";
 
 /**
  * The helper (bottom right; named by the project's `admin.custom.assistant.name`): a chat with a model that sees and uses the platform only
@@ -450,8 +450,8 @@ export class DashboardAgent extends LightElement {
     return html`<ui-fab
       panel
       .open=${this.open}
-      .heading=${HELPER}
-      .triggerLabel=${`Open the ${HELPER}`}
+      .heading=${helper()}
+      .triggerLabel=${`Open the ${helper()}`}
       @ui-toggle=${(e: CustomEvent<{ open: boolean }>) => (this.open = e.detail.open)}
     >
       <ui-icon slot="trigger" name="assistant" size="lg"></ui-icon>

@@ -1,8 +1,8 @@
 import type { Where } from "payload";
 import { html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { DASHBOARD_ROUTE, api } from "../cms/client.ts";
-import type { Doc } from "../cms/types.ts";
+import { DASHBOARD_ROUTE, api } from "../mock/client.ts";
+import type { Doc, Tour } from "../mock/types.ts";
 import { LightElement } from "../components/base/light-element.ts";
 import type { IconName } from "../components/primitives/media/icon.ts";
 import type { MenuItem } from "../components/primitives/navigation/menu.ts";
@@ -17,8 +17,20 @@ import {
   tour,
 } from "../stores/index.ts";
 import type { Access } from "./app.ts";
-import { text } from "../cms/runtime/util.ts";
-import { dashboardPath, formatDate, loadBookmarks, settings, toggleBookmark } from "./shared.ts";
+import { text } from "../mock/runtime/util.ts";
+import {
+  collectionOf,
+  dashboardPath,
+  dataFields,
+  fieldsOf,
+  formatDate,
+  loadBookmarks,
+  settings,
+  toggleBookmark,
+} from "./shared.ts";
+import { loadTours } from "./site.ts";
+import { fill, leaves } from "./widgets/host.ts";
+import type { WidgetScope } from "./widgets/widget.ts";
 
 /** The side panel's sections, in order (ids are remembered in `preferences.asideCollapsed`). */
 export const ASIDE_SECTIONS = [
@@ -52,11 +64,26 @@ export const expandAsideSection = (id: AsideSection) =>
 const BOOKMARK_THIS = "bookmark-this";
 const NOTIFICATION = "notification:";
 const TOUR = "tour:";
-/** A notification kind's badge colour (`admin.custom.notificationTones`). */
-const kindColor = (kind: string): MenuItem["badgeColor"] => {
-  const tone = settings.notificationTones?.[kind];
-  return tone && tone !== "neutral" ? tone : undefined;
+/** A notification kind's badge colour: the tone of its value on the `kind` field (`custom.tones`). */
+const kindField = () => {
+  const c = collectionOf("notifications");
+  return c ? dataFields(fieldsOf(c)).find((f) => f.name === "kind") : undefined;
 };
+const kindColor = (kind: string): MenuItem["badgeColor"] => {
+  const f = kindField();
+  const tone = f?.custom?.tones?.[kind];
+  return tone && tone !== "neutral" && tone !== "primary" ? tone : undefined;
+};
+
+/** The side panel's counters for this user: the `counts` items of `admin.custom.aside` they see. */
+function counters(user: Doc) {
+  const scope: WidgetScope = { user: user as WidgetScope["user"], params: {} };
+  return leaves(settings.aside ?? [], scope).flatMap((w) => {
+    const spec = w.counts;
+    if (!spec || !("items" in spec)) return [];
+    return spec.items.map((x) => ({ ...x, collection: x.collection ?? spec.collection, where: fill(x.where, scope) }));
+  });
+}
 
 /** A bookmark's kind, from its address: a record, a list, settings or a screen. */
 const bookmarkKind = (href: string) => {
@@ -83,6 +110,7 @@ export class DashboardAside extends LightElement {
   /** Current location (path + title); changing it refreshes the panel. */
   @property() path = "";
   @property() pageTitle = "";
+  @state() private tours: Tour[] = [];
   @state() private notifications: MenuItem[] = [];
   @state() private widgets: MenuItem[] = [];
   @state() private loaded = false;
@@ -126,16 +154,17 @@ export class DashboardAside extends LightElement {
     this.unread = unread.length;
 
     // Widgets: the counters this role steers by.
-    const widgets = settings.widgets?.({ id: user.id, role: text(user.role) }) ?? [];
-    const counts = await Promise.all(widgets.map((w) => count(w.slug, w.where as Where)));
+    const widgets = counters(user);
+    const counts = await Promise.all(widgets.map((w) => count(w.collection, w.where as Where)));
     this.widgets = widgets.map((w, i) => ({
       card: true,
       label: w.label,
-      description: w.hint,
+      description: w.note,
       badge: String(counts[i]),
-      badgeColor: counts[i] && w.alert ? "warning" : undefined,
-      href: w.href ?? dashboardPath("collections", w.slug),
+      badgeColor: counts[i] && w.tone === "warning" ? "warning" : undefined,
+      href: dashboardPath("collections", w.collection),
     }));
+    this.tours = await loadTours();
     // Bookmarks: the signed-in user's own.
     if (this.#bookmarksFor !== user.id) {
       this.#bookmarksFor = user.id;
@@ -189,7 +218,7 @@ export class DashboardAside extends LightElement {
       ],
       widgets: this.loaded ? this.widgets : loading,
       // Guided tours, with a tick once shown.
-      tours: (settings.tours ?? []).map((t) => {
+      tours: this.tours.map((t) => {
         const done = this.#tour.value.completed.includes(t.id);
         return {
           card: true,

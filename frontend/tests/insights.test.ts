@@ -2,10 +2,10 @@ import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { beforeEach, describe, expect, it } from "vite-plus/test";
 import config from "../src/cms/config.ts";
-import { Engine } from "../src/cms/runtime/engine.ts";
-import { RestApi } from "../src/cms/runtime/rest.ts";
-import { seedsFromGlob } from "../src/cms/runtime/seed.ts";
-import { MemoryStore } from "../src/cms/runtime/store.ts";
+import { Engine } from "../src/mock/runtime/engine.ts";
+import { RestApi } from "../src/mock/runtime/rest.ts";
+import { seedsFromGlob } from "../src/mock/runtime/seed.ts";
+import { MemoryStore } from "../src/mock/runtime/store.ts";
 
 /** Insights & growth: profit & close, the control room, the 07:00 briefing, Ask Golden Sea, growth CRM. */
 
@@ -125,6 +125,23 @@ describe("07:00 briefing and Ask Golden Sea", () => {
     expect(b.greeting).toBe("Good morning Karim.");
     expect(b.items.length).toBeGreaterThan(2);
     expect(b.items.every((i: { sources: unknown[] }) => i.sources.length > 0)).toBe(true);
+  });
+
+  it("Summarise re-reads the records and stamps later briefings with the new time", async () => {
+    await as("karim.balbaa");
+    const r = await call("POST", "/api/briefing/refresh");
+    expect(r.status).toBe(200);
+    expect(r.body.message).toMatch(/^Summarised again at/);
+    expect((await call("GET", "/api/briefing")).body.at).toBe(r.body.at);
+  });
+
+  it("matches a remittance to open invoices by number digits or equal balance", async () => {
+    await as("mohamed.helmy");
+    const byNumber = await call("POST", "/api/cash/match", { invoices: "0412" });
+    expect(byNumber.status).toBe(200);
+    expect(byNumber.body.message).toMatch(/INV\/2026\/0412/);
+    expect(byNumber.body.href).toMatch(/^\/collections\/invoices\//);
+    expect((await call("POST", "/api/cash/match", { invoices: "nothing", amount: 1.23 })).status).toBe(400);
   });
 
   it("answers about a vessel and cites the case", async () => {

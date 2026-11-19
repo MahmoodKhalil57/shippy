@@ -1,13 +1,14 @@
 import type { Endpoint, PayloadRequest } from "payload";
 import { idOf, logActivity } from "../collections/shared.ts";
-import type { Doc } from "../types.ts";
+import type { Doc } from "../../mock/types.ts";
 import { DEMO_NOW } from "./home.ts";
 
 /**
  * Root endpoints for: Offer comparison, pricing, quotations, approvals. Registered in ./index.ts.
  *
- * - GET  /api/commercial/cases/:id/compare         offers per line, normalised to EGP per base unit
+ * - GET  /api/commercial/cases/:id/compare         offers per line, normalised to EGP per base unit (+ correction drafts)
  * - POST /api/commercial/cases/:id/select          select an offer or a split, with a reason
+ * - POST /api/commercial/cases/:id/split           a split from a form: quantities `q0…` for `offers`
  * - POST /api/commercial/cases/:id/accept          record the customer's written acceptance (alternative pack)
  * - POST /api/commercial/cases/:id/correction      draft (and send) a correction request for a deviating offer
  * - GET  /api/commercial/cases/:id/pricing         landed cost, margin vs markup, policy checks
@@ -1486,22 +1487,92 @@ async function decide(req: PayloadRequest, id: string, decision: "Approve" | "Re
   return updated;
 }
 
+/* ---------------------------------------------------------------- correction requests */
+
+/** A correction request to a supplier whose offer has the wrong part: the AI draft, or what was sent. */
+export interface CorrectionDraft {
+  to: string;
+  subject: string;
+  body: string;
+  status: string;
+  sent: boolean;
+}
+
+function correctionDraft(ctx: Ctx, offer: Doc): CorrectionDraft {
+  const item = ctx.items.find((i) => i.lineNo === num(offer.lineNo));
+  const sup = ctx.suppliers.get(idOf(offer.supplier) ?? "");
+  const rfq = ctx.rfqs.find((r) => idOf(r.supplier) === idOf(offer.supplier));
+  const dev = ((offer.deviations as { type?: string; detail?: string }[]) ?? [])[0];
+  const corrected = ctx.offers.find((o) => idOf(o.supersedes) === offer.id);
+  return {
+    to: `${str(sup?.name)} <${str(sup?.contact).split("·")[0].trim() || "sales"}>`,
+    subject: `${str(rfq?.reference) || "Our RFQ"} — line ${num(offer.lineNo)}: please correct your offer`,
+    body: [
+      `Dear ${str(sup?.contact).split("·")[0].trim() || "colleagues"},`,
+      "",
+      `Thank you for your offer. On line ${num(offer.lineNo)} we asked for ${item?.brand ?? ""} ${item?.partNo ?? item?.description ?? ""} (exact part — no alternatives).`.replace(
+        /\s+/g,
+        " ",
+      ),
+      `Your offer: ${str(offer.offeredDescription) || "different item"}. ${dev?.detail ?? ""}`.trim(),
+      "",
+      "Please send a corrected offer for the requested part, with price, availability and lead time to Port Said.",
+      "",
+      "Best regards,",
+      str(userOf(ctx.req)?.name),
+      "Golden Sea for Trading & Marketing",
+    ].join("\n"),
+    status: corrected
+      ? `Sent 16 Nov · corrected v${num(corrected.version, 2)} received and in use`
+      : "Draft — not sent",
+    sent: Boolean(corrected),
+  };
+}
+
+/** The comparison with the correction requests of the offers that have one, by offer id. */
+export type CompareWithDrafts = Compare & { drafts: Record<string, CorrectionDraft> };
+
+function withDrafts(ctx: Ctx, c: Compare): CompareWithDrafts {
+  const drafts: Record<string, CorrectionDraft> = {};
+  for (const o of c.lines.flatMap((l) => l.offers).filter((o) => o.correctable)) {
+    const doc = ctx.offers.find((x) => x.id === o.id);
+    if (doc) drafts[o.id] = correctionDraft(ctx, doc);
+  }
+  return { ...c, drafts };
+}
+
 /* ---------------------------------------------------------------- endpoints */
 
 const caseParam = (req: PayloadRequest) => str(req.routeParams?.id);
 
 export const commercialEndpoints: Endpoint[] = [
   {
+    // The comparison, with the correction requests of offers with a wrong part (`drafts`).
     path: "/commercial/cases/:id/compare",
     method: "get",
     handler: handle(
       async (req) => {
         const ctx = await load(req, caseParam(req));
         if (!ctx) return fail(404, "Case not found.");
-        return Response.json(compare(ctx));
+        return Response.json(withDrafts(ctx, compare(ctx)));
       },
       { costs: true },
     ),
+  },
+  {
+    // A split from the Compare tab's form: quantities `q0…` for `offers`, saved as the line's selection.
+    path: "/commercial/cases/:id/split",
+    method: "post",
+    handler: async (req: PayloadRequest) => {
+      const b = await body(req);
+      const offers = Array.isArray(b.offers) ? (b.offers as string[]) : [];
+      const select = commercialEndpoints.find((e) => e.path === "/commercial/cases/:id/select")!;
+      const parts = offers.map((offer, i) => ({ offer, qty: Number(b[`q${i}`]) || 0 }));
+      return select.handler({
+        ...req,
+        json: async () => ({ lineNo: b.lineNo, parts, reason: b.reason }),
+      } as unknown as PayloadRequest);
+    },
   },
   {
     path: "/commercial/cases/:id/select",
@@ -1623,34 +1694,9 @@ export const commercialEndpoints: Endpoint[] = [
         const b = await body(req);
         const offer = ctx.offers.find((o) => o.id === str(b.offer));
         if (!offer) return fail(404, "Offer not found.");
-        const item = ctx.items.find((i) => i.lineNo === num(offer.lineNo));
         const sup = ctx.suppliers.get(idOf(offer.supplier) ?? "");
-        const rfq = ctx.rfqs.find((r) => idOf(r.supplier) === idOf(offer.supplier));
-        const dev = ((offer.deviations as { type?: string; detail?: string }[]) ?? [])[0];
         const corrected = ctx.offers.find((o) => idOf(o.supersedes) === offer.id);
-        const draft = {
-          to: `${str(sup?.name)} <${str(sup?.contact).split("·")[0].trim() || "sales"}>`,
-          subject: `${str(rfq?.reference) || "Our RFQ"} — line ${num(offer.lineNo)}: please correct your offer`,
-          body: [
-            `Dear ${str(sup?.contact).split("·")[0].trim() || "colleagues"},`,
-            "",
-            `Thank you for your offer. On line ${num(offer.lineNo)} we asked for ${item?.brand ?? ""} ${item?.partNo ?? item?.description ?? ""} (exact part — no alternatives).`.replace(
-              /\s+/g,
-              " ",
-            ),
-            `Your offer: ${str(offer.offeredDescription) || "different item"}. ${dev?.detail ?? ""}`.trim(),
-            "",
-            "Please send a corrected offer for the requested part, with price, availability and lead time to Port Said.",
-            "",
-            "Best regards,",
-            str(userOf(req)?.name),
-            "Golden Sea for Trading & Marketing",
-          ].join("\n"),
-          status: corrected
-            ? `Sent 16 Nov · corrected v${num(corrected.version, 2)} received and in use`
-            : "Draft — not sent",
-          sent: Boolean(corrected),
-        };
+        const draft = correctionDraft(ctx, offer);
         if (b.send && !corrected) {
           await update(req, "offers", offer.id, { compliance: "Awaiting corrected offer" });
           await logActivity(req, {
@@ -1936,7 +1982,15 @@ export const commercialEndpoints: Endpoint[] = [
       if (!decision) return fail(400, "Decision must be Approve or Reject.");
       const doc = await decide(req, str(req.routeParams?.id), decision, str(b.reason));
       const users = byId(await all(req, "users"));
-      return Response.json(await approvalCard(req, doc, users));
+      const c = await approvalCard(req, doc, users);
+      // `message`: what the approvals screen says once it's recorded (the action's snackbar).
+      const message =
+        c.status === "Approved"
+          ? `Approved: ${c.title}`
+          : c.status === "Rejected"
+            ? `Returned: ${c.title}`
+            : `Your approval is recorded — ${c.progress}.`;
+      return Response.json({ ...c, message });
     }),
   },
 ];

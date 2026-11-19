@@ -1,5 +1,5 @@
 import type { AgentTool, JsonSchema } from "./webmcp.ts";
-import { BUSINESS, HELPER, ORG } from "./identity.ts";
+import { business, helper, org } from "./identity.ts";
 
 /**
  * "Saastama-Micro-3.5" (id `aibrowser`): the helper on the browser's own on-device model, through Chrome's Prompt API
@@ -90,7 +90,8 @@ const CATALOGUES: ((tools: readonly AgentTool[]) => string)[] = [
 ];
 
 /** The brief for a small context (the full instructions don't fit every device). */
-const BRIEF = `You are the ${HELPER} inside the ${ORG} platform (${ORG} is ${BUSINESS}). You see and act only through tools; start with get_screen. Only state what tools return. Answer briefly.`;
+const brief = () =>
+  `You are the ${helper()} inside the ${org()} platform (${org()} is ${business()}). You see and act only through tools; start with get_screen. Only state what tools return. Answer briefly.`;
 const JSON_PROTOCOL =
   'Reply with JSON only: {"action":"tool","tool":"<name>","arguments":{...}} to use one tool (you then get its result), or {"action":"answer","answer":"<reply>"} to answer the person.';
 
@@ -153,7 +154,7 @@ export class BrowserModelChat {
     }
     const briefs = [
       `${instructions}\n\nYou use the platform through these tools:\n${CATALOGUES[0]!(tools)}\n\n${JSON_PROTOCOL}`,
-      ...CATALOGUES.slice(1).map((list) => `${BRIEF}\n${JSON_PROTOCOL}\nTools: ${list(tools)}`),
+      ...CATALOGUES.slice(1).map((list) => `${brief()}\n${JSON_PROTOCOL}\nTools: ${list(tools)}`),
     ];
     for (const [i, brief] of briefs.entries()) {
       try {

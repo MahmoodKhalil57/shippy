@@ -1,8 +1,8 @@
 import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import type { Where } from "payload";
-import { matches } from "../../../cms/runtime/query.ts";
-import type { FieldLike } from "../../../cms/types.ts";
+import { matches } from "../../../mock/runtime/query.ts";
+import type { FieldLike } from "../../../mock/types.ts";
 import type { DropdownItem } from "../../primitives/actions/dropdown.ts";
 import { LightElement } from "../../base/light-element.ts";
 import "../../primitives/actions/button.ts";

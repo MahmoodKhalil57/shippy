@@ -7,11 +7,11 @@ import { build, type Plugin, type ResolvedConfig } from "vite-plus";
  * Serves and builds the in-browser mock backend (src/cms):
  *
  * - `<base>cms-sw.js`, the Service Worker. In dev it's a tiny module that
- *   imports src/cms/sw.ts through Vite (stamped, so editing the config or
+ *   imports src/mock/sw.ts through Vite (stamped, so editing the config or
  *   runtime installs a new worker and reloads the page). In `vp build` it's
  *   bundled into one classic script next to the app.
  *
- * The build also writes the worker's offline precache (`__PRECACHE__`, see src/cms/sw.ts): every
+ * The build also writes the worker's offline precache (`__PRECACHE__`, see src/mock/sw.ts): every
  * built file, versioned by a hash of their contents; full-size background photos are cached
  * after the app has started rather than before.
  *
@@ -20,7 +20,7 @@ import { build, type Plugin, type ResolvedConfig } from "vite-plus";
  * it's installed (so static hosting works too).
  */
 
-const SW_ENTRY = "src/cms/sw.ts";
+const SW_ENTRY = "src/mock/sw.ts";
 const CMS_DIR = `${path.sep}src${path.sep}cms${path.sep}`;
 
 export default function mockBackend(): Plugin {

@@ -11,7 +11,8 @@ import {
   logActivity,
   ruleError,
 } from "./shared.ts";
-import { tones, viewEndpoint, type CollectionSettings } from "../types.ts";
+import { tones, type CollectionSettings } from "../../mock/types.ts";
+import { quotePreview } from "../widgets/quote-preview.ts";
 
 /** Customer quotations, versioned. A revision is a new document; the old version stays. */
 export const Quotations: CollectionConfig = {
@@ -26,7 +27,7 @@ export const Quotations: CollectionConfig = {
       views: {
         edit: {
           preview: {
-            Component: viewEndpoint("/views/quote-preview/:id"),
+            Component: quotePreview,
             path: "/preview",
             tab: { label: "Preview & send", href: "/preview" },
           },

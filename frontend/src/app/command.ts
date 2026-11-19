@@ -1,7 +1,7 @@
 import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { api } from "../cms/client.ts";
-import type { Doc } from "../cms/types.ts";
+import { api } from "../mock/client.ts";
+import type { Doc } from "../mock/types.ts";
 import { LightElement } from "../components/base/light-element.ts";
 import type { IconName } from "../components/primitives/media/icon.ts";
 import type { MenuItem } from "../components/primitives/navigation/menu.ts";

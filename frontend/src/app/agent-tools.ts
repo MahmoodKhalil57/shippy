@@ -1,7 +1,7 @@
 import type { Where } from "payload";
-import { api, withBase } from "../cms/client.ts";
-import { text } from "../cms/runtime/util.ts";
-import type { Doc, FieldLike } from "../cms/types.ts";
+import { api, withBase } from "../mock/client.ts";
+import { text } from "../mock/runtime/util.ts";
+import type { Doc, FieldLike } from "../mock/types.ts";
 import type { AgentTool } from "../agent/webmcp.ts";
 import { bookmarks, notifications, preferences, startTour, tour } from "../stores/index.ts";
 import { roleLabel, roleLogins } from "./demo-users.ts";
@@ -23,12 +23,16 @@ import {
   parseRoute,
   rootViews,
   componentOf,
+  dashboardView,
   settings,
   titleOf,
   toggleBookmark,
   useAsTitle,
   type Route,
 } from "./shared.ts";
+import { fill, leaves, loadSource } from "./widgets/host.ts";
+import type { Source, WidgetPage, WidgetScope } from "./widgets/widget.ts";
+import { loadGuide, loadTours, site } from "./site.ts";
 
 /**
  * The dashboard's WebMCP tools (registered by `<dashboard-app>` through src/agent/webmcp.ts): an
@@ -108,13 +112,39 @@ function describeField(f: FieldLike): Record<string, unknown> {
 }
 
 /**
- * What a custom screen shows: the `View` its endpoint returns (Payload `{ path: "app-view",
- * clientProps: { src } }`), i.e. exactly the blocks the screen draws.
+ * What a custom screen shows: for a screen of widgets (`{ path: "app-widgets", clientProps: { page } }`),
+ * each widget's title with the data it draws, loaded as the signed-in user (one request per
+ * distinct source, as on screen).
  */
-function viewSource(component: unknown, id?: string): string | undefined {
+async function widgetData(
+  component: unknown,
+  user: Doc | null,
+  doc?: { id: string; slug: string },
+): Promise<Record<string, unknown> | undefined> {
   const c = componentOf(component);
-  const src = c?.tag === "app-view" ? c.props.src : undefined;
-  return typeof src === "string" ? src.replace(":id", encodeURIComponent(id ?? "")) : undefined;
+  if (c?.tag !== "app-widgets" || !user) return undefined;
+  const page = c.props.page as WidgetPage;
+  const scope: WidgetScope = {
+    user: user as WidgetScope["user"],
+    doc,
+    params: { ...page.params, ...Object.fromEntries(new URLSearchParams(location.search)) },
+  };
+  const bySource = new Map<string, { titles: string[]; source: Source }>();
+  for (const w of leaves(page.widgets, scope)) {
+    if (!w.source) continue;
+    const source = fill(w.source, scope);
+    const key = JSON.stringify(source);
+    const entry = bySource.get(key) ?? { titles: [], source };
+    if (w.title) entry.titles.push(w.title);
+    bySource.set(key, entry);
+  }
+  const parts = await Promise.all(
+    [...bySource.values()].map(async ({ titles, source }) => ({
+      shownIn: titles.length ? titles : undefined,
+      data: trim(await loadSource(source, scope).catch((e: Error) => ({ error: e.message }))),
+    })),
+  );
+  return { widgets: parts };
 }
 
 /** One list row as the table shows it: the list columns, formatted. */
@@ -154,7 +184,7 @@ async function screenContent(route: Route, host: AgentHost): Promise<Record<stri
       return {
         kind: "dashboard",
         description: "The signed-in user's day: queue, KPIs and charts.",
-        data: await safe(api.get("/home")),
+        ...(await widgetData(dashboardView()?.Component, host.user())),
       };
     case "list": {
       const c = collectionOf(route.slug)!;
@@ -193,20 +223,25 @@ async function screenContent(route: Route, host: AgentHost): Promise<Record<stri
         id: route.id,
         tabs: [{ label: "Details", path: "" }, ...tabs.map((t) => ({ label: t.label, path: t.path }))],
         document: await safe(api.findByID(route.slug, route.id, { depth: 1 })),
-        ...(tab && tab.props.src
-          ? { tabData: await safe(api.get(viewSource({ path: tab.Component, clientProps: tab.props }, route.id)!)) }
+        ...(tab
+          ? {
+              tabData: await widgetData({ path: tab.Component, clientProps: tab.props }, host.user(), {
+                id: route.id,
+                slug: route.slug,
+              }),
+            }
           : {}),
       };
     }
     case "view": {
       const view = rootViews().find((v) => v.key === route.key);
-      const endpoint = viewSource(view?.Component);
+      const content = await widgetData(view?.Component, host.user());
       return {
         kind: "screen",
         screen: route.key,
         title: view?.meta?.title,
         description: view?.meta?.description,
-        ...(endpoint ? { data: await safe(api.get(endpoint)) } : {}),
+        ...content,
       };
     }
     case "global": {
@@ -716,7 +751,7 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
         "Ask the platform's own assistant a question about the business (a case's status, approvals, who owes money, late suppliers, pipeline, margin). It answers from the live records, as the signed-in user may see them, and cites them.",
       inputSchema: schema({ question: { type: "string" } }, ["question"]),
       annotations: READ,
-      execute: async ({ question }) => api.post<Answer>(ASK, { question: str(question) }),
+      execute: async ({ question }) => api.post<Answer>(ask(), { question: str(question) }),
     },
     {
       name: "get_my_work",
@@ -726,14 +761,25 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
       inputSchema: schema({}),
       annotations: READ,
       execute: async () => {
+        const scope: WidgetScope = { user: user as WidgetScope["user"], params: {} };
+        const items = leaves(settings.aside ?? [], scope).flatMap((w) => {
+          const spec = w.counts;
+          return spec && "items" in spec
+            ? spec.items.map((x) => ({
+                ...x,
+                collection: x.collection ?? spec.collection,
+                where: fill(x.where, scope),
+              }))
+            : [];
+        });
         const widgets = await Promise.all(
-          (settings.widgets?.({ id: user.id, role: text(user.role) }) ?? [])
-            .filter((w) => can(w.slug, "read"))
+          items
+            .filter((w) => can(w.collection, "read"))
             .map(async (w) => ({
               label: w.label,
-              count: (await api.count(w.slug, w.where as Where).catch(() => ({ totalDocs: 0 }))).totalDocs,
-              needsAttention: w.alert || undefined,
-              collection: w.slug,
+              count: (await api.count(w.collection, w.where as Where).catch(() => ({ totalDocs: 0 }))).totalDocs,
+              needsAttention: w.tone === "warning" || undefined,
+              collection: w.collection,
               where: w.where,
             })),
         );
@@ -779,7 +825,7 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
       inputSchema: schema({}),
       annotations: READ,
       execute: async () =>
-        (settings.tours ?? []).map((t) => ({
+        (await loadTours()).map((t) => ({
           id: t.id,
           title: t.title,
           summary: t.summary,
@@ -795,7 +841,7 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
         "Start a guided tour for the user (an id from list_tours). It walks them through the screens with coachmarks.",
       inputSchema: schema({ id: { type: "string" } }, ["id"]),
       execute: async ({ id }) => {
-        const t = settings.tours?.find((x) => x.id === str(id));
+        const t = (await loadTours()).find((x) => x.id === str(id));
         if (!t) throw new Error(`No tour "${str(id)}" (see list_tours).`);
         startTour(t.id);
         return { started: t.title, steps: t.steps.map((s) => s.title) };
@@ -937,9 +983,8 @@ async function findRecords(query: string, host: AgentHost, limit = 6) {
 
 /* ---------------------------------------------------------------- the platform guide */
 
-const GUIDE = settings.assistant?.guide ?? [];
-/** The project's question-answering endpoint (`admin.custom.assistant.ask`). */
-const ASK = settings.assistant?.ask ?? "/ask";
+/** The project's question-answering endpoint (the `assistant` global). */
+const ask = () => site().assistant.ask;
 /** What it answers: the reply, its key points and the records it cites. */
 interface Answer {
   answer: string;
@@ -947,15 +992,15 @@ interface Answer {
   sources: { label: string; href: string }[];
   refused?: boolean;
 }
-const ROLE_GUIDE = settings.assistant?.roles ?? {};
-
-function guideText(topic: string, roleId: string) {
+/** The platform guide (`guide-topics`) for a topic, with what the person's role does (the `assistant` global). */
+async function guideText(topic: string, roleId: string) {
+  const GUIDE = await loadGuide();
   const ranked = GUIDE.map((g) => ({
     g,
     score: Math.max(nameScore(topic, g.topic), nameScore(topic, g.keywords)),
   })).sort((a, b) => b.score - a.score);
   const picked = ranked[0] && ranked[0].score > 0 ? ranked.slice(0, 2).filter((r) => r.score > 0) : [];
-  const role = ROLE_GUIDE[roleId];
+  const role = site().assistant.roleNotes.find((r) => r.role === roleId)?.note;
   return clip(
     [
       ...(picked.length
@@ -1055,7 +1100,7 @@ function simpleTools(host: AgentHost): AgentTool[] {
       annotations: READ,
       simple: true,
       execute: async ({ question }) => {
-        const a = await api.post<Answer>(ASK, { question: str(question) });
+        const a = await api.post<Answer>(ask(), { question: str(question) });
         return clip(
           [
             a.answer,
@@ -1075,7 +1120,7 @@ function simpleTools(host: AgentHost): AgentTool[] {
       inputSchema: schema({ topic: { type: "string" } }, ["topic"]),
       annotations: READ,
       simple: true,
-      execute: async ({ topic }) => guideText(str(topic), text(user.role)),
+      execute: async ({ topic }) => await guideText(str(topic), text(user.role)),
     },
   ];
 }

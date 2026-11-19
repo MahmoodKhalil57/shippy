@@ -4,6 +4,7 @@ import { LightElement } from "../components/base/light-element.ts";
 import "../components/index.ts";
 import type { Access } from "./app.ts";
 import { config, dashboardPath, globalLabel, groupOf, labels, rootViews, settings } from "./shared.ts";
+import { site } from "./site.ts";
 
 /**
  * The default home page, for a project that doesn't set `admin.components.views.dashboard`: like
@@ -44,7 +45,7 @@ export class DashboardHome extends LightElement {
 
   render() {
     return html`<ui-flex direction="col" gap="6">
-      <ui-page-header .heading=${settings.branding?.name ?? "Dashboard"}></ui-page-header>
+      <ui-page-header .heading=${site().branding.name}></ui-page-header>
       <ui-grid fit="md" gap="4">
         ${this._groups().map(
           ([group, items]) =>

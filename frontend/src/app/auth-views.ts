@@ -1,11 +1,12 @@
 import { html, nothing } from "lit";
 import { LightElement } from "../components/base/light-element.ts";
 import { customElement, state } from "lit/decorators.js";
-import { api, ApiError } from "../cms/client.ts";
+import { api, ApiError } from "../mock/client.ts";
 import "../components/index.ts";
 import { defaultLogin, demoPassword } from "./demo-users.ts";
 import { localAiState, useLocalModel, type LocalAiState } from "../agent/ai-polyfill.ts";
-import { collectionOf, formFields, settings, toast, userSlug } from "./shared.ts";
+import { collectionOf, formFields, toast, userSlug } from "./shared.ts";
+import { site } from "./site.ts";
 
 /** Login and create-first-user. Both fire `dashboard-auth` once signed in. */
 
@@ -83,7 +84,7 @@ export class DashboardLogin extends LightElement {
     >
       <ui-flex direction="col" gap="3">
         <ui-text variant="body-md" color="muted"
-          >${settings.branding?.loginIntro ?? "A demo user is filled in; switch roles any time from the dashboard."}</ui-text
+          >${site().branding.loginIntro ?? "A demo user is filled in; switch roles any time from the dashboard."}</ui-text
         >
         ${this.error ? html`<ui-alert tone="error">${this.error}</ui-alert>` : nothing}
         <ui-text-input

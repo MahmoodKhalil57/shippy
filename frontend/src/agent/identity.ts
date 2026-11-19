@@ -1,11 +1,10 @@
-import config from "../cms/config.ts";
+import { site } from "../app/site.ts";
 
 /**
- * Who the AI features work for, from the project's settings (`admin.custom` in src/cms/config.ts):
+ * Who the AI features work for, from the project's data (the `branding` and `assistant` globals):
  * the business's name, what it does, and the in-app helper's name. Prompts say these instead of
- * naming a company.
+ * naming a company; they're read when a prompt is built, so edits apply at once.
  */
-const custom = config.admin?.custom;
-export const ORG = custom?.branding?.name ?? "the company";
-export const BUSINESS = custom?.assistant?.business ?? "a business";
-export const HELPER = custom?.assistant?.name ?? "Assistant";
+export const org = () => site().branding.name;
+export const business = () => site().assistant.business;
+export const helper = () => site().assistant.name;

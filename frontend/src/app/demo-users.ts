@@ -14,7 +14,7 @@ export interface SeedUser {
 const seeds = import.meta.glob<SeedUser[]>("../cms/seed/*.json", { eager: true, import: "default" });
 
 /** Seeded users with their passwords. */
-export const seedUsers = (seeds[`../../cms/seed/${userSlug}.json`] ?? []).filter((u) => u.email && u.password);
+export const seedUsers = (seeds[`../cms/seed/${userSlug}.json`] ?? []).filter((u) => u.email && u.password);
 
 /** A role's option label ("Sales", "Management approver"…), when the user collection has a `role` field. */
 const roleField = dataFields(fieldsOf(collectionOf(userSlug)!)).find((f) => f.name === "role");

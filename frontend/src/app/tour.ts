@@ -1,14 +1,14 @@
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { withBase } from "../cms/client.ts";
+import { withBase } from "../mock/client.ts";
 import { LightElement } from "../components/base/light-element.ts";
 import "../components/index.ts";
 import { StoreController, endTour, tour } from "../stores/index.ts";
 import { seedUsers } from "./demo-users.ts";
 import { roleLabel } from "./demo-users.ts";
 import { navigate } from "./shared.ts";
-import type { TourStep, TourTarget } from "../cms/types.ts";
-import { settings } from "./shared.ts";
+import type { Tour, TourStep, TourTarget } from "../mock/types.ts";
+import { loadTours } from "./site.ts";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -58,6 +58,8 @@ export class DashboardTour extends LightElement {
   /** Bumped per step, so a slow step that's been skipped doesn't spotlight anything. */
   #run = 0;
   #shown = "";
+  /** The tours (`tours` collection), loaded when one starts. */
+  @state() private tours: Tour[] = [];
 
   protected updated() {
     const { active, step } = this.#tour.value;
@@ -70,10 +72,11 @@ export class DashboardTour extends LightElement {
   }
 
   private get _tour() {
-    return settings.tours?.find((t) => t.id === this.#tour.value.active);
+    return this.tours.find((t) => t.id === this.#tour.value.active);
   }
 
   private async _play(index: number) {
+    if (!this._tour) this.tours = await loadTours();
     const step = this._tour?.steps[index];
     if (!step) return;
     const run = ++this.#run;

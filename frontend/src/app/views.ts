@@ -1,12 +1,11 @@
-import type { Doc } from "../cms/types.ts";
+import type { Doc } from "../mock/types.ts";
 import type { Access } from "./app.ts";
 
 /**
  * Custom views (Payload `admin.components.views`): the element named by the config's `Component`,
- * usually `app-view` drawing a view endpoint (src/app/view). Project elements register themselves
- * from src/cms/components.
+ * usually `app-widgets` drawing a screen of widgets (src/app/widgets).
  */
-import "./view/view.ts";
+import "./widgets/host.ts";
 
 /** What every custom view receives. Edit tabs also get the document's collection and id. */
 export interface ViewProps {

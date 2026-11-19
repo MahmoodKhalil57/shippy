@@ -2,10 +2,10 @@ import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { beforeEach, describe, expect, it } from "vite-plus/test";
 import config from "../src/cms/config.ts";
-import { Engine } from "../src/cms/runtime/engine.ts";
-import { RestApi } from "../src/cms/runtime/rest.ts";
-import { seedsFromGlob } from "../src/cms/runtime/seed.ts";
-import { MemoryStore } from "../src/cms/runtime/store.ts";
+import { Engine } from "../src/mock/runtime/engine.ts";
+import { RestApi } from "../src/mock/runtime/rest.ts";
+import { seedsFromGlob } from "../src/mock/runtime/seed.ts";
+import { MemoryStore } from "../src/mock/runtime/store.ts";
 
 /** Order-to-cash endpoints (src/cms/endpoints/operations.ts): PO check, purchasing, delivery, invoicing, cash. */
 

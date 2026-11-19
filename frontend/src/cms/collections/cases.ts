@@ -1,5 +1,6 @@
 import type { CollectionConfig } from "payload";
-import { tones, viewEndpoint, type CollectionSettings } from "../types.ts";
+import { tones, type CollectionSettings } from "../../mock/types.ts";
+import { widgets } from "../../app/widgets/widget.ts";
 import {
   CASE_TYPES,
   CURRENCIES,
@@ -11,6 +12,13 @@ import {
   costVisible,
   logActivity,
 } from "./shared.ts";
+import { caseDelivery } from "../widgets/case-delivery.ts";
+import { caseOrder } from "../widgets/case-order.ts";
+import { caseOverview } from "../widgets/case-overview.ts";
+import { caseRfqs } from "../widgets/case-rfqs.ts";
+import { caseCompare } from "../widgets/case-compare.ts";
+import { casePricing } from "../widgets/case-pricing.ts";
+import { caseProfit } from "../widgets/case-profit.ts";
 
 export const STAGES = [
   "New",
@@ -70,44 +78,44 @@ export const Cases: CollectionConfig = {
     group: "Sourcing desk",
     description: "Client RFQs and everything that follows: supplier RFQs, quotes, POs, delivery and payment.",
     // The case workspace: one tab per step from first email to last payment (Payload custom
-    // edit views drawn from view endpoints in src/cms/views).
-    // Counts by what each case is waiting for, above the list (src/cms/views/summary.ts).
+    // edit views, each a screen of widgets in src/cms/widgets).
+    // Counts by what each case is waiting for, above the list, each opening the filtered list.
     components: {
-      beforeList: [viewEndpoint("/views/summary/cases/wait")],
+      beforeList: [widgets({ widgets: [{ counts: { collection: "cases", field: "wait" } }] })],
       views: {
         edit: {
           overview: {
-            Component: viewEndpoint("/views/case-overview/:id"),
+            Component: caseOverview,
             path: "/overview",
             tab: { label: "Overview", href: "/overview" },
           },
           rfqs: {
-            Component: viewEndpoint("/views/case-rfqs/:id"),
+            Component: caseRfqs,
             path: "/rfqs",
             tab: { label: "Supplier RFQs", href: "/rfqs" },
           },
           compare: {
-            Component: viewEndpoint("/views/case-compare/:id"),
+            Component: caseCompare,
             path: "/compare",
             tab: { label: "Compare offers", href: "/compare" },
           },
           pricing: {
-            Component: viewEndpoint("/views/case-pricing/:id"),
+            Component: casePricing,
             path: "/pricing",
             tab: { label: "Pricing", href: "/pricing" },
           },
           order: {
-            Component: viewEndpoint("/views/case-order/:id"),
+            Component: caseOrder,
             path: "/order",
             tab: { label: "Order & purchasing", href: "/order" },
           },
           delivery: {
-            Component: viewEndpoint("/views/case-delivery/:id"),
+            Component: caseDelivery,
             path: "/delivery",
             tab: { label: "Delivery & billing", href: "/delivery" },
           },
           profit: {
-            Component: viewEndpoint("/views/case-profit/:id"),
+            Component: caseProfit,
             path: "/profit",
             tab: { label: "Profit & close", href: "/profit" },
           },

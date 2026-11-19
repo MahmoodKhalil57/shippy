@@ -2,12 +2,12 @@ import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { beforeEach, describe, expect, it } from "vite-plus/test";
 import config from "../src/cms/config.ts";
-import { Engine } from "../src/cms/runtime/engine.ts";
-import { matches, sortDocs } from "../src/cms/runtime/query.ts";
-import { RestApi } from "../src/cms/runtime/rest.ts";
-import { seedsFromGlob } from "../src/cms/runtime/seed.ts";
-import { MemoryStore } from "../src/cms/runtime/store.ts";
-import type { MockConfig } from "../src/cms/types.ts";
+import { Engine } from "../src/mock/runtime/engine.ts";
+import { matches, sortDocs } from "../src/mock/runtime/query.ts";
+import { RestApi } from "../src/mock/runtime/rest.ts";
+import { seedsFromGlob } from "../src/mock/runtime/seed.ts";
+import { MemoryStore } from "../src/mock/runtime/store.ts";
+import type { MockConfig } from "../src/mock/types.ts";
 import type { Where } from "payload";
 
 /** The mock backend, exercised through its REST API like the Service Worker serves it. */
@@ -311,8 +311,8 @@ describe("config", () => {
   it("is a real Payload config", () => {
     const c: MockConfig = config;
     expect(c.collections.map((x) => x.slug).slice(0, 5)).toEqual(["cases", "customers", "suppliers", "users", "media"]);
-    expect(c.collections).toHaveLength(30);
-    expect(c.globals).toHaveLength(8);
+    expect(c.collections).toHaveLength(32);
+    expect(c.globals).toHaveLength(10);
   });
 });
 

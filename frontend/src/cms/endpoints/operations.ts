@@ -1,6 +1,6 @@
 import type { Endpoint, PayloadRequest } from "payload";
 import { idOf, logActivity } from "../collections/shared.ts";
-import type { Doc } from "../types.ts";
+import type { Doc } from "../../mock/types.ts";
 import { DEMO_NOW } from "./home.ts";
 
 /**
@@ -11,7 +11,7 @@ import { DEMO_NOW } from "./home.ts";
  *
  * Everything an AI or an integration does here is a deterministic stub: the PO "reading", the
  * supplier re-check, the agent's ETA email, the tax authority's answer and the collection draft.
- * People confirm every write in the dashboard (the views in src/cms/views/case-order.ts,
+ * People confirm every write in the dashboard (the widgets in src/cms/widgets/case-order.ts,
  * case-delivery.ts, cash.ts). Sales never receives supplier costs or payables.
  */
 
@@ -1421,7 +1421,7 @@ async function collectionDraft(req: PayloadRequest) {
   return collectionDraftFor(req, str((await body(req)).invoice));
 }
 
-/** The reminder draft for one invoice (also drawn by the cash view, src/cms/views/cash.ts). */
+/** The reminder draft for one invoice (also behind the cash page's reminders, ./cash.ts). */
 export async function collectionDraftFor(req: PayloadRequest, invoice: string) {
   if (!req.user) return fail("Sign in first.", 401);
   const inv = await byId(req, "invoices", invoice);
