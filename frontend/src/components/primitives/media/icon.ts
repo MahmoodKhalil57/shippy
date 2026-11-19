@@ -45,7 +45,11 @@ import iCompass from "~icons/line-md/compass";
 import iSparkles from "~icons/material-symbols-light/stars";
 import iShield from "~icons/line-md/security";
 import iChat from "~icons/material-symbols-light/forum-outline";
-import iSend from "~icons/material-symbols-light/send-outline";
+import iSend from "~icons/material-symbols-light/send-rounded";
+import iAssistant from "~icons/material-symbols-light/smart-toy-outline";
+import iCloud from "~icons/material-symbols-light/cloud-outline";
+import iDevice from "~icons/material-symbols-light/computer-outline";
+import iUnfold from "~icons/material-symbols-light/unfold-more";
 import iUpload from "~icons/material-symbols-light/upload";
 import iPrint from "~icons/material-symbols-light/print-outline";
 import iTranslate from "~icons/material-symbols-light/translate";
@@ -158,6 +162,10 @@ export const ICONS = {
   shield: iShield,
   chat: iChat,
   send: iSend,
+  assistant: iAssistant,
+  cloud: iCloud,
+  device: iDevice,
+  unfold: iUnfold,
   upload: iUpload,
   print: iPrint,
   translate: iTranslate,

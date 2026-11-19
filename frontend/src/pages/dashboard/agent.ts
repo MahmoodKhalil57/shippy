@@ -2,6 +2,7 @@ import { html, nothing } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { CODEX_MODELS, CodexConversation, codexConfig, type CodexEvent } from "../../agent/codex.ts";
 import type { AgentTool } from "../../agent/webmcp.ts";
+import type { MenuItem } from "../../components/primitives/navigation/menu.ts";
 import { LightElement } from "../../components/base/light-element.ts";
 import "../../components/index.ts";
 
@@ -174,6 +175,52 @@ export class DashboardAgent extends LightElement {
     }`;
   }
 
+  /**
+   * The model, as a small chip (its icon and name) that opens a menu: the OpenAI models, and the
+   * browser's own on-device one. Opens upward, out of the panel (a popover isn't clipped by it).
+   */
+  private _modelPicker() {
+    const current = CODEX_MODELS.find((m) => m.id === this.model) ?? CODEX_MODELS[0];
+    const onDevice = (id: string) => id === "aibrowser";
+    const item = (m: (typeof CODEX_MODELS)[number]): MenuItem => ({
+      label: m.label,
+      icon: html`<ui-icon name=${onDevice(m.id) ? "device" : "cloud"} size="sm"></ui-icon>`,
+      active: m.id === this.model,
+      value: m.id,
+      ...(onDevice(m.id) ? { card: true, description: "Chrome's built-in model · private, no key" } : {}),
+    });
+    const items: MenuItem[] = [
+      { heading: true, label: "OpenAI · API key", children: CODEX_MODELS.filter((m) => !onDevice(m.id)).map(item) },
+      { heading: true, label: "On this device", children: CODEX_MODELS.filter((m) => onDevice(m.id)).map(item) },
+    ];
+    return html`<ui-dropdown
+      mode="popover"
+      side="top"
+      align="start"
+      panel="card"
+      panel-width="64"
+      panel-shadow="lg"
+      trigger-variant="ghost"
+      trigger-size="xs"
+      trigger-spaced="false"
+      .label=${`Model: ${current.label}`}
+    >
+      <ui-flex slot="trigger" gap="1" align="center">
+        <ui-icon name=${onDevice(current.id) ? "device" : "cloud"} size="sm"></ui-icon>
+        <ui-text as="span" size="xs" weight="semibold">${current.label}</ui-text>
+        <ui-icon name="unfold" size="sm"></ui-icon>
+      </ui-flex>
+      <ui-menu
+        width="full"
+        surface="false"
+        .items=${items}
+        @ui-select=${(e: CustomEvent<{ item: MenuItem }>) => {
+          if (typeof e.detail.item.value === "string" && !this.busy) this._pickModel(e.detail.item.value);
+        }}
+      ></ui-menu>
+    </ui-dropdown>`;
+  }
+
   render() {
     return html`<ui-fab
       panel
@@ -182,7 +229,7 @@ export class DashboardAgent extends LightElement {
       trigger-label="Open the Golden Sea helper"
       @ui-toggle=${(e: CustomEvent<{ open: boolean }>) => (this.open = e.detail.open)}
     >
-      <ui-icon slot="trigger" name="sparkles"></ui-icon>
+      <ui-icon slot="trigger" name="assistant" size="lg"></ui-icon>
       ${this._body()}
       <ui-flex slot="footer" direction="col" gap="2">
         <ui-flex gap="2" align="center">
@@ -201,21 +248,13 @@ export class DashboardAgent extends LightElement {
           ${
             this.busy
               ? html`<ui-button size="sm" variant="ghost" @click=${() => this._stop()}>Stop</ui-button>`
-              : html`<ui-button size="sm" color="primary" label="Send" @click=${() => void this._send()}
-                  ><ui-icon name="send" size="sm"></ui-icon
+              : html`<ui-button size="sm" shape="square" color="primary" label="Send" @click=${() => void this._send()}
+                  ><ui-icon name="send" size="md"></ui-icon
                 ></ui-button>`
           }
         </ui-flex>
         <ui-flex gap="2" align="center" justify="between">
-          <ui-select
-            size="xs"
-            width="auto"
-            leading="Model"
-            .options=${CODEX_MODELS.map((m) => ({ label: m.label, value: m.id }))}
-            .value=${this.model}
-            ?disabled=${this.busy}
-            @change=${(e: Event) => this._pickModel((e.target as HTMLSelectElement).value)}
-          ></ui-select>
+          ${this._modelPicker()}
           ${
             this.lines.length && !this.busy
               ? html`<ui-button size="xs" variant="ghost" @click=${() => this._restart()}>New chat</ui-button>`
