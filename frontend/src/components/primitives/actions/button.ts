@@ -57,7 +57,7 @@ export const button = rcva(
          * has less than 13rem, it shrinks to an icon-only circle at the start (beside the brand) — no screen breakpoint.
          */
         field:
-          "btn-ghost liquid-glass-clear h-11 w-full max-w-xl justify-start gap-2 rounded-full border-transparent px-4 font-normal text-base-content/75 hover:bg-base-100/60 hover:text-base-content [&>ui-kbd>span]:ms-auto @max-[13rem]:me-auto @max-[13rem]:size-10 @max-[13rem]:justify-center @max-[13rem]:px-0 @max-[13rem]:[&>ui-kbd]:hidden @max-[13rem]:[&>ui-text]:hidden",
+          "btn-ghost liquid-glass-clear h-11 w-full max-w-xl justify-start gap-2 rounded-full border-transparent px-4 font-normal text-on-surface-variant hover:bg-surface/60 hover:text-on-surface [&>ui-kbd>span]:ms-auto @max-[13rem]:me-auto @max-[13rem]:size-10 @max-[13rem]:justify-center @max-[13rem]:px-0 @max-[13rem]:[&>ui-kbd]:hidden @max-[13rem]:[&>ui-text]:hidden",
       },
       size: {
         xs: "btn-xs",

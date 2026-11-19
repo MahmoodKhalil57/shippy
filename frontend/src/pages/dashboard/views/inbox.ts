@@ -250,8 +250,8 @@ export class GsInbox extends LightElement {
   private _header() {
     return html`<ui-flex justify="between" align="end" gap="4" wrap>
       <ui-flex direction="col" gap="1" shrink>
-        <ui-text size="xs" color="muted" weight="medium" uppercase>Sourcing desk · intake</ui-text>
-        <ui-heading level="1" size="page">Inbox</ui-heading>
+        <ui-text variant="label-md" color="muted" uppercase>Sourcing desk · intake</ui-text>
+        <ui-heading level="1" variant="page">Inbox</ui-heading>
         <ui-text color="muted"
           >Every channel in one inbox. AI reads emails, files and photos into a draft case; people decide.</ui-text
         >
@@ -290,7 +290,7 @@ export class GsInbox extends LightElement {
             >`,
         )}
       </ui-flex>
-      <ui-text size="xs" color="muted"
+      <ui-text variant="body-sm" color="muted"
         >Processed today: ${d.stats.processedToday} · duplicates suppressed: ${d.stats.duplicates} · waiting for a
         person: ${d.stats.review}</ui-text
       >
@@ -336,10 +336,10 @@ export class GsInbox extends LightElement {
         active: m.id === this.selected,
         label: html`<ui-flex direction="col" gap="1" full-width shrink>
           <ui-flex justify="between" gap="2" full-width>
-            <ui-text size="sm" weight="semibold" truncate>${m.fromName || m.from}</ui-text>
-            <ui-text size="xs" color="muted">${when(m.receivedAt)}</ui-text>
+            <ui-text variant="title-sm" truncate>${m.fromName || m.from}</ui-text>
+            <ui-text variant="body-sm" color="muted">${when(m.receivedAt)}</ui-text>
           </ui-flex>
-          <ui-text size="sm" truncate>${m.subject}</ui-text>
+          <ui-text variant="body-md" truncate>${m.subject}</ui-text>
           <ui-flex gap="1" wrap>
             <ui-badge size="xs" variant="soft" .color=${tone}>${label}</ui-badge>
             <ui-badge size="xs" variant="ghost"
@@ -401,7 +401,7 @@ export class GsInbox extends LightElement {
               .items=${items}
               @ui-select=${(e: CustomEvent<{ item: MenuItem }>) => this._select(String(e.detail.item.value))}
             ></ui-menu>`
-          : html`<ui-text size="sm" color="muted">Nothing here.</ui-text>`
+          : html`<ui-text variant="body-md" color="muted">Nothing here.</ui-text>`
       }
     </ui-card>`;
   }
@@ -414,7 +414,7 @@ export class GsInbox extends LightElement {
           >${queue.length}</ui-badge
         ></ui-flex
       >
-      <ui-text size="xs" color="muted"
+      <ui-text variant="body-sm" color="muted"
         >Matches below 85% confidence are never linked automatically — a person picks the case.</ui-text
       >
       ${
@@ -428,14 +428,14 @@ export class GsInbox extends LightElement {
                       <ui-button size="xs" variant="link" justify="start" @click=${() => this._select(m.id)}
                         >${m.subject}</ui-button
                       >
-                      <ui-text size="xs" color="muted" truncate
+                      <ui-text variant="body-sm" color="muted" truncate
                         >${m.fromName} · ${m.match ? pct(m.match.confidence) : "no match"}</ui-text
                       >
                     </ui-flex>
                   </ui-flex>`,
               )}
             </ui-flex>`
-          : html`<ui-text size="sm" color="muted">Nothing waiting — every reply is matched.</ui-text>`
+          : html`<ui-text variant="body-md" color="muted">Nothing waiting — every reply is matched.</ui-text>`
       }
     </ui-card>`;
   }
@@ -449,9 +449,11 @@ export class GsInbox extends LightElement {
       <ui-mockup-window variant="bordered">
         <ui-flex direction="col" gap="3" padding="4">
           <ui-flex direction="col" gap="1">
-            <ui-text size="xs" color="muted"><strong>From</strong> ${m.fromName} &lt;${m.from}&gt;</ui-text>
-            <ui-text size="xs" color="muted"><strong>Via</strong> ${channelLabel(m)} · ${full(m.receivedAt)}</ui-text>
-            <ui-text size="sm" weight="semibold">${m.subject}</ui-text>
+            <ui-text variant="body-sm" color="muted"><strong>From</strong> ${m.fromName} &lt;${m.from}&gt;</ui-text>
+            <ui-text variant="body-sm" color="muted"
+              ><strong>Via</strong> ${channelLabel(m)} · ${full(m.receivedAt)}</ui-text
+            >
+            <ui-text variant="title-sm">${m.subject}</ui-text>
           </ui-flex>
           <ui-divider></ui-divider>
           ${
@@ -490,7 +492,7 @@ export class GsInbox extends LightElement {
                     .fields=${OFFER_FIELDS}
                   ></ui-ai-extract>
                   <ui-ai-replies .text=${m.body}></ui-ai-replies>`
-              : html`<ui-text size="sm" color="muted">(no text)</ui-text>`
+              : html`<ui-text variant="body-md" color="muted">(no text)</ui-text>`
           }
           ${
             m.files.length
@@ -508,7 +510,7 @@ export class GsInbox extends LightElement {
           <ui-ai-read-file></ui-ai-read-file>
         </ui-flex>
       </ui-mockup-window>
-      <ui-text size="xs" color="muted"
+      <ui-text variant="body-sm" color="muted"
         >Message id ${m.messageId} · re-processing the same message never creates a second case or
         acknowledgement.</ui-text
       >
@@ -519,7 +521,7 @@ export class GsInbox extends LightElement {
     return html`<ui-card variant="border" shadow="false" heading="AI is reading">
       <ui-flex gap="3" align="center">
         <ui-loading variant="dots" size="md" color="primary" label="Reading"></ui-loading>
-        <ui-text size="sm"
+        <ui-text variant="body-md"
           >Reading the email${m.files.length ? ` and ${m.files.length} attachment${m.files.length > 1 ? "s" : ""}` : ""}
           (${m.files.map((f) => f.kind).join(", ") || "text"})…</ui-text
         >
@@ -531,7 +533,7 @@ export class GsInbox extends LightElement {
   private _extractPrompt(m: InboxMessage) {
     if (this.busy === "extract") return this._reading(m);
     return html`<ui-card variant="dash" shadow="false" heading="Read it into a draft case">
-      <ui-text size="sm" color="muted"
+      <ui-text variant="body-md" color="muted"
         >The AI reads the email${m.files.length ? " and every attachment (Excel, PDF, Word, photos)" : ""} into a draft:
         customer, vessel, IMO, port, ETA, deadline and lines with IMPA / ISSA, part numbers and a confidence for every
         value. Nothing is created until you confirm.</ui-text
@@ -556,19 +558,19 @@ export class GsInbox extends LightElement {
           >${x.newCustomer ? html`<ui-badge size="sm" color="accent" variant="soft">New customer</ui-badge>` : nothing}</ui-flex
         >
       </ui-flex>
-      <ui-text size="xs" color="muted">Low-confidence values are never applied without a person checking them.</ui-text>
+      <ui-text variant="body-sm" color="muted"
+        >Low-confidence values are never applied without a person checking them.</ui-text
+      >
       <ui-grid fit="xs" gap="3">
         ${x.header.map(
           (f) =>
             html`<ui-box border rounded="box" padding="3" .surface=${f.confidence < 0.6 ? "base-200" : "base-100"}>
               <ui-flex direction="col" gap="1">
                 <ui-flex justify="between" align="center" gap="2">
-                  <ui-text size="xs" color="muted" uppercase>${f.field}</ui-text>
+                  <ui-text variant="body-sm" color="muted" uppercase>${f.field}</ui-text>
                   ${this._conf(f.confidence)}
                 </ui-flex>
-                <ui-text size="sm" weight="medium" .color=${f.confidence < 0.6 ? "error" : undefined}
-                  >${f.value}</ui-text
-                >
+                <ui-text variant="label-lg" .color=${f.confidence < 0.6 ? "error" : undefined}>${f.value}</ui-text>
               </ui-flex>
             </ui-box>`,
         )}
@@ -585,10 +587,10 @@ export class GsInbox extends LightElement {
         label: "Item",
         render: (l) =>
           html`<ui-flex direction="col" gap="0">
-            <ui-text size="sm" weight="medium">${l.description}</ui-text>
-            <ui-text size="xs" color="muted">“${l.originalText}”</ui-text>
-            ${l.brandRule !== "Any" ? html`<ui-text size="xs" color="accent">${l.brandRule}${l.brand ? ` · ${l.brand}` : ""}</ui-text>` : nothing}
-            ${l.flag ? html`<ui-text size="xs" color="warning">⚑ ${l.flag}</ui-text>` : nothing}
+            <ui-text variant="label-lg">${l.description}</ui-text>
+            <ui-text variant="body-sm" color="muted">“${l.originalText}”</ui-text>
+            ${l.brandRule !== "Any" ? html`<ui-text variant="body-sm" color="accent">${l.brandRule}${l.brand ? ` · ${l.brand}` : ""}</ui-text>` : nothing}
+            ${l.flag ? html`<ui-text variant="body-sm" color="warning">⚑ ${l.flag}</ui-text>` : nothing}
           </ui-flex>`,
       },
       {
@@ -596,12 +598,16 @@ export class GsInbox extends LightElement {
         label: "IMPA · ISSA",
         render: (l) =>
           html`<ui-flex direction="col" gap="0"
-            ><ui-text size="xs" mono>${l.impa || "—"}</ui-text
-            ><ui-text size="xs" mono color="muted">${l.issa || "—"}</ui-text></ui-flex
+            ><ui-text variant="body-sm" mono>${l.impa || "—"}</ui-text
+            ><ui-text variant="body-sm" mono color="muted">${l.issa || "—"}</ui-text></ui-flex
           >`,
       },
-      { key: "partNo", label: "Part no.", render: (l) => html`<ui-text size="xs" mono>${l.partNo || "—"}</ui-text>` },
-      { key: "qty", label: "Qty", render: (l) => html`<ui-text size="sm" weight="medium">${l.qty}</ui-text>` },
+      {
+        key: "partNo",
+        label: "Part no.",
+        render: (l) => html`<ui-text variant="body-sm" mono>${l.partNo || "—"}</ui-text>`,
+      },
+      { key: "qty", label: "Qty", render: (l) => html`<ui-text variant="label-lg">${l.qty}</ui-text>` },
       { key: "unit", label: "Unit" },
       {
         key: "source",
@@ -614,7 +620,7 @@ export class GsInbox extends LightElement {
         label: "Confidence",
         render: (l) =>
           html`<ui-flex direction="col" gap="1" align="start"
-            >${this._conf(l.confidence)}${l.confidence < 0.8 ? html`<ui-text size="xs" color="warning">Check against the original</ui-text>` : nothing}</ui-flex
+            >${this._conf(l.confidence)}${l.confidence < 0.8 ? html`<ui-text variant="body-sm" color="warning">Check against the original</ui-text>` : nothing}</ui-flex
           >`,
       },
     ];
@@ -638,14 +644,14 @@ export class GsInbox extends LightElement {
       <ui-alert color="warning" variant="soft">${x.missing.join(" · ")}</ui-alert>
       ${
         x.clarification
-          ? html`<ui-text size="sm" weight="medium">Clarification request — drafted, not sent</ui-text>
+          ? html`<ui-text variant="label-lg">Clarification request — drafted, not sent</ui-text>
               <ui-mockup-window variant="bordered">
                 <ui-flex direction="col" gap="2" padding="4">
                   ${x.clarification
                     .split(/\n{2,}/)
                     .map(
                       (p) =>
-                        html`<ui-text size="sm"
+                        html`<ui-text variant="body-md"
                           >${p.split("\n").map((l, i) => html`${i ? html`<br />` : nothing}${l}`)}</ui-text
                         >`,
                     )}
@@ -661,7 +667,7 @@ export class GsInbox extends LightElement {
     const backup = this.backup[m.id] ?? x.assignment.backup;
     const locked = Boolean(m.createdCase);
     return html`<ui-card variant="border" shadow="false" heading="Owner, backup and deadline">
-      <ui-text size="xs" color="muted">Suggested by the assignment rules: ${x.assignment.rule}.</ui-text>
+      <ui-text variant="body-sm" color="muted">Suggested by the assignment rules: ${x.assignment.rule}.</ui-text>
       <ui-grid fit="xs" gap="3">
         <ui-select
           legend="Owner"
@@ -682,9 +688,9 @@ export class GsInbox extends LightElement {
           @change=${(e: Event) => (this.backup = { ...this.backup, [m.id]: (e.target as HTMLSelectElement).value })}
         ></ui-select>
         <ui-flex direction="col" gap="1">
-          <ui-text size="sm" weight="medium">Quote deadline</ui-text>
-          <ui-text size="sm">${full(x.assignment.deadline)}</ui-text>
-          <ui-text size="xs" color="muted">A reminder is scheduled before it.</ui-text>
+          <ui-text variant="label-lg">Quote deadline</ui-text>
+          <ui-text variant="body-md">${full(x.assignment.deadline)}</ui-text>
+          <ui-text variant="body-sm" color="muted">A reminder is scheduled before it.</ui-text>
         </ui-flex>
       </ui-grid>
     </ui-card>`;
@@ -701,12 +707,12 @@ export class GsInbox extends LightElement {
       </ui-flex>
       <ui-mockup-window variant="filled">
         <ui-flex direction="col" gap="2" padding="4">
-          <ui-text size="xs" weight="bold" color="primary" uppercase>Golden Sea for Trading & Marketing</ui-text>
-          <ui-text size="sm" weight="semibold">${a.subject}</ui-text>
+          <ui-text variant="label-md" emphasized color="primary" uppercase>Golden Sea for Trading & Marketing</ui-text>
+          <ui-text variant="title-sm">${a.subject}</ui-text>
           <ui-ai-text .text=${a.body} translatable></ui-ai-text>
         </ui-flex>
       </ui-mockup-window>
-      <ui-text size="xs" color="muted"
+      <ui-text variant="body-sm" color="muted"
         >Template: ${a.template}.
         ${a.manual ? "WhatsApp / form source: the owner sends it — the system never messages the customer by itself here." : "Sent once from the approved template — never twice, even if the email is re-processed."}</ui-text
       >
@@ -728,7 +734,7 @@ export class GsInbox extends LightElement {
     const owner =
       this.users.find((u) => u.value === (this.owner[m.id] ?? x.assignment.owner))?.label ?? x.assignment.ownerName;
     return html`<ui-card variant="border" shadow="false" heading="Create the case">
-        <ui-text size="sm"
+        <ui-text variant="body-md"
           >${x.caseType === "service" ? "Service case" : "RFQ case"} for <strong>${x.customerName}</strong> with
           ${x.lines.length}
           line${x.lines.length === 1 ? "" : "s"}${flagged ? ` (${flagged} flagged for clarification)` : ""}, owner
@@ -747,13 +753,13 @@ export class GsInbox extends LightElement {
       </ui-card>
       <ui-modal heading="Create this case?" .open=${this.confirming} @ui-close=${() => (this.confirming = false)}>
         <ui-flex direction="col" gap="2">
-          <ui-text size="sm"
+          <ui-text variant="body-md"
             >Creates a ${x.caseType === "service" ? "service" : "RFQ"} case for
             <strong>${x.customerName}</strong> ${x.newCustomer ? "(new customer record)" : ""} with ${x.lines.length}
             line${x.lines.length === 1 ? "" : "s"} exactly as drafted, owner <strong>${owner}</strong>, deadline
             ${full(x.assignment.deadline)}.</ui-text
           >
-          <ui-text size="sm"
+          <ui-text variant="body-md"
             >${x.acknowledgement.manual ? "The acknowledgement is yours to send by hand." : "The acknowledgement is sent once, from the approved template."}
             ${flagged ? " Flagged lines stay “Clarification needed” until the customer answers." : ""}</ui-text
           >
@@ -774,11 +780,11 @@ export class GsInbox extends LightElement {
           this.busy === "match"
             ? html`<ui-flex gap="3" align="center"
                 ><ui-loading variant="dots" color="primary"></ui-loading
-                ><ui-text size="sm"
+                ><ui-text variant="body-md"
                   >Looking for a reference, the thread, identical files and the sender…</ui-text
                 ></ui-flex
               >`
-            : html`<ui-text size="sm" color="muted"
+            : html`<ui-text variant="body-md" color="muted"
                 >Replies are matched by their supplier-RFQ reference even when the subject changes; forwards by their
                 files. Below 85% a person decides.</ui-text
               >`
@@ -810,8 +816,8 @@ export class GsInbox extends LightElement {
             (c) =>
               html`<ui-flex justify="between" align="center" gap="2" wrap>
                 <ui-flex direction="col" gap="0" shrink>
-                  <ui-text size="sm" weight="medium">${c.caseId} ${this._conf(c.confidence)}</ui-text>
-                  <ui-text size="xs" color="muted">${c.reason}</ui-text>
+                  <ui-text variant="label-lg">${c.caseId} ${this._conf(c.confidence)}</ui-text>
+                  <ui-text variant="body-sm" color="muted">${c.reason}</ui-text>
                 </ui-flex>
                 <ui-button
                   size="sm"
@@ -869,7 +875,7 @@ export class GsInbox extends LightElement {
   private _detail(m: InboxMessage | undefined) {
     if (!m)
       return html`<ui-card variant="border" shadow="false" heading="No message selected"
-        ><ui-text size="sm" color="muted">Pick a message on the left.</ui-text></ui-card
+        ><ui-text variant="body-md" color="muted">Pick a message on the left.</ui-text></ui-card
       >`;
     const x = this.extracted[m.id];
     const dup = this.duplicate[m.id];

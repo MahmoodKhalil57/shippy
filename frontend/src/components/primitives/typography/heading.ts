@@ -9,42 +9,34 @@ import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts
  *
  * Purpose: Typography · Kind: primitive (Shippy, not daisyUI)
  *
- * `level` sets the element (document outline); `size` sets the look and
- * defaults per level. Every variant is responsive, e.g. `size="2xl md:4xl"`.
+ * `level` sets the element (document outline); `variant` sets the look, a role from the type
+ * scale (src/styles/theme.css), and defaults per level: 1 headline-lg, 2 headline-sm, 3 title-lg,
+ * 4 title-md, 5 title-sm, 6 label-lg. `page` is the page title: fluid between headline-sm and
+ * headline-lg with the panel's width, emphasized (Apple's large title). `emphasized` makes any
+ * role one weight heavier. Every variant is responsive, e.g. `variant="title-lg md:headline-sm"`.
  *
  * Variant options are written out inline (not shared constants) so the CSS
  * plugin can read them for responsive values.
  */
 export const heading = rcva("", {
   variants: {
-    size: {
-      /** Page title: 1.5rem → 1.875rem as the space it sits in grows (container units). */
-      page: "text-[clamp(1.5rem,1.2rem_+_1.6cqi,1.875rem)] leading-tight",
-      xs: "text-xs",
-      sm: "text-sm",
-      base: "text-base",
-      lg: "text-lg",
-      xl: "text-xl",
-      "2xl": "text-2xl",
-      "3xl": "text-3xl",
-      "4xl": "text-4xl",
-      "5xl": "text-5xl",
-      "6xl": "text-6xl",
-      "7xl": "text-7xl",
-      "8xl": "text-8xl",
-      "9xl": "text-9xl",
-    },
-    weight: {
-      normal: "font-normal",
-      medium: "font-medium",
-      semibold: "font-semibold",
-      bold: "font-bold",
-      extrabold: "font-extrabold",
-      black: "font-black",
+    variant: {
+      /** Page title: headline-sm → headline-lg as the space it sits in grows (container units). */
+      page: "text-page-title",
+      "display-lg": "text-display-lg",
+      "display-md": "text-display-md",
+      "display-sm": "text-display-sm",
+      "headline-lg": "text-headline-lg",
+      "headline-md": "text-headline-md",
+      "headline-sm": "text-headline-sm",
+      "title-lg": "text-title-lg",
+      "title-md": "text-title-md",
+      "title-sm": "text-title-sm",
+      "label-lg": "text-label-lg",
     },
     color: {
-      "base-content": "text-base-content",
-      muted: "text-base-content/80",
+      "base-content": "text-on-surface",
+      muted: "text-on-surface-variant",
       primary: "text-primary-ink",
       secondary: "text-secondary-ink",
       accent: "text-accent-ink",
@@ -71,8 +63,9 @@ export const heading = rcva("", {
     },
     balance: { true: "text-balance" },
   },
-  defaultVariants: { weight: "bold" },
 });
+/** One weight heavier than the role. */
+export const headingEmphasis = rcva("", { variants: { step: { regular: "font-semibold", strong: "font-bold" } } });
 
 export type HeadingVariants = VariantProps<typeof heading>;
 export type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6;
@@ -86,25 +79,28 @@ const HEADING_TAGS: Record<HeadingLevel, StaticValue> = {
   6: literal`h6`,
 };
 
-/** Default size per level when `size` isn't set. */
-const HEADING_SIZES: Record<HeadingLevel, NonNullable<HeadingVariants["size"]>> = {
-  1: "4xl",
-  2: "3xl",
-  3: "2xl",
-  4: "xl",
-  5: "lg",
-  6: "base",
+/** Default role per level when `variant` isn't set. */
+const HEADING_ROLES: Record<HeadingLevel, NonNullable<HeadingVariants["variant"]>> = {
+  1: "headline-lg",
+  2: "headline-sm",
+  3: "title-lg",
+  4: "title-md",
+  5: "title-sm",
+  6: "label-lg",
 };
 
 /**
  * @example <ui-heading level="1">Dashboard</ui-heading>
- * @example <ui-heading level="2" size="xl md:3xl" color="primary" balance>Revenue this quarter</ui-heading>
+ * @example <ui-heading level="1" variant="page">Supplier bills</ui-heading>
+ * @example <ui-heading level="2" variant="title-lg md:headline-sm" color="primary" balance>Revenue this quarter</ui-heading>
  */
 @customElement("ui-heading")
 export class UiHeading extends LightElement {
   @property({ type: Number }) level: HeadingLevel = 2;
-  @property() size: HeadingVariants["size"];
-  @property() weight: HeadingVariants["weight"];
+  /** The type-scale role (or `page`). */
+  @property() variant: HeadingVariants["variant"];
+  /** One weight heavier than the role. */
+  @property({ type: Boolean }) emphasized = false;
   @property() color: HeadingVariants["color"];
   @property() align: HeadingVariants["align"];
   @property() tracking: HeadingVariants["tracking"];
@@ -113,15 +109,19 @@ export class UiHeading extends LightElement {
   render() {
     const level = (HEADING_TAGS[this.level] ? this.level : 2) as HeadingLevel;
     const tag = HEADING_TAGS[level];
+    const variant = this.variant ?? HEADING_ROLES[level];
     const cls = heading({
-      size: this.size ?? HEADING_SIZES[level],
-      weight: this.weight,
+      variant,
       color: this.color,
       align: this.align,
       tracking: this.tracking,
       balance: this.balance,
     });
-    return html`<${tag} class=${cls}>${this.content}</${tag}>`;
+    const emphasis =
+      this.emphasized && variant !== "page"
+        ? headingEmphasis({ step: /^(headline|title)-/.test(variant) ? "strong" : "regular" })
+        : "";
+    return html`<${tag} class=${[cls, emphasis].filter(Boolean).join(" ")}>${this.content}</${tag}>`;
   }
 }
 

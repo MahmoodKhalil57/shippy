@@ -338,7 +338,7 @@ export class DashboardEditView extends LightElement {
       ${
         url && isImage
           ? html`<ui-card image-src=${url} .imageAlt=${text(this.doc?.alt ?? "")} variant="border" size="sm">
-              <ui-text size="sm">${text(this.doc?.filename)}</ui-text>
+              <ui-text variant="body-md">${text(this.doc?.filename)}</ui-text>
             </ui-card>`
           : url
             ? html`<ui-link href=${url} external>${text(this.doc?.filename)}</ui-link>`
@@ -353,7 +353,7 @@ export class DashboardEditView extends LightElement {
       ></ui-file-input>
       ${
         this.doc
-          ? html`<ui-text size="xs" color="muted"
+          ? html`<ui-text variant="body-sm" color="muted"
               >${text(this.doc.mimeType)} · ${Number(this.doc.filesize).toLocaleString("en-US")} bytes
               ${this.doc.width ? html`· ${this.doc.width}×${this.doc.height}` : nothing}</ui-text
             >`
@@ -418,7 +418,7 @@ export class DashboardEditView extends LightElement {
       return html`<ui-flex direction="col" gap="6">
         <ui-flex direction="col" gap="1">
           <ui-breadcrumbs .items=${crumbs}></ui-breadcrumbs>
-          <ui-heading level="1" size="page">${heading}</ui-heading>
+          <ui-heading level="1" variant="page">${heading}</ui-heading>
         </ui-flex>
         ${tabBar} ${el ?? html`<ui-alert color="info" heading=${active.label}>This screen is loading.</ui-alert>`}
       </ui-flex>`;
@@ -442,16 +442,16 @@ export class DashboardEditView extends LightElement {
                   this.dirty = true;
                 }}
               ></ui-text-input>
-              ${this.errors.password ? html`<ui-text size="sm" color="error">${this.errors.password}</ui-text>` : nothing}`
+              ${this.errors.password ? html`<ui-text variant="body-md" color="error">${this.errors.password}</ui-text>` : nothing}`
           : nothing
       }
       ${
         this.doc
           ? html`<ui-box surface="base-200" rounded="box" padding="4">
               <ui-flex direction="col" gap="1">
-                ${this.doc.id ? html`<ui-text size="xs" color="muted">ID <ui-text as="span" size="xs" mono>${this.doc.id}</ui-text></ui-text>` : nothing}
-                ${this.doc.updatedAt ? html`<ui-text size="xs" color="muted">Updated ${formatDate(this.doc.updatedAt)}</ui-text>` : nothing}
-                ${this.doc.createdAt ? html`<ui-text size="xs" color="muted">Created ${formatDate(this.doc.createdAt)}</ui-text>` : nothing}
+                ${this.doc.id ? html`<ui-text variant="body-sm" color="muted">ID <ui-text as="span" variant="body-sm" mono>${this.doc.id}</ui-text></ui-text>` : nothing}
+                ${this.doc.updatedAt ? html`<ui-text variant="body-sm" color="muted">Updated ${formatDate(this.doc.updatedAt)}</ui-text>` : nothing}
+                ${this.doc.createdAt ? html`<ui-text variant="body-sm" color="muted">Created ${formatDate(this.doc.createdAt)}</ui-text>` : nothing}
               </ui-flex>
             </ui-box>`
           : nothing
@@ -464,7 +464,7 @@ export class DashboardEditView extends LightElement {
           <ui-flex direction="col" gap="1">
             <ui-breadcrumbs .items=${crumbs}></ui-breadcrumbs>
             <ui-flex align="center" gap="3" wrap>
-              <ui-heading level="1" size="page">${heading}</ui-heading>
+              <ui-heading level="1" variant="page">${heading}</ui-heading>
               ${this.dirty ? html`<ui-badge color="warning" variant="soft" size="sm">Unsaved changes</ui-badge>` : nothing}
             </ui-flex>
           </ui-flex>

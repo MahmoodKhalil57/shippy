@@ -14,8 +14,8 @@ export const fieldset = rcva("fieldset", {
   variants: {
     /** Box look used in the daisyUI examples (background + border + padding). */
     surface: {
-      "base-100": "bg-base-100 border-base-300 rounded-box border p-4",
-      "base-200": "bg-base-200 border-base-300 rounded-box border p-4",
+      "base-100": "bg-surface border-outline-variant rounded-box border p-4",
+      "base-200": "bg-surface-container border-outline-variant rounded-box border p-4",
     },
     /** Docs examples use `w-xs` (fieldset) and `w-64` (checkbox / toggle). */
     width: {

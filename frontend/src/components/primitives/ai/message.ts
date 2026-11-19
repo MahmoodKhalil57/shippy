@@ -23,17 +23,17 @@ export const message = rcva("group/message flex flex-col gap-1", {
   },
   defaultVariants: { from: "assistant" },
 });
-export const messageBody = rcva("text-sm", {
+export const messageBody = rcva("text-body-md", {
   variants: {
     from: {
-      user: "max-w-[85%] rounded-box rounded-ee-field bg-base-200 px-3.5 py-2 [overflow-wrap:anywhere] whitespace-pre-line",
+      user: "max-w-[85%] rounded-box rounded-ee-field bg-surface-container px-3.5 py-2 [overflow-wrap:anywhere] whitespace-pre-line",
       assistant: "w-full",
     },
   },
   defaultVariants: { from: "assistant" },
 });
 /** The actions row: shown on hover / focus for the person's turns, always for the assistant's. */
-export const messageActions = rcva("flex items-center gap-0.5 text-base-content/75", {
+export const messageActions = rcva("flex items-center gap-0.5 text-on-surface-variant", {
   variants: {
     from: {
       user: "opacity-0 transition-opacity duration-(--duration-effects-fast) ease-effects-fast group-hover/message:opacity-100 group-focus-within/message:opacity-100 motion-reduce:transition-none",

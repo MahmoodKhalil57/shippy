@@ -170,7 +170,7 @@ export class UiFilterBuilder extends LightElement {
     >
       <span>${field?.label ?? c.field}</span>
       <ui-text as="span" color="muted">${choice.label}</ui-text>
-      ${value ? html`<ui-text as="span" weight="medium">${value}</ui-text>` : nothing}
+      ${value ? html`<ui-text emphasized as="span">${value}</ui-text>` : nothing}
     </ui-chip>`;
   }
 

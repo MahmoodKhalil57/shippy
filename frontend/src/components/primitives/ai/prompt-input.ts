@@ -15,10 +15,10 @@ import { iconSvg } from "../media/icon.ts";
  * empties), `ui-stop` on Stop.
  */
 export const promptInput = rcva(
-  "flex flex-col gap-1 rounded-box border border-base-content/15 bg-base-100 p-1.5 transition-[border-color,box-shadow] duration-(--duration-effects) ease-effects focus-within:border-primary/60 focus-within:ring-3 focus-within:ring-primary/15 motion-reduce:transition-none",
+  "flex flex-col gap-1 rounded-box border border-outline-variant bg-surface p-1.5 transition-[border-color,box-shadow] duration-(--duration-effects) ease-effects focus-within:border-primary/60 focus-within:ring-3 focus-within:ring-primary/15 motion-reduce:transition-none",
 );
 export const promptInputText = rcva(
-  "max-h-40 min-h-10 w-full resize-none bg-transparent px-2 py-1.5 text-sm outline-none [field-sizing:content] placeholder:text-base-content/75 disabled:cursor-not-allowed",
+  "max-h-40 min-h-10 w-full resize-none bg-transparent px-2 py-1.5 text-body-md outline-none [field-sizing:content] placeholder:text-on-surface-variant disabled:cursor-not-allowed",
 );
 export const promptInputBar = rcva("flex items-center gap-1");
 export const promptInputTools = rcva("flex min-w-0 flex-1 items-center gap-1");

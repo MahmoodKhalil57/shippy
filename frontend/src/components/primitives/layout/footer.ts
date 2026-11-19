@@ -27,8 +27,8 @@ export const footer = rcva("footer", {
       center: "footer-center",
     },
     color: {
-      base: "bg-base-200 text-base-content",
-      "base-300": "bg-base-300 text-base-content",
+      base: "bg-surface-container text-on-surface",
+      "base-300": "bg-surface-container-highest text-on-surface",
       neutral: "bg-neutral text-neutral-content",
       primary: "bg-primary text-primary-content",
       none: "",
@@ -41,7 +41,7 @@ export const footer = rcva("footer", {
       none: "",
     },
     /** Top border (docs "Two footer"). */
-    border: { true: "border-base-300 border-t" },
+    border: { true: "border-outline-variant border-t" },
     rounded: { true: "rounded-xs" },
     /** Vertically center the sections (docs "copyright text and social icons"). */
     centerItems: { true: "items-center" },

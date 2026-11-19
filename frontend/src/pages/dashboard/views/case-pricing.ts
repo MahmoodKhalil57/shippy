@@ -93,22 +93,30 @@ export class GsCasePricing extends LightElement {
   private _columns(P: Pricing): TableColumn<Row>[] {
     const cur = P.currency;
     return [
-      { key: "lineNo", label: "#", render: (r) => html`<ui-text size="sm">L${r.lineNo}</ui-text>` },
+      { key: "lineNo", label: "#", render: (r) => html`<ui-text variant="body-md">L${r.lineNo}</ui-text>` },
       {
         key: "description",
         label: "Line · selected supplier(s)",
         render: (r) =>
           html`<ui-flex direction="col" gap="0">
-            <ui-text size="sm" weight="medium">${r.description}</ui-text>
-            <ui-text size="xs" color="muted">${r.sourcing}</ui-text>
+            <ui-text variant="label-lg">${r.description}</ui-text>
+            <ui-text variant="body-sm" color="muted">${r.sourcing}</ui-text>
           </ui-flex>`,
       },
-      { key: "costEGP", label: "Supplier cost", render: (r) => html`<ui-text size="sm">${egp(r.costEGP)}</ui-text>` },
-      { key: "allocEGP", label: "+ Shared", render: (r) => html`<ui-text size="sm">${egp(r.allocEGP)}</ui-text>` },
+      {
+        key: "costEGP",
+        label: "Supplier cost",
+        render: (r) => html`<ui-text variant="body-md">${egp(r.costEGP)}</ui-text>`,
+      },
+      {
+        key: "allocEGP",
+        label: "+ Shared",
+        render: (r) => html`<ui-text variant="body-md">${egp(r.allocEGP)}</ui-text>`,
+      },
       {
         key: "landedEGP",
         label: "Landed",
-        render: (r) => html`<ui-text size="sm" weight="semibold">${egp(r.landedEGP)}</ui-text>`,
+        render: (r) => html`<ui-text variant="title-sm">${egp(r.landedEGP)}</ui-text>`,
       },
       {
         key: "marginPct",
@@ -128,19 +136,23 @@ export class GsCasePricing extends LightElement {
               @change=${(e: Event) =>
                 void this._save({ margins: { [r.lineNo]: Number((e.target as HTMLInputElement).value) || 0 } })}
             ></ui-text-input>
-            <ui-text size="xs" .color=${r.marginPct < r.minPct ? "warning" : "muted"}
+            <ui-text variant="body-sm" .color=${r.marginPct < r.minPct ? "warning" : "muted"}
               >target ${r.targetPct}% · min ${r.minPct}%</ui-text
             >
           </ui-flex>`,
       },
-      { key: "markupPct", label: "Markup", render: (r) => html`<ui-text size="sm">${pct(r.markupPct)}</ui-text>` },
+      {
+        key: "markupPct",
+        label: "Markup",
+        render: (r) => html`<ui-text variant="body-md">${pct(r.markupPct)}</ui-text>`,
+      },
       {
         key: "sellQuote",
         label: `Sell (${cur})`,
         render: (r) =>
           html`<ui-flex direction="col" gap="0">
-            <ui-text size="sm" weight="semibold">${money(r.sellQuote, cur)}</ui-text>
-            <ui-text size="xs" color="muted">${egp(r.sellEGP)}</ui-text>
+            <ui-text variant="title-sm">${money(r.sellQuote, cur)}</ui-text>
+            <ui-text variant="body-sm" color="muted">${egp(r.sellEGP)}</ui-text>
           </ui-flex>`,
       },
       {
@@ -148,8 +160,8 @@ export class GsCasePricing extends LightElement {
         label: `Unit (${cur})`,
         render: (r) =>
           html`<ui-flex direction="col" gap="0">
-            <ui-text size="sm">${amount(r.unitQuote)}</ui-text>
-            <ui-text size="xs" color="muted">× ${r.quoteQty} ${r.quoteUnit}</ui-text>
+            <ui-text variant="body-md">${amount(r.unitQuote)}</ui-text>
+            <ui-text variant="body-sm" color="muted">× ${r.quoteQty} ${r.quoteUnit}</ui-text>
           </ui-flex>`,
       },
       { key: "checks", label: "Checks", render: (r) => flagList(r.checks, "OK") },
@@ -159,9 +171,9 @@ export class GsCasePricing extends LightElement {
   private _tile(label: string, value: string, note: string, color?: "success" | "error" | "warning") {
     return html`<ui-card variant="border" size="sm" shadow="false">
       <ui-flex direction="col" gap="1">
-        <ui-text size="sm" color="muted" truncate>${label}</ui-text>
-        <ui-text size="2xl" weight="semibold" leading="tight" .color=${color}>${value}</ui-text>
-        <ui-text size="xs" color="muted" clamp="2">${note}</ui-text>
+        <ui-text variant="body-md" color="muted" truncate>${label}</ui-text>
+        <ui-text variant="headline-sm" leading="tight" .color=${color}>${value}</ui-text>
+        <ui-text variant="body-sm" color="muted" clamp="2">${note}</ui-text>
       </ui-flex>
     </ui-card>`;
   }
@@ -183,7 +195,7 @@ export class GsCasePricing extends LightElement {
               >`
             : nothing;
     return html`<ui-card variant="border" shadow="false" heading="Approval">
-      <ui-text size="sm" color="muted"
+      <ui-text variant="body-md" color="muted"
         >Rule: every customer quotation, discounts above ${P.policy.maxDiscountPct}% and margin exceptions go to Karim
         Balbaa. Exceptions travel with the request.</ui-text
       >
@@ -223,7 +235,7 @@ export class GsCasePricing extends LightElement {
     if (!this.asking) return nothing;
     return html`<ui-modal open width="wide" heading="Request approval" @ui-close=${() => (this.asking = false)}>
       <ui-flex direction="col" gap="3">
-        <ui-text size="sm"
+        <ui-text variant="body-md"
           >Creates the customer quotation (${P.rows.length} priced lines, ${money(P.totals.sellQuote, P.currency)} excl.
           VAT, margin ${pct(P.totals.marginPct)}) and a <strong>${P.approvalType}</strong> approval for Karim Balbaa.
           Nothing is sent to the customer until it's approved and someone sends it.</ui-text
@@ -268,7 +280,7 @@ export class GsCasePricing extends LightElement {
           <span>Line pricing</span>
           <ui-button size="xs" variant="ghost" href="/globals/pricing-policy">Pricing policy</ui-button>
         </ui-flex>
-        <ui-text size="sm" color="muted"
+        <ui-text variant="body-md" color="muted"
           >Policy: target ${P.policy.targetPct}%, minimum ${P.policy.minPct}% (per store where set), discounts above
           ${P.policy.maxDiscountPct}% need approval. ${P.fxLabel}.</ui-text
         >
@@ -298,7 +310,7 @@ export class GsCasePricing extends LightElement {
             ? html`<ui-flex direction="col" gap="1">
                 ${P.unpriced.map(
                   (u) =>
-                    html`<ui-text size="xs" color="muted"
+                    html`<ui-text variant="body-sm" color="muted"
                       >L${u.lineNo} · ${u.description} — ${u.status}: no cost yet, excluded from this version.</ui-text
                     >`,
                 )}
@@ -309,28 +321,30 @@ export class GsCasePricing extends LightElement {
 
       <ui-grid fit="md" gap="4">
         <ui-card variant="border" shadow="false" heading="Margin vs markup">
-          <ui-text size="sm" color="muted"
+          <ui-text variant="body-md" color="muted"
             >Same profit, two ways to read it — Golden Sea's policy is set on margin.</ui-text
           >
           <ui-grid fit="xs" gap="3">
             <ui-flex direction="col" gap="0">
-              <ui-text size="xs" color="muted" uppercase>Margin = profit ÷ selling price</ui-text>
-              <ui-text size="2xl" weight="semibold">${pct(t.marginPct)}</ui-text>
-              <ui-text size="xs" color="muted">${egp(t.profitEGP)} ÷ ${egp(t.sellEGP)}</ui-text>
+              <ui-text variant="body-sm" color="muted" uppercase>Margin = profit ÷ selling price</ui-text>
+              <ui-text variant="headline-sm">${pct(t.marginPct)}</ui-text>
+              <ui-text variant="body-sm" color="muted">${egp(t.profitEGP)} ÷ ${egp(t.sellEGP)}</ui-text>
             </ui-flex>
             <ui-flex direction="col" gap="0">
-              <ui-text size="xs" color="muted" uppercase>Markup = profit ÷ landed cost</ui-text>
-              <ui-text size="2xl" weight="semibold">${pct(t.markupPct)}</ui-text>
-              <ui-text size="xs" color="muted">${egp(t.profitEGP)} ÷ ${egp(t.landedEGP)}</ui-text>
+              <ui-text variant="body-sm" color="muted" uppercase>Markup = profit ÷ landed cost</ui-text>
+              <ui-text variant="headline-sm">${pct(t.markupPct)}</ui-text>
+              <ui-text variant="body-sm" color="muted">${egp(t.profitEGP)} ÷ ${egp(t.landedEGP)}</ui-text>
             </ui-flex>
           </ui-grid>
-          <ui-text size="xs" color="muted"
+          <ui-text variant="body-sm" color="muted"
             >A 25% margin is a 33.3% markup: pricing “cost + 25%” would land at a 20% margin.</ui-text
           >
         </ui-card>
 
         <ui-card variant="border" shadow="false" heading="Price build-up per line">
-          <ui-text size="sm" color="muted">Supplier cost + shared charges + gross profit = selling price (EGP)</ui-text>
+          <ui-text variant="body-md" color="muted"
+            >Supplier cost + shared charges + gross profit = selling price (EGP)</ui-text
+          >
           <ui-chart
             kind="bars"
             stacked
@@ -348,7 +362,7 @@ export class GsCasePricing extends LightElement {
 
       <ui-grid fit="md" gap="4">
         <ui-card variant="border" shadow="false" heading="Shared charges">
-          <ui-text size="sm" color="muted"
+          <ui-text variant="body-md" color="muted"
             >Allocated ${ALLOCATION.find((a) => a.value === P.allocation)?.label.toLowerCase()}. Estimates are marked;
             actuals replace them at close.</ui-text
           >
@@ -356,7 +370,7 @@ export class GsCasePricing extends LightElement {
             ${P.charges.map(
               (c) =>
                 html`<ui-flex justify="between" align="center" gap="2" wrap>
-                  <ui-text size="sm">${c.label}</ui-text>
+                  <ui-text variant="body-md">${c.label}</ui-text>
                   <ui-flex gap="2" align="center">
                     <ui-badge
                       size="sm"
@@ -364,17 +378,17 @@ export class GsCasePricing extends LightElement {
                       .color=${c.status === "Estimate" ? "warning" : c.status === "Confirmed" ? "success" : "neutral"}
                       >${c.status}</ui-badge
                     >
-                    <ui-text size="sm" weight="semibold">${egp(c.amountEGP)}</ui-text>
+                    <ui-text variant="title-sm">${egp(c.amountEGP)}</ui-text>
                   </ui-flex>
                 </ui-flex>`,
             )}
             <ui-divider></ui-divider>
             <ui-flex justify="between" gap="2">
-              <ui-text size="sm" weight="semibold">Total shared</ui-text>
-              <ui-text size="sm" weight="semibold">${egp(P.chargesEGP)}</ui-text>
+              <ui-text variant="title-sm">Total shared</ui-text>
+              <ui-text variant="title-sm">${egp(P.chargesEGP)}</ui-text>
             </ui-flex>
           </ui-flex>
-          <ui-text size="xs" color="muted"
+          <ui-text variant="body-sm" color="muted"
             >VAT: supply to a foreign vessel in transit is expected at 0% — finance confirms. The quotation shows prices
             excl. VAT.</ui-text
           >
@@ -387,7 +401,7 @@ export class GsCasePricing extends LightElement {
                 ? P.exceptions.map((x) =>
                     flagRow({ tone: /negative|expired|misses/i.test(x) ? "error" : "warning", text: x }),
                   )
-                : html`<ui-text size="sm" color="success">Within policy.</ui-text>`
+                : html`<ui-text variant="body-md" color="success">Within policy.</ui-text>`
             }
           </ui-flex>
         </ui-card>

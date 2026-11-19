@@ -59,18 +59,18 @@ export class GsAsk extends LightElement {
     return html`<ui-chat placement="end" color="primary" author="You">${a.question}</ui-chat>
       <ui-chat author="Golden Sea assistant" .color=${a.refused ? "warning" : undefined}>
         <ui-flex direction="col" gap="2">
-          <ui-text size="sm" weight="medium">${a.answer}</ui-text>
+          <ui-text variant="label-lg">${a.answer}</ui-text>
           ${
             a.points.length
               ? html`<ui-flex direction="col" gap="1">
-                  ${a.points.map((p) => html`<ui-text size="sm">· ${p}</ui-text>`)}
+                  ${a.points.map((p) => html`<ui-text variant="body-md">· ${p}</ui-text>`)}
                 </ui-flex>`
               : nothing
           }
           ${
             a.sources.length
               ? html`<ui-flex gap="1" wrap align="center">
-                  <ui-text size="xs" color="muted">Sources:</ui-text>
+                  <ui-text variant="body-sm" color="muted">Sources:</ui-text>
                   ${a.sources.map(
                     (s) => html`<ui-button size="xs" variant="soft" .href=${s.href}>${s.label}</ui-button>`,
                   )}
@@ -93,13 +93,13 @@ export class GsAsk extends LightElement {
                       <ui-chat author="Golden Sea assistant">
                         <ui-flex gap="2" align="center">
                           <ui-loading variant="dots" size="sm" label="Reading"></ui-loading>
-                          <ui-text size="sm">Reading cases, approvals, invoices and suppliers…</ui-text>
+                          <ui-text variant="body-md">Reading cases, approvals, invoices and suppliers…</ui-text>
                         </ui-flex>
                       </ui-chat>`
                   : nothing
               }
             </ui-flex>`
-          : html`<ui-text size="sm" color="muted"
+          : html`<ui-text variant="body-md" color="muted"
               >Ask about a vessel or case number, approvals, who owes us money, suppliers, deadlines or the growth
               pipeline. Answers come from the live records and link to them.</ui-text
             >`
@@ -138,7 +138,9 @@ export class GsAsk extends LightElement {
             </ui-flex>`
           : nothing
       }
-      <ui-text size="xs" color="muted">The assistant reads and answers; it never sends, prices or pays.</ui-text>
+      <ui-text variant="body-sm" color="muted"
+        >The assistant reads and answers; it never sends, prices or pays.</ui-text
+      >
     </ui-flex>`;
   }
 }

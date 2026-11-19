@@ -41,7 +41,7 @@ export const megamenu = rcva("megamenu [&_[popover]]:liquid-glass", {
       vertical: "megamenu-vertical",
     },
     /** Border + padding used in the docs examples. */
-    bordered: { true: "p-2 border border-base-300" },
+    bordered: { true: "p-2 border border-outline-variant" },
   },
 });
 

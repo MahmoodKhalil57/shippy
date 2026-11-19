@@ -15,11 +15,11 @@ export const hero = rcva("hero", {
   variants: {
     /** Full viewport height, as in the docs examples. */
     fullHeight: { true: "min-h-screen" },
-    /** Background (docs: `bg-base-200`). */
+    /** Background (docs: `bg-surface-container`). */
     surface: {
-      "base-100": "bg-base-100",
-      "base-200": "bg-base-200",
-      "base-300": "bg-base-300",
+      "base-100": "bg-surface",
+      "base-200": "bg-surface-container",
+      "base-300": "bg-surface-container-highest",
       neutral: "bg-neutral text-neutral-content",
       primary: "bg-primary text-primary-content",
     },
@@ -65,7 +65,7 @@ export const heroText = rcva("", {
 });
 
 export const heroOverlay = rcva("hero-overlay");
-export const heroHeading = rcva("text-5xl font-bold", { variants: { overImage: { true: "mb-5" } } });
+export const heroHeading = rcva("text-display-md font-bold", { variants: { overImage: { true: "mb-5" } } });
 export const heroParagraph = rcva("", { variants: { overImage: { true: "mb-5", false: "py-6" } } });
 export const heroFigure = rcva("max-w-sm rounded-sm shadow-elevation-3");
 

@@ -33,7 +33,7 @@ export const indicatorItem = rcva("indicator-item", {
     },
     /** Badge size: `xs` for a count on an icon (tabular, compact). */
     size: {
-      xs: "badge-xs h-4 min-w-4 px-1 text-[0.625rem] font-semibold tabular-nums",
+      xs: "badge-xs h-4 min-w-4 px-1 text-label-sm font-semibold tabular-nums",
     },
     /** Badge look for plain-text indicators (docs "Badge as indicator"). */
     badge: {

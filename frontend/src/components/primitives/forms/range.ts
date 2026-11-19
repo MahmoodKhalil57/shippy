@@ -55,7 +55,7 @@ export const range = rcva("range", {
       "base-100": "text-base-100",
       "base-200": "text-base-200",
       "base-300": "text-base-300",
-      "base-content": "text-base-content",
+      "base-content": "text-on-surface",
     },
     /** Track background. */
     trackColor: {
@@ -98,7 +98,7 @@ export const rangeWrapper = rcva("", {
 });
 
 /** Row under the slider holding tick marks or step labels ("With steps and measure"). */
-export const rangeMeasure = rcva("flex justify-between px-2.5 mt-2 text-xs");
+export const rangeMeasure = rcva("flex justify-between px-2.5 mt-2 text-body-sm");
 
 export type RangeVariants = VariantProps<typeof range>;
 

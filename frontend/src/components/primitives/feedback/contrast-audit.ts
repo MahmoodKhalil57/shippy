@@ -25,23 +25,23 @@ export const contrastAuditBox = rcva(
   { variants: { focus: { true: "ring-4 animate-pulse motion-reduce:animate-none" } } },
 );
 export const contrastAuditLabel = rcva(
-  "absolute -top-2 left-0 -translate-y-full rounded-xs bg-error px-1 text-[0.625rem] leading-4 font-semibold whitespace-nowrap text-error-content",
+  "absolute -top-2 left-0 -translate-y-full rounded-xs bg-error px-1 text-label-sm font-semibold whitespace-nowrap text-error-content",
 );
 export const contrastAuditPanel = rcva(
-  "liquid-glass fixed bottom-4 left-4 z-[71] flex max-h-[min(28rem,60dvh)] w-[min(26rem,calc(100vw-2rem))] flex-col gap-2 rounded-box p-3 text-sm",
+  "liquid-glass fixed bottom-4 left-4 z-[71] flex max-h-[min(28rem,60dvh)] w-[min(26rem,calc(100vw-2rem))] flex-col gap-2 rounded-box p-3 text-body-md",
 );
 export const contrastAuditHead = rcva("flex items-center justify-between gap-2");
 export const contrastAuditTitle = rcva("font-semibold");
-export const contrastAuditSummary = rcva("text-xs text-base-content/70");
+export const contrastAuditSummary = rcva("text-body-sm text-on-surface-variant");
 export const contrastAuditList = rcva(
   "-mx-1 flex min-h-0 flex-col overflow-y-auto px-1 [--scrollbar-inset:var(--radius-box)]",
 );
 export const contrastAuditItem = rcva(
-  "flex items-center gap-2 rounded-field px-2 py-1 text-start hover:bg-base-content/10 focus-visible:outline-2 focus-visible:outline-primary",
+  "flex items-center gap-2 rounded-field px-2 py-1 text-start hover:bg-on-surface/(--state-hover) focus-visible:outline-2 focus-visible:outline-primary",
 );
-export const contrastAuditRatio = rcva("w-14 shrink-0 font-mono text-xs font-semibold text-error");
+export const contrastAuditRatio = rcva("w-14 shrink-0 font-mono text-label-md text-error");
 export const contrastAuditText = rcva("min-w-0 flex-1 truncate");
-export const contrastAuditSwatch = rcva("size-4 shrink-0 rounded-full ring-1 ring-base-content/20 bg-(--swatch)");
+export const contrastAuditSwatch = rcva("size-4 shrink-0 rounded-full ring-1 ring-outline-variant bg-(--swatch)");
 export const contrastAuditButton = rcva("btn btn-xs", {
   variants: { kind: { ghost: "btn-ghost", primary: "btn-primary" } },
 });

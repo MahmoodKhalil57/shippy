@@ -57,7 +57,7 @@ export const timelineIcon = rcva("h-5 w-5", {
 
 /** Parts of a structured entry (snapped-icon example). */
 export const timelineTime = rcva("font-mono italic");
-export const timelineHeading = rcva("text-lg font-black");
+export const timelineHeading = rcva("text-title-md");
 
 export type TimelineVariants = VariantProps<typeof timeline>;
 export type TimelineStartVariants = VariantProps<typeof timelineStart>;

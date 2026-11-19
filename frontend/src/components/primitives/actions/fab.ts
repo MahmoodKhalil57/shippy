@@ -27,9 +27,7 @@ export const fab = rcva("fab [&_svg]:size-6", {
  * A speed-dial action's text label: a glass pill (src/styles/theme.css), so it reads on any
  * background the FAB opens over.
  */
-export const fabLabel = rcva(
-  "liquid-glass rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap text-base-content",
-);
+export const fabLabel = rcva("liquid-glass rounded-full px-3 py-1.5 text-label-lg whitespace-nowrap text-on-surface");
 
 /** Replaces the trigger with a close button while open (visual only, not focusable). */
 export const fabClose = rcva("fab-close");
@@ -67,12 +65,12 @@ export const fabPanel = rcva(
     },
   },
 );
-export const fabPanelHead = rcva("flex shrink-0 items-center gap-2 border-b border-base-content/10 px-4 py-2.5");
-export const fabPanelTitle = rcva("min-w-0 flex-1 truncate text-sm font-semibold");
+export const fabPanelHead = rcva("flex shrink-0 items-center gap-2 border-b border-outline-variant px-4 py-2.5");
+export const fabPanelTitle = rcva("min-w-0 flex-1 truncate text-title-sm");
 export const fabPanelBody = rcva(
   "flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain px-4 py-3 [--scrollbar-inset:var(--radius-box)]",
 );
-export const fabPanelFooter = rcva("shrink-0 border-t border-base-content/10 px-3 py-2.5");
+export const fabPanelFooter = rcva("shrink-0 border-t border-outline-variant px-3 py-2.5");
 
 export type FabVariants = VariantProps<typeof fab>;
 

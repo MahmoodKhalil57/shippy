@@ -205,15 +205,14 @@ export class GsCaseRfqs extends LightElement {
     const tile = (label: string, value: number, note: string, color?: Tone) =>
       html`<ui-card variant="border" size="sm" shadow="false">
         <ui-flex direction="col" gap="1">
-          <ui-text size="sm" color="muted" truncate>${label}</ui-text>
+          <ui-text variant="body-md" color="muted" truncate>${label}</ui-text>
           <ui-text
-            size="3xl"
-            weight="semibold"
+            variant="headline-md"
             leading="tight"
             .color=${color && color !== "neutral" && color !== "info" ? color : undefined}
             >${value}</ui-text
           >
-          <ui-text size="xs" color="muted">${note}</ui-text>
+          <ui-text variant="body-sm" color="muted">${note}</ui-text>
         </ui-flex>
       </ui-card>`;
     return html`<ui-grid fit="xs" gap="4">
@@ -229,7 +228,7 @@ export class GsCaseRfqs extends LightElement {
       {
         key: "reference",
         label: "Reference",
-        render: (r) => html`<ui-text size="xs" mono weight="semibold">${r.reference}</ui-text>`,
+        render: (r) => html`<ui-text variant="label-md" emphasized mono>${r.reference}</ui-text>`,
       },
       {
         key: "supplier",
@@ -238,11 +237,13 @@ export class GsCaseRfqs extends LightElement {
           html`<ui-flex direction="col" gap="0">
             <ui-flex gap="1" align="center" wrap>
               <ui-link variant="hover" .href=${`/collections/suppliers/${r.supplier.id}`}
-                ><ui-text size="sm" weight="medium">${r.supplier.name}</ui-text></ui-link
+                ><ui-text variant="label-lg">${r.supplier.name}</ui-text></ui-link
               >
               ${r.supplier.isNew ? html`<ui-badge size="xs" color="accent" variant="soft">New supplier</ui-badge>` : nothing}
             </ui-flex>
-            <ui-text size="xs" color="muted">${[r.supplier.city, r.category].filter(Boolean).join(" · ")}</ui-text>
+            <ui-text variant="body-sm" color="muted"
+              >${[r.supplier.city, r.category].filter(Boolean).join(" · ")}</ui-text
+            >
           </ui-flex>`,
       },
       {
@@ -258,8 +259,8 @@ export class GsCaseRfqs extends LightElement {
         label: "Sent · due",
         render: (r) =>
           html`<ui-flex direction="col" gap="0"
-            ><ui-text size="xs">${r.sentAt ? at(r.sentAt) : "not invited"}</ui-text
-            ><ui-text size="xs" color="muted">due ${at(r.dueAt)}</ui-text></ui-flex
+            ><ui-text variant="body-sm">${r.sentAt ? at(r.sentAt) : "not invited"}</ui-text
+            ><ui-text variant="body-sm" color="muted">due ${at(r.dueAt)}</ui-text></ui-flex
           >`,
       },
       {
@@ -273,13 +274,17 @@ export class GsCaseRfqs extends LightElement {
         label: "Reminders",
         render: (r) =>
           html`<ui-flex direction="col" gap="0">
-            <ui-text size="sm">${r.reminders} of 2</ui-text>
-            <ui-text size="xs" .color=${r.escalated ? "error" : "muted"}
+            <ui-text variant="body-md">${r.reminders} of 2</ui-text>
+            <ui-text variant="body-sm" .color=${r.escalated ? "error" : "muted"}
               >${r.escalated ? "escalated" : OPEN.includes(r.status) ? (r.nextReminderAt ? `next ${at(r.nextReminderAt)}` : "—") : "stopped"}</ui-text
             >
           </ui-flex>`,
       },
-      { key: "lastEvent", label: "Latest", render: (r) => html`<ui-text size="xs" clamp="2">${r.lastEvent}</ui-text>` },
+      {
+        key: "lastEvent",
+        label: "Latest",
+        render: (r) => html`<ui-text variant="body-sm" clamp="2">${r.lastEvent}</ui-text>`,
+      },
       {
         key: "actions",
         label: "",
@@ -298,7 +303,7 @@ export class GsCaseRfqs extends LightElement {
           ><ui-icon name="sync" size="sm"></ui-icon>Simulate replies</ui-button
         >
       </ui-flex>
-      <ui-text size="xs" color="muted"
+      <ui-text variant="body-sm" color="muted"
         >Each supplier sees only the lines they can quote — never the client, the vessel or the client's files.</ui-text
       >
       ${
@@ -309,7 +314,7 @@ export class GsCaseRfqs extends LightElement {
               .columns=${columns}
               .rows=${d.rfqs as unknown as Record<string, unknown>[]}
             ></ui-table>`
-          : html`<ui-text size="sm" color="muted">No supplier RFQs yet — draft them below.</ui-text>`
+          : html`<ui-text variant="body-md" color="muted">No supplier RFQs yet — draft them below.</ui-text>`
       }
     </ui-card>`;
   }
@@ -329,11 +334,11 @@ export class GsCaseRfqs extends LightElement {
       end: html`<ui-flex direction="col" gap="1">
         <ui-flex gap="2" align="center" wrap>
           <ui-badge size="sm" variant="soft" .color=${tone[e.outcome]}>${e.outcome}</ui-badge>
-          <ui-text size="sm" weight="semibold">${e.supplier}</ui-text>
-          <ui-text size="xs" mono color="muted">${e.reference}</ui-text>
+          <ui-text variant="title-sm">${e.supplier}</ui-text>
+          <ui-text variant="body-sm" mono color="muted">${e.reference}</ui-text>
         </ui-flex>
-        ${e.subject ? html`<ui-text size="xs" color="muted">Subject: “${e.subject}”</ui-text>` : nothing}
-        <ui-text size="xs">${e.detail}</ui-text>
+        ${e.subject ? html`<ui-text variant="body-sm" color="muted">Subject: “${e.subject}”</ui-text>` : nothing}
+        <ui-text variant="body-sm">${e.detail}</ui-text>
       </ui-flex>`,
     }));
     return html`<ui-card variant="border" shadow="false" heading="Replies arriving">
@@ -348,7 +353,7 @@ export class GsCaseRfqs extends LightElement {
       <ui-flex slot="heading" gap="2" align="center"
         >Needs a person<ui-badge size="sm" color="warning" variant="soft">${d.review.length}</ui-badge></ui-flex
       >
-      <ui-text size="xs" color="muted"
+      <ui-text variant="body-sm" color="muted"
         >Anything the AI isn't sure of waits here — nothing uncertain is applied on its own.</ui-text
       >
       <ui-flex direction="col" gap="4">
@@ -358,12 +363,12 @@ export class GsCaseRfqs extends LightElement {
               <ui-flex direction="col" gap="2">
                 <ui-flex justify="between" align="center" gap="2" wrap>
                   <ui-flex direction="col" gap="0" shrink>
-                    <ui-text size="sm" weight="semibold">${r.fromName}: “${r.subject}”</ui-text>
-                    <ui-text size="xs" color="muted">${at(r.receivedAt)}</ui-text>
+                    <ui-text variant="title-sm">${r.fromName}: “${r.subject}”</ui-text>
+                    <ui-text variant="body-sm" color="muted">${at(r.receivedAt)}</ui-text>
                   </ui-flex>
                   <ui-badge size="sm" variant="soft" color="warning">${pct(r.confidence)}</ui-badge>
                 </ui-flex>
-                ${r.basis.map((b) => html`<ui-text size="xs">• ${b}</ui-text>`)}
+                ${r.basis.map((b) => html`<ui-text variant="body-sm">• ${b}</ui-text>`)}
                 ${r.uncertain.map((u) => html`<ui-alert color="warning" variant="soft">${u}</ui-alert>`)}
                 <ui-flex gap="2" wrap>
                   ${
@@ -396,7 +401,7 @@ export class GsCaseRfqs extends LightElement {
   private _replies(d: CaseRfqsPayload) {
     if (!d.replies.length) return nothing;
     return html`<ui-card variant="border" shadow="false" heading="Replies matched">
-      <ui-text size="xs" color="muted"
+      <ui-text variant="body-sm" color="muted"
         >Matched by reference, thread and sender — even when the supplier changed the subject.</ui-text
       >
       <ui-flex direction="col" gap="3">
@@ -404,13 +409,13 @@ export class GsCaseRfqs extends LightElement {
           (r) =>
             html`<ui-flex direction="col" gap="0">
               <ui-flex gap="2" align="center" wrap>
-                <ui-text size="sm" weight="medium">${r.fromName}</ui-text>
-                <ui-text size="xs" color="muted">“${r.subject}” · ${at(r.receivedAt)}</ui-text>
+                <ui-text variant="label-lg">${r.fromName}</ui-text>
+                <ui-text variant="body-sm" color="muted">“${r.subject}” · ${at(r.receivedAt)}</ui-text>
                 <ui-badge size="xs" variant="soft" color="success"
                   >${r.reference || "linked"} · ${pct(r.confidence)}</ui-badge
                 >
               </ui-flex>
-              <ui-text size="xs" color="muted">${r.basis.slice(0, 2).join(" · ")}</ui-text>
+              <ui-text variant="body-sm" color="muted">${r.basis.slice(0, 2).join(" · ")}</ui-text>
             </ui-flex>`,
         )}
       </ui-flex>
@@ -420,7 +425,7 @@ export class GsCaseRfqs extends LightElement {
   private _newSuppliers(d: CaseRfqsPayload) {
     if (!d.newSuppliers.length) return nothing;
     return html`<ui-card variant="border" shadow="false" heading="New suppliers saved">
-      <ui-text size="xs" color="muted"
+      <ui-text variant="body-sm" color="muted"
         >Saved the moment they replied — contact, category and a dated price with its validity, even without an
         order.</ui-text
       >
@@ -431,14 +436,14 @@ export class GsCaseRfqs extends LightElement {
               <ui-flex direction="col" gap="2">
                 <ui-flex gap="2" align="center" wrap>
                   <ui-link variant="hover" .href=${`/collections/suppliers/${s.id}`}
-                    ><ui-text size="sm" weight="semibold">${s.name}</ui-text></ui-link
+                    ><ui-text variant="title-sm">${s.name}</ui-text></ui-link
                   >
                   <ui-badge size="xs" color="accent" variant="soft">New · quoted, never ordered</ui-badge>
                 </ui-flex>
-                <ui-text size="xs" color="muted">${s.city} · ${s.source}</ui-text>
+                <ui-text variant="body-sm" color="muted">${s.city} · ${s.source}</ui-text>
                 ${s.prices.map(
                   (p) =>
-                    html`<ui-text size="xs"
+                    html`<ui-text variant="body-sm"
                       >${p.description}:
                       ${d.canSeeCosts && p.price !== undefined ? html`<strong>${p.currency} ${p.price.toLocaleString("en-US")}</strong> / ${p.per}` : html`<em>price hidden for your role</em>`}
                       · quoted ${day(p.quotedAt)} · valid to ${day(p.validUntil)}</ui-text
@@ -471,7 +476,7 @@ export class GsCaseRfqs extends LightElement {
           }}
         ></ui-tabs>
       </ui-flex>
-      <ui-text size="xs" color="muted"
+      <ui-text variant="body-sm" color="muted"
         >${this.mode === "split" ? "Each category goes to its specialists (best on-time first); a supplier asked for several categories gets one RFQ." : "General chandlers receive every line in one RFQ."}</ui-text
       >
       <ui-grid fit="sm" gap="2">
@@ -482,8 +487,8 @@ export class GsCaseRfqs extends LightElement {
               .checked=${picked.has(l.lineNo)}
               ?disabled=${Boolean(l.held)}
               .label=${html`<ui-flex direction="col" gap="0">
-                <ui-text size="sm">L${l.lineNo} · ${l.description}</ui-text>
-                <ui-text size="xs" .color=${l.held ? "warning" : "muted"}
+                <ui-text variant="body-md">L${l.lineNo} · ${l.description}</ui-text>
+                <ui-text variant="body-sm" .color=${l.held ? "warning" : "muted"}
                   >${l.qty} ${l.unit} ·
                   ${l.category}${l.held ? ` · held: ${l.held}` : l.rfqs.length ? ` · asked: ${l.rfqs.join(", ")}` : ""}${l.offers ? ` · ${l.offers} offer${l.offers > 1 ? "s" : ""}` : ""}</ui-text
                 >
@@ -506,7 +511,7 @@ export class GsCaseRfqs extends LightElement {
         plan
           ? html`<ui-divider></ui-divider>
               ${plan.held.length ? html`<ui-alert color="warning" variant="soft">Held back until clarified: ${plan.held.map((h) => `L${h.lineNo} (${h.reason})`).join(" · ")}</ui-alert>` : nothing}
-              ${plan.skipped.length ? html`<ui-text size="xs" color="muted">Skipped (already asked): ${plan.skipped.join(" · ")}</ui-text>` : nothing}
+              ${plan.skipped.length ? html`<ui-text variant="body-sm" color="muted">Skipped (already asked): ${plan.skipped.join(" · ")}</ui-text>` : nothing}
               <ui-flex direction="col" gap="2">
                 ${plan.drafts.map(
                   (r, i) =>
@@ -514,10 +519,12 @@ export class GsCaseRfqs extends LightElement {
                       <ui-flex direction="col" gap="0" shrink>
                         <ui-flex gap="2" align="center" wrap>
                           <ui-badge size="sm" variant="soft">Draft</ui-badge>
-                          <ui-text size="sm" weight="semibold">${r.supplierName}</ui-text>
-                          <ui-text size="xs" mono color="muted">${r.reference}</ui-text>
+                          <ui-text variant="title-sm">${r.supplierName}</ui-text>
+                          <ui-text variant="body-sm" mono color="muted">${r.reference}</ui-text>
                         </ui-flex>
-                        <ui-text size="xs" color="muted">${r.category} · L${r.lineNos.join(", L")} · ${r.note}</ui-text>
+                        <ui-text variant="body-sm" color="muted"
+                          >${r.category} · L${r.lineNos.join(", L")} · ${r.note}</ui-text
+                        >
                       </ui-flex>
                       <ui-flex gap="1">
                         <ui-button
@@ -541,8 +548,8 @@ export class GsCaseRfqs extends LightElement {
                       </ui-flex>
                       <ui-mockup-window variant="bordered">
                         <ui-flex direction="col" gap="2" padding="4">
-                          <ui-text size="xs" color="muted"><strong>To</strong> ${preview.preview.to}</ui-text>
-                          <ui-text size="sm" weight="semibold">${preview.preview.subject}</ui-text>
+                          <ui-text variant="body-sm" color="muted"><strong>To</strong> ${preview.preview.to}</ui-text>
+                          <ui-text variant="title-sm">${preview.preview.subject}</ui-text>
                           <ui-divider></ui-divider>
                           <ui-ai-text .text=${preview.preview.body} translatable></ui-ai-text>
                         </ui-flex>
@@ -565,11 +572,11 @@ export class GsCaseRfqs extends LightElement {
                 @ui-close=${() => (this.confirming = false)}
               >
                 <ui-flex direction="col" gap="2">
-                  <ui-text size="sm"
+                  <ui-text variant="body-md"
                     >${plan.drafts.length} RFQ${plan.drafts.length === 1 ? "" : "s"} to
                     ${plan.drafts.map((r) => r.supplierName).join(", ")} — reply by ${at(plan.dueAt)}.</ui-text
                   >
-                  <ui-text size="sm"
+                  <ui-text variant="body-md"
                     >The client's name, vessel and files are removed. Reminders go out after 24 h and 48 h, stop as soon
                     as a supplier answers, and the case owner is alerted after the second.</ui-text
                   >
@@ -587,15 +594,15 @@ export class GsCaseRfqs extends LightElement {
     const steps = (r: CaseRfqRow) => {
       const done = r.schedule.filter((s) => s.state === "done").length;
       return html`<ui-flex direction="col" gap="1">
-        <ui-text size="sm" weight="medium"
-          >${r.supplier.name} · <ui-text as="span" size="xs" mono>${r.reference}</ui-text></ui-text
+        <ui-text variant="label-lg"
+          >${r.supplier.name} · <ui-text as="span" variant="body-sm" mono>${r.reference}</ui-text></ui-text
         >
         <ui-steps
           scrollable
           .color=${r.escalated ? "error" : "primary"}
           .current=${done - 1}
           .items=${r.schedule.map((s) => ({
-            label: html`${s.label}<br /><ui-text as="span" size="xs" color="muted"
+            label: html`${s.label}<br /><ui-text as="span" variant="body-sm" color="muted"
                 >${s.state === "skipped" ? "not needed" : s.state === "next" ? `next · ${at(s.at)}` : at(s.at)}</ui-text
               >`,
             marker: s.state === "done" ? "✓" : s.state === "skipped" ? "–" : undefined,
@@ -604,11 +611,11 @@ export class GsCaseRfqs extends LightElement {
       </ui-flex>`;
     };
     return html`<ui-card variant="border" shadow="false" heading="Reminders and escalation">
-      <ui-text size="sm"
+      <ui-text variant="body-md"
         >Reminder 1 after 24 h, reminder 2 after 48 h, then the case owner (${d.case.ownerName}) is alerted. Reminders
         stop the moment a supplier replies or declines.</ui-text
       >
-      ${open.length ? open.map(steps) : html`<ui-text size="sm" color="muted">No supplier is being chased right now.</ui-text>`}
+      ${open.length ? open.map(steps) : html`<ui-text variant="body-md" color="muted">No supplier is being chased right now.</ui-text>`}
     </ui-card>`;
   }
 

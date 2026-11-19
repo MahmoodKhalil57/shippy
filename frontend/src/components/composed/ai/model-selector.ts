@@ -65,7 +65,7 @@ export class UiModelSelector extends LightElement {
       trigger-spaced="false"
       .label=${`Model: ${current?.label ?? ""}`}
     >
-      <ui-text slot="trigger" as="span" size="xs" weight="semibold">
+      <ui-text slot="trigger" as="span" variant="label-md" emphasized>
         ${current?.icon ? html`<ui-icon name=${current.icon} size="sm"></ui-icon>` : ""} ${current?.label}
         <ui-icon name="unfold" size="sm"></ui-icon>
       </ui-text>

@@ -35,9 +35,9 @@ export const diffResizer = rcva("diff-resizer");
 export const diffText = rcva("grid place-content-center text-9xl font-black", {
   variants: {
     color: {
-      "base-100": "bg-base-100",
-      "base-200": "bg-base-200",
-      "base-300": "bg-base-300",
+      "base-100": "bg-surface",
+      "base-200": "bg-surface-container",
+      "base-300": "bg-surface-container-highest",
       neutral: "bg-neutral text-neutral-content",
       primary: "bg-primary text-primary-content",
       secondary: "bg-secondary text-secondary-content",

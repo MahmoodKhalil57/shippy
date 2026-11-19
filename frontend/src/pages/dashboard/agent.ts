@@ -163,13 +163,13 @@ export class DashboardAgent extends LightElement {
     if (this.model !== "aibrowser" || this.localAi === "native" || this.localAi === "local") return nothing;
     return html`<ui-alert color="info" variant="soft">
       <ui-flex direction="col" gap="2">
-        <ui-text size="sm" weight="semibold">Saastama-Micro-3.5 runs on this computer</ui-text>
-        <ui-text size="sm"
+        <ui-text variant="title-sm">Saastama-Micro-3.5 runs on this computer</ui-text>
+        <ui-text variant="body-md"
           >This browser doesn't have Chrome's on-device AI switched on. Download the model once (about 800 MB, kept by
           the browser — not in private windows) to use it here — nothing you type leaves this computer. Or turn on
           Chrome's own (faster) with the steps on the login page.</ui-text
         >
-        ${this.localAiError ? html`<ui-text size="xs" color="error">${this.localAiError}</ui-text>` : nothing}
+        ${this.localAiError ? html`<ui-text variant="body-sm" color="error">${this.localAiError}</ui-text>` : nothing}
         <ui-flex gap="2" align="center" wrap>
           <ui-button
             size="sm"
@@ -457,8 +457,8 @@ export class DashboardAgent extends LightElement {
       <ui-message-scroller ?busy=${this.busy} ?empty=${!this.items.length}>
         <ui-flex slot="empty" direction="col" align="center" gap="3">
           <ui-icon name="assistant" size="xl" color="primary"></ui-icon>
-          <ui-text weight="semibold">How can I help?</ui-text>
-          <ui-text size="sm" color="muted" align="center"
+          <ui-text emphasized>How can I help?</ui-text>
+          <ui-text variant="body-md" color="muted" align="center"
             >I see the screen you're on, find records, explain what's waiting for you, take you anywhere and, with your
             OK, do things for you.</ui-text
           >

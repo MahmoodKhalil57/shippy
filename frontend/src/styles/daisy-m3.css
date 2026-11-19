@@ -26,16 +26,70 @@
     }
 
     /* Read-only fields read as values, not as empty boxes waiting for input: a light tonal fill
-       (4% of the ink), no outline and no shadow. Keyboard focus still shows. */
+       (the lowest container step), no outline and no shadow. Keyboard focus still shows. */
     input.input:read-only:not([type="checkbox"], [type="radio"]),
     textarea.textarea:read-only,
     .input:has(> input:read-only),
     select.select:disabled,
     .select:has(> select:disabled) {
-      background-color: color-mix(in oklab, var(--color-base-content) 4%, transparent);
+      background-color: var(--color-surface-container-low);
       border-color: transparent;
       box-shadow: none;
       cursor: default;
+    }
+
+    /* Colour roles (src/styles/theme.css) for daisyUI's own lines.
+       Fields and selection controls are boundaries people must find, so they use `outline`
+       (M3: ≥ 3:1 against the surface; daisyUI's 20% ink is about 1.5:1, below WCAG 1.4.11). On
+       hover the outline darkens to the ink (M3's hovered outlined field). Coloured, error and
+       focused fields keep daisyUI's colours: this layer wins over daisyUI whatever the
+       specificity, so those are excluded here rather than out-ranked. */
+    :is(.input, .select, .textarea, .file-input):not(
+      :focus,
+      :focus-within,
+      [class*="-primary"],
+      [class*="-secondary"],
+      [class*="-accent"],
+      [class*="-neutral"],
+      [class*="-info"],
+      [class*="-success"],
+      [class*="-warning"],
+      [class*="-error"]
+    ) {
+      --input-color: var(--color-outline);
+      @media (hover: hover) {
+        &:hover {
+          --input-color: var(--color-on-surface-variant);
+        }
+      }
+    }
+    :is(.checkbox, .radio):not(
+      :checked,
+      [aria-checked="true"],
+      :indeterminate,
+      [class*="-primary"],
+      [class*="-secondary"],
+      [class*="-accent"],
+      [class*="-neutral"],
+      [class*="-info"],
+      [class*="-success"],
+      [class*="-warning"],
+      [class*="-error"]
+    ) {
+      --input-color: var(--color-outline);
+    }
+    /* Dividers are decorative separation: outline-variant (M3 divider.color). */
+    .divider:not(
+      .divider-neutral,
+      .divider-primary,
+      .divider-secondary,
+      .divider-accent,
+      .divider-success,
+      .divider-warning,
+      .divider-info,
+      .divider-error
+    ) {
+      --divider-color: var(--color-outline-variant);
     }
   }
 }

@@ -14,8 +14,8 @@ export const mockupBrowser = rcva("mockup-browser w-full", {
   variants: {
     /** `bordered`: border only. `filled`: border + base-100 background. */
     variant: {
-      bordered: "border border-base-300",
-      filled: "bg-base-100 border border-base-300",
+      bordered: "border border-outline-variant",
+      filled: "bg-surface border border-outline-variant",
     },
   },
   defaultVariants: { variant: "bordered" },
@@ -31,7 +31,7 @@ export const mockupBrowserAddress = rcva("input");
 export const mockupBrowserContent = rcva("", {
   variants: {
     variant: {
-      bordered: "border-t border-base-300",
+      bordered: "border-t border-outline-variant",
       filled: "",
     },
     /** Center the content (grid place-content-center). */

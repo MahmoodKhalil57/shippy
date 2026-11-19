@@ -144,7 +144,7 @@ export class GsRoles extends LightElement implements ViewProps {
               html`<ui-tooltip .tip=${u.name}><ui-badge size="sm" variant="outline">${u.name}</ui-badge></ui-tooltip>`,
           )}
         </ui-flex>`
-      : html`<ui-text size="xs" color="muted">System account</ui-text>`;
+      : html`<ui-text variant="body-sm" color="muted">System account</ui-text>`;
   }
 
   private _matrix(d: RolesView) {
@@ -155,9 +155,9 @@ export class GsRoles extends LightElement implements ViewProps {
         label: "Role · people",
         render: (r) =>
           html`<ui-flex direction="col" gap="1">
-            <ui-text size="sm" weight="semibold">${r.label}</ui-text>
+            <ui-text variant="title-sm">${r.label}</ui-text>
             ${this._names(r.users)}
-            ${typeof r.note === "string" && r.note ? html`<ui-text size="xs" color="muted">${r.note}</ui-text>` : nothing}
+            ${typeof r.note === "string" && r.note ? html`<ui-text variant="body-sm" color="muted">${r.note}</ui-text>` : nothing}
           </ui-flex>`,
       },
       ...d.permissions.map((p): TableColumn<RoleRow> => ({
@@ -192,7 +192,7 @@ export class GsRoles extends LightElement implements ViewProps {
             : html`<ui-badge size="sm" variant="soft">Read only — management edits</ui-badge>`
         }
       </ui-flex>
-      <ui-text size="xs" color="muted"
+      <ui-text variant="body-sm" color="muted"
         >Who can see and approve what, per role and person. Named users and licences are confirmed in Phase 0.</ui-text
       >
       <ui-table size="sm" .columns=${columns} .rows=${this.matrix}></ui-table>
@@ -209,15 +209,15 @@ export class GsRoles extends LightElement implements ViewProps {
                 >${c.pass ? "Verified" : "Failing"}</ui-badge
               >
               <ui-flex direction="col" gap="0" shrink>
-                <ui-text size="sm" weight="semibold">${c.label}</ui-text>
-                <ui-text size="xs" color="muted">${c.detail}</ui-text>
+                <ui-text variant="title-sm">${c.label}</ui-text>
+                <ui-text variant="body-sm" color="muted">${c.detail}</ui-text>
               </ui-flex>
             </ui-flex>`,
         )}
       </ui-flex>
       <ui-divider></ui-divider>
       <ui-flex direction="col" gap="2">
-        ${d.permissions.map((p) => html`<ui-text size="xs"><strong>${p.label}:</strong> ${p.enforced}</ui-text>`)}
+        ${d.permissions.map((p) => html`<ui-text variant="body-sm"><strong>${p.label}:</strong> ${p.enforced}</ui-text>`)}
       </ui-flex>
       <ui-alert color="info" variant="soft"
         >Try it: switch the signed-in user to Soaad Amer (Sales) and open the pricing tab of GS-RFQ-0142 — costs and
@@ -239,7 +239,7 @@ export class GsRoles extends LightElement implements ViewProps {
         render: (_s, i) => {
           const s = d.roster.shifts[i];
           return html`<ui-flex direction="col" gap="0">
-            <ui-text size="sm">${s?.fromText} → ${s?.toText}</ui-text>
+            <ui-text variant="body-md">${s?.fromText} → ${s?.toText}</ui-text>
             ${s?.now ? html`<ui-badge size="xs" color="primary" variant="soft">Now</ui-badge>` : nothing}
           </ui-flex>`;
         },
@@ -255,7 +255,7 @@ export class GsRoles extends LightElement implements ViewProps {
                 .value=${s.user}
                 @change=${(e: Event) => this._shift(i, "user", (e.target as HTMLSelectElement).value)}
               ></ui-select>`
-            : html`<ui-text size="sm" weight="semibold">${d.roster.shifts[i]?.user?.name ?? "—"}</ui-text>`,
+            : html`<ui-text variant="title-sm">${d.roster.shifts[i]?.user?.name ?? "—"}</ui-text>`,
       },
       {
         key: "backup",
@@ -268,7 +268,7 @@ export class GsRoles extends LightElement implements ViewProps {
                 .value=${s.backup}
                 @change=${(e: Event) => this._shift(i, "backup", (e.target as HTMLSelectElement).value)}
               ></ui-select>`
-            : html`<ui-text size="sm">${d.roster.shifts[i]?.backup?.name ?? "—"}</ui-text>`,
+            : html`<ui-text variant="body-md">${d.roster.shifts[i]?.backup?.name ?? "—"}</ui-text>`,
       },
     ];
     return html`<ui-card variant="border" shadow="false">
@@ -286,7 +286,7 @@ export class GsRoles extends LightElement implements ViewProps {
             : html`<ui-badge size="sm" variant="soft">Read only — management & office manager edit</ui-badge>`
         }
       </ui-flex>
-      <ui-text size="xs" color="muted"
+      <ui-text variant="body-sm" color="muted"
         >Office hours Sun–Thu 08:00–17:00 Cairo. Outside them, urgent RFQs (or a vessel ETA under 24 h) alert the
         on-duty person by WhatsApp / SMS; the backup after ${d.roster.escalateAfterMinutes} min, then senior contacts:
         ${d.roster.senior.map((p) => p.name).join(", ")}.</ui-text
@@ -303,7 +303,7 @@ export class GsRoles extends LightElement implements ViewProps {
   private _simulator() {
     const r = this.routing;
     return html`<ui-card variant="border" shadow="false" heading="After-hours routing — try it">
-      <ui-text size="xs" color="muted"
+      <ui-text variant="body-sm" color="muted"
         >Pick when an urgent RFQ arrives. The rule “After-hours & weekend RFQ” decides who is alerted; the alert is
         simulated and lands in that person's notifications.</ui-text
       >
@@ -327,9 +327,9 @@ export class GsRoles extends LightElement implements ViewProps {
                 <ui-badge size="sm" variant="soft" .color=${r.inHours ? "info" : "warning"}
                   >${r.inHours ? "Office hours" : "After hours"}</ui-badge
                 >
-                <ui-text size="sm" weight="semibold">${r.atText}</ui-text>
+                <ui-text variant="title-sm">${r.atText}</ui-text>
               </ui-flex>
-              <ui-text size="sm">${r.reason}</ui-text>
+              <ui-text variant="body-md">${r.reason}</ui-text>
               ${
                 r.routedTo
                   ? html`<ui-steps
@@ -358,8 +358,8 @@ export class GsRoles extends LightElement implements ViewProps {
     return html`<ui-flex direction="col" gap="6">
       <ui-flex justify="between" align="end" gap="4" wrap>
         <ui-flex direction="col" gap="1" shrink>
-          <ui-text size="xs" color="muted" weight="medium" uppercase>Team · access</ui-text>
-          <ui-heading level="1" size="page">Roles & permissions</ui-heading>
+          <ui-text variant="label-md" color="muted" uppercase>Team · access</ui-text>
+          <ui-heading level="1" variant="page">Roles & permissions</ui-heading>
           <ui-text color="muted"
             >Sales never sees costs or margins; approvals need a named person; bank-detail changes need two. Urgent RFQs
             after hours go to whoever is on call.</ui-text
@@ -378,7 +378,7 @@ export class GsRoles extends LightElement implements ViewProps {
         .open=${!!this.confirm}
         @ui-close=${() => (this.confirm = "")}
       >
-        <ui-text size="sm"
+        <ui-text variant="body-md"
           >${
             this.confirm === "matrix"
               ? "Changes apply to every person in the role and are logged on the audit trail."

@@ -43,11 +43,11 @@ export const stackLayer = rcva("", {
       accent: "bg-accent text-accent-content grid place-content-center rounded-box",
       neutral: "bg-neutral text-neutral-content grid place-content-center rounded-box",
       /** Bordered card (docs "stacked cards"). */
-      card: "card bg-base-100 border border-base-content text-center",
+      card: "card bg-surface border border-base-content text-center",
       /** Raised card (docs "stacked cards with shadow"). */
-      "card-raised": "card bg-base-100 shadow-elevation-1",
+      "card-raised": "card bg-surface shadow-elevation-1",
       /** Filled card (docs "stacked cards" with shadows). */
-      "card-filled": "card bg-base-200 text-center",
+      "card-filled": "card bg-surface-container text-center",
       image: "rounded-box",
     },
     /** M3 elevation of a layer. */

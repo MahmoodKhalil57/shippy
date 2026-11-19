@@ -11,7 +11,7 @@ import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts
  * Purpose: Layout & page structure · Kind: primitive (Shippy, not daisyUI)
  *
  * The wrapper the daisyUI docs keep writing as utilities
- * (`bg-base-100 border border-base-300 rounded-box p-4 w-64`...), as variants.
+ * (`bg-surface border border-outline-variant rounded-box p-4 w-64`...), as variants.
  * Every variant is responsive, e.g. `padding="4 md:8"`.
  */
 export const box = rcva("", {
@@ -26,17 +26,17 @@ export const box = rcva("", {
     },
     grow: { true: "grow", false: "grow-0" },
     surface: {
-      "base-100": "bg-base-100 text-base-content",
-      "base-200": "bg-base-200 text-base-content",
-      "base-300": "bg-base-300 text-base-content",
+      "base-100": "bg-surface text-on-surface",
+      "base-200": "bg-surface-container text-on-surface",
+      "base-300": "bg-surface-container-highest text-on-surface",
       neutral: "bg-neutral text-neutral-content",
       primary: "bg-primary text-primary-content",
       secondary: "bg-secondary text-secondary-content",
       accent: "bg-accent text-accent-content",
       /** A light primary tint with a primary border: something the AI produced, to check. */
-      "primary-soft": "border border-primary/25 bg-primary/5 text-base-content",
+      "primary-soft": "bg-primary-container text-on-surface",
     },
-    border: { true: "border border-base-300" },
+    border: { true: "border border-outline-variant" },
     rounded: {
       none: "rounded-none",
       field: "rounded-field",

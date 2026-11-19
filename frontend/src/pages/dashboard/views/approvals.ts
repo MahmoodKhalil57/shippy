@@ -80,11 +80,11 @@ export class GsApprovals extends LightElement {
           <ui-badge size="sm" variant="soft" color="primary">${a.type}</ui-badge>
           <ui-badge size="sm" variant="soft" .color=${TONE[a.tone]}>${a.status}</ui-badge>
           ${a.twoPerson ? html`<ui-badge size="sm" variant="outline" color="warning">Two-person rule</ui-badge>` : nothing}
-          ${a.case ? html`<ui-text size="xs" color="muted">${a.case.caseId} · ${a.case.vessel}</ui-text>` : nothing}
+          ${a.case ? html`<ui-text variant="body-sm" color="muted">${a.case.caseId} · ${a.case.vessel}</ui-text>` : nothing}
         </ui-flex>
         <span>${a.title}</span>
       </ui-flex>
-      <ui-text size="xs" color="muted"
+      <ui-text variant="body-sm" color="muted"
         >Requested by ${a.requestedBy}${a.requestedAt ? ` · ${day(a.requestedAt, true)}` : ""}</ui-text
       >
       <ui-ai-summary
@@ -97,8 +97,10 @@ export class GsApprovals extends LightElement {
         ${a.evidence.map(
           (e) =>
             html`<ui-flex gap="2" align="baseline" wrap>
-              <ui-text size="xs" color="muted" uppercase>${e.label}</ui-text>
-              <ui-text size="sm" .color=${e.tone && e.tone !== "neutral" && e.tone !== "info" ? e.tone : undefined}
+              <ui-text variant="body-sm" color="muted" uppercase>${e.label}</ui-text>
+              <ui-text
+                variant="body-md"
+                .color=${e.tone && e.tone !== "neutral" && e.tone !== "info" ? e.tone : undefined}
                 >${e.value}</ui-text
               >
             </ui-flex>`,
@@ -117,11 +119,11 @@ export class GsApprovals extends LightElement {
               >`,
           )}
         </ui-flex>
-        <ui-text size="sm" weight="medium">${a.progress}</ui-text>
+        <ui-text variant="label-lg">${a.progress}</ui-text>
         ${a.approvers
           .filter((p) => p.reason)
-          .map((p) => html`<ui-text size="xs" color="muted" italic>${p.name}: “${p.reason}”</ui-text>`)}
-        <ui-text size="xs" color="muted">Who decides: ${a.rule}</ui-text>
+          .map((p) => html`<ui-text variant="body-sm" color="muted" italic>${p.name}: “${p.reason}”</ui-text>`)}
+        <ui-text variant="body-sm" color="muted">Who decides: ${a.rule}</ui-text>
         ${!done && !a.canDecide ? html`<ui-alert color="info" variant="soft">${a.why}</ui-alert>` : nothing}
       </ui-flex>
       <ui-flex slot="actions" gap="2" wrap>
@@ -164,7 +166,7 @@ export class GsApprovals extends LightElement {
       @ui-close=${() => (this.deciding = null)}
     >
       <ui-flex direction="col" gap="3">
-        <ui-text size="sm" weight="semibold">${d.card.title}</ui-text>
+        <ui-text variant="title-sm">${d.card.title}</ui-text>
         ${
           approve &&
           d.card.twoPerson &&
@@ -185,7 +187,7 @@ export class GsApprovals extends LightElement {
           .value=${this.reason}
           @ui-change=${(e: CustomEvent<{ value: string }>) => (this.reason = e.detail.value)}
         ></ui-ai-tools>
-        <ui-text size="xs" color="muted"
+        <ui-text variant="body-sm" color="muted"
           >Recorded under your name with the time, on the request and the case timeline.</ui-text
         >
       </ui-flex>
@@ -205,11 +207,11 @@ export class GsApprovals extends LightElement {
       <ui-flex slot="heading" gap="2" align="center"
         >${heading}<ui-badge size="sm" variant="soft">${cards.length}</ui-badge></ui-flex
       >
-      <ui-text size="sm" color="muted">${sub}</ui-text>
+      <ui-text variant="body-md" color="muted">${sub}</ui-text>
       ${
         cards.length
           ? html`<ui-grid fit="md" gap="4">${cards.map((c) => this._card(c))}</ui-grid>`
-          : html`<ui-text size="sm" color="muted">${empty}</ui-text>`
+          : html`<ui-text variant="body-md" color="muted">${empty}</ui-text>`
       }
     </ui-card>`;
   }
@@ -224,8 +226,8 @@ export class GsApprovals extends LightElement {
     return html`<ui-flex direction="col" gap="6">
       <ui-flex justify="between" align="end" gap="4" wrap>
         <ui-flex direction="col" gap="1" shrink>
-          <ui-text size="xs" color="muted" weight="medium" uppercase>Approvals</ui-text>
-          <ui-heading level="1" size="page"
+          <ui-text variant="label-md" color="muted" uppercase>Approvals</ui-text>
+          <ui-heading level="1" variant="page"
             >${mine.length ? `${mine.length} decision${mine.length === 1 ? "" : "s"} waiting for you` : "Nothing waiting for you"}</ui-heading
           >
           <ui-text color="muted"
@@ -247,9 +249,9 @@ export class GsApprovals extends LightElement {
           (t) =>
             html`<ui-card variant="border" size="sm" shadow="false">
               <ui-flex direction="col" gap="1">
-                <ui-text size="sm" color="muted" truncate>${t.label}</ui-text>
-                <ui-text size="3xl" weight="semibold" leading="tight">${t.value}</ui-text>
-                <ui-text size="xs" color="muted">${t.note}</ui-text>
+                <ui-text variant="body-md" color="muted" truncate>${t.label}</ui-text>
+                <ui-text variant="headline-md" leading="tight">${t.value}</ui-text>
+                <ui-text variant="body-sm" color="muted">${t.note}</ui-text>
               </ui-flex>
             </ui-card>`,
         )}

@@ -111,8 +111,8 @@ export const icon = rcva("inline-block shrink-0", {
     },
     color: {
       current: "",
-      "base-content": "text-base-content",
-      muted: "text-base-content/70",
+      "base-content": "text-on-surface",
+      muted: "text-on-surface-variant",
       primary: "text-primary",
       secondary: "text-secondary",
       accent: "text-accent",

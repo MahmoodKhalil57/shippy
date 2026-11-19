@@ -159,8 +159,8 @@ export class GsCaseCompare extends LightElement {
         render: (o) =>
           html`<ui-flex direction="col" gap="1">
             <ui-flex gap="2" align="center" wrap>
-              <ui-text size="sm" weight="semibold" .color=${o.superseded ? "muted" : undefined}>${o.supplier}</ui-text>
-              <ui-text size="xs" color="muted">v${o.version}</ui-text>
+              <ui-text variant="title-sm" .color=${o.superseded ? "muted" : undefined}>${o.supplier}</ui-text>
+              <ui-text variant="body-sm" color="muted">v${o.version}</ui-text>
               ${
                 o.kind === "stock"
                   ? html`<ui-badge size="xs" variant="soft" color="success">Own stock</ui-badge>`
@@ -182,7 +182,7 @@ export class GsCaseCompare extends LightElement {
                   : nothing
               }
             </ui-flex>
-            <ui-text size="xs" color="muted">${o.supplierNote}</ui-text>
+            <ui-text variant="body-sm" color="muted">${o.supplierNote}</ui-text>
           </ui-flex>`,
       },
       {
@@ -190,8 +190,8 @@ export class GsCaseCompare extends LightElement {
         label: "Offered",
         render: (o) =>
           html`<ui-flex direction="col" gap="0">
-            <ui-text size="sm">${o.offered}</ui-text>
-            <ui-text size="xs" .color=${o.coverage < 1 ? "warning" : "muted"}
+            <ui-text variant="body-md">${o.offered}</ui-text>
+            <ui-text variant="body-sm" .color=${o.coverage < 1 ? "warning" : "muted"}
               >${Math.round(o.coverage * 100)}% of requested${o.expiry ? ` · exp. ${o.expiry}` : ""}</ui-text
             >
           </ui-flex>`,
@@ -201,8 +201,8 @@ export class GsCaseCompare extends LightElement {
         label: "Price (as offered)",
         render: (o) =>
           html`<ui-flex direction="col" gap="0">
-            <ui-text size="sm">${money(o.price, o.currency)}</ui-text>
-            <ui-text size="xs" color="muted">per ${o.per} · total ${egp(o.goodsEGP)}</ui-text>
+            <ui-text variant="body-md">${money(o.price, o.currency)}</ui-text>
+            <ui-text variant="body-sm" color="muted">per ${o.per} · total ${egp(o.goodsEGP)}</ui-text>
           </ui-flex>`,
       },
       {
@@ -210,10 +210,10 @@ export class GsCaseCompare extends LightElement {
         label: unitLabel,
         render: (o) =>
           html`<ui-flex direction="col" gap="0">
-            <ui-text size="sm" weight="bold" .color=${o.rank === 0 && !o.blocked ? "success" : undefined}
+            <ui-text variant="title-sm" emphasized .color=${o.rank === 0 && !o.blocked ? "success" : undefined}
               >${amount(this._metric(o))}</ui-text
             >
-            <ui-text size="xs" color="muted"
+            <ui-text variant="body-sm" color="muted"
               >${
                 this.mode === "landed"
                   ? `${o.freightEGP ? `+ ${egp(o.freightEGP)}` : "no freight"} · ${o.freightNote}`
@@ -228,11 +228,11 @@ export class GsCaseCompare extends LightElement {
         render: (o) =>
           html`<ui-flex direction="col" gap="0">
             <ui-text
-              size="sm"
+              variant="body-md"
               .color=${o.flags.some((f) => f.type === "Lead time vs ETA" && f.tone === "error") ? "error" : undefined}
               >${o.leadDays} d</ui-text
             >
-            <ui-text size="xs" color="muted">ready ${day(o.readyBy)}</ui-text>
+            <ui-text variant="body-sm" color="muted">ready ${day(o.readyBy)}</ui-text>
           </ui-flex>`,
       },
       {
@@ -240,10 +240,10 @@ export class GsCaseCompare extends LightElement {
         label: "Valid · terms · basis",
         render: (o) =>
           html`<ui-flex direction="col" gap="0">
-            <ui-text size="xs"
+            <ui-text variant="body-sm"
               >${o.validUntil ? `Valid to ${day(o.validUntil)}` : "No expiry"} · ${o.terms || "—"}</ui-text
             >
-            <ui-text size="xs" color="muted">${o.basis}</ui-text>
+            <ui-text variant="body-sm" color="muted">${o.basis}</ui-text>
           </ui-flex>`,
       },
       {
@@ -339,7 +339,7 @@ export class GsCaseCompare extends LightElement {
         <ui-flex gap="2" align="center" shrink>L${line.lineNo} · ${line.description}</ui-flex>
         <ui-badge size="sm" variant="soft" .color=${TONE[line.statusTone]}>${line.status}</ui-badge>
       </ui-flex>
-      <ui-text size="sm" color="muted">Requested: ${line.requested} · ${line.rules}</ui-text>
+      <ui-text variant="body-md" color="muted">Requested: ${line.requested} · ${line.rules}</ui-text>
       ${this._offerCheck(line)}
       ${
         line.missing
@@ -360,9 +360,9 @@ export class GsCaseCompare extends LightElement {
                 (o) =>
                   html`<ui-flex gap="2" align="baseline" wrap>
                     <ui-status size="xs" .color=${TONE[o.tone]} .label=${o.tone}></ui-status>
-                    <ui-text size="xs" weight="semibold">${o.supplier}</ui-text>
+                    <ui-text variant="label-md" emphasized>${o.supplier}</ui-text>
                     <ui-badge size="xs" variant="soft" .color=${TONE[o.tone]}>${o.status}</ui-badge>
-                    <ui-text size="xs" color="muted">${o.note}</ui-text>
+                    <ui-text variant="body-sm" color="muted">${o.note}</ui-text>
                   </ui-flex>`,
               )}
             </ui-flex>`
@@ -397,7 +397,7 @@ export class GsCaseCompare extends LightElement {
       }
       ${
         selected
-          ? html`<ui-text size="sm"
+          ? html`<ui-text variant="body-md"
               ><strong>Selected:</strong> ${selected}${line.selection.reason ? ` · ${line.selection.reason}` : ""}${
                 line.selection.inferred ? " (from the line status)" : ""
               }</ui-text
@@ -457,7 +457,7 @@ export class GsCaseCompare extends LightElement {
       @ui-close=${() => (this.choice = null)}
     >
       <ui-flex direction="col" gap="3">
-        <ui-text size="sm" color="muted">${c.line.description} · requested ${c.line.requested}</ui-text>
+        <ui-text variant="body-md" color="muted">${c.line.description} · requested ${c.line.requested}</ui-text>
         ${
           c.split
             ? html`<ui-flex direction="col" gap="2">
@@ -465,10 +465,8 @@ export class GsCaseCompare extends LightElement {
                   (p, i) =>
                     html`<ui-flex gap="3" align="center" wrap>
                       <ui-flex direction="col" gap="0" grow shrink>
-                        <ui-text size="sm" weight="semibold"
-                          >${name(p.offer)?.supplier} v${name(p.offer)?.version}</ui-text
-                        >
-                        <ui-text size="xs" color="muted"
+                        <ui-text variant="title-sm">${name(p.offer)?.supplier} v${name(p.offer)?.version}</ui-text>
+                        <ui-text variant="body-sm" color="muted"
                           >${amount(name(p.offer)?.landedPerBase ?? 0)} EGP / ${c.line.baseUnit} landed · up to
                           ${Math.floor((name(p.offer)?.baseQty ?? 0) / (c.line.baseQty / c.line.qty))}
                           ${c.line.unit}</ui-text
@@ -489,11 +487,11 @@ export class GsCaseCompare extends LightElement {
                       ></ui-text-input>
                     </ui-flex>`,
                 )}
-                <ui-text size="sm" .color=${total === c.line.qty ? "success" : "warning"}
+                <ui-text variant="body-md" .color=${total === c.line.qty ? "success" : "warning"}
                   >${total} of ${c.line.qty} ${c.line.unit} · ${egp(cost)} landed</ui-text
                 >
               </ui-flex>`
-            : html`<ui-text size="sm"
+            : html`<ui-text variant="body-md"
                 >${name(c.parts[0].offer)?.supplier} v${name(c.parts[0].offer)?.version} × ${c.line.qty} ${c.line.unit}
                 · ${egp(cost)} landed</ui-text
               >`
@@ -543,13 +541,13 @@ export class GsCaseCompare extends LightElement {
               </ui-flex>
               <ui-mockup-window>
                 <ui-flex direction="col" gap="2" padding="4">
-                  <ui-text size="sm"><strong>To:</strong> ${c.draft.to}</ui-text>
-                  <ui-text size="sm"><strong>Subject:</strong> ${c.draft.subject}</ui-text>
+                  <ui-text variant="body-md"><strong>To:</strong> ${c.draft.to}</ui-text>
+                  <ui-text variant="body-md"><strong>Subject:</strong> ${c.draft.subject}</ui-text>
                   <ui-divider></ui-divider>
                   <ui-ai-text .text=${c.draft.body} translatable></ui-ai-text>
                 </ui-flex>
               </ui-mockup-window>
-              <ui-text size="xs" color="muted"
+              <ui-text variant="body-sm" color="muted"
                 >The client is never named to the supplier. v1 stays on the case for audit; only a corrected version can
                 be priced.</ui-text
               >
@@ -582,7 +580,7 @@ export class GsCaseCompare extends LightElement {
     if (!line) return nothing;
     return html`<ui-modal open heading="Record customer acceptance" @ui-close=${() => (this.accepting = null)}>
       <ui-flex direction="col" gap="3">
-        <ui-text size="sm"
+        <ui-text variant="body-md"
           >Line ${line.lineNo} uses an alternative pack. The quotation can only show it as accepted with the customer's
           written confirmation.</ui-text
         >
@@ -617,7 +615,7 @@ export class GsCaseCompare extends LightElement {
     const selected = d.lines.filter((l) => l.selection.parts.length).length;
     return html`<ui-flex direction="col" gap="4">
       <ui-card variant="border" shadow="false" heading="How offers are compared">
-        <ui-text size="sm" color="muted"
+        <ui-text variant="body-md" color="muted"
           >Each offer is checked against the original line and normalised to the requested base unit (EA / L / kg) in
           EGP at the approved FX rate, keeping the supplier's own units and currency. Landed cost adds the freight to
           ${d.port} (lane rates, import costs for agency lines). AI suggests matches and deviations; technical

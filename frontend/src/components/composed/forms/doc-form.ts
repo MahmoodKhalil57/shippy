@@ -212,7 +212,7 @@ export class UiDocForm extends LightElement {
 
   private _error(path: Path) {
     const msg = this.errors[path.join(".")];
-    return msg ? html`<ui-text size="sm" color="error">${msg}</ui-text>` : nothing;
+    return msg ? html`<ui-text variant="body-md" color="error">${msg}</ui-text>` : nothing;
   }
 
   private _hasError(path: Path) {
@@ -262,7 +262,7 @@ export class UiDocForm extends LightElement {
           ?open=${!f.admin?.initCollapsed || this._errorsIn(path, f.fields) > 0}
           .heading=${labelOf(f) || "Details"}
         >
-          ${f.admin?.description ? html`<ui-text size="sm" color="muted">${f.admin.description}</ui-text>` : nothing}
+          ${f.admin?.description ? html`<ui-text variant="body-md" color="muted">${f.admin.description}</ui-text>` : nothing}
           ${this._fields(f.fields ?? [], data, path)}
         </ui-collapse>`;
       case "tabs":
@@ -276,7 +276,7 @@ export class UiDocForm extends LightElement {
             return {
               // A tab with errors inside says so, so they're found without opening every tab.
               label: errors ? `${label} · ${errors} ${errors === 1 ? "error" : "errors"}` : label,
-              content: html`${typeof description === "string" ? html`<ui-text size="sm" color="muted">${description}</ui-text>` : nothing}
+              content: html`${typeof description === "string" ? html`<ui-text variant="body-md" color="muted">${description}</ui-text>` : nothing}
               ${
                 tab.name
                   ? this._fields(tab.fields, isObj(data[tab.name]) ? (data[tab.name] as Data) : {}, at)
@@ -290,8 +290,8 @@ export class UiDocForm extends LightElement {
         const inner = this._fields(f.fields ?? [], isObj(data[name]) ? (data[name] as Data) : {}, [...path, name]);
         if (f.admin?.hideGutter) {
           return html`<ui-flex direction="col" gap="2">
-            ${labelOf(f) ? html`<ui-text weight="semibold">${labelOf(f)}</ui-text>` : nothing}
-            ${f.admin?.description ? html`<ui-text size="sm" color="muted">${f.admin.description}</ui-text>` : nothing}
+            ${labelOf(f) ? html`<ui-text emphasized>${labelOf(f)}</ui-text>` : nothing}
+            ${f.admin?.description ? html`<ui-text variant="body-md" color="muted">${f.admin.description}</ui-text>` : nothing}
             ${inner}
           </ui-flex>`;
         }
@@ -380,7 +380,7 @@ export class UiDocForm extends LightElement {
     return html`<ui-flex direction="col" gap="2">
       <ui-flex align="center" justify="between" gap="2" wrap>
         <ui-flex align="center" gap="2">
-          <ui-text weight="semibold">${labelOf(f)}${f.required ? " *" : ""}</ui-text>
+          <ui-text emphasized>${labelOf(f)}${f.required ? " *" : ""}</ui-text>
           <ui-badge size="sm" variant="soft">${rows.length}${range ? ` · ${range}` : ""}</ui-badge>
         </ui-flex>
         ${
@@ -392,9 +392,9 @@ export class UiDocForm extends LightElement {
             : nothing
         }
       </ui-flex>
-      ${f.admin?.description ? html`<ui-text size="sm" color="muted">${f.admin.description}</ui-text>` : nothing}
+      ${f.admin?.description ? html`<ui-text variant="body-md" color="muted">${f.admin.description}</ui-text>` : nothing}
       ${this._error(at)}
-      ${rows.length ? nothing : html`<ui-text size="sm" color="muted">No ${humanize(name).toLowerCase()} yet.</ui-text>`}
+      ${rows.length ? nothing : html`<ui-text variant="body-md" color="muted">No ${humanize(name).toLowerCase()} yet.</ui-text>`}
       ${rows.map((row, i) => {
         const fields = f.type === "blocks" ? (blockOf(row)?.fields ?? []) : (f.fields ?? []);
         const open = isOpen(row, i);
@@ -421,8 +421,8 @@ export class UiDocForm extends LightElement {
                 @click=${() => (this._folded = new Map(this._folded).set(rowId(row, i), !open))}
               >
                 <ui-icon name=${open ? "chevron-down" : "chevron-right"} size="sm"></ui-icon>
-                <ui-text as="span" size="sm" weight="semibold">${kind} ${text(i + 1).padStart(2, "0")}</ui-text>
-                ${name ? html`<ui-text as="span" size="sm" color="muted">${name}</ui-text>` : nothing}
+                <ui-text as="span" variant="title-sm">${kind} ${text(i + 1).padStart(2, "0")}</ui-text>
+                ${name ? html`<ui-text as="span" variant="body-md" color="muted">${name}</ui-text>` : nothing}
               </ui-button>
               <ui-flex align="center" gap="1">
                 ${errors ? html`<ui-badge size="sm" color="error" variant="soft">${errors} ${errors === 1 ? "error" : "errors"}</ui-badge>` : nothing}
@@ -469,7 +469,7 @@ export class UiDocForm extends LightElement {
       ${
         this.readonly || full
           ? full && !this.readonly
-            ? html`<ui-text size="sm" color="muted"
+            ? html`<ui-text variant="body-md" color="muted"
                 >The most ${humanize(name).toLowerCase()} allowed is ${f.maxRows}.</ui-text
               >`
             : nothing
@@ -501,7 +501,7 @@ export class UiDocForm extends LightElement {
     return html`<ui-flex direction="col" gap="2">
       <ui-flex align="center" justify="between" gap="2" wrap>
         <ui-flex align="center" gap="2">
-          <ui-text weight="semibold">${labelOf(f)}</ui-text>
+          <ui-text emphasized>${labelOf(f)}</ui-text>
           <ui-badge size="sm" variant="soft">${view.total}</ui-badge>
         </ui-flex>
         ${
@@ -510,7 +510,7 @@ export class UiDocForm extends LightElement {
             : nothing
         }
       </ui-flex>
-      ${f.admin?.description ? html`<ui-text size="sm" color="muted">${f.admin.description}</ui-text>` : nothing}
+      ${f.admin?.description ? html`<ui-text variant="body-md" color="muted">${f.admin.description}</ui-text>` : nothing}
       <ui-table
         size="sm"
         bordered
@@ -525,7 +525,7 @@ export class UiDocForm extends LightElement {
       ></ui-table>
       ${
         view.total > view.rows.length
-          ? html`<ui-text size="xs" color="muted">Showing ${view.rows.length} of ${view.total}.</ui-text>`
+          ? html`<ui-text variant="body-sm" color="muted">Showing ${view.rows.length} of ${view.total}.</ui-text>`
           : nothing
       }
     </ui-flex>`;
@@ -693,7 +693,7 @@ export class UiDocForm extends LightElement {
               }
             }}
           ></ui-textarea>
-          ${bad != null ? html`<ui-text size="sm" color="error">Not valid JSON yet — it's saved once it is.</ui-text>` : nothing}`;
+          ${bad != null ? html`<ui-text variant="body-md" color="error">Not valid JSON yet — it's saved once it is.</ui-text>` : nothing}`;
         break;
       }
       case "checkbox":
@@ -731,7 +731,7 @@ export class UiDocForm extends LightElement {
         control = this._choice(f, v, set, label, hint, disabled, color, placeholder, data);
         break;
       default:
-        control = html`<ui-text size="sm" color="muted">${label}: unsupported field type "${f.type}"</ui-text>`;
+        control = html`<ui-text variant="body-md" color="muted">${label}: unsupported field type "${f.type}"</ui-text>`;
     }
     return html`<ui-flex direction="col" gap="1">${control}${this._error(at)}</ui-flex>`;
   }
@@ -861,7 +861,7 @@ export class UiDocForm extends LightElement {
         ${previews.map(
           (o) =>
             html`<ui-card size="xs" variant="border" image-src=${o.image!} .imageAlt=${o.label}>
-              <ui-text size="xs">${o.label}</ui-text>
+              <ui-text variant="body-sm">${o.label}</ui-text>
             </ui-card>`,
         )}
       </ui-grid>

@@ -33,7 +33,7 @@ export const appShell = rcva(
      and rails sit on, and what the floating glass (sheets, menus, dialogs) refracts. Under it, the
      chosen background image (`--app-background`, set by `<ui-appearance kind="background">`)
      behind one scrim (`--app-scrim`, chosen from the image so text on it stays readable). */
-  "group/shell grid h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] overflow-hidden bg-base-200 [background-image:radial-gradient(70%_60%_at_0%_0%,color-mix(in_oklab,var(--color-primary)_16%,transparent),transparent_70%),radial-gradient(60%_55%_at_100%_100%,color-mix(in_oklab,var(--color-secondary)_12%,transparent),transparent_70%),radial-gradient(45%_40%_at_100%_0%,color-mix(in_oklab,var(--color-accent)_9%,transparent),transparent_70%),linear-gradient(var(--app-scrim,transparent),var(--app-scrim,transparent)),var(--app-background,none)] bg-cover bg-center text-base-content",
+  "group/shell grid h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] overflow-hidden bg-surface-container [background-image:radial-gradient(70%_60%_at_0%_0%,color-mix(in_oklab,var(--color-primary)_16%,transparent),transparent_70%),radial-gradient(60%_55%_at_100%_100%,color-mix(in_oklab,var(--color-secondary)_12%,transparent),transparent_70%),radial-gradient(45%_40%_at_100%_0%,color-mix(in_oklab,var(--color-accent)_9%,transparent),transparent_70%),linear-gradient(var(--app-scrim,transparent),var(--app-scrim,transparent)),var(--app-background,none)] bg-cover bg-center text-on-surface",
   {
     variants: {
       /**
@@ -51,7 +51,7 @@ export const appShell = rcva(
  */
 export const appShellHeader = rcva("flex h-16 items-center gap-[clamp(0.5rem,1vw,1rem)] px-(--frame-edge)");
 export const appShellHeaderStart = rcva("flex min-w-0 shrink-0 items-center gap-1");
-export const appShellBrand = rcva("gap-2 rounded-full px-3 text-lg font-semibold tracking-tight");
+export const appShellBrand = rcva("gap-2 rounded-full px-3 text-title-md tracking-tight");
 /** The brand's mark (`brand-icon`): primary, on a soft primary disc. */
 export const appShellBrandMark = rcva("grid size-8 place-items-center rounded-full bg-primary/15 text-primary");
 export const appShellSearch = rcva("@container flex min-w-0 flex-1 justify-center");
@@ -206,7 +206,7 @@ export const appShellCenter = rcva("flex min-w-[13.5rem] flex-1 flex-col gap-1")
  * The page's footer (`slot="footer"`): one centred line under the main panel, on the frame
  * (e.g. a credit). Part of what the scrim keeps readable.
  */
-export const appShellPageFooter = rcva("shrink-0 text-center text-xs leading-4 -mb-1");
+export const appShellPageFooter = rcva("shrink-0 text-center text-body-sm leading-4 -mb-1");
 
 /**
  * A column's toggle: centred on its icon axis (where the rail's icons are centred, 2px inside

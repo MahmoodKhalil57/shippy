@@ -115,9 +115,9 @@ export class GsCaseProfit extends LightElement {
   private _tile(label: string, value: string, note: string, color?: "success" | "error" | "warning") {
     return html`<ui-card variant="border" size="sm" shadow="false">
       <ui-flex direction="col" gap="1">
-        <ui-text size="sm" color="muted" truncate>${label}</ui-text>
-        <ui-text size="2xl" weight="semibold" leading="tight" .color=${color}>${value}</ui-text>
-        <ui-text size="xs" color="muted" clamp="2">${note}</ui-text>
+        <ui-text variant="body-md" color="muted" truncate>${label}</ui-text>
+        <ui-text variant="headline-sm" leading="tight" .color=${color}>${value}</ui-text>
+        <ui-text variant="body-sm" color="muted" clamp="2">${note}</ui-text>
       </ui-flex>
     </ui-card>`;
   }
@@ -151,7 +151,8 @@ export class GsCaseProfit extends LightElement {
   }
 
   private _costs(p: CaseProfit) {
-    const money = (v?: number) => html`<ui-text size="sm" align="end">${v === undefined ? "—" : egp(v)}</ui-text>`;
+    const money = (v?: number) =>
+      html`<ui-text variant="body-md" align="end">${v === undefined ? "—" : egp(v)}</ui-text>`;
     const columns: TableColumn<Row>[] = [
       {
         key: "label",
@@ -161,12 +162,12 @@ export class GsCaseProfit extends LightElement {
             ${
               r.href
                 ? html`<ui-link .href=${r.href} variant="hover"
-                    ><ui-text size="sm" .weight=${r.total ? "semibold" : "medium"}>${r.label}</ui-text></ui-link
+                    ><ui-text variant="label-lg" ?emphasized=${!!r.total}>${r.label}</ui-text></ui-link
                   >`
-                : html`<ui-text size="sm" .weight=${r.total ? "semibold" : "medium"}>${r.label}</ui-text>`
+                : html`<ui-text variant="label-lg" ?emphasized=${!!r.total}>${r.label}</ui-text>`
             }
-            ${r.detail ? html`<ui-text size="xs" color="muted">${r.detail}</ui-text>` : nothing}
-            ${r.note ? html`<ui-text size="xs" color="warning">${r.note}</ui-text>` : nothing}
+            ${r.detail ? html`<ui-text variant="body-sm" color="muted">${r.detail}</ui-text>` : nothing}
+            ${r.note ? html`<ui-text variant="body-sm" color="warning">${r.note}</ui-text>` : nothing}
           </ui-flex>`,
       },
       { key: "expected", label: "Expected", render: (r) => money(r.expected) },
@@ -175,9 +176,9 @@ export class GsCaseProfit extends LightElement {
         key: "difference",
         label: "Difference",
         render: (r) => {
-          if (r.actual === undefined) return html`<ui-text size="sm" align="end" color="muted">—</ui-text>`;
+          if (r.actual === undefined) return html`<ui-text variant="body-md" align="end" color="muted">—</ui-text>`;
           const d = r.actual - r.expected;
-          return html`<ui-text size="sm" align="end" .color=${d > 0 ? "error" : d < 0 ? "success" : "muted"}
+          return html`<ui-text variant="body-md" align="end" .color=${d > 0 ? "error" : d < 0 ? "success" : "muted"}
             >${signed(Math.round(d), egp)}</ui-text
           >`;
         },
@@ -211,7 +212,7 @@ export class GsCaseProfit extends LightElement {
             : nothing
         }
       </ui-flex>
-      <ui-text size="xs" color="muted"
+      <ui-text variant="body-sm" color="muted"
         >Costs as estimated when the quotation was approved, and as billed. Bills replace estimates once a person
         confirms them; nothing changes on its own.</ui-text
       >
@@ -229,26 +230,26 @@ export class GsCaseProfit extends LightElement {
             ${
               r.href
                 ? html`<ui-link .href=${r.href} variant="hover"
-                    ><ui-text size="sm" weight="medium">${r.label}</ui-text></ui-link
+                    ><ui-text variant="label-lg">${r.label}</ui-text></ui-link
                   >`
-                : html`<ui-text size="sm" weight="medium">${r.label}</ui-text>`
+                : html`<ui-text variant="label-lg">${r.label}</ui-text>`
             }
-            <ui-text size="xs" color="muted">${r.amount}</ui-text>
+            <ui-text variant="body-sm" color="muted">${r.amount}</ui-text>
           </ui-flex>`,
       },
       {
         key: "rate",
         label: "Rate",
         render: (r) =>
-          html`<ui-text size="sm" align="end">${r.rate.toFixed(2)}</ui-text
-            ><ui-text size="xs" color="muted" align="end">quoted ${r.quoteRate.toFixed(2)}</ui-text>`,
+          html`<ui-text variant="body-md" align="end">${r.rate.toFixed(2)}</ui-text
+            ><ui-text variant="body-sm" color="muted" align="end">quoted ${r.quoteRate.toFixed(2)}</ui-text>`,
       },
       {
         key: "difference",
         label: "FX difference",
         render: (r) =>
           html`<ui-text
-            size="sm"
+            variant="body-md"
             align="end"
             .color=${r.difference < 0 ? "error" : r.difference > 0 ? "success" : "muted"}
             >${signed(Math.round(r.difference), egp)}</ui-text
@@ -264,21 +265,21 @@ export class GsCaseProfit extends LightElement {
       },
     ];
     return html`<ui-card variant="border" shadow="false" heading="FX differences">
-      <ui-text size="xs" color="muted"
+      <ui-text variant="body-sm" color="muted"
         >Revenue is booked at the quotation's rate (${p.quoteRate.toFixed(2)} EGP/${p.currency}); each receipt converts
         at the bank's actual rate. Expected revenue ${egp(p.expected.revenue)} · actual
         ${egp(p.actual.revenue)}.</ui-text
       >
       ${
         p.currency === "EGP"
-          ? html`<ui-text size="sm">Invoiced in EGP — no exchange-rate difference.</ui-text>`
+          ? html`<ui-text variant="body-md">Invoiced in EGP — no exchange-rate difference.</ui-text>`
           : p.fx.length
             ? html`<ui-table
                 size="sm"
                 .columns=${columns}
                 .rows=${p.fx as (ProfitFx & Record<string, unknown>)[]}
               ></ui-table>`
-            : html`<ui-text size="sm" color="muted">No receipts yet.</ui-text>`
+            : html`<ui-text variant="body-md" color="muted">No receipts yet.</ui-text>`
       }
     </ui-card>`;
   }
@@ -297,11 +298,13 @@ export class GsCaseProfit extends LightElement {
                       .label=${c.settled ? "settled" : "open"}
                     ></ui-status>
                     <ui-flex direction="col" gap="0" grow shrink>
-                      <ui-text size="sm" weight="medium">${c.ref} · ${c.title}</ui-text>
-                      <ui-text size="xs" color="muted">${egp(c.amount)} against ${c.against} · ${c.note}</ui-text>
+                      <ui-text variant="label-lg">${c.ref} · ${c.title}</ui-text>
+                      <ui-text variant="body-sm" color="muted"
+                        >${egp(c.amount)} against ${c.against} · ${c.note}</ui-text
+                      >
                       ${
                         c.settled
-                          ? html`<ui-text size="xs" color="success"
+                          ? html`<ui-text variant="body-sm" color="success"
                               >Settled by credit note
                               ${c.href ? html`<ui-link .href=${c.href}>${c.creditNote}</ui-link>` : c.creditNote}</ui-text
                             >`
@@ -321,7 +324,7 @@ export class GsCaseProfit extends LightElement {
                   </ui-flex>`,
               )}
             </ui-flex>`
-          : html`<ui-text size="sm" color="muted">No claims on this case.</ui-text>`
+          : html`<ui-text variant="body-md" color="muted">No claims on this case.</ui-text>`
       }
       <ui-ai-read-file
         label="Describe damage from a photo"
@@ -348,8 +351,8 @@ export class GsCaseProfit extends LightElement {
         .label=${k.ok ? "Done" : "Open"}
       ></ui-icon>
       <ui-flex direction="col" gap="1" grow shrink>
-        <ui-text size="sm" weight="medium">${k.label}</ui-text>
-        <ui-text size="xs" color="muted">${k.detail}</ui-text>
+        <ui-text variant="label-lg">${k.label}</ui-text>
+        <ui-text variant="body-sm" color="muted">${k.detail}</ui-text>
         ${
           k.sources.length
             ? html`<ui-flex gap="1" wrap>
@@ -375,7 +378,7 @@ export class GsCaseProfit extends LightElement {
           >${done} of ${p.checks.length} green</ui-badge
         >
       </ui-flex>
-      <ui-text size="xs" color="muted"
+      <ui-text variant="body-sm" color="muted"
         >The case closes only when quantities, documents, claims and balances reconcile.</ui-text
       >
       <ui-progress
@@ -393,7 +396,7 @@ export class GsCaseProfit extends LightElement {
               <ui-button color="primary" ?disabled=${!p.canClose} @click=${() => (this.pending = { kind: "close" })}
                 >Close case</ui-button
               >
-              <ui-text size="xs" color="muted"
+              <ui-text variant="body-sm" color="muted"
                 >${
                   p.canClose
                     ? "Every check is green."
@@ -417,12 +420,14 @@ export class GsCaseProfit extends LightElement {
       confirm = "Confirm actuals";
       const billed = p.lines.filter((l) => l.kind === "charge" && l.state === "Billed");
       body = html`<ui-flex direction="col" gap="2">
-        <ui-text size="sm">These billed amounts replace the estimates on the case's shared charges:</ui-text>
+        <ui-text variant="body-md">These billed amounts replace the estimates on the case's shared charges:</ui-text>
         ${billed.map(
           (l) =>
             html`<ui-flex justify="between" gap="3" wrap>
-              <ui-text size="sm">${l.label} <ui-text as="span" size="xs" color="muted">(${l.detail})</ui-text></ui-text>
-              <ui-text size="sm" weight="medium">${egp(l.expected)} → ${egp(l.actual ?? 0)}</ui-text>
+              <ui-text variant="body-md"
+                >${l.label} <ui-text as="span" variant="body-sm" color="muted">(${l.detail})</ui-text></ui-text
+              >
+              <ui-text variant="label-lg">${egp(l.expected)} → ${egp(l.actual ?? 0)}</ui-text>
             </ui-flex>`,
         )}
       </ui-flex>`;
@@ -430,7 +435,7 @@ export class GsCaseProfit extends LightElement {
       heading = `Record receipt for ${p.receipt.number}`;
       confirm = "Record receipt";
       body = html`<ui-flex direction="col" gap="3">
-        <ui-text size="sm"
+        <ui-text variant="body-md"
           >${p.receipt.currency} ${p.receipt.amount.toLocaleString("en-US")} received from
           ${p.customer}${
             p.receipt.currency === "EGP" ? "" : ` at ${p.receipt.rate.toFixed(2)} EGP/${p.receipt.currency}`
@@ -443,7 +448,7 @@ export class GsCaseProfit extends LightElement {
           .value=${job.reference}
           @input=${(e: Event) => (this.pending = { kind: "receipt", reference: (e.target as HTMLInputElement).value })}
         ></ui-text-input>
-        <ui-text size="xs" color="muted"
+        <ui-text variant="body-sm" color="muted"
           >Recorded after the bank movement — the platform never initiates transfers.</ui-text
         >
       </ui-flex>`;
@@ -451,8 +456,8 @@ export class GsCaseProfit extends LightElement {
       heading = `Settle claim ${job.claim.ref}`;
       confirm = "Record credit note";
       body = html`<ui-flex direction="col" gap="2">
-        <ui-text size="sm">${job.claim.title}. ${job.claim.note}</ui-text>
-        <ui-text size="sm"
+        <ui-text variant="body-md">${job.claim.title}. ${job.claim.note}</ui-text>
+        <ui-text variant="body-md"
           >Credit note <strong>${job.claim.creditNote}</strong> from ${job.claim.against} for
           <strong>${egp(job.claim.amount)}</strong> is booked against the replacement cost.</ui-text
         >
@@ -461,11 +466,13 @@ export class GsCaseProfit extends LightElement {
       heading = `Close ${p.caseId}?`;
       confirm = "Close case";
       body = html`<ui-flex direction="col" gap="2">
-        <ui-text size="sm"
+        <ui-text variant="body-md"
           >Actual gross profit <strong>${egp(p.actual.profit)}</strong> (${pct(p.actual.margin)}) against
           ${egp(p.expected.profit)} expected (${pct(p.expected.margin)}).</ui-text
         >
-        <ui-text size="sm">Supplier prices, lead times and on-time results feed back to the supplier records.</ui-text>
+        <ui-text variant="body-md"
+          >Supplier prices, lead times and on-time results feed back to the supplier records.</ui-text
+        >
       </ui-flex>`;
     }
     return html`<ui-modal heading=${heading} .open=${Boolean(job)} @ui-close=${() => (this.pending = null)}>

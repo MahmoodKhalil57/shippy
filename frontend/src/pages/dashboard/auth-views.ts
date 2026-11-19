@@ -82,7 +82,7 @@ export class DashboardLogin extends LightElement {
       @ui-submit=${(e: CustomEvent<{ data: FormData }>) => this._continue((e.detail.data.get("email") as string | null) ?? "")}
     >
       <ui-flex direction="col" gap="3">
-        <ui-text size="sm" color="muted"
+        <ui-text variant="body-md" color="muted"
           >Golden Sea dashboard. A demo user is filled in; switch roles any time from the dashboard.</ui-text
         >
         ${this.error ? html`<ui-alert color="error" variant="soft">${this.error}</ui-alert>` : nothing}
@@ -105,13 +105,15 @@ export class DashboardLogin extends LightElement {
     return html`<ui-form label="Verify it's you" @ui-submit=${() => this._verifyCode()}>
       <ui-flex direction="col" gap="4">
         <ui-flex align="center" justify="between" gap="2" wrap>
-          <ui-text size="sm" color="muted">Signing in as <strong>${this.email}</strong></ui-text>
+          <ui-text variant="body-md" color="muted">Signing in as <strong>${this.email}</strong></ui-text>
           <ui-button variant="ghost" size="xs" .disabled=${!!this.busy} @click=${() => this._back()}>Change</ui-button>
         </ui-flex>
         ${this.error ? html`<ui-alert color="error" variant="soft">${this.error}</ui-alert>` : nothing}
         <ui-flex direction="col" gap="2">
-          <ui-text weight="medium">Authenticator code</ui-text>
-          <ui-text size="sm" color="muted">Enter the ${CODE_LENGTH}-digit code from your authenticator app.</ui-text>
+          <ui-text emphasized>Authenticator code</ui-text>
+          <ui-text variant="body-md" color="muted"
+            >Enter the ${CODE_LENGTH}-digit code from your authenticator app.</ui-text
+          >
           <ui-otp
             focus-on-show
             name="code"
@@ -135,7 +137,7 @@ export class DashboardLogin extends LightElement {
               : html`<ui-icon name="passkey"></ui-icon> Use a passkey`
           }
         </ui-button>
-        <ui-text size="xs" color="muted" align="center"
+        <ui-text variant="body-sm" color="muted" align="center"
           >Demo: any ${CODE_LENGTH}-digit code works, and the passkey prompt is simulated.</ui-text
         >
       </ui-flex>
@@ -170,24 +172,24 @@ export class DashboardLogin extends LightElement {
           : "";
     return html`<ui-collapse heading="Turn on AI features" icon="arrow" mode="details">
       <ui-flex direction="col" gap="3">
-        ${status ? html`<ui-text size="sm" color="success">${status}</ui-text>` : nothing}
+        ${status ? html`<ui-text variant="body-md" color="success">${status}</ui-text>` : nothing}
         <ui-flex direction="col" gap="1">
           <ui-flex gap="2" align="center" wrap>
-            <ui-text size="sm" weight="semibold">Switch on Chrome's on-device AI</ui-text>
+            <ui-text variant="title-sm">Switch on Chrome's on-device AI</ui-text>
             <ui-badge size="sm" variant="soft" color="primary">Recommended</ui-badge>
           </ui-flex>
-          <ui-text size="sm"
+          <ui-text variant="body-md"
             >In desktop Chrome, open <strong>chrome://flags</strong>, enable these flags, then click Relaunch:</ui-text
           >
           <ui-flex gap="1" wrap>${flags.map((f) => html`<ui-badge size="sm" variant="ghost">${f}</ui-badge>`)}</ui-flex>
-          <ui-text size="xs" color="muted"
+          <ui-text variant="body-sm" color="muted"
             >Also enable the Summarization, Writer, Rewriter, Proofreader, Translation and Language Detection APIs. For
             the first flag, choose "Enabled BypassPerfRequirement".</ui-text
           >
         </ui-flex>
         <ui-flex direction="col" gap="1">
-          <ui-text size="sm" weight="semibold">Or download a model</ui-text>
-          <ui-text size="sm">It works in any browser. It is slower and reads text only.</ui-text>
+          <ui-text variant="title-sm">Or download a model</ui-text>
+          <ui-text variant="body-md">It works in any browser. It is slower and reads text only.</ui-text>
           ${
             this.localAi === "native" || this.localAi === "local"
               ? nothing
@@ -247,7 +249,7 @@ export class DashboardFirstUser extends LightElement {
         <ui-card heading="Create the first user" variant="border">
           <ui-form label="Create the first user" @ui-submit=${() => this._submit()}>
             <ui-flex direction="col" gap="4">
-              <ui-text size="sm" color="muted">The mock backend has no users yet.</ui-text>
+              <ui-text variant="body-md" color="muted">The mock backend has no users yet.</ui-text>
               <ui-doc-form
                 .fields=${formFields(c)}
                 .value=${this.value}
@@ -265,7 +267,7 @@ export class DashboardFirstUser extends LightElement {
                 width="full"
                 @input=${(e: Event) => (this.password = (e.target as HTMLInputElement).value)}
               ></ui-text-input>
-              ${this.errors.password ? html`<ui-text size="sm" color="error">${this.errors.password}</ui-text>` : nothing}
+              ${this.errors.password ? html`<ui-text variant="body-md" color="error">${this.errors.password}</ui-text>` : nothing}
               <ui-button type="submit" color="primary" block>Create</ui-button>
             </ui-flex>
           </ui-form>

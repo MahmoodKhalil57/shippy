@@ -31,11 +31,11 @@ export const table = rcva(
   [
     "table",
     // header band
-    "[&_thead_tr]:border-b [&_thead_tr]:border-base-content/10 [&_thead_th]:bg-base-content/[0.035] [&_thead_th]:text-xs [&_thead_th]:font-semibold [&_thead_th]:tracking-wide [&_thead_th]:uppercase [&_:where(thead,tfoot)]:text-base-content/75",
+    "[&_thead_tr]:border-b [&_thead_tr]:border-outline-variant [&_thead_th]:bg-surface-container-low [&_thead_th]:text-label-md [&_thead_th]:tracking-wide [&_thead_th]:uppercase [&_:where(thead,tfoot)]:text-on-surface-variant",
     // rows
-    "[&_tbody_tr]:border-base-content/8 [&_tbody_tr:last-child]:border-b-0 [&_tbody_tr]:[transition:background-color_var(--duration-effects-fast)_var(--ease-effects-fast)] [&_tbody_tr:hover]:bg-base-content/[0.04]",
+    "[&_tbody_tr]:border-outline-variant [&_tbody_tr:last-child]:border-b-0 [&_tbody_tr]:[transition:background-color_var(--duration-effects-fast)_var(--ease-effects-fast)] [&_tbody_tr:hover]:bg-on-surface/(--state-hover)",
     // cells: secondary ink; the record link as a label
-    "[&_td]:text-base-content/80 [&_td_a]:no-underline [&_td_a]:underline-offset-2 [&_td_a:hover]:underline [&_td_a:hover]:text-base-content [&_td:first-of-type_a]:font-medium [&_td:first-of-type_a]:text-base-content",
+    "[&_td]:text-on-surface-variant [&_td_a]:no-underline [&_td_a]:underline-offset-2 [&_td_a:hover]:underline [&_td_a:hover]:text-on-surface [&_td:first-of-type_a]:font-medium [&_td:first-of-type_a]:text-on-surface",
     // the whole row opens the record
     "[&_tbody_tr]:relative [&_tbody_td:first-of-type_a]:after:absolute [&_tbody_td:first-of-type_a]:after:inset-0 [&_tbody_td:first-of-type_a]:after:content-[''] [&_tbody_tr:has(td:first-of-type_a)]:cursor-pointer [&_tbody_td:not(:first-of-type)_:is(a,button,label,input)]:relative [&_tbody_td:not(:first-of-type)_:is(a,button,label,input)]:z-1 [&_tbody_th_:is(a,button,label,input)]:relative [&_tbody_th_:is(a,button,label,input)]:z-1 [&_tbody_td:first-of-type_a]:focus-visible:outline-none [&_tbody_tr:has(td:first-of-type_a:focus-visible)]:outline-2 [&_tbody_tr:has(td:first-of-type_a:focus-visible)]:-outline-offset-2 [&_tbody_tr:has(td:first-of-type_a:focus-visible)]:outline-primary",
   ].join(" "),
@@ -54,7 +54,7 @@ export const table = rcva(
         xl: "table-xl",
       },
       /** Table background ("Table with pinned-rows" uses base-200). */
-      surface: { true: "bg-base-200" },
+      surface: { true: "bg-surface-container" },
       /** Keep every cell (and what's inside it) on one line; the wrapper scrolls sideways instead. */
       nowrap: { true: "[&_th]:whitespace-nowrap [&_td]:whitespace-nowrap [&_.badge]:whitespace-nowrap" },
     },
@@ -65,7 +65,7 @@ export const table = rcva(
 export const tableWrapper = rcva("overflow-x-auto", {
   variants: {
     /** "Table with border and background". */
-    bordered: { true: "rounded-box border border-base-content/10 bg-base-100 [--scrollbar-inset:var(--radius-box)]" },
+    bordered: { true: "rounded-box border border-outline-variant bg-surface [--scrollbar-inset:var(--radius-box)]" },
     /** Fixed scroll height (the pinned examples use `h-96`). */
     height: { sm: "h-64", md: "h-80", lg: "h-96" },
     /** Fixed scroll width (the pinned-cols example uses `w-96`). */
@@ -76,10 +76,10 @@ export const tableWrapper = rcva("overflow-x-auto", {
 /** Row states from the docs examples. */
 export const tableRow = rcva("", {
   variants: {
-    active: { true: "bg-base-200" },
-    hover: { true: "hover:bg-base-300" },
-    /** Checked in a selectable table: tinted with the primary colour (M3's selected state). */
-    selected: { true: "bg-primary/8 hover:bg-primary/12" },
+    active: { true: "bg-surface-container" },
+    hover: { true: "hover:bg-surface-container-highest" },
+    /** Checked in a selectable table: M3's selected state (the primary container). */
+    selected: { true: "bg-primary-container" },
   },
 });
 
@@ -104,7 +104,7 @@ export const tableCell = rcva("", {
 export const tableHead = rcva("group/th", {
   variants: {
     draggable: { true: "cursor-grab touch-pan-y select-none" },
-    dragging: { true: "z-2 cursor-grabbing rounded-field bg-base-100! opacity-95 shadow-elevation-2" },
+    dragging: { true: "z-2 cursor-grabbing rounded-field bg-surface! opacity-95 shadow-elevation-2" },
   },
 });
 /** A sized column's header label: one line, ending in "…" when it doesn't fit. */
@@ -115,7 +115,7 @@ export const tableHeadLabel = rcva("", { variants: { sized: { true: "block min-w
  * 2px line that shows on hovering the header and turns primary on hover, focus and drag.
  */
 export const tableResize = rcva(
-  "absolute inset-y-0 z-1 flex w-3 cursor-col-resize touch-none justify-center outline-none before:h-full before:w-0.5 before:rounded-full before:content-[''] before:[transition:background-color_var(--duration-effects-fast)_var(--ease-effects-fast)] group-hover/th:not-hover:before:bg-base-content/20 hover:before:bg-primary focus-visible:before:bg-primary",
+  "absolute inset-y-0 z-1 flex w-3 cursor-col-resize touch-none justify-center outline-none before:h-full before:w-0.5 before:rounded-full before:content-[''] before:[transition:background-color_var(--duration-effects-fast)_var(--ease-effects-fast)] group-hover/th:not-hover:before:bg-outline hover:before:bg-primary focus-visible:before:bg-primary",
   {
     variants: {
       /** Over the border between two columns; the last column's stays inside the table (no overflow). */
@@ -136,7 +136,7 @@ export const tableAnnounce = rcva("sr-only");
  * columns, in which order). Unsorted, the arrows show on hover / focus only.
  */
 export const tableSort = rcva(
-  "group/sort -mx-1.5 inline-flex max-w-full items-center gap-1 rounded-field px-1.5 py-0.5 font-[inherit] text-[inherit] tracking-[inherit] uppercase hover:bg-base-content/5 hover:text-base-content focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary [transition:background-color_var(--duration-effects-fast)_var(--ease-effects-fast),color_var(--duration-effects-fast)_var(--ease-effects-fast)]",
+  "group/sort -mx-1.5 inline-flex max-w-full items-center gap-1 rounded-field px-1.5 py-0.5 font-[inherit] text-[inherit] tracking-[inherit] uppercase hover:bg-on-surface/(--state-hover) hover:text-on-surface focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary [transition:background-color_var(--duration-effects-fast)_var(--ease-effects-fast),color_var(--duration-effects-fast)_var(--ease-effects-fast)]",
   { variants: { align: { start: "", center: "", end: "flex-row-reverse" } } },
 );
 export const tableSortIcon = rcva(
@@ -152,7 +152,7 @@ export const tableSortIcon = rcva(
   },
 );
 /** With several sort columns: this column's place among them. */
-export const tableSortOrder = rcva("text-[0.625rem] leading-none font-semibold text-primary tabular-nums");
+export const tableSortOrder = rcva("text-label-sm leading-none font-semibold text-primary-ink tabular-nums");
 
 /** The body while new rows load: the current ones stay, dimmed. */
 export const tableBody = rcva("[transition:opacity_var(--duration-effects)_var(--ease-effects)]", {
@@ -161,14 +161,14 @@ export const tableBody = rcva("[transition:opacity_var(--duration-effects)_var(-
 /** A loading placeholder cell (M3's skeleton loader). */
 export const tableSkeleton = rcva("skeleton h-4 w-full max-w-40 rounded-field");
 /** The one row shown when there are no rows. */
-export const tableEmpty = rcva("py-10 text-center text-base-content/75");
+export const tableEmpty = rcva("py-10 text-center text-on-surface-variant");
 
 /** Cell anatomy from "Table with visual elements". */
 export const tablePerson = rcva("flex items-center gap-3");
 export const tablePersonAvatar = rcva("avatar");
 export const tablePersonImage = rcva("w-12 h-12 mask mask-squircle");
 export const tablePersonName = rcva("font-bold");
-export const tablePersonSub = rcva("text-sm opacity-50");
+export const tablePersonSub = rcva("text-body-md text-on-surface-variant");
 
 export type TableVariants = VariantProps<typeof table>;
 export type TableWrapperVariants = VariantProps<typeof tableWrapper>;

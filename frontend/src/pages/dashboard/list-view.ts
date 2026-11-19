@@ -442,8 +442,8 @@ export class DashboardListView extends LightElement {
               ${fields.map(
                 (f) =>
                   html`<ui-flex direction="col" gap="1" align="start">
-                    <ui-text size="xs" color="muted">${labelOf(f)}</ui-text>
-                    ${this._status(f, doc) ?? html`<ui-text size="sm">${this._cellText(f, doc)}</ui-text>`}
+                    <ui-text variant="body-sm" color="muted">${labelOf(f)}</ui-text>
+                    ${this._status(f, doc) ?? html`<ui-text variant="body-md">${this._cellText(f, doc)}</ui-text>`}
                   </ui-flex>`,
               )}
             </ui-grid>
@@ -495,7 +495,7 @@ export class DashboardListView extends LightElement {
     const count = this.allMatching ? (r?.totalDocs ?? 0) : this.selected.length;
     const view = this.view;
     const empty = html`<ui-flex direction="col" align="center" gap="2">
-      <ui-text weight="semibold">No ${plural.toLowerCase()} ${filtered ? "match" : "yet"}</ui-text>
+      <ui-text emphasized>No ${plural.toLowerCase()} ${filtered ? "match" : "yet"}</ui-text>
       ${
         filtered
           ? html`<ui-button
@@ -507,7 +507,7 @@ export class DashboardListView extends LightElement {
               }}
               >Clear search and filters</ui-button
             >`
-          : html`<ui-text size="sm" color="muted">Create the first one.</ui-text>`
+          : html`<ui-text variant="body-md" color="muted">Create the first one.</ui-text>`
       }
     </ui-flex>`;
     const link = linkColumnOf(c);
@@ -528,7 +528,7 @@ export class DashboardListView extends LightElement {
       <ui-flex justify="between" align="end" gap="4" wrap>
         <ui-flex direction="col" gap="1">
           <ui-breadcrumbs .items=${[{ label: "Dashboard", href: dashboardPath() }, { label: plural }]}></ui-breadcrumbs>
-          <ui-heading level="1" size="page">${plural}</ui-heading>
+          <ui-heading level="1" variant="page">${plural}</ui-heading>
           ${
             typeof c.admin?.description === "string"
               ? html`<ui-text color="muted">${c.admin.description}</ui-text>`
@@ -622,7 +622,7 @@ export class DashboardListView extends LightElement {
       ${
         count
           ? html`<ui-flex gap="3" align="center" wrap>
-              <ui-text size="sm" weight="semibold">${count} selected</ui-text>
+              <ui-text variant="title-sm">${count} selected</ui-text>
               ${
                 !this.allMatching && r && this.selected.length === pageRows && r.totalDocs > pageRows
                   ? html`<ui-button size="sm" variant="ghost" @click=${() => (this.allMatching = true)}
@@ -687,7 +687,7 @@ export class DashboardListView extends LightElement {
         r && r.totalDocs > 0
           ? html`<ui-flex justify="between" align="center" gap="4" wrap>
               <ui-flex gap="3" align="center" wrap>
-                <ui-text size="sm" color="muted"
+                <ui-text variant="body-md" color="muted"
                   >${r.pagingCounter}–${r.pagingCounter + r.docs.length - 1} of ${r.totalDocs}</ui-text
                 >
                 <ui-select

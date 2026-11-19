@@ -91,9 +91,9 @@ export class GsControlRoom extends LightElement {
   private _tile(t: CrTile) {
     return html`<ui-card variant="border" size="sm" shadow="false" .href=${t.href}>
       <ui-flex direction="col" gap="1">
-        <ui-text size="sm" color="muted" truncate>${t.label}</ui-text>
-        <ui-text size="3xl" weight="semibold" leading="tight" .color=${t.tone}>${t.value}</ui-text>
-        <ui-text size="xs" color="muted" clamp="2">${t.note}</ui-text>
+        <ui-text variant="body-md" color="muted" truncate>${t.label}</ui-text>
+        <ui-text variant="headline-md" leading="tight" .color=${t.tone}>${t.value}</ui-text>
+        <ui-text variant="body-sm" color="muted" clamp="2">${t.note}</ui-text>
       </ui-flex>
       ${
         t.trend
@@ -134,23 +134,25 @@ export class GsControlRoom extends LightElement {
         !b || this.summarising
           ? html`<ui-flex gap="2" align="center" padding="4">
               <ui-loading variant="dots" size="sm" label="Reading"></ui-loading>
-              <ui-text size="sm" color="muted">Reading cases, approvals, supplier replies, invoices and FX…</ui-text>
+              <ui-text variant="body-md" color="muted"
+                >Reading cases, approvals, supplier replies, invoices and FX…</ui-text
+              >
             </ui-flex>`
           : html`<ui-flex direction="col" gap="3">
-              <ui-text weight="medium">${b.greeting}</ui-text>
+              <ui-text emphasized>${b.greeting}</ui-text>
               ${b.items.map(
                 (i) =>
                   html`<ui-flex gap="3" align="start">
                     <ui-status size="sm" .color=${i.tone} .label=${i.tone}></ui-status>
                     <ui-flex direction="col" gap="1" grow shrink>
-                      <ui-text size="sm">${i.text}</ui-text>
+                      <ui-text variant="body-md">${i.text}</ui-text>
                       <ui-flex gap="1" wrap>
                         ${i.sources.map((s) => html`<ui-button size="xs" variant="ghost" .href=${s.href}>${s.label}</ui-button>`)}
                       </ui-flex>
                     </ui-flex>
                   </ui-flex>`,
               )}
-              <ui-text size="xs" color="muted"
+              <ui-text variant="body-sm" color="muted"
                 >${b.at === "07:00" ? "Written at 07:00" : `Summarised again at ${b.at}`} from ${b.read} live records. A
                 draft to read — nothing is sent, priced or paid.</ui-text
               >
@@ -161,7 +163,7 @@ export class GsControlRoom extends LightElement {
 
   private _chart(c: CrChart) {
     return html`<ui-card variant="border" shadow="false" .heading=${c.title}>
-      <ui-text size="xs" color="muted">${c.sub}</ui-text>
+      <ui-text variant="body-sm" color="muted">${c.sub}</ui-text>
       <ui-chart
         .kind=${c.type}
         .label=${c.title}
@@ -178,7 +180,7 @@ export class GsControlRoom extends LightElement {
   private _ranked(r: CrRanked) {
     const max = Math.max(1, ...r.rows.map((x) => x.value), r.minimum ?? 0);
     return html`<ui-card variant="border" shadow="false" .heading=${r.title}>
-      <ui-text size="xs" color="muted">${r.sub}</ui-text>
+      <ui-text variant="body-sm" color="muted">${r.sub}</ui-text>
       <ui-flex direction="col" gap="3">
         ${r.rows.map((row) => {
           const low = r.minimum !== undefined && row.value < r.minimum;
@@ -187,13 +189,11 @@ export class GsControlRoom extends LightElement {
               ${
                 row.href
                   ? html`<ui-link variant="hover" .href=${row.href}
-                      ><ui-text size="sm" truncate>${row.label}</ui-text></ui-link
+                      ><ui-text variant="body-md" truncate>${row.label}</ui-text></ui-link
                     >`
-                  : html`<ui-text size="sm" truncate>${row.label}</ui-text>`
+                  : html`<ui-text variant="body-md" truncate>${row.label}</ui-text>`
               }
-              <ui-text size="sm" weight="medium" .color=${low ? "error" : undefined}
-                >${FORMAT[r.unit](row.value)}</ui-text
-              >
+              <ui-text variant="label-lg" .color=${low ? "error" : undefined}>${FORMAT[r.unit](row.value)}</ui-text>
             </ui-flex>
             <ui-progress
               width="full"
@@ -202,7 +202,7 @@ export class GsControlRoom extends LightElement {
               .max=${max}
               .label=${`${row.label}: ${FORMAT[r.unit](row.value)}`}
             ></ui-progress>
-            ${row.note ? html`<ui-text size="xs" color="muted">${row.note}</ui-text>` : nothing}
+            ${row.note ? html`<ui-text variant="body-sm" color="muted">${row.note}</ui-text>` : nothing}
           </ui-flex>`;
         })}
       </ui-flex>
@@ -216,18 +216,16 @@ export class GsControlRoom extends LightElement {
         key: "name",
         label: "Supplier",
         render: (r) =>
-          html`<ui-link variant="hover" .href=${r.href}
-            ><ui-text size="sm" weight="medium">${r.name}</ui-text></ui-link
-          >`,
+          html`<ui-link variant="hover" .href=${r.href}><ui-text variant="label-lg">${r.name}</ui-text></ui-link>`,
       },
       {
         key: "onTime",
         label: "On time",
         render: (r) =>
           r.onTime === undefined
-            ? html`<ui-text size="sm" color="muted">No deliveries yet</ui-text>`
+            ? html`<ui-text variant="body-md" color="muted">No deliveries yet</ui-text>`
             : html`<ui-flex direction="col" gap="1">
-                <ui-text size="sm" .color=${r.onTime < 85 ? "warning" : undefined}>${r.onTime}%</ui-text>
+                <ui-text variant="body-md" .color=${r.onTime < 85 ? "warning" : undefined}>${r.onTime}%</ui-text>
                 <ui-progress
                   width="xs"
                   .color=${r.onTime < 85 ? "warning" : "success"}
@@ -241,18 +239,18 @@ export class GsControlRoom extends LightElement {
         key: "replyHrs",
         label: "Avg reply",
         render: (r) =>
-          html`<ui-text size="sm" .color=${(r.replyHrs ?? 0) > 24 ? "warning" : undefined}
+          html`<ui-text variant="body-md" .color=${(r.replyHrs ?? 0) > 24 ? "warning" : undefined}
             >${r.replyHrs === undefined ? "—" : `${r.replyHrs} h`}</ui-text
           >`,
       },
       {
         key: "open",
         label: "Open RFQs",
-        render: (r) => html`<ui-text size="sm">${r.open || "—"}</ui-text>`,
+        render: (r) => html`<ui-text variant="body-md">${r.open || "—"}</ui-text>`,
       },
     ];
     return html`<ui-card variant="border" shadow="false" .heading=${s.title}>
-      <ui-text size="xs" color="muted">${s.sub}</ui-text>
+      <ui-text variant="body-sm" color="muted">${s.sub}</ui-text>
       <ui-table size="sm" hover .columns=${columns} .rows=${s.rows as Row[]}></ui-table>
     </ui-card>`;
   }
@@ -266,8 +264,8 @@ export class GsControlRoom extends LightElement {
   private _section(s: CrSection) {
     return html`<ui-flex direction="col" gap="3">
       <ui-flex direction="col" gap="0">
-        <ui-heading level="2" size="lg">${s.title}</ui-heading>
-        <ui-text size="sm" color="muted">${s.sub}</ui-text>
+        <ui-heading level="2" variant="title-md">${s.title}</ui-heading>
+        <ui-text variant="body-md" color="muted">${s.sub}</ui-text>
       </ui-flex>
       <ui-grid fit="md" gap="4">${s.widgets.map((w) => this._widget(w))}</ui-grid>
     </ui-flex>`;
@@ -281,10 +279,8 @@ export class GsControlRoom extends LightElement {
     return html`<ui-flex direction="col" gap="6">
       <ui-flex justify="between" align="end" gap="4" wrap>
         <ui-flex direction="col" gap="1" shrink>
-          <ui-text size="xs" color="muted" weight="medium" uppercase
-            >Control room · for Karim Balbaa & Mohamed Helmy</ui-text
-          >
-          <ui-heading level="1" size="page">The business, live.</ui-heading>
+          <ui-text variant="label-md" color="muted" uppercase>Control room · for Karim Balbaa & Mohamed Helmy</ui-text>
+          <ui-heading level="1" variant="page">The business, live.</ui-heading>
           <ui-text color="muted"
             >Briefed at 07:00 from every case, quote, delivery and payment — and answers to any question about
             them.</ui-text
@@ -318,8 +314,8 @@ export class GsControlRoom extends LightElement {
 
       <ui-flex justify="between" align="center" gap="3" wrap>
         <ui-flex direction="col" gap="0">
-          <ui-heading level="2" size="xl">Management dashboards</ui-heading>
-          <ui-text size="sm" color="muted"
+          <ui-heading level="2" variant="title-lg">Management dashboards</ui-heading>
+          <ui-text variant="body-md" color="muted"
             >Today's numbers from the live records; trends from the reporting history.</ui-text
           >
         </ui-flex>
@@ -342,7 +338,7 @@ export class GsControlRoom extends LightElement {
       ${
         d && !d.money
           ? html`<ui-card variant="border" shadow="false" heading="Profit & cash">
-              <ui-text size="sm" color="muted"
+              <ui-text variant="body-md" color="muted"
                 >Gross profit, margins, receivables and cash flow are shown to management and finance only.</ui-text
               >
             </ui-card>`

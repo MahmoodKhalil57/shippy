@@ -20,7 +20,7 @@ import { rcva } from "../../base/variants.ts";
  * - the numbers as a table for screen readers.
  * The only `<svg>` drawn outside the icon registry (tests/icons.test.ts): lines need one.
  */
-export const chart = rcva("relative flex w-full flex-col gap-2 text-xs text-base-content/75 select-none", {
+export const chart = rcva("relative flex w-full flex-col gap-2 text-body-sm text-on-surface-variant select-none", {
   variants: {
     /** Plot height: `spark` for KPI tiles, `md` for cards. */
     height: { spark: "[--chart-h:2.5rem]", sm: "[--chart-h:7rem]", md: "[--chart-h:11rem]" },
@@ -30,7 +30,7 @@ export const chart = rcva("relative flex w-full flex-col gap-2 text-xs text-base
 
 /** The plot area: marks, target and hover layer stacked over each other. */
 export const chartPlot = rcva(
-  "relative h-(--chart-h) w-full border-b border-base-content/15 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100",
+  "relative h-(--chart-h) w-full border-b border-outline-variant outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100",
   // Sparklines are bare; other plots leave room above for the max label.
   { variants: { bare: { true: "border-b-0", false: "mt-4" } } },
 );
@@ -72,20 +72,16 @@ export const chartStackSegment = rcva(
   },
 );
 export const chartTarget = rcva(
-  "pointer-events-none absolute inset-x-0 bottom-(--at) border-t border-dashed border-base-content/40",
+  "pointer-events-none absolute inset-x-0 bottom-(--at) border-t border-dashed border-outline",
 );
-export const chartTargetLabel = rcva(
-  "absolute end-0 bottom-0.5 rounded-xs bg-base-100/80 px-1 text-[0.6875rem] leading-4",
-);
-export const chartCrosshair = rcva(
-  "pointer-events-none absolute inset-y-0 start-(--x) border-s border-base-content/30",
-);
+export const chartTargetLabel = rcva("absolute end-0 bottom-0.5 rounded-xs bg-surface/80 px-1 text-label-sm");
+export const chartCrosshair = rcva("pointer-events-none absolute inset-y-0 start-(--x) border-s border-outline");
 export const chartDot = rcva(
   "pointer-events-none absolute start-(--x) bottom-(--y) size-2 -translate-x-1/2 translate-y-1/2 rounded-full bg-current ring-2 ring-base-100",
   { variants: { series: { "0": SERIES[0], "1": SERIES[1], "2": SERIES[2] } } },
 );
 export const chartTooltip = rcva(
-  "liquid-glass pointer-events-none absolute bottom-full z-10 mb-2 flex min-w-28 -translate-x-(--shift) flex-col gap-0.5 rounded-field px-2.5 py-1.5 whitespace-nowrap text-base-content start-(--x)",
+  "liquid-glass pointer-events-none absolute bottom-full z-10 mb-2 flex min-w-28 -translate-x-(--shift) flex-col gap-0.5 rounded-field px-2.5 py-1.5 whitespace-nowrap text-on-surface start-(--x)",
 );
 export const chartTooltipRow = rcva("flex items-center gap-1.5 tabular-nums");
 export const chartSwatch = rcva("inline-block size-2 shrink-0 rounded-full bg-current", {
@@ -93,7 +89,7 @@ export const chartSwatch = rcva("inline-block size-2 shrink-0 rounded-full bg-cu
 });
 export const chartAxis = rcva("flex justify-between gap-1 tabular-nums [&>span]:min-w-0 [&>span]:truncate");
 export const chartMax = rcva("pointer-events-none absolute -top-1 start-0 -translate-y-full tabular-nums");
-export const chartLegend = rcva("flex flex-wrap gap-x-3 gap-y-1 text-base-content/80");
+export const chartLegend = rcva("flex flex-wrap gap-x-3 gap-y-1 text-on-surface-variant");
 export const chartLegendItem = rcva("inline-flex items-center gap-1.5");
 export const chartTable = rcva("sr-only");
 

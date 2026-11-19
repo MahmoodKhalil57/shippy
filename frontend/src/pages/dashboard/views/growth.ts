@@ -116,9 +116,9 @@ export class GsGrowth extends LightElement {
   private _tile(label: string, value: number, note: string, color?: "error" | "warning") {
     return html`<ui-card variant="border" size="sm" shadow="false">
       <ui-flex direction="col" gap="1">
-        <ui-text size="sm" color="muted" truncate>${label}</ui-text>
-        <ui-text size="3xl" weight="semibold" leading="tight" .color=${value ? color : undefined}>${value}</ui-text>
-        <ui-text size="xs" color="muted" clamp="2">${note}</ui-text>
+        <ui-text variant="body-md" color="muted" truncate>${label}</ui-text>
+        <ui-text variant="headline-md" leading="tight" .color=${value ? color : undefined}>${value}</ui-text>
+        <ui-text variant="body-sm" color="muted" clamp="2">${note}</ui-text>
       </ui-flex>
     </ui-card>`;
   }
@@ -126,18 +126,18 @@ export class GsGrowth extends LightElement {
   private _deal(d: Deal) {
     return html`<ui-card variant="border" size="xs" shadow="false" .href=${d.href}>
       <ui-flex direction="col" gap="1">
-        <ui-text size="sm" weight="semibold">${d.name}</ui-text>
-        <ui-text size="xs" color="muted">${d.kind}</ui-text>
+        <ui-text variant="title-sm">${d.name}</ui-text>
+        <ui-text variant="body-sm" color="muted">${d.kind}</ui-text>
         ${
           d.noNext
-            ? html`<ui-text size="xs" color="error">⚑ No next step — plan one or close</ui-text>`
+            ? html`<ui-text variant="body-sm" color="error">⚑ No next step — plan one or close</ui-text>`
             : d.next
-              ? html`<ui-text size="xs" .color=${d.overdue ? "error" : undefined}
+              ? html`<ui-text variant="body-sm" .color=${d.overdue ? "error" : undefined}
                   >Next: ${d.next}${d.due ? ` · ${d.due}` : ""}</ui-text
                 >`
               : nothing
         }
-        <ui-text size="xs" color="muted">${[d.value, d.owner, d.source].filter(Boolean).join(" · ")}</ui-text>
+        <ui-text variant="body-sm" color="muted">${[d.value, d.owner, d.source].filter(Boolean).join(" · ")}</ui-text>
       </ui-flex>
     </ui-card>`;
   }
@@ -148,7 +148,7 @@ export class GsGrowth extends LightElement {
         <span>Prospects by stage</span>
         <ui-button size="xs" variant="ghost" href="/collections/opportunities">All opportunities</ui-button>
       </ui-flex>
-      <ui-text size="xs" color="muted"
+      <ui-text variant="body-sm" color="muted"
         >Introduced → registration submitted → approved vendor → first RFQ → active account. Every open opportunity has
         a next step, or it's flagged.</ui-text
       >
@@ -157,10 +157,10 @@ export class GsGrowth extends LightElement {
           (c) =>
             html`<ui-flex direction="col" gap="2">
               <ui-flex justify="between" align="center" gap="2">
-                <ui-text size="sm" weight="semibold">${c.stage}</ui-text>
+                <ui-text variant="title-sm">${c.stage}</ui-text>
                 <ui-badge size="sm" variant="soft">${c.deals.length}</ui-badge>
               </ui-flex>
-              ${c.deals.length ? c.deals.map((d) => this._deal(d)) : html`<ui-text size="xs" color="muted">—</ui-text>`}
+              ${c.deals.length ? c.deals.map((d) => this._deal(d)) : html`<ui-text variant="body-sm" color="muted">—</ui-text>`}
             </ui-flex>`,
         )}
       </ui-grid>
@@ -185,24 +185,24 @@ export class GsGrowth extends LightElement {
                   >${s.overdue ? `Overdue · ${s.due}` : s.due}</ui-badge
                 >`
           }
-          <ui-text size="xs" color="muted">${s.owner}</ui-text>
+          <ui-text variant="body-sm" color="muted">${s.owner}</ui-text>
         </ui-flex>
         <ui-flex direction="col" gap="0">
-          <ui-link variant="hover" .href=${s.href}><ui-text weight="semibold">${s.company}</ui-text></ui-link>
-          <ui-text size="xs" color="muted">${[s.who, s.stage].filter(Boolean).join(" · ")}</ui-text>
+          <ui-link variant="hover" .href=${s.href}><ui-text emphasized>${s.company}</ui-text></ui-link>
+          <ui-text variant="body-sm" color="muted">${[s.who, s.stage].filter(Boolean).join(" · ")}</ui-text>
         </ui-flex>
-        <ui-text size="sm">${s.goal || "Plan the next step, or close the opportunity."}</ui-text>
+        <ui-text variant="body-md">${s.goal || "Plan the next step, or close the opportunity."}</ui-text>
         ${
           s.script
             ? html`<ui-flex direction="col" gap="1">
-                <ui-text size="xs" color="muted" weight="medium" uppercase>What to say</ui-text>
-                <ui-text size="sm" italic>${s.script}</ui-text>
+                <ui-text variant="label-md" color="muted" uppercase>What to say</ui-text>
+                <ui-text variant="body-md" italic>${s.script}</ui-text>
               </ui-flex>`
             : nothing
         }
         ${
           s.last
-            ? html`<ui-text size="xs" color="muted"
+            ? html`<ui-text variant="body-sm" color="muted"
                 >Last: ${s.last.result}${s.last.note ? ` — ${s.last.note}` : ""}
                 (${s.last.by}${s.last.at ? `, ${s.last.at}` : ""})</ui-text
               >`
@@ -222,7 +222,7 @@ export class GsGrowth extends LightElement {
       <ui-flex slot="heading" gap="2" align="center" wrap
         >Sales next steps<ui-badge size="sm" variant="soft">${g.steps.length}</ui-badge></ui-flex
       >
-      <ui-text size="xs" color="muted"
+      <ui-text variant="body-sm" color="muted"
         >Each step has a channel, a date and what to say. Call or message yourself, then record what happened — the next
         step lands on the owner's follow-ups.</ui-text
       >
@@ -238,11 +238,11 @@ export class GsGrowth extends LightElement {
         label: "Vessel",
         render: (v) =>
           v.href
-            ? html`<ui-link variant="hover" .href=${v.href}><ui-text size="sm">${v.name}</ui-text></ui-link>`
-            : html`<ui-text size="sm">${v.name}</ui-text>`,
+            ? html`<ui-link variant="hover" .href=${v.href}><ui-text variant="body-md">${v.name}</ui-text></ui-link>`
+            : html`<ui-text variant="body-md">${v.name}</ui-text>`,
       },
-      { key: "imo", label: "IMO", render: (v) => html`<ui-text size="sm" mono>${v.imo || "—"}</ui-text>` },
-      { key: "type", label: "Type", render: (v) => html`<ui-text size="sm">${v.type || "—"}</ui-text>` },
+      { key: "imo", label: "IMO", render: (v) => html`<ui-text variant="body-md" mono>${v.imo || "—"}</ui-text>` },
+      { key: "type", label: "Type", render: (v) => html`<ui-text variant="body-md">${v.type || "—"}</ui-text>` },
       {
         key: "supplied",
         label: "",
@@ -254,9 +254,9 @@ export class GsGrowth extends LightElement {
     ];
     const groups = g.fleets.map((f) => ({
       label: html`<ui-flex gap="2" align="center" wrap>
-        <ui-link variant="hover" .href=${f.href}><ui-text size="sm" weight="semibold">${f.company}</ui-text></ui-link>
+        <ui-link variant="hover" .href=${f.href}><ui-text variant="title-sm">${f.company}</ui-text></ui-link>
         <ui-badge size="xs" variant="soft" .color=${f.tone}>${f.relation}</ui-badge>
-        <ui-text size="xs" color="muted"
+        <ui-text variant="body-sm" color="muted"
           >${f.vessels.length} of ${f.fleetSize} vessels on file · ${f.vessels.filter((v) => v.supplied).length}
           supplied</ui-text
         >
@@ -264,7 +264,7 @@ export class GsGrowth extends LightElement {
       rows: f.vessels as Row[],
     }));
     return html`<ui-card variant="border" shadow="false" heading="Fleets per ship manager">
-      <ui-text size="xs" color="muted"
+      <ui-text variant="body-sm" color="muted"
         >Vessels with IMO for customers and prospects — the room to grow is every vessel we don't supply yet.</ui-text
       >
       <ui-table size="sm" .columns=${columns} .groups=${groups}></ui-table>
@@ -279,8 +279,8 @@ export class GsGrowth extends LightElement {
         label: "Company",
         render: (r) =>
           html`<ui-flex direction="col" gap="0">
-            <ui-link variant="hover" .href=${r.href}><ui-text size="sm" weight="medium">${r.company}</ui-text></ui-link>
-            <ui-text size="xs" color="muted">${r.portal}</ui-text>
+            <ui-link variant="hover" .href=${r.href}><ui-text variant="label-lg">${r.company}</ui-text></ui-link>
+            <ui-text variant="body-sm" color="muted">${r.portal}</ui-text>
           </ui-flex>`,
       },
       {
@@ -293,10 +293,10 @@ export class GsGrowth extends LightElement {
         label: "Dates",
         render: (r) =>
           html`<ui-flex direction="col" gap="0">
-            ${r.submitted ? html`<ui-text size="xs">Submitted ${r.submitted}</ui-text>` : nothing}
-            ${r.committee ? html`<ui-text size="xs" weight="medium">Committee ${r.committee}</ui-text>` : nothing}
-            ${r.renewBy ? html`<ui-text size="xs" color="muted">Renew by ${r.renewBy}</ui-text>` : nothing}
-            ${!r.submitted && !r.committee && !r.renewBy ? html`<ui-text size="xs" color="muted">—</ui-text>` : nothing}
+            ${r.submitted ? html`<ui-text variant="body-sm">Submitted ${r.submitted}</ui-text>` : nothing}
+            ${r.committee ? html`<ui-text variant="label-md">Committee ${r.committee}</ui-text>` : nothing}
+            ${r.renewBy ? html`<ui-text variant="body-sm" color="muted">Renew by ${r.renewBy}</ui-text>` : nothing}
+            ${!r.submitted && !r.committee && !r.renewBy ? html`<ui-text variant="body-sm" color="muted">—</ui-text>` : nothing}
           </ui-flex>`,
       },
       {
@@ -312,14 +312,16 @@ export class GsGrowth extends LightElement {
             )}
           </ui-flex>`,
       },
-      { key: "next", label: "Next", render: (r) => html`<ui-text size="xs">${r.next || "—"}</ui-text>` },
+      { key: "next", label: "Next", render: (r) => html`<ui-text variant="body-sm">${r.next || "—"}</ui-text>` },
     ];
     return html`<ui-card variant="border" shadow="false">
       <ui-flex slot="heading" justify="between" align="center" gap="2" full-width wrap>
         <span>Vendor registrations</span>
         <ui-button size="xs" variant="ghost" href="/collections/vendor-registrations">All registrations</ui-button>
       </ui-flex>
-      <ui-text size="xs" color="muted">Applications to become an approved supplier of a ship manager or owner.</ui-text>
+      <ui-text variant="body-sm" color="muted"
+        >Applications to become an approved supplier of a ship manager or owner.</ui-text
+      >
       <ui-table size="sm" .columns=${columns} .rows=${g.registrations as Row[]}></ui-table>
       <ui-ai-extract
         source="file"
@@ -344,8 +346,8 @@ export class GsGrowth extends LightElement {
         label: "Campaign",
         render: (c) =>
           html`<ui-flex direction="col" gap="0">
-            <ui-link variant="hover" .href=${c.href}><ui-text size="sm" weight="medium">${c.name}</ui-text></ui-link>
-            <ui-text size="xs" color="muted"
+            <ui-link variant="hover" .href=${c.href}><ui-text variant="label-lg">${c.name}</ui-text></ui-link>
+            <ui-text variant="body-sm" color="muted"
               >${c.audience} · ${c.recipients} contacts${c.consentOnly ? " · consented only" : ""}</ui-text
             >
           </ui-flex>`,
@@ -363,8 +365,8 @@ export class GsGrowth extends LightElement {
         label: "Status",
         render: (c) =>
           html`<ui-flex direction="col" gap="0">
-            <ui-text size="sm">${c.status}</ui-text>
-            ${c.scheduled ? html`<ui-text size="xs" color="muted">${c.scheduled}</ui-text>` : nothing}
+            <ui-text variant="body-md">${c.status}</ui-text>
+            ${c.scheduled ? html`<ui-text variant="body-sm" color="muted">${c.scheduled}</ui-text>` : nothing}
           </ui-flex>`,
       },
       {
@@ -372,14 +374,14 @@ export class GsGrowth extends LightElement {
         label: "Results",
         render: (c) =>
           c.stats
-            ? html`<ui-text size="xs"
+            ? html`<ui-text variant="body-sm"
                 >${c.stats.sent} sent · ${c.stats.opened} opened · ${c.stats.replied} replied</ui-text
               >`
-            : html`<ui-text size="xs" color="muted">—</ui-text>`,
+            : html`<ui-text variant="body-sm" color="muted">—</ui-text>`,
       },
     ];
     return html`<ui-card variant="border" shadow="false" heading="Campaigns">
-      <ui-text size="xs" color="muted"
+      <ui-text variant="body-sm" color="muted"
         >Approved lists and content only.
         ${g.canSend ? "You can schedule and send." : "Only Karim Balbaa schedules or sends."}</ui-text
       >
@@ -397,7 +399,7 @@ export class GsGrowth extends LightElement {
       ${
         d
           ? html`<ui-flex direction="col" gap="3">
-              ${d.step.goal ? html`<ui-text size="sm" color="muted">Step: ${d.step.goal} (${d.step.channel}, ${d.step.who || "—"})</ui-text>` : nothing}
+              ${d.step.goal ? html`<ui-text variant="body-md" color="muted">Step: ${d.step.goal} (${d.step.channel}, ${d.step.who || "—"})</ui-text>` : nothing}
               <ui-select
                 legend="Outcome"
                 size="sm"
@@ -442,7 +444,7 @@ export class GsGrowth extends LightElement {
                   @change=${(e: Event) => this._set({ stage: (e.target as HTMLSelectElement).value })}
                 ></ui-select>
               </ui-flex>
-              <ui-text size="xs" color="muted"
+              <ui-text variant="body-sm" color="muted"
                 >Saved on the opportunity; the next step goes on the owner's follow-ups.</ui-text
               >
             </ui-flex>`
@@ -463,8 +465,8 @@ export class GsGrowth extends LightElement {
     return html`<ui-flex direction="col" gap="6">
       <ui-flex justify="between" align="end" gap="4" wrap>
         <ui-flex direction="col" gap="1" shrink>
-          <ui-text size="xs" color="muted" weight="medium" uppercase>Growth</ui-text>
-          <ui-heading level="1" size="page">Growth board</ui-heading>
+          <ui-text variant="label-md" color="muted" uppercase>Growth</ui-text>
+          <ui-heading level="1" variant="page">Growth board</ui-heading>
           <ui-text color="muted"
             >Prospects, fleets, introductions and vendor registrations — kept apart from operational RFQs, and linked to
             the customer once business is won.</ui-text

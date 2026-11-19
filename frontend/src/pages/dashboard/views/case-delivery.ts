@@ -221,12 +221,12 @@ export class GsCaseDelivery extends LightElement implements ViewProps {
             >Re-planned after the agent's ETA change — escalated to ${USERS[d.case.owner] ?? d.case.owner} and Karim
             Balbaa</strong
           >
-          <ui-text size="sm">${this.replan.text}</ui-text>
+          <ui-text variant="body-md">${this.replan.text}</ui-text>
         </ui-flex>
       </ui-alert>`;
     if (eta)
       return html`<ui-alert color="warning" variant="soft"
-        ><ui-text size="sm">${dayTime(eta.at)} · ${eta.text}</ui-text></ui-alert
+        ><ui-text variant="body-md">${dayTime(eta.at)} · ${eta.text}</ui-text></ui-alert
       >`;
     if (d.case.blocker) return html`<ui-alert color="info" variant="soft">${d.case.blocker}</ui-alert>`;
     return nothing;
@@ -234,8 +234,8 @@ export class GsCaseDelivery extends LightElement implements ViewProps {
 
   private _kv(label: string, value: TemplateResult | string) {
     return html`<ui-flex direction="col" gap="0">
-      <ui-text size="xs" color="muted" uppercase>${label}</ui-text>
-      ${typeof value === "string" ? html`<ui-text size="sm">${value}</ui-text>` : value}
+      <ui-text variant="body-sm" color="muted" uppercase>${label}</ui-text>
+      ${typeof value === "string" ? html`<ui-text variant="body-md">${value}</ui-text>` : value}
     </ui-flex>`;
   }
 
@@ -244,7 +244,7 @@ export class GsCaseDelivery extends LightElement implements ViewProps {
     if (!next)
       return html`<ui-card variant="border" shadow="false">
         ${this._heading("Vessel delivery plan")}
-        <ui-text size="sm" color="muted"
+        <ui-text variant="body-md" color="muted"
           >No delivery planned yet — the plan is created once supplier POs are confirmed and goods are due.</ui-text
         >
       </ui-card>`;
@@ -276,7 +276,7 @@ export class GsCaseDelivery extends LightElement implements ViewProps {
             >`
           : nothing,
       )}
-      <ui-text size="sm" color="muted"
+      <ui-text variant="body-md" color="muted"
         >Supplier promises and the customer promise are tracked separately; an ETA change moves every open drop, booking
         and task, and alerts the owner.</ui-text
       >
@@ -288,7 +288,7 @@ export class GsCaseDelivery extends LightElement implements ViewProps {
         ${this._kv("Planned on board", dayTime(next.plannedAt))} ${this._kv("Clearance", p.clearance ?? "—")}
       </ui-grid>
       <ui-flex direction="col" gap="2">
-        <ui-text size="sm" weight="medium">Pre-dispatch check — ${next.number}</ui-text>
+        <ui-text variant="label-lg">Pre-dispatch check — ${next.number}</ui-text>
         <ui-flex gap="2" wrap>
           ${checks.map(
             ([label, ok]) =>
@@ -315,7 +315,7 @@ export class GsCaseDelivery extends LightElement implements ViewProps {
           delivered</ui-badge
         >`,
       )}
-      <ui-text size="sm" color="muted"
+      <ui-text variant="body-md" color="muted"
         >“Delivered” needs evidence: dispatch and confirmed receipt are separate, and a drop is confirmed only with the
         signed delivery note or photo from the vessel.</ui-text
       >
@@ -327,31 +327,31 @@ export class GsCaseDelivery extends LightElement implements ViewProps {
     const delivered = /confirmed/.test(x.status);
     return html`<ui-card variant="border" size="sm" shadow="false">
       <ui-flex slot="heading" justify="between" align="center" gap="2" full-width wrap>
-        <ui-text weight="semibold">Drop ${x.drop} · ${x.number}</ui-text>
+        <ui-text emphasized>Drop ${x.drop} · ${x.number}</ui-text>
         <ui-badge size="sm" variant="soft" .color=${statusColor(x.status)}>${x.status}</ui-badge>
       </ui-flex>
-      <ui-text size="xs" color="muted">${dayTime(x.plannedAt)} · ${x.place}</ui-text>
+      <ui-text variant="body-sm" color="muted">${dayTime(x.plannedAt)} · ${x.place}</ui-text>
       <ui-flex direction="col" gap="0">
         ${x.lines.map(
           (l) =>
-            html`<ui-text size="sm"
+            html`<ui-text variant="body-md"
               >L${l.lineNo} · ${l.qty} × ${l.description}${l.lot ? html` · <em>lot ${l.lot}</em>` : nothing}</ui-text
             >`,
         )}
       </ui-flex>
       <ui-flex direction="col" gap="1">
-        <ui-text size="xs" .color=${x.dispatchedAt ? "success" : "muted"}
+        <ui-text variant="body-sm" .color=${x.dispatchedAt ? "success" : "muted"}
           >${x.dispatchedAt ? `Dispatched ${dayTime(x.dispatchedAt)}` : "Not dispatched yet"}</ui-text
         >
-        <ui-text size="xs" .color=${delivered ? "success" : "warning"}
+        <ui-text variant="body-sm" .color=${delivered ? "success" : "warning"}
           >${
             delivered
               ? `Signed by ${x.confirmedBy ?? "vessel"} · ${dayTime(x.confirmedAt)}${x.proof ? " · signed delivery note on file" : ""}`
               : "Confirmed receipt pending — signed delivery note required"
           }</ui-text
         >
-        ${x.shortages ? html`<ui-text size="xs" color="warning">${x.shortages}</ui-text>` : nothing}
-        ${x.invoice ? html`<ui-text size="xs" color="muted">Invoiced: ${x.invoice}</ui-text>` : nothing}
+        ${x.shortages ? html`<ui-text variant="body-sm" color="warning">${x.shortages}</ui-text>` : nothing}
+        ${x.invoice ? html`<ui-text variant="body-sm" color="muted">Invoiced: ${x.invoice}</ui-text>` : nothing}
       </ui-flex>
       <ui-flex slot="actions" gap="2" wrap>
         ${
@@ -391,17 +391,25 @@ export class GsCaseDelivery extends LightElement implements ViewProps {
       {
         key: "line",
         label: "Line",
-        render: (b) => html`<ui-text size="sm" weight="medium">L${b.lineNo} · ${b.description}</ui-text>`,
+        render: (b) => html`<ui-text variant="label-lg">L${b.lineNo} · ${b.description}</ui-text>`,
       },
-      { key: "qty", label: "Short", render: (b) => html`<ui-text size="sm">${b.qty}</ui-text>` },
-      { key: "supplier", label: "Supplier", render: (b) => html`<ui-text size="sm">${b.supplierName}</ui-text>` },
-      { key: "date", label: "Promised", render: (b) => html`<ui-text size="sm">${day(b.date)}</ui-text>` },
+      { key: "qty", label: "Short", render: (b) => html`<ui-text variant="body-md">${b.qty}</ui-text>` },
+      {
+        key: "supplier",
+        label: "Supplier",
+        render: (b) => html`<ui-text variant="body-md">${b.supplierName}</ui-text>`,
+      },
+      { key: "date", label: "Promised", render: (b) => html`<ui-text variant="body-md">${day(b.date)}</ui-text>` },
       {
         key: "follows",
         label: "Follows in",
-        render: (b) => html`<ui-text size="sm">${b.followsIn ?? "Not planned"}</ui-text>`,
+        render: (b) => html`<ui-text variant="body-md">${b.followsIn ?? "Not planned"}</ui-text>`,
       },
-      { key: "owner", label: "Owner", render: (b) => html`<ui-text size="sm">${USERS[b.owner] ?? b.owner}</ui-text>` },
+      {
+        key: "owner",
+        label: "Owner",
+        render: (b) => html`<ui-text variant="body-md">${USERS[b.owner] ?? b.owner}</ui-text>`,
+      },
       {
         key: "risk",
         label: "Risk",
@@ -413,7 +421,7 @@ export class GsCaseDelivery extends LightElement implements ViewProps {
     ];
     return html`<ui-card variant="border" shadow="false">
       ${this._heading("Backorders & late suppliers")}
-      <ui-text size="sm" color="muted"
+      <ui-text variant="body-md" color="muted"
         >Receipt shortfalls become backorders with a date and an owner; a late supplier is escalated against the drop it
         was meant for.</ui-text
       >
@@ -429,8 +437,8 @@ export class GsCaseDelivery extends LightElement implements ViewProps {
       <ui-badge size="sm" variant="soft" .color=${/unreachable/i.test(label) ? "error" : statusColor(s)}
         >${label}</ui-badge
       >
-      ${e.uuid ? html`<ui-text size="xs" color="muted" mono>UUID ${e.uuid}</ui-text>` : nothing}
-      ${e.error ? html`<ui-text size="xs" color="error">${e.error}</ui-text>` : nothing}
+      ${e.uuid ? html`<ui-text variant="body-sm" color="muted" mono>UUID ${e.uuid}</ui-text>` : nothing}
+      ${e.error ? html`<ui-text variant="body-sm" color="error">${e.error}</ui-text>` : nothing}
     </ui-flex>`;
   }
 
@@ -473,9 +481,9 @@ export class GsCaseDelivery extends LightElement implements ViewProps {
         render: (i) =>
           html`<ui-flex direction="col" gap="0">
             <ui-link color="primary" .href=${`/collections/invoices/${i.id}`}
-              ><ui-text size="sm" weight="semibold">${i.number}</ui-text></ui-link
+              ><ui-text variant="title-sm">${i.number}</ui-text></ui-link
             >
-            <ui-text size="xs" color="muted"
+            <ui-text variant="body-sm" color="muted"
               >${i.basis ?? "Delivery"}${i.delivery ? ` · ${i.delivery}` : ""} · ${day(i.issuedAt)}</ui-text
             >
           </ui-flex>`,
@@ -487,7 +495,7 @@ export class GsCaseDelivery extends LightElement implements ViewProps {
           html`<ui-flex direction="col" gap="0"
             >${i.lines.map(
               (l) =>
-                html`<ui-text size="xs"
+                html`<ui-text variant="body-sm"
                   >L${l.lineNo} · ${l.qty}${l.deliveredQty != null ? ` of ${l.deliveredQty} delivered` : ""} ×
                   ${money(l.unitPrice, i.currency)}</ui-text
                 >`,
@@ -499,8 +507,8 @@ export class GsCaseDelivery extends LightElement implements ViewProps {
         label: "Amount · VAT",
         render: (i) =>
           html`<ui-flex direction="col" gap="0">
-            <ui-text size="sm">${money(i.amount, i.currency)}</ui-text>
-            <ui-text size="xs" color="muted">${i.vatTreatment ?? ""}</ui-text>
+            <ui-text variant="body-md">${money(i.amount, i.currency)}</ui-text>
+            <ui-text variant="body-sm" color="muted">${i.vatTreatment ?? ""}</ui-text>
           </ui-flex>`,
       },
       {
@@ -514,11 +522,11 @@ export class GsCaseDelivery extends LightElement implements ViewProps {
         label: "Paid · balance",
         render: (i) =>
           html`<ui-flex direction="col" gap="0">
-            <ui-text size="sm">${money(i.paid, i.currency)} paid</ui-text>
-            <ui-text size="xs" .color=${i.balance > 0 ? "warning" : "success"}
+            <ui-text variant="body-md">${money(i.paid, i.currency)} paid</ui-text>
+            <ui-text variant="body-sm" .color=${i.balance > 0 ? "warning" : "success"}
               >${i.balance > 0 ? `Balance ${money(i.balance, i.currency)} due ${day(i.dueDate)}` : "Settled"}</ui-text
             >
-            ${i.payments.map((p) => html`<ui-text size="xs" color="muted">${day(p.paidAt)} · ${p.reference} · ${money(p.amount, i.currency)}</ui-text>`)}
+            ${i.payments.map((p) => html`<ui-text variant="body-sm" color="muted">${day(p.paidAt)} · ${p.reference} · ${money(p.amount, i.currency)}</ui-text>`)}
           </ui-flex>`,
       },
       {
@@ -549,7 +557,7 @@ export class GsCaseDelivery extends LightElement implements ViewProps {
     ];
     return html`<ui-card variant="border" shadow="false">
       ${this._heading("Customer invoices & payments", html`<ui-badge size="sm" variant="soft">${d.invoices.length}</ui-badge>`)}
-      <ui-text size="sm" color="muted"
+      <ui-text variant="body-md" color="muted"
         >Invoices come from signed deliveries: only delivered quantities, never the same quantity twice. Each one is
         signed and submitted to the Egyptian Tax Authority; a failed signature submits nothing and is safe to
         retry.</ui-text
@@ -562,7 +570,7 @@ export class GsCaseDelivery extends LightElement implements ViewProps {
                 ${this._mini("Next due", nextDue ? `${day(nextDue.dueDate)} · ${money(nextDue.balance, nextDue.currency)}` : "—")}
               </ui-grid>
               <ui-table size="sm" .columns=${columns} .rows=${d.invoices as InvoiceRow[]}></ui-table>`
-          : html`<ui-text size="sm" color="muted"
+          : html`<ui-text variant="body-md" color="muted"
               >No invoice yet — the first one is created from a delivery confirmed with a signed note.</ui-text
             >`
       }
@@ -571,8 +579,8 @@ export class GsCaseDelivery extends LightElement implements ViewProps {
 
   private _mini(label: string, value: string, tone?: "warning" | "success") {
     return html`<ui-flex direction="col" gap="0">
-      <ui-text size="xs" color="muted" uppercase>${label}</ui-text>
-      <ui-text size="lg" weight="semibold" .color=${tone}>${value}</ui-text>
+      <ui-text variant="body-sm" color="muted" uppercase>${label}</ui-text>
+      <ui-text variant="title-md" .color=${tone}>${value}</ui-text>
     </ui-flex>`;
   }
 
@@ -595,41 +603,44 @@ export class GsCaseDelivery extends LightElement implements ViewProps {
       const email = AGENT_EMAIL[data.case.id];
       if (d.loading || !email)
         return html`<ui-flex gap="3" align="center" padding="4"
-          ><ui-loading color="primary"></ui-loading><ui-text size="sm">Reading the agent's email…</ui-text></ui-flex
+          ><ui-loading color="primary"></ui-loading
+          ><ui-text variant="body-md">Reading the agent's email…</ui-text></ui-flex
         >`;
       const open = data.deliveries.filter((x) => !/confirmed|Cancelled|Dispatched/.test(x.status));
       return html`<ui-flex direction="col" gap="3">
         <ui-mockup-window variant="filled">
           <ui-flex direction="col" gap="1" padding="4">
-            <ui-text size="xs" color="muted">From ${email.from} · Subject: ${email.subject}</ui-text>
-            <ui-text size="sm">${email.body}</ui-text>
+            <ui-text variant="body-sm" color="muted">From ${email.from} · Subject: ${email.subject}</ui-text>
+            <ui-text variant="body-md">${email.body}</ui-text>
           </ui-flex>
         </ui-mockup-window>
         <ui-flex gap="2" align="center" wrap>
           <ui-badge size="sm" variant="outline" color="secondary">AI read · 97%</ui-badge>
-          <ui-text size="sm">New ETA <strong>${dayTime(email.eta)}</strong> (was ${dayTime(data.case.eta)})</ui-text>
+          <ui-text variant="body-md"
+            >New ETA <strong>${dayTime(email.eta)}</strong> (was ${dayTime(data.case.eta)})</ui-text
+          >
         </ui-flex>
-        <ui-text size="sm" weight="medium">What moves</ui-text>
+        <ui-text variant="label-lg">What moves</ui-text>
         <ui-flex direction="col" gap="1">
           ${
             open.length
               ? open.map(
                   (x) =>
-                    html`<ui-text size="sm"
+                    html`<ui-text variant="body-md"
                       >${x.number}: on board ${dayTime(x.plannedAt)} → ${dayTime(email.eta)} · launch re-booked · truck
                       & boarding staff re-confirmed (task for ${USERS[data.case.owner] ?? data.case.owner})</ui-text
                     >`,
                 )
-              : html`<ui-text size="sm" color="muted">No open drop to move.</ui-text>`
+              : html`<ui-text variant="body-md" color="muted">No open drop to move.</ui-text>`
           }
           ${data.backorders.map(
             (b) =>
-              html`<ui-text size="sm" .color=${b.date && b.date > email.eta ? "error" : "success"}
+              html`<ui-text variant="body-md" .color=${b.date && b.date > email.eta ? "error" : "success"}
                 >Backorder L${b.lineNo} (${b.supplierName}, ${day(b.date)}):
                 ${b.date && b.date > email.eta ? "still late — escalate" : "now in time for the drop"}</ui-text
               >`,
           )}
-          <ui-text size="sm">Alert to ${USERS[data.case.owner] ?? data.case.owner} and Karim Balbaa.</ui-text>
+          <ui-text variant="body-md">Alert to ${USERS[data.case.owner] ?? data.case.owner} and Karim Balbaa.</ui-text>
         </ui-flex>
         <ui-flex justify="end" gap="2">
           ${cancel}
@@ -639,7 +650,7 @@ export class GsCaseDelivery extends LightElement implements ViewProps {
     }
     if (d.kind === "pod")
       return html`<ui-flex direction="col" gap="3">
-        <ui-text size="sm"
+        <ui-text variant="body-md"
           >${d.delivery.lines.map((l) => `L${l.lineNo} × ${l.qty}`).join(" · ")} — ${d.delivery.place}</ui-text
         >
         <ui-file-input
@@ -733,7 +744,7 @@ export class GsCaseDelivery extends LightElement implements ViewProps {
       const local = d.invoice.vatTreatment === "14% standard";
       const rejected = d.invoice.eInvoice.status === "Rejected";
       return html`<ui-flex direction="col" gap="3">
-        <ui-text size="sm"
+        <ui-text variant="body-md"
           >${d.invoice.billing.legalEntity ?? data.customer?.name} · ${money(d.invoice.amount, d.invoice.currency)} ·
           ${d.invoice.vatTreatment}</ui-text
         >
@@ -762,7 +773,7 @@ export class GsCaseDelivery extends LightElement implements ViewProps {
               >`
             : nothing
         }
-        <ui-text size="xs" color="muted"
+        <ui-text variant="body-sm" color="muted"
           >Signed with Golden Sea's e-signature and submitted; the invoice number is the idempotency key, so a retry
           never creates a second submission.</ui-text
         >
@@ -773,7 +784,7 @@ export class GsCaseDelivery extends LightElement implements ViewProps {
       </ui-flex>`;
     }
     return html`<ui-flex direction="col" gap="3">
-      <ui-text size="sm"
+      <ui-text variant="body-md"
         >Balance ${money(d.invoice.balance, d.invoice.currency)} · due ${day(d.invoice.dueDate)}. Recorded after the
         money is in the bank — the system never moves money.</ui-text
       >

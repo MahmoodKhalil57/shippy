@@ -81,7 +81,7 @@ const aiButton = (icon: IconName, label: string, onClick: () => void, disabled =
 const aiNote = (icon: IconName | "loading", text: unknown, color: "muted" | "error" = "muted") =>
   html`<ui-flex inline gap="1" align="center">
     ${icon === "loading" ? html`<ui-loading size="xs"></ui-loading>` : html`<ui-icon name=${icon} size="xs"></ui-icon>`}
-    <ui-text as="span" size="xs" color=${color}>${text}</ui-text>
+    <ui-text as="span" variant="body-sm" color=${color}>${text}</ui-text>
   </ui-flex>`;
 
 /** A row of assist buttons and notes. */
@@ -93,7 +93,7 @@ const aiBox = (heading: unknown, content: unknown) =>
     <ui-flex direction="col" gap="2">
       <ui-flex gap="1" align="center">
         <ui-icon name="sparkles" size="xs" color="primary"></ui-icon>
-        <ui-text as="span" size="xs" weight="semibold" color="primary">${heading}</ui-text>
+        <ui-text as="span" variant="label-md" emphasized color="primary">${heading}</ui-text>
       </ui-flex>
       ${content}
     </ui-flex>
@@ -109,7 +109,10 @@ const paragraphs = (text: string) =>
     .split(/\n{2,}/)
     .filter((p) => p.trim())
     .map(
-      (p) => html`<ui-text size="sm">${p.split("\n").map((l, i) => html`${i ? html`<br />` : nothing}${l}`)}</ui-text>`,
+      (p) =>
+        html`<ui-text variant="body-md"
+          >${p.split("\n").map((l, i) => html`${i ? html`<br />` : nothing}${l}`)}</ui-text
+        >`,
     );
 
 /** Asks the person for a photo or a recording (the browser's file picker; nothing is uploaded). */
@@ -289,7 +292,7 @@ export class UiAiSummary extends AssistElement {
       return this.summary
         ? html`<ui-flex gap="1" align="start" title="Summarised on this device">
             <ui-icon name="sparkles" size="xs" color="primary"></ui-icon>
-            <ui-text size="xs" color="muted">${this.summary}</ui-text>
+            <ui-text variant="body-sm" color="muted">${this.summary}</ui-text>
           </ui-flex>`
         : nothing;
     return html`<ui-flex direction="col" gap="2">
@@ -543,7 +546,7 @@ export class UiAiCheck extends AssistElement {
                       size="xs"
                       color=${a.yes ? "success" : "warning"}
                     ></ui-icon>
-                    <ui-text size="xs" color=${a.yes ? "success" : "warning"}
+                    <ui-text variant="body-sm" color=${a.yes ? "success" : "warning"}
                       >${a.yes ? q.yes : q.no}${pct(a.confidence)}</ui-text
                     >
                   </ui-flex>`;
@@ -689,11 +692,11 @@ export class UiAiExtract extends AssistElement {
                     const v = values[f.id];
                     const missing = v == null || v === "";
                     return html`<ui-flex gap="2" align="baseline" wrap>
-                      <ui-text as="span" size="xs" color="muted">${f.label}</ui-text>
+                      <ui-text as="span" variant="body-sm" color="muted">${f.label}</ui-text>
                       ${
                         missing
-                          ? html`<ui-text as="span" size="sm" color="muted" italic>not found</ui-text>`
-                          : html`<ui-text as="span" size="sm" weight="medium">${String(v)}</ui-text>`
+                          ? html`<ui-text as="span" variant="body-md" color="muted" italic>not found</ui-text>`
+                          : html`<ui-text as="span" variant="label-lg">${String(v)}</ui-text>`
                       }
                     </ui-flex>`;
                   })}

@@ -30,7 +30,7 @@ export const calendar = rcva("", {
       vc: "vc",
     },
     /** Card look from the docs' inline example. */
-    framed: { true: "bg-base-100 border border-base-300 shadow-elevation-3 rounded-box" },
+    framed: { true: "bg-surface border border-outline-variant shadow-elevation-3 rounded-box" },
   },
   defaultVariants: { library: "cally" },
 });

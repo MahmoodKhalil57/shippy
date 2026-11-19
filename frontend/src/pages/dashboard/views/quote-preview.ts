@@ -233,12 +233,20 @@ export class GsQuotePreview extends LightElement {
       {
         key: "description",
         label: t.desc,
-        render: (l) => html`<ui-text size="sm" dir="ltr">${l.description}</ui-text>`,
+        render: (l) => html`<ui-text variant="body-md" dir="ltr">${l.description}</ui-text>`,
       },
-      { key: "unit", label: t.uom, render: (l) => html`<ui-text size="sm" uppercase>${l.unit}</ui-text>` },
+      { key: "unit", label: t.uom, render: (l) => html`<ui-text variant="body-md" uppercase>${l.unit}</ui-text>` },
       { key: "qty", label: t.qty },
-      { key: "price", label: t.price(cur), render: (l) => html`<ui-text size="sm">${amount(l.price, d)}</ui-text>` },
-      { key: "total", label: t.total(cur), render: (l) => html`<ui-text size="sm">${amount(l.total, d)}</ui-text>` },
+      {
+        key: "price",
+        label: t.price(cur),
+        render: (l) => html`<ui-text variant="body-md">${amount(l.price, d)}</ui-text>`,
+      },
+      {
+        key: "total",
+        label: t.total(cur),
+        render: (l) => html`<ui-text variant="body-md">${amount(l.total, d)}</ui-text>`,
+      },
     ];
     const created = new Date(String(q.createdAt ?? new Date().toISOString()));
     const ymd = `${String(created.getUTCDate()).padStart(2, "0")}/${String(created.getUTCMonth() + 1).padStart(2, "0")}/${created.getUTCFullYear()}`;
@@ -255,19 +263,19 @@ export class GsQuotePreview extends LightElement {
         ${q.status === "Superseded" ? html`<ui-alert color="info" variant="soft">Superseded — kept for audit. Not valid for ordering.</ui-alert>` : nothing}
         <ui-flex justify="between" align="start" gap="4" wrap>
           <ui-flex direction="col" gap="0">
-            <ui-heading level="2" size="2xl" color="primary" tracking="wide">GOLDEN SEA</ui-heading>
-            <ui-text size="xs" color="muted" uppercase>${t.brand}</ui-text>
+            <ui-heading level="2" variant="headline-sm" color="primary" tracking="wide">GOLDEN SEA</ui-heading>
+            <ui-text variant="body-sm" color="muted" uppercase>${t.brand}</ui-text>
           </ui-flex>
           <ui-flex direction="col" gap="1" align="end">
-            <ui-heading level="2" size="2xl" color="primary">${t.title}</ui-heading>
-            <ui-text size="sm" color="primary">${t.no}: ${q.number}</ui-text>
-            <ui-text size="sm">${t.ref}: ${v.case.customerRef || "—"}</ui-text>
-            <ui-text size="sm" color="primary">${t.date}: ${ymd}</ui-text>
+            <ui-heading level="2" variant="headline-sm" color="primary">${t.title}</ui-heading>
+            <ui-text variant="body-md" color="primary">${t.no}: ${q.number}</ui-text>
+            <ui-text variant="body-md">${t.ref}: ${v.case.customerRef || "—"}</ui-text>
+            <ui-text variant="body-md" color="primary">${t.date}: ${ymd}</ui-text>
           </ui-flex>
         </ui-flex>
         <ui-flex direction="col" gap="0">
           <ui-box surface="primary" padding="2" rounded="field"
-            ><ui-text size="sm" weight="semibold">${t.client}</ui-text></ui-box
+            ><ui-text variant="title-sm">${t.client}</ui-text></ui-box
           >
           <ui-table
             size="sm"
@@ -275,7 +283,7 @@ export class GsQuotePreview extends LightElement {
               {
                 key: "k",
                 render: (r: Record<string, unknown>) =>
-                  html`<ui-text size="sm" weight="semibold" color="primary">${r.k}</ui-text>`,
+                  html`<ui-text variant="title-sm" color="primary">${r.k}</ui-text>`,
               },
               { key: "v" },
             ]}
@@ -287,27 +295,27 @@ export class GsQuotePreview extends LightElement {
             ]}
           ></ui-table>
         </ui-flex>
-        <ui-text weight="semibold" color="primary">${t.intro}</ui-text>
+        <ui-text emphasized color="primary">${t.intro}</ui-text>
         <ui-table size="sm" .columns=${columns} .rows=${lines}></ui-table>
         <ui-flex direction="col" gap="1">
           ${
             discount
               ? html`<ui-flex justify="between" gap="2" padding="2">
-                  <ui-text size="sm">${t.discount(discount)}</ui-text>
-                  <ui-text size="sm">− ${amount(gross - total, d)}</ui-text>
+                  <ui-text variant="body-md">${t.discount(discount)}</ui-text>
+                  <ui-text variant="body-md">− ${amount(gross - total, d)}</ui-text>
                 </ui-flex>`
               : nothing
           }
           <ui-box surface="primary" padding="2" rounded="field">
             <ui-flex justify="between" gap="2">
-              <ui-text weight="semibold">${t.grand(cur)} (excl. VAT)</ui-text>
-              <ui-text weight="bold">${amount(total, d)}</ui-text>
+              <ui-text emphasized>${t.grand(cur)} (excl. VAT)</ui-text>
+              <ui-text emphasized>${amount(total, d)}</ui-text>
             </ui-flex>
           </ui-box>
-          ${this.egpView ? html`<ui-text size="xs" color="muted">Converted at ${q.currency}/EGP ${v.fx.toFixed(2)} (approved rate on the quotation).</ui-text>` : nothing}
+          ${this.egpView ? html`<ui-text variant="body-sm" color="muted">Converted at ${q.currency}/EGP ${v.fx.toFixed(2)} (approved rate on the quotation).</ui-text>` : nothing}
         </ui-flex>
         <ui-flex direction="col" gap="2">
-          <ui-text weight="bold" italic>${t.remarks}</ui-text>
+          <ui-text emphasized italic>${t.remarks}</ui-text>
           <ui-list
             .items=${[
               t.delivery(v.case.port, day(v.case.eta)),
@@ -319,20 +327,20 @@ export class GsQuotePreview extends LightElement {
             ].map((x) => ({ heading: x }))}
             .framed=${false}
           ></ui-list>
-          <ui-text size="sm" italic>${t.wish}</ui-text>
+          <ui-text variant="body-md" italic>${t.wish}</ui-text>
         </ui-flex>
         <ui-flex justify="between" align="end" gap="4" wrap>
-          <ui-text size="xs" color="muted"
+          <ui-text variant="body-sm" color="muted"
             >${t.prepared}: ${v.preparedBy || "—"}${v.approvedBy ? ` · ${t.approved}: ${v.approvedBy}` : ""}</ui-text
           >
-          <ui-text size="xs" italic
+          <ui-text variant="body-sm" italic
             >${v.approvedBy ? `${v.approvedBy} — authorised signature` : "Signature on approval"}</ui-text
           >
         </ui-flex>
         <ui-box surface="accent" padding="3" rounded="field">
           <ui-flex direction="col" gap="0">
-            <ui-text size="xs" dir="ltr">+20 10 0000 0000 · Sales@goldensea.com.eg</ui-text>
-            <ui-text size="xs" dir="ltr">6th of October City, Giza Governorate · demo document</ui-text>
+            <ui-text variant="body-sm" dir="ltr">+20 10 0000 0000 · Sales@goldensea.com.eg</ui-text>
+            <ui-text variant="body-sm" dir="ltr">6th of October City, Giza Governorate · demo document</ui-text>
           </ui-flex>
         </ui-box>
       </ui-flex>
@@ -358,10 +366,10 @@ export class GsQuotePreview extends LightElement {
       <ui-flex gap="2" align="center" wrap>
         <ui-badge size="sm" variant="soft" color="primary">${q.number}</ui-badge>
         <ui-badge size="sm" variant="soft">${q.status}</ui-badge>
-        ${q.decision ? html`<ui-text size="sm" color="muted">${q.decision}</ui-text>` : nothing}
+        ${q.decision ? html`<ui-text variant="body-md" color="muted">${q.decision}</ui-text>` : nothing}
         ${
           (q.submission as { submittedAt?: string; method?: string } | undefined)?.submittedAt
-            ? html`<ui-text size="sm" color="muted"
+            ? html`<ui-text variant="body-md" color="muted"
                 >· sent ${day(String((q.submission as { submittedAt: string }).submittedAt), true)} via
                 ${(q.submission as { method?: string }).method}</ui-text
               >`
@@ -372,12 +380,12 @@ export class GsQuotePreview extends LightElement {
         (a) =>
           html`<ui-flex gap="2" align="baseline" wrap>
             <ui-status size="xs" .color=${a.tone} .label=${a.status}></ui-status>
-            <ui-text size="sm"><strong>${a.type}:</strong> ${a.progress}</ui-text>
+            <ui-text variant="body-md"><strong>${a.type}:</strong> ${a.progress}</ui-text>
           </ui-flex>`,
       )}
       ${
         v.why.approve && v.approvalId && !v.can.approve
-          ? html`<ui-text size="xs" color="muted">${v.why.approve}</ui-text>`
+          ? html`<ui-text variant="body-sm" color="muted">${v.why.approve}</ui-text>`
           : nothing
       }
       <ui-flex slot="actions" gap="2" wrap>
@@ -446,7 +454,7 @@ export class GsQuotePreview extends LightElement {
         ></ui-ai-tools>`;
     const body = {
       approve: html`<ui-flex direction="col" gap="3">
-        <ui-text size="sm"
+        <ui-text variant="body-md"
           >Approve ${q.number} (${q.currency} ${amount(Number(q.totalExVat) || 0)} excl.
           VAT)${v.internal?.marginPct !== undefined ? ` at ${pct(v.internal.marginPct)} margin` : ""}. It can then be
           sent to the customer.</ui-text
@@ -455,14 +463,14 @@ export class GsQuotePreview extends LightElement {
         ${reasonBox("Comment (optional)", "e.g. OK — confirm the launch cost before sending")}
       </ui-flex>`,
       return: html`<ui-flex direction="col" gap="3">
-        <ui-text size="sm"
+        <ui-text variant="body-md"
           >Return ${q.number} to the preparer. A reason is required and goes on the case timeline.</ui-text
         >
         ${reasonBox("Reason", "e.g. Re-check line 3 — margin too thin for a new supplier")}
       </ui-flex>`,
       send: html`<ui-flex direction="col" gap="3">
         <ui-flex gap="2" align="center" wrap
-          >${aiBadge()}<ui-text size="xs" color="muted">Nothing is sent until you confirm.</ui-text></ui-flex
+          >${aiBadge()}<ui-text variant="body-sm" color="muted">Nothing is sent until you confirm.</ui-text></ui-flex
         >
         <ui-join label="Submission method">
           <ui-button
@@ -482,12 +490,12 @@ export class GsQuotePreview extends LightElement {
           this.method === "email"
             ? html`<ui-mockup-window>
                 <ui-flex direction="col" gap="2" padding="4">
-                  <ui-text size="sm"><strong>To:</strong> ${v.case.email || "customer"}</ui-text>
-                  <ui-text size="sm"
+                  <ui-text variant="body-md"><strong>To:</strong> ${v.case.email || "customer"}</ui-text>
+                  <ui-text variant="body-md"
                     ><strong>Subject:</strong> Quotation ${q.number} — ${v.case.vessel} — ref.
                     ${v.case.customerRef}</ui-text
                   >
-                  <ui-text size="sm"><strong>Attachment:</strong> ${q.number}.pdf</ui-text>
+                  <ui-text variant="body-md"><strong>Attachment:</strong> ${q.number}.pdf</ui-text>
                   ${reasonBox("Message", "")}
                 </ui-flex>
               </ui-mockup-window>`
@@ -498,14 +506,14 @@ export class GsQuotePreview extends LightElement {
         }
       </ui-flex>`,
       revise: html`<ui-flex direction="col" gap="3">
-        <ui-text size="sm"
+        <ui-text variant="body-md"
           >Creates version ${(v.versions.at(-1)?.version ?? 1) + 1} as a draft with the same lines; ${q.number} is kept
           for audit and marked superseded.</ui-text
         >
         ${reasonBox("What changes", "e.g. Customer asked for ESAB on line 1")}
       </ui-flex>`,
       decision: html`<ui-flex direction="col" gap="3">
-        <ui-text size="sm">The customer's decision on ${q.number}. No response never means lost.</ui-text>
+        <ui-text variant="body-md">The customer's decision on ${q.number}. No response never means lost.</ui-text>
         <ui-join label="Decision">
           ${DECISIONS.map(
             (d) =>
@@ -568,7 +576,7 @@ export class GsQuotePreview extends LightElement {
     const diffs = this.portal?.filter((r) => !r.matches) ?? [];
     return html`<ui-card variant="border" shadow="false">
       <ui-flex slot="heading" gap="2" align="center" wrap>Portal submission check ${aiBadge("AI check")}</ui-flex>
-      <ui-text size="sm" color="muted"
+      <ui-text variant="body-md" color="muted"
         >For customers who buy through a procurement portal: upload the confirmation screenshot and the AI compares it
         with the approved quotation. The submission is complete only when every field matches.</ui-text
       >
@@ -645,7 +653,9 @@ export class GsQuotePreview extends LightElement {
             >
           </ui-join>
         </ui-flex>
-        <ui-text size="xs" color="muted">Customer-facing: supplier names, costs and margins are never printed.</ui-text>
+        <ui-text variant="body-sm" color="muted"
+          >Customer-facing: supplier names, costs and margins are never printed.</ui-text
+        >
       </ui-flex>
       ${this._paper(v)}
       <ui-grid fit="md" gap="4">
@@ -655,7 +665,7 @@ export class GsQuotePreview extends LightElement {
               (x) =>
                 html`<ui-flex justify="between" align="center" gap="2" wrap>
                   <ui-link .href=${dashboardPath("collections", "quotations", x.id, "preview")} color="primary"
-                    ><ui-text size="sm" .weight=${x.id === q.id ? "bold" : "normal"}>${x.number}</ui-text></ui-link
+                    ><ui-text variant="body-md" ?emphasized=${x.id === q.id}>${x.number}</ui-text></ui-link
                   >
                   <ui-flex gap="2" align="center">
                     <ui-badge
@@ -664,7 +674,7 @@ export class GsQuotePreview extends LightElement {
                       .color=${x.status === "Superseded" ? "neutral" : x.status === "Approved" || x.status === "Submitted" ? "success" : "warning"}
                       >${x.status}${x.status === "Superseded" ? " · kept for audit" : ""}</ui-badge
                     >
-                    <ui-text size="xs" color="muted">${q.currency} ${amount(x.totalExVat)}</ui-text>
+                    <ui-text variant="body-sm" color="muted">${q.currency} ${amount(x.totalExVat)}</ui-text>
                   </ui-flex>
                 </ui-flex>`,
             )}
@@ -674,12 +684,14 @@ export class GsQuotePreview extends LightElement {
           v.internal
             ? html`<ui-card variant="border" shadow="false" heading="Internal — never printed">
                 <ui-flex direction="col" gap="1">
-                  <ui-text size="sm">Landed cost: ${egp(v.internal.landedCostEGP ?? 0)}</ui-text>
-                  <ui-text size="sm">Gross profit: ${egp(v.internal.grossProfitEGP ?? 0)}</ui-text>
-                  <ui-text size="sm" .color=${(v.internal.marginPct ?? 0) < v.minMarginPct ? "warning" : "success"}
+                  <ui-text variant="body-md">Landed cost: ${egp(v.internal.landedCostEGP ?? 0)}</ui-text>
+                  <ui-text variant="body-md">Gross profit: ${egp(v.internal.grossProfitEGP ?? 0)}</ui-text>
+                  <ui-text
+                    variant="body-md"
+                    .color=${(v.internal.marginPct ?? 0) < v.minMarginPct ? "warning" : "success"}
                     >Margin: ${pct(v.internal.marginPct ?? 0)} (minimum ${v.minMarginPct}%)</ui-text
                   >
-                  ${v.internal.exceptions ? html`<ui-text size="xs" color="muted">${v.internal.exceptions}</ui-text>` : nothing}
+                  ${v.internal.exceptions ? html`<ui-text variant="body-sm" color="muted">${v.internal.exceptions}</ui-text>` : nothing}
                 </ui-flex>
                 ${
                   v.case.id

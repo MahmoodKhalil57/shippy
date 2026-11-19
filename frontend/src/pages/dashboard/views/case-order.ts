@@ -219,9 +219,9 @@ export class GsCaseOrder extends LightElement implements ViewProps {
   private _tile(label: string, value: string, note: string, tone?: "error" | "warning" | "success") {
     return html`<ui-card variant="border" size="sm" shadow="false">
       <ui-flex direction="col" gap="1">
-        <ui-text size="sm" color="muted" truncate>${label}</ui-text>
-        <ui-text size="2xl" weight="semibold" leading="tight" .color=${tone}>${value}</ui-text>
-        <ui-text size="xs" color="muted" clamp="2">${note}</ui-text>
+        <ui-text variant="body-md" color="muted" truncate>${label}</ui-text>
+        <ui-text variant="headline-sm" leading="tight" .color=${tone}>${value}</ui-text>
+        <ui-text variant="body-sm" color="muted" clamp="2">${note}</ui-text>
       </ui-flex>
     </ui-card>`;
   }
@@ -284,7 +284,9 @@ export class GsCaseOrder extends LightElement implements ViewProps {
           isReading
             ? html`<ui-flex gap="3" align="center"
                 ><ui-loading size="sm" color="primary"></ui-loading
-                ><ui-text size="sm">AI is reading the customer's PO and matching it to the quotation…</ui-text></ui-flex
+                ><ui-text variant="body-md"
+                  >AI is reading the customer's PO and matching it to the quotation…</ui-text
+                ></ui-flex
               >`
             : d.orderConfirmed
               ? html`<ui-alert color="success" variant="soft"
@@ -295,7 +297,7 @@ export class GsCaseOrder extends LightElement implements ViewProps {
                 ? html`<ui-alert color="info" variant="soft">
                     <ui-flex direction="col" gap="1">
                       <strong>Nordvik's purchase order has just arrived by email.</strong>
-                      <ui-text size="sm"
+                      <ui-text variant="body-md"
                         >The AI reads it and checks every line and commercial term against the quotation version it
                         refers to. Nothing is committed until a person resolves each mismatch.</ui-text
                       >
@@ -304,7 +306,7 @@ export class GsCaseOrder extends LightElement implements ViewProps {
                       >Read customer PO</ui-button
                     >
                   </ui-alert>`
-                : html`<ui-text size="sm" color="muted"
+                : html`<ui-text variant="body-md" color="muted"
                     >No customer PO yet. When it arrives it is checked here against the approved quotation
                     version.</ui-text
                   >`
@@ -315,16 +317,22 @@ export class GsCaseOrder extends LightElement implements ViewProps {
         key: "line",
         label: "Line",
         render: (r) =>
-          html`<ui-text size="sm" weight="medium"
-            >${(r.c as Check).lineNo ? `L${(r.c as Check).lineNo}` : "Header"}</ui-text
-          >`,
+          html`<ui-text variant="label-lg">${(r.c as Check).lineNo ? `L${(r.c as Check).lineNo}` : "Header"}</ui-text>`,
       },
-      { key: "field", label: "Checked", render: (r) => html`<ui-text size="sm">${(r.c as Check).field}</ui-text>` },
-      { key: "po", label: "Customer PO", render: (r) => html`<ui-text size="sm">${(r.c as Check).po}</ui-text>` },
+      {
+        key: "field",
+        label: "Checked",
+        render: (r) => html`<ui-text variant="body-md">${(r.c as Check).field}</ui-text>`,
+      },
+      {
+        key: "po",
+        label: "Customer PO",
+        render: (r) => html`<ui-text variant="body-md">${(r.c as Check).po}</ui-text>`,
+      },
       {
         key: "quote",
         label: `Quotation ${po.quotation}`,
-        render: (r) => html`<ui-text size="sm">${(r.c as Check).quote}</ui-text>`,
+        render: (r) => html`<ui-text variant="body-md">${(r.c as Check).quote}</ui-text>`,
       },
       {
         key: "result",
@@ -335,7 +343,9 @@ export class GsCaseOrder extends LightElement implements ViewProps {
           if (c.resolution)
             return html`<ui-flex direction="col" gap="1" align="start">
               <ui-badge size="sm" variant="soft" color="success">Amendment recorded</ui-badge>
-              <ui-text size="xs" color="muted">${c.resolution}${c.evidence ? " · evidence attached" : ""}</ui-text>
+              <ui-text variant="body-sm" color="muted"
+                >${c.resolution}${c.evidence ? " · evidence attached" : ""}</ui-text
+              >
             </ui-flex>`;
           return html`<ui-badge size="sm" variant="soft" color="error">Mismatch</ui-badge>`;
         },
@@ -374,7 +384,7 @@ export class GsCaseOrder extends LightElement implements ViewProps {
           >${isReading ? html`<ui-loading size="xs"></ui-loading> Reading…` : "Re-run PO check"}</ui-button
         >`,
       )}
-      <ui-text size="sm" color="muted"
+      <ui-text variant="body-md" color="muted"
         >${po.number} · received ${dayTime(po.receivedAt)} · matched to ${po.quotation} · billing entity
         ${po.billingEntity ?? "—"} ·
         <ui-badge size="xs" variant="outline" color="secondary">AI check · 96%</ui-badge></ui-text
@@ -448,7 +458,7 @@ export class GsCaseOrder extends LightElement implements ViewProps {
     if (!missing.length) return nothing;
     return html`<ui-card variant="border" shadow="false">
       ${this._heading("Partial award")}
-      <ui-text size="sm" color="muted"
+      <ui-text variant="body-md" color="muted"
         >Quoted lines the customer didn't order: they stay open for a revision or close with a reason — a partly awarded
         case never shows as complete.</ui-text
       >
@@ -457,8 +467,8 @@ export class GsCaseOrder extends LightElement implements ViewProps {
           const u = po.unawarded.find((x) => x.lineNo === l.lineNo);
           return html`<ui-flex justify="between" align="center" gap="3" wrap>
             <ui-flex direction="col" gap="0" shrink>
-              <ui-text size="sm" weight="medium">L${l.lineNo} · ${l.description}</ui-text>
-              <ui-text size="xs" color="muted"
+              <ui-text variant="label-lg">L${l.lineNo} · ${l.description}</ui-text>
+              <ui-text variant="body-sm" color="muted"
                 >${u ? `${u.outcome}${u.reason ? ` — ${u.reason}` : ""}` : "Not on the customer's PO — decide"}</ui-text
               >
             </ui-flex>
@@ -509,9 +519,9 @@ export class GsCaseOrder extends LightElement implements ViewProps {
           const p = r.p as OpsPO;
           return html`<ui-flex direction="col" gap="0">
             <ui-link color="primary" .href=${`/collections/purchase-orders/${p.id}`}
-              ><ui-text size="sm" weight="semibold">${p.number}</ui-text></ui-link
+              ><ui-text variant="title-sm">${p.number}</ui-text></ui-link
             >
-            <ui-text size="xs" color="muted">${p.supplierName}</ui-text>
+            <ui-text variant="body-sm" color="muted">${p.supplierName}</ui-text>
           </ui-flex>`;
         },
       },
@@ -522,7 +532,7 @@ export class GsCaseOrder extends LightElement implements ViewProps {
           html`<ui-flex direction="col" gap="0"
             >${(r.p as OpsPO).lines.map(
               (l) =>
-                html`<ui-text size="xs"
+                html`<ui-text variant="body-sm"
                   >L${l.lineNo} · ${l.qty} ×
                   ${l.description}${
                     d.canSeeCosts && l.unitPrice != null
@@ -549,7 +559,9 @@ export class GsCaseOrder extends LightElement implements ViewProps {
               key: "total",
               label: "Amount",
               render: (r: Row) =>
-                html`<ui-text size="sm" align="end">${money((r.p as OpsPO).total, (r.p as OpsPO).currency)}</ui-text>`,
+                html`<ui-text variant="body-md" align="end"
+                  >${money((r.p as OpsPO).total, (r.p as OpsPO).currency)}</ui-text
+                >`,
             },
             {
               key: "deposit",
@@ -557,10 +569,10 @@ export class GsCaseOrder extends LightElement implements ViewProps {
               render: (r: Row) => {
                 const p = r.p as OpsPO;
                 if (!p.depositPct)
-                  return html`<ui-text size="xs" color="muted">${p.proforma ?? "No deposit"}</ui-text>`;
+                  return html`<ui-text variant="body-sm" color="muted">${p.proforma ?? "No deposit"}</ui-text>`;
                 const paid = (p.paid ?? 0) > 0;
                 return html`<ui-flex direction="col" gap="1" align="start">
-                  <ui-text size="xs"
+                  <ui-text variant="body-sm"
                     >${p.depositPct}% · ${money(p.deposit, p.currency)}${p.proforma ? ` · ${p.proforma}` : ""}</ui-text
                   >
                   ${
@@ -576,7 +588,7 @@ export class GsCaseOrder extends LightElement implements ViewProps {
                           >`
                         : html`<ui-badge size="xs" variant="soft" color="warning">Needs payment approval</ui-badge>`
                   }
-                  ${p.balanceDue ? html`<ui-text size="xs" color="muted">Balance on delivery · ${day(p.balanceDue)}</ui-text>` : nothing}
+                  ${p.balanceDue ? html`<ui-text variant="body-sm" color="muted">Balance on delivery · ${day(p.balanceDue)}</ui-text>` : nothing}
                 </ui-flex>`;
               },
             },
@@ -589,10 +601,10 @@ export class GsCaseOrder extends LightElement implements ViewProps {
           const p = r.p as OpsPO;
           return html`<ui-flex direction="col" gap="1" align="start">
             <ui-badge size="sm" variant="soft" .color=${statusColor(p.status)}>${p.status}</ui-badge>
-            ${p.acknowledgedAt ? html`<ui-text size="xs" color="muted">Acknowledged ${day(p.acknowledgedAt)}</ui-text>` : nothing}
+            ${p.acknowledgedAt ? html`<ui-text variant="body-sm" color="muted">Acknowledged ${day(p.acknowledgedAt)}</ui-text>` : nothing}
             ${
               p.recheckDone
-                ? html`<ui-text size="xs" .color=${p.recheck.some((x) => x.ok === false) ? "warning" : "muted"}
+                ? html`<ui-text variant="body-sm" .color=${p.recheck.some((x) => x.ok === false) ? "warning" : "muted"}
                     >Re-checked${p.recheck.some((x) => x.ok === false) ? " · change flagged" : ""}</ui-text
                   >`
                 : nothing
@@ -619,7 +631,7 @@ export class GsCaseOrder extends LightElement implements ViewProps {
     ];
     return html`<ui-card variant="border" shadow="false">
       ${this._heading("Supplier purchase orders", html`<ui-badge size="sm" variant="soft">${pos.length}</ui-badge>`)}
-      <ui-text size="sm" color="muted"
+      <ui-text variant="body-md" color="muted"
         >Created from the confirmed sales order — split suppliers and scheduled quantities. Price, availability, FX and
         lead time are re-checked before a PO is confirmed; Karim Balbaa approves. Deposits go through payment
         approval.${d.canSeeCosts ? "" : " Supplier costs are hidden for Sales."}</ui-text
@@ -646,8 +658,8 @@ export class GsCaseOrder extends LightElement implements ViewProps {
         label: "Bill",
         render: (b) =>
           html`<ui-flex direction="col" gap="0">
-            <ui-text size="sm" weight="semibold">${b.billNumber}</ui-text>
-            <ui-text size="xs" color="muted">${b.supplierName} · ${b.poNumber ?? "—"}</ui-text>
+            <ui-text variant="title-sm">${b.billNumber}</ui-text>
+            <ui-text variant="body-sm" color="muted">${b.supplierName} · ${b.poNumber ?? "—"}</ui-text>
           </ui-flex>`,
       },
       {
@@ -657,7 +669,9 @@ export class GsCaseOrder extends LightElement implements ViewProps {
           html`<ui-flex direction="col" gap="0"
             >${(b.match as { lineNo: number; ordered: number; received: number; billed: number }[]).map(
               (m) =>
-                html`<ui-text size="xs" .color=${m.billed > m.received || m.received > m.ordered ? "error" : undefined}
+                html`<ui-text
+                  variant="body-sm"
+                  .color=${m.billed > m.received || m.received > m.ordered ? "error" : undefined}
                   >L${m.lineNo}: ${m.ordered} · ${m.received} · ${m.billed}</ui-text
                 >`,
             )}</ui-flex
@@ -667,16 +681,20 @@ export class GsCaseOrder extends LightElement implements ViewProps {
         key: "amount",
         label: "Amount",
         render: (b) =>
-          html`<ui-text size="sm" align="end">${money(b.amount as number, b.currency as string)}</ui-text>`,
+          html`<ui-text variant="body-md" align="end">${money(b.amount as number, b.currency as string)}</ui-text>`,
       },
-      { key: "due", label: "Due", render: (b) => html`<ui-text size="sm">${day(b.dueDate as string)}</ui-text>` },
+      {
+        key: "due",
+        label: "Due",
+        render: (b) => html`<ui-text variant="body-md">${day(b.dueDate as string)}</ui-text>`,
+      },
       {
         key: "status",
         label: "Status",
         render: (b) =>
           html`<ui-flex direction="col" gap="1" align="start">
             <ui-badge size="sm" variant="soft" .color=${statusColor(String(b.status))}>${b.status}</ui-badge>
-            ${b.holdReason ? html`<ui-text size="xs" color="error">${b.holdReason}</ui-text>` : nothing}
+            ${b.holdReason ? html`<ui-text variant="body-sm" color="error">${b.holdReason}</ui-text>` : nothing}
           </ui-flex>`,
       },
     ];
@@ -694,7 +712,7 @@ export class GsCaseOrder extends LightElement implements ViewProps {
             >`
           : nothing,
       )}
-      <ui-text size="sm" color="muted"
+      <ui-text variant="body-md" color="muted"
         >A bill is payable only when ordered = received = billed. More billed than received puts it on hold; the same
         supplier's bill number can't be booked twice.</ui-text
       >
@@ -706,7 +724,7 @@ export class GsCaseOrder extends LightElement implements ViewProps {
       ${
         d.bills.length
           ? html`<ui-table size="sm" .columns=${columns} .rows=${d.bills as unknown as Row[]}></ui-table>`
-          : html`<ui-text size="sm" color="muted">No supplier bills yet.</ui-text>`
+          : html`<ui-text variant="body-md" color="muted">No supplier bills yet.</ui-text>`
       }
     </ui-card>`;
   }
@@ -719,15 +737,15 @@ export class GsCaseOrder extends LightElement implements ViewProps {
         label: "Line",
         render: (r) =>
           html`<ui-flex direction="col" gap="0">
-            <ui-text size="sm" weight="medium">L${r.lineNo} · ${r.description}</ui-text>
-            <ui-text size="xs" color="muted">${r.supplierName} · ${r.poNumber ?? ""}</ui-text>
+            <ui-text variant="label-lg">L${r.lineNo} · ${r.description}</ui-text>
+            <ui-text variant="body-sm" color="muted">${r.supplierName} · ${r.poNumber ?? ""}</ui-text>
           </ui-flex>`,
       },
       {
         key: "qty",
         label: "Received",
         render: (r) =>
-          html`<ui-text size="sm" .color=${(r.shortfall as number) > 0 ? "warning" : undefined}
+          html`<ui-text variant="body-md" .color=${(r.shortfall as number) > 0 ? "warning" : undefined}
             >${r.received} of ${r.ordered}</ui-text
           >`,
       },
@@ -735,7 +753,7 @@ export class GsCaseOrder extends LightElement implements ViewProps {
         key: "where",
         label: "Where",
         render: (r) =>
-          html`<ui-text size="xs"
+          html`<ui-text variant="body-sm"
             >${r.warehouse === "Direct to vessel" ? "Drop-ship → vessel" : `Warehouse ${r.warehouse ?? ""}`} ·
             ${day(r.receivedAt as string)}</ui-text
           >`,
@@ -745,8 +763,8 @@ export class GsCaseOrder extends LightElement implements ViewProps {
         label: "Lot · expiry",
         render: (r) =>
           html`<ui-flex direction="col" gap="0">
-            <ui-text size="xs" mono>${r.lot ?? "—"}</ui-text>
-            <ui-text size="xs" color="muted"
+            <ui-text variant="body-sm" mono>${r.lot ?? "—"}</ui-text>
+            <ui-text variant="body-sm" color="muted"
               >${r.expiry ? `Expires ${day(r.expiry as string)} ${String(r.expiry).slice(0, 4)}` : "No expiry"}</ui-text
             >
           </ui-flex>`,
@@ -757,7 +775,7 @@ export class GsCaseOrder extends LightElement implements ViewProps {
         render: (r) =>
           html`<ui-flex direction="col" gap="1" align="start">
             <ui-badge size="sm" variant="soft" .color=${statusColor(String(r.qc))}>${r.qc}</ui-badge>
-            ${r.claim ? html`<ui-text size="xs" color="muted">${r.claim}</ui-text>` : nothing}
+            ${r.claim ? html`<ui-text variant="body-sm" color="muted">${r.claim}</ui-text>` : nothing}
           </ui-flex>`,
       },
       {
@@ -765,16 +783,16 @@ export class GsCaseOrder extends LightElement implements ViewProps {
         label: "Backorder",
         render: (r) =>
           (r.shortfall as number) > 0
-            ? html`<ui-text size="xs" color="warning"
+            ? html`<ui-text variant="body-sm" color="warning"
                 >${r.shortfall} follow · ${day(r.backorderDate as string)} · owner
                 ${USERS[d.case.owner] ?? d.case.owner}</ui-text
               >`
-            : html`<ui-text size="xs" color="muted">—</ui-text>`,
+            : html`<ui-text variant="body-sm" color="muted">—</ui-text>`,
       },
     ];
     return html`<ui-card variant="border" shadow="false">
       ${this._heading("Receipts · lots · expiry · quality")}
-      <ui-text size="sm" color="muted"
+      <ui-text variant="body-md" color="muted"
         >Warehouse receipts and drop-ship deliveries, with lot, expiry and quality check per line. A shortfall becomes a
         backorder with a date and an owner — it follows in the next drop.</ui-text
       >
@@ -806,7 +824,9 @@ export class GsCaseOrder extends LightElement implements ViewProps {
     const cancel = html`<ui-button variant="ghost" size="sm" @click=${() => (this.dialog = null)}>Cancel</ui-button>`;
     if (d.kind === "amend")
       return html`<ui-flex direction="col" gap="3">
-        <ui-text size="sm"><strong>${d.check.field}</strong> — PO: ${d.check.po} · Quotation: ${d.check.quote}</ui-text>
+        <ui-text variant="body-md"
+          ><strong>${d.check.field}</strong> — PO: ${d.check.po} · Quotation: ${d.check.quote}</ui-text
+        >
         <ui-textarea
           legend="Customer's written agreement"
           hint=${d.check.suggestion ? "AI draft from the customer's email — check it before recording" : "Who agreed, when and what"}
@@ -829,7 +849,7 @@ export class GsCaseOrder extends LightElement implements ViewProps {
       </ui-flex>`;
     if (d.kind === "award")
       return html`<ui-flex direction="col" gap="3">
-        <ui-text size="sm">L${d.lineNo} · ${d.description}</ui-text>
+        <ui-text variant="body-md">L${d.lineNo} · ${d.description}</ui-text>
         <ui-textarea
           legend="Reason (kept on the case)"
           width="full"
@@ -860,7 +880,7 @@ export class GsCaseOrder extends LightElement implements ViewProps {
       if (d.running)
         return html`<ui-flex gap="3" align="center" padding="4"
           ><ui-loading color="primary"></ui-loading
-          ><ui-text size="sm"
+          ><ui-text variant="body-md"
             >Re-checking price, availability, FX and lead time with ${d.po.supplierName}…</ui-text
           ></ui-flex
         >`;
@@ -894,7 +914,9 @@ export class GsCaseOrder extends LightElement implements ViewProps {
         ${
           data.isManagement
             ? nothing
-            : html`<ui-text size="sm" color="muted">Supplier POs are confirmed by Karim Balbaa (management).</ui-text>`
+            : html`<ui-text variant="body-md" color="muted"
+                >Supplier POs are confirmed by Karim Balbaa (management).</ui-text
+              >`
         }
         <ui-flex justify="end" gap="2" wrap>
           ${cancel}
@@ -912,7 +934,7 @@ export class GsCaseOrder extends LightElement implements ViewProps {
     }
     const bill = data.bills[0];
     return html`<ui-flex direction="col" gap="3">
-      <ui-text size="sm"
+      <ui-text variant="body-md"
         >Bill from <strong>${bill?.supplierName}</strong> received by email: <strong>${bill?.billNumber}</strong> ·
         ${money(bill?.amount, bill?.currency)} · PO ${bill?.poNumber} — read by AI (confidence 98%).</ui-text
       >

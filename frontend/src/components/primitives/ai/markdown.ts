@@ -12,16 +12,16 @@ import { rcva } from "../../base/variants.ts";
  * script. Links go only to http(s) addresses or paths in the app (in-app paths stay in the app;
  * others open in a new tab). Partial text renders as it streams.
  */
-export const markdown = rcva("flex flex-col gap-2 text-sm leading-relaxed [overflow-wrap:anywhere]");
-export const markdownHeading = rcva("font-semibold text-base-content", {
-  variants: { level: { "1": "text-base", "2": "text-sm", "3": "text-sm" } },
+export const markdown = rcva("flex flex-col gap-2 text-body-md leading-relaxed [overflow-wrap:anywhere]");
+export const markdownHeading = rcva("text-on-surface", {
+  variants: { level: { "1": "text-title-md", "2": "text-title-sm", "3": "text-title-sm" } },
 });
 export const markdownList = rcva("flex flex-col gap-1 ps-5", {
   variants: { ordered: { true: "list-decimal", false: "list-disc" } },
 });
-export const markdownCode = rcva("rounded-xs bg-base-content/10 px-1 py-0.5 font-mono text-[0.8125em]");
+export const markdownCode = rcva("rounded-xs bg-surface-container-highest px-1 py-0.5 font-mono text-[0.8125em]");
 export const markdownPre = rcva(
-  "overflow-x-auto rounded-field bg-base-300 p-3 font-mono text-xs leading-normal whitespace-pre [--scrollbar-inset:var(--radius-field)]",
+  "overflow-x-auto rounded-field bg-surface-container-highest p-3 font-mono text-body-sm leading-normal whitespace-pre [--scrollbar-inset:var(--radius-field)]",
 );
 export const markdownLink = rcva("link link-hover font-medium text-primary-ink");
 

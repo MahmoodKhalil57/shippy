@@ -55,9 +55,9 @@ export class GsProject extends LightElement implements ViewProps {
         ${d.milestones.map(
           (m) =>
             html`<ui-flex direction="col" gap="1">
-              <ui-text size="xs" color="muted" uppercase weight="medium">${m.week}</ui-text>
-              <ui-text weight="semibold">${m.title}</ui-text>
-              <ui-text size="sm" color="muted">${m.text}</ui-text>
+              <ui-text variant="label-md" color="muted" uppercase>${m.week}</ui-text>
+              <ui-text emphasized>${m.title}</ui-text>
+              <ui-text variant="body-md" color="muted">${m.text}</ui-text>
             </ui-flex>`,
         )}
       </ui-grid>
@@ -72,8 +72,8 @@ export class GsProject extends LightElement implements ViewProps {
         label: "Phase",
         render: (p) =>
           html`<ui-flex direction="col" gap="0"
-            ><ui-text size="sm" weight="semibold">${p.name}</ui-text
-            ><ui-text size="xs" color="muted">${p.weeks}</ui-text></ui-flex
+            ><ui-text variant="title-sm">${p.name}</ui-text
+            ><ui-text variant="body-sm" color="muted">${p.weeks}</ui-text></ui-flex
           >`,
       },
       ...WEEKS.map((w): TableColumn<Row> => ({
@@ -89,7 +89,7 @@ export class GsProject extends LightElement implements ViewProps {
     ];
     return html`<ui-card variant="border" shadow="false" heading="Roadmap — 13 weeks, phased">
       <ui-table size="xs" nowrap .columns=${columns} .rows=${d.phases as Row[]}></ui-table>
-      <ui-text size="xs" color="muted"
+      <ui-text variant="body-sm" color="muted"
         >Each phase is approved on its own; a weekly 45-minute review keeps progress, baseline numbers and decisions in
         one place.</ui-text
       >
@@ -102,14 +102,14 @@ export class GsProject extends LightElement implements ViewProps {
         <span>${p.name}</span>
         <ui-badge size="sm" variant="soft" .color=${PHASE_COLOR[Number(p.key) as PhaseKey]}>${p.weeks}</ui-badge>
       </ui-flex>
-      <ui-text size="sm" color="muted">${p.goal}</ui-text>
+      <ui-text variant="body-md" color="muted">${p.goal}</ui-text>
       <ui-flex direction="col" gap="3">
         ${p.packages.map(
           (w) =>
             html`<ui-flex gap="3" align="center" justify="between" wrap>
               <ui-flex direction="col" gap="0" shrink grow>
-                <ui-text size="sm" weight="semibold">${w.name}</ui-text>
-                <ui-text size="xs" color="muted">${w.detail}</ui-text>
+                <ui-text variant="title-sm">${w.name}</ui-text>
+                <ui-text variant="body-sm" color="muted">${w.detail}</ui-text>
               </ui-flex>
               ${this._see(w.href)}
             </ui-flex>`,
@@ -124,8 +124,8 @@ export class GsProject extends LightElement implements ViewProps {
         ${d.platform.map(
           (w) =>
             html`<ui-flex direction="col" gap="1" align="start">
-              <ui-text size="sm" weight="semibold">${w.name}</ui-text>
-              <ui-text size="xs" color="muted">${w.detail}</ui-text>
+              <ui-text variant="title-sm">${w.name}</ui-text>
+              <ui-text variant="body-sm" color="muted">${w.detail}</ui-text>
               ${this._see(w.href)}
             </ui-flex>`,
         )}
@@ -139,11 +139,9 @@ export class GsProject extends LightElement implements ViewProps {
         ${d.problems.map(
           ([problem, answer, href], i) =>
             html`<ui-card variant="dash" size="sm" shadow="false">
-              <ui-text size="xs" color="muted" uppercase weight="medium"
-                >Problem ${String(i + 1).padStart(2, "0")}</ui-text
-              >
-              <ui-text size="sm" weight="semibold">${problem}</ui-text>
-              <ui-text size="sm">→ ${answer}</ui-text>
+              <ui-text variant="label-md" color="muted" uppercase>Problem ${String(i + 1).padStart(2, "0")}</ui-text>
+              <ui-text variant="title-sm">${problem}</ui-text>
+              <ui-text variant="body-md">→ ${answer}</ui-text>
               <ui-flex>${this._see(href, "Show me")}</ui-flex>
             </ui-card>`,
         )}
@@ -158,7 +156,7 @@ export class GsProject extends LightElement implements ViewProps {
       {
         key: "requirement",
         label: "From your brief",
-        render: (r) => html`<ui-text size="sm">${r.requirement}</ui-text>`,
+        render: (r) => html`<ui-text variant="body-md">${r.requirement}</ui-text>`,
       },
       {
         key: "phase",
@@ -180,7 +178,7 @@ export class GsProject extends LightElement implements ViewProps {
         <span>Your brief, line by line</span>
         <ui-badge size="sm" variant="soft" color="success">${rows.length} / ${rows.length} covered</ui-badge>
       </ui-flex>
-      <ui-text size="xs" color="muted"
+      <ui-text variant="body-sm" color="muted"
         >Every requirement designed, with the screen that shows it and an acceptance test.</ui-text
       >
       <ui-table size="sm" .columns=${columns} .rows=${rows as unknown as Record<string, unknown>[]}></ui-table>
@@ -190,17 +188,17 @@ export class GsProject extends LightElement implements ViewProps {
   private _acceptance(d: ProjectView) {
     const passed = d.acceptance.filter((a) => a.pass).length;
     const columns: TableColumn<AcceptanceTest & Record<string, unknown>>[] = [
-      { key: "no", label: "#", render: (a) => html`<ui-text size="sm" weight="semibold">${a.no}</ui-text>` },
+      { key: "no", label: "#", render: (a) => html`<ui-text variant="title-sm">${a.no}</ui-text>` },
       {
         key: "scenario",
         label: "Scenario",
         render: (a) =>
           html`<ui-flex direction="col" gap="0">
-            <ui-text size="sm" weight="semibold">${a.scenario}</ui-text>
-            <ui-text size="xs" color="muted">${a.evidence}</ui-text>
+            <ui-text variant="title-sm">${a.scenario}</ui-text>
+            <ui-text variant="body-sm" color="muted">${a.evidence}</ui-text>
           </ui-flex>`,
       },
-      { key: "check", label: "Checked live", render: (a) => html`<ui-text size="xs">${a.check}</ui-text>` },
+      { key: "check", label: "Checked live", render: (a) => html`<ui-text variant="body-sm">${a.check}</ui-text>` },
       {
         key: "status",
         label: "Status",
@@ -223,7 +221,7 @@ export class GsProject extends LightElement implements ViewProps {
         .max=${d.acceptance.length}
         .label=${`${passed} of ${d.acceptance.length} acceptance tests pass`}
       ></ui-progress>
-      <ui-text size="xs" color="muted"
+      <ui-text variant="body-sm" color="muted"
         >The ten scenarios you asked to see live, each with its evidence. Checked against the data in this demo
         ${formatDate(d.checkedAt)}; at go-live they run on your own data.</ui-text
       >
@@ -237,9 +235,9 @@ export class GsProject extends LightElement implements ViewProps {
         ${d.trust.map(
           ([title, text, href], i) =>
             html`<ui-flex direction="col" gap="1" align="start">
-              <ui-text size="xs" color="muted" weight="medium">${String(i + 1).padStart(2, "0")}</ui-text>
-              <ui-text weight="semibold">${title}</ui-text>
-              <ui-text size="sm" color="muted">${text}</ui-text>
+              <ui-text variant="label-md" color="muted">${String(i + 1).padStart(2, "0")}</ui-text>
+              <ui-text emphasized>${title}</ui-text>
+              <ui-text variant="body-md" color="muted">${text}</ui-text>
               ${this._see(href, "Show me")}
             </ui-flex>`,
         )}
@@ -249,20 +247,20 @@ export class GsProject extends LightElement implements ViewProps {
 
   private _monthly(d: ProjectView) {
     return html`<ui-card variant="border" shadow="false" heading="Monthly plan — from go-live">
-      <ui-text size="sm" color="muted">One monthly plan keeps everything running after go-live.</ui-text>
+      <ui-text variant="body-md" color="muted">One monthly plan keeps everything running after go-live.</ui-text>
       <ui-flex direction="col" gap="3">
         ${d.monthly.map(
           ([title, text]) =>
             html`<ui-flex gap="3" align="start">
               <ui-icon name="check" color="success" size="sm"></ui-icon>
               <ui-flex direction="col" gap="0" shrink>
-                <ui-text size="sm" weight="semibold">${title}</ui-text>
-                <ui-text size="xs" color="muted">${text}</ui-text>
+                <ui-text variant="title-sm">${title}</ui-text>
+                <ui-text variant="body-sm" color="muted">${text}</ui-text>
               </ui-flex>
             </ui-flex>`,
         )}
       </ui-flex>
-      <ui-text size="xs" color="muted"
+      <ui-text variant="body-sm" color="muted"
         >Odoo licences are with Odoo directly. Larger change requests are scoped and agreed separately.</ui-text
       >
     </ui-card>`;
@@ -270,15 +268,15 @@ export class GsProject extends LightElement implements ViewProps {
 
   private _payment(d: ProjectView) {
     return html`<ui-card variant="border" shadow="false" heading="The last 20% is paid after 30 days of real use.">
-      <ui-text size="sm" color="muted"
+      <ui-text variant="body-md" color="muted"
         >Each phase is paid in three steps, so you only pay the last part once it works in your hands.</ui-text
       >
       <ui-grid fit="xs" gap="4">
         ${d.payment.map(
           ([pct, text], i) =>
             html`<ui-card variant="border" size="sm" shadow="false" .color=${i === 2 ? "primary" : undefined}>
-              <ui-text size="3xl" weight="bold" leading="tight">${pct}</ui-text>
-              <ui-text size="sm">${text}</ui-text>
+              <ui-text variant="headline-md" emphasized leading="tight">${pct}</ui-text>
+              <ui-text variant="body-md">${text}</ui-text>
             </ui-card>`,
         )}
       </ui-grid>
@@ -293,8 +291,8 @@ export class GsProject extends LightElement implements ViewProps {
     return html`<ui-flex direction="col" gap="6">
       <ui-flex justify="between" align="end" gap="4" wrap>
         <ui-flex direction="col" gap="1" shrink>
-          <ui-text size="xs" color="muted" weight="medium" uppercase>Golden Sea × SaaSTEMLY · delivery plan</ui-text>
-          <ui-heading level="1" size="page">From the first email to the last payment</ui-heading>
+          <ui-text variant="label-md" color="muted" uppercase>Golden Sea × SaaSTEMLY · delivery plan</ui-text>
+          <ui-heading level="1" variant="page">From the first email to the last payment</ui-heading>
           <ui-text color="muted"
             >Four phases over 13 weeks, each shown in this demo. Every requirement from your brief is covered and proven
             by an acceptance test before the final payment.</ui-text

@@ -20,7 +20,7 @@ import { button } from "../actions/button.ts";
 export const list = rcva("list", {
   variants: {
     /** Card look used in the docs examples. */
-    framed: { true: "bg-base-100 rounded-box shadow-elevation-1" },
+    framed: { true: "bg-surface rounded-box shadow-elevation-1" },
     /** The docs wrap lists in `w-full max-w-lg`. */
     width: {
       full: "w-full",
@@ -35,7 +35,7 @@ export const list = rcva("list", {
 export const listRow = rcva("list-row");
 
 /** Header `<li>` above the rows. */
-export const listHeading = rcva("p-4 pb-2 text-xs opacity-60 tracking-wide");
+export const listHeading = rcva("p-4 pb-2 text-label-md text-on-surface-variant");
 
 export const listCol = rcva("", {
   variants: {
@@ -45,10 +45,10 @@ export const listCol = rcva("", {
 });
 
 /** Parts of the docs' row anatomy. */
-export const listIndex = rcva("text-4xl font-thin opacity-30 tabular-nums");
+export const listIndex = rcva("text-display-sm text-on-surface-variant tabular-nums");
 export const listImage = rcva("size-10 rounded-box");
-export const listSubtitle = rcva("text-xs uppercase font-semibold opacity-60");
-export const listDescription = rcva("list-col-wrap text-xs");
+export const listSubtitle = rcva("text-label-md uppercase text-on-surface-variant");
+export const listDescription = rcva("list-col-wrap text-body-sm");
 export const listActionIcon = rcva("size-[1.2em]");
 
 export type ListVariants = VariantProps<typeof list>;

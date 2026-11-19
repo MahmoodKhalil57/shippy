@@ -46,9 +46,9 @@ export const aura = rcva("aura", {
     },
     /** Backdrop colour behind the light. */
     backdrop: {
-      "base-100": "bg-base-100",
-      "base-200": "bg-base-200",
-      "base-300": "bg-base-300",
+      "base-100": "bg-surface",
+      "base-200": "bg-surface-container",
+      "base-300": "bg-surface-container-highest",
       neutral: "bg-neutral",
       primary: "bg-primary",
       secondary: "bg-secondary",

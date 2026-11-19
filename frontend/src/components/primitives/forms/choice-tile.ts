@@ -15,19 +15,19 @@ import { iconSvg, type IconName } from "../media/icon.ts";
  * empty slot (an upload). It presses in on a spring when clicked. Fires a plain `click`.
  */
 export const choiceTile = rcva(
-  "group/tile relative isolate grid aspect-[16/10] w-full cursor-pointer place-items-center overflow-hidden rounded-field bg-base-200 text-base-content/70 ring-1 ring-base-content/10 [transition:box-shadow_var(--duration-effects-fast)_var(--ease-effects-fast),scale_var(--duration-spatial-fast)_var(--ease-spatial-fast)] hover:ring-2 hover:ring-primary/50 active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary motion-reduce:transition-none",
+  "group/tile relative isolate grid aspect-[16/10] w-full cursor-pointer place-items-center overflow-hidden rounded-field bg-surface-container text-on-surface-variant ring-1 ring-outline-variant [transition:box-shadow_var(--duration-effects-fast)_var(--ease-effects-fast),scale_var(--duration-spatial-fast)_var(--ease-spatial-fast)] hover:ring-2 hover:ring-primary/50 active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary motion-reduce:transition-none",
   {
     variants: {
       selected: { true: "ring-2 ring-primary hover:ring-primary" },
-      dashed: { true: "border-2 border-dashed border-base-content/20 bg-transparent ring-0" },
+      dashed: { true: "border-2 border-dashed border-outline-variant bg-transparent ring-0" },
     },
   },
 );
 export const choiceTileImage = rcva("absolute inset-0 -z-10 size-full object-cover");
 export const choiceTileLabel = rcva(
-  "absolute inset-x-0 bottom-0 bg-neutral/65 px-2 py-1 text-start text-xs font-medium text-neutral-content",
+  "absolute inset-x-0 bottom-0 bg-neutral/65 px-2 py-1 text-start text-label-md text-neutral-content",
 );
-export const choiceTileEmpty = rcva("flex flex-col items-center gap-1 text-xs font-medium");
+export const choiceTileEmpty = rcva("flex flex-col items-center gap-1 text-label-md");
 export const choiceTileCheck = rcva(
   "absolute top-1.5 end-1.5 grid size-5 place-items-center rounded-full bg-primary text-primary-content",
 );

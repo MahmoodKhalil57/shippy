@@ -11,25 +11,27 @@ import { iconSvg } from "../media/icon.ts";
  *
  * Purpose: AI · Kind: primitive (Shippy; after the AI Elements "Confirmation")
  */
-export const confirmation = rcva("flex flex-col gap-2 rounded-box border p-3 text-sm", {
+export const confirmation = rcva("flex flex-col gap-2 rounded-box border p-3 text-body-md", {
   variants: {
     state: {
       requested: "border-warning/50 bg-warning/10",
-      approved: "border-base-content/10",
-      denied: "border-base-content/10",
+      approved: "border-outline-variant",
+      denied: "border-outline-variant",
     },
   },
 });
 export const confirmationHead = rcva("flex items-start gap-2");
 export const confirmationIcon = rcva("mt-0.5 shrink-0", {
-  variants: { state: { requested: "text-warning-ink", approved: "text-success-ink", denied: "text-base-content/75" } },
+  variants: {
+    state: { requested: "text-warning-ink", approved: "text-success-ink", denied: "text-on-surface-variant" },
+  },
 });
 export const confirmationTitle = rcva("font-semibold");
-export const confirmationDescription = rcva("text-xs text-base-content/80");
-export const confirmationDetails = rcva("text-xs");
+export const confirmationDescription = rcva("text-body-sm text-on-surface-variant");
+export const confirmationDetails = rcva("text-body-sm");
 export const confirmationActions = rcva("flex justify-end gap-2");
-export const confirmationOutcome = rcva("text-xs font-medium", {
-  variants: { state: { requested: "", approved: "text-success-ink", denied: "text-base-content/80" } },
+export const confirmationOutcome = rcva("text-label-md", {
+  variants: { state: { requested: "", approved: "text-success-ink", denied: "text-on-surface-variant" } },
 });
 
 export type ConfirmationState = "requested" | "approved" | "denied";

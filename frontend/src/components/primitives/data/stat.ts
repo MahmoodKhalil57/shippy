@@ -24,7 +24,7 @@ export const stats = rcva("stats", {
     },
     shadow: { true: "shadow-elevation-1" },
     /** Background + border ("With custom colors and button"). */
-    surface: { true: "bg-base-100 border border-base-300" },
+    surface: { true: "bg-surface border border-outline-variant" },
   },
   defaultVariants: { shadow: true },
 });

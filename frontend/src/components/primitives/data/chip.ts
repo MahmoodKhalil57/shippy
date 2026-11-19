@@ -21,9 +21,9 @@ export const chip = rcva("inline-flex max-w-full items-center", {
     variant: {
       soft: "badge badge-soft h-auto gap-1 py-0.5 whitespace-normal [overflow-wrap:anywhere]",
       outline:
-        "rounded-field border border-base-content/15 bg-base-100/70 [transition:border-color_var(--duration-effects-fast)_var(--ease-effects-fast)] hover:border-base-content/30",
+        "rounded-field border border-outline-variant bg-surface/70 [transition:border-color_var(--duration-effects-fast)_var(--ease-effects-fast)] hover:border-outline",
     },
-    size: { sm: "text-xs", md: "text-sm" },
+    size: { sm: "text-body-sm", md: "text-body-md" },
     /** Room for the ✕ at the end. */
     removable: { true: "" },
   },
@@ -40,7 +40,7 @@ export const chipBody = rcva(
     variants: {
       variant: {
         soft: "rounded-full",
-        outline: "rounded-s-field py-1 ps-2.5 pe-1 hover:bg-base-content/5",
+        outline: "rounded-s-field py-1 ps-2.5 pe-1 hover:bg-on-surface/(--state-hover)",
       },
     },
   },
@@ -50,12 +50,12 @@ export const chipLabel = rcva("min-w-0", {
   variants: { variant: { soft: "", outline: "truncate py-1 ps-2.5 pe-1" } },
 });
 export const chipRemove = rcva(
-  "grid shrink-0 place-items-center text-base-content/70 hover:text-base-content focus-visible:outline-2 focus-visible:outline-primary",
+  "grid shrink-0 place-items-center text-on-surface-variant hover:text-on-surface focus-visible:outline-2 focus-visible:outline-primary",
   {
     variants: {
       variant: {
-        soft: "size-4 rounded-full hover:bg-base-content/15",
-        outline: "size-7 rounded-e-field hover:bg-base-content/5",
+        soft: "size-4 rounded-full hover:bg-on-surface/(--state-hover)",
+        outline: "size-7 rounded-e-field hover:bg-on-surface/(--state-hover)",
       },
     },
   },

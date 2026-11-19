@@ -38,7 +38,7 @@ export const toggle = rcva("toggle", {
     },
     validator: { true: "validator" },
     /** `label.toggle` wrapping the checkbox + two icons (the docs' icons example). */
-    icons: { true: "text-base-content" },
+    icons: { true: "text-on-surface" },
   },
 });
 

@@ -55,9 +55,9 @@ export const dropdownPanel = rcva("[--outer-radius:var(--radius-box)] [--outer-p
     surface: {
       /** Frosted glass (src/styles/theme.css): menus float above the page. The default. */
       glass: "liquid-glass",
-      "base-100": "bg-base-100",
-      "base-200": "bg-base-200",
-      "base-300": "bg-base-300",
+      "base-100": "bg-surface",
+      "base-200": "bg-surface-container",
+      "base-300": "bg-surface-container-highest",
     },
     rounded: { true: "rounded-box" },
     width: {

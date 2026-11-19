@@ -265,8 +265,8 @@ export class DashboardApp extends LightElement {
     const items: MenuItem[] = roleLogins.map((u) => ({
       icon: html`<ui-avatar size="xs" .initials=${initials(u)}></ui-avatar>`,
       label: html`<ui-flex direction="col" gap="0" shrink>
-        <ui-text as="div" size="sm" weight="semibold" truncate>${u.name ?? u.email}</ui-text>
-        <ui-text as="div" size="xs" color="muted" truncate>${roleLabel(u.role)}</ui-text>
+        <ui-text as="div" variant="title-sm" truncate>${u.name ?? u.email}</ui-text>
+        <ui-text as="div" variant="body-sm" color="muted" truncate>${roleLabel(u.role)}</ui-text>
       </ui-flex>`,
       active: u.email === this.user?.email,
       value: u.email,
@@ -418,7 +418,7 @@ export class DashboardApp extends LightElement {
         ></dashboard-edit-view>`;
       default:
         return html`<ui-flex direction="col" align="start" gap="4">
-          <ui-heading level="1" size="2xl">Nothing found</ui-heading>
+          <ui-heading level="1" variant="headline-sm">Nothing found</ui-heading>
           <ui-text color="muted">There's no dashboard page at this address.</ui-text>
           <ui-button href=${dashboardPath()} color="primary">Back to the dashboard</ui-button>
         </ui-flex>`;
@@ -493,7 +493,7 @@ export class DashboardApp extends LightElement {
             .heading=${text(user.name ?? user.email)}
           >
             <ui-avatar slot="trigger" .initials=${initials} size="xs"></ui-avatar>
-            <ui-text size="xs" color="muted">${text(user.email)}</ui-text>
+            <ui-text variant="body-sm" color="muted">${text(user.email)}</ui-text>
             <ui-menu
               width="full"
               surface="false"
@@ -505,7 +505,9 @@ export class DashboardApp extends LightElement {
         <ui-menu slot="nav" layout="nav" width="full" surface="false" .items=${this._menu()}></ui-menu>
         <ui-menu slot="rail" layout="rail" surface="false" .items=${this._rail()}></ui-menu>
         ${this._userSwitcher()}
-        <ui-text slot="footer" size="xs" color="muted">This Demo Powered by <strong>SaastemlyCRM</strong></ui-text>
+        <ui-text slot="footer" variant="body-sm" color="muted"
+          >This Demo Powered by <strong>SaastemlyCRM</strong></ui-text
+        >
         <ui-menu
           slot="aside-rail"
           layout="rail"

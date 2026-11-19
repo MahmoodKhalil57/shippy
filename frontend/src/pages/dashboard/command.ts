@@ -261,10 +261,10 @@ export class DashboardCommand extends LightElement {
       );
     const title = marked(entry.title, hit.ranges);
     return html`<ui-flex direction="col" gap="0" shrink>
-      <ui-text as="div" size="sm" weight="medium" truncate
+      <ui-text as="div" variant="label-lg" truncate
         ><ui-text as="span" color="muted">${entry.group} › </ui-text>${title}</ui-text
       >
-      ${entry.description ? html`<ui-text as="div" size="xs" color="muted" truncate>${marked(entry.description, hit.descriptionRanges)}</ui-text>` : nothing}
+      ${entry.description ? html`<ui-text as="div" variant="body-sm" color="muted" truncate>${marked(entry.description, hit.descriptionRanges)}</ui-text>` : nothing}
     </ui-flex>`;
   }
 
@@ -310,7 +310,7 @@ export class DashboardCommand extends LightElement {
     const q = query.trim();
     return html`<ui-button variant="field" label="Search actions, pages and records" @click=${() => this._open()}>
         <ui-icon name="search" size="sm"></ui-icon>
-        <ui-text as="span" size="sm" truncate>Search actions, pages, records…</ui-text>
+        <ui-text as="span" variant="body-md" truncate>Search actions, pages, records…</ui-text>
         <ui-kbd size="xs" keys=${mac ? "⌘+K" : "Ctrl+K"}></ui-kbd>
       </ui-button>
       <ui-modal
@@ -349,23 +349,25 @@ export class DashboardCommand extends LightElement {
                 }}
               ></ui-menu>`
             : html`<ui-flex direction="col" align="center" gap="1" padding="8">
-                <ui-text weight="medium">No results for “${q}”</ui-text>
-                <ui-text size="sm" color="muted">Try other words — search understands related terms too.</ui-text>
+                <ui-text emphasized>No results for “${q}”</ui-text>
+                <ui-text variant="body-md" color="muted"
+                  >Try other words — search understands related terms too.</ui-text
+                >
               </ui-flex>`
         }
         ${this.indexing ? html`<ui-flex justify="center" padding="2"><ui-loading size="sm"></ui-loading></ui-flex>` : nothing}
         <ui-flex slot="footer" justify="between" align="center" gap="3">
-          <ui-text size="xs" color="muted" truncate
+          <ui-text variant="body-sm" color="muted" truncate
             >${q ? `${flat.length} result${flat.length === 1 ? "" : "s"}` : "Type to search"} · fuzzy +
             semantic</ui-text
           >
           <ui-flex align="center" gap="3">
             <ui-flex align="center" gap="1"
-              ><ui-text as="span" size="xs" color="muted">Navigate</ui-text><ui-kbd size="xs">↑</ui-kbd
+              ><ui-text as="span" variant="body-sm" color="muted">Navigate</ui-text><ui-kbd size="xs">↑</ui-kbd
               ><ui-kbd size="xs">↓</ui-kbd></ui-flex
             >
             <ui-flex align="center" gap="1"
-              ><ui-text as="span" size="xs" color="muted">Open</ui-text><ui-kbd size="xs">↵</ui-kbd></ui-flex
+              ><ui-text as="span" variant="body-sm" color="muted">Open</ui-text><ui-kbd size="xs">↵</ui-kbd></ui-flex
             >
           </ui-flex>
         </ui-flex>

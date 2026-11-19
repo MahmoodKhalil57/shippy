@@ -13,15 +13,15 @@ import { iconSvg, type IconName } from "../media/icon.ts";
  * Status: `running` (spinner, the title shimmers), `done`, `error`, `denied`, `waiting` (for the
  * person, e.g. an approval).
  */
-export const trace = rcva("flex flex-col gap-0.5 border-s-2 border-base-content/10 ps-3");
+export const trace = rcva("flex flex-col gap-0.5 border-s-2 border-outline-variant ps-3");
 
-export const traceLine = rcva("group/trace text-xs");
+export const traceLine = rcva("group/trace text-body-sm");
 export const traceSummary = rcva(
   "flex min-h-7 items-center gap-2 rounded-field px-1.5 py-1 -ms-1.5 list-none [&::-webkit-details-marker]:hidden",
   {
     variants: {
       interactive: {
-        true: "cursor-pointer hover:bg-base-content/5 focus-visible:outline-2 focus-visible:outline-primary",
+        true: "cursor-pointer hover:bg-on-surface/(--state-hover) focus-visible:outline-2 focus-visible:outline-primary",
       },
     },
   },
@@ -29,10 +29,10 @@ export const traceSummary = rcva(
 export const traceIcon = rcva("grid size-4 shrink-0 place-items-center", {
   variants: {
     status: {
-      running: "text-base-content/80",
-      done: "text-base-content/75",
+      running: "text-on-surface-variant",
+      done: "text-on-surface-variant",
       error: "text-error-ink",
-      denied: "text-base-content/75",
+      denied: "text-on-surface-variant",
       waiting: "text-warning-ink",
     },
   },
@@ -44,14 +44,14 @@ export const traceTitle = rcva("min-w-0 truncate font-medium", {
       running: "shimmer",
       done: "",
       error: "text-error-ink",
-      denied: "line-through decoration-base-content/40",
+      denied: "line-through decoration-outline",
       waiting: "",
     },
   },
 });
-export const traceDescription = rcva("min-w-0 truncate text-base-content/75");
+export const traceDescription = rcva("min-w-0 truncate text-on-surface-variant");
 export const traceChevron = rcva(
-  "ms-auto shrink-0 text-base-content/75 transition-transform duration-(--duration-spatial-fast) ease-spatial-fast group-open/trace:rotate-180 motion-reduce:transition-none",
+  "ms-auto shrink-0 text-on-surface-variant transition-transform duration-(--duration-spatial-fast) ease-spatial-fast group-open/trace:rotate-180 motion-reduce:transition-none",
 );
 export const traceContent = rcva("mt-1 mb-2 ms-6 flex flex-col gap-1.5");
 

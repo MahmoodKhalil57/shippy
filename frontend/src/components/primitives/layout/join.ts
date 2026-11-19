@@ -33,9 +33,9 @@ export const join = rcva("join", {
     equal: { true: "grid grid-cols-2" },
     /** Background behind the group (docs: accordion "Using Accordion and Join together"). */
     surface: {
-      "base-100": "bg-base-100",
-      "base-200": "bg-base-200",
-      "base-300": "bg-base-300",
+      "base-100": "bg-surface",
+      "base-200": "bg-surface-container",
+      "base-300": "bg-surface-container-highest",
     },
   },
 });

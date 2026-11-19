@@ -56,7 +56,7 @@ export const textInput = rcva("input", {
     /** Monospaced digits (the docs' telephone example). */
     tabular: { true: "tabular-nums" },
     /** Fully rounded, filled field without a border (app-shell header search). */
-    pill: { true: "rounded-full border-transparent bg-base-100" },
+    pill: { true: "rounded-full border-transparent bg-surface" },
   },
 });
 

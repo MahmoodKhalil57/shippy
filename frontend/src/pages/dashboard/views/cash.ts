@@ -191,7 +191,7 @@ export class GsCash extends LightElement implements ViewProps {
   private _remittance(d: Cash) {
     return html`<ui-card variant="border" shadow="false">
       ${this._heading("Match a remittance", html`<ui-badge size="sm" variant="soft">On this device</ui-badge>`)}
-      <ui-text size="xs" color="muted"
+      <ui-text variant="body-sm" color="muted"
         >Paste a customer's payment advice or remittance email: the invoice numbers and amount are read on this device,
         then matched to open invoices. A person records the payment.</ui-text
       >
@@ -215,7 +215,7 @@ export class GsCash extends LightElement implements ViewProps {
         this.remit
           ? this.remit.matches.length
             ? html`<ui-flex direction="col" gap="2">
-                <ui-text size="sm" weight="semibold"
+                <ui-text variant="title-sm"
                   >Looks like it pays
                   ${this.remit.matches.length === 1 ? "this invoice" : `these ${this.remit.matches.length} invoices`}:</ui-text
                 >
@@ -223,8 +223,8 @@ export class GsCash extends LightElement implements ViewProps {
                   (r) =>
                     html`<ui-flex gap="2" align="center" wrap>
                       <ui-link .href=${`/collections/invoices/${r.id}`}>${r.number}</ui-link>
-                      <ui-text size="sm">${r.customerName}</ui-text>
-                      <ui-text size="sm" color="muted">${money(r.balance, r.currency)} open</ui-text>
+                      <ui-text variant="body-md">${r.customerName}</ui-text>
+                      <ui-text variant="body-md" color="muted">${money(r.balance, r.currency)} open</ui-text>
                     </ui-flex>`,
                 )}
               </ui-flex>`
@@ -400,8 +400,8 @@ export class GsCash extends LightElement implements ViewProps {
     return html`<ui-flex direction="col" gap="6">
       <ui-flex justify="between" align="end" gap="4" wrap>
         <ui-flex direction="col" gap="1" shrink>
-          <ui-text size="xs" color="muted" weight="medium" uppercase>Finance · Tue 17 Nov</ui-text>
-          <ui-heading level="1" size="page">Receivables & payables</ui-heading>
+          <ui-text variant="label-md" color="muted" uppercase>Finance · Tue 17 Nov</ui-text>
+          <ui-heading level="1" variant="page">Receivables & payables</ui-heading>
           <ui-text color="muted"
             >What customers owe, what we owe suppliers, and what needs a decision. Money moves only in the bank — here
             people approve and record it.</ui-text
@@ -438,9 +438,9 @@ export class GsCash extends LightElement implements ViewProps {
   private _tile(label: string, value: string, note: string, tone?: "error" | "warning" | "success") {
     return html`<ui-card variant="border" size="sm" shadow="false">
       <ui-flex direction="col" gap="1">
-        <ui-text size="sm" color="muted" truncate>${label}</ui-text>
-        <ui-text size="2xl" weight="semibold" leading="tight" .color=${tone}>${value}</ui-text>
-        <ui-text size="xs" color="muted" clamp="2">${note}</ui-text>
+        <ui-text variant="body-md" color="muted" truncate>${label}</ui-text>
+        <ui-text variant="headline-sm" leading="tight" .color=${tone}>${value}</ui-text>
+        <ui-text variant="body-sm" color="muted" clamp="2">${note}</ui-text>
       </ui-flex>
     </ui-card>`;
   }
@@ -478,7 +478,7 @@ export class GsCash extends LightElement implements ViewProps {
       {
         key: "customer",
         label: "Customer",
-        render: (r) => html`<ui-text size="sm" weight="medium">${r.customer}</ui-text>`,
+        render: (r) => html`<ui-text variant="label-lg">${r.customer}</ui-text>`,
       },
       ...d.buckets.map((b, i) => ({
         key: b,
@@ -486,7 +486,7 @@ export class GsCash extends LightElement implements ViewProps {
         render: (r: Row) => {
           const v = (r.values as number[])[i];
           return html`<ui-text
-            size="sm"
+            variant="body-md"
             align="end"
             .color=${v && i >= 2 ? "error" : v && i === 1 ? "warning" : undefined}
             >${v ? usdK(v) : "—"}</ui-text
@@ -496,12 +496,12 @@ export class GsCash extends LightElement implements ViewProps {
       {
         key: "total",
         label: "Total",
-        render: (r) => html`<ui-text size="sm" weight="semibold" align="end">${usdK(r.total as number)}</ui-text>`,
+        render: (r) => html`<ui-text variant="title-sm" align="end">${usdK(r.total as number)}</ui-text>`,
       },
     ];
     return html`<ui-card variant="border" shadow="false">
       ${this._heading("Receivables ageing by customer")}
-      <ui-text size="sm" color="muted"
+      <ui-text variant="body-md" color="muted"
         >Open balances in USD equivalent (USD/EGP ${d.fx.USD}, EUR/EGP ${d.fx.EUR}), by days past due.</ui-text
       >
       <ui-chart
@@ -520,7 +520,7 @@ export class GsCash extends LightElement implements ViewProps {
     if (d.canSeePayables) series.push({ name: "Cash out (payables + fixed costs)", values: d.cashOut });
     return html`<ui-card variant="border" shadow="false">
       ${this._heading("Cash in vs out — next 8 weeks")}
-      <ui-text size="sm" color="muted"
+      <ui-text variant="body-md" color="muted"
         >EGP thousands, by week. Receipts by invoice due date (overdue counted this week, chronic late payers a week
         later); payments by bill and balance due
         dates${d.fixedWeeklyEgp ? `, plus EGP ${Math.round(d.fixedWeeklyEgp / 1000)}k a week of fixed costs from the budget` : ""}.
@@ -544,9 +544,9 @@ export class GsCash extends LightElement implements ViewProps {
         render: (r) =>
           html`<ui-flex direction="col" gap="0">
             <ui-link color="primary" .href=${`/collections/invoices/${r.id}`}
-              ><ui-text size="sm" weight="semibold">${r.number}</ui-text></ui-link
+              ><ui-text variant="title-sm">${r.number}</ui-text></ui-link
             >
-            <ui-text size="xs" color="muted">${r.customerName}${r.caseId ? ` · ${r.caseId}` : ""}</ui-text>
+            <ui-text variant="body-sm" color="muted">${r.customerName}${r.caseId ? ` · ${r.caseId}` : ""}</ui-text>
           </ui-flex>`,
       },
       {
@@ -554,8 +554,8 @@ export class GsCash extends LightElement implements ViewProps {
         label: "Balance",
         render: (r) =>
           html`<ui-flex direction="col" gap="0">
-            <ui-text size="sm">${money(r.balance, r.currency)}</ui-text>
-            ${r.paid ? html`<ui-text size="xs" color="muted">of ${money(r.amount, r.currency)} · ${money(r.paid, r.currency)} paid</ui-text>` : nothing}
+            <ui-text variant="body-md">${money(r.balance, r.currency)}</ui-text>
+            ${r.paid ? html`<ui-text variant="body-sm" color="muted">of ${money(r.amount, r.currency)} · ${money(r.paid, r.currency)} paid</ui-text>` : nothing}
           </ui-flex>`,
       },
       {
@@ -563,8 +563,8 @@ export class GsCash extends LightElement implements ViewProps {
         label: "Due",
         render: (r) =>
           html`<ui-flex direction="col" gap="0">
-            <ui-text size="sm">${day(r.dueDate)}</ui-text>
-            <ui-text size="xs" .color=${r.daysOverdue > 30 ? "error" : r.daysOverdue > 0 ? "warning" : "muted"}
+            <ui-text variant="body-md">${day(r.dueDate)}</ui-text>
+            <ui-text variant="body-sm" .color=${r.daysOverdue > 30 ? "error" : r.daysOverdue > 0 ? "warning" : "muted"}
               >${r.daysOverdue > 0 ? `${r.daysOverdue} days overdue` : `in ${-r.daysOverdue} days`}</ui-text
             >
           </ui-flex>`,
@@ -598,15 +598,15 @@ export class GsCash extends LightElement implements ViewProps {
                     @click=${() => this._draftReminder(r)}
                     >${r.contactRule === "do-not-chase" ? "Internal reminder" : "Draft reminder"}</ui-button
                   >`
-                : html`<ui-text size="xs" color="muted">Not due yet</ui-text>`
+                : html`<ui-text variant="body-sm" color="muted">Not due yet</ui-text>`
             }
-            ${r.lastReminder ? html`<ui-text size="xs" color="muted" clamp="2">Last: ${r.lastReminder}</ui-text>` : nothing}
+            ${r.lastReminder ? html`<ui-text variant="body-sm" color="muted" clamp="2">Last: ${r.lastReminder}</ui-text>` : nothing}
           </ui-flex>`,
       },
     ];
     return html`<ui-card variant="border" shadow="false">
       ${this._heading("Collections — open invoices", html`<ui-badge size="sm" variant="soft">${d.receivables.length}</ui-badge>`)}
-      <ui-text size="sm" color="muted"
+      <ui-text variant="body-md" color="muted"
         >Reminders follow each customer's contact rule: “do not chase” accounts get an internal reminder only; for the
         others the AI drafts the email and a person reviews and sends it.</ui-text
       >
@@ -621,8 +621,8 @@ export class GsCash extends LightElement implements ViewProps {
         label: "Supplier",
         render: (p) =>
           html`<ui-flex direction="col" gap="0">
-            <ui-text size="sm" weight="semibold">${p.supplierName}</ui-text>
-            <ui-text size="xs" color="muted"
+            <ui-text variant="title-sm">${p.supplierName}</ui-text>
+            <ui-text variant="body-sm" color="muted"
               >${p.po}${p.caseId ? html` · <ui-link color="primary" .href=${`/collections/cases/${p.case}/order`}>${p.caseId}</ui-link>` : nothing}${p.bill ? ` · bill ${p.bill.number}` : ""}</ui-text
             >
           </ui-flex>`,
@@ -638,10 +638,10 @@ export class GsCash extends LightElement implements ViewProps {
               .color=${p.stage === "Bill on hold" ? "error" : p.stage === "Deposit to pay" || p.stage === "Balance due" ? "warning" : "neutral"}
               >${p.stage}</ui-badge
             >
-            ${p.bill?.holdReason ? html`<ui-text size="xs" color="error">${p.bill.holdReason}</ui-text>` : nothing}
+            ${p.bill?.holdReason ? html`<ui-text variant="body-sm" color="error">${p.bill.holdReason}</ui-text>` : nothing}
             ${
               p.depositPct
-                ? html`<ui-text size="xs" color="muted"
+                ? html`<ui-text variant="body-sm" color="muted"
                     >Deposit ${p.depositPct}%
                     ${money(p.deposit, p.currency)}${p.paid ? " · paid" : p.depositApproval ? ` · approval ${p.depositApproval.status}` : ""}</ui-text
                   >`
@@ -652,28 +652,29 @@ export class GsCash extends LightElement implements ViewProps {
       {
         key: "total",
         label: "Total",
-        render: (p) => html`<ui-text size="sm" align="end">${money(p.total, p.currency)}</ui-text>`,
+        render: (p) => html`<ui-text variant="body-md" align="end">${money(p.total, p.currency)}</ui-text>`,
       },
       {
         key: "paid",
         label: "Paid",
-        render: (p) => html`<ui-text size="sm" align="end">${p.paid ? money(p.paid, p.currency) : "—"}</ui-text>`,
+        render: (p) =>
+          html`<ui-text variant="body-md" align="end">${p.paid ? money(p.paid, p.currency) : "—"}</ui-text>`,
       },
       {
         key: "balance",
         label: "Balance",
-        render: (p) => html`<ui-text size="sm" weight="semibold" align="end">${money(p.balance, p.currency)}</ui-text>`,
+        render: (p) => html`<ui-text variant="title-sm" align="end">${money(p.balance, p.currency)}</ui-text>`,
       },
-      { key: "due", label: "Due", render: (p) => html`<ui-text size="sm">${day(p.due)}</ui-text>` },
+      { key: "due", label: "Due", render: (p) => html`<ui-text variant="body-md">${day(p.due)}</ui-text>` },
       {
         key: "act",
         label: "",
         render: (p) => {
           const hasApproval = d.approvals.some((a) => a.po?.id === p.id);
           if (p.stage === "Bill on hold")
-            return html`<ui-text size="xs" color="muted">Waits for receipt / credit note</ui-text>`;
+            return html`<ui-text variant="body-sm" color="muted">Waits for receipt / credit note</ui-text>`;
           if (hasApproval || p.depositApproval)
-            return html`<ui-text size="xs" color="muted">Approval in progress</ui-text>`;
+            return html`<ui-text variant="body-sm" color="muted">Approval in progress</ui-text>`;
           if (!d.canFinance) return nothing;
           return html`<ui-button
             size="xs"
@@ -687,7 +688,7 @@ export class GsCash extends LightElement implements ViewProps {
     ];
     return html`<ui-card variant="border" shadow="false">
       ${this._heading("Supplier payables", html`<ui-badge size="sm" variant="soft">${d.payables.length}</ui-badge>`)}
-      <ui-text size="sm" color="muted"
+      <ui-text variant="body-md" color="muted"
         >Deposits paid against pro formas, balances due on delivery, and bills held when PO, receipt and bill don't
         match.</ui-text
       >
@@ -700,7 +701,7 @@ export class GsCash extends LightElement implements ViewProps {
       ? html`<ui-flex direction="col" gap="0"
           >${list.map(
             (x) =>
-              html`<ui-text size="xs" .color=${x.decision === "Approve" ? "success" : "error"}
+              html`<ui-text variant="body-sm" .color=${x.decision === "Approve" ? "success" : "error"}
                 >${x.decision === "Approve" ? "Approved" : "Rejected"} by
                 ${x.name || USERS[x.user] || x.user}${x.at ? ` · ${dayTime(x.at)}` : ""}${x.reason ? ` — ${x.reason}` : ""}</ui-text
               >`,
@@ -712,7 +713,7 @@ export class GsCash extends LightElement implements ViewProps {
   private _approvals(d: Cash) {
     return html`<ui-card variant="border" shadow="false">
       ${this._heading("Payments needing approval", html`<ui-badge size="sm" variant="soft">${d.approvals.length}</ui-badge>`)}
-      <ui-text size="sm" color="muted"
+      <ui-text variant="body-md" color="muted"
         >Every supplier payment needs the Financial Director or the CEO. Once approved, finance pays in the bank and
         records it here with the bank reference.</ui-text
       >
@@ -723,12 +724,12 @@ export class GsCash extends LightElement implements ViewProps {
                 (a) =>
                   html`<ui-flex justify="between" align="start" gap="3" wrap>
                     <ui-flex direction="col" gap="1" shrink>
-                      <ui-text size="sm" weight="semibold">${a.title}</ui-text>
-                      <ui-text size="xs" color="muted"
+                      <ui-text variant="title-sm">${a.title}</ui-text>
+                      <ui-text variant="body-sm" color="muted"
                         >${a.type}${a.caseId ? ` · ${a.caseId}` : ""}${a.po ? ` · ${money(a.amount, a.po.currency)}` : ""}
                         · approvers ${a.approvers.map((p) => p.name).join(" or ")}</ui-text
                       >
-                      ${a.detail ? html`<ui-text size="xs" color="muted">${a.detail}</ui-text>` : nothing}
+                      ${a.detail ? html`<ui-text variant="body-sm" color="muted">${a.detail}</ui-text>` : nothing}
                       ${this._decisions(a.decisions)}
                     </ui-flex>
                     <ui-flex gap="2" align="center" wrap>
@@ -764,7 +765,7 @@ export class GsCash extends LightElement implements ViewProps {
                   </ui-flex>`,
               )}
             </ui-flex>`
-          : html`<ui-text size="sm" color="muted">Nothing waiting.</ui-text>`
+          : html`<ui-text variant="body-md" color="muted">Nothing waiting.</ui-text>`
       }
     </ui-card>`;
   }
@@ -782,7 +783,7 @@ export class GsCash extends LightElement implements ViewProps {
             >${b.applied ? "Applied" : b.status}</ui-badge
           >`,
         )}
-        <ui-text size="sm" weight="medium">${b.title}</ui-text>
+        <ui-text variant="label-lg">${b.title}</ui-text>
         <ui-steps
           .current=${current - 1}
           .items=${[
@@ -798,21 +799,21 @@ export class GsCash extends LightElement implements ViewProps {
           b.request
             ? html`<ui-grid fit="xs" gap="4">
                 <ui-flex direction="col" gap="0">
-                  <ui-text size="xs" color="muted" uppercase>Current account</ui-text>
-                  <ui-text size="sm">${b.request.current}</ui-text>
+                  <ui-text variant="body-sm" color="muted" uppercase>Current account</ui-text>
+                  <ui-text variant="body-md">${b.request.current}</ui-text>
                 </ui-flex>
                 <ui-flex direction="col" gap="0">
-                  <ui-text size="xs" color="muted" uppercase>Requested</ui-text>
-                  <ui-text size="sm">${b.request.requested.bankName} · ${b.request.requested.iban}</ui-text>
+                  <ui-text variant="body-sm" color="muted" uppercase>Requested</ui-text>
+                  <ui-text variant="body-md">${b.request.requested.bankName} · ${b.request.requested.iban}</ui-text>
                 </ui-flex>
                 <ui-flex direction="col" gap="0">
-                  <ui-text size="xs" color="muted" uppercase>Request came by</ui-text>
-                  <ui-text size="sm">${b.request.requestedVia}</ui-text>
+                  <ui-text variant="body-sm" color="muted" uppercase>Request came by</ui-text>
+                  <ui-text variant="body-md">${b.request.requestedVia}</ui-text>
                 </ui-flex>
                 <ui-flex direction="col" gap="0">
-                  <ui-text size="xs" color="muted" uppercase>Call back on</ui-text>
-                  <ui-text size="sm">${b.request.phoneOnFile}</ui-text>
-                  <ui-text size="xs" color="error">Never: ${b.request.phoneInRequest}</ui-text>
+                  <ui-text variant="body-sm" color="muted" uppercase>Call back on</ui-text>
+                  <ui-text variant="body-md">${b.request.phoneOnFile}</ui-text>
+                  <ui-text variant="body-sm" color="error">Never: ${b.request.phoneInRequest}</ui-text>
                 </ui-flex>
               </ui-grid>`
             : nothing
@@ -841,7 +842,7 @@ export class GsCash extends LightElement implements ViewProps {
                     >Approve after call-back</ui-button
                   >`
               : b.status !== "Approved"
-                ? html`<ui-text size="xs" color="muted"
+                ? html`<ui-text variant="body-sm" color="muted"
                     >${b.decisions.some((x) => x.user === this.user.id) ? "You have decided — a second, different person must approve." : "Waiting for an approver."}</ui-text
                   >`
                 : nothing
@@ -882,7 +883,7 @@ export class GsCash extends LightElement implements ViewProps {
       if (!draft)
         return html`<ui-flex gap="3" align="center" padding="4"
           ><ui-loading color="primary"></ui-loading
-          ><ui-text size="sm">Checking ${d.invoice.customerName}'s contact rule and drafting…</ui-text></ui-flex
+          ><ui-text variant="body-md">Checking ${d.invoice.customerName}'s contact rule and drafting…</ui-text></ui-flex
         >`;
       const internal = draft.mode === "internal";
       return html`<ui-flex direction="col" gap="3">
@@ -900,7 +901,7 @@ export class GsCash extends LightElement implements ViewProps {
                 >${d.invoice.customerName} must not be chased: no customer message is drafted — an internal reminder for
                 the account owner instead.</ui-alert
               >`
-            : html`<ui-text size="sm">To: <strong>${draft.to}</strong> · Subject: ${draft.subject}</ui-text>`
+            : html`<ui-text variant="body-md">To: <strong>${draft.to}</strong> · Subject: ${draft.subject}</ui-text>`
         }
         <ui-textarea
           legend=${internal ? "Internal reminder" : "Email (edit before sending)"}
@@ -928,7 +929,7 @@ export class GsCash extends LightElement implements ViewProps {
               this.dialog = { ...this.dialog, draft: { ...this.dialog.draft, body: e.detail.value } };
           }}
         ></ui-ai-tools>
-        ${draft.note ? html`<ui-text size="xs" color="muted">${draft.note}</ui-text>` : nothing}
+        ${draft.note ? html`<ui-text variant="body-sm" color="muted">${draft.note}</ui-text>` : nothing}
         <ui-flex justify="end" gap="2">
           ${cancel}
           <ui-button color="primary" size="sm" @click=${() => this._sendReminder()}
@@ -972,7 +973,7 @@ export class GsCash extends LightElement implements ViewProps {
       </ui-flex>`;
     if (d.kind === "record")
       return html`<ui-flex direction="col" gap="3">
-        <ui-text size="sm"
+        <ui-text variant="body-md"
           >${money(d.approval.amount, d.approval.po?.currency)} to ${d.approval.po?.supplier} (${d.approval.kind}) —
           approved. Pay it in the bank first, then record the bank reference here.</ui-text
         >
@@ -990,12 +991,14 @@ export class GsCash extends LightElement implements ViewProps {
         </ui-flex>
       </ui-flex>`;
     return html`<ui-flex direction="col" gap="3">
-      <ui-text size="sm"
+      <ui-text variant="body-md"
         >${d.payable.supplierName} · ${d.payable.po} · balance
         <strong>${money(d.payable.balance, d.payable.currency)}</strong> due
         ${day(d.payable.due)}${d.payable.bill ? ` · bill ${d.payable.bill.number} ${d.payable.bill.status}` : ""}.</ui-text
       >
-      <ui-text size="sm" color="muted">Routed to Mohamed Helmy (Financial Director) or Karim Balbaa (CEO).</ui-text>
+      <ui-text variant="body-md" color="muted"
+        >Routed to Mohamed Helmy (Financial Director) or Karim Balbaa (CEO).</ui-text
+      >
       <ui-flex justify="end" gap="2">
         ${cancel}
         <ui-button color="primary" size="sm" @click=${() => this._requestApproval()}>Request approval</ui-button>

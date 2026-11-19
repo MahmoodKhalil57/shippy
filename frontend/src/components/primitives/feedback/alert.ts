@@ -46,7 +46,7 @@ export const alertIcon = rcva("h-6 w-6 shrink-0 stroke-current", {
 });
 
 export const alertHeading = rcva("font-bold");
-export const alertDescription = rcva("text-xs");
+export const alertDescription = rcva("text-body-sm");
 export const alertActions = rcva("flex gap-2");
 export const alertDismiss = rcva("btn btn-sm btn-ghost btn-circle");
 

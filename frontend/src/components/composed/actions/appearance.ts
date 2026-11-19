@@ -227,8 +227,8 @@ export class UiAppearance extends LightElement {
       <ui-box max-height="96">
         <ui-flex direction="col" gap="2">
           <ui-flex justify="between" align="baseline" gap="2">
-            <ui-text as="span" size="sm" weight="semibold">Background</ui-text>
-            ${this.credit ? html`<ui-text as="span" size="xs" color="muted">${this.credit}</ui-text>` : nothing}
+            <ui-text as="span" variant="title-sm">Background</ui-text>
+            ${this.credit ? html`<ui-text as="span" variant="body-sm" color="muted">${this.credit}</ui-text>` : nothing}
           </ui-flex>
           <ui-grid cols="2" gap="2">
             <ui-choice-tile

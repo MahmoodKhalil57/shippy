@@ -23,7 +23,7 @@ export const card = rcva("card [&_p]:grow-0", {
   variants: {
     variant: {
       /** Outlined: a quiet hairline (M3's outlined card). */
-      border: "card-border border-base-content/10",
+      border: "card-border border-outline-variant",
       dash: "card-dash",
     },
     size: {
@@ -39,7 +39,7 @@ export const card = rcva("card [&_p]:grow-0", {
     imageFull: { true: "image-full" },
     /** Background + text colour ("custom color" / "neutral" examples). */
     color: {
-      base: "bg-base-100",
+      base: "bg-surface",
       neutral: "bg-neutral text-neutral-content",
       primary: "bg-primary text-primary-content",
       secondary: "bg-secondary text-secondary-content",

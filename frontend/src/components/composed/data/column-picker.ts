@@ -71,7 +71,7 @@ export class UiColumnPicker extends LightElement {
     >
       <span slot="trigger"><ui-icon name="columns" size="sm"></ui-icon> Columns</span>
       <ui-flex justify="between" align="center" gap="2">
-        <ui-text size="sm" weight="semibold">Columns</ui-text>
+        <ui-text variant="title-sm">Columns</ui-text>
         ${
           changed
             ? html`<ui-button size="xs" variant="ghost" @click=${() => this._emit([...this.defaults], [], true)}

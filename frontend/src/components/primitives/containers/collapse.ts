@@ -27,7 +27,7 @@ export const collapse = rcva("collapse !visible", {
       close: "collapse-close",
     },
     /** Default border + background used throughout the daisyUI examples. */
-    bordered: { true: "bg-base-100 border border-base-300" },
+    bordered: { true: "bg-surface border border-outline-variant" },
     /** Custom colours that switch while focused ("custom colors ... with focus"). */
     color: {
       primary: "bg-primary text-primary-content focus:bg-secondary focus:text-secondary-content",
@@ -46,7 +46,7 @@ export const collapseTitle = rcva("collapse-title font-semibold", {
     },
   },
 });
-export const collapseContent = rcva("collapse-content text-sm", {
+export const collapseContent = rcva("collapse-content text-body-md", {
   variants: {
     color: {
       primary: "bg-primary text-primary-content peer-checked:bg-secondary peer-checked:text-secondary-content",

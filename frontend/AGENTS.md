@@ -44,7 +44,7 @@ The design system is enforced through the components (`tests/architecture.test.t
 - **Primitives use theme colours only** (`primary`, `base-200`…), never the Tailwind palette (`red-400`) or literal colours.
 - **Fluid before breakpoints**: lay pages out intrinsically — `<ui-grid fit>` (as many columns as fit), `<ui-grid sidebar>`, wrapping `<ui-flex wrap>`, `fill` widths, and fluid sizes (`padding-x="fluid"`, heading `size="page"`, `clamp()` + container units of the main panel, which is an `@container`). The dashboard uses no screen breakpoints; reach for `sm:`/`md:` tokens only when no intrinsic pattern works.
 - **Glass is for the floating layer only**: sheets, dialogs, menus and other controls that float above content use `liquid-glass` (or `liquid-glass-clear` for small controls), defined in `src/styles/theme.css` (tint, light blur, refraction via the `#liquid-glass-refraction` SVG filter in `index.html`, rim shine, shadow). Tooltips, toasts, popovers, pickers and the dock already use it through their primitives; `shadow-*` utilities on glass replace only its drop shadow. The main panel is see-through frosted glass (`liquid-glass-surface`) over the background; content surfaces inside it (cards, tables) stay solid, and glass never sits on glass. Over a background image, the app shell picks the lightest scrim (`--app-scrim`) at which `<ui-contrast-audit>` finds no failing text over the image, so the photo shows as much as stays readable. The material already handles light/dark, Reduce transparency, Increase contrast and browsers without `backdrop-filter`.
-- **Colour contrast (WCAG AA) is checked**: `tests/contrast.test.ts` checks every colour scheme's ink/fill pairs (the scheme generator, `plugins/schemes.ts`, fixes unreadable `*-content` tokens); on screen, the command palette's **"Check colour contrast"** (or `?audit` in the URL) runs `<ui-contrast-audit>`, which measures every visible text against what's really behind it — glass, tints, and the background image — and outlines failures. Run it in light and dark after visual changes. Rules that keep it green: secondary text no fainter than `text-base-content/75`; coloured text uses the `*-ink` tokens (`text-success-ink`…, the colour mixed toward the ink), never raw `text-success`; tinted backgrounds take full-strength text.
+- **Colour contrast (WCAG AA) is checked**: `tests/contrast.test.ts` checks every colour scheme's ink/fill pairs (the scheme generator, `plugins/schemes.ts`, fixes unreadable `*-content` tokens); on screen, the command palette's **"Check colour contrast"** (or `?audit` in the URL) runs `<ui-contrast-audit>`, which measures every visible text against what's really behind it — glass, tints, and the background image — and outlines failures. Run it in light and dark after visual changes. Rules that keep it green: secondary text is the `on-surface-variant` role (80% of the ink), never fainter; coloured text uses the `*-ink` tokens (`text-success-ink`…, the colour mixed toward the ink), never raw `text-success`; tinted backgrounds take full-strength text.
 - **Icons come from the registry only**: `ICONS` / `iconSvg()` / `<ui-icon name>` in `src/components/primitives/media/icon.ts`, filled with `import x from "~icons/<collection>/<name>"` (unplugin-icons, tree-shaken) from line-md (preferred, animated), material-symbols-light, devicon or logos. Nothing else draws an `<svg>` (`tests/icons.test.ts`).
 - Missing something? Add a variant (or a new primitive) in `src/components/primitives`, not a workaround in the page.
 
@@ -137,6 +137,38 @@ The forms render every Payload field type (payloadcms.com/docs/fields/overview) 
   - `<ui-frame-column>`: a side column with its toggle, its list and rail stack, its footer and its sheet backdrop.
   - `<ui-frame-main>`: the glass panel and the page footer; it plays the page transitions.
 - **Appearance:** the header's theme, colour-scheme and background controls are `<ui-appearance kind="theme|scheme|background">` (composed). The document-level changes and the circular reveal are in `src/components/base/appearance.ts`. `<ui-theme-controller>` keeps only daisyUI's pure-CSS modes (toggle, checkbox, swap, radio, buttons, dropdown).
+
+## Colour, type and state roles (Material Design 3, with Apple's guidance)
+
+The roles are in `src/styles/theme.css`, derived from each colour scheme's daisyUI colours. `tests/design-roles.test.ts` rejects raw values in primitives (and the old `size` / `weight` on text in pages). Pick a role by what the thing is, never by how it should look.
+
+- **Ink:**
+  - `on-surface` is the main text.
+  - `on-surface-variant` is secondary text: supporting lines, captions, header labels and icons. `<ui-text color="muted">` uses it.
+  - `on-surface-disabled` (38%) is for disabled content.
+  - Never "base-content at 70%".
+- **Lines:**
+  - `outline` is for boundaries people must find: text fields, selects, checkboxes and radios. It's at least 3:1 against the surface (WCAG 1.4.11). Hovered, fields darken to `on-surface-variant`.
+  - `outline-variant` is decorative: dividers, card, table and chip borders.
+  - `daisy-m3.css` maps daisyUI's own field and divider lines onto these roles.
+- **Surfaces** (separation by tone first, shadows only for what floats):
+  - `surface` is the base.
+  - `surface-container-lowest` → `-low` (cards, table header bands) → `surface-container` (navigation, grouped sections) → `-high` (dialogs, hovered rows) → `-highest` (filled fields, code).
+  - The steps are larger in dark themes.
+- **Containers:** `primary-container`, `success-container` and the like are tinted fills, each paired with an `on-*-container` ink. Selected rows, list items, chips and the active navigation item use `primary-container`. The colour schemes' `secondary` is often near-white, so M3's secondary-container isn't used for selection.
+- **State layers:**
+  - A state layer is a wash of the content's own colour: hover 8%, focus 10%, pressed 10%, dragged 16% (`--state-hover` and the rest).
+  - Use the `state-layer` utility on any interactive element. It's a background-image over the element's own background, applies hover only with a real pointer, focus only for keyboard focus, and nothing when disabled.
+  - For a one-off, use the token: `hover:bg-on-surface/(--state-hover)`. Never `hover:bg-primary/12`.
+- **Type:** M3's 15 roles. Text is set by role (`<ui-text variant="body-sm">`, `<ui-heading variant="title-lg">`), never by a raw size. Each role brings its size, line height, weight and tracking:
+  - `display-*`: big numerals.
+  - `headline-*`: page and dialog titles. `<ui-heading variant="page">` is the fluid page title.
+  - `title-*`: section, card and item titles.
+  - `body-*`: running text, table cells and descriptions.
+  - `label-*`: text inside components, such as tags, counts and metadata.
+  - `emphasized` is the same role one weight heavier (unread, selected, the key figure).
+  - Sizes and line heights are M3's. Weights and tracking follow Apple's advice for system fonts: titles and headlines semibold, labels medium, tracking only on small labels.
+  - Components whose `size` prop is itself a display scale (swap, countdown, text-rotate, diff, avatar initials) are the listed exceptions.
 
 ## Elevation, shape and spacing (Material Design 3)
 

@@ -113,8 +113,8 @@ export class GsAutomations extends LightElement implements ViewProps {
   private _header() {
     return html`<ui-flex justify="between" align="end" gap="4" wrap>
       <ui-flex direction="col" gap="1" shrink>
-        <ui-text size="xs" color="muted" weight="medium" uppercase>Work · automation</ui-text>
-        <ui-heading level="1" size="page">Automations & exceptions</ui-heading>
+        <ui-text variant="label-md" color="muted" uppercase>Work · automation</ui-text>
+        <ui-heading level="1" variant="page">Automations & exceptions</ui-heading>
         <ui-text color="muted"
           >Every automation has a trigger, owner, due time, approval rule, retry behaviour and stop condition.
           Reprocessing never creates duplicates; failures land in the exception queue with a safe retry.</ui-text
@@ -130,9 +130,9 @@ export class GsAutomations extends LightElement implements ViewProps {
   private _tiles(d: AutomationsView) {
     const tile = (label: string, value: string, note: string, color?: "error" | "warning" | "success") =>
       html`<ui-card variant="border" size="sm" shadow="false">
-        <ui-text size="sm" color="muted" truncate>${label}</ui-text>
-        <ui-text size="3xl" weight="semibold" leading="tight" .color=${color}>${value}</ui-text>
-        <ui-text size="xs" color="muted">${note}</ui-text>
+        <ui-text variant="body-md" color="muted" truncate>${label}</ui-text>
+        <ui-text variant="headline-md" leading="tight" .color=${color}>${value}</ui-text>
+        <ui-text variant="body-sm" color="muted">${note}</ui-text>
       </ui-card>`;
     return html`<ui-grid fit="xs" gap="4">
       ${tile("Rules", `${d.stats.enabled}/${d.stats.rules}`, "enabled · every one explicit")}
@@ -148,7 +148,7 @@ export class GsAutomations extends LightElement implements ViewProps {
       {
         key: "occurredAt",
         label: "When",
-        render: (x) => html`<ui-text size="xs">${formatDate(x.occurredAt)}</ui-text>`,
+        render: (x) => html`<ui-text variant="body-sm">${formatDate(x.occurredAt)}</ui-text>`,
       },
       {
         key: "summary",
@@ -157,17 +157,21 @@ export class GsAutomations extends LightElement implements ViewProps {
           html`<ui-flex direction="col" gap="0">
             <ui-flex gap="2" align="center" wrap>
               <ui-badge size="xs" variant="outline">${s(x.source)}</ui-badge>
-              <ui-text size="sm" weight="medium">${s(x.summary)}</ui-text>
+              <ui-text variant="label-lg">${s(x.summary)}</ui-text>
             </ui-flex>
-            <ui-text size="xs" color="muted">${s(x.impact)}</ui-text>
+            <ui-text variant="body-sm" color="muted">${s(x.impact)}</ui-text>
           </ui-flex>`,
       },
       {
         key: "idempotencyKey",
         label: "Idempotency key",
-        render: (x) => html`<ui-text as="code" size="xs" mono>${s(x.idempotencyKey) || "—"}</ui-text>`,
+        render: (x) => html`<ui-text as="code" variant="body-sm" mono>${s(x.idempotencyKey) || "—"}</ui-text>`,
       },
-      { key: "retries", label: "Retries", render: (x) => html`<ui-text size="sm">${s(x.retries) || "0"}</ui-text>` },
+      {
+        key: "retries",
+        label: "Retries",
+        render: (x) => html`<ui-text variant="body-md">${s(x.retries) || "0"}</ui-text>`,
+      },
       {
         key: "status",
         label: "Status",
@@ -184,13 +188,13 @@ export class GsAutomations extends LightElement implements ViewProps {
             ? this.retrying === x.id
               ? html`<ui-flex gap="2" align="center"
                   ><ui-loading size="xs" color="primary"></ui-loading
-                  ><ui-text size="xs" color="muted">Checking key…</ui-text></ui-flex
+                  ><ui-text variant="body-sm" color="muted">Checking key…</ui-text></ui-flex
                 >`
               : html`<ui-button size="xs" color="primary" variant="soft" @click=${() => this._retry(x as Doc)}
                   >Safe retry</ui-button
                 >`
             : x.status === "Waiting for review"
-              ? html`<ui-text size="xs" color="muted">In the review queue</ui-text>`
+              ? html`<ui-text variant="body-sm" color="muted">In the review queue</ui-text>`
               : html`<ui-button size="xs" variant="ghost" @click=${() => this._retry(x as Doc)}
                   >Retry again</ui-button
                 >`,
@@ -201,7 +205,7 @@ export class GsAutomations extends LightElement implements ViewProps {
         Exception queue
         <ui-badge size="sm" variant="soft" .color=${d.stats.open ? "error" : "success"}>${d.stats.open} open</ui-badge>
       </ui-flex>
-      <ui-text size="xs" color="muted"
+      <ui-text variant="body-sm" color="muted"
         >A retry first checks the idempotency key (message-id, invoice number, mailbox), so nothing is created, imported
         or sent twice. Retrying a resolved item changes nothing.</ui-text
       >
@@ -218,7 +222,7 @@ export class GsAutomations extends LightElement implements ViewProps {
           >${d.review.length}</ui-badge
         >
       </ui-flex>
-      <ui-text size="xs" color="muted"
+      <ui-text variant="body-sm" color="muted"
         >Below the confidence threshold the AI never applies a value: it leaves the field blank or the match unlinked
         and waits here for a person.</ui-text
       >
@@ -230,8 +234,8 @@ export class GsAutomations extends LightElement implements ViewProps {
                   html`<ui-flex gap="3" align="start" wrap>
                     <ui-icon name="sparkles" color="accent" size="sm"></ui-icon>
                     <ui-flex direction="col" gap="0" grow shrink>
-                      <ui-text size="sm" weight="medium">${r.title}</ui-text>
-                      <ui-text size="xs" color="muted">${r.detail}</ui-text>
+                      <ui-text variant="label-lg">${r.title}</ui-text>
+                      <ui-text variant="body-sm" color="muted">${r.detail}</ui-text>
                     </ui-flex>
                     ${
                       r.confidence !== undefined
@@ -256,7 +260,7 @@ export class GsAutomations extends LightElement implements ViewProps {
                     </ui-flex>
                   </ui-flex>`,
               )
-            : html`<ui-text size="sm" color="muted">Nothing waiting for review.</ui-text>`
+            : html`<ui-text variant="body-md" color="muted">Nothing waiting for review.</ui-text>`
         }
       </ui-flex>
     </ui-card>`;
@@ -280,9 +284,9 @@ export class GsAutomations extends LightElement implements ViewProps {
     const col = (title: string, icon: "bolt" | "user", rows: string[]) =>
       html`<ui-flex direction="col" gap="2">
         <ui-flex gap="2" align="center"
-          ><ui-icon .name=${icon} size="sm"></ui-icon><ui-text weight="semibold">${title}</ui-text></ui-flex
+          ><ui-icon .name=${icon} size="sm"></ui-icon><ui-text emphasized>${title}</ui-text></ui-flex
         >
-        ${rows.map((r) => html`<ui-text size="sm">• ${r}</ui-text>`)}
+        ${rows.map((r) => html`<ui-text variant="body-md">• ${r}</ui-text>`)}
       </ui-flex>`;
     return html`<ui-card variant="border" shadow="false" heading="Automation boundaries">
       <ui-grid fit="sm" gap="6">
@@ -299,7 +303,7 @@ export class GsAutomations extends LightElement implements ViewProps {
         label: "Rule",
         render: (r) =>
           html`<ui-flex direction="col" gap="1" align="start">
-            <ui-text size="sm" weight="semibold">${s(r.name)}</ui-text>
+            <ui-text variant="title-sm">${s(r.name)}</ui-text>
             <ui-flex gap="1" wrap>
               <ui-badge size="xs" variant="soft" .color=${MODE[s(r.mode)]?.color ?? "neutral"}
                 >${MODE[s(r.mode)]?.label ?? s(r.mode)}</ui-badge
@@ -315,16 +319,24 @@ export class GsAutomations extends LightElement implements ViewProps {
             </ui-flex>
           </ui-flex>`,
       },
-      { key: "trigger", label: "Trigger", render: (r) => html`<ui-text size="xs">${s(r.trigger)}</ui-text>` },
-      { key: "action", label: "Action", render: (r) => html`<ui-text size="xs">${s(r.action)}</ui-text>` },
+      { key: "trigger", label: "Trigger", render: (r) => html`<ui-text variant="body-sm">${s(r.trigger)}</ui-text>` },
+      { key: "action", label: "Action", render: (r) => html`<ui-text variant="body-sm">${s(r.action)}</ui-text>` },
       {
         key: "owner",
         label: "Owner · due",
-        render: (r) => html`<ui-text size="xs">${s(r.owner) || "—"} · ${s(r.due) || "—"}</ui-text>`,
+        render: (r) => html`<ui-text variant="body-sm">${s(r.owner) || "—"} · ${s(r.due) || "—"}</ui-text>`,
       },
-      { key: "approval", label: "Approval", render: (r) => html`<ui-text size="xs">${s(r.approval) || "—"}</ui-text>` },
-      { key: "retry", label: "Retry", render: (r) => html`<ui-text size="xs">${s(r.retry) || "—"}</ui-text>` },
-      { key: "stop", label: "Stop condition", render: (r) => html`<ui-text size="xs">${s(r.stop) || "—"}</ui-text>` },
+      {
+        key: "approval",
+        label: "Approval",
+        render: (r) => html`<ui-text variant="body-sm">${s(r.approval) || "—"}</ui-text>`,
+      },
+      { key: "retry", label: "Retry", render: (r) => html`<ui-text variant="body-sm">${s(r.retry) || "—"}</ui-text>` },
+      {
+        key: "stop",
+        label: "Stop condition",
+        render: (r) => html`<ui-text variant="body-sm">${s(r.stop) || "—"}</ui-text>`,
+      },
       {
         key: "enabled",
         label: "On",
@@ -346,7 +358,7 @@ export class GsAutomations extends LightElement implements ViewProps {
       <ui-flex slot="heading" gap="2" align="center" wrap>
         Rule registry <ui-badge size="sm" variant="soft">${d.rules.length} rules</ui-badge>
       </ui-flex>
-      <ui-text size="xs" color="muted"
+      <ui-text variant="body-sm" color="muted"
         >${d.canEdit ? "You can pause or enable rules; each change is logged." : "Management can pause or enable rules; everyone can read them."}</ui-text
       >
       <ui-table size="sm" .columns=${columns} .rows=${d.rules}></ui-table>
@@ -355,14 +367,14 @@ export class GsAutomations extends LightElement implements ViewProps {
 
   private _audit(d: AutomationsView) {
     const columns: TableColumn<TimelineEntry & Record<string, unknown>>[] = [
-      { key: "at", label: "When", render: (a) => html`<ui-text size="xs">${formatDate(a.at)}</ui-text>` },
+      { key: "at", label: "When", render: (a) => html`<ui-text variant="body-sm">${formatDate(a.at)}</ui-text>` },
       {
         key: "kind",
         label: "Who",
         render: (a) =>
           html`<ui-flex direction="col" gap="0" align="start">
             <ui-badge size="xs" variant="soft" .color=${KIND_COLOR[a.kind]}>${KIND_LABEL[a.kind]}</ui-badge>
-            <ui-text size="xs" color="muted">${a.actor}</ui-text>
+            <ui-text variant="body-sm" color="muted">${a.actor}</ui-text>
           </ui-flex>`,
       },
       {
@@ -370,8 +382,8 @@ export class GsAutomations extends LightElement implements ViewProps {
         label: "What",
         render: (a) =>
           html`<ui-flex direction="col" gap="0">
-            <ui-text size="sm">${a.text}</ui-text>
-            ${a.rule ? html`<ui-text size="xs" color="muted">rule: ${a.rule}</ui-text>` : nothing}
+            <ui-text variant="body-md">${a.text}</ui-text>
+            ${a.rule ? html`<ui-text variant="body-sm" color="muted">rule: ${a.rule}</ui-text>` : nothing}
           </ui-flex>`,
       },
       {
@@ -379,15 +391,17 @@ export class GsAutomations extends LightElement implements ViewProps {
         label: "Case",
         render: (a) =>
           a.caseHref
-            ? html`<ui-link color="primary" .href=${a.caseHref}><ui-text size="sm">${a.caseId}</ui-text></ui-link>`
-            : html`<ui-text size="xs" color="muted">${a.entity || "—"}</ui-text>`,
+            ? html`<ui-link color="primary" .href=${a.caseHref}
+                ><ui-text variant="body-md">${a.caseId}</ui-text></ui-link
+              >`
+            : html`<ui-text variant="body-sm" color="muted">${a.entity || "—"}</ui-text>`,
       },
     ];
     return html`<ui-card variant="border" shadow="false">
       <ui-flex slot="heading" gap="2" align="center" wrap
         >Audit log <ui-badge size="sm" variant="soft">latest ${d.audit.length}</ui-badge></ui-flex
       >
-      <ui-text size="xs" color="muted">Every automatic step and human decision, append-only.</ui-text>
+      <ui-text variant="body-sm" color="muted">Every automatic step and human decision, append-only.</ui-text>
       <ui-table size="sm" .columns=${columns} .rows=${d.audit as unknown as Record<string, unknown>[]}></ui-table>
     </ui-card>`;
   }
@@ -404,8 +418,8 @@ export class GsAutomations extends LightElement implements ViewProps {
       <ui-grid fit="lg" gap="6" align="start">${this._exceptions(d)} ${this._review(d)}</ui-grid>
       ${this._registry(d)} ${this._boundaries()} ${this._audit(d)}
       <ui-modal heading="Mark as reviewed?" .open=${!!this.reviewing} @ui-close=${() => (this.reviewing = null)}>
-        <ui-text size="sm">${this.reviewing?.title}</ui-text>
-        <ui-text size="sm" color="muted"
+        <ui-text variant="body-md">${this.reviewing?.title}</ui-text>
+        <ui-text variant="body-md" color="muted"
           >Confirm you checked the flagged fields at the source. Your name goes on the audit log; the AI's values are
           never applied without this.</ui-text
         >

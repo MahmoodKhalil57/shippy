@@ -16,7 +16,7 @@ import { rcva, responsiveBoolean, type Breakpoint, type Responsive } from "../..
  */
 /** The glass bubble, shared with the menu's icon-only tooltips. */
 export const TOOLTIP_GLASS =
-  "[&::before]:liquid-glass-clear [&::before]:text-base-content [&>.tooltip-content]:liquid-glass-clear [&>.tooltip-content]:text-base-content [&::after]:invisible";
+  "[&::before]:liquid-glass-clear [&::before]:text-on-surface [&>.tooltip-content]:liquid-glass-clear [&>.tooltip-content]:text-on-surface [&::after]:invisible";
 
 export const tooltip = rcva("", {
   variants: {

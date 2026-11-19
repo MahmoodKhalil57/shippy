@@ -15,7 +15,7 @@ import { booleanAttribute, rcva } from "../../base/variants.ts";
  * of the scroll area). Custom active color (docs): `active-color="primary"`.
  */
 /** Unselected tabs at 80% ink (daisyUI's faint default falls below WCAG AA). */
-export const tabs = rcva("tabs [&>.tab:not(.tab-active)]:text-base-content/80", {
+export const tabs = rcva("tabs [&>.tab:not(.tab-active)]:text-on-surface-variant", {
   variants: {
     variant: {
       box: "tabs-box",
@@ -72,7 +72,7 @@ export const tabsContent = rcva("tab-content");
 /** Panel look from the docs examples. */
 export const tabsPanel = rcva("", {
   variants: {
-    surface: { true: "bg-base-100 border-base-300" },
+    surface: { true: "bg-surface border-outline-variant" },
     padding: { md: "p-6", lg: "p-10", none: "" },
     /** Stays in view inside a horizontally scrolling tabs area. */
     scroll: {

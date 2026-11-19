@@ -36,12 +36,12 @@ export const TONE: Record<Tone, StatusColor> = {
 export const flagRow = (f: Flag) =>
   html`<ui-flex gap="2" align="baseline">
     <ui-status size="xs" .color=${TONE[f.tone]} .label=${f.tone}></ui-status>
-    <ui-text size="xs" .color=${f.tone === "error" ? "error" : undefined}>${f.text}</ui-text>
+    <ui-text variant="body-sm" .color=${f.tone === "error" ? "error" : undefined}>${f.text}</ui-text>
   </ui-flex>`;
 
 export const flagList = (flags: Flag[], empty = "No issues") =>
   html`<ui-flex direction="col" gap="1">
-    ${flags.length ? flags.map(flagRow) : html`<ui-text size="xs" color="success">${empty}</ui-text>`}
+    ${flags.length ? flags.map(flagRow) : html`<ui-text variant="body-sm" color="success">${empty}</ui-text>`}
   </ui-flex>`;
 
 /** The card Sales sees instead of costs and margins. */

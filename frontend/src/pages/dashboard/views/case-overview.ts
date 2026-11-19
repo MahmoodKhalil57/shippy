@@ -147,8 +147,8 @@ export class GsCaseOverview extends LightElement implements ViewProps {
       <ui-steps scrollable color="primary" .current=${d.current} .items=${items}></ui-steps>
       <ui-flex gap="2" align="center" wrap>
         <ui-badge size="sm" variant="outline">Phase ${step.phase}</ui-badge>
-        <ui-text size="sm" weight="semibold">${step.label}: ${d.stage}</ui-text>
-        <ui-text size="sm" color="muted">${step.detail}</ui-text>
+        <ui-text variant="title-sm">${step.label}: ${d.stage}</ui-text>
+        <ui-text variant="body-md" color="muted">${step.detail}</ui-text>
       </ui-flex>
       ${
         d.halted
@@ -169,8 +169,8 @@ export class GsCaseOverview extends LightElement implements ViewProps {
   ) {
     return html`<ui-flex direction="col" gap="1">
       <ui-flex justify="between" gap="2">
-        <ui-text size="sm">${label}</ui-text>
-        <ui-text size="sm" weight="semibold">${value} / ${total}</ui-text>
+        <ui-text variant="body-md">${label}</ui-text>
+        <ui-text variant="title-sm">${value} / ${total}</ui-text>
       </ui-flex>
       <ui-progress
         .color=${color}
@@ -187,15 +187,15 @@ export class GsCaseOverview extends LightElement implements ViewProps {
     const f = d.fulfilment;
     const pct = l.total ? Math.round((l.ready / l.total) * 100) : 0;
     const columns: TableColumn<LineRow & Record<string, unknown>>[] = [
-      { key: "lineNo", label: "#", render: (r) => html`<ui-text size="sm" weight="semibold">${r.lineNo}</ui-text>` },
-      { key: "description", label: "Line", render: (r) => html`<ui-text size="sm">${r.description}</ui-text>` },
+      { key: "lineNo", label: "#", render: (r) => html`<ui-text variant="title-sm">${r.lineNo}</ui-text>` },
+      { key: "description", label: "Line", render: (r) => html`<ui-text variant="body-md">${r.description}</ui-text>` },
       {
         key: "status",
         label: "Status",
         render: (r) =>
           html`<ui-flex gap="2" align="center">
             <ui-status size="sm" .color=${BUCKET_COLOR[r.bucket]} .label=${BUCKET_LABEL[r.bucket]}></ui-status>
-            <ui-text size="sm">${r.status}</ui-text>
+            <ui-text variant="body-md">${r.status}</ui-text>
           </ui-flex>`,
       },
       {
@@ -203,7 +203,7 @@ export class GsCaseOverview extends LightElement implements ViewProps {
         label: "AI read",
         render: (r) =>
           r.confidence === undefined
-            ? html`<ui-text size="sm" color="muted">—</ui-text>`
+            ? html`<ui-text variant="body-md" color="muted">—</ui-text>`
             : html`<ui-badge size="sm" variant="soft" .color=${r.confidence < 0.85 ? "warning" : "neutral"}
                 >${Math.round(r.confidence * 100)}%</ui-badge
               >`,
@@ -216,7 +216,7 @@ export class GsCaseOverview extends LightElement implements ViewProps {
           >${pct}% ready</ui-badge
         >
       </ui-flex>
-      <ui-text size="sm" color="muted"
+      <ui-text variant="body-md" color="muted"
         >Each line moves on its own. A case with some lines ready is ${pct}% — never “done” until every line
         is.</ui-text
       >
@@ -233,7 +233,7 @@ export class GsCaseOverview extends LightElement implements ViewProps {
                 ${this._bar("Delivered", f.delivered, f.total, "info")}
                 ${this._bar("Invoiced", f.invoiced, f.total, "info")}
               </ui-grid>
-              ${f.notes.map((n) => html`<ui-text size="xs" color="warning">⚑ ${n}</ui-text>`)}`
+              ${f.notes.map((n) => html`<ui-text variant="body-sm" color="warning">⚑ ${n}</ui-text>`)}`
           : nothing
       }
       ${
@@ -250,22 +250,22 @@ export class GsCaseOverview extends LightElement implements ViewProps {
 
   private _next(d: CaseOverview) {
     return html`<ui-card variant="border" shadow="false" heading="Next action">
-      <ui-text weight="semibold">${d.next || "—"}</ui-text>
+      <ui-text emphasized>${d.next || "—"}</ui-text>
       ${
         d.blocker
           ? html`<ui-alert color="warning" variant="soft"
               ><span><strong>Blocker:</strong> ${d.blocker}</span></ui-alert
             >`
-          : html`<ui-text size="sm" color="muted">No blocker.</ui-text>`
+          : html`<ui-text variant="body-md" color="muted">No blocker.</ui-text>`
       }
       <ui-flex direction="col" gap="1">
-        <ui-text size="sm"><strong>Quote due</strong> ${d.deadlineText}</ui-text>
-        <ui-text size="sm"
+        <ui-text variant="body-md"><strong>Quote due</strong> ${d.deadlineText}</ui-text>
+        <ui-text variant="body-md"
           ><strong>Vessel</strong>
           ${d.vessel}${d.port ? ` · ${d.port}` : ""}${d.eta ? ` · ETA ${formatDate(d.eta)}` : ""}</ui-text
         >
-        ${d.customerRef ? html`<ui-text size="sm"><strong>Customer ref</strong> ${d.customerRef}</ui-text>` : nothing}
-        ${d.value !== undefined ? html`<ui-text size="sm"><strong>Value</strong> USD ${d.value.toLocaleString("en-US")}</ui-text>` : nothing}
+        ${d.customerRef ? html`<ui-text variant="body-md"><strong>Customer ref</strong> ${d.customerRef}</ui-text>` : nothing}
+        ${d.value !== undefined ? html`<ui-text variant="body-md"><strong>Value</strong> USD ${d.value.toLocaleString("en-US")}</ui-text>` : nothing}
       </ui-flex>
     </ui-card>`;
   }
@@ -275,11 +275,11 @@ export class GsCaseOverview extends LightElement implements ViewProps {
       ? html`<ui-flex gap="3" align="center">
           <ui-avatar size="xs" .initials=${p.initials || p.name.slice(0, 2)}></ui-avatar>
           <ui-flex direction="col" gap="0">
-            <ui-text size="sm" weight="semibold">${p.name}</ui-text>
-            <ui-text size="xs" color="muted">${role}</ui-text>
+            <ui-text variant="title-sm">${p.name}</ui-text>
+            <ui-text variant="body-sm" color="muted">${role}</ui-text>
           </ui-flex>
         </ui-flex>`
-      : html`<ui-text size="sm" color="muted">No ${role.toLowerCase()} set</ui-text>`;
+      : html`<ui-text variant="body-md" color="muted">No ${role.toLowerCase()} set</ui-text>`;
   }
 
   private _owner(d: CaseOverview) {
@@ -298,7 +298,7 @@ export class GsCaseOverview extends LightElement implements ViewProps {
       ${
         d.handoverNote
           ? html`<ui-collapse heading="Last handover note" icon="arrow">
-              <ui-text size="sm">${d.handoverNote}</ui-text>
+              <ui-text variant="body-md">${d.handoverNote}</ui-text>
             </ui-collapse>`
           : nothing
       }
@@ -308,14 +308,14 @@ export class GsCaseOverview extends LightElement implements ViewProps {
   private _contactRule(d: CaseOverview) {
     const c = d.customer;
     return html`<ui-card variant="border" shadow="false" heading="Customer contact rule">
-      <ui-text size="sm" weight="semibold">${c.name}</ui-text>
+      <ui-text variant="title-sm">${c.name}</ui-text>
       <ui-badge
         size="md"
         variant="soft"
         .color=${c.strict ? "error" : c.contactRule === "one-follow-up" ? "warning" : "success"}
         >${c.contactRuleLabel}</ui-badge
       >
-      <ui-text size="xs" color="muted"
+      <ui-text variant="body-sm" color="muted"
         >${
           c.strict
             ? "Follow-ups for this customer are internal reminders only — the system refuses customer-facing chasers."
@@ -338,9 +338,9 @@ export class GsCaseOverview extends LightElement implements ViewProps {
               (t) =>
                 html`<ui-flex direction="col" gap="0">
                   <ui-link variant="hover" .href=${`/collections/tasks/${t.id}`}
-                    ><ui-text size="sm" weight="medium">${t.title}</ui-text></ui-link
+                    ><ui-text variant="label-lg">${t.title}</ui-text></ui-link
                   >
-                  <ui-text size="xs" color="muted"
+                  <ui-text variant="body-sm" color="muted"
                     >${[
                       t.channel,
                       t.owner,
@@ -353,7 +353,7 @@ export class GsCaseOverview extends LightElement implements ViewProps {
                   >
                 </ui-flex>`,
             )
-          : html`<ui-text size="sm" color="muted">Nothing open.</ui-text>`
+          : html`<ui-text variant="body-md" color="muted">Nothing open.</ui-text>`
       }
     </ui-card>`;
   }
@@ -364,7 +364,7 @@ export class GsCaseOverview extends LightElement implements ViewProps {
       {
         key: "lineNo",
         label: "Line",
-        render: (q) => html`<ui-text size="sm" weight="semibold">${q.lineNo ?? "All"}</ui-text>`,
+        render: (q) => html`<ui-text variant="title-sm">${q.lineNo ?? "All"}</ui-text>`,
       },
       {
         key: "to",
@@ -372,7 +372,7 @@ export class GsCaseOverview extends LightElement implements ViewProps {
         render: (q) =>
           html`<ui-flex direction="col" gap="0">
             <ui-badge size="sm" variant="outline">${q.to}</ui-badge>
-            <ui-text size="xs" color="muted">${q.via}</ui-text>
+            <ui-text variant="body-sm" color="muted">${q.via}</ui-text>
           </ui-flex>`,
       },
       {
@@ -380,8 +380,10 @@ export class GsCaseOverview extends LightElement implements ViewProps {
         label: "Question",
         render: (q) =>
           html`<ui-flex direction="col" gap="0">
-            <ui-text size="sm">${q.question}</ui-text>
-            <ui-text size="xs" color="muted">${q.askedBy}${q.askedAt ? ` · ${formatDate(q.askedAt)}` : ""}</ui-text>
+            <ui-text variant="body-md">${q.question}</ui-text>
+            <ui-text variant="body-sm" color="muted"
+              >${q.askedBy}${q.askedAt ? ` · ${formatDate(q.askedAt)}` : ""}</ui-text
+            >
           </ui-flex>`,
       },
       {
@@ -391,8 +393,8 @@ export class GsCaseOverview extends LightElement implements ViewProps {
           q.open
             ? html`<ui-badge size="sm" variant="soft" color="warning">Waiting</ui-badge>`
             : html`<ui-flex direction="col" gap="0">
-                <ui-text size="sm">${q.answer}</ui-text>
-                ${q.answeredAt ? html`<ui-text size="xs" color="muted">${formatDate(q.answeredAt)}</ui-text>` : nothing}
+                <ui-text variant="body-md">${q.answer}</ui-text>
+                ${q.answeredAt ? html`<ui-text variant="body-sm" color="muted">${formatDate(q.answeredAt)}</ui-text>` : nothing}
               </ui-flex>`,
       },
     ];
@@ -401,7 +403,7 @@ export class GsCaseOverview extends LightElement implements ViewProps {
         Clarifications log
         <ui-badge size="sm" variant="soft" .color=${open ? "warning" : "success"}>${open} open</ui-badge>
       </ui-flex>
-      <ui-text size="xs" color="muted"
+      <ui-text variant="body-sm" color="muted"
         >Questions and answers per line, to the customer, a supplier or internal. Clear lines keep moving while one
         waits.</ui-text
       >
@@ -412,7 +414,7 @@ export class GsCaseOverview extends LightElement implements ViewProps {
               .columns=${columns}
               .rows=${d.clarifications as unknown as Record<string, unknown>[]}
             ></ui-table>`
-          : html`<ui-text size="sm" color="muted">No clarifications on this case.</ui-text>`
+          : html`<ui-text variant="body-md" color="muted">No clarifications on this case.</ui-text>`
       }
     </ui-card>`;
   }
@@ -423,14 +425,14 @@ export class GsCaseOverview extends LightElement implements ViewProps {
       const k = KIND[t.kind];
       return {
         icon: html`<ui-icon .name=${k.icon} .color=${k.color} size="sm" .label=${k.label}></ui-icon>`,
-        start: html`<ui-text size="xs" color="muted">${formatDate(t.at)}</ui-text>`,
+        start: html`<ui-text variant="body-sm" color="muted">${formatDate(t.at)}</ui-text>`,
         end: html`<ui-flex direction="col" gap="1" padding="1">
           <ui-flex gap="2" align="center" wrap>
             <ui-badge size="xs" variant="soft" .color=${k.color}>${k.label}</ui-badge>
-            <ui-text size="xs" color="muted">${t.actor}</ui-text>
+            <ui-text variant="body-sm" color="muted">${t.actor}</ui-text>
             ${t.rule ? html`<ui-badge size="xs" variant="outline">rule: ${t.rule}</ui-badge>` : nothing}
           </ui-flex>
-          <ui-text size="sm">${t.text}</ui-text>
+          <ui-text variant="body-md">${t.text}</ui-text>
         </ui-flex>`,
         done: true,
       };
@@ -452,7 +454,7 @@ export class GsCaseOverview extends LightElement implements ViewProps {
           ${tab("human", `Human ${counts("human")}`)} ${tab("alert", `Alerts ${counts("alert")}`)}
         </ui-flex>
       </ui-flex>
-      <ui-text size="xs" color="muted"
+      <ui-text variant="body-sm" color="muted"
         >Every automatic step names the rule that fired; every human step names the person. Nothing is edited after the
         fact.</ui-text
       >
@@ -464,7 +466,7 @@ export class GsCaseOverview extends LightElement implements ViewProps {
       ${
         items.length
           ? html`<ui-timeline direction="vertical" compact snap-icon .items=${items}></ui-timeline>`
-          : html`<ui-text size="sm" color="muted">Nothing logged yet.</ui-text>`
+          : html`<ui-text variant="body-md" color="muted">Nothing logged yet.</ui-text>`
       }
     </ui-card>`;
   }
@@ -480,7 +482,7 @@ export class GsCaseOverview extends LightElement implements ViewProps {
       @ui-close=${() => (this.reassignOpen = false)}
     >
       <ui-flex direction="col" gap="4">
-        <ui-text size="sm" color="muted"
+        <ui-text variant="body-md" color="muted"
           >The new owner gets the case, its open tasks and a notification. The handover note is logged on the
           timeline.</ui-text
         >
@@ -505,14 +507,14 @@ export class GsCaseOverview extends LightElement implements ViewProps {
           >
             <ui-icon name="sparkles" size="sm"></ui-icon> Draft handover with AI
           </ui-button>
-          ${this.drafting ? html`<ui-loading size="sm" color="primary"></ui-loading><ui-text size="sm" color="muted">Reading the case, clarifications and tasks…</ui-text>` : nothing}
+          ${this.drafting ? html`<ui-loading size="sm" color="primary"></ui-loading><ui-text variant="body-md" color="muted">Reading the case, clarifications and tasks…</ui-text>` : nothing}
           ${
             this.draftMeta
               ? html`<ui-badge size="sm" variant="soft" color="accent">AI draft</ui-badge>
                   <ui-badge size="sm" variant="soft"
                     >${Math.round(this.draftMeta.confidence * 100)}% confidence</ui-badge
                   >
-                  <ui-text size="xs" color="muted">from ${this.draftMeta.sources.join(", ")}</ui-text>`
+                  <ui-text variant="body-sm" color="muted">from ${this.draftMeta.sources.join(", ")}</ui-text>`
               : nothing
           }
         </ui-flex>

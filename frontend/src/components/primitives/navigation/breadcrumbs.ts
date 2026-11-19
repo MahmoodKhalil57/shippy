@@ -20,10 +20,10 @@ export const breadcrumbs = rcva(
   {
     variants: {
       size: {
-        xs: "text-xs",
-        sm: "text-sm",
-        md: "text-base",
-        lg: "text-lg",
+        xs: "text-body-sm",
+        sm: "text-body-md",
+        md: "text-body-lg",
+        lg: "text-title-md",
       },
       /** Max width (the crumbs wrap when they don't fit). */
       width: {
