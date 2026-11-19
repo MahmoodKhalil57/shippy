@@ -79,9 +79,10 @@ export const menu = rcva(
       /**
        * Navigation rail: exactly the open list's items with the labels left out, so each icon and
        * highlight sits where it does in the open list. Items are the icon pill (`w-11`), the
-       * width the open list's highlight folds to.
+       * width the open list's highlight folds to. The active item has the open list's highlight
+       * colour, so the selection looks the same whether the column is open or closed.
        */
-      rail: { true: "[&_li>*]:w-11" },
+      rail: { true: "[&_li>*]:w-11 [&_.menu-active]:bg-primary/20" },
       /**
        * Panes (like VS Code's side bar): the menu fills its container's height, every top-level
        * group's title stays on screen, and each open group scrolls inside its own share of the

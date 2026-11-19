@@ -110,8 +110,60 @@ function stringify(nodes: Node[]): string {
     .join("");
 }
 
+/** The property names a rule body sets (`a:1;b:url(x;y)` → a, b), ignoring nesting in brackets. */
+function propertiesOf(body: string): string[] {
+  const out: string[] = [];
+  let depth = 0;
+  let start = 0;
+  for (let i = 0; i <= body.length; i++) {
+    const c = body[i];
+    if (c === "(" || c === "[") depth++;
+    else if (c === ")" || c === "]") depth--;
+    else if ((c === ";" || i === body.length) && depth === 0) {
+      const decl = body.slice(start, i);
+      const colon = decl.indexOf(":");
+      if (colon > 0) out.push(decl.slice(0, colon).trim());
+      start = i + 1;
+    }
+  }
+  return out;
+}
+
+/**
+ * A fallback that lands after its own enhancement overrides it. Within one block, once an
+ * `@supports` enhancement has set properties for a selector, a later plain rule for the same
+ * selector that sets only those properties is that fallback, out of order: drop it. (The
+ * minifier can merge one sheet's enhancement into a combined selector, so keeping last copies
+ * alone doesn't keep every pair in order.)
+ */
+function dropLateFallbacks(nodes: Node[]): Node[] {
+  const enhanced = new Map<string, Set<string>>();
+  const out: Node[] = [];
+  for (const n of nodes) {
+    if (n.children) {
+      if (/^@supports\b/.test(n.prelude.trim()))
+        for (const c of n.children)
+          if (c.body !== undefined)
+            for (const sel of c.prelude.split(",")) {
+              const set = enhanced.get(sel.trim()) ?? new Set<string>();
+              for (const p of propertiesOf(c.body)) set.add(p);
+              enhanced.set(sel.trim(), set);
+            }
+      out.push({ ...n, children: dropLateFallbacks(n.children) });
+      continue;
+    }
+    if (n.body !== undefined) {
+      const set = enhanced.get(n.prelude.trim());
+      const props = propertiesOf(n.body);
+      if (set && props.length && props.every((p) => set.has(p))) continue;
+    }
+    out.push(n);
+  }
+  return out;
+}
+
 export function dedupeCssRules(css: string): string {
-  return stringify(dedupe(parse(css), "", new Set()));
+  return stringify(dropLateFallbacks(dedupe(parse(css), "", new Set())));
 }
 
 export default function dedupeCss() {
@@ -123,6 +175,8 @@ export default function dedupeCss() {
       _: unknown,
       bundle: Record<string, { type: string; fileName: string; source?: string | Uint8Array }>,
     ) {
+      // Only a file's content changes, never its name: Vite names it from its inputs, and this
+      // pass is deterministic, so a name maps to one output for as long as this file is unchanged.
       for (const asset of Object.values(bundle)) {
         if (asset.type !== "asset" || !asset.fileName.endsWith(".css")) continue;
         const src = typeof asset.source === "string" ? asset.source : new TextDecoder().decode(asset.source);

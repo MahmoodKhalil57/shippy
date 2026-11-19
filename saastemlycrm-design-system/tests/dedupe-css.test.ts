@@ -18,4 +18,18 @@ describe("dedupe-css (build)", () => {
     // The enhancement must come after the last plain fallback.
     expect(out.lastIndexOf("color-mix(in oklab")).toBeGreaterThan(out.lastIndexOf(fallback));
   });
+
+  it("drops a fallback that lands after its own enhancement (the table rows' state layer)", () => {
+    // One sheet's pair survives as [enhancement]; a later sheet's fallback, not a duplicate
+    // because the first copy was merged, would paint every row solid.
+    const sel = ".v tbody tr";
+    const enhance = `@supports (color:color-mix(in lab, red, red)){${sel}{background-image:linear-gradient(color-mix(in oklab, currentColor var(--s), transparent))}}`;
+    const fallback = `${sel}{background-image:linear-gradient(currentColor,currentColor)}`;
+    const out = dedupeCssRules(`@layer v{${enhance}${fallback}.other{color:red}}`);
+    expect(out).not.toContain(fallback);
+    expect(out).toContain("color-mix(in oklab, currentColor");
+    expect(out).toContain(".other{color:red}");
+    // A fallback before its enhancement stays (browsers without color-mix).
+    expect(dedupeCssRules(`@layer v{${fallback}${enhance}}`)).toContain(fallback);
+  });
 });
