@@ -18,7 +18,7 @@ export const progress = rcva("progress progress-primary", {
   variants: {
     /** Bar width; full by default. */
     width: {
-      xs: "w-32",
+      xs: "w-32 max-w-full",
       sm: "w-56 max-w-full",
       md: "w-72 max-w-full",
       lg: "w-96 max-w-full",

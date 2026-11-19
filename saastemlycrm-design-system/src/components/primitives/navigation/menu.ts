@@ -4,7 +4,7 @@ import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
-import { TOOLTIP_GLASS } from "../feedback/tooltip.ts";
+import { stack, row, text } from "../layout/algebra.ts";
 
 /**
  * Menu: Displays a list of links vertically or horizontally.
@@ -32,8 +32,11 @@ export const menu = rcva(
         vertical: "menu-vertical",
         horizontal: "menu-horizontal",
       },
-      /** One column that never wraps: rows keep the menu's width, so long labels can truncate. */
-      nowrap: { true: "flex-nowrap [&_li>*]:min-w-0" },
+      /**
+       * Rows keep the menu's width, so long labels truncate: each item is capped at the menu
+       * (`max-w-full`), so no column of items is laid out wider than it.
+       */
+      nowrap: { true: "[&>li]:max-w-full [&_li>*]:min-w-0" },
       /** Show one level at a time; the open `<summary>` becomes a back button. */
       paged: { true: "menu-paged" },
       /** Background used in the docs examples. */
@@ -50,7 +53,8 @@ export const menu = rcva(
         /** Fill the remaining space (docs drawer icon-only sidebar). */
         grow: "w-full grow",
         auto: "w-auto",
-        max: "min-w-max",
+        /** As wide as its items, capped at its parent. */
+        max: "w-max max-w-full",
       },
       /** Icon size (docs: `h-5 w-5`, `h-4 w-4` in small menus). */
       iconSize: {
@@ -59,10 +63,11 @@ export const menu = rcva(
       },
       /**
        * App navigation look, shared by the expanded list (`layout="nav"`) and the rail
-       * (`layout="rail"`): same text size and weight. One column that never wraps, so rows keep the menu's width and long labels truncate.
+       * (`layout="rail"`): same text size and weight. Rows keep the menu's width (each item is capped
+       * at it), so long labels truncate.
        */
       nav: {
-        true: "flex-nowrap px-0 text-label-lg [&_.menu-title]:text-on-surface-variant [interpolate-size:allow-keywords] [&_details::details-content]:overflow-hidden [&_details::details-content]:[block-size:0] [&_details::details-content]:[transition:block-size_var(--duration-spatial)_var(--ease-spatial),content-visibility_var(--duration-spatial)_allow-discrete] [&_details[open]::details-content]:[block-size:auto] motion-reduce:[&_details::details-content]:transition-none",
+        true: "[&>li]:max-w-full px-0 text-label-lg [&_.menu-title]:text-on-surface-variant [interpolate-size:allow-keywords] [&_details::details-content]:overflow-hidden [&_details::details-content]:[block-size:0] [&_details::details-content]:[transition:block-size_var(--duration-spatial)_var(--ease-spatial),content-visibility_var(--duration-spatial)_allow-discrete] [&_details[open]::details-content]:[block-size:auto] motion-reduce:[&_details::details-content]:transition-none",
       },
       /**
        * Open navigation list that can fold into the rail's look with motion: set
@@ -88,10 +93,11 @@ export const menu = rcva(
        * group's title stays on screen, and each open group scrolls inside its own share of the
        * height: open groups share it equally, and a group needing less gives the rest away.
        * Opening or closing one, its share grows or shrinks on the same spring as its content
-       * (only `flex-grow` changes, so it animates), and the other panes move with it.
+       * (only `flex-grow` changes, so it animates), and the other panes move with it. A closed
+       * group is 2rem: its basis, and its floor (`min-h-8`), so it never shrinks below it.
        */
       panes: {
-        true: "min-h-0 flex-1 [&>li]:min-h-8 [&>li]:flex-[0_0_2rem] [&>li]:max-h-max [&>li]:[transition:flex-grow_var(--duration-spatial)_var(--ease-spatial)] motion-reduce:[&>li]:transition-none [&>li:has(>details[open])]:flex-[1_1_2rem] [&>li>details]:h-full [&>li>details::details-content]:[block-size:calc(100%_-_2rem)] [&>li>details[open]::details-content]:[block-size:calc(100%_-_2rem)] [&>li>details>ul]:max-h-full [&>li>details>ul]:overflow-y-auto [&>li>details>ul]:overscroll-contain",
+        true: "min-h-0 flex-1 [&>li]:min-h-8 [&>li]:flex-[0_1_2rem] [&>li]:max-h-max [&>li]:[transition:flex-grow_var(--duration-spatial)_var(--ease-spatial)] motion-reduce:[&>li]:transition-none [&>li:has(>details[open])]:flex-[1_1_2rem] [&>li>details]:h-full [&>li>details::details-content]:[block-size:calc(100%_-_2rem)] [&>li>details[open]::details-content]:[block-size:calc(100%_-_2rem)] [&>li>details>ul]:max-h-full [&>li>details>ul]:overflow-y-auto [&>li>details>ul]:overscroll-contain",
       },
     },
     defaultVariants: { surface: true, rounded: true, iconSize: "md" },
@@ -141,13 +147,15 @@ export const menuLink = rcva("rounded-inner", {
      * matters (notifications, tours…). Spaced from its neighbours; still a link or button.
      */
     card: {
-      true: "my-1 flex! flex-col items-stretch! gap-0.5 rounded-box border border-outline-variant bg-surface/50 px-3 py-2 whitespace-normal hover:bg-surface",
+      true: "my-1 flex flex-col inline-flex! max-w-full items-stretch! gap-0.5 rounded-box border border-outline-variant bg-surface/50 w-full px-[min(12px,max(0px,calc((100%_-_7rem)/2)))] py-2 whitespace-normal hover:bg-surface",
     },
-    /** Icon-only items show a tooltip with the label. */
+    /** Icon-only items show a tooltip with the label (the tooltip's glass, `TOOLTIP_GLASS`, written out). */
     tooltip: {
-      top: `tooltip ${TOOLTIP_GLASS}`,
-      right: `tooltip tooltip-right ${TOOLTIP_GLASS}`,
-      bottom: `tooltip tooltip-bottom ${TOOLTIP_GLASS}`,
+      top: "tooltip [&::before]:liquid-glass-clear [&::before]:text-on-surface [&>.tooltip-content]:liquid-glass-clear [&>.tooltip-content]:text-on-surface [&::after]:invisible",
+      right:
+        "tooltip tooltip-right [&::before]:liquid-glass-clear [&::before]:text-on-surface [&>.tooltip-content]:liquid-glass-clear [&>.tooltip-content]:text-on-surface [&::after]:invisible",
+      bottom:
+        "tooltip tooltip-bottom [&::before]:liquid-glass-clear [&::before]:text-on-surface [&>.tooltip-content]:liquid-glass-clear [&>.tooltip-content]:text-on-surface [&::after]:invisible",
     },
   },
 });
@@ -159,22 +167,22 @@ export const menuLink = rcva("rounded-inner", {
  * (`m-0 opacity-100`: daisyUI draws an empty menu `<li>` as a faint divider.)
  */
 export const menuIndicator = rcva(
-  "pointer-events-none absolute -z-10 m-0 rounded-field opacity-100 bg-primary/20 [position-anchor:--menu-target] [position-visibility:anchors-valid] top-[anchor(top)] left-[anchor(left)] h-[anchor-size(height)] w-[anchor-size(width)] [transition:top_var(--duration-spatial)_var(--ease-spatial),left_var(--duration-spatial)_var(--ease-spatial),width_var(--duration-spatial)_var(--ease-spatial),height_var(--duration-spatial)_var(--ease-spatial)] [@container_style(--menu-expanded:0)]:[position-anchor:--menu-active-root] [@container_style(--menu-collapse:1)]:[position-anchor:--menu-active-root] [@container_style(--menu-collapse:1)]:w-11 not-supports-[anchor-name:--a]:hidden motion-reduce:transition-none",
+  "pointer-events-none absolute -z-10 m-0 rounded-field opacity-100 bg-primary/20 [position-anchor:--menu-target] [position-visibility:anchors-valid] top-[anchor(top)] start-[anchor(start)] h-[anchor-size(height)] w-[anchor-size(width)] [transition:top_var(--duration-spatial)_var(--ease-spatial),inset-inline-start_var(--duration-spatial)_var(--ease-spatial),width_var(--duration-spatial)_var(--ease-spatial),height_var(--duration-spatial)_var(--ease-spatial)] [@container_style(--menu-expanded:0)]:[position-anchor:--menu-active-root] [@container_style(--menu-collapse:1)]:[position-anchor:--menu-active-root] [@container_style(--menu-collapse:1)]:w-11 not-supports-[anchor-name:--a]:hidden motion-reduce:transition-none",
 );
 
 /** Navigation labels: one line (long ones end in an ellipsis); slide and fade away as the list folds (`--menu-collapse`). */
 export const menuNavLabel = rcva(
-  "inline-block truncate [opacity:calc(1_-_var(--menu-collapse,0))] [translate:calc(var(--menu-collapse,0)_*_-1rem)_0] [transition:opacity_var(--duration-effects-fast)_var(--ease-effects-fast),translate_var(--duration-spatial-fast)_var(--ease-spatial-fast)] motion-reduce:transition-none",
+  `inline-block ${text.line} [opacity:calc(1_-_var(--menu-collapse,0))] [translate:calc(var(--menu-collapse,0)_*_-1rem)_0] [transition:opacity_var(--duration-effects-fast)_var(--ease-effects-fast),translate_var(--duration-spatial-fast)_var(--ease-spatial-fast)] motion-reduce:transition-none`,
 );
 
 /** A card item's parts: title row (title + badge), and the description under it. */
-export const menuCardHead = rcva("flex items-start gap-2");
+export const menuCardHead = rcva(`${row} items-start gap-2`);
 export const menuCardTitle = rcva("min-w-0 flex-1 text-label-lg leading-snug [overflow-wrap:break-word]");
 export const menuCardDescription = rcva(
-  "text-body-sm leading-snug text-on-surface-variant [overflow-wrap:break-word] [.menu-active_&]:text-on-surface",
+  `${text.label} text-body-sm leading-snug text-on-surface-variant [.menu-active_&]:text-on-surface`,
 );
 export const menuCardBody = rcva(
-  "flex flex-col gap-0.5 [opacity:calc(1_-_var(--menu-collapse,0))] [transition:opacity_var(--duration-effects-fast)_var(--ease-effects-fast)] motion-reduce:transition-none",
+  `${stack} gap-0.5 [opacity:calc(1_-_var(--menu-collapse,0))] [transition:opacity_var(--duration-effects-fast)_var(--ease-effects-fast)] motion-reduce:transition-none`,
 );
 
 /** Trailing badge (docs "Menu with icons and badge"). */
@@ -190,8 +198,8 @@ export const menuBadge = rcva("badge badge-xs", {
       warning: "badge-warning",
       error: "badge-error",
     },
-    /** In a card: never squeezed, on the title's first line. */
-    card: { true: "mt-0.5 shrink-0 whitespace-nowrap" },
+    /** In a card: on the title's first line, one line (the head wraps before it squeezes it). */
+    card: { true: "mt-0.5 min-w-0 truncate" },
   },
 });
 

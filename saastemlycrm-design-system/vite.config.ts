@@ -12,13 +12,12 @@ export default defineConfig({
     ignorePatterns: ["dist/**"],
     jsPlugins: [
       { name: "vite-plus", specifier: "vite-plus/oxlint-plugin" },
-      // Its own rules (./lint): here, the fluid-layout rules for the components' class strings.
+      // Its own rules (./lint).
       { name: "saastemly", specifier: "./lint/index.js" },
     ],
     rules: { "vite-plus/prefer-vite-plus-imports": "error" },
     options: { typeAware: true, typeCheck: true },
     overrides: [
-      { files: ["src/components/**/*.ts"], rules: { "saastemly/fluid-classes": "error" } },
       {
         // Lit calls template event listeners (`@click=${this._onClick}`) with
         // `this` bound to the host element, so passing methods unbound is the

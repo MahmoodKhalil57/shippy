@@ -2,6 +2,7 @@ import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
+import { inset, row, rowFill, stack, text } from "../layout/algebra.ts";
 import { button } from "../actions/button.ts";
 import { iconSvg } from "../media/icon.ts";
 
@@ -11,7 +12,7 @@ import { iconSvg } from "../media/icon.ts";
  *
  * Purpose: AI · Kind: primitive (Shippy; after the AI Elements "Confirmation")
  */
-export const confirmation = rcva("flex flex-col gap-2 rounded-box border p-3 text-body-md", {
+export const confirmation = rcva(`${stack} ${inset["3"]} ${text.label} gap-2 rounded-box border py-3 text-body-md`, {
   variants: {
     state: {
       requested: "border-warning/50 bg-warning/10",
@@ -20,16 +21,18 @@ export const confirmation = rcva("flex flex-col gap-2 rounded-box border p-3 tex
     },
   },
 });
-export const confirmationHead = rcva("flex items-start gap-2");
-export const confirmationIcon = rcva("mt-0.5 shrink-0", {
+export const confirmationHead = rcva(`${row} items-start gap-2`);
+export const confirmationIcon = rcva("mt-0.5", {
   variants: {
     state: { requested: "text-warning-ink", approved: "text-success-ink", denied: "text-on-surface-variant" },
   },
 });
+/** The title and description beside the icon: they keep 7rem, or go under it. */
+export const confirmationText = rcva(rowFill);
 export const confirmationTitle = rcva("font-semibold");
-export const confirmationDescription = rcva("text-body-sm text-on-surface-variant");
-export const confirmationDetails = rcva("text-body-sm");
-export const confirmationActions = rcva("flex justify-end gap-2");
+export const confirmationDescription = rcva(`${text.prose} text-body-sm text-on-surface-variant`);
+export const confirmationDetails = rcva(`${text.prose} text-body-sm`);
+export const confirmationActions = rcva(`${row} justify-end gap-2`);
 export const confirmationOutcome = rcva("text-label-md", {
   variants: { state: { requested: "", approved: "text-success-ink", denied: "text-on-surface-variant" } },
 });
@@ -66,7 +69,7 @@ export class UiConfirmation extends LightElement {
         <span class=${confirmationIcon({ state: this.state })}
           >${iconSvg(requested ? "shield" : this.state === "approved" ? "check" : "block", { size: "sm" })}</span
         >
-        <div>
+        <div class=${confirmationText()}>
           <div class=${confirmationTitle()}>${this.label}</div>
           ${this.description ? html`<div class=${confirmationDescription()}>${this.description}</div>` : nothing}
         </div>

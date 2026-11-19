@@ -28,20 +28,23 @@ export const container = rcva("w-full", {
       full: "max-w-full",
     },
     centered: { true: "mx-auto" },
+    /**
+     * Inline padding that limits itself (layout/algebra.ts `inset`): it never leaves the content
+     * less than min(7rem, the container). `fluid` scales with the main panel: 1rem to 2.5rem.
+     */
     paddingX: {
-      /** Scales with the space it sits in (the app's main panel): 1rem → 2.5rem. */
-      fluid: "px-[clamp(1rem,5cqi,2.5rem)]",
-      "0": "px-0",
-      "1": "px-1",
-      "2": "px-2",
-      "3": "px-3",
-      "4": "px-4",
-      "5": "px-5",
-      "6": "px-6",
-      "8": "px-8",
-      "10": "px-10",
-      "12": "px-12",
-      "16": "px-16",
+      fluid: "w-full px-[min(clamp(1rem,5cqi,2.5rem),max(0px,calc((100%_-_7rem)/2)))]",
+      "0": "w-full px-0",
+      "1": "w-full px-[min(4px,max(0px,calc((100%_-_7rem)/2)))]",
+      "2": "w-full px-[min(8px,max(0px,calc((100%_-_7rem)/2)))]",
+      "3": "w-full px-[min(12px,max(0px,calc((100%_-_7rem)/2)))]",
+      "4": "w-full px-[min(16px,max(0px,calc((100%_-_7rem)/2)))]",
+      "5": "w-full px-[min(20px,max(0px,calc((100%_-_7rem)/2)))]",
+      "6": "w-full px-[min(24px,max(0px,calc((100%_-_7rem)/2)))]",
+      "8": "w-full px-[min(32px,max(0px,calc((100%_-_7rem)/2)))]",
+      "10": "w-full px-[min(40px,max(0px,calc((100%_-_7rem)/2)))]",
+      "12": "w-full px-[min(48px,max(0px,calc((100%_-_7rem)/2)))]",
+      "16": "w-full px-[min(64px,max(0px,calc((100%_-_7rem)/2)))]",
     },
     paddingY: {
       /** Scales with the space it sits in: 1.5rem → 2.5rem. */

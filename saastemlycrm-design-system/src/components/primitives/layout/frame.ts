@@ -57,11 +57,12 @@ export const appShell = rcva(
  * to an icon when that room gets small — a container query, not a screen breakpoint), actions.
  */
 export const appShellHeader = rcva(
-  "@container/header flex h-16 items-center gap-[clamp(0.5rem,1vw,1rem)] px-[max(var(--frame-edge),0.25rem)]",
+  "@container/header w-full flex flex-row flex-wrap max-w-full min-h-16 items-center gap-[clamp(0.5rem,1vw,1rem)] px-[max(var(--frame-edge),0.25rem)]",
 );
-// layout: fixed (the menu button and the brand)
-export const appShellHeaderStart = rcva("flex min-w-0 shrink-0 items-center gap-1");
-export const appShellBrand = rcva("gap-2 rounded-full px-3 text-title-md tracking-tight @max-[23.5rem]/header:px-1.5");
+export const appShellHeaderStart = rcva("flex flex-row flex-wrap max-w-full min-w-0 items-center gap-1");
+export const appShellBrand = rcva(
+  "w-fit gap-2 rounded-full px-3 min-w-0 [overflow-wrap:anywhere] text-title-md tracking-tight @max-[23.5rem]/header:px-1",
+);
 /**
  * The brand's name: on a header too narrow for the name, the search and the actions together (a
  * 320px phone), only the mark shows; the name stays for screen readers (it's the link's name).
@@ -69,9 +70,10 @@ export const appShellBrand = rcva("gap-2 rounded-full px-3 text-title-md trackin
 export const appShellBrandName = rcva("@max-[23.5rem]/header:sr-only");
 /** The brand's mark (`brand-icon`): primary, on a soft primary disc. */
 export const appShellBrandMark = rcva("grid size-8 place-items-center rounded-full bg-primary/15 text-primary");
-export const appShellSearch = rcva("@container flex min-w-0 flex-1 justify-center");
-// layout: fixed (icon buttons)
-export const appShellActions = rcva("flex shrink-0 items-center justify-end gap-1");
+export const appShellSearch = rcva(
+  "@container w-full flex flex-row flex-wrap max-w-full min-w-0 flex-1 justify-center",
+);
+export const appShellActions = rcva("flex flex-row flex-wrap max-w-full items-center justify-end gap-1");
 
 /**
  * Header items kept above an open sheet and its backdrop (they sit in the sheet's empty top
@@ -125,11 +127,10 @@ export const appShellColumn = rcva(
       /** Its rail lives in the other column (compact frame): it takes no room, and shows only as a sheet. */
       merged: { true: "w-0!", false: "" },
     },
-    // layout: fixed (the frame's side columns; the shell folds them away when the room is short)
+    // Open widths (`--frame-nav`, `--frame-aside`): the shell pushes only when frame-fit says they fit.
     compoundVariants: [
-      { side: "start", push: true, class: "w-72" },
-      // layout: fixed (as above)
-      { side: "end", push: true, class: "w-80" },
+      { side: "start", push: true, class: "w-(--frame-nav)" },
+      { side: "end", push: true, class: "w-(--frame-aside)" },
     ],
   },
 );
@@ -184,14 +185,14 @@ export const appShellPanel = rcva(
         sheet: true,
         open: true,
         side: "start",
-        class: "start-0 ms-0 w-[calc(18rem_+_var(--frame-edge))] rounded-e-xl-increased",
+        class: "start-0 ms-0 w-[calc(var(--frame-nav)_+_var(--frame-edge))] rounded-e-xl-increased",
       },
       {
         sheet: true,
         open: true,
         side: "end",
         merged: false,
-        class: "end-0 me-0 w-[calc(20rem_+_var(--frame-edge))] rounded-s-xl-increased",
+        class: "end-0 me-0 w-[calc(var(--frame-aside)_+_var(--frame-edge))] rounded-s-xl-increased",
       },
       /*
        * Merged into the start column (a compact frame): the side panel's rail is on the start
@@ -202,7 +203,7 @@ export const appShellPanel = rcva(
         open: true,
         side: "end",
         merged: true,
-        class: "start-0 ms-0 w-[calc(20rem_+_var(--frame-edge))] rounded-e-xl-increased",
+        class: "start-0 ms-0 w-[calc(var(--frame-aside)_+_var(--frame-edge))] rounded-e-xl-increased",
       },
       /*
        * Closing a sheet: it stays a sheet (fixed, pinned, full height, background, shadow — every
@@ -231,7 +232,7 @@ export const appShellMain = rcva(
    * at the padding edge, so the gap stays while the page scrolls instead of scrolling away), so
    * content never runs into the panel's rim.
    */
-  "@container/main min-h-0 flex-1 overflow-x-clip overflow-y-auto overscroll-contain border-2 border-transparent rounded-(--main-radius) liquid-glass-surface [--main-radius:clamp(var(--radius-lg),3vw,var(--radius-xl-increased))] [--scrollbar-inset:var(--main-radius)]",
+  "@container/main w-full min-h-0 flex-1 overflow-x-clip overflow-y-auto overscroll-contain border-2 border-transparent rounded-(--main-radius) liquid-glass-surface [--main-radius:clamp(var(--radius-lg),3vw,var(--radius-xl-increased))] [--scrollbar-inset:var(--main-radius)]",
   {
     variants: {
       /**
@@ -247,7 +248,7 @@ export const appShellMain = rcva(
 export const appShellPage = rcva("");
 
 /** The main panel with its footer under it; takes the room the columns leave. */
-// layout: fixed (the main panel keeps `--main-min` for its content, plus its 2×2px border)
+// The main panel keeps `--main-min` for its content, plus its 2×2px border (frame-fit proves the room).
 export const appShellCenter = rcva("flex min-w-[calc(var(--main-min)_+_0.25rem)] flex-1 flex-col gap-1");
 
 /**
@@ -258,14 +259,14 @@ export const appShellCenter = rcva("flex min-w-[calc(var(--main-min)_+_0.25rem)]
 // Centred in the band under the main panel: it reaches over the frame's bottom edge
 // (`-mb-(--frame-edge)`), so 4px gap + 4px above and 8px below, in a normal or a compact frame.
 export const appShellPageFooter = rcva(
-  "-mb-(--frame-edge) shrink-0 pt-1 pb-2 text-center text-body-sm leading-4 opacity-65",
+  "-mb-(--frame-edge) shrink-0 min-w-0 [overflow-wrap:anywhere] pt-1 pb-2 text-center text-body-sm leading-4 opacity-65",
 );
 
 /**
  * A column's toggle: centred on its icon axis (where the rail's icons are centred, 2px inside
  * the 44px pill), at the same spot whether the column is open or closed.
  */
-export const appShellToggle = rcva("shrink-0", {
+export const appShellToggle = rcva("shrink-0 group/toggle", {
   variants: {
     column: { start: "ms-0.5", end: "me-0.5 self-end" },
   },

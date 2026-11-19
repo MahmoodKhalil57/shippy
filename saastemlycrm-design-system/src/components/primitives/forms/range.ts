@@ -4,6 +4,7 @@ import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
+import { inset, row, text } from "../layout/algebra.ts";
 
 /**
  * Range slider: Selects a value by sliding a handle.
@@ -98,7 +99,7 @@ export const rangeWrapper = rcva("", {
 });
 
 /** Row under the slider holding tick marks or step labels ("With steps and measure"). */
-export const rangeMeasure = rcva("flex justify-between px-2.5 mt-2 text-body-sm");
+export const rangeMeasure = rcva(`${row} ${inset["2.5"]} ${text.label} justify-between mt-2 text-body-sm`);
 
 export type RangeVariants = VariantProps<typeof range>;
 

@@ -3,6 +3,7 @@ import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva, type Breakpoint } from "../../base/variants.ts";
+import { text } from "../layout/algebra.ts";
 
 /**
  * Tooltip: a short description of what something is or does, on hover and keyboard focus
@@ -39,16 +40,16 @@ export const tooltip = rcva(TOOLTIP_GLASS, {
   defaultVariants: { enabled: true },
 });
 
-export const tooltipContent = rcva("tooltip-content", {
+export const tooltipContent = rcva(`tooltip-content ${text.label}`, {
   variants: {
     variant: {
       plain: "text-body-sm",
-      rich: "flex max-w-80 flex-col items-start gap-1 rounded-md p-3 text-start text-body-md text-on-surface-variant",
+      rich: "flex flex-col max-w-80 items-start gap-1 rounded-md py-3 text-start text-body-md text-on-surface-variant",
     },
   },
   defaultVariants: { variant: "plain" },
 });
-export const tooltipHeading = rcva("text-title-sm text-on-surface");
+export const tooltipHeading = rcva(`${text.label} text-title-sm text-on-surface`);
 
 export type TooltipVariants = VariantProps<typeof tooltip>;
 

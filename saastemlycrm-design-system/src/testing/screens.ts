@@ -200,27 +200,26 @@ export interface ScreenCheckOptions {
   only?: string[];
 }
 
-/**
- * Every screen as every user, checked with `designProblems` and for links that lead nowhere
- * (`links()` builds them; this checks the data they're built from): one line per problem,
- * "<user> · <screen> › <widget>: <what's wrong>". Empty when the screens follow the design.
- */
-export async function screenDesignProblems(options: ScreenCheckOptions): Promise<string[]> {
+/** Every screen drawn as every user: who, which screen, its blocks, and what went wrong drawing it. */
+async function* drawn(options: ScreenCheckOptions) {
   const { config, backend } = options;
   const collection = options.collection ?? "users";
   const ctx: Ctx = { backend, config, api: options.apiRoute ?? "/api" };
   const screens = screensOf(config).filter((s) => !options.only || options.only.includes(s.name));
-  const out = new Set<string>();
-  /** Documents looked up by links, by `<collection>/<id>`: whether they exist. */
-  const known = new Map<string, boolean>();
   for (const email of options.users) {
     const login = await backend.login(email, options.password, collection);
     if (login.status !== 200) {
-      out.add(`${email}: can't sign in (${login.status})`);
+      yield {
+        who: email,
+        screen: undefined,
+        blocks: [] as ViewBlock[],
+        problems: [`${email}: can't sign in (${login.status})`],
+        ctx,
+      };
       continue;
     }
     const me = (await backend.call("GET", `${ctx.api}/${collection}/me`)).body.user;
-    const who = email.split("@")[0];
+    const who = email.split("@")[0]!;
     for (const screen of screens) {
       let doc: WidgetScope["doc"];
       if (screen.docOf) {
@@ -231,15 +230,33 @@ export async function screenDesignProblems(options: ScreenCheckOptions): Promise
       }
       const scope: WidgetScope = { user: me, doc, params: { ...screen.page.params } };
       const { blocks, problems } = await draw(ctx, screen.page, scope, screen.name);
-      const links: string[] = [];
-      for (const href of hrefsIn(blocks)) {
-        const broken = await brokenLink(ctx, href, known);
-        if (broken) links.push(`${screen.name}: link ${href} leads nowhere (${broken})`);
-      }
-      // The same problem for several users is one line, named for the first.
-      for (const p of [...problems, ...links, ...designProblems(blocks, screen.name)])
-        if (![...out].some((x) => x.endsWith(` · ${p}`))) out.add(`${who} · ${p}`);
+      yield { who, screen, blocks, problems, ctx };
     }
+  }
+}
+
+/**
+ * Every screen as every user, checked with `designProblems` and for links that lead nowhere
+ * (`links()` builds them; this checks the data they're built from): one line per problem,
+ * "<user> · <screen> › <widget>: <what's wrong>". Empty when the screens follow the design.
+ */
+export async function screenDesignProblems(options: ScreenCheckOptions): Promise<string[]> {
+  const out = new Set<string>();
+  /** Documents looked up by links, by `<collection>/<id>`: whether they exist. */
+  const known = new Map<string, boolean>();
+  for await (const { who, screen, blocks, problems, ctx } of drawn(options)) {
+    if (!screen) {
+      problems.forEach((p) => out.add(p));
+      continue;
+    }
+    const links: string[] = [];
+    for (const href of hrefsIn(blocks)) {
+      const broken = await brokenLink(ctx, href, known);
+      if (broken) links.push(`${screen.name}: link ${href} leads nowhere (${broken})`);
+    }
+    // The same problem for several users is one line, named for the first.
+    for (const p of [...problems, ...links, ...designProblems(blocks, screen.name)])
+      if (![...out].some((x) => x.endsWith(` · ${p}`))) out.add(`${who} · ${p}`);
   }
   return [...out];
 }

@@ -29,9 +29,11 @@ export const join = rcva("join", {
     },
     /** Mark children as join items automatically (see above). */
     auto: { true: "[&>:not([data-ui])]:join-item [&>[data-ui]>*]:join-item" },
-    /** Equal-width items in a 2-column grid (docs: pagination "Next/Prev"). */
-    // layout: fixed (two short buttons, Previous / Next, that belong side by side)
-    equal: { true: "grid grid-cols-2" },
+    /**
+     * Equal-width items side by side (docs: pagination "Next/Prev"): a row whose items all start
+     * from nothing and share the room equally (`flex-1`), the rendered element of a `ui-*` child too.
+     */
+    equal: { true: "flex flex-row flex-wrap max-w-full [&>*]:flex-1 [&>[data-ui]>*]:flex-1" },
     /** Background behind the group (docs: accordion "Using Accordion and Join together"). */
     surface: {
       "base-100": "bg-surface",

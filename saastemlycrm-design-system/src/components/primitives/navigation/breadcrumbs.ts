@@ -3,6 +3,7 @@ import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
+import { inlineRow, text } from "../layout/algebra.ts";
 
 /**
  * Breadcrumbs: Helps users navigate the website.
@@ -17,7 +18,7 @@ import { rcva } from "../../base/variants.ts";
  * trail 4px too wide for its box, so it always showed a scrollbar and clipped the last crumb. `width="xs"` gives the docs "max-width" example.
  */
 export const breadcrumbs = rcva(
-  "breadcrumbs ms-0 overflow-visible [&>ul]:flex-wrap [&>ul]:ps-0 [&>ul]:whitespace-normal [&>ul>li]:max-w-full [&>ul>li]:[overflow-wrap:break-word]",
+  `${text.label} breadcrumbs ms-0 overflow-visible [&>ul]:flex-wrap [&>ul]:ps-0 [&>ul]:whitespace-normal [&>ul>li]:max-w-full [&>ul>li]:[overflow-wrap:break-word]`,
   {
     variants: {
       size: {
@@ -39,7 +40,7 @@ export const breadcrumbs = rcva(
 );
 
 /** Wraps an icon + label in a crumb; sizes the icon like the docs. */
-export const breadcrumbsItem = rcva("inline-flex items-center gap-2 [&_svg]:h-4 [&_svg]:w-4 [&_svg]:stroke-current");
+export const breadcrumbsItem = rcva(`${inlineRow} items-center gap-2 [&_svg]:h-4 [&_svg]:w-4 [&_svg]:stroke-current`);
 
 export type BreadcrumbsVariants = VariantProps<typeof breadcrumbs>;
 

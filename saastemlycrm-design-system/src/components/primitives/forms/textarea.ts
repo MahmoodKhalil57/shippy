@@ -38,7 +38,9 @@ export const textarea = rcva("textarea min-w-0", {
     },
     validator: { true: "validator" },
     /** Code and JSON: monospaced, no wrapping, tab-sized indents. */
-    mono: { true: "font-mono text-body-md [tab-size:2] whitespace-pre" },
+    mono: {
+      true: "font-mono text-body-md [tab-size:2] whitespace-pre overflow-x-auto min-w-0 [overflow-wrap:anywhere]",
+    },
     width: {
       auto: "w-auto",
       "64": "w-64 max-w-full",

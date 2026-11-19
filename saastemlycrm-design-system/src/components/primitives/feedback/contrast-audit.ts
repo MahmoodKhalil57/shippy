@@ -1,14 +1,16 @@
 import { html, nothing } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
+import { inlineStart } from "../../base/inline-start.ts";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
+import { floating, inset, pad, row, stack, text } from "../layout/algebra.ts";
 import { auditContrast, type ContrastIssue } from "../../base/contrast.ts";
 import { auditProminence, type ProminenceIssue } from "../../base/prominence.ts";
-import { auditLayout, type LayoutIssue } from "../../base/layout.ts";
+import { auditLayers, type LayoutIssue } from "../../base/layout.ts";
 
 export { auditContrast, type ContrastIssue } from "../../base/contrast.ts";
-export { auditLayout, type LayoutIssue } from "../../base/layout.ts";
+export { auditLayers, auditLayout, type LayoutIssue } from "../../base/layout.ts";
 
 /**
  * Contrast audit: finds text on screen that fails WCAG contrast (AA: 4.5:1, or 3:1 for large text)
@@ -28,7 +30,7 @@ export { auditLayout, type LayoutIssue } from "../../base/layout.ts";
  * and at a wide one.
  */
 export const contrastAuditBox = rcva(
-  "pointer-events-none fixed z-[70] rounded-xs ring-2 ring-offset-1 ring-offset-base-100 top-(--top) left-(--left) h-(--h) w-(--w)",
+  "pointer-events-none fixed z-[70] rounded-xs ring-2 ring-offset-1 ring-offset-base-100 top-(--top) start-(--left) h-(--h) w-(--w) max-w-full",
   {
     variants: {
       focus: { true: "ring-4 animate-pulse motion-reduce:animate-none" },
@@ -39,19 +41,17 @@ export const contrastAuditBox = rcva(
   },
 );
 export const contrastAuditLabel = rcva(
-  "absolute -top-2 left-0 -translate-y-full rounded-xs bg-error px-1 text-label-sm font-semibold whitespace-nowrap text-error-content",
+  `${floating.fit} ${text.line} absolute -top-2 start-0 -translate-y-full rounded-xs bg-error px-1 text-label-sm font-semibold text-error-content`,
 );
 export const contrastAuditPanel = rcva(
-  "liquid-glass fixed bottom-4 left-4 z-[71] flex max-h-[min(28rem,60dvh)] w-[min(26rem,calc(100vw-2rem))] flex-col gap-2 rounded-box p-3 text-body-md",
+  `${stack} ${floating.md} ${pad["3"]} ${text.label} liquid-glass fixed bottom-4 start-4 z-[71] max-h-[min(28rem,60dvh)] gap-2 rounded-box py-3 text-body-md`,
 );
-export const contrastAuditHead = rcva("flex items-center justify-between gap-2");
+export const contrastAuditHead = rcva(`${row} items-center justify-between gap-2`);
 export const contrastAuditTitle = rcva("font-semibold");
-export const contrastAuditSummary = rcva("text-body-sm text-on-surface-variant");
-export const contrastAuditList = rcva(
-  "-mx-1 flex min-h-0 flex-col overflow-y-auto px-1 [--scrollbar-inset:var(--radius-box)]",
-);
+export const contrastAuditSummary = rcva(`${text.prose} text-body-sm text-on-surface-variant`);
+export const contrastAuditList = rcva(`${stack} min-h-0 overflow-y-auto [--scrollbar-inset:var(--radius-box)]`);
 export const contrastAuditItem = rcva(
-  "touch-target flex items-center gap-2 rounded-field px-2 py-1 text-start state-layer focus-visible:outline-2 focus-visible:outline-primary",
+  `${row} ${inset["2"]} touch-target items-center gap-2 rounded-field py-1 text-start state-layer focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary`,
 );
 export const contrastAuditRatio = rcva("w-14 shrink-0 font-mono text-label-md", {
   variants: { kind: { contrast: "text-error-ink", prominence: "text-warning-ink", layout: "text-info-ink" } },
@@ -107,7 +107,7 @@ export class UiContrastAudit extends LightElement {
 
   /** The layout problems at the current width, without showing anything. */
   measureLayout(): LayoutIssue[] {
-    return auditLayout();
+    return auditLayers();
   }
 
   /** Audit the page now (closes any open dialog-free overlay first). */
@@ -117,7 +117,7 @@ export class UiContrastAudit extends LightElement {
     requestAnimationFrame(() => {
       const issues = auditContrast();
       this.prominence = auditProminence();
-      this.layout = auditLayout();
+      this.layout = auditLayers();
       this.issues = issues;
       // oxlint-disable-next-line no-console
       console.table(
@@ -147,7 +147,7 @@ export class UiContrastAudit extends LightElement {
     if (!r.width || r.bottom < 0 || r.top > innerHeight) return nothing;
     return html`<div
       class=${contrastAuditBox({ focus, kind })}
-      style=${styleMap({ "--top": `${r.top}px`, "--left": `${r.left}px`, "--h": `${r.height}px`, "--w": `${r.width}px` })}
+      style=${styleMap({ "--top": `${r.top}px`, "--left": `${inlineStart(r.left, r.width)}px`, "--h": `${r.height}px`, "--w": `${r.width}px` })}
     >
       <span class=${contrastAuditLabel()}>${label}</span>
     </div>`;

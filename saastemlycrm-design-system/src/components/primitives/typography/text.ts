@@ -23,10 +23,11 @@ import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts
  * for responsive values.
  */
 /**
- * Text never makes its container wider: as a flex or grid item it may shrink below its longest
- * word (`min-w-0`), and a word that can't fit then breaks (a file name in a phone-width row).
+ * Text never makes its container wider: it's a label in the layout algebra's terms (`text.label`,
+ * written out: `min-w-0 [overflow-wrap:anywhere]`), so as a flex or grid item it may shrink below
+ * its longest word, and a word that can't fit then breaks (a file name in a phone-width row).
  */
-export const text = rcva("min-w-0 [overflow-wrap:break-word]", {
+export const text = rcva("min-w-0 [overflow-wrap:anywhere]", {
   variants: {
     variant: {
       "display-lg": "text-display-lg",
@@ -81,7 +82,7 @@ export const text = rcva("min-w-0 [overflow-wrap:break-word]", {
       "5": "line-clamp-5",
       "6": "line-clamp-6",
     },
-    truncate: { true: "truncate" },
+    truncate: { true: "min-w-0 truncate" },
     mono: { true: "font-mono" },
     italic: { true: "italic" },
     uppercase: { true: "uppercase" },

@@ -3,6 +3,7 @@ import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
+import { inlineRow } from "../layout/algebra.ts";
 import { iconSvg, type IconName } from "../media/icon.ts";
 
 /**
@@ -20,7 +21,7 @@ import { iconSvg, type IconName } from "../media/icon.ts";
  * reads at AA in every scheme. `variant="outline"` is a quieter neutral label for facts that sit
  * beside status tags (a phase, a type). One label, a few words, sentence case.
  */
-export const tag = rcva("inline-flex max-w-full shrink-0 items-center gap-1 rounded-sm align-middle", {
+export const tag = rcva(`${inlineRow} items-center gap-1 rounded-sm align-middle`, {
   variants: {
     tone: {
       neutral: "bg-surface-container-high text-on-surface-variant",

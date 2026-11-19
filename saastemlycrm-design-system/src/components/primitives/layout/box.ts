@@ -49,20 +49,21 @@ export const box = rcva("", {
       "2": "shadow-elevation-2",
       "3": "shadow-elevation-3",
     },
+    /** Inline padding limits itself (layout/algebra.ts `pad`): it never squeezes the content. */
     padding: {
-      /** Scales with the window: 1rem → 4rem. */
-      fluid: "p-[clamp(1rem,6vw,4rem)]",
-      "0": "p-0",
-      "1": "p-1",
-      "2": "p-2",
-      "3": "p-3",
-      "4": "p-4",
-      "5": "p-5",
-      "6": "p-6",
-      "8": "p-8",
-      "10": "p-10",
-      "12": "p-12",
-      "16": "p-16",
+      /** Scales with the window: 1rem to 4rem, limited like every padding (layout/algebra.ts `pad`). */
+      fluid: "px-[min(clamp(1rem,6vw,4rem),max(0px,calc((100%_-_7rem)/2)))] py-[clamp(1rem,6vw,4rem)]",
+      "0": "px-0 py-0",
+      "1": "px-[min(4px,max(0px,calc((100%_-_7rem)/2)))] py-1",
+      "2": "px-[min(8px,max(0px,calc((100%_-_7rem)/2)))] py-2",
+      "3": "px-[min(12px,max(0px,calc((100%_-_7rem)/2)))] py-3",
+      "4": "px-[min(16px,max(0px,calc((100%_-_7rem)/2)))] py-4",
+      "5": "px-[min(20px,max(0px,calc((100%_-_7rem)/2)))] py-5",
+      "6": "px-[min(24px,max(0px,calc((100%_-_7rem)/2)))] py-6",
+      "8": "px-[min(32px,max(0px,calc((100%_-_7rem)/2)))] py-8",
+      "10": "px-[min(40px,max(0px,calc((100%_-_7rem)/2)))] py-10",
+      "12": "px-[min(48px,max(0px,calc((100%_-_7rem)/2)))] py-12",
+      "16": "px-[min(64px,max(0px,calc((100%_-_7rem)/2)))] py-16",
     },
     /** Width cap, so `width="full"` boxes stop growing (no breakpoint needed). */
     max: { sm: "max-w-sm", md: "max-w-md", lg: "max-w-lg", xl: "max-w-xl" },
@@ -107,7 +108,7 @@ export const box = rcva("", {
       "x-auto": "overflow-x-auto",
     },
     /** Center the content on both axes. */
-    center: { true: "grid place-items-center" },
+    center: { true: "grid min-w-0 place-items-center" },
   },
 });
 

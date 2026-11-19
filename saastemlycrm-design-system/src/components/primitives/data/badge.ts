@@ -3,6 +3,7 @@ import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
+import { inlineRow } from "../layout/algebra.ts";
 
 /**
  * Badge: a count or a dot (M3 badges): how many are waiting, or that something is new or in a
@@ -16,11 +17,12 @@ import { rcva } from "../../base/variants.ts";
  *   (`tone`), always with a `label` for assistive tech, since colour alone says nothing.
  * Tones are the tag tones; counts are neutral by default, "needs attention" counts `error`.
  */
-export const badge = rcva("inline-flex shrink-0 items-center justify-center rounded-full align-middle tabular-nums", {
+export const badge = rcva(`${inlineRow} items-center justify-center rounded-full align-middle tabular-nums`, {
   variants: {
     kind: {
-      count: "h-4 min-w-4 px-1 text-label-sm",
-      dot: "size-1.5",
+      // A count is at most 4 characters ("99+"): it stays on one line (no break inside it).
+      count: "h-4 min-w-4 px-1 text-label-sm wrap-normal",
+      dot: "size-1.5 shrink-0",
     },
     tone: {
       neutral: "",

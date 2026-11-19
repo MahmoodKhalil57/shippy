@@ -4,6 +4,7 @@ import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { card, cardBody, cardLinkIcon } from "../containers/card.ts";
+import { stack, text } from "../layout/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
 
 /**
@@ -17,8 +18,8 @@ import { iconSvg } from "../media/icon.ts";
  * on target), in the tone's readable ink. With `href` the whole stat opens the list behind it.
  * Put a sparkline in the `trend` slot (`<ui-chart kind="spark" slot="trend">`).
  */
-export const statLabel = rcva("truncate text-body-md text-on-surface-variant");
-export const statValue = rcva("tabular-nums", {
+export const statLabel = rcva(`${text.line} text-body-md text-on-surface-variant`);
+export const statValue = rcva(`${text.label} tabular-nums`, {
   variants: {
     size: { md: "text-headline-sm", lg: "text-headline-md" },
     tone: {
@@ -32,8 +33,8 @@ export const statValue = rcva("tabular-nums", {
   },
   defaultVariants: { size: "md", tone: "neutral" },
 });
-export const statNote = rcva("line-clamp-2 text-body-sm text-on-surface-variant");
-export const statText = rcva("flex min-w-0 flex-col gap-1");
+export const statNote = rcva(`${text.label} line-clamp-2 text-body-sm text-on-surface-variant`);
+export const statText = rcva(`${stack} min-w-0 gap-1`);
 
 export type StatVariants = VariantProps<typeof statValue>;
 

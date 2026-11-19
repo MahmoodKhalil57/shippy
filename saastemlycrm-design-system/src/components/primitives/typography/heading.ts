@@ -18,7 +18,8 @@ import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts
  * Variant options are written out inline (not shared constants) so the CSS
  * plugin can read them for responsive values.
  */
-export const heading = rcva("", {
+/** A heading never widens its box: a label (`text.label`, written out), its words break. */
+export const heading = rcva("min-w-0 [overflow-wrap:anywhere]", {
   variants: {
     variant: {
       /** Page title: headline-sm → headline-lg as the space it sits in grows (container units). */

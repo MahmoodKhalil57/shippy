@@ -5,6 +5,7 @@ import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { booleanAttribute, rcva } from "../../base/variants.ts";
 import { button } from "../actions/button.ts";
 import { iconButton } from "../actions/icon-button.ts";
+import { inset, row, text } from "../layout/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
 
 /**
@@ -40,7 +41,7 @@ export const modalBox = rcva("modal-box liquid-glass shadow-elevation-3 motion-r
     width: {
       wide: "w-11/12 max-w-5xl",
       /** Command palette. */
-      palette: "w-[calc(100%-1rem)] max-w-2xl",
+      palette: "w-full max-w-[min(42rem,calc(100%_-_1rem))]",
     },
     /** `header` / body / `footer` sections; only the body scrolls. */
     sections: {
@@ -48,13 +49,13 @@ export const modalBox = rcva("modal-box liquid-glass shadow-elevation-3 motion-r
     },
   },
 });
-export const modalHeader = rcva("shrink-0 border-b border-outline-variant");
-export const modalBody = rcva("min-h-0 flex-1 overflow-y-auto overscroll-contain p-2");
-export const modalFooter = rcva("shrink-0 border-t border-outline-variant px-4 py-2.5");
-export const modalHeading = rcva("text-title-lg");
+export const modalHeader = rcva("border-b border-outline-variant");
+export const modalBody = rcva(`${inset["2"]} min-h-0 flex-1 overflow-y-auto overscroll-contain py-2`);
+export const modalFooter = rcva(`${inset["4"]} border-t border-outline-variant py-2.5`);
+export const modalHeading = rcva(`${text.label} text-title-lg`);
 export const modalAction = rcva("modal-action");
 /** Form wrapping the action buttons so any of them closes the dialog. */
-export const modalActionForm = rcva("flex gap-2");
+export const modalActionForm = rcva(`${row} gap-2`);
 /** Full-screen layer behind the box; a click on it closes the modal. */
 export const modalBackdrop = rcva("modal-backdrop");
 /** Hidden checkbox for the CSS-only "modal using checkbox" method. */

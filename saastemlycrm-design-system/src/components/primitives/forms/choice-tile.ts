@@ -2,6 +2,7 @@ import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
+import { inset } from "../layout/algebra.ts";
 import { iconSvg, type IconName } from "../media/icon.ts";
 
 /**
@@ -25,7 +26,7 @@ export const choiceTile = rcva(
 );
 export const choiceTileImage = rcva("absolute inset-0 -z-10 size-full object-cover");
 export const choiceTileLabel = rcva(
-  "absolute inset-x-0 bottom-0 bg-neutral/65 px-2 py-1 text-start text-label-md text-neutral-content",
+  `${inset["2"]} absolute inset-x-0 bottom-0 bg-neutral/65 py-1 text-start text-label-md text-neutral-content`,
 );
 export const choiceTileEmpty = rcva("flex flex-col items-center gap-1 text-label-md");
 export const choiceTileCheck = rcva(

@@ -4,6 +4,7 @@ import { customElement, property } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
+import { row, stack } from "../layout/algebra.ts";
 
 /**
  * Skeleton: Shows a loading state for a component.
@@ -17,7 +18,7 @@ export const skeleton = rcva("skeleton", {
     text: { true: "skeleton-text" },
     /** Shapes from the docs examples (each with its default size). */
     shape: {
-      square: "h-32 w-32",
+      square: "h-32 w-32 max-w-full",
       circle: "h-16 w-16 shrink-0 rounded-full",
       line: "h-4 w-full",
       block: "h-32 w-full",
@@ -25,9 +26,9 @@ export const skeleton = rcva("skeleton", {
     /** Width override (the docs' short lines: `w-20`, `w-28`). */
     width: {
       full: "w-full",
-      "20": "w-20",
-      "28": "w-28",
-      "32": "w-32",
+      "20": "w-20 max-w-full",
+      "28": "w-28 max-w-full",
+      "32": "w-32 max-w-full",
       "52": "w-52 max-w-full",
     },
     /** Height override. */
@@ -41,12 +42,12 @@ export const skeleton = rcva("skeleton", {
 });
 
 /** Layouts of the docs' composite examples. */
-export const skeletonStack = rcva("flex flex-col gap-4", {
+export const skeletonStack = rcva(`${stack} gap-4`, {
   variants: {
     width: { "52": "w-52 max-w-full", full: "w-full" },
   },
 });
-export const skeletonRow = rcva("flex items-center gap-4");
+export const skeletonRow = rcva(`${row} items-center gap-4`);
 
 export type SkeletonVariants = VariantProps<typeof skeleton>;
 

@@ -3,6 +3,7 @@ import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
+import { row, stack, text } from "../layout/algebra.ts";
 import { iconSvg, type IconName } from "../media/icon.ts";
 import { loading as loadingRecipe } from "./loading.ts";
 
@@ -19,11 +20,11 @@ import { loading as loadingRecipe } from "./loading.ts";
  * The heading is the `heading` property or the text children; `description` adds a line; put
  * a next step in the `actions` slot ("Clear filters", "Create the first one", "Try again").
  */
-export const emptyState = rcva("flex flex-col", {
+export const emptyState = rcva(`${stack}`, {
   variants: {
     size: {
       sm: "items-start gap-1 py-2",
-      md: "items-center gap-2 px-4 py-12 text-center",
+      md: "items-center gap-2 w-full px-[min(16px,max(0px,calc((100%_-_7rem)/2)))] py-12 text-center",
     },
   },
   defaultVariants: { size: "md" },
@@ -38,14 +39,14 @@ export const emptyStateIcon = rcva("mb-1 grid place-items-center rounded-full", 
   },
   defaultVariants: { tone: "neutral" },
 });
-export const emptyStateHeading = rcva("", {
+export const emptyStateHeading = rcva(`${text.label}`, {
   variants: {
     size: { sm: "text-body-md text-on-surface-variant", md: "text-title-md text-on-surface" },
     tone: { neutral: "", error: "text-error-ink!" },
   },
 });
-export const emptyStateDescription = rcva("max-w-[50ch] text-body-md text-on-surface-variant");
-export const emptyStateActions = rcva("mt-2 flex max-w-full flex-wrap justify-center gap-2");
+export const emptyStateDescription = rcva(`${text.prose} max-w-[50ch] text-body-md text-on-surface-variant`);
+export const emptyStateActions = rcva(`${row} mt-2 justify-center gap-2`);
 
 export type EmptyStateVariants = VariantProps<typeof emptyState>;
 

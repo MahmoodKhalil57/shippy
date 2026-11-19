@@ -3,6 +3,7 @@ import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
+import { padEnd, row, text } from "../layout/algebra.ts";
 import { badge, type BadgeVariants } from "../data/badge.ts";
 import { iconSvg } from "../media/icon.ts";
 
@@ -24,6 +25,8 @@ import { iconSvg } from "../media/icon.ts";
  *
  * daisyUI grows every `<p>` in a card (`.card p { flex-grow: 1 }`); ours stay their natural height.
  */
+// Padding: daisyUI's card body pads `--card-p`, which `md` makes fluid (16px on a phone up to 24px);
+// the body's padding limits itself whatever it is (src/styles/daisy-m3.css, "layout").
 export const card = rcva("card [&_p]:grow-0", {
   variants: {
     variant: {
@@ -31,15 +34,10 @@ export const card = rcva("card [&_p]:grow-0", {
       filled: "border border-transparent bg-surface-container-highest",
       elevated: "border border-transparent bg-surface-container-low shadow-elevation-1",
     },
-    /**
-     * `md` (the default) pads fluidly with the panel it's in (a container: the main panel): 16px on
-     * a phone up to daisyUI's 24px from about a 600px panel, so a 320px screen keeps room for content.
-     * A card inside another card's body (a filled panel in a section) pads 12px up to 16px: nested
-     * insets add up, and three of them left an alert in a phone-width card 80px for its text.
-     */
+    /** `md` (the default) pads fluidly (see `card`); `sm` is daisyUI's 16px. */
     size: {
       sm: "card-sm",
-      md: "card-md [--card-p:clamp(1rem,4cqi,1.5rem)] [.card-body_&]:[--card-p:clamp(0.75rem,3cqi,1rem)]",
+      md: "card-md [&>.card-body]:[--card-p:clamp(1rem,4cqi,1.5rem)]",
     },
     /**
      * The whole card is a link (`href`): on hover it lifts a level on a spring, its edge picks up
@@ -55,14 +53,14 @@ export const card = rcva("card [&_p]:grow-0", {
 
 export const cardBody = rcva("card-body");
 /** The header row: the heading (and count) at the start, the trailing items at the end. */
-export const cardHeader = rcva("flex max-w-full flex-wrap items-center justify-between gap-x-3 gap-y-1");
-export const cardHeadingGroup = rcva("flex min-w-0 items-center gap-2");
+export const cardHeader = rcva(`${row} items-center justify-between gap-x-3 gap-y-1`);
+export const cardHeadingGroup = rcva(`${row} items-center gap-2`);
 /** The title: tight, and clear of the link arrow on link cards. */
 export const cardTitle = rcva("card-title leading-snug tracking-tight", {
-  variants: { link: { true: "pe-6" } },
+  variants: { link: { true: padEnd["6"] } },
 });
-export const cardTrailing = rcva("flex max-w-full flex-wrap items-center gap-2");
-export const cardSubhead = rcva("text-body-md text-on-surface-variant");
+export const cardTrailing = rcva(`${row} items-center gap-2`);
+export const cardSubhead = rcva(`${text.prose} text-body-md text-on-surface-variant`);
 /** A link card's arrow: hidden until the card is hovered or focused, then slides in. */
 export const cardLinkIcon = rcva(
   "pointer-events-none absolute top-4 end-4 text-primary opacity-0 -translate-x-1 [transition:opacity_var(--duration-effects-fast)_var(--ease-effects-fast),translate_var(--duration-spatial-fast)_var(--ease-spatial-fast)] group-hover/card:translate-x-0 group-hover/card:opacity-100 group-focus-visible/card:translate-x-0 group-focus-visible/card:opacity-100 motion-reduce:translate-x-0",

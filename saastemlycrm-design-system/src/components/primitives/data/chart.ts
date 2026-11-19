@@ -4,6 +4,7 @@ import { customElement, property, state } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
+import { container, floating, inlineRow, pad, row, stack, text } from "../layout/algebra.ts";
 
 /**
  * Chart: a small, accessible chart for dashboards — a sparkline, bars or lines over one x axis.
@@ -20,13 +21,16 @@ import { rcva } from "../../base/variants.ts";
  * - the numbers as a table for screen readers.
  * The only `<svg>` drawn outside the icon registry (tests/icons.test.ts): lines need one.
  */
-export const chart = rcva("relative flex w-full flex-col gap-2 text-body-sm text-on-surface-variant select-none", {
-  variants: {
-    /** Plot height: `spark` for KPI tiles, `md` for cards. */
-    height: { spark: "[--chart-h:2.5rem]", sm: "[--chart-h:7rem]", md: "[--chart-h:11rem]" },
+export const chart = rcva(
+  `${stack} ${text.label} relative w-full gap-2 text-body-sm text-on-surface-variant select-none`,
+  {
+    variants: {
+      /** Plot height: `spark` for KPI tiles, `md` for cards. */
+      height: { spark: "[--chart-h:2.5rem]", sm: "[--chart-h:7rem]", md: "[--chart-h:11rem]" },
+    },
+    defaultVariants: { height: "md" },
   },
-  defaultVariants: { height: "md" },
-});
+);
 
 /** The plot area: marks, target and hover layer stacked over each other. */
 export const chartPlot = rcva(
@@ -46,8 +50,8 @@ export const chartLine = rcva(
 export const chartArea = rcva("fill-current stroke-none opacity-15", {
   variants: { series: { "0": SERIES[0], "1": SERIES[1], "2": SERIES[2] } },
 });
-export const chartBars = rcva("absolute inset-0 flex items-end gap-0.5");
-export const chartBarSlot = rcva("flex h-full min-w-0 flex-1 items-end justify-center gap-0.5");
+export const chartBars = rcva(`${row} absolute inset-0 items-end gap-0.5`);
+export const chartBarSlot = rcva(`${row} h-full min-w-0 flex-1 items-end justify-center gap-0.5`);
 export const chartBar = rcva(
   "h-(--bar) max-w-8 min-w-0 flex-1 rounded-t-xs bg-current [transition:height_var(--duration-spatial)_var(--ease-spatial),opacity_var(--duration-effects)_var(--ease-effects)] motion-reduce:transition-none",
   {
@@ -63,7 +67,7 @@ export const chartBar = rcva(
 /** Stacked bars: one column per x, the series' segments on top of each other (a build-up). */
 export const chartStack = rcva("flex h-full w-full max-w-8 min-w-0 flex-col-reverse");
 export const chartStackSegment = rcva(
-  "h-(--bar) w-full shrink-0 bg-current [transition:height_var(--duration-spatial)_var(--ease-spatial),opacity_var(--duration-effects)_var(--ease-effects)] last:rounded-t-xs motion-reduce:transition-none",
+  "h-(--bar) w-full bg-current [transition:height_var(--duration-spatial)_var(--ease-spatial),opacity_var(--duration-effects)_var(--ease-effects)] last:rounded-t-xs motion-reduce:transition-none",
   {
     variants: {
       series: { "0": SERIES[0], "1": SERIES[1], "2": SERIES[2] },
@@ -81,26 +85,27 @@ export const chartDot = rcva(
   { variants: { series: { "0": SERIES[0], "1": SERIES[1], "2": SERIES[2] } } },
 );
 export const chartTooltip = rcva(
-  "liquid-glass pointer-events-none absolute bottom-full z-10 mb-2 flex min-w-28 -translate-x-(--shift) flex-col gap-0.5 rounded-field px-2.5 py-1.5 whitespace-nowrap text-on-surface start-(--x)",
+  // As wide as its lines (at least 7rem), at most the window less 1rem each side.
+  `${stack} ${floating.fit} ${pad["2.5"]} liquid-glass pointer-events-none absolute bottom-full z-10 mb-2 min-w-[min(100%,7rem)] -translate-x-(--shift) gap-0.5 rounded-field py-1.5 text-on-surface start-(--x)`,
 );
-export const chartTooltipRow = rcva("flex items-center gap-1.5 tabular-nums");
+export const chartTooltipRow = rcva(`${row} items-center gap-1.5 tabular-nums`);
 export const chartSwatch = rcva("inline-block size-2 shrink-0 rounded-full bg-current", {
   variants: { series: { "0": SERIES[0], "1": SERIES[1], "2": SERIES[2] } },
 });
-export const chartAxis = rcva("flex justify-between gap-1 tabular-nums [&>span]:min-w-0 [&>span]:truncate", {
+export const chartAxis = rcva(`${row} justify-between gap-1 tabular-nums [&>span]:min-w-0 [&>span]:truncate`, {
   variants: {
     /**
      * Which labels show, by the chart's own width (a container query, `chartAxisBox`): every
      * label once there's room for them all, else the first and last, never labels cut short.
      */
-    show: { all: "hidden @lg:flex", ends: "@lg:hidden" },
+    show: { all: "@max-lg:hidden", ends: "@lg:hidden" },
   },
 });
 /** The box the axis measures (its labels' room). */
-export const chartAxisBox = rcva("@container");
+export const chartAxisBox = rcva(container.axis);
 export const chartMax = rcva("pointer-events-none absolute -top-1 start-0 -translate-y-full tabular-nums");
-export const chartLegend = rcva("flex max-w-full flex-wrap gap-x-3 gap-y-1 text-on-surface-variant");
-export const chartLegendItem = rcva("inline-flex items-center gap-1.5");
+export const chartLegend = rcva(`${row} gap-x-3 gap-y-1 text-on-surface-variant`);
+export const chartLegendItem = rcva(`${inlineRow} items-center gap-1.5`);
 export const chartTable = rcva("sr-only");
 
 export type ChartVariants = VariantProps<typeof chart>;

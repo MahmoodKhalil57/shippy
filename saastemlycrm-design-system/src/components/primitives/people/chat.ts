@@ -42,7 +42,7 @@ export const chatHeader = rcva("chat-header");
 export const chatFooter = rcva("chat-footer opacity-50");
 /** Round avatar box inside `chat-image`. */
 export const chatAvatar = rcva("w-10 rounded-full");
-export const chatTime = rcva("text-body-sm text-on-surface-variant");
+export const chatTime = rcva("min-w-0 [overflow-wrap:anywhere] text-body-sm text-on-surface-variant");
 /** Wrapper of a whole conversation. */
 export const chatLog = rcva("w-full");
 

@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
+import { formatViolations, widthViolations } from "./layout-proof/check.ts";
 import { booleanBindings, recipeVariants, responsiveSafelist, responsiveTokens } from "./recipes.ts";
 
 /**
@@ -27,6 +28,9 @@ import { booleanBindings, recipeVariants, responsiveSafelist, responsiveTokens }
  * and boolean variants at each bare breakpoint assigned to the attribute or
  * property that feeds them (e.g. `hide="lg"` -> `lg:hidden`).
  * In dev, editing a file that changes those tokens regenerates the stylesheets.
+ *
+ * The layout proof runs here too: a primitive whose classes decide a width outside the layout
+ * algebra (src/components/primitives/layout/algebra.ts) doesn't build (./layout-proof/check.ts).
  *
  * Must be listed before tailwindcss() in `plugins`.
  */
@@ -152,6 +156,16 @@ export default function componentCss(options: { dir?: string; reference?: string
       const tsFile = path.join(dir, `${name}.ts`);
       if (!tokensByFile.size) for (const d of scanDirs) scanDir(d);
       const source = readFileSync(tsFile, "utf8");
+      // The layout proof: no width class outside the algebra (it's where they're written).
+      const primitives = path.join(componentsDir, "primitives");
+      if (path.normalize(tsFile).startsWith(primitives) && path.basename(tsFile) !== "algebra.ts") {
+        const violations = widthViolations(source, tsFile);
+        if (violations.length)
+          throw new Error(
+            `Layout proof: ${posix(path.relative(componentsDir, tsFile))} decides widths outside the layout algebra (src/components/primitives/layout/algebra.ts):
+${formatViolations(posix(path.relative(componentsDir, tsFile)), violations)}`,
+          );
+      }
       // App/composed usage, plus the component's own responsive values (e.g. a
       // default of `direction = "sm:horizontal"`), which only affect this file.
       const tokens = new Set([...allTokens(), ...responsiveTokens(source)]);

@@ -6,6 +6,7 @@ import { live } from "lit/directives/live.js";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { iconButton } from "../actions/icon-button.ts";
+import { inset, row } from "../layout/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
 import { kbd, kbdKeys } from "../showcase/kbd.ts";
 
@@ -24,7 +25,7 @@ import { kbd, kbdKeys } from "../showcase/kbd.ts";
  * 13rem it folds to the magnifying glass alone.
  */
 export const search = rcva(
-  "input flex min-w-0 items-center gap-2 [&_input::-webkit-search-cancel-button]:appearance-none [&_input]:min-w-0 [&_input]:grow",
+  `input ${row} min-w-0 items-center gap-2 [&_input::-webkit-search-cancel-button]:appearance-none [&_input]:min-w-0 [&_input]:basis-0 [&_input]:grow`,
   {
     variants: {
       size: { sm: "input-sm", md: "input-md", lg: "input-lg" },
@@ -42,7 +43,7 @@ export const search = rcva(
 );
 export const searchIcon = rcva("size-[1.1em] shrink-0 text-on-surface-variant");
 export const searchLauncher = rcva(
-  "btn btn-ghost touch-target liquid-glass-clear h-11 w-full max-w-xl justify-start gap-2 rounded-full border-transparent px-4 font-normal text-on-surface-variant hover:bg-surface/60 hover:text-on-surface @max-[13rem]:me-auto @max-[13rem]:size-10 @max-[13rem]:justify-center @max-[13rem]:px-0 @max-[13rem]:[&>[data-search-text]]:hidden @max-[13rem]:[&>[data-search-keys]]:hidden",
+  `${inset["4"]} btn btn-ghost touch-target liquid-glass-clear h-11 max-w-xl justify-start gap-2 rounded-full border-transparent font-normal text-on-surface-variant hover:bg-surface/60 hover:text-on-surface @max-[13rem]:me-auto @max-[13rem]:size-10 @max-[13rem]:justify-center @max-[13rem]:px-0 @max-[13rem]:[&>[data-search-text]]:hidden @max-[13rem]:[&>[data-search-keys]]:hidden`,
 );
 export const searchLauncherText = rcva("min-w-0 truncate text-body-md");
 export const searchShortcut = rcva("ms-auto");

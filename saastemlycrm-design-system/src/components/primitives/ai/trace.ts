@@ -2,6 +2,7 @@ import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
+import { inset, padStart, row, stack, text } from "../layout/algebra.ts";
 import { iconSvg, type IconName } from "../media/icon.ts";
 
 /**
@@ -13,11 +14,11 @@ import { iconSvg, type IconName } from "../media/icon.ts";
  * Status: `running` (spinner, the title shimmers), `done`, `error`, `denied`, `waiting` (for the
  * person, e.g. an approval).
  */
-export const trace = rcva("flex flex-col gap-0.5 border-s-2 border-outline-variant ps-3");
+export const trace = rcva(`${stack} ${padStart["1"]} gap-0.5 border-s-2 border-outline-variant`);
 
-export const traceLine = rcva("group/trace text-body-sm");
+export const traceLine = rcva(`${text.label} group/trace text-body-sm`);
 export const traceSummary = rcva(
-  "touch-target flex min-h-7 items-center gap-2 rounded-field px-1.5 py-1 -ms-1.5 list-none [&::-webkit-details-marker]:hidden",
+  `touch-target ${row} ${inset["2"]} min-h-7 items-center gap-2 rounded-field py-1 list-none [&::-webkit-details-marker]:hidden`,
   {
     variants: {
       interactive: {
@@ -51,9 +52,9 @@ export const traceTitle = rcva("min-w-0 truncate font-medium", {
 });
 export const traceDescription = rcva("min-w-0 truncate text-on-surface-variant");
 export const traceChevron = rcva(
-  "ms-auto shrink-0 text-on-surface-variant transition-transform duration-(--duration-spatial-fast) ease-spatial-fast group-open/trace:rotate-180 motion-reduce:transition-none",
+  "ms-auto text-on-surface-variant transition-transform duration-(--duration-spatial-fast) ease-spatial-fast group-open/trace:rotate-180 motion-reduce:transition-none",
 );
-export const traceContent = rcva("mt-1 mb-2 ms-6 flex flex-col gap-1.5");
+export const traceContent = rcva(`${stack} ${padStart["8"]} mt-1 mb-2 gap-1.5`);
 
 export type TraceStatus = "running" | "done" | "error" | "denied" | "waiting";
 

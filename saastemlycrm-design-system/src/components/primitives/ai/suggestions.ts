@@ -12,17 +12,17 @@ import { button } from "../actions/button.ts";
  * One row that scrolls sideways when it doesn't fit, its edges fading where there's more
  * (`wrap` lets them wrap onto lines instead, e.g. in an empty state).
  */
-export const suggestions = rcva("flex gap-1.5", {
+export const suggestions = rcva("", {
   variants: {
     wrap: {
-      true: "max-w-full flex-wrap",
+      true: "flex flex-row flex-wrap max-w-full gap-1.5",
       false:
-        "overflow-x-auto overscroll-x-contain [scrollbar-width:none] [mask-image:linear-gradient(to_right,transparent,black_1rem,black_calc(100%-1rem),transparent)] px-4 -mx-4",
+        "min-w-0 max-w-full overflow-x-auto whitespace-nowrap overscroll-x-contain [scrollbar-width:none] [mask-image:linear-gradient(to_right,black_calc(100%-1rem),transparent)] rtl:[mask-image:linear-gradient(to_left,black_calc(100%-1rem),transparent)] [&>*+*]:ms-1",
     },
   },
   defaultVariants: { wrap: false },
 });
-export const suggestion = rcva("shrink-0 font-normal");
+export const suggestion = rcva("font-normal");
 
 /**
  * @example <ui-suggestions .items=${["What's waiting for me?", "Who owes us money?"]} @ui-select=${(e) => send(e.detail.value)}></ui-suggestions>

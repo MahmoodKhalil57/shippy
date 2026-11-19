@@ -3,6 +3,7 @@ import { customElement, property } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
+import { fixed, row } from "../layout/algebra.ts";
 
 /**
  * Swatches: a few colours side by side, overlapping — a preview of a colour scheme or palette.
@@ -12,8 +13,8 @@ import { rcva } from "../../base/variants.ts";
  * The colours are data (a scheme's own values), not theme tokens, so they're set inline.
  * Decorative: name the scheme next to it.
  */
-export const swatches = rcva("flex shrink-0 -space-x-1.5");
-export const swatch = rcva("size-4 rounded-full ring-2 ring-base-100");
+export const swatches = rcva(`${row} -space-x-1.5`);
+export const swatch = rcva(`${fixed["4"]} rounded-full ring-2 ring-base-100`);
 
 /** @example <ui-swatches .colors=${["#fff", "#2563eb", "#9333ea", "#f59e0b"]}></ui-swatches> */
 @customElement("ui-swatches")

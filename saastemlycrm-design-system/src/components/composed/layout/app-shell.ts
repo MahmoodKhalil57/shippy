@@ -3,6 +3,15 @@ import { customElement, property, state } from "lit/decorators.js";
 import { cssLuminance, lumaOf, sampleBehind, type Luma, type Rect } from "../../base/legibility.ts";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { auditContrast } from "../../base/contrast.ts";
+import {
+  closeColumn,
+  openColumn,
+  refit,
+  MAIN_COMFORT,
+  type FrameSizes,
+  type FrameState,
+  type Side,
+} from "../../base/frame-fit.ts";
 import type { PageTransition } from "../../primitives/layout/frame.ts";
 import "../../primitives/layout/frame.ts";
 import type { IconName } from "../../primitives/media/icon.ts";
@@ -64,9 +73,6 @@ export type { PageTransition } from "../../primitives/layout/frame.ts";
  * `nav-open` / `aside-open` reflect the columns' state; the built-in toggles flip them
  * and fire `ui-change` with `{ nav, aside }`. Escape closes a floating column.
  */
-/** Open widths the room checks use (px; they mirror the recipes above). */
-const NAV_OPEN = 288; // w-72
-const ASIDE_OPEN = 320; // w-80
 /** The frame's live fluid sizes (`--frame-*`, registered so they compute to px): a rail, and gaps + edges. */
 const frame = () => {
   const css = getComputedStyle(document.documentElement);
@@ -74,10 +80,8 @@ const frame = () => {
   return {
     rail: px("--frame-rail"),
     chrome: 2 * px("--frame-gap") + 2 * px("--frame-edge"),
-    /** The main panel's narrowest content box (`--main-min`). */
-    mainMin: px("--main-min") || 258,
     /** The content width under which a frame with both rails goes compact (`--main-comfort`). */
-    mainComfort: px("--main-comfort") || 320,
+    mainComfort: px("--main-comfort") || MAIN_COMFORT,
   };
 };
 
@@ -236,12 +240,6 @@ export class UiAppShell extends LightElement {
     setTimeout(() => this._measureSoon(), 50);
   };
 
-  /** Room a column takes in the layout: open width when pushing, else its rail (none when merged). */
-  private _room(side: "start" | "end", open: boolean, sheet: boolean) {
-    if (open && !sheet) return side === "start" ? NAV_OPEN : ASIDE_OPEN;
-    return side === "end" && this._compact ? 0 : frame().rail;
-  }
-
   /**
    * What the main panel takes beside its content: its border and its scrollbar, measured (the
    * scrollbar's width is the browser's; before the panel is drawn, its 2×2px border only).
@@ -251,22 +249,29 @@ export class UiAppShell extends LightElement {
     return main ? main.offsetWidth - main.clientWidth : 4;
   }
 
-  /** Whether the main panel's content keeps `--main-comfort` with the columns taking this much room. */
-  private _fits(nav: number, aside: number) {
-    // A compact frame has no edges or gaps (`appShell`'s `compact`).
-    const edges = this._compact ? 0 : frame().chrome;
-    // A column pushes the page only when the page keeps `--main-comfort`: below that it's a sheet.
-    return document.documentElement.clientWidth >= nav + aside + edges + this._mainChrome() + frame().mainComfort;
+  /** The live sizes the room decisions read (the decisions are src/components/base/frame-fit.ts). */
+  private _sizes(): FrameSizes {
+    return { ...frame(), mainChrome: this._mainChrome() };
   }
 
-  /**
-   * Whether the normal frame (its edges and gaps, both rails) leaves the main panel's content at
-   * least `--main-comfort`: if not, the frame goes compact to give the page that room back.
-   */
-  private _fitsFrame(nav: number, aside: number) {
-    return (
-      document.documentElement.clientWidth >= nav + aside + frame().chrome + this._mainChrome() + frame().mainComfort
-    );
+  private get _state(): FrameState {
+    return {
+      compact: this._compact,
+      navOpen: this.navOpen,
+      navSheet: this._navSheet,
+      asideOpen: this.asideOpen,
+      asideSheet: this._asideSheet,
+    };
+  }
+
+  /** Apply a decision: a column turning into a sheet prepares its width first, then columns open or close. */
+  private async _apply(next: FrameState) {
+    this._compact = next.compact;
+    if (next.navSheet && !this._navSheet) await this._toSheet("start");
+    else this._navSheet = next.navSheet;
+    if (next.asideSheet && !this._asideSheet) await this._toSheet("end");
+    else this._asideSheet = next.asideSheet;
+    this._set(next.navOpen, next.asideOpen);
   }
 
   /** Plays an M3 transition pattern as a new page enters the main panel (see `<ui-frame-main>`). */
@@ -274,26 +279,17 @@ export class UiAppShell extends LightElement {
     this.querySelector("ui-frame-main")?.pageTransition(kind);
   }
 
-  async toggleNav(open = !this.navOpen) {
-    if (!open) return this._set(false, this.asideOpen);
-    const aside = this._room("end", this.asideOpen, this._asideSheet);
-    if (this._fits(NAV_OPEN, aside)) this._navSheet = false;
-    else if (this.asideOpen && !this._asideSheet && this._fits(NAV_OPEN, frame().rail)) {
-      this._navSheet = false;
-      return this._set(true, false); // make room by closing the side panel
-    } else await this._toSheet("start");
-    this._set(true, this.asideOpen);
+  toggleNav(open = !this.navOpen) {
+    return this._toggle("start", open);
   }
 
-  async toggleAside(open = !this.asideOpen) {
-    if (!open) return this._set(this.navOpen, false);
-    const nav = this._room("start", this.navOpen, this._navSheet);
-    if (this._fits(nav, ASIDE_OPEN)) this._asideSheet = false;
-    else if (this.navOpen && !this._navSheet && this._fits(frame().rail, ASIDE_OPEN)) {
-      this._asideSheet = false;
-      return this._set(false, true); // make room by closing the navigation
-    } else await this._toSheet("end");
-    this._set(this.navOpen, true);
+  toggleAside(open = !this.asideOpen) {
+    return this._toggle("end", open);
+  }
+
+  private _toggle(side: Side, open: boolean) {
+    const width = document.documentElement.clientWidth;
+    return this._apply(open ? openColumn(side, width, this._state, this._sizes()) : closeColumn(side, this._state));
   }
 
   /**
@@ -313,14 +309,9 @@ export class UiAppShell extends LightElement {
 
   /** Window resized (or first layout): close pushing columns, side panel first, until the main panel fits. */
   private _refit = () => {
-    // Compact when both rails (the frame's normal, roomiest closed state) leave under `--main-comfort`.
-    this._compact = !this._fitsFrame(frame().rail, frame().rail);
-    let nav = this.navOpen;
-    let aside = this.asideOpen;
-    const room = () => this._room("start", nav, this._navSheet) + this._room("end", aside, this._asideSheet);
-    if (aside && !this._asideSheet && !this._fits(0, room())) aside = false;
-    if (nav && !this._navSheet && !this._fits(0, room())) nav = false;
-    this._set(nav, aside);
+    const next = refit(document.documentElement.clientWidth, this._state, this._sizes());
+    this._compact = next.compact;
+    this._set(next.navOpen, next.asideOpen);
   };
   #resize = new ResizeObserver(() => this._refit());
 

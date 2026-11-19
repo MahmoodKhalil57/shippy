@@ -3,6 +3,7 @@ import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
+import { text } from "../layout/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
 
 /**
@@ -57,7 +58,7 @@ export const timelineIcon = rcva("h-5 w-5", {
 
 /** Parts of a structured entry (snapped-icon example). */
 export const timelineTime = rcva("font-mono italic");
-export const timelineHeading = rcva("text-title-md");
+export const timelineHeading = rcva(`${text.label} text-title-md`);
 
 export type TimelineVariants = VariantProps<typeof timeline>;
 export type TimelineStartVariants = VariantProps<typeof timelineStart>;

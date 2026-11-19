@@ -14,8 +14,11 @@ import { booleanAttribute, rcva } from "../../base/variants.ts";
  * Horizontal scroll when there's no room (docs): `scroll-area="xs"` (the max width — prefer fewer tabs: Apple avoids overflow tabs)
  * of the scroll area). Custom active color (docs): `active-color="primary"`.
  */
-/** Unselected tabs at 80% ink (daisyUI's faint default falls below WCAG AA). */
-export const tabs = rcva("tabs [&>.tab:not(.tab-active)]:text-on-surface-variant", {
+/**
+ * Unselected tabs at 80% ink (daisyUI's faint default falls below WCAG AA). Labels never widen the
+ * row (`text.label`, written out); the row wraps (src/styles/daisy-m3.css).
+ */
+export const tabs = rcva("tabs min-w-0 [overflow-wrap:anywhere] [&>.tab:not(.tab-active)]:text-on-surface-variant", {
   variants: {
     /**
      * M3 tabs: `primary` for a page's own sections (the record's tabs), `secondary` for sections
@@ -31,8 +34,11 @@ export const tabs = rcva("tabs [&>.tab:not(.tab-active)]:text-on-surface-variant
       sm: "tabs-sm",
       md: "tabs-md",
     },
-    /** Keep tabs on one line inside a scroll area. */
-    scroll: { true: "min-w-max" },
+    /**
+     * Inside a scroll area. The tabs wrap like anywhere else: a row held wider than its box is
+     * what the layout algebra rules out (only `scrolled` content may, and it has no tabs).
+     */
+    scroll: { true: "" },
   },
 });
 
@@ -44,7 +50,7 @@ export const tabsScroll = rcva("overflow-x-auto", {
 });
 
 /** A single tab (button, link, radio input or label wrapping a radio). */
-export const tabsTab = rcva("tab [&>svg]:me-2 [&>svg]:size-4", {
+export const tabsTab = rcva("tab gap-2 [&>svg]:size-4", {
   variants: {
     active: { true: "tab-active" },
     disabled: { true: "tab-disabled" },
@@ -64,7 +70,11 @@ export const tabsContent = rcva("tab-content");
 export const tabsPanel = rcva("", {
   variants: {
     surface: { true: "bg-surface border-outline-variant" },
-    padding: { md: "p-6", lg: "p-10", none: "" },
+    padding: {
+      md: "w-full px-[min(24px,max(0px,calc((100%_-_7rem)/2)))] py-6",
+      lg: "w-full px-[min(40px,max(0px,calc((100%_-_7rem)/2)))] py-10",
+      none: "",
+    },
     /** Stays in view inside a horizontally scrolling tabs area. */
     scroll: {
       xs: "sticky start-0 max-w-60",

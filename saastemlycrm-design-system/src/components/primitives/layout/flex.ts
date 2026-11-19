@@ -15,12 +15,17 @@ import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts
  */
 export const flex = rcva("", {
   variants: {
-    inline: { true: "inline-flex", false: "flex" },
+    /** Sized to its content, capped at its parent (layout/algebra.ts `inlineFlex`). */
+    inline: { true: "inline-flex! max-w-full", false: "" },
+    /**
+     * A row always wraps: what doesn't fit goes to the next line (layout/algebra.ts `row`), so a
+     * row can't stick out of its box at any width. A column is `stack`.
+     */
     direction: {
-      row: "flex-row",
-      col: "flex-col",
-      "row-reverse": "flex-row-reverse",
-      "col-reverse": "flex-col-reverse",
+      row: "flex flex-row flex-wrap min-w-0 max-w-full",
+      col: "flex flex-col min-w-0",
+      "row-reverse": "flex flex-row-reverse flex-wrap min-w-0 max-w-full",
+      "col-reverse": "flex flex-col-reverse min-w-0",
     },
     gap: {
       "0": "gap-0",
@@ -50,27 +55,29 @@ export const flex = rcva("", {
       around: "justify-around",
       evenly: "justify-evenly",
     },
+    /** Inline padding limits itself (layout/algebra.ts `pad`): it never squeezes the content. */
     padding: {
-      "0": "p-0",
-      "1": "p-1",
-      "2": "p-2",
-      "3": "p-3",
-      "4": "p-4",
-      "5": "p-5",
-      "6": "p-6",
-      "8": "p-8",
-      "10": "p-10",
-      "12": "p-12",
-      "16": "p-16",
+      "0": "px-0 py-0",
+      "1": "px-[min(4px,max(0px,calc((100%_-_7rem)/2)))] py-1",
+      "2": "px-[min(8px,max(0px,calc((100%_-_7rem)/2)))] py-2",
+      "3": "px-[min(12px,max(0px,calc((100%_-_7rem)/2)))] py-3",
+      "4": "px-[min(16px,max(0px,calc((100%_-_7rem)/2)))] py-4",
+      "5": "px-[min(20px,max(0px,calc((100%_-_7rem)/2)))] py-5",
+      "6": "px-[min(24px,max(0px,calc((100%_-_7rem)/2)))] py-6",
+      "8": "px-[min(32px,max(0px,calc((100%_-_7rem)/2)))] py-8",
+      "10": "px-[min(40px,max(0px,calc((100%_-_7rem)/2)))] py-10",
+      "12": "px-[min(48px,max(0px,calc((100%_-_7rem)/2)))] py-12",
+      "16": "px-[min(64px,max(0px,calc((100%_-_7rem)/2)))] py-16",
     },
-    wrap: { true: "max-w-full flex-wrap" },
+    /** Rows always wrap (see `direction`); kept so existing markup reads the same. */
+    wrap: { true: "" },
     grow: { true: "grow" },
     /** Let text inside truncate instead of widening the row (min-width: 0). */
     shrink: { true: "min-w-0" },
     fullWidth: { true: "w-full" },
     fullHeight: { true: "h-full" },
   },
-  defaultVariants: { inline: false },
+  defaultVariants: { inline: false, direction: "row" },
 });
 
 export type FlexVariants = VariantProps<typeof flex>;

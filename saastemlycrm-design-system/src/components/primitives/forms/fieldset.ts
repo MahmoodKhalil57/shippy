@@ -16,8 +16,10 @@ export const fieldset = rcva("fieldset min-w-0 grid-cols-[minmax(0,1fr)]", {
   variants: {
     /** Box look used in the daisyUI examples (background + border + padding). */
     surface: {
-      "base-100": "bg-surface border-outline-variant rounded-box border p-4",
-      "base-200": "bg-surface-container border-outline-variant rounded-box border p-4",
+      "base-100":
+        "bg-surface border-outline-variant rounded-box border px-[min(16px,max(0px,calc((100%_-_7rem)/2)))] py-4",
+      "base-200":
+        "bg-surface-container border-outline-variant rounded-box border px-[min(16px,max(0px,calc((100%_-_7rem)/2)))] py-4",
     },
     /** Docs examples use `w-xs` (fieldset) and `w-64` (checkbox / toggle). */
     width: {

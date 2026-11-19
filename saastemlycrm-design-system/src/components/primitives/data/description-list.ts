@@ -24,9 +24,10 @@ export const descriptionList = rcva("m-0", {
       /**
        * Label beside value when the list's own width has room for both (a container query: 24rem),
        * else the label above its value, so a narrow card never squeezes the values into a sliver.
+       * layout/algebra.ts `pairsInline`, written out (variant values stay literal).
        */
       inline:
-        "grid grid-cols-1 gap-x-4 [&_dd]:mb-3 @sm:grid-cols-[minmax(min(8rem,40%),max-content)_minmax(0,1fr)] @sm:items-baseline @sm:gap-y-2 @sm:[&_dd]:mb-0",
+        "grid min-w-0 grid-cols-[minmax(0,1fr)] gap-x-4 [&_dd]:mb-3 @min-[24rem]:grid-cols-[minmax(min(8rem,40%),max-content)_minmax(0,1fr)] @min-[24rem]:items-baseline @min-[24rem]:gap-y-2 @min-[24rem]:[&_dd]:mb-0",
     },
   },
   defaultVariants: { layout: "stacked" },
@@ -37,9 +38,9 @@ export const descriptionItem = rcva("min-w-0", {
   variants: { layout: { stacked: "flex flex-col gap-0.5", inline: "contents" } },
 });
 /** The box the list measures (its layout follows its own width, not the window's). */
-export const descriptionBox = rcva("@container");
+export const descriptionBox = rcva("@container w-full");
 export const descriptionLabel = rcva("text-label-md text-on-surface-variant");
-export const descriptionValue = rcva("m-0 min-w-0 [overflow-wrap:break-word]", {
+export const descriptionValue = rcva("m-0 min-w-0 [overflow-wrap:anywhere]", {
   variants: {
     size: { sm: "text-body-md", md: "text-title-md", lg: "text-headline-sm tabular-nums" },
     tone: {
@@ -51,7 +52,7 @@ export const descriptionValue = rcva("m-0 min-w-0 [overflow-wrap:break-word]", {
   },
   defaultVariants: { size: "sm", tone: "neutral" },
 });
-export const descriptionNote = rcva("block text-body-sm text-on-surface-variant", {
+export const descriptionNote = rcva("block min-w-0 [overflow-wrap:anywhere] text-body-sm text-on-surface-variant", {
   variants: {
     tone: { neutral: "", success: "text-success-ink!", warning: "text-warning-ink!", error: "text-error-ink!" },
   },

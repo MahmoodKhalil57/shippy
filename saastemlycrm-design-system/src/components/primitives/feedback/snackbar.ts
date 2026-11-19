@@ -3,6 +3,7 @@ import { customElement, state } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { iconButton } from "../actions/icon-button.ts";
+import { inset, padStart, row, rowFill, text } from "../layout/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
 
 /**
@@ -17,12 +18,12 @@ import { iconSvg } from "../media/icon.ts";
  * elevation +3. Status messages are announced politely; errors assertively. Put one
  * `<ui-snackbar>` near the app root and call `push`.
  */
-export const snackbar = rcva("pointer-events-none fixed inset-x-0 bottom-4 z-[65] flex justify-center px-4");
+export const snackbar = rcva(`${row} ${inset["4"]} pointer-events-none fixed inset-x-0 bottom-4 z-[65] justify-center`);
 export const snackbarBody = rcva(
-  "liquid-glass shadow-elevation-3 pointer-events-auto flex min-h-12 w-full max-w-[min(36rem,100%)] items-center gap-2 rounded-md py-1.5 ps-4 pe-1.5 text-body-md text-on-surface starting:translate-y-4 starting:opacity-0 [transition:opacity_var(--duration-short4)_var(--ease-emphasized-decelerate),translate_var(--duration-medium2)_var(--ease-emphasized-decelerate)] motion-reduce:translate-y-0",
+  `${row} ${padStart["4"]} ${text.label} liquid-glass shadow-elevation-3 pointer-events-auto min-h-12 w-full max-w-[min(36rem,100%)] items-center gap-2 rounded-md py-1.5 pe-1 text-body-md text-on-surface starting:translate-y-4 starting:opacity-0 [transition:opacity_var(--duration-short4)_var(--ease-emphasized-decelerate),translate_var(--duration-medium2)_var(--ease-emphasized-decelerate)] motion-reduce:translate-y-0`,
   { variants: { tone: { neutral: "", error: "text-error-ink" } } },
 );
-export const snackbarText = rcva("min-w-0 flex-1 py-1.5");
+export const snackbarText = rcva(`${rowFill} py-1.5`);
 export const snackbarAction = rcva(
   "btn btn-ghost btn-sm max-w-full state-layer touch-target border-transparent bg-transparent text-primary-ink",
 );

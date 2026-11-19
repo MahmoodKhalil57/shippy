@@ -5,6 +5,7 @@ import { clampColumnWidth, COLUMN_MAX_WIDTH, COLUMN_MIN_WIDTH, moveColumn, order
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
 import { button } from "../actions/button.ts";
+import { inlineRow, row, scrolled, scrollX, text } from "../layout/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
 import { tag } from "./tag.ts";
 
@@ -28,11 +29,12 @@ import { tag } from "./tag.ts";
  *   and shows the link's keyboard focus as a ring around the whole row.
  */
 // Columns are never narrower than 10rem (about 18 characters a line): when they can't all have
-// that, the table scrolls sideways (`tableWrapper`) instead of wrapping values into a sliver.
+// that, the table scrolls sideways (`tableWrapper`, layout/algebra.ts `scrollX`) instead of wrapping
+// values into a sliver. The table is only ever drawn inside that scroller.
 export const table = rcva(
   [
     // layout: fixed (a 10rem column floor: the table scrolls sideways when its columns can't all have it)
-    "table [&_:is(th,td)]:min-w-[10rem]",
+    `table ${scrolled.tableColumns}`,
     // header band
     "[&_thead_tr]:border-b [&_thead_tr]:border-outline-variant [&_thead_th]:bg-surface-container-low [&_thead_th]:text-label-md [&_thead_th]:tracking-wide [&_thead_th]:uppercase [&_:where(thead,tfoot)]:text-on-surface-variant",
     // rows
@@ -69,15 +71,20 @@ export const table = rcva(
       },
       /** Table background ("Table with pinned-rows" uses base-200). */
       surface: { true: "bg-surface-container" },
-      /** Keep every cell (and what's inside it) on one line; the wrapper scrolls sideways instead. */
-      nowrap: { true: "[&_th]:whitespace-nowrap [&_td]:whitespace-nowrap [&_.badge]:whitespace-nowrap" },
+      /**
+       * Keep every cell (and what's inside it) on one line: drawn by the scroller around the table
+       * (`tableWrapper`'s `nowrap`), which scrolls sideways instead.
+       */
+      nowrap: { true: "" },
     },
   },
 );
 
-/** Scroll container around the table (horizontal overflow). */
-export const tableWrapper = rcva("overflow-x-auto", {
+/** Scroll container around the table (horizontal overflow; layout/algebra.ts `scrollX`). */
+export const tableWrapper = rcva(scrollX, {
   variants: {
+    /** Every cell (and what's inside it) on one line: the table scrolls sideways in this box. */
+    nowrap: { true: "overflow-x-auto [&_th]:whitespace-nowrap [&_td]:whitespace-nowrap [&_.badge]:whitespace-nowrap" },
     /** "Table with border and background". */
     bordered: { true: "rounded-box border border-outline-variant bg-surface [--scrollbar-inset:var(--radius-box)]" },
     /** Fixed scroll height (the pinned examples use `h-96`). */
@@ -100,9 +107,9 @@ export const tableRow = rcva("", {
 /** A cell's alignment: numbers line up on the right, in tabular figures. */
 export const tableCell = rcva("", {
   variants: {
-    align: { start: "", center: "text-center", end: "text-end tabular-nums whitespace-nowrap" },
+    align: { start: "", center: "text-center", end: "text-end tabular-nums min-w-0 truncate" },
     /** Keep on one line (ids and references that would break at their hyphens). */
-    nowrap: { true: "whitespace-nowrap" },
+    nowrap: { true: "min-w-0 truncate" },
     /** A column someone sized: what doesn't fit wraps, or ends in "…" on one-line cells. */
     sized: { true: "overflow-hidden text-ellipsis" },
     /** The column being dragged: its cells tinted, so it's clear which one moves. */
@@ -123,7 +130,7 @@ export const tableHead = rcva("group/th", {
 });
 /** A cell with a supporting line: the value, then a quieter line under it. */
 export const tableCellStack = rcva("flex flex-col gap-0.5");
-export const tableSupporting = rcva("text-body-sm", {
+export const tableSupporting = rcva(`${text.label} text-body-sm`, {
   variants: {
     tone: {
       error: "text-error-ink",
@@ -140,7 +147,7 @@ export const tableHeadLabel = rcva("", { variants: { sized: { true: "block min-w
  * 2px line that shows on hovering the header and turns primary on hover, focus and drag.
  */
 export const tableResize = rcva(
-  "absolute inset-y-0 z-1 flex w-3 pointer-coarse:w-6 cursor-col-resize touch-none justify-center outline-none before:h-full before:w-0.5 before:rounded-full before:content-[''] before:[transition:background-color_var(--duration-effects-fast)_var(--ease-effects-fast)] group-hover/th:not-hover:before:bg-outline hover:before:bg-primary focus-visible:before:bg-primary",
+  `${row} absolute inset-y-0 z-1 w-3 pointer-coarse:w-6 cursor-col-resize touch-none justify-center outline-none before:h-full before:w-0.5 before:rounded-full before:content-[''] before:[transition:background-color_var(--duration-effects-fast)_var(--ease-effects-fast)] group-hover/th:not-hover:before:bg-outline hover:before:bg-primary focus-visible:before:bg-primary`,
   {
     variants: {
       /** Over the border between two columns; the last column's stays inside the table (no overflow). */
@@ -161,8 +168,9 @@ export const tableAnnounce = rcva("sr-only");
  * columns, in which order). Unsorted, the arrows show on hover / focus only.
  */
 export const tableSort = rcva(
-  "group/sort touch-target -mx-1.5 inline-flex max-w-full items-center gap-1 rounded-field px-1.5 py-0.5 font-[inherit] text-[inherit] tracking-[inherit] uppercase state-layer hover:text-on-surface focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary [transition:background-color_var(--duration-effects-fast)_var(--ease-effects-fast),color_var(--duration-effects-fast)_var(--ease-effects-fast)]",
-  { variants: { align: { start: "", center: "", end: "flex-row-reverse" } } },
+  `${inlineRow} group/sort touch-target items-center gap-1 rounded-field py-0.5 font-[inherit] text-[inherit] tracking-[inherit] uppercase state-layer hover:text-on-surface focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary [transition:background-color_var(--duration-effects-fast)_var(--ease-effects-fast),color_var(--duration-effects-fast)_var(--ease-effects-fast)]`,
+  // `end`: the arrows before the label (layout/algebra.ts `rowReverse`, kept inline: `inlineFlex`).
+  { variants: { align: { start: "", center: "", end: "flex flex-row-reverse flex-wrap max-w-full inline-flex!" } } },
 );
 export const tableSortIcon = rcva(
   "[transition:opacity_var(--duration-effects-fast)_var(--ease-effects-fast),rotate_var(--duration-spatial-fast)_var(--ease-spatial-fast)]",
@@ -189,11 +197,11 @@ export const tableSkeleton = rcva("skeleton h-4 w-full max-w-40 rounded-field");
 export const tableEmpty = rcva("py-10 text-center text-on-surface-variant");
 
 /** Cell anatomy from "Table with visual elements". */
-export const tablePerson = rcva("flex items-center gap-3");
+export const tablePerson = rcva(`${row} items-center gap-3`);
 export const tablePersonAvatar = rcva("avatar");
 export const tablePersonImage = rcva("w-12 h-12 mask mask-squircle");
 export const tablePersonName = rcva("font-bold");
-export const tablePersonSub = rcva("text-body-md text-on-surface-variant");
+export const tablePersonSub = rcva(`${text.label} text-body-md text-on-surface-variant`);
 
 export type TableVariants = VariantProps<typeof table>;
 export type TableWrapperVariants = VariantProps<typeof tableWrapper>;
@@ -902,7 +910,9 @@ export class UiTable extends LightElement {
       surface: this.surface,
       nowrap: this.nowrap,
     });
-    return html`<div class=${tableWrapper({ bordered: this.bordered, height: this.height, width: this.width })}>
+    return html`<div
+      class=${tableWrapper({ bordered: this.bordered, height: this.height, width: this.width, nowrap: this.nowrap })}
+    >
       <table class=${cls}>
         ${this._body()}
         ${

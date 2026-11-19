@@ -1,8 +1,10 @@
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
+import { inlineStart } from "../../base/inline-start.ts";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
+import { floating, pad, row, stack, text } from "../layout/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
 
 /**
@@ -22,16 +24,16 @@ import { iconSvg } from "../media/icon.ts";
  */
 export const coachmark = rcva("contents [&>*]:z-[60]");
 export const coachmarkSpot = rcva(
-  "pointer-events-none fixed rounded-box scrim-cutout ring-2 ring-primary [transition:top_var(--duration-spatial)_var(--ease-spatial),left_var(--duration-spatial)_var(--ease-spatial),width_var(--duration-spatial)_var(--ease-spatial),height_var(--duration-spatial)_var(--ease-spatial)] motion-reduce:transition-none top-(--top) left-(--left) h-(--h) w-(--w)",
+  "pointer-events-none fixed rounded-box scrim-cutout ring-2 ring-primary [transition:top_var(--duration-spatial)_var(--ease-spatial),inset-inline-start_var(--duration-spatial)_var(--ease-spatial),width_var(--duration-spatial)_var(--ease-spatial),height_var(--duration-spatial)_var(--ease-spatial)] motion-reduce:transition-none top-(--top) start-(--left) h-(--h) w-(--w) max-w-full",
 );
 export const coachmarkCard = rcva(
-  "liquid-glass pointer-events-auto fixed flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-2 rounded-box p-4 text-on-surface [transition:top_var(--duration-spatial)_var(--ease-spatial),left_var(--duration-spatial)_var(--ease-spatial),opacity_var(--duration-effects)_var(--ease-effects)] motion-reduce:transition-none top-(--top) left-(--left) starting:opacity-0",
+  `${stack} ${floating.sm} ${pad["4"]} liquid-glass pointer-events-auto fixed gap-2 rounded-box py-4 text-on-surface [transition:top_var(--duration-spatial)_var(--ease-spatial),inset-inline-start_var(--duration-spatial)_var(--ease-spatial),opacity_var(--duration-effects)_var(--ease-effects)] motion-reduce:transition-none top-(--top) start-(--left) starting:opacity-0`,
 );
-export const coachmarkEyebrow = rcva("flex items-center gap-2 text-label-md text-on-surface-variant");
-export const coachmarkHeading = rcva("text-title-lg leading-snug");
-export const coachmarkBody = rcva("text-body-md leading-relaxed text-on-surface-variant");
-export const coachmarkFooter = rcva("mt-1 flex max-w-full flex-wrap items-center justify-between gap-2");
-export const coachmarkProgress = rcva("flex items-center gap-1");
+export const coachmarkEyebrow = rcva(`${row} items-center gap-2 text-label-md text-on-surface-variant`);
+export const coachmarkHeading = rcva(`${text.label} text-title-lg leading-snug`);
+export const coachmarkBody = rcva(`${text.prose} text-body-md leading-relaxed text-on-surface-variant`);
+export const coachmarkFooter = rcva(`${row} mt-1 items-center justify-between gap-2`);
+export const coachmarkProgress = rcva(`${row} items-center gap-1`);
 export const coachmarkSpinner = rcva("loading loading-spinner loading-xs");
 export const coachmarkDot = rcva(
   "h-1.5 rounded-full [transition:width_var(--duration-spatial-fast)_var(--ease-spatial-fast),background-color_var(--duration-effects-fast)_var(--ease-effects-fast)]",
@@ -154,7 +156,7 @@ export class UiCoachmark extends LightElement {
     return html`<div class=${coachmark()}>
       <div
         class=${coachmarkSpot()}
-        style=${styleMap({ "--top": `${spot.top}px`, "--left": `${spot.left}px`, "--h": `${spot.h}px`, "--w": `${spot.w}px` })}
+        style=${styleMap({ "--top": `${spot.top}px`, "--left": `${inlineStart(spot.left, spot.w)}px`, "--h": `${spot.h}px`, "--w": `${spot.w}px` })}
       ></div>
       <div
         class=${coachmarkCard()}
@@ -163,7 +165,7 @@ export class UiCoachmark extends LightElement {
         aria-modal="false"
         aria-live="polite"
         aria-label=${typeof this.heading === "string" ? this.heading : "Guided tour"}
-        style=${styleMap({ "--top": `${at.top}px`, "--left": `${at.left}px` })}
+        style=${styleMap({ "--top": `${at.top}px`, "--left": `${inlineStart(at.left, this._card.w)}px` })}
       >
         <div class=${coachmarkEyebrow()}>
           ${iconSvg("compass", { size: "sm" })}

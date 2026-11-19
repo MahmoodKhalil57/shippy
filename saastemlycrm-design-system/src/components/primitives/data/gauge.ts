@@ -3,6 +3,7 @@ import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
+import { row, rowFill, text } from "../layout/algebra.ts";
 
 /**
  * Gauge: how much of something there is, a value within a known range: lines ready, checks
@@ -18,16 +19,17 @@ import { rcva } from "../../base/variants.ts";
  */
 export const gauge = rcva("flex min-w-0 flex-col gap-1", {
   variants: {
-    width: { xs: "w-32", sm: "w-56 max-w-full", full: "w-full" },
+    width: { xs: "w-32 max-w-full", sm: "w-56 max-w-full", full: "w-full" },
   },
   defaultVariants: { width: "full" },
 });
-export const gaugeHead = rcva("flex items-baseline justify-between gap-2");
-export const gaugeHeading = rcva("min-w-0 truncate text-body-md text-on-surface");
-export const gaugeValue = rcva("shrink-0 text-title-sm text-on-surface tabular-nums");
+export const gaugeHead = rcva(`${row} items-baseline justify-between gap-x-2`);
+export const gaugeHeading = rcva(`${rowFill} truncate text-body-md text-on-surface`);
+export const gaugeValue = rcva(`${text.label} text-title-sm text-on-surface tabular-nums`);
 export const gaugeTrack = rcva("h-1 w-full overflow-hidden rounded-full bg-surface-container-highest");
 export const gaugeFill = rcva(
-  "h-full rounded-full [transition:width_var(--duration-medium2)_var(--ease-emphasized-decelerate)]",
+  // As wide as the reading (`--fill`, a share of the track), never wider than the track.
+  "h-full w-(--fill) max-w-full rounded-full [transition:width_var(--duration-medium2)_var(--ease-emphasized-decelerate)]",
   {
     variants: {
       tone: {
@@ -88,7 +90,7 @@ export class UiGauge extends LightElement {
         aria-label=${this.label || (typeof this.heading === "string" ? this.heading : "") || "Gauge"}
         aria-valuetext=${this.label || `${this.value} of ${this.max}`}
       >
-        <div class=${gaugeFill({ tone: this.tone })} style="width:${pct}%"></div>
+        <div class=${gaugeFill({ tone: this.tone })} style="--fill:${pct}%"></div>
       </div>
     </div>`;
   }

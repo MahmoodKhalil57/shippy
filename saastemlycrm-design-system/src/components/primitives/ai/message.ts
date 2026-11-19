@@ -2,6 +2,7 @@ import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
+import { row, text } from "../layout/algebra.ts";
 import { iconButton } from "../actions/icon-button.ts";
 import { iconSvg, type IconName } from "../media/icon.ts";
 
@@ -23,17 +24,17 @@ export const message = rcva("group/message flex flex-col gap-1", {
   },
   defaultVariants: { from: "assistant" },
 });
-export const messageBody = rcva("text-body-md", {
+export const messageBody = rcva(`${text.label} text-body-md`, {
   variants: {
     from: {
-      user: "max-w-[85%] rounded-box rounded-ee-field bg-surface-container px-3.5 py-2 [overflow-wrap:break-word] whitespace-pre-line",
+      user: "w-fit max-w-[85%] rounded-box rounded-ee-field bg-surface-container px-3 py-2 whitespace-pre-line",
       assistant: "w-full",
     },
   },
   defaultVariants: { from: "assistant" },
 });
 /** The actions row: shown on hover / focus for the person's turns, always for the assistant's. */
-export const messageActions = rcva("flex items-center gap-0.5 text-on-surface-variant", {
+export const messageActions = rcva(`${row} items-center gap-0.5 text-on-surface-variant`, {
   variants: {
     from: {
       user: "opacity-0 transition-opacity duration-(--duration-effects-fast) ease-effects-fast group-hover/message:opacity-100 group-focus-within/message:opacity-100 motion-reduce:transition-none",

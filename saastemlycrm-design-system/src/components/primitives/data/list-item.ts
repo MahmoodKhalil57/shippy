@@ -3,6 +3,7 @@ import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
+import { inset, row, rowEnd, rowFill, stack, text } from "../layout/algebra.ts";
 
 /**
  * List and list item: rows of records, each one subject (M3 lists; Apple lists).
@@ -22,7 +23,7 @@ import { rcva } from "../../base/variants.ts";
  * (listen for `click`). It then has a state layer, a 48px touch target and keyboard focus;
  * `selected` marks the open one in a list-and-detail screen (primary container, `aria-current`).
  */
-export const list = rcva("flex flex-col", {
+export const list = rcva(stack, {
   variants: {
     variant: {
       divided: "[&>*+*_[data-list-row]]:border-t [&>*+*_[data-list-row]]:border-outline-variant",
@@ -33,7 +34,9 @@ export const list = rcva("flex flex-col", {
 });
 
 export const listItem = rcva(
-  "flex w-full items-start gap-x-3 gap-y-1.5 px-3 py-2.5 text-start @max-[20rem]/item:flex-wrap text-on-surface [--outer-radius:var(--radius-box)]",
+  // A wrapping row (layout/algebra.ts): leading, content, trailing. The content keeps 7rem; when the
+  // row can't give it that beside the trailing slot, the trailing slot goes on its own line.
+  `${row} ${inset["3"]} items-start gap-x-3 gap-y-1.5 py-2.5 text-start text-on-surface [--outer-radius:var(--radius-box)]`,
   {
     variants: {
       interactive: {
@@ -45,30 +48,25 @@ export const listItem = rcva(
     },
   },
 );
-/**
- * The listitem wrapper is a container (the row inside is the box): a row narrower than 20rem puts
- * its trailing slot on a line of its own under the content, instead of a 40% sliver beside it.
- */
-export const listItemWrap = rcva("@container/item block");
-export const listItemLeading = rcva("flex shrink-0 items-center self-start pt-1 text-on-surface-variant");
-export const listItemContent = rcva("flex min-w-0 flex-1 flex-col gap-0.5");
-export const listItemTop = rcva("flex min-w-0 items-baseline justify-between gap-2");
+/** The listitem wrapper adds no layout of its own (the row inside is the box). */
+export const listItemWrap = rcva("block");
+export const listItemLeading = rcva(`${row} items-center self-start pt-1 text-on-surface-variant`);
+/** The content: the slot that takes the room (M3 Lists: "the largest-width slot"), never under 7rem. */
+export const listItemContent = rcva(`${stack} ${rowFill} gap-0.5`);
+export const listItemTop = rcva(`${row} items-baseline justify-between gap-x-2`);
 export const listItemOverline = rcva("text-label-sm text-on-surface-variant");
-export const listItemHeadline = rcva("min-w-0 truncate text-title-sm");
-export const listItemTrailingText = rcva("shrink-0 text-label-md text-on-surface-variant tabular-nums");
-export const listItemSupporting = rcva("text-body-md text-on-surface-variant", {
+export const listItemHeadline = rcva(`${text.line} text-title-sm`);
+export const listItemTrailingText = rcva(`${text.label} text-label-md text-on-surface-variant tabular-nums`);
+export const listItemSupporting = rcva(`${text.prose} text-body-md text-on-surface-variant`, {
   variants: { lines: { "1": "line-clamp-1", "2": "line-clamp-2", "3": "line-clamp-3" } },
   defaultVariants: { lines: "2" },
 });
-export const listItemExtra = rcva("mt-1 flex max-w-full flex-wrap items-center gap-1");
+export const listItemExtra = rcva(`${row} mt-1 items-center gap-1`);
 /**
- * The trailing slot is smaller than the content (M3 Lists: leading and trailing "must be a smaller
- * width than the content section"): at most 40% of the row; what doesn't fit wraps inside it. In a row under 20rem it takes the whole
- * width under the content, starting where the content starts.
+ * The trailing slot (M3 Lists: a value or an action at the end): at the row's end, or on a line
+ * of its own under the content when the row can't give the content 7rem beside it.
  */
-export const listItemTrailing = rcva(
-  "flex min-w-0 max-w-[40%] flex-wrap items-center justify-end gap-2 self-center @max-[20rem]/item:max-w-full @max-[20rem]/item:basis-full @max-[20rem]/item:justify-start",
-);
+export const listItemTrailing = rcva(`${rowEnd} ${row} items-center justify-end gap-2 self-center`);
 
 export type ListVariants = VariantProps<typeof list>;
 export type ListItemLines = "1" | "2" | "3";

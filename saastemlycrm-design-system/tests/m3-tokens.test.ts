@@ -11,7 +11,8 @@ import { classStrings } from "../vite/recipes.ts";
  *   colour scheme's role radii (`rounded-field` / `-box` / `-selector`), `rounded-inner` for nested
  *   corners, or a value made of radius tokens — never a raw `rounded-[6px]`;
  * - spacing: M3's spacing steps (2, 4, 6, 8, 10, 12, 14, 16, 20, 24, 32, 36, 40, 48, 56, 64, 72dp),
- *   or a value built from tokens or a fluid `clamp()` — never `p-7` (28) or `gap-[13px]`.
+ *   a value built from tokens or a fluid `clamp()`, or a step limited by the layout algebra
+ *   (`min(16px, max(0px, …))`) — never `p-7` (28) or `gap-[13px]`.
  */
 
 const primitivesDir = path.resolve(import.meta.dirname, "../src/components/primitives");
@@ -82,6 +83,10 @@ export function tokenProblems(cls: string): string[] {
   );
   if (space) {
     const v = space[1]!;
+    // The layout algebra's self-limiting padding (layout/algebra.ts `pad`, `inset`): an M3 step,
+    // capped so it never leaves the content less than min(7rem, the box).
+    const limited = /^\[min\((\d+(?:\.\d+)?)px,max\(0px,calc\(/.exec(v);
+    if (limited && SPACE_STEPS.has(String(Number(limited[1]) / 4))) return [];
     if (SPACE_STEPS.has(v) || v === "auto" || (/^[[(]/.test(v) && tokenValue(v))) return [];
     return [`${cls}: use an M3 spacing step (0.5 = 2dp … 18 = 72dp) or a token`];
   }

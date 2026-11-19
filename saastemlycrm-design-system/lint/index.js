@@ -582,124 +582,6 @@ const noRawHrefs = defineRule({
   },
 });
 
-// ---- fluid-classes --------------------------------------------------------------------------
-
-/**
- * Fluid layout, by construction (a design system's own primitives): class strings that would
- * overflow a narrow container. Grounded in M3 (Lists: the content slot "must be the largest-width
- * slot") and Apple's HIG (Layout: adapt to every size, checked "for clipping"). What classes alone
- * can't show, the on-screen layout audit finds (`?audit`).
- */
-const FIXED_SIZE = /^(?:w|size)-(?:\d|px|\[)/;
-const CAPPED = /^max-w-/;
-const WIDE = /^(?:min-)?w-(?:4\d|5\d|6\d|7\d|8\d|9\d|3xs|2xs|xs|sm|md|lg|xl|[2-7]xl)$/;
-const WIDE_ARBITRARY = /^(?:min-)?w-\[(\d+(?:\.\d+)?)(rem|px)\]$/;
-
-/** Is this string a list of utility classes (not prose)? */
-export const isClassString = (/** @type {string} */ value) =>
-  (/\b(?:flex|grid|shrink-0|w-|min-w-|btn|fieldset|input|textarea|select|overflow-wrap)/.test(value) ||
-    (/\blabel\b/.test(value) && /\S-\S/.test(value))) &&
-  /^[\w\-[\]:/.%(),!@&>*+=#"' ]+$/.test(value) &&
-  !value.includes("  ") &&
-  !/\b[A-Z][a-z]/.test(value);
-
-/**
- * What in one class string breaks a fluid layout (each a sentence naming the fix):
- * 1. a `shrink-0` group (`flex`/`grid` with a `gap`) that neither wraps nor is capped;
- * 2. a fixed width of 10rem or more without a cap (`max-w-*`);
- * 3. a wrapping group (`flex-wrap`) that isn't capped: as a flex item it keeps its one-line width;
- * 4. a button (`btn`) without `max-w-full`;
- * 5. a fieldset without `min-w-0` (it's `min-width: min-content` by default);
- * 6. a form control (`input`, `textarea`, `select`) without `min-w-0`: in a grid (a fieldset) it
- *    keeps its built-in width (about 20 characters) instead of shrinking with the column;
- * 7. daisyUI's `label` (`white-space: nowrap`) without `whitespace-normal`: a long hint sets the
- *    width of the column it's in.
- * 9. `[overflow-wrap:anywhere]`: it makes the text's narrowest width one letter, so a grid or table
- *    column shrinks to a sliver; `break-word` breaks a word only when it can't fit.
- * 8. a grid recipe with fixed columns (`grid grid-cols-2`, `grid-cols-[a_b]`) and no narrow fallback
- *    (an `@container` variant or `auto-fit`): its columns squeeze instead of stacking.
- * A fieldset (5) also needs a `minmax(0, 1fr)` column: a plain `1fr` is at least as wide as its
- * widest unbreakable line.
- */
-export function fluidProblems(/** @type {string} */ value) {
-  const tokens = value.split(/\s+/).filter(Boolean);
-  const has = (/** @type {RegExp} */ re) => tokens.some((c) => re.test(c));
-  const out = [];
-  const group = has(/^(?:inline-)?(?:flex|grid)$/) && has(/^gap(?:-[xy])?-/);
-  if (has(/^shrink-0$/) && group && !has(/^flex-col$/) && !has(/^flex-wrap$/) && !has(CAPPED) && !has(FIXED_SIZE))
-    out.push(
-      `a shrink-0 group ("${value}") neither wraps nor is capped: add flex-wrap or max-w-*, or mark it "layout: fixed"`,
-    );
-  const wide = tokens.find((c) => {
-    const m = WIDE_ARBITRARY.exec(c);
-    return WIDE.test(c) || (m !== null && (m[2] === "px" ? Number(m[1]) / 16 : Number(m[1])) >= 10);
-  });
-  if (wide && !has(CAPPED))
-    out.push(`"${wide}" is wider than a phone column can be: add max-w-full (or use min(100%, …))`);
-  if (has(/^flex-wrap$/) && !has(/^(?:max-w-|min-w-0$|w-full$|flex-1$|grow$|basis-)/))
-    out.push(`a wrapping group ("${value}") isn't capped, so it won't wrap as a flex item: add max-w-full`);
-  if (has(/^fieldset$/) && !has(/^min-w-0$/))
-    out.push(`a fieldset ("${value}") without min-w-0 refuses to shrink below its widest field`);
-  if (has(/^fieldset$/) && !has(/^grid-cols-\[minmax\(0,1fr\)\]$/))
-    out.push(`a fieldset ("${value}") needs grid-cols-[minmax(0,1fr)]: its 1fr column is as wide as its widest line`);
-  if (has(/^label$/) && tokens.length > 0 && !has(/^whitespace-normal$/))
-    out.push(`daisyUI's label ("${value}") never wraps: add whitespace-normal`);
-  const control = tokens.find((c) => c === "input" || c === "textarea" || c === "select");
-  if (control && tokens.some((c) => /[-:]/.test(c)) && !has(/^min-w-0$/))
-    out.push(
-      `a form control ("${value.slice(0, 40)}…") without min-w-0 keeps its built-in width in a grid: add min-w-0`,
-    );
-  // A grid recipe with fixed columns and no narrow fallback: the columns squeeze at any width.
-  // Equal columns, or a template with a fixed track of 4rem or more (not capped by `min(…, %)`):
-  // an `auto` icon column beside `1fr` text can't squeeze anything.
-  const bigTrack = (/** @type {string} */ c) =>
-    [...c.replace(/min\([^()]*\)/g, "").matchAll(/(\d+(?:\.\d+)?)(rem|px)/g)].some(
-      (m) => (m[2] === "px" ? Number(m[1]) / 16 : Number(m[1])) >= 4,
-    );
-  const fixedCols = tokens.find(
-    (c) =>
-      /^grid-cols-(?:[2-9]|1[0-2])$/.test(c) ||
-      (/^grid-cols-\[.*_.*\]$/.test(c) && !/auto-(?:fit|fill)/.test(c) && bigTrack(c)),
-  );
-  if (fixedCols && has(/^grid$/) && !tokens.some((c) => /^@[\w-]*:grid-cols-/.test(c)))
-    out.push(
-      `a grid with fixed columns ("${fixedCols}") and no narrow fallback: use grid-cols-1 with an @container variant, or auto-fit`,
-    );
-  if (has(/^\[overflow-wrap:anywhere\]$/))
-    out.push(
-      "[overflow-wrap:anywhere] lets a column shrink to one letter (its min-content): use [overflow-wrap:break-word]",
-    );
-  if (has(/^btn$/) && !has(CAPPED)) out.push(`a button ("${value.slice(0, 40)}…") isn't capped: add max-w-full`);
-  return out;
-}
-
-const fluidClasses = defineRule({
-  meta: {
-    type: "problem",
-    docs: { description: "Class strings that would overflow a narrow container." },
-    messages: { fluidClasses: "{{problem}}" },
-    schema: [],
-  },
-  create(context) {
-    const lines = context.sourceCode.lines;
-    /** A recipe fixed on purpose says so on one of the two lines above it: `// layout: fixed (why)`. */
-    const marked = (/** @type {any} */ node) => {
-      const line = node.loc.start.line;
-      return [lines[line - 1], lines[line - 2], lines[line - 3]].some((l) => l?.includes("layout: fixed"));
-    };
-    const check = (/** @type {any} */ node, /** @type {string} */ value) => {
-      if (!isClassString(value) || marked(node)) return;
-      for (const problem of fluidProblems(value))
-        context.report({ node, messageId: "fluidClasses", data: { problem } });
-    };
-    return {
-      Literal(/** @type {any} */ node) {
-        if (typeof node.value === "string") check(node, node.value);
-      },
-    };
-  },
-});
-
 // ---- the plugin and its recommended rules ---------------------------------------------------
 
 const plugin = definePlugin({
@@ -712,7 +594,6 @@ const plugin = definePlugin({
     "sentence-case-titles": sentenceCaseTitles,
     "max-blocks": maxBlocks,
     "no-raw-hrefs": noRawHrefs,
-    "fluid-classes": fluidClasses,
   },
 });
 
@@ -731,7 +612,6 @@ export const recommended = {
   "saastemly/sentence-case-titles": "warn",
   "saastemly/max-blocks": "warn",
   "saastemly/no-raw-hrefs": "error",
-  "saastemly/fluid-classes": "error",
   "no-restricted-imports": [
     "error",
     {

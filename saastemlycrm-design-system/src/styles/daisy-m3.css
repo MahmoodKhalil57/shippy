@@ -144,3 +144,137 @@ select::picker(select) {
 [data-theme] {
   --depth: 0;
 }
+
+/* ---------------------------------------------------------------- layout
+   daisyUI's components keep the layout invariant of src/components/primitives/layout/algebra.ts,
+   so the layout proof (vite/layout-proof/check.ts, `DAISY_SAFE`) can let primitives use them:
+     (I1) content never sticks out of its box;
+     (I3) inline padding never leaves the content less than min(7rem, the box): every padding here
+          is `min(p, max(0, (100% − 7rem) / 2))`, against the box's own width or its parent's.
+   Each rule names what daisyUI does that would break it. Same layer as the rules above: daisyUI's
+   top level, so a primitive's utility still wins. */
+@layer utilities {
+  @layer daisyui {
+    /* Buttons: one line (`nowrap`). A label too long for the room wraps. Their padding stays:
+       sized to their content, at most 1.5rem a side (`--btn-p`), they fit any box that holds
+       others (the algebra's `pad`). */
+    .btn {
+      flex-wrap: wrap;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      min-width: 0;
+      max-width: 100%;
+    }
+    /* Badges (counts and dots): sized to their content; a long one is cut, not wider than its box. */
+    .badge {
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    /* Card bodies: a fixed `--card-p`, however narrow the card. */
+    .card-body {
+      min-width: 0;
+      padding-inline: min(var(--card-p, 1.5rem), max(0px, calc((100% - 7rem) / 2)));
+    }
+    .card-title,
+    .card-actions {
+      min-width: 0;
+      flex-wrap: wrap;
+      overflow-wrap: break-word;
+    }
+    /* Fields: at most 100% already (clamp(3rem, 20rem, 100%)); in a row they'd keep their 3rem+. */
+    .input,
+    .select,
+    .textarea,
+    .file-input {
+      min-width: 0;
+      max-width: 100%;
+    }
+    /* Labels never wrap in daisyUI (`nowrap`): a long hint would set its column's width. */
+    .label,
+    .floating-label {
+      white-space: normal;
+      overflow-wrap: break-word;
+      min-width: 0;
+      max-width: 100%;
+    }
+    /* A fieldset is `min-width: min-content`, and its 1fr column as wide as its widest line. */
+    .fieldset {
+      min-width: 0;
+      grid-template-columns: minmax(0, 1fr);
+    }
+    /* Menus are sized to their content (`fit-content`) with one-line items; a horizontal one lays
+       its items in one column each (`grid-auto-flow: column`). */
+    .menu {
+      max-width: 100%;
+    }
+    /* A vertical menu is a column that wraps (`flex-wrap: wrap`): in a box of fixed height, its items
+       would start a second column beside the first and push it sideways. One column; what's taller
+       than the box scrolls in it. */
+    .menu:not(.menu-horizontal) {
+      flex-wrap: nowrap;
+    }
+    .menu :where(li > *) {
+      min-width: 0;
+    }
+    .menu-horizontal {
+      display: flex;
+      flex-wrap: wrap;
+    }
+    /* Tabs: each at least its content's width (`min-width: fit-content`); the row already wraps. */
+    .tab {
+      min-width: 0;
+      max-width: 100%;
+      overflow-wrap: break-word;
+    }
+    /* Joined controls sit in one row that never wraps (`inline-flex`). */
+    .join {
+      flex-wrap: wrap;
+      max-width: 100%;
+    }
+    /* Dividers' text never wraps. */
+    .divider {
+      white-space: normal;
+      overflow-wrap: break-word;
+    }
+    /* An accordion's title keeps 3rem at its end for the arrow and 1rem at its start. */
+    .collapse-title {
+      min-width: 0;
+      overflow-wrap: break-word;
+      padding-inline: min(1rem, max(0px, calc((100% - 7rem - 2rem) / 2))) min(3rem, max(2rem, calc(100% - 7rem)));
+    }
+    .collapse-content {
+      min-width: 0;
+      padding-inline: min(1rem, max(0px, calc((100% - 7rem) / 2)));
+    }
+    /* Chat bubbles pad 1rem whatever their width. */
+    .chat-bubble {
+      min-width: 0;
+      overflow-wrap: break-word;
+      padding-inline: min(1rem, max(0px, calc((100% - 7rem) / 2)));
+    }
+    /* Dialogs pad 1.5rem whatever their width. */
+    .modal-box {
+      padding-inline: min(1.5rem, max(0px, calc((100% - 7rem) / 2)));
+    }
+    /* An indicator is as wide as what it marks (`max-content`). */
+    .indicator {
+      max-width: 100%;
+    }
+    /* A one-time code's digits sit in one row; on a narrow screen they go on two. */
+    .otp {
+      flex-wrap: wrap;
+      max-width: 100%;
+    }
+    /* Keys and the timeline's items: never wider than their box. */
+    .kbd,
+    .timeline > li {
+      max-width: 100%;
+      min-width: 0;
+    }
+    /* Steps and tables are wider than a narrow box by nature: steps scroll themselves (daisyUI's
+       `overflow: auto hidden`); a table's primitive always draws it inside a scroller
+       (src/components/primitives/data/table.ts, `tableWrapper`). Breadcrumbs scroll too
+       (`overflow-x: auto`) unless their primitive wraps them. Both keep I1. */
+  }
+}

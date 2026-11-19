@@ -4,6 +4,7 @@ import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
+import { floating, inset, row, stack } from "../layout/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
 import { iconButton } from "./icon-button.ts";
 
@@ -31,7 +32,7 @@ export const fab = rcva(
       },
       size: {
         md: "size-14 rounded-lg",
-        lg: "size-24 rounded-xl [&_svg]:size-9",
+        lg: "size-24 max-w-full rounded-xl [&_svg]:size-9",
       },
     },
     defaultVariants: { color: "primary", size: "md" },
@@ -39,7 +40,7 @@ export const fab = rcva(
 );
 
 export const fabDock = rcva(
-  "fixed end-4 bottom-4 z-[60] flex flex-col items-end gap-3 pointer-events-none [&>*]:pointer-events-auto",
+  `fixed end-4 bottom-4 z-[60] ${stack} items-end gap-3 pointer-events-none [&>*]:pointer-events-auto`,
 );
 /**
  * Closed, the panel stays mounted but hidden, so its content (a conversation) never lands in the page.
@@ -47,7 +48,7 @@ export const fabDock = rcva(
  * back into it on the exit curve, quicker. With Reduce motion it only fades.
  */
 export const fabPanel = rcva(
-  "liquid-glass flex h-[min(38rem,calc(100dvh-7rem))] w-[min(26rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-box origin-bottom-right starting:scale-50 starting:opacity-0 motion-reduce:scale-100",
+  `liquid-glass ${stack} ${floating.md} h-[min(38rem,calc(100dvh-7rem))] overflow-hidden rounded-box origin-bottom-right starting:scale-50 starting:opacity-0 motion-reduce:scale-100`,
   {
     variants: {
       hidden: {
@@ -58,13 +59,13 @@ export const fabPanel = rcva(
     },
   },
 );
-// layout: fixed (keeps its height in the panel's column; its title truncates)
-export const fabPanelHead = rcva("flex shrink-0 items-center gap-2 border-b border-outline-variant px-4 py-2.5");
+// Its height is its content's (a flex item's automatic minimum); its title truncates.
+export const fabPanelHead = rcva(`${row} ${inset["4"]} items-center gap-2 border-b border-outline-variant py-2.5`);
 export const fabPanelTitle = rcva("min-w-0 flex-1 truncate text-title-sm");
 export const fabPanelBody = rcva(
-  "flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain px-4 py-3 [--scrollbar-inset:var(--radius-box)]",
+  `${stack} ${inset["4"]} min-h-0 flex-1 gap-3 overflow-y-auto overscroll-contain py-3 [--scrollbar-inset:var(--radius-box)]`,
 );
-export const fabPanelFooter = rcva("shrink-0 border-t border-outline-variant px-3 py-2.5");
+export const fabPanelFooter = rcva(`${inset["3"]} border-t border-outline-variant py-2.5`);
 
 export type FabVariants = VariantProps<typeof fab>;
 

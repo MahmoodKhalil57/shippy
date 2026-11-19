@@ -16,6 +16,13 @@
 @import "./styles/daisy-m3.css";
 
 @layer base {
+  /* Every word can break where it doesn't fit, so no text is ever held wider than its box by a long
+     word, a URL or a file name: the layout algebra's base fact
+     (src/components/primitives/layout/algebra.ts). Readable columns come from its explicit minimums. */
+  :where(html) {
+    overflow-wrap: anywhere;
+  }
+
   /* Reduce motion (M3: subtle fades instead of sliding or scaling): everything that moves or
      resizes on a spatial spring jumps straight to its end; colour and opacity still ease. */
   @media (prefers-reduced-motion: reduce) {

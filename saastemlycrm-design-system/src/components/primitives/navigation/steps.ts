@@ -4,6 +4,7 @@ import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
+import { scrolled, text } from "../layout/algebra.ts";
 
 /**
  * Steps: where something is in a fixed sequence (M3 / Apple progress through stages).
@@ -17,8 +18,8 @@ import { rcva } from "../../base/variants.ts";
  * (a dash) or `done` out of order. `supporting` is the small line under a label ("next · 14:00").
  * `direction="vertical lg:horizontal"` is responsive; `scrollable` lets a long row scroll.
  */
-// layout: fixed (each step keeps 10rem for its label: a row that can't fit scrolls, `stepsScroll`)
-export const steps = rcva("steps [&>.step]:min-w-[10rem]", {
+// Each step keeps 10rem for its label (`scrolled.steps`): a row that can't fit scrolls (daisyUI's steps scroll themselves).
+export const steps = rcva(`steps ${scrolled.steps}`, {
   variants: {
     direction: {
       vertical: "steps-vertical",
@@ -39,7 +40,7 @@ export const stepsStep = rcva("step", {
 });
 /** Horizontal scroll wrapper for long step lists. */
 export const stepsScroll = rcva("overflow-x-auto");
-export const stepsSupporting = rcva("block text-body-sm text-on-surface-variant");
+export const stepsSupporting = rcva(`block ${text.label} text-body-sm text-on-surface-variant`);
 
 export type StepsVariants = VariantProps<typeof steps>;
 export type StepsTone = NonNullable<VariantProps<typeof stepsStep>["tone"]>;

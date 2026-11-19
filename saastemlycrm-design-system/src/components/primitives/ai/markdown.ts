@@ -2,6 +2,7 @@ import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
+import { inset, padStart, scrollX, stack, text } from "../layout/algebra.ts";
 
 /**
  * Markdown: a model's reply, formatted — paragraphs, headings, lists, code, bold, italics, links.
@@ -12,16 +13,16 @@ import { rcva } from "../../base/variants.ts";
  * script. Links go only to http(s) addresses or paths in the app (in-app paths stay in the app;
  * others open in a new tab). Partial text renders as it streams.
  */
-export const markdown = rcva("flex flex-col gap-2 text-body-md leading-relaxed [overflow-wrap:break-word]");
-export const markdownHeading = rcva("text-on-surface", {
+export const markdown = rcva(`${stack} ${text.prose} gap-2 text-body-md leading-relaxed`);
+export const markdownHeading = rcva(`${text.label} text-on-surface`, {
   variants: { level: { "1": "text-title-md", "2": "text-title-sm", "3": "text-title-sm" } },
 });
-export const markdownList = rcva("flex flex-col gap-1 ps-5", {
+export const markdownList = rcva(`${stack} ${padStart["5"]} gap-1`, {
   variants: { ordered: { true: "list-decimal", false: "list-disc" } },
 });
 export const markdownCode = rcva("rounded-xs bg-surface-container-highest px-1 py-0.5 font-mono text-[0.8125em]");
 export const markdownPre = rcva(
-  "overflow-x-auto rounded-field bg-surface-container-highest p-3 font-mono text-body-sm leading-normal whitespace-pre [--scrollbar-inset:var(--radius-field)]",
+  `${scrollX} ${inset["3"]} ${text.label} rounded-field bg-surface-container-highest py-3 font-mono text-body-sm leading-normal whitespace-pre [--scrollbar-inset:var(--radius-field)]`,
 );
 export const markdownLink = rcva("link link-hover font-medium text-primary-ink");
 

@@ -22,16 +22,19 @@ export const avatar = rcva("avatar", {
   },
 });
 
-/** Inner box: size, shape, ring and placeholder colours (all utilities from the docs examples). */
+/**
+ * Inner box: size, shape, ring and placeholder colours (all utilities from the docs examples). Sizes
+ * above 4rem are capped at the parent (`max-w-full`); the box stays square (daisyUI's aspect ratio).
+ */
 export const avatarImage = rcva("", {
   variants: {
     size: {
       xs: "w-8",
       sm: "w-12",
       md: "w-16",
-      lg: "w-20",
-      xl: "w-24",
-      "2xl": "w-32",
+      lg: "w-20 max-w-full",
+      xl: "w-24 max-w-full",
+      "2xl": "w-32 max-w-full",
     },
     shape: {
       /** No rounding (the docs' group / placeholder examples). */

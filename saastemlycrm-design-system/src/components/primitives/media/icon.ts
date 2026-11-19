@@ -7,6 +7,7 @@ import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
+import { inlineRow } from "../layout/algebra.ts";
 import type { IconName } from "./icon-names.ts";
 import iCheck from "~icons/line-md/confirm";
 import iX from "~icons/line-md/close";
@@ -103,16 +104,16 @@ import iPasskey from "~icons/material-symbols-light/passkey";
  * imported on its own, so only the icons listed here reach the bundle. `iconSvg()` is exported so
  * other primitives render the same icons. Every variant is responsive, e.g. `size="sm md:lg"`.
  */
-export const icon = rcva("inline-block shrink-0", {
+export const icon = rcva("inline-block", {
   variants: {
     size: {
-      xs: "size-3",
-      sm: "size-4",
-      md: "size-5",
-      lg: "size-6",
-      xl: "size-8",
-      "2xl": "size-10",
-      em: "size-[1.2em]",
+      xs: "size-3 shrink-0",
+      sm: "size-4 shrink-0",
+      md: "size-5 shrink-0",
+      lg: "size-6 shrink-0",
+      xl: "size-8 shrink-0",
+      "2xl": "size-10 shrink-0",
+      em: "size-[1.2em] shrink-0",
     },
     color: {
       current: "",
@@ -139,7 +140,7 @@ export const icon = rcva("inline-block shrink-0", {
 });
 
 /** Wrapper for an authored `<svg>`: sizes the SVG to the icon box. */
-export const iconSlot = rcva("inline-grid place-items-center *:size-full");
+export const iconSlot = rcva(`${inlineRow} items-center justify-center *:size-full`);
 
 export type IconVariants = VariantProps<typeof icon>;
 

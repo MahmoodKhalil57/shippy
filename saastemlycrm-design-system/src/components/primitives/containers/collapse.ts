@@ -4,6 +4,7 @@ import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement, uid, type Renderable } from "../../base/light-element.ts";
 import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
+import { text } from "../layout/algebra.ts";
 
 /**
  * Collapse: Shows and hides content.
@@ -38,15 +39,23 @@ export const collapse = rcva("collapse !visible", {
 
 export const collapseTitle = rcva("collapse-title font-semibold", {
   variants: {
-    /** Move the arrow/plus icon to the start ("moving collapse icon to the start"). */
-    iconPosition: { start: "after:start-5 after:end-auto pe-4 ps-12", end: "" },
+    /**
+     * Move the arrow/plus icon to the start ("moving collapse icon to the start"). The paddings
+     * limit themselves (layout/algebra.ts `padStart` / `padEnd`), so the icon sits at 12px and the
+     * title starts at 32px.
+     */
+    iconPosition: {
+      start:
+        "after:start-3 after:end-auto ps-[min(32px,max(0px,calc(100%_-_7rem)))] pe-[min(16px,max(0px,calc(100%_-_7rem)))]",
+      end: "",
+    },
     /** Custom colours that switch while the checkbox is checked. */
     color: {
       primary: "bg-primary text-primary-content peer-checked:bg-secondary peer-checked:text-secondary-content",
     },
   },
 });
-export const collapseContent = rcva("collapse-content text-body-md", {
+export const collapseContent = rcva(`collapse-content ${text.prose} text-body-md`, {
   variants: {
     color: {
       primary: "bg-primary text-primary-content peer-checked:bg-secondary peer-checked:text-secondary-content",

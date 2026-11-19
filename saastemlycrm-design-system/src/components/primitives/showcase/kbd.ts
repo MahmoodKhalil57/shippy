@@ -3,6 +3,7 @@ import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
+import { inlineRow, row, text } from "../layout/algebra.ts";
 
 /**
  * Kbd: Displays keyboard shortcuts.
@@ -22,8 +23,8 @@ export const kbd = rcva("kbd", {
   },
 });
 
-/** One centered row of keys, as in the docs' keyboard / arrow-key layouts. */
-export const kbdRow = rcva("flex w-full justify-center", {
+/** One centered row of keys, as in the docs' keyboard / arrow-key layouts (it wraps when narrow). */
+export const kbdRow = rcva(`${row} w-full justify-center`, {
   variants: {
     /** Space between keys: `sm` (gap-1, full keyboard), `xl` (gap-12, arrow keys). */
     gap: {
@@ -38,7 +39,7 @@ export const kbdRow = rcva("flex w-full justify-center", {
 });
 
 /** A key combination (`keys`): its keys and separators kept together as one tight group. */
-export const kbdKeys = rcva("inline-flex items-center gap-1 text-body-sm text-on-surface-variant");
+export const kbdKeys = rcva(`${inlineRow} ${text.label} items-center gap-1 text-body-sm text-on-surface-variant`);
 
 export type KbdVariants = VariantProps<typeof kbd> & VariantProps<typeof kbdRow>;
 

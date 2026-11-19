@@ -3,6 +3,7 @@ import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
+import { inlineRow } from "../layout/algebra.ts";
 import { iconSvg, type IconName } from "../media/icon.ts";
 
 /**
@@ -19,7 +20,7 @@ import { iconSvg, type IconName } from "../media/icon.ts";
  * `select="multi"` is a set of toggles (`ui-change` { values }). To switch a page's main view,
  * use tabs instead (Apple).
  */
-export const buttonGroup = rcva("inline-flex max-w-full flex-wrap items-center gap-0.5");
+export const buttonGroup = rcva(`${inlineRow} items-center gap-0.5`);
 export const buttonGroupItem = rcva(
   "btn btn-ghost max-w-full h-auto min-h-(--size) whitespace-normal [text-wrap:balance] touch-target state-layer gap-1 border-transparent bg-surface-container-highest text-on-surface [transition:border-radius_var(--duration-spatial-fast)_var(--ease-spatial-fast),background-color_var(--duration-effects-fast)_var(--ease-effects-fast)] rounded-sm first:rounded-s-full last:rounded-e-full focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary",
   {

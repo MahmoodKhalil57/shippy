@@ -4,6 +4,7 @@ import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { booleanAttribute, rcva } from "../../base/variants.ts";
 import { iconButton } from "../actions/icon-button.ts";
+import { fixed, inset, row, rowFill, stack, text } from "../layout/algebra.ts";
 import { iconSvg, type IconName } from "../media/icon.ts";
 
 /**
@@ -20,27 +21,27 @@ import { iconSvg, type IconName } from "../media/icon.ts";
  * `dismissible` adds a close button (a cancelable `ui-close`).
  */
 /** The alert's box, a container: a narrow alert (under 16rem) puts its icon above the text. */
-export const alertBox = rcva("@container/alert");
-export const alert = rcva(
-  "grid w-full grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-2 rounded-box px-4 py-3 text-body-md @max-[16rem]/alert:grid-cols-[minmax(0,1fr)] @max-[16rem]/alert:px-3",
-  {
-    variants: {
-      tone: {
-        info: "bg-info-container text-on-info-container",
-        success: "bg-success-container text-on-success-container",
-        warning: "bg-warning-container text-on-warning-container",
-        error: "bg-error-container text-on-error-container",
-      },
+/** The alert's wrapper: as wide as its parent. */
+export const alertBox = rcva("w-full");
+/**
+ * A wrapping row (layout/algebra.ts): the tone icon, then the text, which keeps 7rem; on a box too
+ * narrow for both, the text goes under the icon. Its padding limits itself (`inset`).
+ */
+export const alert = rcva(`${row} ${inset["4"]} items-start gap-x-3 gap-y-2 rounded-box py-3`, {
+  variants: {
+    tone: {
+      info: "bg-info-container text-on-info-container",
+      success: "bg-success-container text-on-success-container",
+      warning: "bg-warning-container text-on-warning-container",
+      error: "bg-error-container text-on-error-container",
     },
-    defaultVariants: { tone: "info" },
   },
-);
-export const alertIcon = rcva("mt-0.5 size-5 shrink-0");
-export const alertBody = rcva("flex min-w-0 flex-col gap-0.5");
-export const alertHeading = rcva("text-title-sm");
-export const alertActions = rcva(
-  "col-start-2 @max-[16rem]/alert:col-start-1 flex max-w-full flex-wrap items-center gap-2",
-);
+  defaultVariants: { tone: "info" },
+});
+export const alertIcon = rcva(`mt-0.5 ${fixed["5"]}`);
+export const alertBody = rcva(`${stack} ${rowFill} gap-0.5 text-body-md`);
+export const alertHeading = rcva(`${text.label} text-title-sm`);
+export const alertActions = rcva(`${row} mt-1.5 items-center gap-2`);
 
 export type AlertVariants = VariantProps<typeof alert>;
 export type AlertTone = NonNullable<AlertVariants["tone"]>;
@@ -88,26 +89,26 @@ export class UiAlert extends LightElement {
         <div class=${alertBody()}>
           ${this.heading ? html`<p class=${alertHeading()}>${this.heading}</p>` : nothing}
           ${this.description ? html`<p>${this.description}</p>` : nothing} ${this.slotted()}
+          ${
+            this.hasSlotted("actions") || this.dismissible
+              ? html`<div class=${alertActions()}>
+                  ${this.slotted("actions")}
+                  ${
+                    this.dismissible
+                      ? html`<button
+                          type="button"
+                          class=${iconButton({ size: "xs" })}
+                          aria-label="Dismiss"
+                          @click=${this._dismiss}
+                        >
+                          ${iconSvg("x", { size: "sm" })}
+                        </button>`
+                      : nothing
+                  }
+                </div>`
+              : nothing
+          }
         </div>
-        ${
-          this.hasSlotted("actions") || this.dismissible
-            ? html`<div class=${alertActions()}>
-                ${this.slotted("actions")}
-                ${
-                  this.dismissible
-                    ? html`<button
-                        type="button"
-                        class=${iconButton({ size: "xs" })}
-                        aria-label="Dismiss"
-                        @click=${this._dismiss}
-                      >
-                        ${iconSvg("x", { size: "sm" })}
-                      </button>`
-                    : nothing
-                }
-              </div>`
-            : nothing
-        }
       </div>
     </div>`;
   }

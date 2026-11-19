@@ -2,6 +2,7 @@ import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
+import { row, rowEnd } from "../layout/algebra.ts";
 
 /**
  * Toolbar: the row of controls that acts on the content below it: filters, view, sort,
@@ -16,9 +17,9 @@ import { rcva } from "../../base/variants.ts";
  * A contextual toolbar ("3 selected" and what to do with them) is the same element with its
  * own label.
  */
-export const toolbar = rcva("flex max-w-full flex-wrap items-center gap-2");
-export const toolbarStart = rcva("flex min-w-0 flex-wrap items-center gap-2");
-export const toolbarEnd = rcva("ms-auto flex max-w-full flex-wrap items-center gap-1");
+export const toolbar = rcva(`${row} items-center gap-2`);
+export const toolbarStart = rcva(`${row} min-w-0 items-center gap-2`);
+export const toolbarEnd = rcva(`${row} ${rowEnd} items-center gap-1`);
 
 /**
  * @example

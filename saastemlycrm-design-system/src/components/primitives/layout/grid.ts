@@ -12,7 +12,7 @@ import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts
  *
  * Every variant is responsive, e.g. `cols="1 md:2 lg:4"`.
  */
-export const grid = rcva("grid", {
+export const grid = rcva("grid min-w-0", {
   variants: {
     /**
      * Intrinsic columns, no breakpoints: as many as fit the space, each at least this wide (and
@@ -40,20 +40,24 @@ export const grid = rcva("grid", {
      * Main content and a sidebar (`items` with `role: "main"` / `"side"`), side by side while the
      * main part keeps at least 30rem, otherwise the sidebar wraps underneath. No breakpoints.
      */
-    sidebar: { true: "flex! max-w-full flex-wrap items-start" },
+    sidebar: { true: "flex! flex-row flex-wrap min-w-0 max-w-full items-start" },
+    /**
+     * This many equal columns once the grid's own width gives each of them 7rem (a container
+     * query: 7N + 4(N − 1) rem, room for the widest gap), one column before that.
+     */
     cols: {
-      "1": "grid-cols-1",
-      "2": "grid-cols-2",
-      "3": "grid-cols-3",
-      "4": "grid-cols-4",
-      "5": "grid-cols-5",
-      "6": "grid-cols-6",
-      "7": "grid-cols-7",
-      "8": "grid-cols-8",
-      "9": "grid-cols-9",
-      "10": "grid-cols-10",
-      "11": "grid-cols-11",
-      "12": "grid-cols-12",
+      "1": "grid-cols-[minmax(0,1fr)]",
+      "2": "grid-cols-[minmax(0,1fr)] @min-[18rem]:grid-cols-2",
+      "3": "grid-cols-[minmax(0,1fr)] @min-[29rem]:grid-cols-3",
+      "4": "grid-cols-[minmax(0,1fr)] @min-[40rem]:grid-cols-4",
+      "5": "grid-cols-[minmax(0,1fr)] @min-[51rem]:grid-cols-5",
+      "6": "grid-cols-[minmax(0,1fr)] @min-[62rem]:grid-cols-6",
+      "7": "grid-cols-[minmax(0,1fr)] @min-[73rem]:grid-cols-7",
+      "8": "grid-cols-[minmax(0,1fr)] @min-[84rem]:grid-cols-8",
+      "9": "grid-cols-[minmax(0,1fr)] @min-[95rem]:grid-cols-9",
+      "10": "grid-cols-[minmax(0,1fr)] @min-[106rem]:grid-cols-10",
+      "11": "grid-cols-[minmax(0,1fr)] @min-[117rem]:grid-cols-11",
+      "12": "grid-cols-[minmax(0,1fr)] @min-[128rem]:grid-cols-12",
     },
     rows: {
       "1": "grid-rows-1",
@@ -88,51 +92,57 @@ export const grid = rcva("grid", {
       end: "justify-items-end",
       stretch: "justify-items-stretch",
     },
+    /** How items fill the grid's columns (a column per item, `grid-flow-col`, would stick out). */
     flow: {
       row: "grid-flow-row",
-      col: "grid-flow-col",
       dense: "grid-flow-dense",
     },
+    /** Inline padding limits itself (layout/algebra.ts `pad`). */
     padding: {
-      "0": "p-0",
-      "1": "p-1",
-      "2": "p-2",
-      "3": "p-3",
-      "4": "p-4",
-      "5": "p-5",
-      "6": "p-6",
-      "8": "p-8",
-      "10": "p-10",
-      "12": "p-12",
-      "16": "p-16",
+      "0": "px-0 py-0",
+      "1": "px-[min(4px,max(0px,calc((100%_-_7rem)/2)))] py-1",
+      "2": "px-[min(8px,max(0px,calc((100%_-_7rem)/2)))] py-2",
+      "3": "px-[min(12px,max(0px,calc((100%_-_7rem)/2)))] py-3",
+      "4": "px-[min(16px,max(0px,calc((100%_-_7rem)/2)))] py-4",
+      "5": "px-[min(20px,max(0px,calc((100%_-_7rem)/2)))] py-5",
+      "6": "px-[min(24px,max(0px,calc((100%_-_7rem)/2)))] py-6",
+      "8": "px-[min(32px,max(0px,calc((100%_-_7rem)/2)))] py-8",
+      "10": "px-[min(40px,max(0px,calc((100%_-_7rem)/2)))] py-10",
+      "12": "px-[min(48px,max(0px,calc((100%_-_7rem)/2)))] py-12",
+      "16": "px-[min(64px,max(0px,calc((100%_-_7rem)/2)))] py-16",
     },
   },
 });
 
 /** The container a `balance` grid measures. */
-export const gridBox = rcva("@container");
+export const gridBox = rcva("@container w-full");
 
 /** A cell spanning several columns. */
 export const gridItem = rcva("", {
   variants: {
-    /** In a `sidebar` grid: the part that takes the room, or the sidebar (18rem, growing when alone). */
+    /**
+     * In a `sidebar` grid: the part that takes the room, or the sidebar (18rem, growing when alone).
+     * The sidebar is in rem, not spacing px, so it grows with the text size and wraps under the
+     * main part sooner (HIG Layout, Dynamic Type: adjacent views "may need to stack vertically").
+     */
     role: {
       main: "min-w-[min(100%,30rem)] grow-[999] basis-0",
-      side: "min-w-0 grow basis-72",
+      side: "min-w-[min(100%,7rem)] grow basis-[18rem]",
     },
+    /** Spans N columns once there's room for N (as `cols`); the whole row before that. */
     span: {
       "1": "col-span-1",
-      "2": "col-span-2",
-      "3": "col-span-3",
-      "4": "col-span-4",
-      "5": "col-span-5",
-      "6": "col-span-6",
-      "7": "col-span-7",
-      "8": "col-span-8",
-      "9": "col-span-9",
-      "10": "col-span-10",
-      "11": "col-span-11",
-      "12": "col-span-12",
+      "2": "col-span-full @min-[18rem]:col-span-2",
+      "3": "col-span-full @min-[29rem]:col-span-3",
+      "4": "col-span-full @min-[40rem]:col-span-4",
+      "5": "col-span-full @min-[51rem]:col-span-5",
+      "6": "col-span-full @min-[62rem]:col-span-6",
+      "7": "col-span-full @min-[73rem]:col-span-7",
+      "8": "col-span-full @min-[84rem]:col-span-8",
+      "9": "col-span-full @min-[95rem]:col-span-9",
+      "10": "col-span-full @min-[106rem]:col-span-10",
+      "11": "col-span-full @min-[117rem]:col-span-11",
+      "12": "col-span-full @min-[128rem]:col-span-12",
       full: "col-span-full",
     },
   },

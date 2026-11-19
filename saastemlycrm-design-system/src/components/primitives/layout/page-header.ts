@@ -2,6 +2,7 @@ import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
+import { row, stack, text } from "./algebra.ts";
 import { heading } from "../typography/heading.ts";
 
 /**
@@ -21,12 +22,12 @@ import { heading } from "../typography/heading.ts";
  *   (default)     anything that belongs under the subtitle (an AI summary, a filter line)
  * On a narrow panel the actions wrap under the text.
  */
-export const pageHeader = rcva("flex max-w-full flex-wrap items-end justify-between gap-x-4 gap-y-3");
-export const pageHeaderText = rcva("flex min-w-0 flex-[1_1_24rem] flex-col gap-1");
-export const pageHeaderTitleRow = rcva("flex max-w-full flex-wrap items-center gap-x-3 gap-y-1");
+export const pageHeader = rcva(`${row} items-end justify-between gap-x-4 gap-y-3`);
+export const pageHeaderText = rcva(`${stack} min-w-0 flex-[1_1_24rem] gap-1`);
+export const pageHeaderTitleRow = rcva(`${row} items-center gap-x-3 gap-y-1`);
 export const pageHeaderEyebrow = rcva("text-label-md text-on-surface-variant");
-export const pageHeaderSubtitle = rcva("max-w-[70ch] text-body-lg text-on-surface-variant");
-export const pageHeaderActions = rcva("flex max-w-full flex-wrap items-center gap-2");
+export const pageHeaderSubtitle = rcva(`${text.prose} max-w-[70ch] text-body-lg text-on-surface-variant`);
+export const pageHeaderActions = rcva(`${row} items-center gap-2`);
 
 /**
  * @example

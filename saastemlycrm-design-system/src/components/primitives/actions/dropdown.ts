@@ -4,6 +4,7 @@ import { customElement, property, query } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement, uid, type Renderable } from "../../base/light-element.ts";
 import { isOn, rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
+import { row, stack, text } from "../layout/algebra.ts";
 import { button, type ButtonVariants } from "./button.ts";
 import { iconButton, type IconButtonVariants } from "./icon-button.ts";
 import { iconSvg, type IconName } from "../media/icon.ts";
@@ -41,11 +42,11 @@ export const dropdown = rcva("dropdown", {
 });
 
 /** A menu item's row: icon, label (and description), shortcut, check. */
-export const dropdownItem = rcva("flex items-center gap-3", {
+export const dropdownItem = rcva(`${row} items-center gap-3`, {
   variants: { destructive: { true: "text-error-ink" } },
 });
-export const dropdownItemText = rcva("flex min-w-0 flex-1 flex-col");
-export const dropdownItemDescription = rcva("text-body-sm text-on-surface-variant");
+export const dropdownItemText = rcva(`${stack} min-w-0 flex-1`);
+export const dropdownItemDescription = rcva(`${text.label} text-body-sm text-on-surface-variant`);
 export const dropdownItemShortcut = rcva("text-label-md text-on-surface-variant");
 export const dropdownSeparator = rcva("my-1 h-px bg-outline-variant");
 
@@ -70,15 +71,17 @@ export const dropdownPanel = rcva(
       },
       rounded: { true: "rounded-box" },
       width: {
-        "52": "w-52 max-w-[calc(100vw-2rem)]",
-        "64": "w-64 max-w-[calc(100vw-2rem)]",
-        "72": "w-72 max-w-[calc(100vw-2rem)]",
-        "80": "w-80 max-w-[calc(100vw-2rem)]",
+        "52": "w-[min(13rem,calc(100vw_-_2rem))] max-w-[calc(100vw-2rem)]",
+        "64": "w-[min(16rem,calc(100vw_-_2rem))] max-w-[calc(100vw-2rem)]",
+        "72": "w-[min(18rem,calc(100vw_-_2rem))] max-w-[calc(100vw-2rem)]",
+        // `floating.*` (layout/algebra.ts); the max-width overrides daisyUI's menu `max-width: 100%` (of the trigger).
+        "80": "w-[min(20rem,calc(100vw_-_2rem))] max-w-[calc(100vw-2rem)]",
       },
       padding: {
         "0": "p-0",
-        "2": "p-2",
-        "4": "p-4",
+        // Inline: daisyUI's menu padding (0.5rem); a panel's own would be measured against its trigger.
+        "2": "py-2",
+        "4": "px-[min(16px,max(0px,calc((100%_-_7rem)/2)))] py-4",
       },
       /** M3 elevation: menus rest at +2 (the default); +3 for pickers that hold a task (date, search). */
       elevation: {

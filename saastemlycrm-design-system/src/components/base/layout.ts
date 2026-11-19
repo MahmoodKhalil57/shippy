@@ -1,5 +1,6 @@
 /**
- * Layout audit: what breaks a fluid layout at the current width. Apple's HIG (Layout) asks to test
+ * Layout audit: what breaks a fluid layout at the current width, on the page and in every open
+ * floating layer (`auditLayers`: menus, dialogs, the helper's panel). Apple's HIG (Layout) asks to test
  * "the largest and smallest layouts … to check for clipping and other layout issues"; M3 (Lists)
  * says the content slot "must be the largest-width slot". Run by `<ui-contrast-audit>` (`?audit`,
  * or "Check contrast and layout" in the command palette) next to the contrast check; resize the
@@ -39,7 +40,9 @@ const SKIP = "ui-contrast-audit, script, style, template, [popover], dialog:not(
 const visible = (e: Element, s: CSSStyleDeclaration) => {
   if (s.display === "none" || s.visibility === "hidden" || s.display === "contents") return false;
   const r = e.getBoundingClientRect();
-  return r.width > 0 && r.height > 0;
+  // Text with height but no width isn't hidden, it's collapsed (a size container in a content-sized
+  // parent): the worst case of `cramped`, so it's measured like anything else.
+  return r.height > 0 && (r.width > 0 || ownText(e).length > 0);
 };
 
 const clipsX = (s: CSSStyleDeclaration) => s.overflowX !== "visible";
@@ -81,7 +84,13 @@ export function auditLayout(root: Element | null = document.querySelector("main"
         walk(child, box);
         continue;
       }
-      if (!visible(child, s)) continue;
+      if (!visible(child, s)) {
+        // A box collapsed to no width that doesn't clip still shows what's in it (a size container
+        // in a content-sized parent): look inside. One that clips (a closed column) hides it.
+        const shown = s.display !== "none" && s.visibility !== "hidden" && !clipsX(s);
+        if (shown && child.getBoundingClientRect().height > 0) walk(child, box);
+        continue;
+      }
       if (floats(s) && s.position !== "sticky") continue; // placed on purpose (menus, badges, tooltips)
       // Mid-animation (a page sliding in): where it is now isn't where it will be.
       if (child.getAnimations().some((a) => a.playState === "running")) {
@@ -144,4 +153,24 @@ function boxName(e: Element) {
   if (e.matches("main")) return "page";
   if (e.matches("dialog")) return "dialog";
   return e.tagName.toLowerCase().startsWith("ui-") ? e.tagName.toLowerCase() : "box";
+}
+
+/** Open floating layers: popovers, dialogs and dialog panels (the helper's), each audited on its own. */
+function floatingLayers(): Element[] {
+  const open = [...document.querySelectorAll(":popover-open, dialog[open], [role=dialog]")].filter((e) => {
+    if (e.closest("ui-contrast-audit")) return false;
+    const s = getComputedStyle(e);
+    const r = e.getBoundingClientRect();
+    return s.display !== "none" && s.visibility !== "hidden" && r.width > 0 && r.height > 0;
+  });
+  // A layer inside another is audited with it.
+  return open.filter((e) => !open.some((o) => o !== e && o.contains(e)));
+}
+
+/**
+ * The page (`main`) and every open floating layer: a menu, a sheet, a dialog, the helper's panel.
+ * They sit outside `main`, so `auditLayout()` alone never sees them.
+ */
+export function auditLayers(): LayoutIssue[] {
+  return [auditLayout(), ...floatingLayers().map((layer) => auditLayout(layer))].flat();
 }
