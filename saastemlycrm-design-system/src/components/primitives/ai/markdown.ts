@@ -12,7 +12,7 @@ import { rcva } from "../../base/variants.ts";
  * script. Links go only to http(s) addresses or paths in the app (in-app paths stay in the app;
  * others open in a new tab). Partial text renders as it streams.
  */
-export const markdown = rcva("flex flex-col gap-2 text-body-md leading-relaxed [overflow-wrap:anywhere]");
+export const markdown = rcva("flex flex-col gap-2 text-body-md leading-relaxed [overflow-wrap:break-word]");
 export const markdownHeading = rcva("text-on-surface", {
   variants: { level: { "1": "text-title-md", "2": "text-title-sm", "3": "text-title-sm" } },
 });

@@ -22,7 +22,7 @@ import { iconSvg } from "../media/icon.ts";
 export const chip = rcva("inline-flex max-w-full items-center", {
   variants: {
     variant: {
-      input: "badge badge-soft h-auto gap-1 py-0.5 whitespace-normal [overflow-wrap:anywhere]",
+      input: "badge badge-soft h-auto gap-1 py-0.5 whitespace-normal [overflow-wrap:break-word]",
       filter:
         "rounded-field border border-outline-variant bg-surface/70 [transition:border-color_var(--duration-effects-fast)_var(--ease-effects-fast)] hover:border-outline",
     },

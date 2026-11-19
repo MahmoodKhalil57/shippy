@@ -27,9 +27,12 @@ import { tag } from "./tag.ts";
  *   hit area covers the row; other links and controls in the row stay on top and keep working),
  *   and shows the link's keyboard focus as a ring around the whole row.
  */
+// Columns are never narrower than 10rem (about 18 characters a line): when they can't all have
+// that, the table scrolls sideways (`tableWrapper`) instead of wrapping values into a sliver.
 export const table = rcva(
   [
-    "table",
+    // layout: fixed (a 10rem column floor: the table scrolls sideways when its columns can't all have it)
+    "table [&_:is(th,td)]:min-w-[10rem]",
     // header band
     "[&_thead_tr]:border-b [&_thead_tr]:border-outline-variant [&_thead_th]:bg-surface-container-low [&_thead_th]:text-label-md [&_thead_th]:tracking-wide [&_thead_th]:uppercase [&_:where(thead,tfoot)]:text-on-surface-variant",
     // rows

@@ -65,6 +65,12 @@ describe("fluid layout, by construction", () => {
     expect(fluidProblems("textarea w-full")).toHaveLength(1);
     expect(fluidProblems("textarea min-w-0 w-full")).toEqual([]);
     expect(fluidProblems("select an option")).toEqual([]);
+    expect(fluidProblems("grid grid-cols-[minmax(8rem,max-content)_1fr]")).toHaveLength(1);
+    expect(fluidProblems("grid grid-cols-[auto_minmax(0,1fr)]")).toEqual([]);
+    expect(fluidProblems("grid grid-cols-2")).toHaveLength(1);
+    expect(fluidProblems("grid grid-cols-1 @sm:grid-cols-[minmax(min(8rem,40%),max-content)_minmax(0,1fr)]")).toEqual(
+      [],
+    );
     expect(fluidProblems("w-96")).toHaveLength(1);
     expect(fluidProblems("w-96 max-w-full")).toEqual([]);
     expect(fluidProblems("min-w-[13.5rem] flex-1")).toHaveLength(1);

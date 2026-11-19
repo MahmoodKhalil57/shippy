@@ -33,7 +33,7 @@ export const list = rcva("flex flex-col", {
 });
 
 export const listItem = rcva(
-  "flex w-full items-start gap-3 px-3 py-2.5 text-start text-on-surface [--outer-radius:var(--radius-box)]",
+  "flex w-full items-start gap-x-3 gap-y-1.5 px-3 py-2.5 text-start @max-[20rem]/item:flex-wrap text-on-surface [--outer-radius:var(--radius-box)]",
   {
     variants: {
       interactive: {
@@ -45,8 +45,11 @@ export const listItem = rcva(
     },
   },
 );
-/** The listitem wrapper adds no box (the row inside is the box). */
-export const listItemWrap = rcva("contents");
+/**
+ * The listitem wrapper is a container (the row inside is the box): a row narrower than 20rem puts
+ * its trailing slot on a line of its own under the content, instead of a 40% sliver beside it.
+ */
+export const listItemWrap = rcva("@container/item block");
 export const listItemLeading = rcva("flex shrink-0 items-center self-start pt-1 text-on-surface-variant");
 export const listItemContent = rcva("flex min-w-0 flex-1 flex-col gap-0.5");
 export const listItemTop = rcva("flex min-w-0 items-baseline justify-between gap-2");
@@ -60,9 +63,12 @@ export const listItemSupporting = rcva("text-body-md text-on-surface-variant", {
 export const listItemExtra = rcva("mt-1 flex max-w-full flex-wrap items-center gap-1");
 /**
  * The trailing slot is smaller than the content (M3 Lists: leading and trailing "must be a smaller
- * width than the content section"): at most 40% of the row; what doesn't fit wraps inside it.
+ * width than the content section"): at most 40% of the row; what doesn't fit wraps inside it. In a row under 20rem it takes the whole
+ * width under the content, starting where the content starts.
  */
-export const listItemTrailing = rcva("flex min-w-0 max-w-[40%] flex-wrap items-center justify-end gap-2 self-center");
+export const listItemTrailing = rcva(
+  "flex min-w-0 max-w-[40%] flex-wrap items-center justify-end gap-2 self-center @max-[20rem]/item:max-w-full @max-[20rem]/item:basis-full @max-[20rem]/item:justify-start",
+);
 
 export type ListVariants = VariantProps<typeof list>;
 export type ListItemLines = "1" | "2" | "3";

@@ -17,7 +17,8 @@ import { rcva } from "../../base/variants.ts";
  * (a dash) or `done` out of order. `supporting` is the small line under a label ("next · 14:00").
  * `direction="vertical lg:horizontal"` is responsive; `scrollable` lets a long row scroll.
  */
-export const steps = rcva("steps", {
+// layout: fixed (each step keeps 10rem for its label: a row that can't fit scrolls, `stepsScroll`)
+export const steps = rcva("steps [&>.step]:min-w-[10rem]", {
   variants: {
     direction: {
       vertical: "steps-vertical",

@@ -22,7 +22,11 @@ import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts
  * written out inline (not shared constants) so the CSS plugin can read them
  * for responsive values.
  */
-export const text = rcva("", {
+/**
+ * Text never makes its container wider: as a flex or grid item it may shrink below its longest
+ * word (`min-w-0`), and a word that can't fit then breaks (a file name in a phone-width row).
+ */
+export const text = rcva("min-w-0 [overflow-wrap:break-word]", {
   variants: {
     variant: {
       "display-lg": "text-display-lg",
@@ -82,7 +86,7 @@ export const text = rcva("", {
     italic: { true: "italic" },
     uppercase: { true: "uppercase" },
     /** Keep the text's own line breaks and wrap long words (messages, generated answers). */
-    "pre-line": { true: "whitespace-pre-line [overflow-wrap:anywhere]" },
+    "pre-line": { true: "whitespace-pre-line [overflow-wrap:break-word]" },
     /** A search match inside a result (with `as="mark"`). */
     highlight: { true: "rounded-xs bg-primary-container px-0.5 text-on-primary-container" },
   },

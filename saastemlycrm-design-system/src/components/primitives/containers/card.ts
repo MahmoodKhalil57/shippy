@@ -34,10 +34,12 @@ export const card = rcva("card [&_p]:grow-0", {
     /**
      * `md` (the default) pads fluidly with the panel it's in (a container: the main panel): 16px on
      * a phone up to daisyUI's 24px from about a 600px panel, so a 320px screen keeps room for content.
+     * A card inside another card's body (a filled panel in a section) pads 12px up to 16px: nested
+     * insets add up, and three of them left an alert in a phone-width card 80px for its text.
      */
     size: {
       sm: "card-sm",
-      md: "card-md [--card-p:clamp(1rem,4cqi,1.5rem)]",
+      md: "card-md [--card-p:clamp(1rem,4cqi,1.5rem)] [.card-body_&]:[--card-p:clamp(0.75rem,3cqi,1rem)]",
     },
     /**
      * The whole card is a link (`href`): on hover it lifts a level on a spring, its edge picks up

@@ -597,7 +597,7 @@ const WIDE_ARBITRARY = /^(?:min-)?w-\[(\d+(?:\.\d+)?)(rem|px)\]$/;
 
 /** Is this string a list of utility classes (not prose)? */
 export const isClassString = (/** @type {string} */ value) =>
-  (/\b(?:flex|grid|shrink-0|w-|min-w-|btn|fieldset|input|textarea|select)/.test(value) ||
+  (/\b(?:flex|grid|shrink-0|w-|min-w-|btn|fieldset|input|textarea|select|overflow-wrap)/.test(value) ||
     (/\blabel\b/.test(value) && /\S-\S/.test(value))) &&
   /^[\w\-[\]:/.%(),!@&>*+=#"' ]+$/.test(value) &&
   !value.includes("  ") &&
@@ -614,6 +614,10 @@ export const isClassString = (/** @type {string} */ value) =>
  *    keeps its built-in width (about 20 characters) instead of shrinking with the column;
  * 7. daisyUI's `label` (`white-space: nowrap`) without `whitespace-normal`: a long hint sets the
  *    width of the column it's in.
+ * 9. `[overflow-wrap:anywhere]`: it makes the text's narrowest width one letter, so a grid or table
+ *    column shrinks to a sliver; `break-word` breaks a word only when it can't fit.
+ * 8. a grid recipe with fixed columns (`grid grid-cols-2`, `grid-cols-[a_b]`) and no narrow fallback
+ *    (an `@container` variant or `auto-fit`): its columns squeeze instead of stacking.
  * A fieldset (5) also needs a `minmax(0, 1fr)` column: a plain `1fr` is at least as wide as its
  * widest unbreakable line.
  */
@@ -644,6 +648,26 @@ export function fluidProblems(/** @type {string} */ value) {
   if (control && tokens.some((c) => /[-:]/.test(c)) && !has(/^min-w-0$/))
     out.push(
       `a form control ("${value.slice(0, 40)}…") without min-w-0 keeps its built-in width in a grid: add min-w-0`,
+    );
+  // A grid recipe with fixed columns and no narrow fallback: the columns squeeze at any width.
+  // Equal columns, or a template with a fixed track of 4rem or more (not capped by `min(…, %)`):
+  // an `auto` icon column beside `1fr` text can't squeeze anything.
+  const bigTrack = (/** @type {string} */ c) =>
+    [...c.replace(/min\([^()]*\)/g, "").matchAll(/(\d+(?:\.\d+)?)(rem|px)/g)].some(
+      (m) => (m[2] === "px" ? Number(m[1]) / 16 : Number(m[1])) >= 4,
+    );
+  const fixedCols = tokens.find(
+    (c) =>
+      /^grid-cols-(?:[2-9]|1[0-2])$/.test(c) ||
+      (/^grid-cols-\[.*_.*\]$/.test(c) && !/auto-(?:fit|fill)/.test(c) && bigTrack(c)),
+  );
+  if (fixedCols && has(/^grid$/) && !tokens.some((c) => /^@[\w-]*:grid-cols-/.test(c)))
+    out.push(
+      `a grid with fixed columns ("${fixedCols}") and no narrow fallback: use grid-cols-1 with an @container variant, or auto-fit`,
+    );
+  if (has(/^\[overflow-wrap:anywhere\]$/))
+    out.push(
+      "[overflow-wrap:anywhere] lets a column shrink to one letter (its min-content): use [overflow-wrap:break-word]",
     );
   if (has(/^btn$/) && !has(CAPPED)) out.push(`a button ("${value.slice(0, 40)}…") isn't capped: add max-w-full`);
   return out;

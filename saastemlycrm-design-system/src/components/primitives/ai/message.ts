@@ -26,7 +26,7 @@ export const message = rcva("group/message flex flex-col gap-1", {
 export const messageBody = rcva("text-body-md", {
   variants: {
     from: {
-      user: "max-w-[85%] rounded-box rounded-ee-field bg-surface-container px-3.5 py-2 [overflow-wrap:anywhere] whitespace-pre-line",
+      user: "max-w-[85%] rounded-box rounded-ee-field bg-surface-container px-3.5 py-2 [overflow-wrap:break-word] whitespace-pre-line",
       assistant: "w-full",
     },
   },

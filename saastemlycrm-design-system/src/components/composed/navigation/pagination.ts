@@ -1,5 +1,5 @@
 import { html, type TemplateResult } from "lit";
-import { customElement, property } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 import { LightElement, uid } from "../../base/light-element.ts";
 import type { ButtonVariants } from "../../primitives/actions/button.ts";
 import type { JoinVariants } from "../../primitives/layout/join.ts";
@@ -36,6 +36,9 @@ interface PageButton {
  *
  * Pages are 1-based. Long ranges collapse to `1 … 4 5 6 … 99` (the gap is a
  * disabled button, as in the docs). Fires `ui-change` with `{ page }`.
+ *
+ * Fluid: when the page numbers don't fit the row it's in (a phone-width card), it shows
+ * « 3 / 12 » instead, and the numbers again once the row is wide enough.
  */
 @customElement("ui-pagination")
 export class UiPagination extends LightElement {
@@ -55,6 +58,37 @@ export class UiPagination extends LightElement {
   /** Radio group name (radio mode). */
   @property() name = uid("page");
   @property() label = "Pagination";
+
+  /** The numbers don't fit: show the current page of the total between the arrows. */
+  @state() private _narrow = false;
+  /** The width the numbers need, measured when they were last shown. */
+  private _fullWidth = 0;
+  private _resize = new ResizeObserver(() => this._fit());
+
+  connectedCallback() {
+    super.connectedCallback();
+    // The host has no box (`display: contents`): the room is the parent's.
+    if (this.parentElement) this._resize.observe(this.parentElement);
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this._resize.disconnect();
+  }
+
+  protected updated() {
+    // The buttons draw after this element does: watch the numbers' own size too.
+    const nav = this.querySelector("nav");
+    if (nav && !this._narrow) this._resize.observe(nav);
+    this._fit();
+  }
+
+  private _fit() {
+    if (this.mode !== "numbers" || !this.parentElement) return;
+    if (!this._narrow) this._fullWidth = this.querySelector("nav")?.scrollWidth ?? 0;
+    const narrow = this._fullWidth > this.parentElement.clientWidth;
+    if (narrow !== this._narrow) this._narrow = narrow;
+  }
 
   go(page: number) {
     const p = Math.min(Math.max(1, page), Math.max(1, this.total));
@@ -126,6 +160,17 @@ export class UiPagination extends LightElement {
         )}
       </ui-join>`;
     }
+
+    if (this._narrow)
+      return html`<ui-join as="nav" .label=${this.label}>
+        ${this._arrow(-1, this.prevLabel)}
+        ${this._button(`${this.page} / ${Math.max(1, this.total)}`, {
+          active: true,
+          current: "page",
+          label: `Page ${this.page} of ${Math.max(1, this.total)}`,
+        })}
+        ${this._arrow(1, this.nextLabel)}
+      </ui-join>`;
 
     return html`<ui-join as="nav" .label=${this.label} .direction=${this.direction}>
       ${this.prevNext ? this._arrow(-1, this.prevLabel) : ""}

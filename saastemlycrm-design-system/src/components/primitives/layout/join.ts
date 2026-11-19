@@ -30,6 +30,7 @@ export const join = rcva("join", {
     /** Mark children as join items automatically (see above). */
     auto: { true: "[&>:not([data-ui])]:join-item [&>[data-ui]>*]:join-item" },
     /** Equal-width items in a 2-column grid (docs: pagination "Next/Prev"). */
+    // layout: fixed (two short buttons, Previous / Next, that belong side by side)
     equal: { true: "grid grid-cols-2" },
     /** Background behind the group (docs: accordion "Using Accordion and Join together"). */
     surface: {

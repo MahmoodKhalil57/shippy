@@ -418,7 +418,7 @@ export class UiDocForm extends LightElement {
         ];
         return html`<ui-box border rounded="box" padding="3">
           <ui-flex direction="col" gap="3">
-            <ui-flex align="center" justify="between" gap="2">
+            <ui-flex align="center" justify="between" gap="2" wrap>
               <ui-button
                 size="xs"
                 variant="text"
@@ -427,7 +427,7 @@ export class UiDocForm extends LightElement {
               >
                 <ui-icon name=${open ? "chevron-down" : "chevron-right"} size="sm"></ui-icon>
                 <ui-text as="span" variant="title-sm">${kind} ${text(i + 1).padStart(2, "0")}</ui-text>
-                ${name ? html`<ui-text as="span" variant="body-md" color="muted">${name}</ui-text>` : nothing}
+                ${name ? html`<ui-text as="span" variant="body-md" color="muted" truncate>${name}</ui-text>` : nothing}
               </ui-button>
               <ui-flex align="center" gap="1">
                 ${errors ? html`<ui-tag tone="error">${errors} ${errors === 1 ? "error" : "errors"}</ui-tag>` : nothing}
@@ -727,7 +727,7 @@ export class UiDocForm extends LightElement {
               set(next);
             }}
           ></ui-text-input>`;
-        control = html`<ui-grid cols="2" gap="4">${part(0, `${label} · longitude`)}${part(1, "Latitude")}</ui-grid>`;
+        control = html`<ui-grid fit="xs" gap="4">${part(0, `${label} · longitude`)}${part(1, "Latitude")}</ui-grid>`;
         break;
       }
       case "select":

@@ -21,7 +21,12 @@ export const descriptionList = rcva("m-0", {
   variants: {
     layout: {
       stacked: "grid grid-cols-[repeat(auto-fit,minmax(min(100%,11rem),1fr))] gap-x-6 gap-y-4",
-      inline: "grid grid-cols-[minmax(8rem,max-content)_1fr] items-baseline gap-x-4 gap-y-2",
+      /**
+       * Label beside value when the list's own width has room for both (a container query: 24rem),
+       * else the label above its value, so a narrow card never squeezes the values into a sliver.
+       */
+      inline:
+        "grid grid-cols-1 gap-x-4 [&_dd]:mb-3 @sm:grid-cols-[minmax(min(8rem,40%),max-content)_minmax(0,1fr)] @sm:items-baseline @sm:gap-y-2 @sm:[&_dd]:mb-0",
     },
   },
   defaultVariants: { layout: "stacked" },
@@ -31,8 +36,10 @@ export const descriptionList = rcva("m-0", {
 export const descriptionItem = rcva("min-w-0", {
   variants: { layout: { stacked: "flex flex-col gap-0.5", inline: "contents" } },
 });
+/** The box the list measures (its layout follows its own width, not the window's). */
+export const descriptionBox = rcva("@container");
 export const descriptionLabel = rcva("text-label-md text-on-surface-variant");
-export const descriptionValue = rcva("m-0 min-w-0 [overflow-wrap:anywhere]", {
+export const descriptionValue = rcva("m-0 min-w-0 [overflow-wrap:break-word]", {
   variants: {
     size: { sm: "text-body-md", md: "text-title-md", lg: "text-headline-sm tabular-nums" },
     tone: {
@@ -79,17 +86,19 @@ export class UiDescriptionList extends LightElement {
 
   render() {
     const layout = this.layout ?? "stacked";
-    return html`<dl class=${descriptionList({ layout })}>
-      ${this.items.map(
-        (i) =>
-          html`<div class=${descriptionItem({ layout })}>
-            <dt class=${descriptionLabel()}>${i.label}</dt>
-            <dd class=${descriptionValue({ size: this.size, tone: i.tone })}>
-              ${i.value}${i.note ? html`<span class=${descriptionNote({ tone: i.noteTone })}>${i.note}</span>` : nothing}
-            </dd>
-          </div>`,
-      )}
-    </dl>`;
+    return html`<div class=${descriptionBox()}>
+      <dl class=${descriptionList({ layout })}>
+        ${this.items.map(
+          (i) =>
+            html`<div class=${descriptionItem({ layout })}>
+              <dt class=${descriptionLabel()}>${i.label}</dt>
+              <dd class=${descriptionValue({ size: this.size, tone: i.tone })}>
+                ${i.value}${i.note ? html`<span class=${descriptionNote({ tone: i.noteTone })}>${i.note}</span>` : nothing}
+              </dd>
+            </div>`,
+        )}
+      </dl>
+    </div>`;
   }
 }
 

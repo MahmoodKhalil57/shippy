@@ -169,9 +169,9 @@ export const menuNavLabel = rcva(
 
 /** A card item's parts: title row (title + badge), and the description under it. */
 export const menuCardHead = rcva("flex items-start gap-2");
-export const menuCardTitle = rcva("min-w-0 flex-1 text-label-lg leading-snug [overflow-wrap:anywhere]");
+export const menuCardTitle = rcva("min-w-0 flex-1 text-label-lg leading-snug [overflow-wrap:break-word]");
 export const menuCardDescription = rcva(
-  "text-body-sm leading-snug text-on-surface-variant [overflow-wrap:anywhere] [.menu-active_&]:text-on-surface",
+  "text-body-sm leading-snug text-on-surface-variant [overflow-wrap:break-word] [.menu-active_&]:text-on-surface",
 );
 export const menuCardBody = rcva(
   "flex flex-col gap-0.5 [opacity:calc(1_-_var(--menu-collapse,0))] [transition:opacity_var(--duration-effects-fast)_var(--ease-effects-fast)] motion-reduce:transition-none",

@@ -10,10 +10,12 @@
  *   horizontal scroller (a table) may be wider: the scroller is its box.
  * - `squeezed`: text that truncates or clamps has been squeezed to almost nothing, so something
  *   beside it doesn't shrink (a trailing slot full of tags).
+ * - `cramped`: text wrapped into a column too narrow to read (three lines or more in under 7rem):
+ *   nothing overflows, but a word or two per line, broken mid-word, is a layout that didn't adapt.
  * - `page-scroll`: the page itself scrolls sideways.
  */
 
-export type LayoutIssueKind = "escapes" | "squeezed" | "page-scroll";
+export type LayoutIssueKind = "escapes" | "squeezed" | "cramped" | "page-scroll";
 
 export interface LayoutIssue {
   kind: LayoutIssueKind;
@@ -24,6 +26,10 @@ export interface LayoutIssue {
 
 /** Narrower than this, truncated text says almost nothing (about four characters). */
 export const MIN_TEXT_WIDTH = 40;
+/** Narrower than this (7rem), wrapped text reads a word or two per line. */
+export const MIN_COLUMN_WIDTH = 112;
+/** Lines of text in a column that narrow before it's cramped. */
+const CRAMPED_LINES = 3;
 /** Rounding slack, in pixels. */
 const SLACK = 1;
 
@@ -96,6 +102,14 @@ export function auditLayout(root: Element | null = document.querySelector("main"
       const cut = child.scrollWidth > child.clientWidth + SLACK || child.scrollHeight > child.clientHeight + SLACK;
       if (truncates && cut && (child.textContent ?? "").trim().length > 3 && r.width < MIN_TEXT_WIDTH)
         out.push({ kind: "squeezed", element: child, detail: `squeezed to ${Math.round(r.width)}px` });
+      // Text wrapped into a sliver: its own text (not its children's) on many lines, narrow.
+      // An inline element is only as wide as its longest line: measure the block it flows in.
+      if (columnWidth(child, s, r) < MIN_COLUMN_WIDTH && ownText(child).length > 20) {
+        const lineHeight = parseFloat(s.lineHeight) || parseFloat(s.fontSize) * 1.4;
+        const lines = Math.round(r.height / lineHeight);
+        if (lines >= CRAMPED_LINES && s.whiteSpace !== "nowrap")
+          out.push({ kind: "cramped", element: child, detail: `${lines} lines in ${Math.round(r.width)}px` });
+      }
       // Inside a horizontal scroller, wider content is meant to scroll: its children start afresh.
       if (scrollsX(s)) walk(child, null);
       else walk(child, isBox(s) ? { el: child, rect: r } : box);
@@ -103,6 +117,24 @@ export function auditLayout(root: Element | null = document.querySelector("main"
   };
   walk(root, { el: root, rect: root.getBoundingClientRect() });
   return out;
+}
+
+/** The width text in `e` can use: its own, or for inline text, the content box of the block it flows in. */
+function columnWidth(e: Element, s: CSSStyleDeclaration, r: DOMRect) {
+  if (s.display !== "inline") return r.width;
+  let block = e.parentElement;
+  // Component hosts are `display: contents` (no box): skip them as well as inline boxes.
+  while (block && ["inline", "contents"].includes(getComputedStyle(block).display)) block = block.parentElement;
+  if (!block) return r.width;
+  const b = getComputedStyle(block);
+  return block.clientWidth - parseFloat(b.paddingLeft) - parseFloat(b.paddingRight);
+}
+
+/** The text directly inside an element (not in its child elements). */
+function ownText(e: Element) {
+  let t = "";
+  for (const n of e.childNodes) if (n.nodeType === Node.TEXT_NODE) t += n.textContent ?? "";
+  return t.trim();
 }
 
 /** A readable name for a box, for the audit's messages. */

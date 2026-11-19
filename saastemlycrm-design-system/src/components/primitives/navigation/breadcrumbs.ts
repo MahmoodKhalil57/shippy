@@ -11,12 +11,13 @@ import { rcva } from "../../base/variants.ts";
  * Docs: https://daisyui.com/components/breadcrumbs/
  *
  * `.breadcrumbs` wraps a `<ul>` of `<li>` links. Crumbs that don't fit wrap onto the next line
- * (each crumb stays whole) instead of daisyUI's horizontal scrolling, and without daisyUI's 4px
+ * (each crumb stays whole; only a crumb longer than the whole row, a long record title, wraps
+ * inside itself: as a flex item it is capped at the row, `max-w-full`) instead of daisyUI's horizontal scrolling, and without daisyUI's 4px
  * outdent (which cancels its own padding): in a column sized to its content the outdent made the
  * trail 4px too wide for its box, so it always showed a scrollbar and clipped the last crumb. `width="xs"` gives the docs "max-width" example.
  */
 export const breadcrumbs = rcva(
-  "breadcrumbs ms-0 overflow-visible [&>ul]:flex-wrap [&>ul]:ps-0 [&>ul]:whitespace-normal [&>ul>li]:whitespace-nowrap",
+  "breadcrumbs ms-0 overflow-visible [&>ul]:flex-wrap [&>ul]:ps-0 [&>ul]:whitespace-normal [&>ul>li]:max-w-full [&>ul>li]:[overflow-wrap:break-word]",
   {
     variants: {
       size: {

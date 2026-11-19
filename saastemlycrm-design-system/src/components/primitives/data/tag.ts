@@ -46,7 +46,7 @@ export const tag = rcva("inline-flex max-w-full shrink-0 items-center gap-1 roun
  * The text: on one line when the tag fits its row, else wrapped onto a second line (a tag never
  * cuts its words: "Token expired" at the end of a long tag is the point of it).
  */
-export const tagText = rcva("min-w-0 [overflow-wrap:anywhere] [text-wrap:balance]");
+export const tagText = rcva("min-w-0 [overflow-wrap:break-word] [text-wrap:balance]");
 
 export type TagVariants = VariantProps<typeof tag>;
 export type Tone = NonNullable<TagVariants["tone"]>;

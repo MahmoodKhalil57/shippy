@@ -19,8 +19,10 @@ import { iconSvg, type IconName } from "../media/icon.ts";
  * the message (children or `description`), and at most two actions (`slot="actions"`).
  * `dismissible` adds a close button (a cancelable `ui-close`).
  */
+/** The alert's box, a container: a narrow alert (under 16rem) puts its icon above the text. */
+export const alertBox = rcva("@container/alert");
 export const alert = rcva(
-  "grid w-full grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-2 rounded-box px-4 py-3 text-body-md",
+  "grid w-full grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-2 rounded-box px-4 py-3 text-body-md @max-[16rem]/alert:grid-cols-[minmax(0,1fr)] @max-[16rem]/alert:px-3",
   {
     variants: {
       tone: {
@@ -36,7 +38,9 @@ export const alert = rcva(
 export const alertIcon = rcva("mt-0.5 size-5 shrink-0");
 export const alertBody = rcva("flex min-w-0 flex-col gap-0.5");
 export const alertHeading = rcva("text-title-sm");
-export const alertActions = rcva("col-start-2 flex max-w-full flex-wrap items-center gap-2");
+export const alertActions = rcva(
+  "col-start-2 @max-[16rem]/alert:col-start-1 flex max-w-full flex-wrap items-center gap-2",
+);
 
 export type AlertVariants = VariantProps<typeof alert>;
 export type AlertTone = NonNullable<AlertVariants["tone"]>;
@@ -78,31 +82,33 @@ export class UiAlert extends LightElement {
       : this.icon
         ? iconSvg(ALERT_ICONS[tone], {}, { class: alertIcon() })
         : html`<span></span>`;
-    return html`<div role=${tone === "error" || tone === "warning" ? "alert" : "status"} class=${alert({ tone })}>
-      ${icon}
-      <div class=${alertBody()}>
-        ${this.heading ? html`<p class=${alertHeading()}>${this.heading}</p>` : nothing}
-        ${this.description ? html`<p>${this.description}</p>` : nothing} ${this.slotted()}
+    return html`<div class=${alertBox()}>
+      <div role=${tone === "error" || tone === "warning" ? "alert" : "status"} class=${alert({ tone })}>
+        ${icon}
+        <div class=${alertBody()}>
+          ${this.heading ? html`<p class=${alertHeading()}>${this.heading}</p>` : nothing}
+          ${this.description ? html`<p>${this.description}</p>` : nothing} ${this.slotted()}
+        </div>
+        ${
+          this.hasSlotted("actions") || this.dismissible
+            ? html`<div class=${alertActions()}>
+                ${this.slotted("actions")}
+                ${
+                  this.dismissible
+                    ? html`<button
+                        type="button"
+                        class=${iconButton({ size: "xs" })}
+                        aria-label="Dismiss"
+                        @click=${this._dismiss}
+                      >
+                        ${iconSvg("x", { size: "sm" })}
+                      </button>`
+                    : nothing
+                }
+              </div>`
+            : nothing
+        }
       </div>
-      ${
-        this.hasSlotted("actions") || this.dismissible
-          ? html`<div class=${alertActions()}>
-              ${this.slotted("actions")}
-              ${
-                this.dismissible
-                  ? html`<button
-                      type="button"
-                      class=${iconButton({ size: "xs" })}
-                      aria-label="Dismiss"
-                      @click=${this._dismiss}
-                    >
-                      ${iconSvg("x", { size: "sm" })}
-                    </button>`
-                  : nothing
-              }
-            </div>`
-          : nothing
-      }
     </div>`;
   }
 }

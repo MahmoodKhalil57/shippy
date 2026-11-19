@@ -251,11 +251,12 @@ export class UiAppShell extends LightElement {
     return main ? main.offsetWidth - main.clientWidth : 4;
   }
 
-  /** Whether the main panel's content keeps `--main-min` with the columns taking this much room. */
+  /** Whether the main panel's content keeps `--main-comfort` with the columns taking this much room. */
   private _fits(nav: number, aside: number) {
     // A compact frame has no edges or gaps (`appShell`'s `compact`).
     const edges = this._compact ? 0 : frame().chrome;
-    return document.documentElement.clientWidth >= nav + aside + edges + this._mainChrome() + frame().mainMin;
+    // A column pushes the page only when the page keeps `--main-comfort`: below that it's a sheet.
+    return document.documentElement.clientWidth >= nav + aside + edges + this._mainChrome() + frame().mainComfort;
   }
 
   /**
