@@ -6,7 +6,7 @@ import { live } from "lit/directives/live.js";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { iconButton } from "../actions/icon-button.ts";
-import { inset, row } from "../layout/algebra.ts";
+import { inset, row, rowLine } from "../layout/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
 import { kbd, kbdKeys } from "../showcase/kbd.ts";
 
@@ -45,7 +45,7 @@ export const searchIcon = rcva("size-[1.1em] shrink-0 text-on-surface-variant");
 export const searchLauncher = rcva(
   `${inset["4"]} btn btn-ghost touch-target liquid-glass-clear h-11 max-w-xl justify-start gap-2 rounded-full border-transparent font-normal text-on-surface-variant hover:bg-surface/60 hover:text-on-surface @max-[13rem]:me-auto @max-[13rem]:size-10 @max-[13rem]:justify-center @max-[13rem]:px-0 @max-[13rem]:[&>[data-search-text]]:hidden @max-[13rem]:[&>[data-search-keys]]:hidden`,
 );
-export const searchLauncherText = rcva("min-w-0 truncate text-body-md");
+export const searchLauncherText = rcva(`${rowLine} text-start text-body-md`);
 export const searchShortcut = rcva("ms-auto");
 
 export type SearchVariants = VariantProps<typeof search>;

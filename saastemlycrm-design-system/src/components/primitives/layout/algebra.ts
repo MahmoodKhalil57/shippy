@@ -63,6 +63,12 @@ export const inlineFlex = "inline-flex! max-w-full";
 
 /** The item in a row that takes the room: never under min(100%, 7rem); short of it, it wraps (I2). */
 export const rowFill = "min-w-[min(100%,7rem)] grow basis-[7rem]";
+/**
+ * The item in a row that takes the room as one line cut with an ellipsis (a search field's
+ * placeholder beside its shortcut keys): its basis is 0, so the row never breaks before it; it
+ * gets what its fixed neighbours leave and cuts the rest (I1).
+ */
+export const rowLine = "min-w-0 flex-1 basis-0 truncate";
 /** A row's trailing group: pushed to the end, onto its own line when the row is narrow. */
 export const rowEnd = "ms-auto min-w-0 max-w-full";
 

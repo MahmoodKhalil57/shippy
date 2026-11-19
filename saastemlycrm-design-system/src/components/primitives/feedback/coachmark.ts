@@ -130,12 +130,30 @@ export class UiCoachmark extends LightElement {
     this.dispatchEvent(new CustomEvent(name, { bubbles: true, composed: true }));
   }
 
+  /**
+   * The highlighted area: the target with a little room around it, within the window. A target
+   * too tall to sit beside the card (a long card of offers) is highlighted from its top down to
+   * where the card begins under it, so the ring is whole and the card never covers the target.
+   */
+  private _spot(): DOMRect | null {
+    const r = this._rect;
+    if (!r) return null;
+    const vh = innerHeight;
+    const top = Math.max(8, r.top - PAD);
+    let bottom = Math.min(vh - 8, r.bottom + PAD);
+    const fitsBeside = r.height + PAD * 2 + GAP + this._card.h + 32 <= vh;
+    if (!fitsBeside) bottom = Math.max(top + 48, Math.min(bottom, vh - this._card.h - GAP - 16));
+    return new DOMRect(r.left - PAD, top, r.width + PAD * 2, bottom - top);
+  }
+
   /** Card position: below the target if it fits, else above, else over it; clamped to the screen. */
   private _cardAt(): { top: number; left: number } {
     const vw = innerWidth;
     const vh = innerHeight;
     const { w, h } = this._card;
-    const r = this._rect;
+    const s = this._spot();
+    // The spot already has PAD around the target.
+    const r = s && new DOMRect(s.left + PAD, s.top + PAD, s.width - PAD * 2, s.height - PAD * 2);
     if (!r) return { top: Math.max(16, (vh - h) / 2), left: Math.max(16, (vw - w) / 2) };
     const left = Math.min(Math.max(16, r.left + r.width / 2 - w / 2), vw - w - 16);
     const below = r.bottom + PAD + GAP;
@@ -146,10 +164,10 @@ export class UiCoachmark extends LightElement {
 
   render() {
     if (!this.open) return nothing;
-    const r = this._rect;
+    const s = this._spot();
     // Without a target the hole shrinks to nothing in the middle: the whole page dims.
-    const spot = r
-      ? { top: r.top - PAD, left: r.left - PAD, h: r.height + PAD * 2, w: r.width + PAD * 2 }
+    const spot = s
+      ? { top: s.top, left: s.left, h: s.height, w: s.width }
       : { top: innerHeight / 2, left: innerWidth / 2, h: 0, w: 0 };
     const at = this._cardAt();
     const last = this.step >= this.total;

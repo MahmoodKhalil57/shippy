@@ -86,7 +86,11 @@ export class DashboardTour extends LightElement {
       await this._prepare(step);
       const target = step.target ? await waitFor(() => find(step.target!)) : null;
       if (run !== this.#run) return;
-      boxOf(target ?? document.body)?.scrollIntoView({ block: "center", behavior: "smooth" });
+      // A target taller than about half the window shows from its top (its heading is what the
+      // step names); a shorter one is centred.
+      const box = boxOf(target ?? document.body);
+      const tall = (box?.getBoundingClientRect().height ?? 0) > innerHeight / 2;
+      box?.scrollIntoView({ block: tall ? "start" : "center", behavior: "smooth" });
       // Let the smooth scroll settle before the spotlight measures it.
       await sleep(target ? 350 : 0);
       if (run !== this.#run) return;
