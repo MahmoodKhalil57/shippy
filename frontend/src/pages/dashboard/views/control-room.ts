@@ -123,6 +123,9 @@ export class GsControlRoom extends LightElement {
             >AI draft</ui-badge
           >
         </ui-flex>
+        <ui-speak
+          .text=${b && !this.summarising ? [b.greeting, ...b.items.map((i) => i.text)].join(". ") : ""}
+        ></ui-speak>
         <ui-button size="xs" variant="soft" ?disabled=${this.summarising} @click=${() => void this._brief(true)}
           ><ui-icon name="sparkles" size="sm"></ui-icon>Summarise</ui-button
         >

@@ -62,6 +62,7 @@ import iThinking from "~icons/material-symbols-light/neurology-outline";
 import iTool from "~icons/material-symbols-light/build-outline";
 import iBlock from "~icons/material-symbols-light/block";
 import iGlobe from "~icons/material-symbols-light/language";
+import iMic from "~icons/material-symbols-light/mic-outline";
 import iUpload from "~icons/material-symbols-light/upload";
 import iPrint from "~icons/material-symbols-light/print-outline";
 import iTranslate from "~icons/material-symbols-light/translate";
@@ -190,6 +191,7 @@ export const ICONS = {
   tool: iTool,
   block: iBlock,
   globe: iGlobe,
+  mic: iMic,
   upload: iUpload,
   print: iPrint,
   translate: iTranslate,

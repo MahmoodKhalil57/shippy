@@ -321,6 +321,18 @@ export class GsGrowth extends LightElement {
       </ui-flex>
       <ui-text size="xs" color="muted">Applications to become an approved supplier of a ship manager or owner.</ui-text>
       <ui-table size="sm" .columns=${columns} .rows=${g.registrations as Row[]}></ui-table>
+      <ui-ai-extract
+        source="file"
+        label="Read a registration document"
+        what="company registration document (commercial register, tax card or vendor certificate)"
+        .fields=${[
+          { id: "company", label: "Company" },
+          { id: "registration", label: "Commercial register no." },
+          { id: "tax", label: "Tax card no." },
+          { id: "issued", label: "Issued" },
+          { id: "expires", label: "Expires", hint: "the expiry or renewal date" },
+        ]}
+      ></ui-ai-extract>
     </ui-card>`;
   }
 

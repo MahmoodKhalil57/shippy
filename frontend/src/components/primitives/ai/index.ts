@@ -1,4 +1,5 @@
 // AI: the parts of a conversation with an agent (after shadcn's AI Elements).
+export * from "./assist.ts";
 export * from "./confirmation.ts";
 export * from "./markdown.ts";
 export * from "./message.ts";

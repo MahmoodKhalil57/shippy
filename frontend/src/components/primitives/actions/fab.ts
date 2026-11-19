@@ -50,8 +50,10 @@ export const fabTooltip = rcva("tooltip", {
 export const fabDock = rcva(
   "fixed end-4 bottom-4 z-[60] flex flex-col items-end gap-3 pointer-events-none [&>*]:pointer-events-auto",
 );
+/** Closed, the panel stays mounted but hidden, so its content (a conversation) never lands in the page. */
 export const fabPanel = rcva(
   "liquid-glass flex h-[min(38rem,calc(100dvh-7rem))] w-[min(26rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-box origin-bottom-right transition-[opacity,scale] duration-(--duration-effects) ease-effects starting:scale-95 starting:opacity-0 motion-reduce:transition-none",
+  { variants: { hidden: { true: "hidden" } } },
 );
 export const fabPanelHead = rcva("flex shrink-0 items-center gap-2 border-b border-base-content/10 px-4 py-2.5");
 export const fabPanelTitle = rcva("min-w-0 flex-1 truncate text-sm font-semibold");
@@ -127,25 +129,21 @@ export class UiFab extends LightElement {
   private _renderPanel() {
     const trigger = this.hasSlotted("trigger") ? this.slotted("trigger") : this.trigger;
     return html`<div class=${fabDock()}>
-      ${
-        this.open
-          ? html`<section class=${fabPanel()} role="dialog" aria-label=${ifDefined(this.triggerLabel)}>
-              <header class=${fabPanelHead()}>
-                <span class=${fabPanelTitle()}>${this.heading}</span>
-                <button
-                  type="button"
-                  class=${button({ variant: "ghost", size: "sm", shape: "circle" })}
-                  aria-label="Close"
-                  @click=${() => this._toggle(false)}
-                >
-                  ${iconSvg("x", { size: "sm" })}
-                </button>
-              </header>
-              <div class=${fabPanelBody()}>${this.slotted()}</div>
-              ${this.hasSlotted("footer") ? html`<footer class=${fabPanelFooter()}>${this.slotted("footer")}</footer>` : nothing}
-            </section>`
-          : nothing
-      }
+      <section class=${fabPanel({ hidden: !this.open })} role="dialog" aria-label=${ifDefined(this.triggerLabel)}>
+        <header class=${fabPanelHead()}>
+          <span class=${fabPanelTitle()}>${this.heading}</span>
+          <button
+            type="button"
+            class=${button({ variant: "ghost", size: "sm", shape: "circle" })}
+            aria-label="Close"
+            @click=${() => this._toggle(false)}
+          >
+            ${iconSvg("x", { size: "sm" })}
+          </button>
+        </header>
+        <div class=${fabPanelBody()}>${this.slotted()}</div>
+        ${this.hasSlotted("footer") ? html`<footer class=${fabPanelFooter()}>${this.slotted("footer")}</footer>` : nothing}
+      </section>
       <button
         type="button"
         class=${button({ size: this.size, color: this.color, shape: "circle", class: "shadow-lg" })}

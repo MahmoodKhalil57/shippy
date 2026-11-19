@@ -30,6 +30,11 @@ export interface AgentTool<I extends Record<string, unknown> = Record<string, un
     untrustedContentHint?: boolean;
   };
   execute(input: I, signal?: AbortSignal): Promise<unknown>;
+  /**
+   * In the small set for small models (the on-device Saastama-Micro-3.5): one or two plain arguments, a
+   * short text result. Not sent to the browser's WebMCP (it's how this page's own helper picks).
+   */
+  simple?: boolean;
 }
 
 /** The result shape agents read: MCP text content, plus the value itself. */
@@ -109,6 +114,23 @@ export function provideTools(next: AgentTool[]) {
   }
   window.dispatchEvent(new Event("agent-tools-change"));
 }
+
+/** Who is asking and where they are — what an in-page assistant tells its model with each message. */
+export interface AgentContext {
+  name: string;
+  /** The role as people say it ("Management approver"), and its id ("management"). */
+  role: string;
+  roleId: string;
+  page: string;
+  path: string;
+}
+let context: () => AgentContext | null = () => null;
+
+/** The app says who's signed in and where (called when the context is needed, so it's always current). */
+export const provideAgentContext = (fn: () => AgentContext | null) => {
+  context = fn;
+};
+export const agentContext = () => context();
 
 /** The current tools, for an in-page assistant (e.g. to describe them to a model). */
 export const agentTools = (): readonly AgentTool[] => tools;

@@ -1,6 +1,7 @@
 import { html, nothing } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { api } from "../../cms/client.ts";
+import { text } from "../../cms/runtime/util.ts";
 import type { Home, HomeCase, HomeChart, HomeItem, HomeTile, HomeUnit, HomeWidget } from "../../cms/endpoints/home.ts";
 import { LightElement } from "../../components/base/light-element.ts";
 import type { TableColumn } from "../../components/primitives/data/table.ts";
@@ -36,6 +37,8 @@ const STATUS: Record<Tone, "error" | "warning" | "info" | "success" | "neutral">
 export class DashboardHome extends LightElement {
   @state() private home: Home | null = null;
   @state() private error = "";
+  /** Unread notifications, as lines for "While you were away" (summarised on the device). */
+  @state() private unread = "";
 
   connectedCallback() {
     super.connectedCallback();
@@ -45,6 +48,10 @@ export class DashboardHome extends LightElement {
   private async _load() {
     try {
       this.home = await api.get<Home>("/home");
+      const { docs } = await api
+        .find("notifications", { where: { read: { equals: false } }, sort: "-at", limit: 20, depth: 0 })
+        .catch(() => ({ docs: [] }));
+      this.unread = docs.map((n) => `${text(n.kind)}: ${text(n.title)} — ${text(n.detail)}`).join("\n");
     } catch (e) {
       this.error = (e as Error).message;
     }
@@ -261,6 +268,11 @@ export class DashboardHome extends LightElement {
           <ui-text size="xs" color="muted" weight="medium" uppercase>${h.eyebrow}</ui-text>
           <ui-heading level="1" size="page">${h.greeting}</ui-heading>
           <ui-text color="muted">${h.subtitle}</ui-text>
+          <ui-ai-summary
+            label="While you were away"
+            context="Unread notifications for someone back at their desk at a ship chandler: say what needs them first."
+            .text=${this.unread}
+          ></ui-ai-summary>
         </ui-flex>
         <ui-flex gap="2" wrap>
           ${h.actions.map(

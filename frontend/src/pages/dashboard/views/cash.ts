@@ -1,5 +1,6 @@
 import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import type { Extracted } from "../../../agent/built-in-ai.ts";
 import { api } from "../../../cms/client.ts";
 import { LightElement } from "../../../components/base/light-element.ts";
 import type { TableColumn } from "../../../components/primitives/data/table.ts";
@@ -166,6 +167,74 @@ export class GsCash extends LightElement implements ViewProps {
   @state() private error = "";
   @state() private busy = "";
   @state() private dialog: Dialog | null = null;
+  /** A pasted remittance, read on the device, and the open invoices it seems to pay. */
+  @state() private remit: { values: Extracted; matches: Receivable[] } | null = null;
+
+  /**
+   * Match what the remittance names (invoice numbers, the amount) against the open invoices —
+   * plain matching, not the model: by number (also just its digits), or by an equal balance.
+   */
+  private _matchRemittance(d: Cash, values: Extracted) {
+    const digits = (s: string) => s.replace(/\D/g, "");
+    const tokens = String(values.invoices ?? "")
+      .split(/[\s,;]+/)
+      .map((t) => t.trim().toLowerCase())
+      .filter((t) => digits(t).length >= 3);
+    const amount = typeof values.amount === "number" ? values.amount : Number(values.amount);
+    const byNumber = d.receivables.filter((r) =>
+      tokens.some((t) => r.number.toLowerCase().includes(t) || digits(r.number).endsWith(digits(t))),
+    );
+    const byAmount = Number.isFinite(amount) ? d.receivables.filter((r) => Math.abs(r.balance - amount) < 1) : [];
+    this.remit = { values, matches: [...new Set([...byNumber, ...byAmount])] };
+  }
+
+  private _remittance(d: Cash) {
+    return html`<ui-card variant="border" shadow="false">
+      ${this._heading("Match a remittance", html`<ui-badge size="sm" variant="soft">On this device</ui-badge>`)}
+      <ui-text size="xs" color="muted"
+        >Paste a customer's payment advice or remittance email: the invoice numbers and amount are read on this device,
+        then matched to open invoices. A person records the payment.</ui-text
+      >
+      <ui-ai-extract
+        source="paste"
+        label="Read and match"
+        placeholder="Paste the remittance or payment advice…"
+        what="customer remittance advice or payment email"
+        pickable
+        use-label="Match to open invoices"
+        .fields=${[
+          { id: "invoices", label: "Invoice numbers", hint: "every invoice number mentioned, comma-separated" },
+          { id: "amount", label: "Amount paid", type: "number" },
+          { id: "currency", label: "Currency" },
+          { id: "payer", label: "Paid by" },
+          { id: "date", label: "Payment date" },
+        ]}
+        @ui-select=${(e: CustomEvent<{ values: Extracted }>) => this._matchRemittance(d, e.detail.values)}
+      ></ui-ai-extract>
+      ${
+        this.remit
+          ? this.remit.matches.length
+            ? html`<ui-flex direction="col" gap="2">
+                <ui-text size="sm" weight="semibold"
+                  >Looks like it pays
+                  ${this.remit.matches.length === 1 ? "this invoice" : `these ${this.remit.matches.length} invoices`}:</ui-text
+                >
+                ${this.remit.matches.map(
+                  (r) =>
+                    html`<ui-flex gap="2" align="center" wrap>
+                      <ui-link .href=${`/collections/invoices/${r.id}`}>${r.number}</ui-link>
+                      <ui-text size="sm">${r.customerName}</ui-text>
+                      <ui-text size="sm" color="muted">${money(r.balance, r.currency)} open</ui-text>
+                    </ui-flex>`,
+                )}
+              </ui-flex>`
+            : html`<ui-alert color="warning" variant="soft"
+                >No open invoice matches these numbers or this amount — check the remittance by hand.</ui-alert
+              >`
+          : nothing
+      }
+    </ui-card>`;
+  }
 
   connectedCallback() {
     super.connectedCallback();
@@ -345,7 +414,7 @@ export class GsCash extends LightElement implements ViewProps {
       </ui-flex>
       ${this._tiles(d)}
       <ui-grid fit="lg" gap="4">${this._ageing(d)} ${this._forecast(d)}</ui-grid>
-      ${this._collections(d)}
+      ${this._collections(d)} ${this._remittance(d)}
       ${
         d.canSeePayables
           ? html`${this._payables(d)} ${this._approvals(d)} ${this._bank(d)}`
@@ -846,6 +915,19 @@ export class GsCash extends LightElement implements ViewProps {
                 })
               : undefined}
         ></ui-textarea>
+        <ui-ai-tools
+          .value=${draft.body}
+          .brief=${
+            internal
+              ? `A short internal note to the account owner: invoice ${d.invoice.number} for ${d.invoice.customerName} is ${d.invoice.daysOverdue} days overdue; the customer must not be chased.`
+              : `A polite payment reminder email to ${d.invoice.customerName} about invoice ${d.invoice.number}, signed by Golden Sea finance.`
+          }
+          .context=${`Invoice ${d.invoice.number}, ${d.invoice.currency} ${d.invoice.balance.toLocaleString("en-GB")} outstanding of ${d.invoice.amount.toLocaleString("en-GB")}, due ${d.invoice.dueDate.slice(0, 10)}, ${d.invoice.daysOverdue} days overdue${d.invoice.case ? `, for case ${d.invoice.case}` : ""}.`}
+          @ui-change=${(e: CustomEvent<{ value: string }>) => {
+            if (this.dialog?.kind === "reminder" && this.dialog.draft)
+              this.dialog = { ...this.dialog, draft: { ...this.dialog.draft, body: e.detail.value } };
+          }}
+        ></ui-ai-tools>
         ${draft.note ? html`<ui-text size="xs" color="muted">${draft.note}</ui-text>` : nothing}
         <ui-flex justify="end" gap="2">
           ${cancel}

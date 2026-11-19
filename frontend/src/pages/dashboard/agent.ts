@@ -1,7 +1,7 @@
 import { html, nothing, type TemplateResult } from "lit";
 import { customElement, query, state } from "lit/decorators.js";
 import { CODEX_MODELS, CodexConversation, codexConfig, type CodexEvent } from "../../agent/codex.ts";
-import { agentTools, type AgentTool } from "../../agent/webmcp.ts";
+import { agentContext, agentTools, type AgentTool } from "../../agent/webmcp.ts";
 import { LightElement } from "../../components/base/light-element.ts";
 import type { ConfirmationState } from "../../components/primitives/ai/confirmation.ts";
 import type { MessageRating } from "../../components/primitives/ai/message.ts";
@@ -43,11 +43,22 @@ type Item =
     }
   | { kind: "error"; text: string };
 
-const SUGGESTIONS = [
-  "What am I looking at?",
-  "What's waiting for me today?",
-  "Take me to the offer comparison for Aurora Crest",
-  "Who owes us money?",
+/** Questions to start with: the same two for everyone, then two for the person's role. */
+const SUGGESTIONS = ["What am I looking at?", "What's waiting for me today?"];
+const ROLE_SUGGESTIONS: Record<string, string[]> = {
+  "supply-chain": ["Which suppliers are late?", "Status of Aurora Crest"],
+  sales: ["Which quotations are waiting for the customer?", "Status of Aurora Crest"],
+  management: ["What needs my approval?", "How is the growth pipeline?"],
+  "finance-director": ["Who owes us money?", "Go to receivables"],
+  operations: ["Which deliveries are coming up?", "Go to purchase orders"],
+  "office-admin": ["Go to the inbox", "How does the inbox work?"],
+};
+const suggestions = () => [
+  ...SUGGESTIONS,
+  ...(ROLE_SUGGESTIONS[agentContext()?.roleId ?? ""] ?? [
+    "Who owes us money?",
+    "Take me to the offer comparison for Aurora Crest",
+  ]),
 ];
 
 const MODEL_GROUPS: ModelGroup[] = [
@@ -61,7 +72,6 @@ const MODEL_GROUPS: ModelGroup[] = [
       id: m.id,
       label: m.label,
       icon: "device",
-      description: "Chrome's built-in model · private, no key",
     })),
   },
 ];
@@ -69,7 +79,7 @@ const MODEL_GROUPS: ModelGroup[] = [
 /** The last model picked (remembered per browser), else index.html's default. */
 function savedModel(): string {
   try {
-    const saved = localStorage.getItem("gs:helper-model");
+    const saved = localStorage.getItem("gs:helper-model-v2");
     if (saved && CODEX_MODELS.some((m) => m.id === saved)) return saved;
   } catch {
     /* storage unavailable */
@@ -141,7 +151,7 @@ export class DashboardAgent extends LightElement {
     this.model = id;
     this._warmUp();
     try {
-      localStorage.setItem("gs:helper-model", id);
+      localStorage.setItem("gs:helper-model-v2", id);
     } catch {
       /* storage unavailable */
     }
@@ -387,7 +397,7 @@ export class DashboardAgent extends LightElement {
           >
           <ui-suggestions
             wrap
-            .items=${SUGGESTIONS}
+            .items=${suggestions()}
             @ui-select=${(e: CustomEvent<{ value: string }>) => void this._send(e.detail.value)}
           ></ui-suggestions>
         </ui-flex>

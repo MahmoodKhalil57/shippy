@@ -447,6 +447,7 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
 
   return [
     ...always,
+    ...simpleTools(host),
     {
       name: "list_pages",
       title: "Pages",
@@ -814,6 +815,343 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
         startTour(t.id);
         return { started: t.title, steps: t.steps.map((s) => s.title) };
       },
+    },
+  ];
+}
+
+/* ---------------------------------------------------------------- the simple set (small models) */
+
+/**
+ * Short text instead of JSON: a small on-device model reads a few lines far better than a large
+ * object. Each simple tool returns at most ~1,500 characters.
+ */
+const clip = (s: string, max = 1500) => (s.length > max ? `${s.slice(0, max)}…` : s);
+const line = (...parts: unknown[]) =>
+  parts
+    .filter((p) => p != null && p !== "")
+    .map(String)
+    .join(" · ");
+
+/** The current screen in a few lines: what it is, who's looking, and the first things on it. */
+async function screenText(host: AgentHost): Promise<string> {
+  const route = parseRoute(location.pathname);
+  const user = host.user();
+  const out = [
+    `Page: ${host.title()} (${location.pathname})`,
+    user ? `Signed in as ${text(user.name ?? user.email)} — ${roleLabel(text(user.role))}` : "Signed out",
+  ];
+  const c = (await screenContent(route, host).catch(() => ({}))) as Record<string, unknown>;
+  if (c.description) out.push(`About this page: ${str(c.description)}`);
+  if (route.name === "dashboard") out.push(await myDayText());
+  else if (route.name === "list") {
+    const rows = (c.rows as Record<string, unknown>[] | undefined) ?? [];
+    out.push(
+      `A list of ${str(c.label)}: ${typeof c.totalDocs === "number" ? c.totalDocs : rows.length} in all. First ones:`,
+    );
+    for (const r of rows.slice(0, 8)) out.push(`- ${line(...Object.values(r).slice(1, 6))}`);
+  } else if (route.name === "edit") {
+    const doc = (c.document ?? {}) as Record<string, unknown>;
+    const col = collectionOf(route.slug)!;
+    out.push(`A ${labels(col).singular.toLowerCase()}: ${titleOf(col, doc as Doc)}`);
+    for (const f of columnsOf(col).slice(0, 8)) out.push(`- ${text(f.label ?? f.name)}: ${cellText(f, doc[f.name!])}`);
+    if (route.slug === "cases") out.push(await caseText(route.id));
+    out.push(`Tabs: ${((c.tabs as { label: string }[] | undefined) ?? []).map((t) => t.label).join(", ")}`);
+  } else if (route.name === "view") out.push(`A screen: ${str(c.title)}.`);
+  else if (route.name === "global") out.push(`Settings: ${str(c.label)}.`);
+  return clip(out.join("\n"));
+}
+
+/** The signed-in person's day, from their dashboard: greeting, counters, their queue, lists. */
+async function myDayText(): Promise<string> {
+  const home = await api.get<{
+    greeting: string;
+    subtitle: string;
+    widgets: {
+      kind: string;
+      tiles?: { label: string; value: string; note?: string }[];
+      title?: string;
+      cases?: { caseId: string; vessel: string; stage: string; next: string; blocker: string; due: string }[];
+      lists?: { title: string; items: { title: string; sub: string }[] }[];
+    }[];
+  }>("/home");
+  const out = [home.greeting, home.subtitle];
+  for (const w of home.widgets) {
+    if (w.kind === "tiles")
+      out.push(...(w.tiles ?? []).map((t) => `- ${t.label}: ${t.value}${t.note ? ` (${t.note})` : ""}`));
+    if (w.kind === "queue") {
+      out.push(`${w.title ?? "Queue"}:`);
+      out.push(
+        ...(w.cases ?? [])
+          .slice(0, 5)
+          .map((q) => `- ${line(q.caseId, q.vessel, q.stage, `next: ${q.next}`, q.blocker, q.due)}`),
+      );
+    }
+    if (w.kind === "lists")
+      for (const l of w.lists ?? []) {
+        if (!l.items.length) continue;
+        out.push(`${l.title}:`);
+        out.push(...l.items.slice(0, 4).map((i) => `- ${line(i.title, i.sub)}`));
+      }
+  }
+  return clip(out.filter(Boolean).join("\n"));
+}
+
+/** One case's status in a few lines (stage, owner, deadline, next action, blocker, lines). */
+async function caseText(id: string): Promise<string> {
+  const c = await api.get<{
+    caseId: string;
+    vessel: string;
+    port: string;
+    customer: { name: string };
+    stage: string;
+    deadlineText: string;
+    next: string;
+    blocker: string;
+    owner: { name: string } | null;
+    lines: { total: number; ready: number; waiting: number; blocked: number; noOffer: number };
+  }>(`/case-overview/${encodeURIComponent(id)}`);
+  return clip(
+    [
+      `${c.caseId} — ${c.vessel} at ${c.port}, for ${c.customer.name}`,
+      `Stage: ${c.stage}. Deadline: ${c.deadlineText}.`,
+      `Owner: ${c.owner?.name ?? "nobody"}.`,
+      `Next action: ${c.next || "—"}.${c.blocker ? ` Blocked by: ${c.blocker}.` : ""}`,
+      `Lines: ${c.lines.ready}/${c.lines.total} ready, ${c.lines.waiting} waiting, ${c.lines.blocked} blocked, ${c.lines.noOffer} without an offer.`,
+      `Page: /collections/cases/${c.caseId.toLowerCase()}`,
+    ].join("\n"),
+  );
+}
+
+/** Records whose title matches what someone typed (a case number, a vessel, a company, an invoice…). */
+async function findRecords(query: string, host: AgentHost, limit = 6) {
+  const q = query.trim();
+  if (!q) return [];
+  const searchable = config.collections.filter(
+    (c) => useAsTitle(c) !== "id" && c.admin?.hidden !== true && host.access()?.collections[c.slug]?.read.permission,
+  );
+  const fields = (c: (typeof searchable)[number]) =>
+    [
+      useAsTitle(c),
+      ...dataFields(formFields(c))
+        .filter((f) => ["vessel", "name", "company", "customerRef"].includes(f.name!))
+        .map((f) => f.name!),
+    ].filter((v, i, a) => a.indexOf(v) === i);
+  const hits = await Promise.all(
+    searchable.map(async (c) => {
+      const where = { or: fields(c).map((f) => ({ [f]: { like: q } })) } as Where;
+      const r = await api.find(c.slug, { where, limit: 3, depth: 0 }).catch(() => ({ docs: [] as Doc[] }));
+      return r.docs.map((d) => ({
+        title: titleOf(c, d),
+        kind: labels(c).singular,
+        path: `/collections/${c.slug}/${encodeURIComponent(d.id)}`,
+      }));
+    }),
+  );
+  return hits.flat().slice(0, limit);
+}
+
+/* ---------------------------------------------------------------- the platform guide */
+
+/** How the platform works, in short sections a small model can look up (and quote). */
+const GUIDE: { topic: string; keywords: string; text: string }[] = [
+  {
+    topic: "The flow of a case",
+    keywords: "case flow rfq process stages lifecycle how it works",
+    text: "Every customer RFQ is one case, from the first email to the last payment: intake (the inbox reads the RFQ) → supplier RFQs → offers compared → pricing → quotation approved and sent → customer PO checked → supplier POs → delivery to the vessel → invoice → payment → close. Lines can move in stages; a case only completes when every line does. Each case has an owner, a deadline and a next action.",
+  },
+  {
+    topic: "The inbox",
+    keywords: "inbox email whatsapp message intake new rfq read extract",
+    text: 'Inbox (Sourcing desk → Inbox): every mailbox and WhatsApp in one list. Open a message and use "Read it into a draft case": AI reads the email and attachments into a draft with a confidence per field; low-confidence values go to review. A person creates the case. Translate, Catch me up, and Read a photo or voice note help with each message.',
+  },
+  {
+    topic: "Supplier RFQs and reminders",
+    keywords: "supplier rfq request quote reminder late chase reply",
+    text: "On a case's Supplier RFQs tab: draft RFQs per supplier (the client's name is always removed), send them, and track replies. Reminders go after 24 h and 48 h, then the case owner is alerted. \"Remind now\" sends one by hand. Replies are matched even when the subject changes.",
+  },
+  {
+    topic: "Comparing offers",
+    keywords: "compare offers best price deviation select split supplier",
+    text: "On a case's Compare offers tab: each offer is checked against the requested line (brand, unit, pack size) and normalised to the base unit, with landed cost in EGP. Deviations are flagged; the best fit is recommended; a person selects. A wrong offer gets a correction request to the supplier.",
+  },
+  {
+    topic: "Pricing and quotations",
+    keywords: "price pricing margin quotation quote send approve version",
+    text: "On a case's Pricing tab, prices follow the pricing policy and FX rates. Below-policy margins need approval. The quotation (EGP or USD, English or Arabic) is previewed, approved, then sent; every change is a new version. Sales never sees costs or margins.",
+  },
+  {
+    topic: "Approvals",
+    keywords: "approval approve reject decide two-person margin exception payment bank",
+    text: "Approvals queue (Commercial → Approvals queue): every request that needs a named person — margin exceptions, quotations, payments, alternative items, bank-detail changes (two people: Finance and the CEO). Approve, or return with a reason; decisions are recorded under your name.",
+  },
+  {
+    topic: "Customer PO and orders",
+    keywords: "customer po purchase order mismatch amendment order confirm supplier po",
+    text: "On a case's Order & purchasing tab: the customer's PO is checked line by line against the approved quotation; any mismatch blocks commitment until the customer agrees in writing. Then the sales order is confirmed and supplier POs are prepared, re-checked and approved.",
+  },
+  {
+    topic: "Delivery",
+    keywords: "delivery vessel eta port proof signed note shortage damage",
+    text: "On a case's Delivery tab: drop-ship or warehouse routes, ETA changes, the port agent, and proof of delivery (the signed note). Shortages or damage noted on board become claims.",
+  },
+  {
+    topic: "Invoices and collection",
+    keywords: "invoice payment owe overdue collect reminder receivable payable e-invoice cash",
+    text: 'Finance → Receivables & payables: what customers owe (by age) and what we owe suppliers. "Draft reminder" writes a collection email that respects each customer\'s contact rule; a person reviews and sends it. Invoices are issued from delivery, with Egyptian e-invoicing.',
+  },
+  {
+    topic: "Insights",
+    keywords: "dashboard control room briefing profit report kpi management",
+    text: "Insights → Control room: the business live, with a 07:00 AI briefing. Each case's Profit tab shows actual against expected profit, FX differences and claims; a case closes only when everything reconciles.",
+  },
+  {
+    topic: "Finding things",
+    keywords: "search find where look up record command palette",
+    text: "Press Ctrl+K (or /) for the search palette: pages, actions and records. Bookmarks, notifications, widgets and guided tours are in the side panel on the right.",
+  },
+];
+
+/** What each role mostly does here (the helper's sense of who it's talking to). */
+const ROLE_GUIDE: Record<string, string> = {
+  "supply-chain":
+    "Supply chain & customer service: reads the inbox, creates cases, sends supplier RFQs and chases replies, compares offers, prices lines and prepares quotations.",
+  sales:
+    "Sales: owns customer relationships and quotations, follows customer decisions and POs, and grows accounts. Sales never sees costs or margins.",
+  management:
+    "Management approver: decides approvals (margin exceptions, payments, bank-detail changes), watches the control room, and steers by blockers, cash and profit.",
+  "finance-director":
+    "Finance: receivables and payables, collection reminders, payment approvals and bank-detail checks, invoices and e-invoicing.",
+  operations: "Operations: supplier POs, receiving, deliveries to vessels, proof of delivery and claims.",
+  "office-admin": "Office admin: the inbox, contacts, vendor registrations and documents.",
+};
+
+function guideText(topic: string, roleId: string) {
+  const ranked = GUIDE.map((g) => ({
+    g,
+    score: Math.max(nameScore(topic, g.topic), nameScore(topic, g.keywords)),
+  })).sort((a, b) => b.score - a.score);
+  const picked = ranked[0] && ranked[0].score > 0 ? ranked.slice(0, 2).filter((r) => r.score > 0) : [];
+  const role = ROLE_GUIDE[roleId];
+  return clip(
+    [
+      ...(picked.length
+        ? picked.map((r) => `${r.g.topic}: ${r.g.text}`)
+        : [`Topics: ${GUIDE.map((g) => g.topic).join("; ")}.`]),
+      role ? `Your role — ${role}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n\n"),
+  );
+}
+
+/** The simple set: what a small model can use well. */
+function simpleTools(host: AgentHost): AgentTool[] {
+  const user = host.user()!;
+  return [
+    {
+      name: "what_is_on_screen",
+      title: "What's on screen",
+      description:
+        "What the person is looking at now, in a few lines: the page, who they are, and the main things on it.",
+      inputSchema: schema({}),
+      annotations: READ,
+      simple: true,
+      execute: () => screenText(host),
+    },
+    {
+      name: "open_page",
+      title: "Open a page",
+      description:
+        'Open a page for the person. "page" is what they called it: "home", "invoices", "approvals", "inbox", "pricing policy", or a case number like "GS-RFQ-0142" (add a tab: "GS-RFQ-0142 compare offers").',
+      inputSchema: schema({ page: { type: "string", description: "The page or record the person named" } }, ["page"]),
+      simple: true,
+      execute: async ({ page }) => {
+        navigate(await resolvePage(str(page), host));
+        await new Promise((r) => setTimeout(r, 50));
+        return `Opened: ${host.title()} (${location.pathname}).`;
+      },
+    },
+    {
+      name: "my_day",
+      title: "My day",
+      description:
+        "What's waiting for the signed-in person today: their counters, their queue of cases with next actions, and their lists.",
+      inputSchema: schema({}),
+      annotations: READ,
+      simple: true,
+      execute: () => myDayText(),
+    },
+    {
+      name: "case_status",
+      title: "Case status",
+      description:
+        'Where a case stands: stage, deadline, owner, next action, what blocks it. "case" can be a case number (GS-RFQ-0142), a vessel (Aurora Crest) or a customer.',
+      inputSchema: schema({ case: { type: "string", description: "Case number, vessel or customer" } }, ["case"]),
+      annotations: READ,
+      simple: true,
+      execute: async (input) => {
+        const q = str(input.case);
+        const hits = (await findRecords(q, host, 20)).filter((h) => h.path.startsWith("/collections/cases/"));
+        let id = hits[0]?.path.split("/").pop();
+        if (!id) {
+          const r = await api
+            .find("cases", {
+              where: { or: [{ vessel: { like: q } }, { customerRef: { like: q } }] } as Where,
+              limit: 1,
+              depth: 0,
+            })
+            .catch(() => ({ docs: [] as Doc[] }));
+          id = r.docs[0]?.id;
+        }
+        if (!id) throw new Error(`No case matches "${q}". Try find, or a case number like GS-RFQ-0142.`);
+        return caseText(decodeURIComponent(id));
+      },
+    },
+    {
+      name: "find",
+      title: "Find",
+      description:
+        "Find records by what the person typed: a case or invoice number, a vessel, a customer or supplier name. Returns the matches with the page each opens.",
+      inputSchema: schema({ query: { type: "string" } }, ["query"]),
+      annotations: { ...READ, untrustedContentHint: true },
+      simple: true,
+      execute: async ({ query }) => {
+        const hits = await findRecords(str(query), host);
+        return hits.length
+          ? hits.map((h) => `- ${h.title} (${h.kind}) → ${h.path}`).join("\n")
+          : `Nothing matches "${str(query)}".`;
+      },
+    },
+    {
+      name: "ask_golden_sea",
+      title: "Ask Golden Sea",
+      description:
+        "Business questions answered from the live records: a case or vessel's status, what's waiting for approval, who owes us money, late suppliers, deadlines, the growth pipeline, margin.",
+      inputSchema: schema({ question: { type: "string" } }, ["question"]),
+      annotations: READ,
+      simple: true,
+      execute: async ({ question }) => {
+        const a = await api.post<Answer>("/ask", { question: str(question) });
+        return clip(
+          [
+            a.answer,
+            ...a.points.map((p) => `- ${p}`),
+            a.sources.length ? `Sources: ${a.sources.map((s) => `${s.label} (${s.href})`).join(", ")}` : "",
+          ]
+            .filter(Boolean)
+            .join("\n"),
+        );
+      },
+    },
+    {
+      name: "platform_guide",
+      title: "Platform guide",
+      description:
+        'How the platform works and where things are: "topic" like "approvals", "how to send a quotation", "supplier reminders", "the inbox", "invoices".',
+      inputSchema: schema({ topic: { type: "string" } }, ["topic"]),
+      annotations: READ,
+      simple: true,
+      execute: async ({ topic }) => guideText(str(topic), text(user.role)),
     },
   ];
 }

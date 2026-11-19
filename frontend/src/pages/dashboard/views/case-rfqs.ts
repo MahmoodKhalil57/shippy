@@ -46,7 +46,6 @@ const at = (v: string) => (v ? FMT.format(new Date(v)) : "—");
 const day = (v: string) => (v ? DAY.format(new Date(v)) : "—");
 const pct = (c: number) => `${Math.round(c * 100)}%`;
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
-const lines = (text: string) => text.split("\n").map((l, i) => html`${i ? html`<br />` : nothing}${l}`);
 
 @customElement("gs-case-rfqs")
 export class GsCaseRfqs extends LightElement {
@@ -545,7 +544,7 @@ export class GsCaseRfqs extends LightElement {
                           <ui-text size="xs" color="muted"><strong>To</strong> ${preview.preview.to}</ui-text>
                           <ui-text size="sm" weight="semibold">${preview.preview.subject}</ui-text>
                           <ui-divider></ui-divider>
-                          ${preview.preview.body.split(/\n{2,}/).map((p) => html`<ui-text size="sm">${lines(p)}</ui-text>`)}
+                          <ui-ai-text .text=${preview.preview.body} translatable></ui-ai-text>
                         </ui-flex>
                       </ui-mockup-window>`
                   : nothing

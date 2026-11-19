@@ -87,6 +87,12 @@ export class GsApprovals extends LightElement {
       <ui-text size="xs" color="muted"
         >Requested by ${a.requestedBy}${a.requestedAt ? ` · ${day(a.requestedAt, true)}` : ""}</ui-text
       >
+      <ui-ai-summary
+        type="tldr"
+        auto
+        context="An approval request at a ship chandler: say in one sentence what is being asked and what matters for the decision."
+        .text=${[a.title, a.type, ...a.evidence.map((e) => `${e.label}: ${e.value}`), a.progress].join("\n")}
+      ></ui-ai-summary>
       <ui-flex direction="col" gap="2">
         ${a.evidence.map(
           (e) =>
@@ -174,6 +180,11 @@ export class GsApprovals extends LightElement {
           .value=${this.reason}
           @input=${(e: Event) => (this.reason = (e.target as HTMLTextAreaElement).value)}
         ></ui-textarea>
+        <ui-ai-tools
+          tools="formal shorter proofread"
+          .value=${this.reason}
+          @ui-change=${(e: CustomEvent<{ value: string }>) => (this.reason = e.detail.value)}
+        ></ui-ai-tools>
         <ui-text size="xs" color="muted"
           >Recorded under your name with the time, on the request and the case timeline.</ui-text
         >

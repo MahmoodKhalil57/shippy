@@ -31,7 +31,7 @@ export interface ModelGroup {
  * @example
  * <ui-model-selector value="luna" .groups=${[
  *   { label: "OpenAI", models: [{ id: "luna", label: "Luna", icon: "cloud" }] },
- *   { label: "On this device", models: [{ id: "aibrowser", label: "AIbrowser", icon: "device", description: "Private, no key" }] },
+ *   { label: "On this device", models: [{ id: "aibrowser", label: "Saastama-Micro-3.5", icon: "device" }] },
  * ]} @ui-change=${(e) => (model = e.detail.value)}></ui-model-selector>
  */
 @customElement("ui-model-selector")

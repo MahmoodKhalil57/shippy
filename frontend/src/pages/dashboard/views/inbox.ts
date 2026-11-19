@@ -1,5 +1,6 @@
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { decisionsReady, score, type ExtractField } from "../../../agent/built-in-ai.ts";
 import { api } from "../../../cms/client.ts";
 import type { ExtractionResult, InboxMessage, InboxPayload, MatchResult } from "../../../cms/endpoints/sourcing.ts";
 import type { ExtractedLine } from "../../../cms/endpoints/sourcing-data.ts";
@@ -36,6 +37,27 @@ const STATUS: Record<string, [Tone, string]> = {
   "Case created": ["success", "Linked · case created"],
   Ignored: ["neutral", "Not related"],
 };
+
+/** What a supplier's reply can tell us, for "Pull out the offer details" (on the device). */
+const OFFER_FIELDS: ExtractField[] = [
+  { id: "item", label: "Item offered", hint: "product, brand and part number" },
+  { id: "price", label: "Unit price", type: "number" },
+  { id: "currency", label: "Currency" },
+  { id: "pack", label: "Unit / pack size" },
+  { id: "leadTime", label: "Lead time" },
+  { id: "validity", label: "Valid until" },
+];
+
+/** What an incoming message can be, for the on-device category suggestion. */
+const MESSAGE_KINDS = [
+  "New RFQ",
+  "Supplier offer or reply",
+  "Customer PO or order",
+  "Invoice or payment query",
+  "Delivery or logistics",
+  "Complaint",
+  "Other",
+];
 
 const confTone = (c: number): Tone => (c >= 0.85 ? "success" : c >= 0.6 ? "warning" : "error");
 const pct = (c: number) => `${Math.round(c * 100)}%`;
@@ -105,6 +127,7 @@ export class GsInbox extends LightElement {
       const ids = this.data.messages.map((m) => m.id);
       this.selected = select ?? (ids.includes(this.selected) ? this.selected : (ids[0] ?? ""));
       void this._restore();
+      void this._rateUrgency();
     } catch (e) {
       this.error = (e as Error).message;
     }
@@ -274,8 +297,24 @@ export class GsInbox extends LightElement {
     </ui-card>`;
   }
 
+  /** On-device urgency (1–5) per message, when the model is already there; for the badge and the sort. */
+  @state() private urgency = new Map<string, number>();
+  @state() private urgentFirst = false;
+
+  private async _rateUrgency() {
+    const messages = this.data?.messages.filter((m) => !this.urgency.has(m.id)).slice(0, 20) ?? [];
+    if (!messages.length || !(await decisionsReady())) return;
+    for (const m of messages) {
+      const n = await score(
+        `${m.subject}\n\n${m.body}`,
+        "How urgent is this message for a ship chandler? Urgent: a vessel arriving very soon, a deadline today, a complaint, a stop or a cancellation.",
+      ).catch(() => null);
+      if (n != null) this.urgency = new Map(this.urgency).set(m.id, n);
+    }
+  }
+
   private _visible(d: InboxPayload) {
-    return d.messages.filter((m) =>
+    const visible = d.messages.filter((m) =>
       this.filter === "new"
         ? m.status === "New"
         : this.filter === "review"
@@ -284,6 +323,9 @@ export class GsInbox extends LightElement {
             ? ["Linked", "Case created"].includes(m.status)
             : true,
     );
+    return this.urgentFirst
+      ? [...visible].sort((a, b) => (this.urgency.get(b.id) ?? 0) - (this.urgency.get(a.id) ?? 0))
+      : visible;
   }
 
   private _list(d: InboxPayload) {
@@ -304,6 +346,17 @@ export class GsInbox extends LightElement {
               ><ui-icon .name=${channelIcon(m)} size="xs"></ui-icon>${channelLabel(m)}</ui-badge
             >
             ${m.files.length ? html`<ui-badge size="xs" variant="ghost">${m.files.length} file${m.files.length > 1 ? "s" : ""}</ui-badge>` : nothing}
+            <ui-ai-language .text=${`${m.subject}\n${m.body}`}></ui-ai-language>
+            ${
+              (this.urgency.get(m.id) ?? 0) >= 3
+                ? html`<ui-badge
+                    size="xs"
+                    variant="soft"
+                    .color=${(this.urgency.get(m.id) ?? 0) >= 4 ? "warning" : undefined}
+                    >Urgency ${this.urgency.get(m.id)}/5</ui-badge
+                  >`
+                : nothing
+            }
           </ui-flex>
         </ui-flex>`,
       };
@@ -313,6 +366,17 @@ export class GsInbox extends LightElement {
         <ui-flex gap="2" align="center"
           >Messages<ui-badge size="sm" variant="soft">${d.messages.length}</ui-badge></ui-flex
         >
+        ${
+          this.urgency.size
+            ? html`<ui-button
+                size="xs"
+                .variant=${this.urgentFirst ? "soft" : "ghost"}
+                .color=${this.urgentFirst ? "primary" : undefined}
+                @click=${() => (this.urgentFirst = !this.urgentFirst)}
+                >Most urgent first</ui-button
+              >`
+            : nothing
+        }
       </ui-flex>
       <ui-tabs
         variant="box"
@@ -377,7 +441,6 @@ export class GsInbox extends LightElement {
   }
 
   private _original(m: InboxMessage) {
-    const paragraphs = m.body.split(/\n{2,}/);
     return html`<ui-card variant="border" shadow="false">
       <ui-flex slot="heading" justify="between" align="center" gap="2" full-width wrap>
         <span>Original message</span>
@@ -392,13 +455,41 @@ export class GsInbox extends LightElement {
           </ui-flex>
           <ui-divider></ui-divider>
           ${
-            paragraphs.length && m.body
-              ? paragraphs.map(
-                  (p) =>
-                    html`<ui-text size="sm"
-                      >${p.split("\n").map((l, i) => html`${i ? html`<br />` : nothing}${l}`)}</ui-text
-                    >`,
-                )
+            m.body
+              ? html`<ui-ai-classify
+                    .text=${`${m.subject}\n\n${m.body}`}
+                    .options=${MESSAGE_KINDS}
+                    what="incoming emails and messages to a ship chandler"
+                  ></ui-ai-classify>
+                  <ui-ai-flag
+                    tone="error"
+                    heading="Asks to change bank or payment details"
+                    question="Does this message ask to change bank account, IBAN or payment details?"
+                    .text=${m.body}
+                    note="Don't act on it from the email: a bank-detail change needs two people (Finance and the CEO) and a call-back on the number already on file."
+                  ></ui-ai-flag>
+                  <ui-ai-flag
+                    tone="info"
+                    heading="Looks like an automatic reply"
+                    question="Is this an automatic reply (out of office, auto-acknowledgement) rather than a written answer?"
+                    .text=${m.body}
+                    note="It doesn't answer the request — supplier reminders keep running."
+                  ></ui-ai-flag>
+                  <ui-ai-flag
+                    heading="The sender can't supply"
+                    question="Does the sender say they cannot supply, quote or deliver the requested items?"
+                    .text=${m.body}
+                    note="Look for another supplier for these lines before the deadline."
+                  ></ui-ai-flag>
+                  <ui-ai-text .text=${m.body} translatable summarizable></ui-ai-text>
+                  <ui-ai-extract
+                    source="text"
+                    label="Pull out the offer details"
+                    what="supplier offer or reply to a ship chandler"
+                    .text=${m.body}
+                    .fields=${OFFER_FIELDS}
+                  ></ui-ai-extract>
+                  <ui-ai-replies .text=${m.body}></ui-ai-replies>`
               : html`<ui-text size="sm" color="muted">(no text)</ui-text>`
           }
           ${
@@ -414,6 +505,7 @@ export class GsInbox extends LightElement {
                 </ui-flex>`
               : nothing
           }
+          <ui-ai-read-file></ui-ai-read-file>
         </ui-flex>
       </ui-mockup-window>
       <ui-text size="xs" color="muted"
@@ -611,14 +703,7 @@ export class GsInbox extends LightElement {
         <ui-flex direction="col" gap="2" padding="4">
           <ui-text size="xs" weight="bold" color="primary" uppercase>Golden Sea for Trading & Marketing</ui-text>
           <ui-text size="sm" weight="semibold">${a.subject}</ui-text>
-          ${a.body
-            .split(/\n{2,}/)
-            .map(
-              (p) =>
-                html`<ui-text size="sm"
-                  >${p.split("\n").map((l, i) => html`${i ? html`<br />` : nothing}${l}`)}</ui-text
-                >`,
-            )}
+          <ui-ai-text .text=${a.body} translatable></ui-ai-text>
         </ui-flex>
       </ui-mockup-window>
       <ui-text size="xs" color="muted"

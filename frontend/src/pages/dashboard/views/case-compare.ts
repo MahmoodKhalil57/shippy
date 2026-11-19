@@ -304,6 +304,33 @@ export class GsCaseCompare extends LightElement {
     return parts.map((p) => `${name(p.offer)} × ${p.qty}`).join(" + ");
   }
 
+  /**
+   * An on-device second look at the current offers against the request (same item, brand or
+   * approved equivalent, unit, pack size): things to check, never a verdict — the rules above and
+   * a person decide.
+   */
+  private _offerCheck(line: CmpLine) {
+    const offers = line.offers.filter((o) => !o.superseded).slice(0, 6);
+    if (!offers.length) return nothing;
+    const text = [
+      `Requested: ${line.description} — ${line.requested}. Rules: ${line.rules}.`,
+      ...offers.map(
+        (o, i) => `Offer ${i + 1} from ${o.supplier}: ${o.offered}. Supplier note: ${o.supplierNote || "none"}.`,
+      ),
+    ].join("\n");
+    const questions = offers.map((o, i) => ({
+      id: `offer${i + 1}`,
+      prompt: `Does offer ${i + 1} (${o.supplier}) match the requested item: the same product, brand or an approved equivalent, unit and pack size?`,
+      yes: `${o.supplier}: matches the request`,
+      no: `${o.supplier}: may differ from the request — check`,
+    }));
+    return html`<ui-ai-check
+      label="Check offers against the request"
+      .text=${text}
+      .questions=${questions}
+    ></ui-ai-check>`;
+  }
+
   private _line(line: CmpLine) {
     const best = line.offers.find((o) => o.id === line.best);
     const selected = this._selectionText(line);
@@ -313,6 +340,7 @@ export class GsCaseCompare extends LightElement {
         <ui-badge size="sm" variant="soft" .color=${TONE[line.statusTone]}>${line.status}</ui-badge>
       </ui-flex>
       <ui-text size="sm" color="muted">Requested: ${line.requested} · ${line.rules}</ui-text>
+      ${this._offerCheck(line)}
       ${
         line.missing
           ? html`<ui-alert color="warning" variant="soft"
@@ -518,7 +546,7 @@ export class GsCaseCompare extends LightElement {
                   <ui-text size="sm"><strong>To:</strong> ${c.draft.to}</ui-text>
                   <ui-text size="sm"><strong>Subject:</strong> ${c.draft.subject}</ui-text>
                   <ui-divider></ui-divider>
-                  ${c.draft.body.split("\n").map((l) => html`<ui-text size="sm">${l || html`<br />`}</ui-text>`)}
+                  <ui-ai-text .text=${c.draft.body} translatable></ui-ai-text>
                 </ui-flex>
               </ui-mockup-window>
               <ui-text size="xs" color="muted"

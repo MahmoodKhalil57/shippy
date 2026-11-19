@@ -679,6 +679,44 @@ export class GsCaseDelivery extends LightElement implements ViewProps {
           .value=${d.shortages}
           @input=${(e: Event) => (this.dialog = { ...d, shortages: (e.target as HTMLTextAreaElement).value })}
         ></ui-textarea>
+        <ui-ai-dictate
+          label="Dictate shortages or damage"
+          @ui-select=${(e: CustomEvent<{ value: string }>) => {
+            const now = this.dialog;
+            if (now?.kind === "pod")
+              this.dialog = {
+                ...now,
+                shortages: now.shortages ? `${now.shortages}\n${e.detail.value}` : e.detail.value,
+              };
+          }}
+        ></ui-ai-dictate>
+        <ui-ai-extract
+          source="file"
+          label="Read the signed note from a photo"
+          what="signed delivery note or receipt from a ship"
+          pickable
+          use-label="Fill in"
+          .fields=${[
+            { id: "signedBy", label: "Signed by", hint: "name and rank of the officer who signed" },
+            { id: "date", label: "Date" },
+            { id: "vessel", label: "Vessel" },
+            {
+              id: "remarks",
+              label: "Shortages or damage noted",
+              hint: "anything written about missing or damaged items",
+            },
+          ]}
+          @ui-select=${(e: CustomEvent<{ values: Record<string, string | number | null> }>) => {
+            const now = this.dialog;
+            if (now?.kind !== "pod") return;
+            const v = e.detail.values;
+            this.dialog = {
+              ...now,
+              signedBy: v.signedBy ? String(v.signedBy) : now.signedBy,
+              shortages: v.remarks ? [now.shortages, String(v.remarks)].filter(Boolean).join("\n") : now.shortages,
+            };
+          }}
+        ></ui-ai-extract>
         ${d.file ? nothing : html`<ui-alert color="warning" variant="soft">No evidence, no “Delivered”: attach the signed note first.</ui-alert>`}
         <ui-flex justify="end" gap="2">
           ${cancel}

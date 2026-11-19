@@ -17,7 +17,7 @@ import { viewElement } from "./views.ts";
 import "./edit-view.ts";
 import "./list-view.ts";
 import "./command.ts";
-import { provideTools } from "../../agent/webmcp.ts";
+import { provideAgentContext, provideTools } from "../../agent/webmcp.ts";
 import { dashboardTools, type AgentHost, type Appearance } from "./agent-tools.ts";
 import { asideRail, expandAsideSection, type AsideSection } from "./aside.ts";
 import { roleLabel, roleLogins, seedUsers, type SeedUser } from "./demo-users.ts";
@@ -124,6 +124,17 @@ export class DashboardApp extends LightElement {
     await this._guard();
     // The agent's tools follow who's signed in: only what this user may see and do.
     provideTools(dashboardTools(this.#agentHost));
+    provideAgentContext(() =>
+      this.user
+        ? {
+            name: text(this.user.name ?? this.user.email),
+            role: roleLabel(text(this.user.role)),
+            roleId: text(this.user.role),
+            page: this._title(),
+            path: location.pathname,
+          }
+        : null,
+    );
   }
 
   /** The running app, as the WebMCP tools see it (./agent-tools.ts): state and actions, never the DOM. */

@@ -1,3 +1,4 @@
+import { toEnglish } from "../../agent/built-in-ai.ts";
 import { text } from "../../cms/runtime/util.ts";
 import { LightElement } from "../../components/base/light-element.ts";
 import { html, nothing, type PropertyValues } from "lit";
@@ -40,7 +41,14 @@ export class DashboardListView extends LightElement {
 
   private async _load() {
     const c = collectionOf(this.slug)!;
-    const where: Where | undefined = this.search ? { [useAsTitle(c)]: { like: this.search } } : undefined;
+    // A name typed in Arabic (or another language) is also searched in English: "أطلس" finds Atlas.
+    const english = this.search ? await toEnglish(this.search).catch(() => this.search) : "";
+    const field = useAsTitle(c);
+    const where: Where | undefined = !this.search
+      ? undefined
+      : english && english !== this.search
+        ? { or: [{ [field]: { like: this.search } }, { [field]: { like: english } }] }
+        : { [field]: { like: this.search } };
     this.result = await api.find(this.slug, {
       where,
       sort: this.sort || undefined,

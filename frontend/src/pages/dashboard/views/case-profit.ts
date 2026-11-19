@@ -323,6 +323,11 @@ export class GsCaseProfit extends LightElement {
             </ui-flex>`
           : html`<ui-text size="sm" color="muted">No claims on this case.</ui-text>`
       }
+      <ui-ai-read-file
+        label="Describe damage from a photo"
+        image-prompt="This photo shows goods delivered to a ship. Describe any damage for a claim: which items, how many, what is damaged (dents, leaks, broken seals, wet cartons), and any visible labels, part numbers or batch numbers. Write only what you can see."
+        audio-prompt="This voice note describes goods delivered to a ship. Write down the damage or shortage for a claim: which items, how many, and what is wrong."
+      ></ui-ai-read-file>
     </ui-card>`;
   }
 

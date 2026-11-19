@@ -141,12 +141,69 @@ export class DashboardLogin extends LightElement {
     </ui-form>`;
   }
 
+  /** How to turn on Chrome's on-device AI (Saastama-Micro-3.5 and the AI helpers on every screen). */
+  private _onDeviceAi() {
+    const flag = (name: string, id: string, note = "") =>
+      html`<ui-flex gap="2" align="baseline" wrap>
+        <ui-text size="sm" weight="medium">${name}</ui-text>
+        <ui-text as="code" mono size="xs">${id}</ui-text>
+        ${note ? html`<ui-text size="xs" color="muted">${note}</ui-text>` : nothing}
+      </ui-flex>`;
+    return html`<ui-collapse heading="Turn on on-device AI (Chrome)" icon="arrow">
+      <ui-flex direction="col" gap="3">
+        <ui-text size="sm"
+          >The helper's default model, <strong>Saastama-Micro-3.5</strong>, and the AI on every screen (translate, catch
+          me up, checks, reading photos and voice notes) run inside Chrome on this computer — nothing is sent anywhere.
+          They are new Chrome features, so they need switching on once:</ui-text
+        >
+        <ui-text size="sm"
+          ><strong>1.</strong> Use Chrome on a desktop or laptop (Windows, macOS, Linux or ChromeOS), up to date. It
+          needs about 22 GB of free disk space, and a graphics card with more than 4 GB of memory or 16 GB of
+          RAM.</ui-text
+        >
+        <ui-text size="sm"
+          ><strong>2.</strong> Open <strong>chrome://flags</strong> in the address bar. Search for each of these and set
+          it to <strong>Enabled</strong>:</ui-text
+        >
+        <ui-flex direction="col" gap="1">
+          ${flag("Enables optimization guide on device", "#optimization-guide-on-device-model", "choose “Enabled BypassPerfRequirement”")}
+          ${flag("Prompt API", "#prompt-api")}
+          ${flag("Prompt API Multimodal Input", "#prompt-api-multimodal-input", "photos and voice notes")}
+          ${flag("Prompt API Tool Use", "#prompt-api-tool-use", "the helper's tools")}
+          ${flag("Prompt API Sampling Mode", "#prompt-api-sampling-mode")}
+          ${flag("Speculative Decoding for Built-in AI", "#on-device-model-speculative-decoding", "faster")}
+          ${flag("Gemma 4 for Built-in AI", "#gemma4-for-built-in-ai", "the stronger model")}
+          ${flag("Decisions API", "#decisions-api", "checks and categories")}
+          ${flag("Summarization API", "search “Summarization”", "catch me up")}
+          ${flag("Writer API / Rewriter API", "search “Writer” and “Rewriter”", "drafts and tone")}
+          ${flag("Proofreader API", "search “Proofreader”")}
+          ${flag("Translation API / Language Detection API", "search “Translation” and “Language detection”", "Arabic ↔ English")}
+        </ui-flex>
+        <ui-text size="sm"
+          ><strong>3.</strong> Click <strong>Relaunch</strong> at the bottom of the flags page.</ui-text
+        >
+        <ui-text size="sm"
+          ><strong>4.</strong> Come back here and click anywhere: Chrome downloads its model once (a few GB) in the
+          background. <strong>chrome://on-device-internals</strong> shows its progress.</ui-text
+        >
+        <ui-text size="xs" color="muted"
+          >Flag names change between Chrome versions; if one isn't there, search for the feature's name. Without them
+          everything still works — the AI buttons just don't appear, and the helper can use an OpenAI model
+          instead.</ui-text
+        >
+      </ui-flex>
+    </ui-collapse>`;
+  }
+
   render() {
     return html`<ui-flex justify="center" padding="4">
       <ui-box width="full" max="md" padding="fluid">
-        <ui-card heading=${this.step === "email" ? "Log in" : "Verify it's you"} variant="border">
-          ${this.step === "email" ? this._emailStep() : this._verifyStep()}
-        </ui-card>
+        <ui-flex direction="col" gap="4">
+          <ui-card heading=${this.step === "email" ? "Log in" : "Verify it's you"} variant="border">
+            ${this.step === "email" ? this._emailStep() : this._verifyStep()}
+          </ui-card>
+          ${this._onDeviceAi()}
+        </ui-flex>
       </ui-box>
     </ui-flex>`;
   }

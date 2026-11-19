@@ -11,6 +11,7 @@ import "../../primitives/forms/radio.ts";
 import "../../primitives/forms/select.ts";
 import "../../primitives/forms/text-input.ts";
 import "../../primitives/forms/textarea.ts";
+import "../../primitives/ai/assist.ts";
 import "../../primitives/layout/box.ts";
 import "../../primitives/layout/flex.ts";
 import "../../primitives/layout/grid.ts";
@@ -342,15 +343,24 @@ export class UiDocForm extends LightElement {
       case "code":
       case "richText":
         control = html`<ui-textarea
-          .legend=${label}
-          .hint=${hint}
-          .value=${typeof v === "string" ? v : v == null ? "" : JSON.stringify(v)}
-          .placeholder=${placeholder}
-          .readonly=${disabled}
-          field-width="full"
-          width="full"
-          @input=${(e: Event) => set((e.target as HTMLTextAreaElement).value)}
-        ></ui-textarea>`;
+            .legend=${label}
+            .hint=${hint}
+            .value=${typeof v === "string" ? v : v == null ? "" : JSON.stringify(v)}
+            .placeholder=${placeholder}
+            .readonly=${disabled}
+            field-width="full"
+            width="full"
+            @input=${(e: Event) => set((e.target as HTMLTextAreaElement).value)}
+          ></ui-textarea>
+          ${
+            f.type !== "code" && !disabled
+              ? html`<ui-ai-tools
+                  tools="proofread shorter formal"
+                  .value=${typeof v === "string" ? v : ""}
+                  @ui-change=${(e: CustomEvent<{ value: string }>) => set(e.detail.value)}
+                ></ui-ai-tools>`
+              : nothing
+          }`;
         break;
       case "json":
         control = html`<ui-textarea

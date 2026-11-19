@@ -380,6 +380,35 @@ export class GsCaseOrder extends LightElement implements ViewProps {
         <ui-badge size="xs" variant="outline" color="secondary">AI check · 96%</ui-badge></ui-text
       >
       <ui-table size="sm" .columns=${columns} .rows=${po.checks.map((c, i) => ({ c, i }))}></ui-table>
+      <ui-ai-check
+        label="Second look with AI"
+        .text=${po.checks
+          .map(
+            (c) =>
+              `${c.lineNo > 0 ? `Line ${c.lineNo}` : "Terms"} · ${c.field}: PO says "${c.po}", quotation ${po.quotation} says "${c.quote}"`,
+          )
+          .join("\n")}
+        .questions=${[
+          {
+            id: "prices",
+            prompt: "Are the prices on the customer's PO the same as on the quotation?",
+            yes: "Prices match the quotation",
+            no: "A price differs from the quotation",
+          },
+          {
+            id: "items",
+            prompt: "Are the items and quantities on the PO the same as on the quotation?",
+            yes: "Items and quantities match",
+            no: "An item or quantity differs",
+          },
+          {
+            id: "terms",
+            prompt: "Do the PO's commercial terms (payment, delivery, validity) match the quotation?",
+            yes: "Terms match",
+            no: "A term differs",
+          },
+        ]}
+      ></ui-ai-check>
       ${
         blocked
           ? html`<ui-alert color="error" variant="soft"

@@ -434,11 +434,16 @@ export class GsQuotePreview extends LightElement {
     const q = v.quotation;
     const reasonBox = (label: string, placeholder: string) =>
       html`<ui-textarea
-        .label=${label}
-        .placeholder=${placeholder}
-        .value=${this.text}
-        @input=${(e: Event) => (this.text = (e.target as HTMLTextAreaElement).value)}
-      ></ui-textarea>`;
+          .label=${label}
+          .placeholder=${placeholder}
+          .value=${this.text}
+          @input=${(e: Event) => (this.text = (e.target as HTMLTextAreaElement).value)}
+        ></ui-textarea>
+        <ui-ai-tools
+          tools="formal shorter proofread translate"
+          .value=${this.text}
+          @ui-change=${(e: CustomEvent<{ value: string }>) => (this.text = e.detail.value)}
+        ></ui-ai-tools>`;
     const body = {
       approve: html`<ui-flex direction="col" gap="3">
         <ui-text size="sm"

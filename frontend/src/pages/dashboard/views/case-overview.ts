@@ -456,6 +456,11 @@ export class GsCaseOverview extends LightElement implements ViewProps {
         >Every automatic step names the rule that fired; every human step names the person. Nothing is edited after the
         fact.</ui-text
       >
+      <ui-ai-summary
+        label="Catch me up on this case"
+        context="The activity log of a ship-supply case at Golden Sea, from the customer's RFQ to payment. Say where it stands and what is blocking it."
+        .text=${d.timeline.map((t) => `${formatDate(t.at)} · ${t.actor}: ${t.text}`).join("\n")}
+      ></ui-ai-summary>
       ${
         items.length
           ? html`<ui-timeline direction="vertical" compact snap-icon .items=${items}></ui-timeline>`
@@ -519,6 +524,11 @@ export class GsCaseOverview extends LightElement implements ViewProps {
           .value=${this.note}
           @input=${(e: Event) => (this.note = (e.target as HTMLTextAreaElement).value)}
         ></ui-textarea>
+        <ui-ai-tools
+          tools="formal shorter proofread"
+          .value=${this.note}
+          @ui-change=${(e: CustomEvent<{ value: string }>) => (this.note = e.detail.value)}
+        ></ui-ai-tools>
       </ui-flex>
       <ui-flex slot="actions" gap="2">
         <ui-button variant="ghost" @click=${() => (this.reassignOpen = false)}>Cancel</ui-button>
