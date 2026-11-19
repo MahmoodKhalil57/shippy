@@ -2,7 +2,8 @@ import { defineConfig } from "vite-plus";
 import { designSystem } from "saastemlycrm-design-system/vite";
 import mockBackend from "./plugins/mock-backend.ts";
 
-export default defineConfig({
+export default defineConfig(({ command, isPreview }) => ({
+  base: command === "build" || isPreview ? "/shippy/" : "/",
   plugins: [
     // The design system: component stylesheets, Tailwind, cascade layers, icons.
     ...designSystem(),
@@ -24,7 +25,8 @@ export default defineConfig({
   test: {
     include: ["tests/**/*.test.ts"],
   },
-  // The build is the demo website: GitHub Pages serves the repository's docs/ folder (at
-  // /shippy/, set by `--base` in the package.json build script).
+  // The build is the demo website: GitHub Pages serves the repository's docs/ folder at /shippy/.
+  // The base lives here, not as a `--base` flag: Git Bash rewrites `/shippy/` on a command line
+  // into a Windows path ("C:/Program Files/Git/shippy/"), which broke every asset URL once.
   build: { outDir: "../docs", emptyOutDir: true },
-});
+}));
