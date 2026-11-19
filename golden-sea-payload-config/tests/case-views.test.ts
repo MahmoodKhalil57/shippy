@@ -1,53 +1,17 @@
-import { readdirSync, readFileSync } from "node:fs";
-import path from "node:path";
 import { stringify } from "qs-esm";
 import { beforeEach, describe, expect, it } from "vite-plus/test";
 import type { Source, Widget, WidgetPage, WidgetScope } from "saastemlycrm-design-system/contracts";
-import config from "golden-sea-payload-config";
-import { caseCompare } from "golden-sea-payload-config/src/widgets/case-compare.ts";
-import { caseOverview } from "golden-sea-payload-config/src/widgets/case-overview.ts";
-import { casePricing } from "golden-sea-payload-config/src/widgets/case-pricing.ts";
-import { caseProfit } from "golden-sea-payload-config/src/widgets/case-profit.ts";
-import { caseRfqs } from "golden-sea-payload-config/src/widgets/case-rfqs.ts";
-
-import { Engine } from "../src/mock/runtime/engine.ts";
-import { RestApi } from "../src/mock/runtime/rest.ts";
-import { seedsFromGlob } from "../src/mock/runtime/seed.ts";
-import { MemoryStore } from "../src/mock/runtime/store.ts";
+import { caseCompare } from "../src/widgets/case-compare.ts";
+import { caseOverview } from "../src/widgets/case-overview.ts";
+import { casePricing } from "../src/widgets/case-pricing.ts";
+import { caseProfit } from "../src/widgets/case-profit.ts";
+import { caseRfqs } from "../src/widgets/case-rfqs.ts";
+import { backend, call, login } from "./backend.ts";
 
 /** The case workspace tabs as widgets (src/cms/widgets/case-*.ts): what they show, per role, and their actions. */
 
-const seedDir = path.resolve(import.meta.dirname, "../../golden-sea-payload-config/src/seed");
-const seedFiles: Record<string, unknown> = {};
-for (const f of readdirSync(seedDir, { recursive: true }) as string[]) {
-  if (f.endsWith(".json"))
-    seedFiles[`./seed/${f.split(path.sep).join("/")}`] = JSON.parse(readFileSync(path.join(seedDir, f), "utf8"));
-}
-const seeds = seedsFromGlob(seedFiles);
-
-let api: RestApi;
-let token = "";
-const call = async (method: string, url: string, payload?: unknown) => {
-  const headers: Record<string, string> = token ? { authorization: `JWT ${token}` } : {};
-  const init: RequestInit = { method, headers };
-  if (payload !== undefined) {
-    init.body = JSON.stringify(payload);
-    headers["content-type"] = "application/json";
-  }
-  const res = await api.handle(new Request(`http://mock.test${url}`, init));
-  // oxlint-disable-next-line typescript/no-explicit-any
-  const body: any = await res.json().catch(() => ({}));
-  return { status: res.status, body };
-};
-const login = async (user: string) => {
-  token = "";
-  const { body } = await call("POST", "/api/users/login", { email: `${user}@goldensea.test`, password: "demo1234" });
-  token = body.token;
-};
-
 beforeEach(async () => {
-  token = "";
-  api = new RestApi(new Engine(config, new MemoryStore()), seeds);
+  backend.reset();
   await login("karim.youssef");
 });
 

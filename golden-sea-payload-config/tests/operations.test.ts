@@ -1,47 +1,13 @@
-import { readdirSync, readFileSync } from "node:fs";
-import path from "node:path";
 import { beforeEach, describe, expect, it } from "vite-plus/test";
-import config from "golden-sea-payload-config";
-import { Engine } from "../src/mock/runtime/engine.ts";
-import { RestApi } from "../src/mock/runtime/rest.ts";
-import { seedsFromGlob } from "../src/mock/runtime/seed.ts";
-import { MemoryStore } from "../src/mock/runtime/store.ts";
+import { backend, call, login } from "./backend.ts";
 
 /** Order-to-cash endpoints (src/cms/endpoints/operations.ts): PO check, purchasing, delivery, invoicing, cash. */
 
-const seedDir = path.resolve(import.meta.dirname, "../../golden-sea-payload-config/src/seed");
-const seedFiles: Record<string, unknown> = {};
-for (const f of readdirSync(seedDir, { recursive: true }) as string[]) {
-  if (f.endsWith(".json"))
-    seedFiles[`./seed/${f.split(path.sep).join("/")}`] = JSON.parse(readFileSync(path.join(seedDir, f), "utf8"));
-}
-const seeds = seedsFromGlob(seedFiles);
-
-let api: RestApi;
-let token = "";
-const call = async (method: string, url: string, payload?: unknown) => {
-  const headers: Record<string, string> = token ? { authorization: `JWT ${token}` } : {};
-  const init: RequestInit = { method, headers };
-  if (payload !== undefined) {
-    init.body = JSON.stringify(payload);
-    headers["content-type"] = "application/json";
-  }
-  const res = await api.handle(new Request(`http://mock.test${url}`, init));
-  // oxlint-disable-next-line typescript/no-explicit-any
-  const body: any = await res.json().catch(() => ({}));
-  return { status: res.status, body };
-};
-const as = async (user: string) => {
-  token = "";
-  const { body } = await call("POST", "/api/users/login", { email: `${user}@goldensea.test`, password: "demo1234" });
-  token = body.token;
-};
 const ops = (id: string) => call("GET", `/api/operations/case/${id}`);
 
 beforeEach(async () => {
-  token = "";
-  api = new RestApi(new Engine(config, new MemoryStore()), seeds);
-  await as("karim.youssef");
+  backend.reset();
+  await login("karim.youssef");
 });
 
 describe("customer PO check", () => {
@@ -92,7 +58,7 @@ describe("customer PO check", () => {
     const re = await call("POST", "/api/operations/po-recheck", { po: nile.id });
     expect(re.body.changed).toBe(1);
     expect((await call("PATCH", `/api/purchase-orders/${nile.id}`, { status: "Confirmed" })).status).toBe(400);
-    await as("karim.balbaa");
+    await login("karim.balbaa");
     expect((await call("PATCH", `/api/purchase-orders/${nile.id}`, { status: "Confirmed" })).status).toBe(200);
   });
 
@@ -120,7 +86,7 @@ describe("customer PO check", () => {
 
 describe("costs stay hidden from sales", () => {
   it("omits supplier prices, bills and payables", async () => {
-    await as("soaad.amer");
+    await login("soaad.amer");
     const o = (await ops("gs-rfq-0133")).body;
     expect(o.canSeeCosts).toBe(false);
     expect(o.purchaseOrders[0].total).toBeUndefined();
@@ -162,7 +128,7 @@ describe("delivery and invoicing", () => {
       "/api/tasks?where[case][equals]=gs-rfq-0133&where[createdByRule][equals]=ETA change",
     );
     expect(tasks.body.totalDocs).toBe(seededTasks + 1);
-    await as("ahmedy");
+    await login("ahmedy");
     const bell = await call("GET", "/api/notifications?where[title][like]=ETA change");
     expect(bell.body.totalDocs).toBe(1);
     // Idempotent: the same email again changes nothing.
@@ -170,7 +136,7 @@ describe("delivery and invoicing", () => {
   });
 
   it("confirms delivery only with proof and invoices delivered quantities once", async () => {
-    await as("ahmedy");
+    await login("ahmedy");
     const noProof = await call("POST", "/api/operations/confirm-delivery", {
       delivery: "dn-0133-1",
       signedBy: "Chief Officer",
@@ -217,13 +183,13 @@ describe("delivery and invoicing", () => {
   });
 
   it("retries an e-invoice after the signature service was unreachable and clears the exception", async () => {
-    await as("mohamed.helmy");
+    await login("mohamed.helmy");
     const retries = (await call("GET", "/api/integration-exceptions/ex-eta?depth=0")).body.retries ?? 0;
     const r = await call("POST", "/api/operations/einvoice", { invoice: "inv-0419" });
     expect(r.body.result).toBe("submitted");
     const ex = (await call("GET", "/api/integration-exceptions/ex-eta?depth=0")).body;
     expect(ex).toMatchObject({ status: "Resolved", retries: retries + 1 });
-    await as("karim.youssef");
+    await login("karim.youssef");
     expect((await call("POST", "/api/operations/einvoice", { invoice: "inv-0419" })).status).toBe(403);
   });
 
@@ -236,7 +202,7 @@ describe("delivery and invoicing", () => {
 
 describe("receivables and payables", () => {
   it("ages receivables by customer and respects contact rules in reminders", async () => {
-    await as("mohamed.helmy");
+    await login("mohamed.helmy");
     const cash = (await call("GET", "/api/operations/cash")).body;
     const atlas = cash.ageing.find((a: { customer: string }) => a.customer === "Atlas Tankers");
     expect(atlas.values).toEqual([0, 0, 6500, 1400]);
@@ -252,7 +218,7 @@ describe("receivables and payables", () => {
   });
 
   it("routes payments through approval and keeps deposits, holds and balances apart", async () => {
-    await as("mohamed.helmy");
+    await login("mohamed.helmy");
     const cash = (await call("GET", "/api/operations/cash")).body;
     const stages = Object.fromEntries(cash.payables.map((p: { po: string; stage: string }) => [p.po, p.stage]));
     expect(stages).toMatchObject({ P0418: "Deposit to pay", P0417: "Bill on hold", P0416: "Balance on delivery" });
@@ -279,10 +245,10 @@ describe("receivables and payables", () => {
   });
 
   it("needs two different people for a bank-detail change", async () => {
-    await as("mohamed.helmy");
+    await login("mohamed.helmy");
     let bank = (await call("GET", "/api/operations/cash")).body.bankChanges[0];
     expect(bank).toMatchObject({ id: "ap-bank-s3", status: "Approved 1 of 2", canDecide: false, applied: false });
-    await as("karim.balbaa");
+    await login("karim.balbaa");
     bank = (await call("GET", "/api/operations/cash")).body.bankChanges[0];
     expect(bank.canDecide).toBe(true);
     const ap = (await call("GET", "/api/approvals/ap-bank-s3?depth=0")).body;

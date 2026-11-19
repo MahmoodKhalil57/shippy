@@ -449,7 +449,7 @@ const decisionReady = async () => {
 const pct = (c?: number) => (c == null ? "" : ` · ${Math.round(c * 100)}%`);
 
 /**
- * @example <ui-ai-classify .text=${message.body} .options=${["New RFQ", "Supplier offer", …]} what="incoming emails to a supplier"></ui-ai-classify>
+ * @example <ui-ai-classify .text=${message.body} .options=${["New order", "Supplier offer", …]} what="incoming emails to a supplier"></ui-ai-classify>
  *
  * The Decisions API when the browser has it (with its confidence), else the Prompt API. Runs on
  * its own when the model is there; otherwise a "Suggest a category" button. With `pickable`,
@@ -564,7 +564,7 @@ export class UiAiCheck extends AssistElement {
 /**
  * @example <ui-ai-read-file></ui-ai-read-file>
  *
- * "Read a photo or voice note": the person picks an image (a handwritten RFQ, a requisition, a
+ * "Read a photo or voice note": the person picks an image (a handwritten order, a receipt, a
  * nameplate) or a recording; the on-device model lists what's in it (Prompt API multimodal
  * input). Nothing is uploaded. `image-prompt` / `audio-prompt` say what to read for.
  */

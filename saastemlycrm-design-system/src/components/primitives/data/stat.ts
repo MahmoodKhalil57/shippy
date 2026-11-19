@@ -38,9 +38,9 @@ export const statText = rcva("flex min-w-0 flex-col gap-1");
 export type StatVariants = VariantProps<typeof statValue>;
 
 /**
- * @example <ui-stat label="Overdue" .value=${"EGP 96,400"} note="2 invoices · oldest 12 days" tone="error"></ui-stat>
+ * @example <ui-stat label="Overdue" .value=${"USD 96,400"} note="2 invoices · oldest 12 days" tone="error"></ui-stat>
  * @example
- * <ui-stat label="Awaiting supplier" .value=${2} note="1 RFQ awaiting reply" href="/collections/cases" size="lg">
+ * <ui-stat label="Awaiting supplier" .value=${2} note="1 request awaiting reply" href="/collections/orders" size="lg">
  *   <ui-chart slot="trend" kind="spark" …></ui-chart>
  * </ui-stat>
  */

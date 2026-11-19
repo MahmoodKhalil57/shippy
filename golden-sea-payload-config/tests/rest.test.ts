@@ -1,45 +1,18 @@
-import { readdirSync, readFileSync } from "node:fs";
-import path from "node:path";
 import { beforeEach, describe, expect, it } from "vite-plus/test";
-import config from "golden-sea-payload-config";
-import { Engine } from "../src/mock/runtime/engine.ts";
-import { matches, sortDocs } from "saastemlycrm-design-system/payload";
-import { RestApi } from "../src/mock/runtime/rest.ts";
-import { seedsFromGlob } from "../src/mock/runtime/seed.ts";
-import { MemoryStore } from "../src/mock/runtime/store.ts";
+import { MemoryStore } from "mock-runner/testing";
 import type { MockConfig } from "saastemlycrm-design-system/contracts";
-import type { Where } from "payload";
+import { backend, call, config, login as signIn, seeds } from "./backend.ts";
 
-/** The mock backend, exercised through its REST API like the Service Worker serves it. */
+/**
+ * Golden Sea's collections, globals and access rules over the REST API (as the Service Worker
+ * serves it): its data, hooks, validation and per-role rules. The engine's own behaviour is
+ * tested in mock-runner with a fixture config.
+ */
 
-const seedDir = path.resolve(import.meta.dirname, "../../golden-sea-payload-config/src/seed");
-const seedFiles: Record<string, unknown> = {};
-for (const f of readdirSync(seedDir, { recursive: true }) as string[]) {
-  if (f.endsWith(".json"))
-    seedFiles[`./seed/${f.split(path.sep).join("/")}`] = JSON.parse(readFileSync(path.join(seedDir, f), "utf8"));
-}
-const seeds = seedsFromGlob(seedFiles);
-
-let api: RestApi;
-const call = async (method: string, url: string, payload?: unknown, headers: Record<string, string> = {}) => {
-  const init: RequestInit = { method, headers: { ...headers } };
-  if (payload instanceof FormData) init.body = payload;
-  else if (payload !== undefined) {
-    init.body = JSON.stringify(payload);
-    (init.headers as Record<string, string>)["content-type"] = "application/json";
-  }
-  const res = await api.handle(new Request(`http://mock.test${url}`, init));
-  const type = res.headers.get("content-type") ?? "";
-  // Response bodies are asserted on loosely, as in an API test.
-  // oxlint-disable-next-line typescript/no-explicit-any
-  const body: any = type.includes("json") ? await res.json() : await res.text();
-  return { status: res.status, body, res };
-};
-const login = (email = "karim.balbaa@goldensea.test", password = "demo1234") =>
-  call("POST", "/api/users/login", { email, password });
+const login = (email = "karim.balbaa@goldensea.test", password = "demo1234") => signIn(email, password);
 
 beforeEach(() => {
-  api = new RestApi(new Engine(config, new MemoryStore()), seeds);
+  backend.reset();
 });
 
 describe("REST: reading", () => {
@@ -234,29 +207,11 @@ describe("REST: auth, endpoints, uploads, mock tools", () => {
     expect((await call("GET", "/api/users/init")).body).toEqual({ initialized: true });
   });
 
-  it("serves collection and root custom endpoints", async () => {
+  it("serves collection custom endpoints", async () => {
     const summary = await call("GET", "/api/cases/gs-rfq-0142/summary");
     expect(summary.body.summary).toBe(
       "GS-RFQ-0142 · Nordvik Ship Management · MV Aurora Crest: Comparing offers. Next: Select offers & price lines 1–5.",
     );
-    // Root-level endpoint, with route params, the Local API and the logged-in user.
-    const withRoot: MockConfig = {
-      ...config,
-      endpoints: [
-        {
-          path: "/owners/:id/open-cases",
-          method: "get",
-          handler: async (req) => {
-            const where = { owner: { equals: req.routeParams?.id }, stage: { not_in: ["Lost", "Expired"] } };
-            const { totalDocs } = await req.payload.count({ collection: "cases", where });
-            return Response.json({ owner: req.routeParams?.id, open: totalDocs, by: req.user?.id ?? null });
-          },
-        },
-      ],
-    };
-    api = new RestApi(new Engine(withRoot, new MemoryStore()), seeds);
-    await login("karim.youssef@goldensea.test");
-    expect((await call("GET", "/api/owners/ky/open-cases")).body).toEqual({ owner: "ky", open: 4, by: "ky" });
   });
 
   it("stores and serves uploads (multipart with _payload, like Payload's admin)", async () => {
@@ -286,27 +241,6 @@ describe("REST: auth, endpoints, uploads, mock tools", () => {
   });
 });
 
-describe("query semantics", () => {
-  const docs = [
-    { id: "1", n: 3, tags: ["a", "b"], g: { x: "hi" }, d: "2026-01-02T00:00:00.000Z" },
-    { id: "2", n: 10, tags: ["c"], g: { x: "yo" }, d: "2026-01-01T00:00:00.000Z" },
-  ];
-  it("matches operators and coerces query-string values", () => {
-    const ids = (w: Where) => docs.filter((d) => matches(d, w)).map((d) => d.id);
-    expect(ids({ n: { greater_than: "5" } })).toEqual(["2"]);
-    expect(ids({ tags: { in: "a,c" } })).toEqual(["1", "2"]);
-    expect(ids({ tags: { not_in: ["a"] } })).toEqual(["2"]);
-    expect(ids({ tags: { all: ["a", "b"] } })).toEqual(["1"]);
-    expect(ids({ "g.x": { contains: "Y" } })).toEqual(["2"]);
-    expect(ids({ d: { less_than: "2026-01-01T12:00:00.000Z" } })).toEqual(["2"]);
-    expect(ids({ missing: { exists: "false" } })).toEqual(["1", "2"]);
-  });
-  it("sorts by several keys", () => {
-    expect(sortDocs(docs, "-n").map((d) => d.id)).toEqual(["2", "1"]);
-    expect(sortDocs(docs, ["d"]).map((d) => d.id)).toEqual(["2", "1"]);
-  });
-});
-
 describe("config", () => {
   it("is a real Payload config", () => {
     const c: MockConfig = config;
@@ -324,9 +258,9 @@ describe("seed top-up", () => {
       ...seeds,
       collections: { ...seeds.collections, users: users.filter((u) => u.email !== "mohamed.helmy@goldensea.test") },
     };
-    await new RestApi(new Engine(config, store), older).ready();
+    await backend.reset({ store, seeds: older }).ready();
     // The seed has grown since: starting again tops the store up, keeping what was there.
-    api = new RestApi(new Engine(config, store), seeds);
+    backend.reset({ store });
     const { status, body } = await login("mohamed.helmy@goldensea.test");
     expect(status).toBe(200);
     expect(body.user).toMatchObject({ email: "mohamed.helmy@goldensea.test", role: "finance-director" });

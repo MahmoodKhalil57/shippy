@@ -1,63 +1,19 @@
-import { readdirSync, readFileSync } from "node:fs";
-import path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
-import config from "golden-sea-payload-config";
-import { Engine } from "../src/mock/runtime/engine.ts";
-import { RestApi } from "../src/mock/runtime/rest.ts";
-import { seedsFromGlob } from "../src/mock/runtime/seed.ts";
-import { MemoryStore } from "../src/mock/runtime/store.ts";
-import {
-  createStore,
-  endTour,
-  filters,
-  setCaseFilters,
-  startTour,
-  toast,
-  toasts,
-  tour,
-} from "saastemlycrm-design-system/src/stores/index.ts";
+import { createStore, endTour, startTour, tour } from "saastemlycrm-design-system/src/stores/index.ts";
+import { backend, call, login, seeds } from "./backend.ts";
 
 /** The sourcing-desk data model (STATE-AUDIT.md): seeds load cleanly and the business rules hold. */
 
-const seedDir = path.resolve(import.meta.dirname, "../../golden-sea-payload-config/src/seed");
-const seedFiles: Record<string, unknown> = {};
-for (const f of readdirSync(seedDir, { recursive: true }) as string[]) {
-  if (f.endsWith(".json"))
-    seedFiles[`./seed/${f.split(path.sep).join("/")}`] = JSON.parse(readFileSync(path.join(seedDir, f), "utf8"));
-}
-const seeds = seedsFromGlob(seedFiles);
-
-let api: RestApi;
-let token = "";
-const call = async (method: string, url: string, payload?: unknown) => {
-  const headers: Record<string, string> = token ? { authorization: `JWT ${token}` } : {};
-  const init: RequestInit = { method, headers };
-  if (payload !== undefined) {
-    init.body = JSON.stringify(payload);
-    headers["content-type"] = "application/json";
-  }
-  const res = await api.handle(new Request(`http://mock.test${url}`, init));
-  // oxlint-disable-next-line typescript/no-explicit-any
-  const body: any = await res.json().catch(() => ({}));
-  return { status: res.status, body };
-};
-const as = async (user: string) => {
-  token = "";
-  const { body } = await call("POST", "/api/users/login", { email: `${user}@goldensea.test`, password: "demo1234" });
-  token = body.token;
-};
-
 beforeEach(async () => {
-  token = "";
-  api = new RestApi(new Engine(config, new MemoryStore()), seeds);
-  await as("karim.balbaa");
+  backend.reset();
+  await login("karim.balbaa");
 });
 
 describe("seed data", () => {
   it("loads every seeded document without validation errors", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     await call("POST", "/api/_mock/reset");
-    await as("karim.balbaa");
+    await login("karim.balbaa");
     expect(warn).not.toHaveBeenCalled();
     warn.mockRestore();
     for (const [slug, docs] of Object.entries(seeds.collections)) {
@@ -127,18 +83,18 @@ describe("business rules", () => {
     const ap = (await call("GET", "/api/approvals/ap-bank-s3?depth=0")).body;
     expect(ap.status).toBe("Approved 1 of 2");
     // Mohamed Helmy already approved: he can't approve twice.
-    await as("mohamed.helmy");
+    await login("mohamed.helmy");
     const twice = await call("PATCH", "/api/approvals/ap-bank-s3", {
       decisions: [...ap.decisions, { user: "mh", decision: "Approve" }],
     });
     expect(twice.status).toBe(400);
     // Nobody records a decision for someone else, and non-approvers can't decide.
-    await as("karim.youssef");
+    await login("karim.youssef");
     const other = await call("PATCH", "/api/approvals/ap-bank-s3", {
       decisions: [...ap.decisions, { user: "kb", decision: "Approve" }],
     });
     expect(other.status).toBe(400);
-    await as("karim.balbaa");
+    await login("karim.balbaa");
     const ok = await call("PATCH", "/api/approvals/ap-bank-s3", {
       decisions: [...ap.decisions, { decision: "Approve" }],
     });
@@ -191,7 +147,7 @@ describe("business rules", () => {
   });
 
   it("only management approves quotations and confirms supplier POs", async () => {
-    await as("karim.youssef");
+    await login("karim.youssef");
     expect((await call("PATCH", "/api/quotations/q-0142-v1", { status: "Approved" })).status).toBe(400);
     const po = await call("POST", "/api/purchase-orders", {
       case: "gs-rfq-0142",
@@ -204,7 +160,7 @@ describe("business rules", () => {
       (await call("PATCH", `/api/purchase-orders/${po.body.doc.id}`, { status: "Confirmed", recheckDone: true }))
         .status,
     ).toBe(400);
-    await as("karim.balbaa");
+    await login("karim.balbaa");
     expect((await call("PATCH", `/api/purchase-orders/${po.body.doc.id}`, { status: "Confirmed" })).status).toBe(400); // no re-check
     expect(
       (await call("PATCH", `/api/purchase-orders/${po.body.doc.id}`, { status: "Confirmed", recheckDone: true }))
@@ -239,7 +195,7 @@ describe("business rules", () => {
   });
 
   it("hides costs and margins from sales", async () => {
-    await as("soaad.amer");
+    await login("soaad.amer");
     const offer = (await call("GET", "/api/offers/off-l1-s1?depth=0")).body;
     expect(offer.price).toBeUndefined();
     const c = (await call("GET", "/api/cases/gs-rfq-0142?depth=0")).body;
@@ -280,13 +236,9 @@ describe("frontend stores", () => {
     expect(s.get()).toEqual({ a: 1, b: "x" });
   });
 
-  it("updates nested case filters, tours and toasts", () => {
-    setCaseFilters({ view: "board" });
-    expect(filters.get().cases).toMatchObject({ view: "board", scope: "all" });
+  it("starts and finishes tours", () => {
     startTour("morning");
     endTour(true);
     expect(tour.get()).toMatchObject({ active: null, completed: ["morning"] });
-    const id = toast("Saved", "success", 0);
-    expect(toasts.get().items.map((t) => t.id)).toContain(id);
   });
 });

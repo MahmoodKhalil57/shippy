@@ -1,41 +1,7 @@
-import { readdirSync, readFileSync } from "node:fs";
-import path from "node:path";
 import { beforeEach, describe, expect, it } from "vite-plus/test";
-import config from "golden-sea-payload-config";
-import { Engine } from "../src/mock/runtime/engine.ts";
-import { RestApi } from "../src/mock/runtime/rest.ts";
-import { seedsFromGlob } from "../src/mock/runtime/seed.ts";
-import { MemoryStore } from "../src/mock/runtime/store.ts";
+import { backend, call, login } from "./backend.ts";
 
 /** Offer comparison, pricing, quotations and approvals (src/cms/endpoints/commercial.ts). */
-
-const seedDir = path.resolve(import.meta.dirname, "../../golden-sea-payload-config/src/seed");
-const seedFiles: Record<string, unknown> = {};
-for (const f of readdirSync(seedDir, { recursive: true }) as string[]) {
-  if (f.endsWith(".json"))
-    seedFiles[`./seed/${f.split(path.sep).join("/")}`] = JSON.parse(readFileSync(path.join(seedDir, f), "utf8"));
-}
-const seeds = seedsFromGlob(seedFiles);
-
-let api: RestApi;
-let token = "";
-const call = async (method: string, url: string, payload?: unknown) => {
-  const headers: Record<string, string> = token ? { authorization: `JWT ${token}` } : {};
-  const init: RequestInit = { method, headers };
-  if (payload !== undefined) {
-    init.body = JSON.stringify(payload);
-    headers["content-type"] = "application/json";
-  }
-  const res = await api.handle(new Request(`http://mock.test${url}`, init));
-  // oxlint-disable-next-line typescript/no-explicit-any
-  const body: any = await res.json().catch(() => ({}));
-  return { status: res.status, body };
-};
-const as = async (user: string) => {
-  token = "";
-  const { body } = await call("POST", "/api/users/login", { email: `${user}@goldensea.test`, password: "demo1234" });
-  token = body.token;
-};
 
 const CASE = "/api/commercial/cases/gs-rfq-0142";
 // oxlint-disable-next-line typescript/no-explicit-any
@@ -44,8 +10,8 @@ const line = (cmp: any, n: number) => cmp.lines.find((l: { lineNo: number }) => 
 const offer = (l: any, id: string) => l.offers.find((o: { id: string }) => o.id === id);
 
 beforeEach(async () => {
-  api = new RestApi(new Engine(config, new MemoryStore()), seeds);
-  await as("karim.youssef");
+  backend.reset();
+  await login("karim.youssef");
 });
 
 describe("offer comparison", () => {
@@ -151,7 +117,7 @@ describe("pricing", () => {
   });
 
   it("refuses costs and margins to sales", async () => {
-    await as("soaad.amer");
+    await login("soaad.amer");
     expect((await call("GET", `${CASE}/pricing`)).status).toBe(403);
     expect((await call("GET", `${CASE}/compare`)).status).toBe(403);
     expect((await call("POST", `${CASE}/request-approval`, {})).status).toBe(403);
@@ -171,13 +137,13 @@ describe("quotation → approval → send → decision", () => {
 
     // Karim Youssef isn't an approver.
     expect((await call("POST", `/api/commercial/approvals/${apId}/decide`, { decision: "Approve" })).status).toBe(400);
-    await as("karim.balbaa");
+    await login("karim.balbaa");
     // Returning needs a reason.
     expect((await call("POST", `/api/commercial/approvals/${apId}/decide`, { decision: "Reject" })).status).toBe(400);
     const ok = await call("POST", `/api/commercial/approvals/${apId}/decide`, { decision: "Approve", reason: "OK" });
     expect(ok.body.status).toBe("Approved");
 
-    await as("karim.youssef");
+    await login("karim.youssef");
     const view = (await call("GET", "/api/commercial/quotations/q-0142-v1")).body;
     expect(view).toMatchObject({ approvedBy: "Karim Balbaa", step: 2, can: { send: true } });
     const sent = (await call("POST", "/api/commercial/quotations/q-0142-v1/send", { method: "email" })).body;
@@ -207,7 +173,7 @@ describe("quotation → approval → send → decision", () => {
 
 describe("approvals queue", () => {
   it("shows who can decide and the two-person progress", async () => {
-    await as("karim.balbaa");
+    await login("karim.balbaa");
     const kb = (await call("GET", "/api/commercial/approvals")).body;
     const bank = kb.pending.find((a: { id: string }) => a.id === "ap-bank-s3");
     expect(bank).toMatchObject({
@@ -217,7 +183,7 @@ describe("approvals queue", () => {
     });
     expect(kb.decided.some((a: { id: string }) => a.id === "ap-quote-0139")).toBe(true);
 
-    await as("mohamed.helmy");
+    await login("mohamed.helmy");
     const mh = (await call("GET", "/api/commercial/approvals")).body;
     const mine = mh.pending.find((a: { id: string }) => a.id === "ap-bank-s3");
     expect(mine.canDecide).toBe(false);
@@ -227,7 +193,7 @@ describe("approvals queue", () => {
   });
 
   it("an approved FX rate becomes the active rate", async () => {
-    await as("karim.balbaa");
+    await login("karim.balbaa");
     await call("POST", "/api/commercial/approvals/ap-fx-usd/decide", { decision: "Approve" });
     const fx = (await call("GET", "/api/globals/fx-rates")).body;
     const usd = fx.rates.filter(
@@ -237,7 +203,7 @@ describe("approvals queue", () => {
   });
 
   it("an approved margin exception approves the quotation behind it", async () => {
-    await as("karim.balbaa");
+    await login("karim.balbaa");
     const r = await call("POST", "/api/commercial/approvals/ap-margin-0137/decide", { decision: "Approve" });
     expect(r.body.status).toBe("Approved");
     expect((await call("GET", "/api/quotations/q-0137-v2?depth=0")).body.status).toBe("Approved");

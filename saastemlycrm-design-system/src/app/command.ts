@@ -19,6 +19,7 @@ import {
   groupOf,
   labels,
   navigate,
+  settings,
   titleOf,
   toggleBookmark,
   useAsTitle,
@@ -244,7 +245,7 @@ export class DashboardCommand extends LightElement {
         { kind: "action", hits: pick("action", 4) },
       ];
     }
-    const hits = search(all, query, 200);
+    const hits = search(all, query, 200, settings.search?.synonyms);
     const sections = (["action", "page", "record"] as EntryKind[])
       .map((kind) => ({ kind, hits: hits.filter((h) => h.entry.kind === kind).slice(0, PER_SECTION[kind]) }))
       .filter((s) => s.hits.length);

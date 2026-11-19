@@ -48,7 +48,7 @@ const PAD = 6;
 
 /**
  * @example
- * <ui-coachmark open .target=${el} eyebrow="RFQ email → one case" step="2" total="7" heading="AI drafts the case"
+ * <ui-coachmark open .target=${el} eyebrow="Email → one order" step="2" total="7" heading="AI drafts the order"
  *   @ui-next=${…} @ui-back=${…} @ui-close=${…}>Body text</ui-coachmark>
  *
  * Without a `target` the card sits in the middle (for intros and outros). `busy` shows a

@@ -4,6 +4,10 @@
   "private": true,
   "description": "Runs a Payload project's dashboard entirely in the browser: a service worker serves Payload's REST API from IndexedDB.",
   "type": "module",
+  "exports": {
+    "./testing": "./src/testing.ts",
+    "./package.json": "./package.json"
+  },
   "scripts": {
     "dev": "vp dev",
     "build": "tsc -p tsconfig.json && vp build --base /shippy/",

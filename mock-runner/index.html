@@ -6,18 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <!-- Offline support is the service worker's precache (src/mock/sw.ts, list written by
          plugins/mock-backend.ts). -->
+    <!-- Title and description: the project's `branding` global (plugins/mock-backend.ts). -->
     <meta name="theme-color" content="#0b1a26" />
-    <meta
-      name="description"
-      content="Golden Sea marine supply: sourcing, quotations, fulfilment and finance in one workspace."
-    />
-    <!-- The Golden Sea helper (bottom right) runs on an OpenAI Codex model (saastemlycrm-design-system/src/agent/codex.ts). A
+    <meta name="description" content="A business dashboard." />
+    <!-- The helper (bottom right) runs on an OpenAI Codex model (saastemlycrm-design-system/src/agent/codex.ts). A
          developer adds an API key here when running locally. Never commit or deploy a real key:
          this page is published as is (docs/). -->
     <meta name="openai-api-key" content="" />
     <meta name="openai-model" content="aibrowser" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-    <title>Golden Sea</title>
+    <title>Dashboard</title>
     <!-- Apply the saved theme and colour scheme (ui-appearance) before the first paint. -->
     <script>
       try {

@@ -8,6 +8,7 @@ import { roleLabel, roleLogins } from "./demo-users.ts";
 import {
   cellText,
   collectionOf,
+  collectionSettings,
   columnsOf,
   config,
   dashboardPath,
@@ -31,6 +32,8 @@ import {
   type Route,
 } from "./shared.ts";
 import { fill, leaves, loadSource } from "./widgets/host.ts";
+import type { ViewBlock } from "./widgets/schema.ts";
+import { blocksText, headerText } from "./widgets/text.ts";
 import type { Source, WidgetPage, WidgetScope } from "./widgets/widget.ts";
 import { loadGuide, loadTours, site } from "./site.ts";
 
@@ -147,6 +150,92 @@ async function widgetData(
   return { widgets: parts };
 }
 
+const asBlocks = (b: ViewBlock | ViewBlock[] | null | undefined): ViewBlock[] =>
+  b ? (Array.isArray(b) ? b : [b]) : [];
+
+/**
+ * A screen of widgets as short text, the way it's drawn: the header, then each widget's title
+ * (with its count and tags) and its blocks as lines (./widgets/text.ts). Loaded as the signed-in
+ * user, one request per distinct source. A refused or failing widget is left out, as on screen.
+ */
+async function pageText(
+  page: WidgetPage,
+  user: Doc | null,
+  doc?: { id: string; slug: string },
+  linesPerWidget = 8,
+): Promise<string[]> {
+  if (!user) return [];
+  const scope: WidgetScope = {
+    user: user as WidgetScope["user"],
+    doc,
+    params: { ...page.params, ...Object.fromEntries(new URLSearchParams(location.search)) },
+  };
+  const cache = new Map<string, Promise<unknown>>();
+  const load = (s: Source) => {
+    const source = fill(s, scope);
+    const key = JSON.stringify(source);
+    if (!cache.has(key)) cache.set(key, loadSource(source, scope));
+    return cache.get(key)!;
+  };
+  const out: string[] = [];
+  const h = page.header;
+  try {
+    if (h && "render" in h) out.push(...headerText(h.render(h.source ? await load(h.source) : null, scope)));
+    else out.push(...headerText(h));
+  } catch {
+    /* a header that can't load: the widgets still say what's there */
+  }
+  const parts = await Promise.all(
+    leaves(page.widgets, scope).map(async (w) => {
+      try {
+        const data = w.source ? await load(w.source) : null;
+        if (w.hidden?.(data as never, scope)) return [];
+        const lines = blocksText(asBlocks(w.render?.(data as never, scope)));
+        const head = w.title ? w.head?.(data as never, scope) : undefined;
+        const title = w.title
+          ? `${[w.title, ...(head?.tags ?? []).map((t) => t.label)].join(" · ")}${head?.count == null ? "" : ` (${head.count})`}:`
+          : "";
+        return [title, ...lines.slice(0, linesPerWidget)].filter(Boolean);
+      } catch {
+        return [];
+      }
+    }),
+  );
+  return [...out, ...parts.flat()];
+}
+
+/** A component slot's screen of widgets (`{ path: "app-widgets", clientProps: { page } }`) as text. */
+function widgetText(component: unknown, user: Doc | null, doc?: { id: string; slug: string }) {
+  const c = componentOf(component);
+  return c?.tag === "app-widgets" ? pageText(c.props.page as WidgetPage, user, doc) : Promise.resolve([]);
+}
+
+/**
+ * What a record's own screens say about it, as text: the widgets above its form
+ * (`custom.edit.before`), then its edit tabs in order (only `tab`, when given), until `budget`
+ * characters are reached.
+ */
+async function recordText(slug: string, id: string, user: Doc | null, tab?: string, budget = 1200) {
+  const c = collectionOf(slug)!;
+  const doc = { id, slug };
+  const sections: { label?: string; lines: () => Promise<string[]> }[] = [];
+  const before = collectionSettings(c).edit?.before;
+  if (before?.length && !tab) sections.push({ lines: () => pageText({ widgets: before }, user, doc) });
+  for (const t of editTabs(c))
+    if (!tab || t.key === tab)
+      sections.push({
+        label: t.label,
+        lines: () => widgetText({ path: t.Component, clientProps: t.props }, user, doc),
+      });
+  const out: string[] = [];
+  for (const s of sections) {
+    if (out.join("\n").length >= budget) break;
+    const lines = await s.lines().catch(() => []);
+    if (lines.length) out.push(...(s.label && !tab ? [`[${s.label} tab]`] : []), ...lines);
+  }
+  return out;
+}
+
 /** One list row as the table shows it: the list columns, formatted. */
 function row(slug: string, doc: Doc) {
   const c = collectionOf(slug)!;
@@ -183,7 +272,7 @@ async function screenContent(route: Route, host: AgentHost): Promise<Record<stri
     case "dashboard":
       return {
         kind: "dashboard",
-        description: "The signed-in user's day: queue, KPIs and charts.",
+        description: "The home page: the signed-in user's day.",
         ...(await widgetData(dashboardView()?.Component, host.user())),
       };
     case "list": {
@@ -279,7 +368,7 @@ function matchEndpoint(method: string, path: string) {
 
 /* ---------------------------------------------------------------- finding a page by name */
 
-/** Lower-case words only: "/Collections/Supplier-RFQs " → "collections supplier rfqs". */
+/** Lower-case words only: "/Collections/Purchase-Orders " → "collections purchase orders". */
 const words = (s: string) =>
   s
     .toLowerCase()
@@ -354,7 +443,7 @@ function pageIndex(host: AgentHost): PageEntry[] {
   return pages;
 }
 
-/** A record named by its number or title (e.g. "GS-RFQ-0136"), with a tab if one is named too. */
+/** A record named by its number or title (e.g. "ORD-0136"), with a tab if one is named too. */
 async function findRecordPage(query: string, host: AgentHost): Promise<string | null> {
   const token = query.match(/[A-Za-z0-9]+(?:[-/][A-Za-z0-9]+)*\d[A-Za-z0-9-/]*/)?.[0];
   if (!token) return null;
@@ -380,8 +469,8 @@ async function findRecordPage(query: string, host: AgentHost): Promise<string | 
 }
 
 /**
- * Where to go for what someone asked: a path as is; else a record ("GS-RFQ-0136 pricing"); else
- * the page whose name fits best ("home", "invoices", "pricing policy"). No good fit: an error
+ * Where to go for what someone asked: a path as is; else a record ("ORD-0136 invoices"); else
+ * the page whose name fits best ("home", "invoices", "settings"). No good fit: an error
  * naming the closest pages, so the agent can pick one.
  */
 async function resolvePage(query: string, host: AgentHost): Promise<string> {
@@ -417,7 +506,7 @@ const schema = (properties: Record<string, unknown>, required: string[] = []) =>
 const whereSchema = {
   type: "object",
   description:
-    'Payload "where" query, e.g. {"stage":{"equals":"Awaiting supplier"}} or {"and":[{"owner":{"equals":"kb"}},{"value":{"greater_than":5000}}]}. Operators: equals, not_equals, in, not_in, like, contains, greater_than, less_than, exists…',
+    'Payload "where" query, e.g. {"status":{"equals":"Open"}} or {"and":[{"owner":{"equals":"u1"}},{"value":{"greater_than":5000}}]}. Operators: equals, not_equals, in, not_in, like, contains, greater_than, less_than, exists…',
 };
 
 /** All tools, for the signed-in user (`host`). Signed out: only what's needed to look and sign in. */
@@ -455,7 +544,7 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
       title: "Switch user (demo)",
       description:
         "Sign in as another demo user (an id from list_demo_users), to see the platform as that role sees it. Every screen, list and tool then shows what that person may see and do.",
-      inputSchema: schema({ id: { type: "string", description: "Demo user id, e.g. kb" } }, ["id"]),
+      inputSchema: schema({ id: { type: "string", description: "Demo user id, from list_demo_users" } }, ["id"]),
       annotations: ACT,
       execute: async ({ id }) => {
         if (!(await host.switchUser(str(id)))) throw new Error(`No demo user "${str(id)}" (see list_demo_users).`);
@@ -472,7 +561,7 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
       name: "list_pages",
       title: "Pages",
       description:
-        "Every page the user can open, grouped as in the navigation (paths for navigate), plus the tabs of records that have them (e.g. a case's Overview, Supplier RFQs, Compare offers, Pricing…).",
+        "Every page the user can open, grouped as in the navigation (paths for navigate), plus the tabs of records that have them (e.g. a record's Overview, History…).",
       inputSchema: schema({}),
       annotations: READ,
       execute: async () => ({
@@ -496,7 +585,7 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
       name: "navigate",
       title: "Go to a page",
       description:
-        'Open a page in the app, as clicking a link would. Give a path (e.g. /inbox, /collections/invoices) or simply what the person called it: a page or screen name ("home", "invoices", "approvals", "pricing policy"), or a record and optionally its tab ("GS-RFQ-0136", "GS-RFQ-0142 compare offers"). Returns the new screen (as get_screen).',
+        'Open a page in the app, as clicking a link would. Give a path (e.g. /collections/invoices) or simply what the person called it: a page or screen name ("home", "invoices", "approvals"), or a record and optionally its tab ("ORD-0136", "ORD-0142 history"). Returns the new screen (as get_screen).',
       inputSchema: schema({ path: { type: "string", description: "A path, or the page / record the person named" } }, [
         "path",
       ]),
@@ -694,8 +783,7 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
     {
       name: "get_settings",
       title: "Read settings",
-      description:
-        "A global (settings document, e.g. pricing-policy, approval-rules, fx-rates): slugs from describe_schema.",
+      description: "A global (settings document, e.g. a pricing policy): slugs from describe_schema.",
       inputSchema: schema({ global: { type: "string" } }, ["global"]),
       annotations: READ,
       execute: async ({ global }) => {
@@ -718,7 +806,7 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
       name: "list_workflows",
       title: "Workflows",
       description:
-        "The platform's workflow endpoints behind its screens (inbox triage, supplier RFQs, offer comparison, pricing, approvals, purchase orders, delivery, invoicing, cash, automations…), as METHOD and path with :params. GETs read a screen's data; POSTs perform its actions. Use with call_workflow.",
+        "The platform's workflow endpoints behind its screens (what each screen's buttons do), as METHOD and path with :params. GETs read a screen's data; POSTs perform its actions. Use with call_workflow.",
       inputSchema: schema({}),
       annotations: READ,
       execute: async () => workflowEndpoints(),
@@ -731,7 +819,7 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
       inputSchema: schema(
         {
           method: { type: "string", enum: ["get", "post"] },
-          path: { type: "string", description: "e.g. /commercial/cases/gs-rfq-0142/compare" },
+          path: { type: "string", description: "e.g. /orders/ord-0142/approve" },
           body: { type: "object", description: "POST body" },
         },
         ["method", "path"],
@@ -748,7 +836,7 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
       name: "ask_assistant",
       title: "Ask the records",
       description:
-        "Ask the platform's own assistant a question about the business (a case's status, approvals, who owes money, late suppliers, pipeline, margin). It answers from the live records, as the signed-in user may see them, and cites them.",
+        "Ask the platform's own assistant a question about the business (a record's status, what's waiting for approval, who owes money, deadlines). It answers from the live records, as the signed-in user may see them, and cites them.",
       inputSchema: schema({ question: { type: "string" } }, ["question"]),
       annotations: READ,
       execute: async ({ question }) => api.post<Answer>(ask(), { question: str(question) }),
@@ -873,7 +961,7 @@ async function screenText(host: AgentHost): Promise<string> {
   ];
   const c = (await screenContent(route, host).catch(() => ({}))) as Record<string, unknown>;
   if (c.description) out.push(`About this page: ${str(c.description)}`);
-  if (route.name === "dashboard") out.push(await myDayText());
+  if (route.name === "dashboard") out.push(await myDayText(user));
   else if (route.name === "list") {
     const rows = (c.rows as Record<string, unknown>[] | undefined) ?? [];
     out.push(
@@ -885,93 +973,78 @@ async function screenText(host: AgentHost): Promise<string> {
     const col = collectionOf(route.slug)!;
     out.push(`A ${labels(col).singular.toLowerCase()}: ${titleOf(col, doc as Doc)}`);
     for (const f of columnsOf(col).slice(0, 8)) out.push(`- ${text(f.label ?? f.name)}: ${cellText(f, doc[f.name!])}`);
-    if (route.slug === "cases") out.push(await caseText(route.id));
+    out.push(...(await recordText(route.slug, route.id, user, route.tab, 700)));
     out.push(`Tabs: ${((c.tabs as { label: string }[] | undefined) ?? []).map((t) => t.label).join(", ")}`);
   } else if (route.name === "view") out.push(`A screen: ${str(c.title)}.`);
   else if (route.name === "global") out.push(`Settings: ${str(c.label)}.`);
   return clip(out.join("\n"));
 }
 
-/** The signed-in person's day, from their dashboard: greeting, counters, their queue, lists. */
-async function myDayText(): Promise<string> {
-  const home = await api.get<{
-    greeting: string;
-    subtitle: string;
-    widgets: {
-      kind: string;
-      tiles?: { label: string; value: string; note?: string }[];
-      title?: string;
-      cases?: { caseId: string; vessel: string; stage: string; next: string; blocker: string; due: string }[];
-      lists?: { title: string; items: { title: string; sub: string }[] }[];
-    }[];
-  }>("/home");
-  const out = [home.greeting, home.subtitle];
-  for (const w of home.widgets) {
-    if (w.kind === "tiles")
-      out.push(...(w.tiles ?? []).map((t) => `- ${t.label}: ${t.value}${t.note ? ` (${t.note})` : ""}`));
-    if (w.kind === "queue") {
-      out.push(`${w.title ?? "Queue"}:`);
-      out.push(
-        ...(w.cases ?? [])
-          .slice(0, 5)
-          .map((q) => `- ${line(q.caseId, q.vessel, q.stage, `next: ${q.next}`, q.blocker, q.due)}`),
-      );
-    }
-    if (w.kind === "lists")
-      for (const l of w.lists ?? []) {
-        if (!l.items.length) continue;
-        out.push(`${l.title}:`);
-        out.push(...l.items.slice(0, 4).map((i) => `- ${line(i.title, i.sub)}`));
-      }
-  }
-  return clip(out.filter(Boolean).join("\n"));
+/**
+ * The signed-in person's day, as their home page shows it: its header, then each widget's
+ * blocks as lines. A project without a home page of widgets: the side panel's counters.
+ */
+async function myDayText(user: Doc | null): Promise<string> {
+  let lines = await widgetText(dashboardView()?.Component, user);
+  if (!lines.length) lines = await pageText({ widgets: settings.aside ?? [] }, user);
+  return clip(lines.join("\n") || "Nothing on the home page for this person.");
 }
 
-/** One case's status in a few lines (stage, owner, deadline, next action, blocker, lines). */
-async function caseText(id: string): Promise<string> {
-  const c = await api.get<{
-    caseId: string;
-    vessel: string;
-    port: string;
-    customer: { name: string };
-    stage: string;
-    deadlineText: string;
-    next: string;
-    blocker: string;
-    owner: { name: string } | null;
-    lines: { total: number; ready: number; waiting: number; blocked: number; noOffer: number };
-  }>(`/case-overview/${encodeURIComponent(id)}`);
+/** The collection people ask "the status of …" about: the `assistant` global's `mainRecord`, else the first with tabs. */
+function mainCollection(host: AgentHost) {
+  const readable = (slug: string) => host.access()?.collections[slug]?.read.permission === true;
+  const named = site().assistant.mainRecord;
+  if (named && collectionOf(named) && readable(named)) return named;
+  return config.collections.find((c) => editTabs(c).length && readable(c.slug))?.slug;
+}
+
+/**
+ * Where a record stands, in a few lines: what it is, its list columns, then what its own screens
+ * say (the widgets above its form and its tabs, as text), and the page that opens it.
+ */
+async function recordStatusText(query: string, host: AgentHost): Promise<string> {
+  const main = mainCollection(host);
+  const hit =
+    (main ? (await findRecords(query, host, 1, [main]))[0] : undefined) ?? (await findRecords(query, host, 1))[0];
+  if (!hit) throw new Error(`No record matches "${query}". Try find, or a record number.`);
+  const c = collectionOf(hit.slug)!;
+  const doc = await api.findByID(hit.slug, hit.id, { depth: 1 });
+  const title = useAsTitle(c);
   return clip(
     [
-      `${c.caseId} — ${c.vessel} at ${c.port}, for ${c.customer.name}`,
-      `Stage: ${c.stage}. Deadline: ${c.deadlineText}.`,
-      `Owner: ${c.owner?.name ?? "nobody"}.`,
-      `Next action: ${c.next || "—"}.${c.blocker ? ` Blocked by: ${c.blocker}.` : ""}`,
-      `Lines: ${c.lines.ready}/${c.lines.total} ready, ${c.lines.waiting} waiting, ${c.lines.blocked} blocked, ${c.lines.noOffer} without an offer.`,
-      `Page: /collections/cases/${c.caseId.toLowerCase()}`,
+      `${titleOf(c, doc)} (${labels(c).singular.toLowerCase()})`,
+      ...columnsOf(c)
+        .filter((f) => f.name !== title)
+        .map((f) => `- ${text(f.label ?? f.name)}: ${cellText(f, doc[f.name!])}`),
+      ...(await recordText(hit.slug, hit.id, host.user())),
+      `Page: ${hit.path}`,
     ].join("\n"),
   );
 }
 
-/** Records whose title matches what someone typed (a case number, a vessel, a company, an invoice…). */
-async function findRecords(query: string, host: AgentHost, limit = 6) {
+/**
+ * Records matching what someone typed (a record number, a name…): each collection's title field
+ * and its `admin.listSearchableFields`, as the list's search uses them. `only` narrows the collections.
+ */
+async function findRecords(query: string, host: AgentHost, limit = 6, only?: string[]) {
   const q = query.trim();
   if (!q) return [];
   const searchable = config.collections.filter(
-    (c) => useAsTitle(c) !== "id" && c.admin?.hidden !== true && host.access()?.collections[c.slug]?.read.permission,
+    (c) =>
+      (!only || only.includes(c.slug)) &&
+      useAsTitle(c) !== "id" &&
+      c.admin?.hidden !== true &&
+      host.access()?.collections[c.slug]?.read.permission,
   );
   const fields = (c: (typeof searchable)[number]) =>
-    [
-      useAsTitle(c),
-      ...dataFields(formFields(c))
-        .filter((f) => ["vessel", "name", "company", "customerRef"].includes(f.name!))
-        .map((f) => f.name!),
-    ].filter((v, i, a) => a.indexOf(v) === i);
+    [useAsTitle(c), ...(c.admin?.listSearchableFields ?? [])].filter((v, i, a) => a.indexOf(v) === i);
   const hits = await Promise.all(
     searchable.map(async (c) => {
       const where = { or: fields(c).map((f) => ({ [f]: { like: q } })) } as Where;
       const r = await api.find(c.slug, { where, limit: 3, depth: 0 }).catch(() => ({ docs: [] as Doc[] }));
       return r.docs.map((d) => ({
+        slug: c.slug,
+        id: d.id,
         title: titleOf(c, d),
         kind: labels(c).singular,
         path: `/collections/${c.slug}/${encodeURIComponent(d.id)}`,
@@ -1031,7 +1104,7 @@ function simpleTools(host: AgentHost): AgentTool[] {
       name: "open_page",
       title: "Open a page",
       description:
-        'Open a page for the person. "page" is what they called it: "home", "invoices", "approvals", "inbox", "pricing policy", or a case number like "GS-RFQ-0142" (add a tab: "GS-RFQ-0142 compare offers").',
+        'Open a page for the person. "page" is what they called it: "home", "invoices", "approvals", or a record number like "ORD-0142" (add a tab: "ORD-0142 history").',
       inputSchema: schema({ page: { type: "string", description: "The page or record the person named" } }, ["page"]),
       simple: true,
       execute: async ({ page }) => {
@@ -1044,43 +1117,27 @@ function simpleTools(host: AgentHost): AgentTool[] {
       name: "my_day",
       title: "My day",
       description:
-        "What's waiting for the signed-in person today: their counters, their queue of cases with next actions, and their lists.",
+        "What's waiting for the signed-in person today, as their home page shows it: their key figures, their queue and their lists.",
       inputSchema: schema({}),
       annotations: READ,
       simple: true,
-      execute: () => myDayText(),
+      execute: () => myDayText(user),
     },
     {
-      name: "case_status",
-      title: "Case status",
+      name: "record_status",
+      title: "Record status",
       description:
-        'Where a case stands: stage, deadline, owner, next action, what blocks it. "case" can be a case number (GS-RFQ-0142), a vessel (Aurora Crest) or a customer.',
-      inputSchema: schema({ case: { type: "string", description: "Case number, vessel or customer" } }, ["case"]),
+        'Where a record stands: its main fields and what its pages say (stage, owner, deadline, next action, what blocks it…). "record" is its number or a name the person used for it.',
+      inputSchema: schema({ record: { type: "string", description: "A record number or name" } }, ["record"]),
       annotations: READ,
       simple: true,
-      execute: async (input) => {
-        const q = str(input.case);
-        const hits = (await findRecords(q, host, 20)).filter((h) => h.path.startsWith("/collections/cases/"));
-        let id = hits[0]?.path.split("/").pop();
-        if (!id) {
-          const r = await api
-            .find("cases", {
-              where: { or: [{ vessel: { like: q } }, { customerRef: { like: q } }] } as Where,
-              limit: 1,
-              depth: 0,
-            })
-            .catch(() => ({ docs: [] as Doc[] }));
-          id = r.docs[0]?.id;
-        }
-        if (!id) throw new Error(`No case matches "${q}". Try find, or a case number like GS-RFQ-0142.`);
-        return caseText(decodeURIComponent(id));
-      },
+      execute: async ({ record }) => recordStatusText(str(record), host),
     },
     {
       name: "find",
       title: "Find",
       description:
-        "Find records by what the person typed: a case or invoice number, a vessel, a customer or supplier name. Returns the matches with the page each opens.",
+        "Find records by what the person typed: a record number or a name (a customer, a company, a person…). Returns the matches with the page each opens.",
       inputSchema: schema({ query: { type: "string" } }, ["query"]),
       annotations: { ...READ, untrustedContentHint: true },
       simple: true,
@@ -1095,7 +1152,7 @@ function simpleTools(host: AgentHost): AgentTool[] {
       name: "ask_records",
       title: "Ask the records",
       description:
-        "Business questions answered from the live records: a case or vessel's status, what's waiting for approval, who owes us money, late suppliers, deadlines, the growth pipeline, margin.",
+        "Business questions answered from the live records: what's waiting for approval, who owes us money, what's late, deadlines, totals and trends.",
       inputSchema: schema({ question: { type: "string" } }, ["question"]),
       annotations: READ,
       simple: true,
@@ -1116,7 +1173,7 @@ function simpleTools(host: AgentHost): AgentTool[] {
       name: "platform_guide",
       title: "Platform guide",
       description:
-        'How the platform works and where things are: "topic" like "approvals", "how to send a quotation", "supplier reminders", "the inbox", "invoices".',
+        'How the platform works and where things are: "topic" like "approvals", "how to add a customer", "invoices".',
       inputSchema: schema({ topic: { type: "string" } }, ["topic"]),
       annotations: READ,
       simple: true,

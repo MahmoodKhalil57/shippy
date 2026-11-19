@@ -1,0 +1,5 @@
+[
+  { "id": "news", "name": "News", "kind": "topic" },
+  { "id": "guides", "name": "Guides", "kind": "topic" },
+  { "id": "weekly", "name": "Weekly", "kind": "series" }
+]

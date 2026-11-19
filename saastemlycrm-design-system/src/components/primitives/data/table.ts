@@ -218,7 +218,7 @@ export interface TableColumn<T extends TableRowData = TableRowData> {
   /** Custom cell content; defaults to `row[key]`. */
   render?: (row: T, index: number) => Renderable;
   /**
-   * A second, quieter line under the value (M3's two-line list item): the vessel under the
+   * A second, quieter line under the value (M3's two-line list item): the city under the
    * customer, "3 days overdue" under the date. Muted, or in a tone (`{ text, tone }`).
    */
   supporting?: (row: T, index: number) => TableSupporting;

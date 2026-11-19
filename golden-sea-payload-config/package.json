@@ -4,12 +4,14 @@
   "private": true,
   "description": "Golden Sea's Payload config: collections, globals, endpoints, widgets and seed data, built on saastemlycrm-design-system's contracts.",
   "files": [
-    "src"
+    "src",
+    "public"
   ],
   "type": "module",
   "exports": {
     ".": "./src/config.ts",
     "./seed": "./src/seed.ts",
+    "./seed/branding.json": "./src/seed/globals/branding.json",
     "./src/*": "./src/*",
     "./package.json": "./package.json"
   },
@@ -23,6 +25,7 @@
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
+    "mock-runner": "workspace:*",
     "payload": "3.94.0",
     "typescript": "~7.0.2",
     "vite": "npm:@voidzero-dev/vite-plus-core@8.3.8000",

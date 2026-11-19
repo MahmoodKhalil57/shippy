@@ -41,9 +41,14 @@ seed data (`src/seed`). Entry points: `.` (the config, `src/config.ts`) and `./s
 - **Contracts:** it imports only `saastemlycrm-design-system/contracts` (and `/payload`): the config
   types, `tones`, `CollectionSettings`, `widgets()` and the block vocabulary. Never the design
   system's components or app, never Lit: the config also runs in a service worker and, later, on
-  a server. It defines no custom elements. `mock-runner/tests/template.test.ts` enforces all of
-  this.
+  a server. It defines no custom elements. `tests/template.test.ts` enforces all of this (and that
+  the design system names no project or runner).
 - **Screens:** see "Screens are widgets" in `saastemlycrm-design-system/AGENTS.md`. Anything the
   widget vocabulary can't draw becomes a generic block or component in the design system.
-- **Tests:** its behaviour is tested against a backend: `mock-runner/tests` runs every endpoint and
-  widget page. `STATE-AUDIT.md` maps the state behind each screen.
+- **Tests** (`tests/`, `vp test`): its behaviour against a backend, mock-runner's engine in memory
+  through `mock-runner/testing` (a dev dependency; `src` never imports it). `tests/backend.ts`
+  sets it up with this config and `seedModules`: `backend.reset()` in `beforeEach`, `call(...)`,
+  `login("karim.youssef")` (demo password). `rest.test.ts`: collections, globals, access and seed
+  over REST; `case-views`, `commercial`, `data-model`, `insights`, `operations`, `platform`,
+  `sourcing`: every endpoint and widget page; `template.test.ts`: the packages' roles.
+  `STATE-AUDIT.md` maps the state behind each screen.

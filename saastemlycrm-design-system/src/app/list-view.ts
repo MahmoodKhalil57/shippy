@@ -46,7 +46,7 @@ import {
  * - `limit` / `page`: rows per page and the pager;
  * - `select`: only the columns on screen (and the title) come back;
  * - `depth` + `populate`: related documents come back with just their title;
- * - `joins`: join columns (a customer's vessels) come back as counts.
+ * - `joins`: join columns (a customer's orders) come back as counts.
  * The table's state lives in the URL (`?q=…&sort=…&filters[0][field]=…`), so a filtered view can be
  * bookmarked, shared, and survives a reload; the columns someone picks are remembered per collection.
  */

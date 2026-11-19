@@ -1,0 +1,5 @@
+[
+  { "id": "ada", "email": "ada@fixture.test", "password": "secret", "name": "Ada", "role": "admin" },
+  { "id": "bob", "email": "bob@fixture.test", "password": "secret", "name": "Bob", "role": "editor" },
+  { "id": "cy", "email": "cy@fixture.test", "password": "secret", "name": "Cy", "role": "editor" }
+]

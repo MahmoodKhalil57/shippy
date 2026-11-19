@@ -56,7 +56,6 @@ export async function seedStore(engine: Engine, seeds: Seeds) {
   }
   await engine.store.setMeta("seededIds", seedIds(seeds));
   await engine.store.setMeta("seededAt", new Date().toISOString());
-  await engine.store.setMeta("seededGlobals", Object.keys(seeds.globals));
   await engine.store.setMeta("seedHash", seedHash(seeds));
 }
 
@@ -95,20 +94,21 @@ export async function topUpSeed(engine: Engine, seeds: Seeds) {
       }
     }
   }
-  // Globals the store was never seeded with (added to the project since): seed those once.
-  // (Stores from before this was tracked: a global with stored data counts as seeded.)
-  const knownGlobals = new Set((await engine.store.getMeta<string[]>("seededGlobals")) ?? []);
+  // Globals added to the project since are seeded; globals already there get the seed's fields
+  // they don't have yet (fields added since). What people set is never overwritten.
   for (const [slug, data] of Object.entries(seeds.globals)) {
-    if (knownGlobals.has(slug) || !engine.hasGlobal(slug) || (await engine.store.getGlobal(slug))) continue;
+    if (!engine.hasGlobal(slug)) continue;
+    const stored = await engine.store.getGlobal(slug);
+    const missing = stored ? Object.fromEntries(Object.entries(data).filter(([k]) => stored[k] === undefined)) : data;
+    if (!Object.keys(missing).length) continue;
     try {
-      await engine.updateGlobal({ slug, data, context, depth: 0 });
-      added.push(`globals/${slug}`);
+      await engine.updateGlobal({ slug, data: missing, context, depth: 0 });
+      added.push(stored ? `globals/${slug} (${Object.keys(missing).join(", ")})` : `globals/${slug}`);
     } catch (e) {
       console.warn(`[mock backend] seed globals/${slug} skipped:`, (e as Error).message, e);
     }
   }
   if (added.length) console.info(`[mock backend] added ${added.length} new seed documents:`, added.join(", "));
   await engine.store.setMeta("seededIds", seedIds(seeds));
-  await engine.store.setMeta("seededGlobals", Object.keys(seeds.globals));
   await engine.store.setMeta("seedHash", seedHash(seeds));
 }

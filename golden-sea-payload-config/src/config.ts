@@ -57,6 +57,38 @@ export default defineConfig({
         ],
       },
       aside,
+      // The command palette's own words for this business (added to the generic thesaurus).
+      search: {
+        synonyms: [
+          ["customer", "client", "buyer", "shipowner", "operator", "manager", "company"],
+          ["vessel", "ship", "boat", "tanker", "carrier", "rig", "fleet", "imo"],
+          ["offer", "bid", "response", "supplier quote"],
+          ["rfq", "request", "inquiry", "enquiry", "tender", "case", "requisition"],
+          ["message", "email", "mail", "inbox", "intake", "whatsapp", "chat"],
+        ],
+      },
+      // This business's status words, coloured like the generic ones.
+      statusWords: {
+        neutral: ["not awarded", "superseded"],
+        error: ["short", "damaged", "unreachable", "clarification", "not sourced"],
+        warning: ["approved 1", "deposit to pay", "on watch", "documents pending"],
+        info: [
+          "validating",
+          "sourcing",
+          "comparing",
+          "purchasing",
+          "delivering",
+          "customs",
+          "loading",
+          "dispatched",
+          "on board",
+          "boat transfer",
+          "trial",
+          "introduced",
+          "prospect",
+        ],
+        success: ["first rfq"],
+      },
     },
     meta: { titleSuffix: "· Golden Sea" },
     // The demo's purpose-built screens (Payload custom views). Each `Component` is a screen of

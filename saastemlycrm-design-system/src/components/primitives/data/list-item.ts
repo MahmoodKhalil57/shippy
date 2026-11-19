@@ -66,7 +66,7 @@ export type ListItemLines = "1" | "2" | "3";
 /**
  * @example
  * <ui-list>
- *   <ui-list-item headline="GS-RFQ-0142" supporting="MV Aurora Crest · Port Said" trailing-text="14 Nov" href="/collections/cases/gs-rfq-0142">
+ *   <ui-list-item headline="ORD-0142" supporting="Acme Ltd · Rotterdam" trailing-text="14 Nov" href="/collections/orders/ord-0142">
  *     <ui-badge slot="leading" dot tone="warning" label="Waiting"></ui-badge>
  *     <ui-tag slot="trailing" tone="warning">Awaiting supplier</ui-tag>
  *   </ui-list-item>

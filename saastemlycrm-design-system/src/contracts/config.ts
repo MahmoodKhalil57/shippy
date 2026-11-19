@@ -170,6 +170,17 @@ export interface DashboardSettings {
   nav?: { groups: { label: string; icon?: string }[] };
   /** The side panel's counters: widgets (usually `counts`, shown by role with `visible`). */
   aside?: Widget[];
+  /**
+   * The command palette's search: `synonyms` are groups of this business's words that mean
+   * (roughly) the same thing (["vehicle", "car", "van"]), added to the generic thesaurus.
+   */
+  search?: { synonyms?: string[][] };
+  /**
+   * The project's own status words by tone, added to the generic ones the dashboard colours
+   * statuses by ("on board": "info"). Checked before them, in the order neutral, error, warning,
+   * info, success. A select field's `custom.tones` still wins.
+   */
+  statusWords?: Partial<Record<"neutral" | "error" | "warning" | "info" | "success", string[]>>;
 }
 
 /** What to spotlight: the smallest element matching `sel` (default: a card) whose text includes `text`. */

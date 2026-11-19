@@ -287,36 +287,99 @@ export const isToned = (f: FieldLike) =>
 export const toneOf = (f: FieldLike, value: unknown, label: string): Tone =>
   (f.custom?.tones?.[String(value)] as Tone | undefined) ?? statusColor(label);
 
+/** Status words by tone, checked in this order: ended, problem, waiting, in progress, done. */
+const STATUS_WORDS: [Tone, string[]][] = [
+  ["neutral", ["expired", "cancelled", "skipped", "ignored", "archived"]],
+  [
+    "error",
+    [
+      "blocked",
+      "mismatch",
+      "rejected",
+      "invalid",
+      "declined",
+      "no response",
+      "on hold",
+      "held",
+      "overdue",
+      "wrong",
+      "missing",
+      "late",
+      "failed",
+      "reversed",
+      "lost",
+    ],
+  ],
+  [
+    "warning",
+    [
+      "awaiting",
+      "waiting",
+      "pending",
+      "partial",
+      "planned",
+      "rescheduled",
+      "draft",
+      "submitted",
+      "open",
+      "due",
+      "needs review",
+      "requested",
+      "revision",
+      "returned",
+      "under review",
+    ],
+  ],
+  ["info", ["new", "sent", "scheduled", "ready", "in progress", "processing"]],
+  [
+    "success",
+    [
+      "valid",
+      "matched",
+      "confirmed",
+      "ok",
+      "paid",
+      "received",
+      "delivered",
+      "approved",
+      "closed",
+      "settled",
+      "acknowledged",
+      "reconciled",
+      "recorded",
+      "done",
+      "resolved",
+      "won",
+      "active",
+      "linked",
+      "created",
+      "replied",
+      "selected",
+      "ordered",
+      "invoiced",
+      "released",
+      "completed",
+    ],
+  ],
+];
+const escapeWord = (w: string) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+/** The generic words plus the project's (`admin.custom.statusWords`), one pattern per tone. */
+let statusPatterns: [Tone, RegExp][] | undefined;
+const patternsOf = () =>
+  (statusPatterns ??= STATUS_WORDS.map(([tone, words]) => {
+    const all = [
+      ...(settings.statusWords?.[tone as keyof NonNullable<DashboardSettings["statusWords"]>] ?? []),
+      ...words,
+    ];
+    return [tone, new RegExp(all.map(escapeWord).join("|"), "i")] as [Tone, RegExp];
+  }));
+
 /**
- * The badge colour for a status or stage, from its words: problems red, waiting amber, work in
- * progress blue, done green, ended or unknown grey. Used by the order-to-cash screens and by
- * collection lists for their status columns.
+ * The badge colour for a status or stage, from its words: ended grey, problems red, waiting amber,
+ * in progress blue, done green, unknown grey. A project adds its own status words (its domain's
+ * "on board", "customs") with `admin.custom.statusWords`; a select field's `custom.tones` wins.
  */
 export function statusColor(status = ""): Tone {
-  if (/not awarded|expired|cancelled|superseded|skipped|ignored/i.test(status)) return "neutral";
-  if (
-    /blocked|mismatch|rejected|invalid|declined|no response|on hold|held|overdue|short|damaged|wrong|missing|late|unreachable|clarification|not sourced|lost|failed|reversed/i.test(
-      status,
-    )
-  )
-    return "error";
-  if (
-    /awaiting|waiting|pending|partial|planned|rescheduled|draft|submitted|approved 1|open|due|deposit to pay|needs review|requested|revision|returned|on watch|under review|documents pending/i.test(
-      status,
-    )
-  )
-    return "warning";
-  if (
-    /new|sent|validating|sourcing|comparing|purchasing|delivering|customs|scheduled|loading|dispatched|on board|boat transfer|trial|ready|introduced|prospect|in progress/i.test(
-      status,
-    )
-  )
-    return "info";
-  if (
-    /valid|matched|confirmed|ok|paid|received|delivered|approved|closed|settled|acknowledged|reconciled|recorded|done|resolved|won|active|linked|created|replied|selected|ordered|invoiced|released|first rfq/i.test(
-      status,
-    )
-  )
-    return "success";
+  for (const [tone, re] of patternsOf()) if (re.test(status)) return tone;
   return "neutral";
 }

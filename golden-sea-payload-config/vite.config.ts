@@ -11,9 +11,9 @@ export default defineConfig({
     rules: { "vite-plus/prefer-vite-plus-imports": "error" },
     options: { typeAware: true, typeCheck: true },
   },
-  // Its behaviour is tested against a backend: mock-runner's tests run every endpoint and widget.
+  // Its behaviour is tested against a backend: every endpoint and widget, through mock-runner's
+  // engine (`mock-runner/testing`).
   test: {
     include: ["tests/**/*.test.ts"],
-    passWithNoTests: true,
   },
 });

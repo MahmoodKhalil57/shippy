@@ -63,8 +63,8 @@ export interface DescriptionItem {
 /**
  * @example
  * <ui-description-list .items=${[
- *   { label: "Vessel ETA", value: "18 Nov, 06:00" },
- *   { label: "Balance", value: "EGP 12,400", tone: "warning" },
+ *   { label: "Delivery", value: "18 Nov, 06:00" },
+ *   { label: "Balance", value: "USD 12,400", tone: "warning" },
  * ]}></ui-description-list>
  * @example <ui-description-list layout="inline" .items=${evidence}></ui-description-list>
  */

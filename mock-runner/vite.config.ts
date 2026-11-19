@@ -7,8 +7,8 @@ export default defineConfig({
     // The design system: component stylesheets, Tailwind, cascade layers, icons.
     ...designSystem(),
     // The in-browser Payload-compatible backend (src/mock): a service worker serving the
-    // project's REST API from IndexedDB.
-    mockBackend(),
+    // project's REST API from IndexedDB. The project is this one setting.
+    ...mockBackend({ project: "golden-sea-payload-config" }),
   ],
   fmt: {
     ignorePatterns: ["dist/**", "bun.lock"],

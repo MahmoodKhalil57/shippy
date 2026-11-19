@@ -11,9 +11,10 @@ import type { Source } from "../components/primitives/ai/sources.ts";
 import type { TraceStatus } from "../components/primitives/ai/trace.ts";
 import "../components/index.ts";
 import { helper } from "../agent/identity.ts";
+import { site } from "./site.ts";
 
 /**
- * The helper (bottom right; named by the project's `admin.custom.assistant.name`): a chat with a model that sees and uses the platform only
+ * The helper (bottom right; named by the project's `assistant` global): a chat with a model that sees and uses the platform only
  * through its WebMCP tools (src/agent/codex.ts, ./agent-tools.ts) — so it knows the screen, the
  * records and the workflows the way the person's role does, without the DOM.
  *
@@ -45,23 +46,17 @@ type Item =
     }
   | { kind: "error"; text: string };
 
-/** Questions to start with: the same two for everyone, then two for the person's role. */
+/**
+ * Questions to start with: the same two for everyone, then the person's role's own (the
+ * `assistant` global's `roleNotes[].suggestions`), else the project's general ones, else neutral ones.
+ */
 const SUGGESTIONS = ["What am I looking at?", "What's waiting for me today?"];
-const ROLE_SUGGESTIONS: Record<string, string[]> = {
-  "supply-chain": ["Which suppliers are late?", "Status of Aurora Crest"],
-  sales: ["Which quotations are waiting for the customer?", "Status of Aurora Crest"],
-  management: ["What needs my approval?", "How is the growth pipeline?"],
-  "finance-director": ["Who owes us money?", "Go to receivables"],
-  operations: ["Which deliveries are coming up?", "Go to purchase orders"],
-  "office-admin": ["Go to the inbox", "How does the inbox work?"],
+const DEFAULT_SUGGESTIONS = ["What needs my approval?", "How does this page work?"];
+const suggestions = () => {
+  const { roleNotes, suggestions: general } = site().assistant;
+  const own = roleNotes.find((r) => r.role === agentContext()?.roleId)?.suggestions ?? [];
+  return [...SUGGESTIONS, ...(own.length ? own : general.length ? general : DEFAULT_SUGGESTIONS)];
 };
-const suggestions = () => [
-  ...SUGGESTIONS,
-  ...(ROLE_SUGGESTIONS[agentContext()?.roleId ?? ""] ?? [
-    "Who owes us money?",
-    "Take me to the offer comparison for Aurora Crest",
-  ]),
-];
 
 const MODEL_GROUPS: ModelGroup[] = [
   {
@@ -81,7 +76,7 @@ const MODEL_GROUPS: ModelGroup[] = [
 /** The last model picked (remembered per browser), else index.html's default. */
 function savedModel(): string {
   try {
-    const saved = localStorage.getItem("gs:helper-model-v2");
+    const saved = localStorage.getItem("saastemly:helper-model-v2");
     if (saved && CODEX_MODELS.some((m) => m.id === saved)) return saved;
   } catch {
     /* storage unavailable */
@@ -204,7 +199,7 @@ export class DashboardAgent extends LightElement {
     this.model = id;
     this._warmUp();
     try {
-      localStorage.setItem("gs:helper-model-v2", id);
+      localStorage.setItem("saastemly:helper-model-v2", id);
     } catch {
       /* storage unavailable */
     }

@@ -11,32 +11,32 @@ import {
 
 const entries: SearchEntry[] = [
   {
-    id: "p:cases",
+    id: "p:orders",
     kind: "page",
-    title: "Cases",
-    group: "Sourcing desk",
-    description: "Client RFQs and everything that follows",
+    title: "Orders",
+    group: "Sales",
+    description: "Customer orders and everything that follows",
   },
   { id: "p:invoices", kind: "page", title: "Invoices", group: "Finance", description: "What customers owe us" },
   { id: "p:suppliers", kind: "page", title: "Suppliers", group: "Directory", description: "Companies we buy from" },
-  { id: "p:vessels", kind: "page", title: "Vessels", group: "Directory", description: "Ships we supply" },
-  { id: "p:supplier-rfqs", kind: "page", title: "Supplier RFQs", group: "Sourcing desk" },
-  { id: "a:new-case", kind: "action", title: "Create new Case", group: "Actions" },
-  { id: "r:helios", kind: "record", title: "Helios Bulk Carriers", group: "Customers", keywords: ["Piraeus"] },
+  { id: "p:vehicles", kind: "page", title: "Vehicles", group: "Directory", description: "The cars we rent out" },
+  { id: "p:customer-pos", kind: "page", title: "Customer POs", group: "Sales" },
+  { id: "a:new-order", kind: "action", title: "Create new Order", group: "Actions" },
+  { id: "r:acme", kind: "record", title: "Acme Trading Ltd", group: "Customers", keywords: ["Rotterdam"] },
 ];
-const ids = (q: string) => search(entries, q).map((h) => h.entry.id);
+const ids = (q: string, synonyms?: string[][]) => search(entries, q, 40, synonyms).map((h) => h.entry.id);
 
 describe("command search", () => {
   it("stems words", () => {
     expect(stem("invoices")).toBe(stem("invoice"));
     expect(stem("invoicing")).toBe(stem("invoice"));
-    expect(words("Helios — Bulk/Carriers 2")).toEqual(["helios", "bulk", "carriers", "2"]);
+    expect(words("Acme — Trading/Ltd 2")).toEqual(["acme", "trading", "ltd", "2"]);
   });
 
   it("fuzzy: substrings at word starts, characters in order, and a typo", () => {
-    expect(fuzzyMatch("rfq", "Supplier RFQs")?.ranges).toEqual([[9, 12]]);
-    expect(fuzzyMatch("sup rfq", "Supplier RFQs")!.score).toBeGreaterThan(0.8);
-    expect(fuzzyMatch("srfq", "Supplier RFQs")).not.toBeNull();
+    expect(fuzzyMatch("pos", "Customer POs")?.ranges).toEqual([[9, 12]]);
+    expect(fuzzyMatch("cus pos", "Customer POs")!.score).toBeGreaterThan(0.8);
+    expect(fuzzyMatch("cpo", "Customer POs")).not.toBeNull();
     expect(fuzzyMatch("invoce", "Invoices")).not.toBeNull();
     expect(fuzzyMatch("zzz", "Invoices")).toBeNull();
     // characters in order must stay compact: "case" is not "Create new Stock item"
@@ -46,25 +46,32 @@ describe("command search", () => {
   });
 
   it("ranks literal title matches first", () => {
-    expect(ids("case")[0]).toMatch(/cases|new-case/);
-    expect(ids("helios")[0]).toBe("r:helios");
-    expect(ids("piraeus")).toContain("r:helios");
+    expect(ids("order")[0]).toMatch(/orders|new-order/);
+    expect(ids("acme")[0]).toBe("r:acme");
+    expect(ids("rotterdam")).toContain("r:acme");
   });
 
   it("semantic: finds entries by meaning", () => {
     expect(semanticScore("bills", new Set([stem("invoice")]))).toBeGreaterThan(0.5);
     expect(ids("bills")).toContain("p:invoices");
     expect(ids("vendors")).toContain("p:suppliers");
-    expect(ids("ships")).toContain("p:vessels");
     const bills = search(entries, "bills").find((h) => h.entry.id === "p:invoices")!;
     expect(bills.related).toBe(true);
     expect(bills.ranges).toEqual([]);
   });
 
+  it("semantic: a project's own synonyms join the thesaurus", () => {
+    const synonyms = [["vehicle", "car", "van", "fleet"]];
+    expect(ids("vans")).not.toContain("p:vehicles");
+    expect(ids("vans", synonyms)).toContain("p:vehicles");
+    // the generic words still work alongside them
+    expect(ids("bills", synonyms)).toContain("p:invoices");
+  });
+
   it("splits titles into highlighted parts", () => {
-    expect(highlightParts("Supplier RFQs", [[9, 12]])).toEqual([
-      { text: "Supplier ", match: false },
-      { text: "RFQ", match: true },
+    expect(highlightParts("Customer POs", [[9, 11]])).toEqual([
+      { text: "Customer ", match: false },
+      { text: "PO", match: true },
       { text: "s", match: false },
     ]);
   });

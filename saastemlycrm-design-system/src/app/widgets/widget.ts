@@ -60,7 +60,7 @@ export interface RecordsSpec {
   limit?: number;
   /** Field names; the first links to the document. */
   columns: string[];
-  /** A field shown as the second line under a column: `{ customer: "vessel" }`. */
+  /** A field shown as the second line under a column: `{ customer: "city" }`. */
   supporting?: Record<string, string>;
   layout?: "table" | "list";
   empty?: string;

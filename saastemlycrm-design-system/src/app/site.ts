@@ -17,15 +17,47 @@ export interface Branding {
   backgroundCredit?: string;
 }
 
+/** The kinds of request the helper's simple tools answer (an example question is one of these). */
+export const REQUEST_KINDS = [
+  "open_page",
+  "what_is_on_screen",
+  "my_day",
+  "record_status",
+  "find",
+  "ask_records",
+  "platform_guide",
+] as const;
+export type RequestKind = (typeof REQUEST_KINDS)[number];
+
 export interface AssistantInfo {
   name: string;
   business: string;
   ask: string;
-  roleNotes: { role: string; note: string }[];
+  /** What each role does, and the questions its helper offers to start with. */
+  roleNotes: { role: string; note: string; suggestions: string[] }[];
+  /** Starter questions for a role without its own. */
+  suggestions: string[];
+  /** The collection people ask "the status of …" about (its records' fields and tabs answer it). */
+  mainRecord?: string;
+  /** What record numbers look like, as a regular expression's source ("ORD-\d+"). */
+  recordPattern?: string;
+  /** Words (or their starts) that make a message a business question for the records. */
+  businessKeywords: string[];
+  /** Example questions per kind of request, for the small model's brief (`argument`: what the tool gets). */
+  examples: { question: string; kind: RequestKind; argument?: string }[];
 }
 
 let branding: Branding = { name: "Dashboard", icon: "grid", backgrounds: [] };
-let assistant: AssistantInfo = { name: "Assistant", business: "a business", ask: "/ask", roleNotes: [] };
+const NO_ASSISTANT: AssistantInfo = {
+  name: "Assistant",
+  business: "a business",
+  ask: "/ask",
+  roleNotes: [],
+  suggestions: [],
+  businessKeywords: [],
+  examples: [],
+};
+let assistant: AssistantInfo = NO_ASSISTANT;
 
 export const site = () => ({ branding, assistant });
 
@@ -48,14 +80,27 @@ export async function loadSite() {
   const a = await api.findGlobal<Doc>("assistant").catch(() => null);
   if (a)
     assistant = {
-      name: text(a.name, "Assistant"),
-      business: text(a.business, "a business"),
-      ask: text(a.ask, "/ask"),
-      roleNotes: ((a.roleNotes as { role?: string; note?: string }[] | undefined) ?? []).flatMap((x) =>
-        x.role && x.note ? [{ role: x.role, note: x.note }] : [],
+      name: text(a.name, NO_ASSISTANT.name),
+      business: text(a.business, NO_ASSISTANT.business),
+      ask: text(a.ask, NO_ASSISTANT.ask),
+      roleNotes: list<{ role?: string; note?: string; suggestions?: unknown }>(a.roleNotes).flatMap((x) =>
+        x.role && x.note ? [{ role: x.role, note: x.note, suggestions: strings(x.suggestions) }] : [],
       ),
+      suggestions: strings(a.suggestions),
+      mainRecord: text(a.mainRecord) || undefined,
+      recordPattern: text(a.recordPattern) || undefined,
+      businessKeywords: strings(a.businessKeywords),
+      examples: list<{ question?: string; kind?: string; argument?: string }>(a.examples).flatMap((x) => {
+        const kind = REQUEST_KINDS.find((k) => k === x.kind);
+        return x.question && kind ? [{ question: x.question, kind, argument: text(x.argument) || undefined }] : [];
+      }),
     };
 }
+
+const list = <T>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
+/** A `hasMany` text field: its non-empty strings. */
+const strings = (v: unknown): string[] =>
+  list<unknown>(v).flatMap((s) => (typeof s === "string" && s.trim() ? [s] : []));
 
 let tours: Promise<Tour[]> | null = null;
 /** The guided tours (`tours` collection), loaded once per sign-in. */

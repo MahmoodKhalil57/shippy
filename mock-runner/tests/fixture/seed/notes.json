@@ -1,0 +1,5 @@
+[
+  { "id": "n-ada-1", "owner": "ada", "text": "Ada's note" },
+  { "id": "n-bob-1", "owner": "bob", "text": "Bob's note" },
+  { "id": "n-cy-1", "owner": "cy", "text": "Cy's note" }
+]

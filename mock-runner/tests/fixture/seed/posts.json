@@ -1,0 +1,60 @@
+[
+  {
+    "id": "p1",
+    "ref": "P-0001",
+    "title": "Hello world",
+    "status": "published",
+    "views": 10,
+    "published": "2026-01-05T09:00:00.000Z",
+    "featured": true,
+    "author": "ada",
+    "category": "news",
+    "meta": { "words": 100, "likes": 3 },
+    "tags": [{ "label": "intro" }]
+  },
+  {
+    "id": "p2",
+    "ref": "P-0002",
+    "title": "Marine stores guide",
+    "status": "published",
+    "views": 40,
+    "published": "2026-01-02T09:00:00.000Z",
+    "author": "bob",
+    "category": "guides",
+    "meta": { "words": 900, "likes": 0 },
+    "tags": [{ "label": "how-to" }, { "label": "supply" }]
+  },
+  {
+    "id": "p3",
+    "ref": "P-0003",
+    "title": "Draft notes",
+    "status": "draft",
+    "views": 0,
+    "published": "2026-01-09T09:00:00.000Z",
+    "author": "bob",
+    "category": "news",
+    "meta": { "words": 50, "likes": 0 }
+  },
+  {
+    "id": "p4",
+    "ref": "P-0004",
+    "title": "Delta update",
+    "status": "published",
+    "views": 25,
+    "published": "2026-01-01T09:00:00.000Z",
+    "author": "ada",
+    "category": "news",
+    "meta": { "words": 300, "likes": 2 }
+  },
+  {
+    "id": "p5",
+    "ref": "P-0005",
+    "title": "Old news",
+    "status": "published",
+    "views": 5,
+    "published": "2026-01-03T09:00:00.000Z",
+    "author": "bob",
+    "category": "guides",
+    "meta": { "words": 20, "likes": 1 }
+  }
+]

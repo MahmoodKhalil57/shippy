@@ -38,7 +38,7 @@ export type ConfirmationState = "requested" | "approved" | "denied";
 
 /**
  * @example
- * <ui-confirmation label="Update a record?" description="Case GS-RFQ-0142" state="requested"
+ * <ui-confirmation label="Update a record?" description="Order ORD-0142" state="requested"
  *   @ui-approve=${…} @ui-deny=${…}>…details…</ui-confirmation>
  *
  * Children are the details (what exactly will change). `ui-approve` / `ui-deny` bubble.

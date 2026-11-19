@@ -1,5 +1,4 @@
-import config from "golden-sea-payload-config";
-import { seedModules } from "golden-sea-payload-config/seed";
+import config, { seedModules } from "virtual:mock-project";
 import { Engine } from "./runtime/engine.ts";
 import { RestApi } from "./runtime/rest.ts";
 import { seedsFromGlob } from "./runtime/seed.ts";
@@ -50,7 +49,7 @@ const api = new RestApi(new Engine(config, new IndexedDbStore(), { apiRoute }), 
 /** Written by plugins/mock-backend.ts in `vp build`: paths relative to the base. */
 declare const __PRECACHE__: { version: string; core: string[]; later: string[] } | undefined;
 const precache = typeof __PRECACHE__ === "undefined" ? null : __PRECACHE__;
-const CACHE = precache ? `golden-sea-${precache.version}` : "";
+const CACHE = precache ? `mock-runner-${precache.version}` : "";
 const shell = `${base}index.html`;
 
 self.addEventListener("install", (event) =>
@@ -77,7 +76,7 @@ self.addEventListener("activate", (event) =>
     (async () => {
       if (precache) {
         for (const key of await caches.keys())
-          if (key.startsWith("golden-sea-") && key !== CACHE) await caches.delete(key);
+          if (key.startsWith("mock-runner-") && key !== CACHE) await caches.delete(key);
         // The big photos: not worth delaying the first load for, so after taking control.
         void caches.open(CACHE).then(async (cache) => {
           for (const f of precache.later) {

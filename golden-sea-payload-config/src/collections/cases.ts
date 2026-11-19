@@ -74,6 +74,7 @@ export const Cases: CollectionConfig = {
   labels: { singular: "Case", plural: "Cases" },
   admin: {
     useAsTitle: "caseId",
+    listSearchableFields: ["caseId", "vessel", "customerRef"],
     defaultColumns: ["caseId", "customer", "vessel", "stage", "deadline", "owner", "value"],
     group: "Sourcing desk",
     description: "Client RFQs and everything that follows: supplier RFQs, quotes, POs, delivery and payment.",

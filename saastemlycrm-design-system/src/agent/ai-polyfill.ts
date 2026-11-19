@@ -27,7 +27,7 @@ const TASKS: [api: string, file: string, force: string][] = [
   ["Translator", "translator", "__FORCE_TRANSLATOR_POLYFILL__"],
   ["LanguageDetector", "language-detector", "__FORCE_LANGUAGE_DETECTOR_POLYFILL__"],
 ];
-const STORAGE = "gs:local-ai";
+const STORAGE = "saastemly:local-ai";
 /** Announced (on window) when AI APIs appear, so features that were hidden show themselves. */
 export const AI_CHANGE = "built-in-ai-change";
 

@@ -13,7 +13,7 @@ import type { DocumentSpec } from "../../components/base/document-spec.ts";
 
 export type Tone = "neutral" | "primary" | "info" | "success" | "warning" | "error";
 
-/** How a number reads. `money` needs a `currency`; `compact` gives "EGP 12k". */
+/** How a number reads. `money` needs a `currency`; `compact` gives "USD 12k". */
 export interface NumberFormat {
   unit?: "count" | "pct" | "days" | "minutes" | "hours" | "money";
   currency?: string;

@@ -15,6 +15,11 @@ export const Branding: GlobalConfig = {
   fields: [
     { name: "name", type: "text", required: true, defaultValue: "Dashboard" },
     {
+      name: "description",
+      type: "textarea",
+      admin: { description: "One line about the business: the page description for search engines and link previews." },
+    },
+    {
       name: "icon",
       type: "text",
       defaultValue: "grid",
@@ -66,6 +71,78 @@ export const Assistant: GlobalConfig = {
       fields: [
         { name: "role", type: "select", options: ROLES, required: true },
         { name: "note", type: "textarea", required: true },
+        {
+          name: "suggestions",
+          type: "text",
+          hasMany: true,
+          label: "Starter questions",
+          admin: { description: "Offered when someone in this role opens the helper." },
+        },
+      ],
+    },
+    {
+      name: "suggestions",
+      type: "text",
+      hasMany: true,
+      label: "Starter questions (other roles)",
+      admin: { description: "Offered to roles without starter questions of their own." },
+    },
+    {
+      type: "collapsible",
+      label: "How the helper reads requests",
+      admin: { initCollapsed: true },
+      fields: [
+        {
+          name: "mainRecord",
+          type: "text",
+          label: "Main record collection",
+          admin: { description: '"Status of …" looks records up here first (a collection slug: "cases").' },
+        },
+        {
+          name: "recordPattern",
+          type: "text",
+          label: "Record number pattern",
+          admin: { description: 'What record numbers look like, as a regular expression ("GS-[A-Z]+-\\d+").' },
+        },
+        {
+          name: "businessKeywords",
+          type: "text",
+          hasMany: true,
+          label: "Business words",
+          admin: {
+            description: 'Words (or their starts: "approv") that make a message a question for the records.',
+          },
+        },
+        {
+          name: "examples",
+          type: "array",
+          label: "Example requests",
+          admin: { description: "One or two per kind: the on-device model follows examples better than rules." },
+          fields: [
+            {
+              type: "row",
+              fields: [
+                { name: "question", type: "text", required: true, admin: { width: "50%" } },
+                {
+                  name: "kind",
+                  type: "select",
+                  required: true,
+                  admin: { width: "25%" },
+                  options: [
+                    { label: "Open a page", value: "open_page" },
+                    { label: "What's on screen", value: "what_is_on_screen" },
+                    { label: "My day", value: "my_day" },
+                    { label: "Record status", value: "record_status" },
+                    { label: "Find", value: "find" },
+                    { label: "Ask the records", value: "ask_records" },
+                    { label: "Platform guide", value: "platform_guide" },
+                  ],
+                },
+                { name: "argument", type: "text", label: "What the tool gets", admin: { width: "25%" } },
+              ],
+            },
+          ],
+        },
       ],
     },
   ],

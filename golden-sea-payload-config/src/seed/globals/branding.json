@@ -1,18 +1,46 @@
 {
   "name": "Golden Sea",
+  "description": "Golden Sea marine supply: sourcing, quotations, fulfilment and finance in one workspace.",
   "icon": "anchor",
   "loginIntro": "Golden Sea dashboard. A demo user is filled in; switch roles any time from the dashboard.",
   "poweredBy": "SaastemlyCRM",
   "backgrounds": [
-    { "path": "goldensea/Slider1", "label": "Container port at dusk" },
-    { "path": "goldensea/Slider7", "label": "Ships in harbour" },
-    { "path": "goldensea/Slider8", "label": "Bollard at sunset" },
-    { "path": "goldensea/Slider6", "label": "Mooring line" },
-    { "path": "backgrounds/waves", "label": "Ocean waves" },
-    { "path": "backgrounds/night-ship", "label": "Ship at night" },
-    { "path": "backgrounds/seaport", "label": "Seaport at sunset" },
-    { "path": "backgrounds/lighthouse", "label": "Lighthouse storm" },
-    { "path": "backgrounds/fluid", "label": "Fluid" }
+    {
+      "path": "goldensea/Slider1",
+      "label": "Container port at dusk"
+    },
+    {
+      "path": "goldensea/Slider7",
+      "label": "Ships in harbour"
+    },
+    {
+      "path": "goldensea/Slider8",
+      "label": "Bollard at sunset"
+    },
+    {
+      "path": "goldensea/Slider6",
+      "label": "Mooring line"
+    },
+    {
+      "path": "backgrounds/waves",
+      "label": "Ocean waves"
+    },
+    {
+      "path": "backgrounds/night-ship",
+      "label": "Ship at night"
+    },
+    {
+      "path": "backgrounds/seaport",
+      "label": "Seaport at sunset"
+    },
+    {
+      "path": "backgrounds/lighthouse",
+      "label": "Lighthouse storm"
+    },
+    {
+      "path": "backgrounds/fluid",
+      "label": "Fluid"
+    }
   ],
   "backgroundCredit": "Photos: Golden Sea, Pexels"
 }

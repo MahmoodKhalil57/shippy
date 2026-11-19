@@ -1,41 +1,11 @@
-import { readdirSync, readFileSync } from "node:fs";
-import path from "node:path";
 import { beforeEach, describe, expect, it } from "vite-plus/test";
-import config from "golden-sea-payload-config";
-import { Engine } from "../src/mock/runtime/engine.ts";
-import { RestApi } from "../src/mock/runtime/rest.ts";
-import { seedsFromGlob } from "../src/mock/runtime/seed.ts";
-import { MemoryStore } from "../src/mock/runtime/store.ts";
-import { lineCategory } from "golden-sea-payload-config/src/endpoints/sourcing.ts";
+import { lineCategory } from "../src/endpoints/sourcing.ts";
+import { backend, call, login } from "./backend.ts";
 
 /** The sourcing desk's endpoints: inbox (extraction, matching, case creation), inbox history, supplier RFQs. */
 
-const seedDir = path.resolve(import.meta.dirname, "../../golden-sea-payload-config/src/seed");
-const seedFiles: Record<string, unknown> = {};
-for (const f of readdirSync(seedDir, { recursive: true }) as string[]) {
-  if (f.endsWith(".json"))
-    seedFiles[`./seed/${f.split(path.sep).join("/")}`] = JSON.parse(readFileSync(path.join(seedDir, f), "utf8"));
-}
-const seeds = seedsFromGlob(seedFiles);
-
-let api: RestApi;
-const call = async (method: string, url: string, payload?: unknown) => {
-  const init: RequestInit = { method, headers: {} };
-  if (payload !== undefined) {
-    init.body = JSON.stringify(payload);
-    (init.headers as Record<string, string>)["content-type"] = "application/json";
-  }
-  const res = await api.handle(new Request(`http://mock.test${url}`, init));
-  const type = res.headers.get("content-type") ?? "";
-  // oxlint-disable-next-line typescript/no-explicit-any
-  const body: any = type.includes("json") ? await res.json() : await res.text();
-  return { status: res.status, body };
-};
-const login = (email = "karim.youssef@goldensea.test") =>
-  call("POST", "/api/users/login", { email, password: "demo1234" });
-
 beforeEach(() => {
-  api = new RestApi(new Engine(config, new MemoryStore()), seeds);
+  backend.reset();
 });
 
 describe("inbox", () => {

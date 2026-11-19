@@ -2,11 +2,12 @@
  * Search behind the command palette: ranks actions, pages and records for a query by
  *
  * - **fuzzy** matching on titles — exact / prefix / word-start substrings, characters in order
- *   (`csrfq` → "Customer RFQs"), and one typo per word (`invoce` → "Invoices"), with the matched
+ *   (`cpo` → "Customer POs"), and one typo per word (`invoce` → "Invoices"), with the matched
  *   character ranges for highlighting;
- * - **semantic** matching on what an entry is about — stemmed words plus a thesaurus of this
- *   domain (maritime supply & procurement), so "bill" finds invoices, "vendor" finds suppliers,
- *   "ship" finds vessels, "money owed" finds receivables.
+ * - **semantic** matching on what an entry is about — stemmed words plus a thesaurus of
+ *   business words, so "bill" finds invoices, "vendor" finds suppliers, "money owed" finds
+ *   receivables. A project adds its own words (`admin.custom.search.synonyms`), passed as
+ *   `synonyms`.
  *
  * Runs in the browser over an index the palette builds when it opens (no server needed). A real
  * deployment could swap `semanticScore` for embeddings without changing the palette.
@@ -18,7 +19,7 @@ export interface SearchEntry {
   id: string;
   kind: EntryKind;
   title: string;
-  /** Where it lives, shown before the title ("Sourcing desk › Cases"). */
+  /** Where it lives, shown before the title ("Sales › Orders"). */
   group: string;
   description?: string;
   /** Extra searchable words (field values, synonyms…). */
@@ -65,16 +66,15 @@ export function stem(word: string): string {
   return w.replace(/e$/, "");
 }
 
-/** Domain thesaurus: words in a group mean (roughly) the same thing here. */
+/** Business thesaurus: words in a group mean (roughly) the same thing. */
 const THESAURUS: string[][] = [
   ["invoice", "bill", "billing", "receivable", "owed", "owe", "debtor", "collection"],
   ["payment", "pay", "paid", "remittance", "settle", "settlement", "transfer", "money", "cash"],
   ["supplier", "vendor", "seller", "manufacturer", "maker"],
-  ["customer", "client", "buyer", "shipowner", "operator", "manager", "company"],
-  ["vessel", "ship", "boat", "tanker", "carrier", "rig", "fleet", "imo"],
+  ["customer", "client", "buyer", "company"],
   ["quotation", "quote", "proposal", "estimate", "pricing", "price"],
-  ["offer", "bid", "response", "supplier quote"],
-  ["rfq", "request", "inquiry", "enquiry", "tender", "case", "requisition"],
+  ["offer", "bid", "response"],
+  ["request", "inquiry", "enquiry"],
   ["purchase", "order", "po", "procure", "procurement", "buy"],
   ["delivery", "shipment", "shipping", "dispatch", "logistics", "freight", "courier", "fulfilment", "fulfillment"],
   ["stock", "inventory", "warehouse", "receipt", "goods", "store"],
@@ -85,7 +85,7 @@ const THESAURUS: string[][] = [
   ["setting", "config", "configuration", "preference", "option", "setup"],
   ["report", "analytic", "kpi", "dashboard", "metric", "chart", "stat", "overview", "insight"],
   ["exception", "error", "problem", "issue", "alert", "failure", "mismatch", "warning"],
-  ["message", "email", "mail", "inbox", "intake", "whatsapp", "chat"],
+  ["message", "email", "mail", "inbox", "chat"],
   ["create", "new", "add", "make", "start", "open"],
   ["opportunity", "lead", "prospect", "deal", "growth", "pipeline", "crm"],
   ["margin", "profit", "markup", "cost"],
@@ -94,14 +94,27 @@ const THESAURUS: string[][] = [
   ["logout", "signout", "exit", "leave"],
   ["mock", "seed", "demo", "data", "backup", "export", "import", "reset"],
 ];
-const RELATED = new Map<string, Set<string>>();
-for (const group of THESAURUS) {
-  const stems = group.flatMap((g) => words(g)).map(stem);
-  for (const s of stems) {
-    const set = RELATED.get(s) ?? new Set<string>();
-    for (const other of stems) if (other !== s) set.add(other);
-    RELATED.set(s, set);
+/** Each word's stem → the stems it's related to, from the thesaurus plus a project's groups. */
+function relatedMap(extra: string[][] = []) {
+  const related = new Map<string, Set<string>>();
+  for (const group of [...THESAURUS, ...extra]) {
+    const stems = group.flatMap((g) => words(g)).map(stem);
+    for (const s of stems) {
+      const set = related.get(s) ?? new Set<string>();
+      for (const other of stems) if (other !== s) set.add(other);
+      related.set(s, set);
+    }
   }
+  return related;
+}
+const RELATED = relatedMap();
+const relatedCache = new WeakMap<string[][], Map<string, Set<string>>>();
+/** The related words with a project's synonyms (built once per list). */
+function relatedWith(synonyms?: string[][]) {
+  if (!synonyms?.length) return RELATED;
+  let map = relatedCache.get(synonyms);
+  if (!map) relatedCache.set(synonyms, (map = relatedMap(synonyms)));
+  return map;
 }
 
 // ---------------------------------------------------------------- fuzzy
@@ -148,7 +161,7 @@ function matchToken(token: string, text: string): { score: number; ranges: Range
       if (m[0].startsWith(root)) return { score: 0.85, ranges: [[m.index, m.index + root.length]] };
     }
   }
-  // 3. characters in order, rewarding word starts and runs ("csrfq" → Customer RFQs)
+  // 3. characters in order, rewarding word starts and runs ("cpo" → Customer POs)
   const ranges: Range[] = [];
   let i = 0;
   let gaps = 0;
@@ -182,7 +195,7 @@ function matchToken(token: string, text: string): { score: number; ranges: Range
     }
     i = found + 1;
   }
-  // ...but only acronym-like (word starts and runs: "csrfq") or within a short stretch, so "case"
+  // ...but only acronym-like (word starts and runs: "cpo") or within a short stretch, so "case"
   // doesn't match "Create new Stock item"
   const span = ranges.length ? ranges.at(-1)![1] - ranges[0]![0] : 0;
   const compact = loose === 0 || span <= token.length + 2;
@@ -231,8 +244,12 @@ export function mergeRanges(ranges: Range[]): Range[] {
 
 // ---------------------------------------------------------------- semantic
 
-/** Share of the query's meaning found in the entry: a word itself counts 1, a related word 0.7. */
-export function semanticScore(query: string, entryWords: Set<string>): number {
+/**
+ * Share of the query's meaning found in the entry: a word itself counts 1, a related word 0.7.
+ * `synonyms`: a project's own groups of words that mean the same, added to the thesaurus.
+ */
+export function semanticScore(query: string, entryWords: Set<string>, synonyms?: string[][]): number {
+  const related = relatedWith(synonyms);
   const tokens = words(query)
     .filter((w) => w.length >= 2)
     .map(stem);
@@ -240,7 +257,7 @@ export function semanticScore(query: string, entryWords: Set<string>): number {
   let total = 0;
   for (const t of tokens) {
     if (entryWords.has(t)) total += 1;
-    else if ([...(RELATED.get(t) ?? [])].some((r) => entryWords.has(r))) total += 0.7;
+    else if ([...(related.get(t) ?? [])].some((r) => entryWords.has(r))) total += 0.7;
   }
   return total / tokens.length;
 }
@@ -259,8 +276,8 @@ function entryWords(e: SearchEntry): Set<string> {
 
 const KIND_BIAS: Record<EntryKind, number> = { action: 0.04, page: 0.05, record: 0 };
 
-/** Ranks entries for a query, best first. */
-export function search(entries: SearchEntry[], query: string, limit = 40): SearchHit[] {
+/** Ranks entries for a query, best first (`synonyms`: a project's own, see `semanticScore`). */
+export function search(entries: SearchEntry[], query: string, limit = 40, synonyms?: string[][]): SearchHit[] {
   const q = query.trim();
   if (!q) return [];
   const hits: SearchHit[] = [];
@@ -269,7 +286,7 @@ export function search(entries: SearchEntry[], query: string, limit = 40): Searc
     const elsewhere = title
       ? null
       : fuzzyMatch(q, [entry.group, entry.description ?? "", ...(entry.keywords ?? [])].join(" · "));
-    const meaning = semanticScore(q, entryWords(entry));
+    const meaning = semanticScore(q, entryWords(entry), synonyms);
     const literal = title ? title.score : elsewhere ? elsewhere.score * 0.8 : 0;
     const score = Math.max(literal, meaning * 0.78) + (literal && meaning ? 0.08 : 0) + KIND_BIAS[entry.kind];
     if (score < 0.45) continue;
