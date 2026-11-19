@@ -266,7 +266,7 @@ describe("the checks themselves", () => {
 
   it("read element APIs: tokens, booleans, literals, renamed attributes", () => {
     const button = apis.get("ui-button")!;
-    expect(button.attributes.get("size")).toEqual({ kind: "tokens", options: ["xs", "sm", "md", "lg", "xl"] });
+    expect(button.attributes.get("size")).toEqual({ kind: "tokens", options: ["xs", "sm", "md"] });
     expect(button.attributes.get("block")).toMatchObject({ kind: "boolean", responsive: true });
     expect(button.attributes.get("disabled")).toMatchObject({ kind: "boolean", responsive: false, allowFalse: false });
     expect(button.attributes.get("type")).toMatchObject({ kind: "literal" });

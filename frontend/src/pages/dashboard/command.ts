@@ -308,11 +308,12 @@ export class DashboardCommand extends LightElement {
     ]);
     const byId = new Map(flat.map((h) => [h.entry.id, h.entry]));
     const q = query.trim();
-    return html`<ui-button variant="field" label="Search actions, pages and records" @click=${() => this._open()}>
-        <ui-icon name="search" size="sm"></ui-icon>
-        <ui-text as="span" variant="body-md" truncate>Search actions, pages, records…</ui-text>
-        <ui-kbd size="xs" keys=${mac ? "⌘+K" : "Ctrl+K"}></ui-kbd>
-      </ui-button>
+    return html`<ui-search
+        launcher
+        label="Search actions, pages, records…"
+        shortcut=${mac ? "⌘+K" : "Ctrl+K"}
+        @click=${() => this._open()}
+      ></ui-search>
       <ui-modal
         placement="spotlight"
         width="palette"
@@ -322,17 +323,14 @@ export class DashboardCommand extends LightElement {
         @keydown=${(e: KeyboardEvent) => this._onKey(e, flat)}
       >
         <ui-flex slot="header" align="center" gap="2" padding="2">
-          <ui-text-input
-            type="search"
-            icon="search"
-            variant="ghost"
+          <ui-search
+            variant="bare"
             size="lg"
-            width="full"
             autocomplete="off"
-            placeholder="Search actions, pages and records…"
+            label="Search actions, pages and records…"
             .value=${query}
             @input=${(e: Event) => palette.set({ query: (e.target as HTMLInputElement).value, highlighted: 0 })}
-          ></ui-text-input>
+          ></ui-search>
           <ui-kbd size="sm">Esc</ui-kbd>
         </ui-flex>
         ${

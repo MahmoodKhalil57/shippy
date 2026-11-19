@@ -113,13 +113,7 @@ export class GsCaseProfit extends LightElement {
   /* ---------------------------------------------------------------- sections */
 
   private _tile(label: string, value: string, note: string, color?: "success" | "error" | "warning") {
-    return html`<ui-card variant="border" size="sm" shadow="false">
-      <ui-flex direction="col" gap="1">
-        <ui-text variant="body-md" color="muted" truncate>${label}</ui-text>
-        <ui-text variant="headline-sm" leading="tight" .color=${color}>${value}</ui-text>
-        <ui-text variant="body-sm" color="muted" clamp="2">${note}</ui-text>
-      </ui-flex>
-    </ui-card>`;
+    return html`<ui-stat .label=${label} .value=${value} .note=${note} .tone=${color}></ui-stat>`;
   }
 
   private _tiles(p: CaseProfit) {
@@ -187,9 +181,7 @@ export class GsCaseProfit extends LightElement {
         key: "state",
         label: "Status",
         render: (r) =>
-          r.state
-            ? html`<ui-badge size="sm" variant="soft" .color=${STATE_COLOR[r.state]}>${STATE_LABEL[r.state]}</ui-badge>`
-            : nothing,
+          r.state ? html`<ui-tag .tone=${STATE_COLOR[r.state]}>${STATE_LABEL[r.state]}</ui-tag>` : nothing,
       },
     ];
     const rows: Row[] = p.lines.map((l: ProfitLine) => ({ ...l }));
@@ -201,17 +193,17 @@ export class GsCaseProfit extends LightElement {
       total: true,
     });
     const action = p.checks.find((k) => k.key === "actuals")?.action;
-    return html`<ui-card variant="border" shadow="false">
-      <ui-flex slot="heading" justify="between" align="center" gap="2" full-width wrap>
-        <span>Expected vs actual cost</span>
-        ${
+    return html`<ui-card>
+      <span slot="heading">Expected vs actual cost</span>
+      <ui-flex slot="trailing" gap="2" align="center" wrap
+        >${
           action
             ? html`<ui-button size="xs" color="primary" @click=${() => (this.pending = { kind: "actuals" })}
                 >Confirm actuals</ui-button
               >`
             : nothing
-        }
-      </ui-flex>
+        }</ui-flex
+      >
       <ui-text variant="body-sm" color="muted"
         >Costs as estimated when the quotation was approved, and as billed. Bills replace estimates once a person
         confirms them; nothing changes on its own.</ui-text
@@ -259,12 +251,10 @@ export class GsCaseProfit extends LightElement {
         key: "realised",
         label: "",
         render: (r) =>
-          html`<ui-badge size="sm" variant="soft" .color=${r.realised ? "success" : "neutral"}
-            >${r.realised ? "Realised" : "Unrealised"}</ui-badge
-          >`,
+          html`<ui-tag .tone=${r.realised ? "success" : "neutral"}>${r.realised ? "Realised" : "Unrealised"}</ui-tag>`,
       },
     ];
-    return html`<ui-card variant="border" shadow="false" heading="FX differences">
+    return html`<ui-card heading="FX differences">
       <ui-text variant="body-sm" color="muted"
         >Revenue is booked at the quotation's rate (${p.quoteRate.toFixed(2)} EGP/${p.currency}); each receipt converts
         at the bank's actual rate. Expected revenue ${egp(p.expected.revenue)} · actual
@@ -279,24 +269,24 @@ export class GsCaseProfit extends LightElement {
                 .columns=${columns}
                 .rows=${p.fx as (ProfitFx & Record<string, unknown>)[]}
               ></ui-table>`
-            : html`<ui-text variant="body-md" color="muted">No receipts yet.</ui-text>`
+            : html`<ui-empty-state size="sm">No receipts yet.</ui-empty-state>`
       }
     </ui-card>`;
   }
 
   private _claims(p: CaseProfit) {
-    return html`<ui-card variant="border" shadow="false" heading="Claims">
+    return html`<ui-card heading="Claims">
       ${
         p.claims.length
           ? html`<ui-flex direction="col" gap="3">
               ${p.claims.map(
                 (c) =>
                   html`<ui-flex gap="3" align="start" wrap>
-                    <ui-status
-                      size="sm"
-                      .color=${c.settled ? "success" : "warning"}
+                    <ui-badge
+                      dot
+                      .tone=${c.settled ? "success" : "warning"}
                       .label=${c.settled ? "settled" : "open"}
-                    ></ui-status>
+                    ></ui-badge>
                     <ui-flex direction="col" gap="0" grow shrink>
                       <ui-text variant="label-lg">${c.ref} · ${c.title}</ui-text>
                       <ui-text variant="body-sm" color="muted"
@@ -315,7 +305,7 @@ export class GsCaseProfit extends LightElement {
                       !c.settled && p.canAct
                         ? html`<ui-button
                             size="xs"
-                            variant="soft"
+                            variant="tonal"
                             @click=${() => (this.pending = { kind: "claim", claim: c })}
                             >Record credit note</ui-button
                           >`
@@ -324,7 +314,7 @@ export class GsCaseProfit extends LightElement {
                   </ui-flex>`,
               )}
             </ui-flex>`
-          : html`<ui-text variant="body-md" color="muted">No claims on this case.</ui-text>`
+          : html`<ui-empty-state size="sm">No claims on this case.</ui-empty-state>`
       }
       <ui-ai-read-file
         label="Describe damage from a photo"
@@ -356,14 +346,14 @@ export class GsCaseProfit extends LightElement {
         ${
           k.sources.length
             ? html`<ui-flex gap="1" wrap>
-                ${k.sources.map((s) => html`<ui-button size="xs" variant="ghost" .href=${s.href}>${s.label}</ui-button>`)}
+                ${k.sources.map((s) => html`<ui-button size="xs" variant="text" .href=${s.href}>${s.label}</ui-button>`)}
               </ui-flex>`
             : nothing
         }
       </ui-flex>
       ${
         !k.ok && k.action && !p.closed
-          ? html`<ui-button size="xs" variant="soft" color="primary" @click=${open}>${k.actionLabel}</ui-button>`
+          ? html`<ui-button size="xs" variant="tonal" color="primary" @click=${open}>${k.actionLabel}</ui-button>`
           : nothing
       }
     </ui-flex>`;
@@ -371,23 +361,22 @@ export class GsCaseProfit extends LightElement {
 
   private _checklist(p: CaseProfit) {
     const done = p.checks.filter((k) => k.ok).length;
-    return html`<ui-card variant="border" shadow="false">
-      <ui-flex slot="heading" justify="between" align="center" gap="2" full-width wrap>
-        <span>Close checklist</span>
-        <ui-badge size="sm" variant="soft" .color=${done === p.checks.length ? "success" : "warning"}
-          >${done} of ${p.checks.length} green</ui-badge
-        >
-      </ui-flex>
+    return html`<ui-card>
+      <span slot="heading">Close checklist</span>
+      <ui-flex slot="trailing" gap="2" align="center" wrap
+        ><ui-tag .tone=${done === p.checks.length ? "success" : "warning"}
+          >${done} of ${p.checks.length} green</ui-tag
+        ></ui-flex
+      >
       <ui-text variant="body-sm" color="muted"
         >The case closes only when quantities, documents, claims and balances reconcile.</ui-text
       >
-      <ui-progress
-        width="full"
-        .color=${done === p.checks.length ? "success" : "warning"}
+      <ui-gauge
+        .tone=${done === p.checks.length ? "success" : "warning"}
         .value=${done}
         .max=${p.checks.length}
         .label=${`${done} of ${p.checks.length} checks green`}
-      ></ui-progress>
+      ></ui-gauge>
       <ui-flex direction="col" gap="4">${p.checks.map((k) => this._check(k, p))}</ui-flex>
       ${
         p.closed
@@ -478,7 +467,7 @@ export class GsCaseProfit extends LightElement {
     return html`<ui-modal heading=${heading} .open=${Boolean(job)} @ui-close=${() => (this.pending = null)}>
       ${body}
       <ui-flex slot="actions" gap="2">
-        <ui-button variant="ghost" @click=${() => (this.pending = null)}>Cancel</ui-button>
+        <ui-button variant="text" @click=${() => (this.pending = null)}>Cancel</ui-button>
         <ui-button color="primary" ?disabled=${this.busy} @click=${() => void this._confirm()}>${confirm}</ui-button>
       </ui-flex>
     </ui-modal>`;
@@ -486,17 +475,21 @@ export class GsCaseProfit extends LightElement {
 
   render() {
     if (this.denied)
-      return html`<ui-alert color="info" variant="soft" heading="Profit & close"
+      return html`<ui-alert tone="info" heading="Profit & close"
         >Costs, margins and profit aren't shown to Sales. The case owner and finance see this tab.</ui-alert
       >`;
-    if (this.error) return html`<ui-alert color="error" variant="soft">${this.error}</ui-alert>`;
+    if (this.error)
+      return html`<ui-empty-state
+        tone="error"
+        heading="This page couldn't load"
+        .description=${this.error}
+      ></ui-empty-state>`;
     const p = this.p;
-    if (!p)
-      return html`<ui-flex justify="center" padding="8"><ui-loading size="lg" color="primary"></ui-loading></ui-flex>`;
+    if (!p) return html`<ui-empty-state loading></ui-empty-state>`;
     return html`<ui-flex direction="col" gap="6">
       ${
         p.closed
-          ? html`<ui-alert color="success" variant="soft" heading="Case closed — settled"
+          ? html`<ui-alert tone="success" heading="Case closed — settled"
               >${p.closedAt ? `Closed ${formatDateTime(p.closedAt)}. ` : ""}Actual profit recorded; supplier prices and
               on-time results fed back to the supplier records.</ui-alert
             >`
@@ -516,7 +509,7 @@ export class GsCaseProfit extends LightElement {
                   },
                 ]}
               ></ui-grid>`
-          : html`<ui-alert color="info" variant="soft" heading="Expected profit is fixed at the customer PO"
+          : html`<ui-alert tone="info" heading="Expected profit is fixed at the customer PO"
               >${p.caseId} is at “${p.stage}”. The expected profit is taken from the approved quotation once the
               customer's PO is confirmed; actuals follow as supplier bills arrive.</ui-alert
             >`

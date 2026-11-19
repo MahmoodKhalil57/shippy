@@ -60,7 +60,7 @@ export class UiModelSelector extends LightElement {
       panel="card"
       panel-width="64"
       panel-elevation="2"
-      trigger-variant="ghost"
+      trigger-variant="text"
       trigger-size="xs"
       trigger-spaced="false"
       .label=${`Model: ${current?.label ?? ""}`}

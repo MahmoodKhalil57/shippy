@@ -163,22 +163,20 @@ export class GsCaseCompare extends LightElement {
               <ui-text variant="body-sm" color="muted">v${o.version}</ui-text>
               ${
                 o.kind === "stock"
-                  ? html`<ui-badge size="xs" variant="soft" color="success">Own stock</ui-badge>`
+                  ? html`<ui-tag tone="success">Own stock</ui-tag>`
                   : o.kind === "agency"
-                    ? html`<ui-badge size="xs" variant="soft" color="info">Agency</ui-badge>`
+                    ? html`<ui-tag tone="info">Agency</ui-tag>`
                     : nothing
               }
-              ${o.id === line.best ? html`<ui-badge size="xs" color="success">Best fit</ui-badge>` : nothing}
+              ${o.id === line.best ? html`<ui-tag tone="success">Best fit</ui-tag>` : nothing}
               ${
                 this.mode === "unit" && o.id === line.cheapestUnit && o.id !== line.best
-                  ? html`<ui-badge size="xs" variant="outline" color="warning">Cheapest unit price</ui-badge>`
+                  ? html`<ui-tag variant="outline" tone="warning">Cheapest unit price</ui-tag>`
                   : nothing
               }
               ${
                 selected.has(o.id)
-                  ? html`<ui-badge size="xs" variant="soft" color="primary"
-                      >Selected${selected.size > 1 ? ` × ${selected.get(o.id)}` : ""}</ui-badge
-                    >`
+                  ? html`<ui-tag tone="primary">Selected${selected.size > 1 ? ` × ${selected.get(o.id)}` : ""}</ui-tag>`
                   : nothing
               }
             </ui-flex>
@@ -258,8 +256,9 @@ export class GsCaseCompare extends LightElement {
                   ? nothing
                   : html`<ui-button
                       size="xs"
-                      .variant=${selected.has(o.id) ? "soft" : undefined}
-                      .color=${selected.has(o.id) ? "primary" : undefined}
+                      variant="tonal"
+                      toggle
+                      ?selected=${selected.has(o.id)}
                       ?disabled=${selected.size === 1 && selected.has(o.id)}
                       @click=${() => this._open(line, [{ offer: o.id, qty: line.qty }])}
                       >${selected.size === 1 && selected.has(o.id) ? "Selected" : "Select"}</ui-button
@@ -267,21 +266,21 @@ export class GsCaseCompare extends LightElement {
               }
               ${
                 o.correctable
-                  ? html`<ui-button size="xs" variant="soft" @click=${() => this._openCorrection(o)}
+                  ? html`<ui-button size="xs" variant="tonal" @click=${() => this._openCorrection(o)}
                       >Correction request</ui-button
                     >`
                   : nothing
               }
               ${
                 o.needsAcceptance && selected.has(o.id) && !line.selection.customerAccepted
-                  ? html`<ui-button size="xs" variant="soft" color="warning" @click=${() => (this.accepting = line)}
+                  ? html`<ui-button size="xs" variant="tonal" color="primary" @click=${() => (this.accepting = line)}
                       >Record customer acceptance</ui-button
                     >`
                   : nothing
               }
               ${
                 o.needsAcceptance && selected.has(o.id) && line.selection.customerAccepted
-                  ? html`<ui-badge size="xs" variant="soft" color="success">Customer accepted in writing</ui-badge>`
+                  ? html`<ui-tag tone="success">Customer accepted in writing</ui-tag>`
                   : nothing
               }
             </ui-flex>
@@ -334,16 +333,16 @@ export class GsCaseCompare extends LightElement {
   private _line(line: CmpLine) {
     const best = line.offers.find((o) => o.id === line.best);
     const selected = this._selectionText(line);
-    return html`<ui-card variant="border" shadow="false">
-      <ui-flex slot="heading" justify="between" align="center" gap="2" wrap full-width>
-        <ui-flex gap="2" align="center" shrink>L${line.lineNo} · ${line.description}</ui-flex>
-        <ui-badge size="sm" variant="soft" .color=${TONE[line.statusTone]}>${line.status}</ui-badge>
-      </ui-flex>
+    return html`<ui-card>
+      <span slot="heading">L${line.lineNo} · ${line.description}</span>
+      <ui-flex slot="trailing" gap="2" align="center" wrap
+        ><ui-tag .tone=${TONE[line.statusTone]}>${line.status}</ui-tag></ui-flex
+      >
       <ui-text variant="body-md" color="muted">Requested: ${line.requested} · ${line.rules}</ui-text>
       ${this._offerCheck(line)}
       ${
         line.missing
-          ? html`<ui-alert color="warning" variant="soft"
+          ? html`<ui-alert tone="warning"
               >Not sent to suppliers yet: ${line.missing}. Waiting for the customer's answer.</ui-alert
             >`
           : nothing
@@ -359,9 +358,9 @@ export class GsCaseCompare extends LightElement {
               ${line.others.map(
                 (o) =>
                   html`<ui-flex gap="2" align="baseline" wrap>
-                    <ui-status size="xs" .color=${TONE[o.tone]} .label=${o.tone}></ui-status>
+                    <ui-badge dot .tone=${TONE[o.tone]} .label=${o.tone}></ui-badge>
                     <ui-text variant="label-md" emphasized>${o.supplier}</ui-text>
-                    <ui-badge size="xs" variant="soft" .color=${TONE[o.tone]}>${o.status}</ui-badge>
+                    <ui-tag .tone=${TONE[o.tone]}>${o.status}</ui-tag>
                     <ui-text variant="body-sm" color="muted">${o.note}</ui-text>
                   </ui-flex>`,
               )}
@@ -370,7 +369,7 @@ export class GsCaseCompare extends LightElement {
       }
       ${
         best || line.split
-          ? html`<ui-alert color="success" variant="soft">
+          ? html`<ui-alert tone="success">
               <ui-flex direction="col" gap="1">
                 <ui-flex gap="2" align="center" wrap><strong>Recommendation</strong>${aiBadge("Suggested")}</ui-flex>
                 ${
@@ -390,9 +389,7 @@ export class GsCaseCompare extends LightElement {
               </ui-flex>
             </ui-alert>`
           : line.offers.length
-            ? html`<ui-alert color="warning" variant="soft"
-                >No offer passes every check yet — no recommendation.</ui-alert
-              >`
+            ? html`<ui-alert tone="warning">No offer passes every check yet — no recommendation.</ui-alert>`
             : nothing
       }
       ${
@@ -410,17 +407,17 @@ export class GsCaseCompare extends LightElement {
               ${
                 line.split
                   ? html`<ui-button
-                      size="sm"
+                      size="xs"
                       color="primary"
-                      variant="soft"
+                      variant="tonal"
                       @click=${() => this._open(line, line.split!.parts, true)}
                       >Use split ${line.split.text}</ui-button
                     >`
                   : nothing
               }
               <ui-button
-                size="sm"
-                variant="ghost"
+                size="xs"
+                variant="text"
                 @click=${() =>
                   this._open(
                     line,
@@ -498,10 +495,8 @@ export class GsCaseCompare extends LightElement {
         }
         ${
           best
-            ? html`<ui-alert color="success" variant="soft"
-                >This is the best-fit choice. A reason is optional.</ui-alert
-              >`
-            : html`<ui-alert color="warning" variant="soft"
+            ? html`<ui-alert tone="success">This is the best-fit choice. A reason is optional.</ui-alert>`
+            : html`<ui-alert tone="warning"
                 >Not the best-fit offer: give a reason. It's kept on the case and shown to the approver.</ui-alert
               >`
         }
@@ -512,7 +507,7 @@ export class GsCaseCompare extends LightElement {
           @input=${(e: Event) => (this.reason = (e.target as HTMLTextAreaElement).value)}
         ></ui-textarea>
       </ui-flex>
-      <ui-button slot="actions" variant="ghost" @click=${() => (this.choice = null)}>Cancel</ui-button>
+      <ui-button slot="actions" variant="text" @click=${() => (this.choice = null)}>Cancel</ui-button>
       <ui-button
         slot="actions"
         color="primary"
@@ -535,9 +530,7 @@ export class GsCaseCompare extends LightElement {
           ? html`<ui-flex direction="col" gap="3">
               <ui-flex gap="2" align="center" wrap>
                 ${aiBadge()}
-                <ui-badge size="sm" variant="soft" .color=${c.draft.sent ? "success" : "warning"}
-                  >${c.draft.status}</ui-badge
-                >
+                <ui-tag .tone=${c.draft.sent ? "success" : "warning"}>${c.draft.status}</ui-tag>
               </ui-flex>
               <ui-mockup-window>
                 <ui-flex direction="col" gap="2" padding="4">
@@ -553,11 +546,11 @@ export class GsCaseCompare extends LightElement {
               >
             </ui-flex>`
           : html`<ui-flex gap="3" align="center"
-              ><ui-loading size="sm" color="secondary"></ui-loading
+              ><ui-loading size="sm" color="primary"></ui-loading
               ><ui-text color="muted">AI is drafting the request…</ui-text></ui-flex
             >`
       }
-      <ui-button slot="actions" variant="ghost" @click=${() => (this.correction = null)}>Close</ui-button>
+      <ui-button slot="actions" variant="text" @click=${() => (this.correction = null)}>Close</ui-button>
       ${
         c.draft && !c.draft.sent
           ? html`<ui-button
@@ -590,7 +583,7 @@ export class GsCaseCompare extends LightElement {
           @input=${(e: Event) => (this.acceptNote = (e.target as HTMLTextAreaElement).value)}
         ></ui-textarea>
       </ui-flex>
-      <ui-button slot="actions" variant="ghost" @click=${() => (this.accepting = null)}>Cancel</ui-button>
+      <ui-button slot="actions" variant="text" @click=${() => (this.accepting = null)}>Cancel</ui-button>
       <ui-button
         slot="actions"
         color="primary"
@@ -609,12 +602,17 @@ export class GsCaseCompare extends LightElement {
       return hiddenForRole(
         "Supplier offers carry supplier costs, so Sales sees the selling prices on the quotation instead. Supply chain, finance and management compare offers.",
       );
-    if (this.error) return html`<ui-alert color="error" variant="soft">${this.error}</ui-alert>`;
+    if (this.error)
+      return html`<ui-empty-state
+        tone="error"
+        heading="This page couldn't load"
+        .description=${this.error}
+      ></ui-empty-state>`;
     const d = this.data;
     if (!d) return loadingBlock("Comparing offers…");
     const selected = d.lines.filter((l) => l.selection.parts.length).length;
     return html`<ui-flex direction="col" gap="4">
-      <ui-card variant="border" shadow="false" heading="How offers are compared">
+      <ui-card heading="How offers are compared">
         <ui-text variant="body-md" color="muted"
           >Each offer is checked against the original line and normalised to the requested base unit (EA / L / kg) in
           EGP at the approved FX rate, keeping the supplier's own units and currency. Landed cost adds the freight to
@@ -623,26 +621,20 @@ export class GsCaseCompare extends LightElement {
         >
         <ui-flex justify="between" align="center" gap="3" wrap>
           <ui-flex gap="2" wrap>
-            <ui-badge size="sm" variant="soft" color="info">${d.fxLabel}</ui-badge>
-            <ui-badge size="sm" variant="soft">ETA ${day(d.eta)} · ${d.daysToEta} days</ui-badge>
-            <ui-badge size="sm" variant="soft" .color=${selected ? "success" : undefined}
-              >${selected} of ${d.lines.length} lines selected</ui-badge
-            >
+            <ui-tag tone="info">${d.fxLabel}</ui-tag>
+            <ui-tag>ETA ${day(d.eta)} · ${d.daysToEta} days</ui-tag>
+            <ui-tag .tone=${selected ? "success" : undefined}>${selected} of ${d.lines.length} lines selected</ui-tag>
           </ui-flex>
-          <ui-join label="Compare by">
-            <ui-button
-              size="sm"
-              .color=${this.mode === "unit" ? "primary" : undefined}
-              @click=${() => (this.mode = "unit")}
-              >Unit price</ui-button
-            >
-            <ui-button
-              size="sm"
-              .color=${this.mode === "landed" ? "primary" : undefined}
-              @click=${() => (this.mode = "landed")}
-              >Landed cost</ui-button
-            >
-          </ui-join>
+          <ui-button-group
+            label="Compare by"
+            size="xs"
+            .value=${this.mode}
+            .options=${[
+              { value: "unit", label: "Unit price" },
+              { value: "landed", label: "Landed cost" },
+            ]}
+            @ui-change=${(e: CustomEvent<{ value: string }>) => (this.mode = e.detail.value as typeof this.mode)}
+          ></ui-button-group>
         </ui-flex>
       </ui-card>
       ${d.lines.map((l) => this._line(l))}

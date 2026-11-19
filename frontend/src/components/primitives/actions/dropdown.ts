@@ -5,7 +5,8 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement, uid, type Renderable } from "../../base/light-element.ts";
 import { isOn, rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
 import { button, type ButtonVariants } from "./button.ts";
-import { iconSvg } from "../media/icon.ts";
+import { iconButton, type IconButtonVariants } from "./icon-button.ts";
+import { iconSvg, type IconName } from "../media/icon.ts";
 
 /**
  * Dropdown: Opens a menu or other element when a button is clicked.
@@ -38,6 +39,15 @@ export const dropdown = rcva("dropdown", {
     },
   },
 });
+
+/** A menu item's row: icon, label (and description), shortcut, check. */
+export const dropdownItem = rcva("flex items-center gap-3", {
+  variants: { destructive: { true: "text-error-ink" } },
+});
+export const dropdownItemText = rcva("flex min-w-0 flex-1 flex-col");
+export const dropdownItemDescription = rcva("text-body-sm text-on-surface-variant");
+export const dropdownItemShortcut = rcva("text-label-md text-on-surface-variant");
+export const dropdownSeparator = rcva("my-1 h-px bg-outline-variant");
 
 /** The floating panel (`dropdown-content`). Combine with `dropdownPanel` for its look. */
 /** Above everything in the page layer (indicator badges are `z-1` too and would paint over a later-opened panel). */
@@ -126,11 +136,29 @@ export type DropdownTriggerVariants = VariantProps<typeof dropdownTrigger>;
 /** `menu`: item list; `card`: card with `card-body` around the children; `plain`: no look at all. */
 export type DropdownPanelKind = "menu" | "card" | "plain";
 
+/**
+ * A menu item (M3 menus; Apple menus): a command, or an option that can be on (`checked`, shown
+ * with a check, announced as a checkbox item). Group related items and put a `separator` between
+ * groups; put a destructive command last, marked `destructive` (error ink), and confirm it before
+ * acting. End a label with "…" when the command asks for more before it runs (Apple).
+ */
 export interface DropdownItem {
   label: Renderable;
   href?: string;
   value?: string;
   disabled?: boolean;
+  /** A leading icon (use them for all items of a group, or none). */
+  icon?: IconName;
+  /** An option that's on (a check at the end; `menuitemcheckbox`). `false` = an option that's off. */
+  checked?: boolean;
+  /** Deletes or discards something: error ink. */
+  destructive?: boolean;
+  /** A keyboard shortcut hint, shown at the end ("Ctrl+D"). */
+  shortcut?: string;
+  /** A line under the label. */
+  description?: Renderable;
+  /** A divider before this item, starting a new group. */
+  separator?: boolean;
 }
 
 /**
@@ -187,7 +215,8 @@ export class UiDropdown extends LightElement {
   @property({ attribute: "trigger-color" }) triggerColor: ButtonVariants["color"];
   @property({ attribute: "trigger-variant" }) triggerVariant: ButtonVariants["variant"];
   @property({ attribute: "trigger-size" }) triggerSize: ButtonVariants["size"];
-  @property({ attribute: "trigger-shape" }) triggerShape: ButtonVariants["shape"];
+  /** An icon-only trigger: an icon button of this shape (`round`, `square`). */
+  @property({ attribute: "trigger-shape" }) triggerShape: IconButtonVariants["shape"];
   @property({ attribute: "trigger-spaced", converter: responsiveBoolean }) triggerSpaced: Responsive<boolean> = true;
   @property({ attribute: "trigger-rounded" }) triggerRounded: DropdownTriggerVariants["rounded"];
   @property({ attribute: "trigger-tone" }) triggerTone: DropdownTriggerVariants["tone"];
@@ -247,6 +276,38 @@ export class UiDropdown extends LightElement {
     else this.show();
   }
 
+  /** Arrow keys, Home / End and type-ahead move between items; Escape closes back to the trigger. */
+  private _menuKey(e: KeyboardEvent) {
+    const items = [...this.querySelectorAll<HTMLElement>('[role^="menuitem"]:not([aria-disabled="true"])')];
+    if (!items.length) return;
+    const at = items.indexOf(document.activeElement as HTMLElement);
+    let next = -1;
+    if (e.key === "ArrowDown") next = (at + 1) % items.length;
+    else if (e.key === "ArrowUp") next = (at - 1 + items.length) % items.length;
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = items.length - 1;
+    else if (e.key === "Escape") {
+      e.preventDefault();
+      this.hide();
+      this.querySelector<HTMLElement>("[data-trigger]")?.focus();
+      return;
+    } else if (e.key.length === 1 && /\S/.test(e.key)) {
+      const k = e.key.toLowerCase();
+      next = items.findIndex((el, i) => i > at && el.textContent?.trim().toLowerCase().startsWith(k));
+      if (next < 0) next = items.findIndex((el) => el.textContent?.trim().toLowerCase().startsWith(k));
+    }
+    if (next < 0) return;
+    e.preventDefault();
+    items[next]!.focus();
+  }
+
+  /** On opening a menu, focus goes to its first item (M3). */
+  private _focusFirst() {
+    requestAnimationFrame(() =>
+      this.querySelector<HTMLElement>('[role^="menuitem"]:not([aria-disabled="true"])')?.focus(),
+    );
+  }
+
   private _select(item: DropdownItem, index: number, e: Event) {
     if (item.disabled) {
       e.preventDefault();
@@ -259,6 +320,11 @@ export class UiDropdown extends LightElement {
   private _trig() {
     if (this.hasSlotted("trigger")) return this.slotted("trigger");
     return this.triggerIcon ? html`${dropdownIcons[this.triggerIcon]}${this.label}` : this.label;
+  }
+
+  /** The menu's accessible name: the trigger's label. */
+  private get _menuName() {
+    return this.triggerLabel ?? (typeof this.label === "string" ? this.label : undefined);
   }
 
   private get _kind(): DropdownPanelKind {
@@ -280,11 +346,23 @@ export class UiDropdown extends LightElement {
   }
 
   private _triggerCls() {
+    const trigger = dropdownTrigger({
+      spaced: isOn(this.triggerSpaced) ? this.triggerSpaced : false,
+      rounded: this.triggerRounded,
+      tone: this.triggerTone,
+    });
+    if (this.triggerShape)
+      return iconButton({
+        variant:
+          this.triggerVariant === "tonal" ? "tonal" : this.triggerVariant === "outlined" ? "outlined" : "standard",
+        size: this.triggerSize,
+        shape: this.triggerShape,
+        class: trigger,
+      });
     return button({
       color: this.triggerColor,
       variant: this.triggerVariant,
       size: this.triggerSize,
-      shape: this.triggerShape,
       class: dropdownTrigger({
         spaced: isOn(this.triggerSpaced) ? this.triggerSpaced : false,
         rounded: this.triggerRounded,
@@ -305,16 +383,26 @@ export class UiDropdown extends LightElement {
     }
     return this.items.map(
       (item, i) =>
-        html`<li class=${item.disabled ? "menu-disabled" : ""}>
-          <a
-            href=${ifDefined(item.href)}
-            tabindex="0"
-            aria-disabled=${ifDefined(item.disabled ? "true" : undefined)}
-            @click=${(e: Event) => this._select(item, i, e)}
-            @keydown=${(e: KeyboardEvent) => (e.key === "Enter" || e.key === " ") && !item.href && this._select(item, i, e)}
-            >${item.label}</a
-          >
-        </li>`,
+        html`${item.separator && i > 0 ? html`<li role="separator" class=${dropdownSeparator()}></li>` : nothing}
+          <li role="none" class=${item.disabled ? "menu-disabled" : ""}>
+            <a
+              href=${ifDefined(item.href)}
+              tabindex="-1"
+              role=${item.checked === undefined ? "menuitem" : "menuitemcheckbox"}
+              aria-checked=${ifDefined(item.checked === undefined ? undefined : String(item.checked))}
+              aria-disabled=${ifDefined(item.disabled ? "true" : undefined)}
+              class=${dropdownItem({ destructive: !!item.destructive })}
+              @click=${(e: Event) => this._select(item, i, e)}
+              @keydown=${(e: KeyboardEvent) => (e.key === "Enter" || e.key === " ") && !item.href && this._select(item, i, e)}
+            >
+              ${item.icon ? iconSvg(item.icon, { size: "sm" }) : nothing}
+              <span class=${dropdownItemText()}
+                >${item.label}${item.description ? html`<span class=${dropdownItemDescription()}>${item.description}</span>` : nothing}</span
+              >
+              ${item.shortcut ? html`<kbd class=${dropdownItemShortcut()}>${item.shortcut}</kbd>` : nothing}
+              ${item.checked ? iconSvg("check", { size: "sm" }) : nothing}
+            </a>
+          </li>`,
     );
   }
 
@@ -324,7 +412,13 @@ export class UiDropdown extends LightElement {
     const panelCls = dropdownContent({ class: this._look() });
     const panelTag = (cls: string) =>
       isMenu
-        ? html`<ul tabindex="-1" class=${cls}>
+        ? html`<ul
+            tabindex="-1"
+            class=${cls}
+            role="menu"
+            aria-label=${ifDefined(this._menuName)}
+            @keydown=${this._menuKey}
+          >
             ${this._panelBody()}
           </ul>`
         : html`<div tabindex="0" class=${cls}>${this._panelBody()}</div>`;
@@ -366,7 +460,19 @@ export class UiDropdown extends LightElement {
         </button>
         ${
           isMenu
-            ? html`<ul class=${popCls} popover id=${this._id} style="position-anchor:${anchor}" @toggle=${onToggle}>
+            ? html`<ul
+                class=${popCls}
+                popover
+                id=${this._id}
+                style="position-anchor:${anchor}"
+                role="menu"
+                aria-label=${ifDefined(this._menuName)}
+                @toggle=${(e: ToggleEvent) => {
+                  onToggle(e);
+                  if (e.newState === "open") this._focusFirst();
+                }}
+                @keydown=${this._menuKey}
+              >
                 ${this._panelBody()}
               </ul>`
             : html`<div class=${popCls} popover id=${this._id} style="position-anchor:${anchor}" @toggle=${onToggle}>

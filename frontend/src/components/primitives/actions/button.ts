@@ -1,5 +1,5 @@
 import type { VariantProps } from "class-variance-authority";
-import { html } from "lit";
+import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { live } from "lit/directives/live.js";
@@ -7,72 +7,54 @@ import { LightElement } from "../../base/light-element.ts";
 import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
 
 /**
- * Button: Lets users take actions or make choices.
+ * Button: an action (M3 buttons; Apple buttons).
  *
  * Purpose: Actions · Kind: primitive
- * Docs: https://daisyui.com/components/button/
  *
- * Every variant is responsive, e.g. the docs' responsive button:
- * `size="xs sm:sm md:md lg:lg xl:xl"`.
- */
-/**
- * Every button squashes a little when pressed and springs back (M3 expressive fast spatial
- * spring; colours and shadows on the effects spring: src/styles/daisy-motion.css).
+ * Five styles, by how much the action should stand out (M3), never by size (Apple):
+ *   filled     the screen's main action — one, two at most (the prominence audit counts them)
+ *   tonal      a secondary action that still needs presence (a tinted container)
+ *   outlined   a medium-emphasis alternative ("Cancel" beside "Save")
+ *   text       low emphasis: in cards, toolbars, dialogs' dismissive actions
+ *   elevated   a filled-tonal action that must lift off a busy surface (rare)
+ * With a `color` and no `variant` a button is filled; with neither it's tonal. Colours are the
+ * roles that mean something: `primary`, `secondary`, `error` (destructive: never the primary
+ * action, Apple). Sizes are M3's: `xs` 32px (compact rows, cards), `sm` 40px (the default),
+ * `md` 56px (a hero action). Every button has a 48px touch target and a pressed shape morph.
+ * A toggle (`toggle`) shows and announces its state with `selected` (`aria-pressed`). `loading`
+ * swaps the content for a spinner while the action runs and blocks a second press.
  */
 /**
  * Pressed, a button morphs its corners (M3 Expressive's shape morph, on the fast spatial spring —
- * src/styles/daisy-motion.css times it): a rounded button squares up to at most `sm` (8dp), a
- * round icon button to `md` (12dp), and springs back on release. Selected (`active`), a round
- * button stays at `md`, as M3's toggle buttons do.
+ * src/styles/daisy-motion.css times it): it squares up to at most `sm` (8dp), and springs back
+ * on release. Selected, it stays at `md` (12dp), as M3's toggle buttons do.
  */
 export const button = rcva(
-  "btn touch-target active:scale-[0.94] motion-reduce:active:scale-100 active:rounded-[min(var(--radius-sm),var(--radius-field))] [&.btn-circle]:active:rounded-md",
+  "btn touch-target active:scale-[0.94] motion-reduce:active:scale-100 active:rounded-[min(var(--radius-sm),var(--radius-field))]",
   {
     variants: {
-      color: {
-        neutral: "btn-neutral",
-        primary: "btn-primary",
-        secondary: "btn-secondary",
-        accent: "btn-accent",
-        info: "btn-info",
-        success: "btn-success",
-        warning: "btn-warning",
-        error: "btn-error",
-      },
       variant: {
-        /**
-         * Outline, dash, soft, ghost and link draw text in the button's colour: mixed toward the
-         * ink so it reads at WCAG AA (filled on hover, they use the colour's own content ink).
-         */
-        outline:
-          "btn-outline [&:not(:hover,:active,.btn-active)]:[color:color-mix(in_oklab,var(--btn-color,var(--color-base-content))_35%,var(--color-base-content))]",
-        dash: "btn-dash [&:not(:hover,:active,.btn-active)]:[color:color-mix(in_oklab,var(--btn-color,var(--color-base-content))_35%,var(--color-base-content))]",
-        soft: "btn-soft [&:not(:hover,:active,.btn-active)]:[color:color-mix(in_oklab,var(--btn-color,var(--color-base-content))_35%,var(--color-base-content))]",
-        ghost:
-          "btn-ghost [&:not(:hover,:active,.btn-active)]:[color:color-mix(in_oklab,var(--btn-color,var(--color-base-content))_35%,var(--color-base-content))]",
-        link: "btn-link [&:not(:hover,:active,.btn-active)]:[color:color-mix(in_oklab,var(--btn-color,var(--color-base-content))_35%,var(--color-base-content))]",
-        /**
-         * Looks like a search field (the app header's command-palette trigger): rounded, filled,
-         * placeholder-coloured text, a trailing `<ui-kbd>` hint. When its container (an `@container`)
-         * has less than 13rem, it shrinks to an icon-only circle at the start (beside the brand) — no screen breakpoint.
-         */
-        field:
-          "btn-ghost liquid-glass-clear h-11 w-full max-w-xl justify-start gap-2 rounded-full border-transparent px-4 font-normal text-on-surface-variant hover:bg-surface/60 hover:text-on-surface [&>ui-kbd>span]:ms-auto @max-[13rem]:me-auto @max-[13rem]:size-10 @max-[13rem]:justify-center @max-[13rem]:px-0 @max-[13rem]:[&>ui-kbd]:hidden @max-[13rem]:[&>ui-text]:hidden",
+        filled: "",
+        tonal: "btn-ghost state-layer border-transparent",
+        outlined: "btn-ghost state-layer border-outline-variant",
+        text: "btn-ghost state-layer border-transparent bg-transparent!",
+        elevated:
+          "btn-ghost state-layer border-transparent bg-surface-container-low! shadow-elevation-1 hover:shadow-elevation-2",
+      },
+      color: {
+        primary: "",
+        secondary: "",
+        error: "",
       },
       size: {
-        xs: "btn-xs",
-        sm: "btn-sm",
-        md: "btn-md",
-        lg: "btn-lg",
-        xl: "btn-xl",
-      },
-      shape: {
-        square: "btn-square",
-        circle: "btn-circle",
+        xs: "btn-sm",
+        sm: "btn-md",
+        md: "btn-xl",
       },
       wide: { true: "btn-wide" },
       block: { true: "btn-block" },
-      active: { true: "btn-active [&.btn-circle]:rounded-md" },
+      /** A toggle that's on: it keeps the pressed corners and its container colour. */
+      selected: { true: "btn-active rounded-[min(var(--radius-md),var(--radius-field))]" },
       disabled: { true: "btn-disabled" },
       /** Hide the button, e.g. `hide="lg"` where a sidebar it toggles is always open. */
       hide: { true: "hidden" },
@@ -85,18 +67,38 @@ export const button = rcva(
       /** Text that wraps onto several lines (a suggested reply): the button grows to fit it. */
       multiline: { true: "h-auto min-h-(--size) py-2 text-start font-normal whitespace-normal" },
     },
+    compoundVariants: [
+      { variant: "filled", color: "primary", class: "btn-primary" },
+      { variant: "filled", color: "secondary", class: "btn-secondary" },
+      { variant: "filled", color: "error", class: "btn-error" },
+      { variant: "tonal", color: undefined, class: "bg-surface-container-highest text-on-surface" },
+      { variant: "tonal", color: "primary", class: "bg-primary-container text-on-primary-container" },
+      { variant: "tonal", color: "secondary", class: "bg-secondary-container text-on-secondary-container" },
+      { variant: "tonal", color: "error", class: "bg-error-container text-on-error-container" },
+      { variant: ["outlined", "text", "elevated"], color: undefined, class: "text-on-surface" },
+      { variant: ["outlined", "text", "elevated"], color: "primary", class: "text-primary-ink" },
+      { variant: ["outlined", "text", "elevated"], color: "secondary", class: "text-secondary-ink" },
+      { variant: ["outlined", "text", "elevated"], color: "error", class: "text-error-ink" },
+      {
+        variant: ["tonal", "outlined", "text"],
+        selected: true,
+        class: "bg-primary-container! text-on-primary-container!",
+      },
+    ],
   },
 );
+/** The spinner shown while a button's action runs. */
+export const buttonSpinner = rcva("loading loading-spinner loading-sm");
 
 export type ButtonVariants = VariantProps<typeof button>;
 
 /**
- * @example <ui-button color="primary" variant="soft" size="sm">Save</ui-button>
- * @example <ui-button href="/docs" variant="link">Docs</ui-button>
- * @example <ui-button size="xs sm:sm md:md lg:lg xl:xl">Responsive</ui-button>
- * @example <ui-button block="max-sm">Full width on phones</ui-button>
- *
- * @example <ui-button type="radio" name="page" value="1" label="1" shape="square"></ui-button>
+ * @example <ui-button color="primary">Save</ui-button>
+ * @example <ui-button variant="tonal" size="xs">Draft reply</ui-button>
+ * @example <ui-button variant="text" href="/collections/cases">All cases</ui-button>
+ * @example <ui-button color="error" variant="outlined">Delete…</ui-button>
+ * @example <ui-button toggle ?selected=${urgentFirst}>Most urgent first</ui-button>
+ * @example <ui-button color="primary" ?loading=${saving}>Save</ui-button>
  *
  * Renders an `<a>` when `href` is set, otherwise a `<button>`. `type="radio"`
  * / `type="checkbox"` render the docs' button-styled `<input>` (labelled by
@@ -107,11 +109,14 @@ export class UiButton extends LightElement {
   @property() color: ButtonVariants["color"];
   @property() variant: ButtonVariants["variant"];
   @property() size: ButtonVariants["size"];
-  @property() shape: ButtonVariants["shape"];
   @property() justify: ButtonVariants["justify"];
   @property({ converter: responsiveBoolean }) wide: Responsive<boolean> = false;
   @property({ converter: responsiveBoolean }) block: Responsive<boolean> = false;
-  @property({ converter: responsiveBoolean }) active: Responsive<boolean> = false;
+  /** A toggle button: it announces `selected` (aria-pressed). */
+  @property({ type: Boolean }) toggle = false;
+  @property({ type: Boolean }) selected = false;
+  /** The action is running: a spinner, and no second press. */
+  @property({ type: Boolean }) loading = false;
   @property({ type: Boolean }) multiline = false;
   @property({ converter: responsiveBoolean }) hide: Responsive<boolean> = false;
   /** Behaviour, not just looks: disables the native button / link. */
@@ -128,15 +133,16 @@ export class UiButton extends LightElement {
   @property({ type: Boolean }) checked = false;
 
   render() {
+    const variant = this.variant ?? (this.color ? "filled" : "tonal");
+    const color = this.color ?? (variant === "filled" ? "primary" : undefined);
     const cls = button({
-      color: this.color,
-      variant: this.variant,
+      color,
+      variant,
       size: this.size,
-      shape: this.shape,
       justify: this.justify,
       wide: this.wide,
       block: this.block,
-      active: this.active,
+      selected: this.selected,
       multiline: this.multiline,
       hide: this.hide,
       disabled: this.disabled && !!this.href,
@@ -168,11 +174,13 @@ export class UiButton extends LightElement {
     return html`<button
       class=${cls}
       type=${this.type}
-      ?disabled=${this.disabled}
+      ?disabled=${this.disabled || this.loading}
+      aria-busy=${ifDefined(this.loading ? "true" : undefined)}
       aria-label=${ifDefined(this.label)}
       aria-current=${ifDefined(this.current)}
+      aria-pressed=${ifDefined(this.toggle ? String(this.selected) : undefined)}
     >
-      ${this.content}
+      ${this.loading ? html`<span class=${buttonSpinner()} aria-hidden="true"></span>` : nothing}${this.content}
     </button>`;
   }
 }

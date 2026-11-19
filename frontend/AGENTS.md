@@ -41,12 +41,44 @@ The design system is enforced through the components (`tests/architecture.test.t
   - no primitive recipes: import only types (`import type`) and element registrations (`import "…/button.ts"`);
   - templates hold `ui-*` elements plus unstyled inline text (`strong`, `em`, `span`, `br`…), nothing else;
   - attribute values must be the primitive's tokens; the test reads each primitive's variants and checks every literal value.
-- **Primitives use theme colours only** (`primary`, `base-200`…), never the Tailwind palette (`red-400`) or literal colours.
-- **Fluid before breakpoints**: lay pages out intrinsically — `<ui-grid fit>` (as many columns as fit), `<ui-grid sidebar>`, wrapping `<ui-flex wrap>`, `fill` widths, and fluid sizes (`padding-x="fluid"`, heading `size="page"`, `clamp()` + container units of the main panel, which is an `@container`). The dashboard uses no screen breakpoints; reach for `sm:`/`md:` tokens only when no intrinsic pattern works.
-- **Glass is for the floating layer only**: sheets, dialogs, menus and other controls that float above content use `liquid-glass` (or `liquid-glass-clear` for small controls), defined in `src/styles/theme.css` (tint, light blur, refraction via the `#liquid-glass-refraction` SVG filter in `index.html`, rim shine, shadow). Tooltips, toasts, popovers, pickers and the dock already use it through their primitives; `shadow-*` utilities on glass replace only its drop shadow. The main panel is see-through frosted glass (`liquid-glass-surface`) over the background; content surfaces inside it (cards, tables) stay solid, and glass never sits on glass. Over a background image, the app shell picks the lightest scrim (`--app-scrim`) at which `<ui-contrast-audit>` finds no failing text over the image, so the photo shows as much as stays readable. The material already handles light/dark, Reduce transparency, Increase contrast and browsers without `backdrop-filter`. Enforced (`tests/design-roles.test.ts`, "everything that floats is glass"): dropdown panels are always glass and have no solid surface option; every `<select>`'s open list (`::picker(select)`) gets the glass from `daisy-m3.css`, because a utility on `<ui-select>`'s wrapper can't reach it; and any primitive that renders a popover or a `<dialog>` must use the glass.
+- **Primitives use theme colours only** (`primary`, `surface-container`…), never the Tailwind palette (`red-400`) or literal colours.
+- **Fluid before breakpoints**: lay pages out intrinsically — `<ui-grid fit>` (as many columns as fit), `<ui-grid sidebar>`, wrapping `<ui-flex wrap>`, `fill` widths, and fluid sizes (`padding-x="fluid"`, `<ui-page-header>` (its title is `variant="page"`), `clamp()` + container units of the main panel, which is an `@container`). The dashboard uses no screen breakpoints; reach for `sm:`/`md:` tokens only when no intrinsic pattern works.
+- **Glass is for the floating layer only**: sheets, dialogs, menus and other controls that float above content use `liquid-glass` (or `liquid-glass-clear` for small controls), defined in `src/styles/theme.css` (tint, light blur, refraction via the `#liquid-glass-refraction` SVG filter in `index.html`, rim shine, shadow). Tooltips, the snackbar, popovers and pickers already use it through their primitives; `shadow-*` utilities on glass replace only its drop shadow. The main panel is see-through frosted glass (`liquid-glass-surface`) over the background; content surfaces inside it (cards, tables) stay solid, and glass never sits on glass. Over a background image, the app shell picks the lightest scrim (`--app-scrim`) at which `<ui-contrast-audit>` finds no failing text over the image, so the photo shows as much as stays readable. The material already handles light/dark, Reduce transparency, Increase contrast and browsers without `backdrop-filter`. Enforced (`tests/design-roles.test.ts`, "everything that floats is glass"): dropdown panels are always glass and have no solid surface option; every `<select>`'s open list (`::picker(select)`) gets the glass from `daisy-m3.css`, because a utility on `<ui-select>`'s wrapper can't reach it; and any primitive that renders a popover or a `<dialog>` must use the glass.
 - **Colour contrast (WCAG AA) is checked**: `tests/contrast.test.ts` checks every colour scheme's ink/fill pairs (the scheme generator, `plugins/schemes.ts`, fixes unreadable `*-content` tokens); on screen, the command palette's **"Check colour contrast"** (or `?audit` in the URL) runs `<ui-contrast-audit>`, which measures every visible text against what's really behind it — glass, tints, and the background image — and outlines failures. Run it in light and dark after visual changes. Rules that keep it green: secondary text is the `on-surface-variant` role (80% of the ink), never fainter; coloured text uses the `*-ink` tokens (`text-success-ink`…, the colour mixed toward the ink), never raw `text-success`; tinted backgrounds take full-strength text.
 - **Icons come from the registry only**: `ICONS` / `iconSvg()` / `<ui-icon name>` in `src/components/primitives/media/icon.ts`, filled with `import x from "~icons/<collection>/<name>"` (unplugin-icons, tree-shaken) from line-md (preferred, animated), material-symbols-light, devicon or logos. Nothing else draws an `<svg>` (`tests/icons.test.ts`).
 - Missing something? Add a variant (or a new primitive) in `src/components/primitives`, not a workaround in the page.
+
+## Which component (M3 and Apple component names in brackets)
+
+Pages say what a thing is, and the primitive decides how it looks. `tests/design-roles.test.ts` ("pages use the semantic components") rejects the hand-built versions listed here.
+
+- **Page top**: `<ui-page-header heading subtitle eyebrow>` with `slot="breadcrumbs"`, `slot="status"` and `slot="actions"` (top app bar; large title). Never `<ui-heading level="1">`.
+- **Cards**: `<ui-card variant="outlined|filled|elevated" heading subhead .count>` with `slot="trailing"` for tags or actions in the header. Cards have no colour, width or shadow options.
+- **Words and numbers on things**: `<ui-tag tone>` is a status or category word ("Overdue"). `<ui-badge .count>` is a number and `<ui-badge dot tone label>` is a dot. A badge never holds a word.
+- **Key figures**: `<ui-stat label value note tone href>`, with `slot="trend"`.
+- **Label and value pairs**: `<ui-description-list .items layout="stacked|inline">`. It renders a real `<dl>`.
+- **Rows of things**: `<ui-list>` with `<ui-list-item headline supporting overline trailing-text href selected>` (list). A table cell's second line is the column's `supporting`, not a hand-built stack.
+- **Nothing to show, loading, failed**: `<ui-empty-state heading description icon tone loading>` with `slot="actions"`.
+- **Messages**:
+  - `<ui-alert tone>` is inline, next to what it's about.
+  - The snackbar is for something that just happened: the `toast()` helper pushes to the one `<ui-snackbar>`. A message with an action or an error stays until it is dismissed.
+  - A decision is a `<ui-modal confirm-label confirm-tone="error">` (dialog; alert). Its button names the verb ("Delete"), and Cancel is always there.
+- **Actions**:
+  - `<ui-button variant="filled|tonal|outlined|text|elevated" color size="xs|sm|md">`. Use at most one or two filled buttons per view.
+  - An icon-only action is `<ui-icon-button label>`. The label is its name and its tooltip.
+  - A row of controls over content is a `<ui-toolbar label>`, with `slot="end"` for the trailing group.
+  - Menus are `<ui-dropdown .items>` with icons, `checked`, `destructive` and separators.
+- **Choosing**:
+  - One or several options from a few: `<ui-button-group .options select="single|multi">` (segmented button). Never a colour swap between buttons.
+  - A setting that applies at once: `<ui-switch>`. A statement someone confirms: `<ui-checkbox>`.
+  - A button that stays on: `<ui-button toggle ?selected>`.
+  - Chips: `variant="input"` is a picked value, `variant="filter"` is an active filter.
+- **Fields**: every field has a name: `label`, `legend`, `aria-label` or a placeholder. A search is `<ui-search label>`, which has the icon, a clear button and Escape to clear. The header's command-palette trigger is `<ui-search launcher shortcut>`.
+- **Amounts and progress**:
+  - A measurement ("3 of 5 lines ready", "92% on time") is `<ui-gauge tone heading value-text label>`.
+  - `<ui-progress>` is only for work the app is doing now, and it is always primary.
+  - A position in a fixed sequence is `<ui-steps current tone>`: earlier steps get a tick, `state: "skipped"` shows a dash, and `supporting` is the small line under a label.
+- **Text**: `<ui-text variant="body-md">` and `<ui-heading variant="title-lg">` take type roles, plus `emphasized`. They have no `size` or `weight`.
 
 # Mock backend (Payload-compatible, in the browser)
 
@@ -136,7 +168,7 @@ The forms render every Payload field type (payloadcms.com/docs/fields/overview) 
   - `<ui-frame-body>`.
   - `<ui-frame-column>`: a side column with its toggle, its list and rail stack, its footer and its sheet backdrop.
   - `<ui-frame-main>`: the glass panel and the page footer; it plays the page transitions.
-- **Appearance:** the header's theme, colour-scheme and background controls are `<ui-appearance kind="theme|scheme|background">` (composed). The document-level changes and the circular reveal are in `src/components/base/appearance.ts`. `<ui-theme-controller>` keeps only daisyUI's pure-CSS modes (toggle, checkbox, swap, radio, buttons, dropdown).
+- **Appearance:** the header's theme, colour-scheme and background controls are `<ui-appearance kind="theme|scheme|background">` (composed). The document-level changes and the circular reveal are in `src/components/base/appearance.ts`.
 
 ## Colour, type and state roles (Material Design 3, with Apple's guidance)
 

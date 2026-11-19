@@ -189,8 +189,8 @@ export class GsCash extends LightElement implements ViewProps {
   }
 
   private _remittance(d: Cash) {
-    return html`<ui-card variant="border" shadow="false">
-      ${this._heading("Match a remittance", html`<ui-badge size="sm" variant="soft">On this device</ui-badge>`)}
+    return html`<ui-card>
+      ${this._heading("Match a remittance", html`<ui-tag>On this device</ui-tag>`)}
       <ui-text variant="body-sm" color="muted"
         >Paste a customer's payment advice or remittance email: the invoice numbers and amount are read on this device,
         then matched to open invoices. A person records the payment.</ui-text
@@ -228,7 +228,7 @@ export class GsCash extends LightElement implements ViewProps {
                     </ui-flex>`,
                 )}
               </ui-flex>`
-            : html`<ui-alert color="warning" variant="soft"
+            : html`<ui-alert tone="warning"
                 >No open invoice matches these numbers or this amount — check the remittance by hand.</ui-alert
               >`
           : nothing
@@ -393,32 +393,34 @@ export class GsCash extends LightElement implements ViewProps {
   /* ------------------------------------------------------------ render */
 
   render() {
-    if (this.error) return html`<ui-alert color="error" variant="soft">${this.error}</ui-alert>`;
+    if (this.error)
+      return html`<ui-empty-state
+        tone="error"
+        heading="This page couldn't load"
+        .description=${this.error}
+      ></ui-empty-state>`;
     const d = this.data;
-    if (!d)
-      return html`<ui-flex justify="center" padding="8"><ui-loading size="lg" color="primary"></ui-loading></ui-flex>`;
+    if (!d) return html`<ui-empty-state loading></ui-empty-state>`;
     return html`<ui-flex direction="col" gap="6">
-      <ui-flex justify="between" align="end" gap="4" wrap>
-        <ui-flex direction="col" gap="1" shrink>
-          <ui-text variant="label-md" color="muted" uppercase>Finance · Tue 17 Nov</ui-text>
-          <ui-heading level="1" variant="page">Receivables & payables</ui-heading>
-          <ui-text color="muted"
-            >What customers owe, what we owe suppliers, and what needs a decision. Money moves only in the bank — here
-            people approve and record it.</ui-text
-          >
+      <ui-page-header>
+        <span slot="eyebrow">Finance · Tue 17 Nov</span>
+        <span slot="heading">Receivables & payables</span>
+        <span slot="subtitle"
+          >What customers owe, what we owe suppliers, and what needs a decision. Money moves only in the bank — here
+          people approve and record it.</span
+        >
+        <ui-flex slot="actions" gap="2" wrap>
+          <ui-button size="xs" variant="tonal" href="/approvals">Approvals queue</ui-button>
+          <ui-button size="xs" variant="tonal" href="/collections/invoices">All invoices</ui-button>
         </ui-flex>
-        <ui-flex gap="2" wrap>
-          <ui-button size="sm" variant="soft" href="/approvals">Approvals queue</ui-button>
-          <ui-button size="sm" variant="soft" href="/collections/invoices">All invoices</ui-button>
-        </ui-flex>
-      </ui-flex>
+      </ui-page-header>
       ${this._tiles(d)}
       <ui-grid fit="lg" gap="4">${this._ageing(d)} ${this._forecast(d)}</ui-grid>
       ${this._collections(d)} ${this._remittance(d)}
       ${
         d.canSeePayables
           ? html`${this._payables(d)} ${this._approvals(d)} ${this._bank(d)}`
-          : html`<ui-alert color="info" variant="soft"
+          : html`<ui-alert tone="info"
               >Supplier payables, payment approvals and bank details are not visible to Sales.</ui-alert
             >`
       }
@@ -429,20 +431,14 @@ export class GsCash extends LightElement implements ViewProps {
   }
 
   private _heading(title: string, badge?: TemplateResult | typeof nothing, actions?: TemplateResult | typeof nothing) {
-    return html`<ui-flex slot="heading" justify="between" align="center" gap="2" full-width wrap>
-      <ui-flex gap="2" align="center" wrap>${title}${badge ?? nothing}</ui-flex>
-      ${actions ? html`<ui-flex gap="2" wrap>${actions}</ui-flex>` : nothing}
-    </ui-flex>`;
+    return html`<span slot="heading">${title}</span>
+      <ui-flex slot="trailing" gap="2" align="center" wrap
+        >${badge ?? nothing}${actions ? html`<ui-flex gap="2" wrap>${actions}</ui-flex>` : nothing}</ui-flex
+      >`;
   }
 
   private _tile(label: string, value: string, note: string, tone?: "error" | "warning" | "success") {
-    return html`<ui-card variant="border" size="sm" shadow="false">
-      <ui-flex direction="col" gap="1">
-        <ui-text variant="body-md" color="muted" truncate>${label}</ui-text>
-        <ui-text variant="headline-sm" leading="tight" .color=${tone}>${value}</ui-text>
-        <ui-text variant="body-sm" color="muted" clamp="2">${note}</ui-text>
-      </ui-flex>
-    </ui-card>`;
+    return html`<ui-stat .label=${label} .value=${value} .note=${note} .tone=${tone}></ui-stat>`;
   }
 
   private _tiles(d: Cash) {
@@ -499,7 +495,7 @@ export class GsCash extends LightElement implements ViewProps {
         render: (r) => html`<ui-text variant="title-sm" align="end">${usdK(r.total as number)}</ui-text>`,
       },
     ];
-    return html`<ui-card variant="border" shadow="false">
+    return html`<ui-card>
       ${this._heading("Receivables ageing by customer")}
       <ui-text variant="body-md" color="muted"
         >Open balances in USD equivalent (USD/EGP ${d.fx.USD}, EUR/EGP ${d.fx.EUR}), by days past due.</ui-text
@@ -518,7 +514,7 @@ export class GsCash extends LightElement implements ViewProps {
   private _forecast(d: Cash) {
     const series = [{ name: "Cash in (expected receipts)", values: d.cashIn }];
     if (d.canSeePayables) series.push({ name: "Cash out (payables + fixed costs)", values: d.cashOut });
-    return html`<ui-card variant="border" shadow="false">
+    return html`<ui-card>
       ${this._heading("Cash in vs out — next 8 weeks")}
       <ui-text variant="body-md" color="muted"
         >EGP thousands, by week. Receipts by invoice due date (overdue counted this week, chronic late payers a week
@@ -574,14 +570,13 @@ export class GsCash extends LightElement implements ViewProps {
         label: "Contact rule",
         render: (r) => {
           const rule = RULE[r.contactRule] ?? RULE.allowed;
-          return html`<ui-badge size="sm" variant="soft" .color=${rule.color}>${rule.label}</ui-badge>`;
+          return html`<ui-tag .tone=${rule.color}>${rule.label}</ui-tag>`;
         },
       },
       {
         key: "einv",
         label: "E-invoice",
-        render: (r) =>
-          html`<ui-badge size="sm" variant="outline" .color=${statusColor(r.eInvoice)}>${r.eInvoice}</ui-badge>`,
+        render: (r) => html`<ui-tag variant="outline" .tone=${statusColor(r.eInvoice)}>${r.eInvoice}</ui-tag>`,
       },
       {
         key: "act",
@@ -592,7 +587,7 @@ export class GsCash extends LightElement implements ViewProps {
               r.daysOverdue > -5
                 ? html`<ui-button
                     size="xs"
-                    variant="soft"
+                    variant="tonal"
                     .color=${r.contactRule === "do-not-chase" ? undefined : "primary"}
                     ?disabled=${Boolean(this.busy)}
                     @click=${() => this._draftReminder(r)}
@@ -604,8 +599,8 @@ export class GsCash extends LightElement implements ViewProps {
           </ui-flex>`,
       },
     ];
-    return html`<ui-card variant="border" shadow="false">
-      ${this._heading("Collections — open invoices", html`<ui-badge size="sm" variant="soft">${d.receivables.length}</ui-badge>`)}
+    return html`<ui-card>
+      ${this._heading("Collections — open invoices", html`<ui-badge .count=${d.receivables.length}></ui-badge>`)}
       <ui-text variant="body-md" color="muted"
         >Reminders follow each customer's contact rule: “do not chase” accounts get an internal reminder only; for the
         others the AI drafts the email and a person reviews and sends it.</ui-text
@@ -632,11 +627,9 @@ export class GsCash extends LightElement implements ViewProps {
         label: "Stage",
         render: (p) =>
           html`<ui-flex direction="col" gap="1" align="start">
-            <ui-badge
-              size="sm"
-              variant="soft"
-              .color=${p.stage === "Bill on hold" ? "error" : p.stage === "Deposit to pay" || p.stage === "Balance due" ? "warning" : "neutral"}
-              >${p.stage}</ui-badge
+            <ui-tag
+              .tone=${p.stage === "Bill on hold" ? "error" : p.stage === "Deposit to pay" || p.stage === "Balance due" ? "warning" : "neutral"}
+              >${p.stage}</ui-tag
             >
             ${p.bill?.holdReason ? html`<ui-text variant="body-sm" color="error">${p.bill.holdReason}</ui-text>` : nothing}
             ${
@@ -678,7 +671,7 @@ export class GsCash extends LightElement implements ViewProps {
           if (!d.canFinance) return nothing;
           return html`<ui-button
             size="xs"
-            variant="soft"
+            variant="tonal"
             ?disabled=${Boolean(this.busy)}
             @click=${() => (this.dialog = { kind: "request", payable: p })}
             >Request payment approval</ui-button
@@ -686,8 +679,8 @@ export class GsCash extends LightElement implements ViewProps {
         },
       },
     ];
-    return html`<ui-card variant="border" shadow="false">
-      ${this._heading("Supplier payables", html`<ui-badge size="sm" variant="soft">${d.payables.length}</ui-badge>`)}
+    return html`<ui-card>
+      ${this._heading("Supplier payables", html`<ui-badge .count=${d.payables.length}></ui-badge>`)}
       <ui-text variant="body-md" color="muted"
         >Deposits paid against pro formas, balances due on delivery, and bills held when PO, receipt and bill don't
         match.</ui-text
@@ -711,8 +704,8 @@ export class GsCash extends LightElement implements ViewProps {
   }
 
   private _approvals(d: Cash) {
-    return html`<ui-card variant="border" shadow="false">
-      ${this._heading("Payments needing approval", html`<ui-badge size="sm" variant="soft">${d.approvals.length}</ui-badge>`)}
+    return html`<ui-card>
+      ${this._heading("Payments needing approval", html`<ui-badge .count=${d.approvals.length}></ui-badge>`)}
       <ui-text variant="body-md" color="muted"
         >Every supplier payment needs the Financial Director or the CEO. Once approved, finance pays in the bank and
         records it here with the bank reference.</ui-text
@@ -733,12 +726,12 @@ export class GsCash extends LightElement implements ViewProps {
                       ${this._decisions(a.decisions)}
                     </ui-flex>
                     <ui-flex gap="2" align="center" wrap>
-                      <ui-badge size="sm" variant="soft" .color=${statusColor(a.status)}>${a.status}</ui-badge>
+                      <ui-tag .tone=${statusColor(a.status)}>${a.status}</ui-tag>
                       ${
                         a.canDecide
                           ? html`<ui-button
                                 size="xs"
-                                variant="ghost"
+                                variant="text"
                                 @click=${() => (this.dialog = { kind: "decide", approval: a, bank: false, decision: "Reject", reason: "", callBack: false })}
                                 >Reject</ui-button
                               >
@@ -755,7 +748,7 @@ export class GsCash extends LightElement implements ViewProps {
                           ? html`<ui-button
                               size="xs"
                               color="primary"
-                              variant="soft"
+                              variant="tonal"
                               @click=${() => (this.dialog = { kind: "record", approval: a, reference: "TRX-88" + String(Date.now()).slice(-3) })}
                               >Record payment</ui-button
                             >`
@@ -765,7 +758,7 @@ export class GsCash extends LightElement implements ViewProps {
                   </ui-flex>`,
               )}
             </ui-flex>`
-          : html`<ui-text variant="body-md" color="muted">Nothing waiting.</ui-text>`
+          : html`<ui-empty-state size="sm">Nothing waiting.</ui-empty-state>`
       }
     </ui-card>`;
   }
@@ -776,11 +769,11 @@ export class GsCash extends LightElement implements ViewProps {
       const approved = b.decisions.filter((x) => x.decision === "Approve");
       const callBackDone = approved.length > 0 || b.decisions.some((x) => /call-back/i.test(x.reason ?? ""));
       const current = b.applied ? 5 : b.status === "Approved" ? 4 : approved.length === 1 ? 3 : callBackDone ? 2 : 1;
-      return html`<ui-card variant="border" shadow="false">
+      return html`<ui-card>
         ${this._heading(
           "Bank-detail change — two-person check",
-          html`<ui-badge size="sm" variant="soft" .color=${b.applied ? "success" : statusColor(b.status)}
-            >${b.applied ? "Applied" : b.status}</ui-badge
+          html`<ui-tag .tone=${b.applied ? "success" : statusColor(b.status)}
+            >${b.applied ? "Applied" : b.status}</ui-tag
           >`,
         )}
         <ui-text variant="label-lg">${b.title}</ui-text>
@@ -797,29 +790,23 @@ export class GsCash extends LightElement implements ViewProps {
         ></ui-steps>
         ${
           b.request
-            ? html`<ui-grid fit="xs" gap="4">
-                <ui-flex direction="col" gap="0">
-                  <ui-text variant="body-sm" color="muted" uppercase>Current account</ui-text>
-                  <ui-text variant="body-md">${b.request.current}</ui-text>
-                </ui-flex>
-                <ui-flex direction="col" gap="0">
-                  <ui-text variant="body-sm" color="muted" uppercase>Requested</ui-text>
-                  <ui-text variant="body-md">${b.request.requested.bankName} · ${b.request.requested.iban}</ui-text>
-                </ui-flex>
-                <ui-flex direction="col" gap="0">
-                  <ui-text variant="body-sm" color="muted" uppercase>Request came by</ui-text>
-                  <ui-text variant="body-md">${b.request.requestedVia}</ui-text>
-                </ui-flex>
-                <ui-flex direction="col" gap="0">
-                  <ui-text variant="body-sm" color="muted" uppercase>Call back on</ui-text>
-                  <ui-text variant="body-md">${b.request.phoneOnFile}</ui-text>
-                  <ui-text variant="body-sm" color="error">Never: ${b.request.phoneInRequest}</ui-text>
-                </ui-flex>
-              </ui-grid>`
+            ? html`<ui-description-list
+                .items=${[
+                  { label: "Current account", value: b.request.current },
+                  { label: "Requested", value: `${b.request.requested.bankName} · ${b.request.requested.iban}` },
+                  { label: "Request came by", value: b.request.requestedVia },
+                  {
+                    label: "Call back on",
+                    value: b.request.phoneOnFile,
+                    note: `Never: ${b.request.phoneInRequest}`,
+                    noteTone: "error",
+                  },
+                ]}
+              ></ui-description-list>`
             : nothing
         }
         ${this._decisions(b.decisions)}
-        <ui-alert color=${b.applied ? "success" : "warning"} variant="soft"
+        <ui-alert tone=${b.applied ? "success" : "warning"}
           >${
             b.applied
               ? `New details applied to ${b.supplierName} and verified. Payments can use them.`
@@ -830,13 +817,13 @@ export class GsCash extends LightElement implements ViewProps {
           ${
             b.canDecide
               ? html`<ui-button
-                    size="sm"
-                    variant="ghost"
+                    size="xs"
+                    variant="text"
                     @click=${() => (this.dialog = { kind: "decide", approval: b, bank: true, decision: "Reject", reason: "", callBack: false })}
                     >Reject</ui-button
                   >
                   <ui-button
-                    size="sm"
+                    size="xs"
                     color="primary"
                     @click=${() => (this.dialog = { kind: "decide", approval: b, bank: true, decision: "Approve", reason: "", callBack: false })}
                     >Approve after call-back</ui-button
@@ -850,7 +837,7 @@ export class GsCash extends LightElement implements ViewProps {
           ${
             b.status === "Approved" && !b.applied && d.canFinance
               ? html`<ui-button
-                  size="sm"
+                  size="xs"
                   color="primary"
                   ?disabled=${Boolean(this.busy)}
                   @click=${() => this._applyBank(b)}
@@ -877,7 +864,7 @@ export class GsCash extends LightElement implements ViewProps {
   private _dialogBody(_data: Cash) {
     const d = this.dialog;
     if (!d) return nothing;
-    const cancel = html`<ui-button variant="ghost" size="sm" @click=${() => (this.dialog = null)}>Cancel</ui-button>`;
+    const cancel = html`<ui-button variant="text" size="xs" @click=${() => (this.dialog = null)}>Cancel</ui-button>`;
     if (d.kind === "reminder") {
       const draft = d.draft;
       if (!draft)
@@ -888,16 +875,12 @@ export class GsCash extends LightElement implements ViewProps {
       const internal = draft.mode === "internal";
       return html`<ui-flex direction="col" gap="3">
         <ui-flex gap="2" align="center" wrap>
-          <ui-badge size="sm" variant="outline" color="secondary"
-            >AI draft · ${Math.round(draft.confidence * 100)}%</ui-badge
-          >
-          <ui-badge size="sm" variant="soft" .color=${(RULE[draft.rule] ?? RULE.allowed).color}
-            >${(RULE[draft.rule] ?? RULE.allowed).label}</ui-badge
-          >
+          <ui-tag variant="outline">AI draft · ${Math.round(draft.confidence * 100)}%</ui-tag>
+          <ui-tag .tone=${(RULE[draft.rule] ?? RULE.allowed).color}>${(RULE[draft.rule] ?? RULE.allowed).label}</ui-tag>
         </ui-flex>
         ${
           internal
-            ? html`<ui-alert color="warning" variant="soft"
+            ? html`<ui-alert tone="warning"
                 >${d.invoice.customerName} must not be chased: no customer message is drafted — an internal reminder for
                 the account owner instead.</ui-alert
               >`
@@ -932,7 +915,7 @@ export class GsCash extends LightElement implements ViewProps {
         ${draft.note ? html`<ui-text variant="body-sm" color="muted">${draft.note}</ui-text>` : nothing}
         <ui-flex justify="end" gap="2">
           ${cancel}
-          <ui-button color="primary" size="sm" @click=${() => this._sendReminder()}
+          <ui-button color="primary" size="xs" @click=${() => this._sendReminder()}
             >${internal ? "Create internal reminder" : "Send reminder"}</ui-button
           >
         </ui-flex>
@@ -942,16 +925,16 @@ export class GsCash extends LightElement implements ViewProps {
       return html`<ui-flex direction="col" gap="3">
         ${
           d.bank && d.decision === "Approve"
-            ? html`<ui-alert color="warning" variant="soft"
+            ? html`<ui-alert tone="warning"
                   >Call the supplier back on the number on file
                   (${(d.approval as BankChange).request?.phoneOnFile ?? "—"}) — never on a number from the request — and
                   confirm the new account with them.</ui-alert
                 >
-                <ui-toggle
+                <ui-checkbox
                   label="I called back on the number on file and the supplier confirmed the new account"
                   .checked=${d.callBack}
                   @change=${(e: Event) => (this.dialog = { ...d, callBack: (e.target as HTMLInputElement).checked })}
-                ></ui-toggle>`
+                ></ui-checkbox>`
             : nothing
         }
         <ui-textarea
@@ -963,7 +946,7 @@ export class GsCash extends LightElement implements ViewProps {
         <ui-flex justify="end" gap="2">
           ${cancel}
           <ui-button
-            size="sm"
+            size="xs"
             .color=${d.decision === "Approve" ? "primary" : "error"}
             ?disabled=${(d.decision === "Reject" && !d.reason.trim()) || (d.bank && d.decision === "Approve" && !d.callBack)}
             @click=${() => this._decide()}
@@ -985,7 +968,7 @@ export class GsCash extends LightElement implements ViewProps {
         ></ui-text-input>
         <ui-flex justify="end" gap="2">
           ${cancel}
-          <ui-button color="primary" size="sm" ?disabled=${!d.reference.trim()} @click=${() => this._recordPayment()}
+          <ui-button color="primary" size="xs" ?disabled=${!d.reference.trim()} @click=${() => this._recordPayment()}
             >Record payment</ui-button
           >
         </ui-flex>
@@ -1001,7 +984,7 @@ export class GsCash extends LightElement implements ViewProps {
       >
       <ui-flex justify="end" gap="2">
         ${cancel}
-        <ui-button color="primary" size="sm" @click=${() => this._requestApproval()}>Request approval</ui-button>
+        <ui-button color="primary" size="xs" @click=${() => this._requestApproval()}>Request approval</ui-button>
       </ui-flex>
     </ui-flex>`;
   }

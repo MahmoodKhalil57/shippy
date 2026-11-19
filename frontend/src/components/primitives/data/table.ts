@@ -6,7 +6,7 @@ import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
 import { button } from "../actions/button.ts";
 import { iconSvg } from "../media/icon.ts";
-import { badge } from "./badge.ts";
+import { tag } from "./tag.ts";
 
 /**
  * Table: Shows a list of data in a table format.
@@ -118,6 +118,17 @@ export const tableHead = rcva("group/th", {
     dragging: { true: "z-2 cursor-grabbing rounded-field bg-surface! opacity-95 shadow-elevation-2" },
   },
 });
+/** A cell with a supporting line: the value, then a quieter line under it. */
+export const tableCellStack = rcva("flex flex-col gap-0.5");
+export const tableSupporting = rcva("text-body-sm", {
+  variants: {
+    tone: {
+      error: "text-error-ink",
+      warning: "text-warning-ink",
+      success: "text-success-ink",
+    },
+  },
+});
 /** A sized column's header label: one line, ending in "…" when it doesn't fit. */
 export const tableHeadLabel = rcva("", { variants: { sized: { true: "block min-w-0 truncate" } } });
 
@@ -198,11 +209,19 @@ export interface TableTextBadgeCell {
 
 export type TableRowData = Record<string, unknown>;
 
+/** A cell's second line: text, or text in a tone when it means something (an overdue date). */
+export type TableSupporting = Renderable | { text: Renderable; tone?: "error" | "warning" | "success" };
+
 export interface TableColumn<T extends TableRowData = TableRowData> {
   key: string;
   label?: Renderable;
   /** Custom cell content; defaults to `row[key]`. */
   render?: (row: T, index: number) => Renderable;
+  /**
+   * A second, quieter line under the value (M3's two-line list item): the vessel under the
+   * customer, "3 days overdue" under the date. Muted, or in a tone (`{ text, tone }`).
+   */
+  supporting?: (row: T, index: number) => TableSupporting;
   /** Render cells as `<th>` (with `pin-cols` these stick to the side). */
   header?: boolean;
   /**
@@ -740,7 +759,16 @@ export class UiTable extends LightElement {
 
   private _row(row: TableRowData, index: number) {
     const cell = (c: TableColumn): TemplateResult => {
-      const v = c.render ? c.render(row, index) : this._kind(c, row, index);
+      const value = c.render ? c.render(row, index) : this._kind(c, row, index);
+      const s = c.supporting?.(row, index);
+      const sup = s && typeof s === "object" && "text" in s ? s : { text: s as Renderable, tone: undefined };
+      const v =
+        sup.text != null && sup.text !== "" && sup.text !== nothing
+          ? html`<div class=${tableCellStack()}>
+              <div>${value}</div>
+              <div class=${tableSupporting({ tone: sup.tone })}>${sup.text}</div>
+            </div>`
+          : value;
       const cls =
         tableCell({
           align: c.align,
@@ -795,13 +823,13 @@ export class UiTable extends LightElement {
     if (c.kind === "text-badge" && v && typeof v === "object") {
       const t = v as TableTextBadgeCell;
       return html`${t.text}${
-        t.badge != null ? html`<br /><span class=${badge({ variant: "ghost", size: "sm" })}>${t.badge}</span>` : nothing
+        t.badge != null ? html`<br /><span class=${tag({ variant: "outline" })}>${t.badge}</span>` : nothing
       }`;
     }
     if (c.kind === "button") {
       return html`<button
         type="button"
-        class=${button({ variant: "ghost", size: "xs" })}
+        class=${button({ variant: "text", size: "xs" })}
         @click=${(e: Event) => {
           e.stopPropagation();
           this.dispatchEvent(new CustomEvent("ui-cell-action", { detail: { row, index, key: c.key }, bubbles: true }));

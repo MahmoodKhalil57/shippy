@@ -386,7 +386,7 @@ export class DashboardListView extends LightElement {
     if (f.type !== "select" || f.hasMany || !/status|stage/i.test(f.name ?? "")) return undefined;
     const label = this._cellText(f, doc);
     if (!label || label === "—") return undefined;
-    return html`<ui-badge size="sm" variant="soft" .color=${statusColor(label)}>${label}</ui-badge>`;
+    return html`<ui-tag .tone=${statusColor(label)}>${label}</ui-tag>`;
   }
 
   // ---------------------------------------------------------------- view
@@ -433,20 +433,13 @@ export class DashboardListView extends LightElement {
       ${r.docs.map(
         (doc) =>
           html`<ui-card
-            variant="border"
             size="sm"
             href=${dashboardPath("collections", this.slug, String(doc.id))}
             .heading=${titleOf(c, doc)}
           >
-            <ui-grid cols="2" gap="3">
-              ${fields.map(
-                (f) =>
-                  html`<ui-flex direction="col" gap="1" align="start">
-                    <ui-text variant="body-sm" color="muted">${labelOf(f)}</ui-text>
-                    ${this._status(f, doc) ?? html`<ui-text variant="body-md">${this._cellText(f, doc)}</ui-text>`}
-                  </ui-flex>`,
-              )}
-            </ui-grid>
+            <ui-description-list
+              .items=${fields.map((f) => ({ label: labelOf(f), value: this._status(f, doc) ?? this._cellText(f, doc) }))}
+            ></ui-description-list>
           </ui-card>`,
       )}
     </ui-grid>`;
@@ -499,8 +492,8 @@ export class DashboardListView extends LightElement {
       ${
         filtered
           ? html`<ui-button
-              size="sm"
-              variant="ghost"
+              size="xs"
+              variant="text"
               @click=${() => {
                 this.typed = "";
                 this._set({ q: "", filters: [] });
@@ -525,27 +518,27 @@ export class DashboardListView extends LightElement {
           .join();
 
     return html`<ui-flex direction="col" gap="5">
-      <ui-flex justify="between" align="end" gap="4" wrap>
-        <ui-flex direction="col" gap="1">
-          <ui-breadcrumbs .items=${[{ label: "Dashboard", href: dashboardPath() }, { label: plural }]}></ui-breadcrumbs>
-          <ui-heading level="1" variant="page">${plural}</ui-heading>
-          ${
-            typeof c.admin?.description === "string"
-              ? html`<ui-text color="muted">${c.admin.description}</ui-text>`
+      <ui-page-header
+        .heading=${plural}
+        .subtitle=${typeof c.admin?.description === "string" ? c.admin.description : ""}
+      >
+        <ui-breadcrumbs
+          slot="breadcrumbs"
+          .items=${[{ label: "Dashboard", href: dashboardPath() }, { label: plural }]}
+        ></ui-breadcrumbs>
+        <ui-flex slot="actions" gap="2" wrap
+          >${
+            perms?.create.permission
+              ? html`<ui-button color="primary" href=${dashboardPath("collections", this.slug, "create")}
+                  >+ Create new ${singular}</ui-button
+                >`
               : nothing
-          }
-        </ui-flex>
-        ${
-          perms?.create.permission
-            ? html`<ui-button color="primary" href=${dashboardPath("collections", this.slug, "create")}
-                >+ Create new ${singular}</ui-button
-              >`
-            : nothing
-        }
-      </ui-flex>
+          }</ui-flex
+        >
+      </ui-page-header>
 
       <ui-flex direction="col" gap="3">
-        <ui-flex justify="between" align="center" gap="2" wrap>
+        <ui-toolbar .label=${plural}>
           <ui-filter-builder
             .fields=${this._filterFields()}
             .value=${filters}
@@ -553,103 +546,93 @@ export class DashboardListView extends LightElement {
             @ui-change=${(e: CustomEvent<{ value: FilterCondition[]; match: FilterMatch }>) =>
               this._set({ filters: e.detail.value, match: e.detail.match })}
           ></ui-filter-builder>
-          <ui-flex gap="1" align="center" wrap>
-            ${
-              view === "cards"
-                ? html`<ui-select
-                    size="sm"
-                    width="auto"
-                    leading="Sort"
-                    .options=${this._sortOptions()}
-                    .value=${sort}
-                    @change=${(e: Event) => this._set({ sort: (e.target as HTMLSelectElement).value })}
-                  ></ui-select>`
-                : nothing
-            }
-            <ui-join label="View">
-              <ui-button
-                size="sm"
-                variant="ghost"
-                label="Table view"
-                ?active=${view === "table"}
-                @click=${() => this._view("table")}
-                ><ui-icon name="table" size="sm"></ui-icon> Table</ui-button
-              >
-              <ui-button
-                size="sm"
-                variant="ghost"
-                label="Card view"
-                ?active=${view === "cards"}
-                @click=${() => this._view("cards")}
-                ><ui-icon name="grid" size="sm"></ui-icon> Cards</ui-button
-              >
-            </ui-join>
-            <ui-column-picker
-              .columns=${pickerColumns}
-              .hiddenColumns=${this.hiddenKeys}
-              .defaults=${this.hiddenDefaults}
-              ?customized=${arranged}
-              .density=${view === "table" ? this.#prefs.value.listDensity : undefined}
-              @ui-density=${(e: CustomEvent<{ density: "0" | "-1" | "-2" }>) =>
-                preferences.set({ listDensity: e.detail.density })}
-              @ui-change=${(e: CustomEvent<{ hidden: string[]; order: string[]; reset: boolean }>) => {
-                const { hidden, order, reset } = e.detail;
-                const slug = this.slug;
-                preferences.set((p) => ({
-                  listColumns: { ...p.listColumns, [slug]: hidden },
-                  listColumnOrder: { ...p.listColumnOrder, [slug]: order },
-                  listColumnWidths: reset ? { ...p.listColumnWidths, [slug]: {} } : p.listColumnWidths,
-                }));
-                void this._load();
-              }}
-            ></ui-column-picker>
-            <ui-button size="sm" variant="ghost" ?disabled=${!r?.totalDocs} @click=${() => void this._export()}
-              ><ui-icon name="upload" size="sm"></ui-icon> Export CSV</ui-button
-            >
-          </ui-flex>
-        </ui-flex>
-        <ui-text-input
-          icon="search"
-          type="search"
-          width="full"
-          placeholder=${`Search by ${titleLabel.toLowerCase()}`}
+          ${
+            view === "cards"
+              ? html`<ui-select
+                  slot="end"
+                  size="sm"
+                  width="auto"
+                  leading="Sort"
+                  .options=${this._sortOptions()}
+                  .value=${sort}
+                  @change=${(e: Event) => this._set({ sort: (e.target as HTMLSelectElement).value })}
+                ></ui-select>`
+              : nothing
+          }
+          <ui-button-group
+            slot="end"
+            label="View"
+            size="xs"
+            .value=${view}
+            .options=${[
+              { value: "table", label: "Table", icon: "table" },
+              { value: "cards", label: "Cards", icon: "grid" },
+            ]}
+            @ui-change=${(e: CustomEvent<{ value: string }>) => this._view(e.detail.value as "table" | "cards")}
+          ></ui-button-group>
+          <ui-column-picker
+            slot="end"
+            .columns=${pickerColumns}
+            .hiddenColumns=${this.hiddenKeys}
+            .defaults=${this.hiddenDefaults}
+            ?customized=${arranged}
+            .density=${view === "table" ? this.#prefs.value.listDensity : undefined}
+            @ui-density=${(e: CustomEvent<{ density: "0" | "-1" | "-2" }>) =>
+              preferences.set({ listDensity: e.detail.density })}
+            @ui-change=${(e: CustomEvent<{ hidden: string[]; order: string[]; reset: boolean }>) => {
+              const { hidden, order, reset } = e.detail;
+              const slug = this.slug;
+              preferences.set((p) => ({
+                listColumns: { ...p.listColumns, [slug]: hidden },
+                listColumnOrder: { ...p.listColumnOrder, [slug]: order },
+                listColumnWidths: reset ? { ...p.listColumnWidths, [slug]: {} } : p.listColumnWidths,
+              }));
+              void this._load();
+            }}
+          ></ui-column-picker>
+          <ui-button slot="end" size="xs" variant="text" ?disabled=${!r?.totalDocs} @click=${() => void this._export()}
+            ><ui-icon name="upload" size="sm"></ui-icon> Export CSV</ui-button
+          >
+        </ui-toolbar>
+        <ui-search
+          label=${`Search by ${titleLabel.toLowerCase()}`}
           .value=${this.typed}
           @input=${(e: Event) => {
             this.typed = (e.target as HTMLInputElement).value;
             clearTimeout(this.#typing);
             this.#typing = setTimeout(() => this._set({ q: this.typed.trim() }), SEARCH_DELAY);
           }}
-        ></ui-text-input>
+        ></ui-search>
       </ui-flex>
 
       ${
         count
-          ? html`<ui-flex gap="3" align="center" wrap>
+          ? html`<ui-toolbar label="Selection">
               <ui-text variant="title-sm">${count} selected</ui-text>
               ${
                 !this.allMatching && r && this.selected.length === pageRows && r.totalDocs > pageRows
-                  ? html`<ui-button size="sm" variant="ghost" @click=${() => (this.allMatching = true)}
+                  ? html`<ui-button size="xs" variant="text" @click=${() => (this.allMatching = true)}
                       >Select all ${r.totalDocs} ${filtered ? "matching" : plural.toLowerCase()}</ui-button
                     >`
                   : nothing
               }
               ${
                 perms?.delete.permission
-                  ? html`<ui-button size="sm" color="error" variant="soft" @click=${() => (this.confirming = true)}
+                  ? html`<ui-button size="xs" color="error" variant="tonal" @click=${() => (this.confirming = true)}
                       >Delete ${count}</ui-button
                     >`
                   : nothing
               }
               <ui-button
-                size="sm"
-                variant="ghost"
+                size="xs"
+                variant="text"
                 @click=${() => {
                   this.selected = [];
                   this.allMatching = false;
                 }}
                 >Clear selection</ui-button
               >
-            </ui-flex>`
+            </ui-toolbar>`
           : nothing
       }
       ${
@@ -720,13 +703,12 @@ export class DashboardListView extends LightElement {
       <ui-modal
         heading=${`Delete ${count} ${count === 1 ? singular : plural}?`}
         .open=${this.confirming}
+        confirm-label="Delete"
+        confirm-tone="error"
+        @ui-confirm=${() => this._deleteSelected()}
         @ui-close=${() => (this.confirming = false)}
       >
         <ui-text>This can't be undone.</ui-text>
-        <ui-flex slot="actions" gap="2">
-          <ui-button variant="ghost" @click=${() => (this.confirming = false)}>Cancel</ui-button>
-          <ui-button color="error" @click=${() => this._deleteSelected()}>Delete</ui-button>
-        </ui-flex>
       </ui-modal>
     </ui-flex>`;
   }

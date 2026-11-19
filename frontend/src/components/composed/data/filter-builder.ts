@@ -160,7 +160,7 @@ export class UiFilterBuilder extends LightElement {
     const choice = choiceOf(field?.type ?? "text", c);
     const value = this._valueLabel(c);
     return html`<ui-chip
-      variant="outline"
+      variant="filter"
       size="md"
       pressable
       removable
@@ -183,15 +183,12 @@ export class UiFilterBuilder extends LightElement {
       const options = (field.options ?? []).filter((o) => o.label.toLowerCase().includes(this._search.toLowerCase()));
       return html`${
           (field.options?.length ?? 0) > 8
-            ? html`<ui-text-input
-                type="search"
-                icon="search"
+            ? html`<ui-search
                 size="sm"
-                width="full"
-                placeholder=${`Search ${field.label.toLowerCase()}`}
+                label=${`Search ${field.label.toLowerCase()}`}
                 .value=${this._search}
                 @input=${(e: Event) => (this._search = (e.target as HTMLInputElement).value)}
-              ></ui-text-input>`
+              ></ui-search>`
             : nothing
         }
         <ui-box max-height="56"
@@ -260,12 +257,12 @@ export class UiFilterBuilder extends LightElement {
       <ui-flex justify="end" align="center" gap="2">
         ${
           this._editing >= 0
-            ? html`<ui-button size="sm" variant="ghost" color="error" @click=${() => this._remove(this._editing)}
+            ? html`<ui-button size="xs" variant="text" color="error" @click=${() => this._remove(this._editing)}
                 >Remove</ui-button
               >`
             : nothing
         }
-        <ui-button size="sm" color="primary" ?disabled=${!filterComplete(draft)} @click=${() => this._apply()}
+        <ui-button size="xs" color="primary" ?disabled=${!filterComplete(draft)} @click=${() => this._apply()}
           >${this._editing >= 0 ? "Update" : "Add filter"}</ui-button
         >
       </ui-flex>
@@ -294,8 +291,8 @@ export class UiFilterBuilder extends LightElement {
         mode="popover"
         panel="card"
         panel-width="80"
-        trigger-variant="ghost"
-        trigger-size="sm"
+        trigger-variant="text"
+        trigger-size="xs"
         .label=${"Add filter"}
       >
         <span slot="trigger" @click=${() => this._edit(-1)}><ui-icon name="filter" size="sm"></ui-icon> Filter</span>
@@ -303,7 +300,7 @@ export class UiFilterBuilder extends LightElement {
       </ui-dropdown>
       ${
         this.value.length
-          ? html`<ui-button size="sm" variant="ghost" @click=${() => this._emit([])}>Clear filters</ui-button>`
+          ? html`<ui-button size="xs" variant="text" @click=${() => this._emit([])}>Clear filters</ui-button>`
           : nothing
       }
     </ui-flex>`;

@@ -5,7 +5,6 @@ import { api } from "../../../cms/client.ts";
 import type { ExtractionResult, InboxMessage, InboxPayload, MatchResult } from "../../../cms/endpoints/sourcing.ts";
 import type { ExtractedLine } from "../../../cms/endpoints/sourcing-data.ts";
 import { LightElement } from "../../../components/base/light-element.ts";
-import type { MenuItem } from "../../../components/primitives/navigation/menu.ts";
 import type { TableColumn } from "../../../components/primitives/data/table.ts";
 import type { Access } from "../app.ts";
 import type { ViewProps } from "../views.ts";
@@ -248,45 +247,43 @@ export class GsInbox extends LightElement {
   /* ---------------------------------------------------------------- parts */
 
   private _header() {
-    return html`<ui-flex justify="between" align="end" gap="4" wrap>
-      <ui-flex direction="col" gap="1" shrink>
-        <ui-text variant="label-md" color="muted" uppercase>Sourcing desk · intake</ui-text>
-        <ui-heading level="1" variant="page">Inbox</ui-heading>
-        <ui-text color="muted"
-          >Every channel in one inbox. AI reads emails, files and photos into a draft case; people decide.</ui-text
-        >
-      </ui-flex>
-      <ui-flex gap="2" wrap>
-        <ui-button size="sm" color="primary" ?disabled=${this.busy === "simulate"} @click=${() => this._simulate("rfq")}
+    return html`<ui-page-header>
+      <span slot="eyebrow">Sourcing desk · intake</span>
+      <span slot="heading">Inbox</span>
+      <span slot="subtitle"
+        >Every channel in one inbox. AI reads emails, files and photos into a draft case; people decide.</span
+      >
+      <ui-flex slot="actions" gap="2" wrap>
+        <ui-button size="xs" color="primary" ?disabled=${this.busy === "simulate"} @click=${() => this._simulate("rfq")}
           ><ui-icon name="mail" size="sm"></ui-icon>Simulate new email</ui-button
         >
         <ui-button
-          size="sm"
-          variant="soft"
+          size="xs"
+          variant="tonal"
           ?disabled=${this.busy === "simulate"}
           @click=${() => this._simulate("forward")}
           >Simulate forwarded copy</ui-button
         >
         <ui-button
-          size="sm"
-          variant="soft"
+          size="xs"
+          variant="tonal"
           ?disabled=${this.busy === "simulate"}
           @click=${() => this._simulate("reply")}
           >Simulate supplier reply</ui-button
         >
       </ui-flex>
-    </ui-flex>`;
+    </ui-page-header>`;
   }
 
   private _channels(d: InboxPayload) {
     const tone = (s: string): Tone =>
       s === "Connected" ? "success" : s === "Manual" ? "neutral" : /expired|error/i.test(s) ? "error" : "warning";
-    return html`<ui-card variant="border" size="sm" shadow="false" heading="Connected channels">
+    return html`<ui-card size="sm" heading="Connected channels">
       <ui-flex gap="2" wrap>
         ${d.connections.map(
           (c) =>
-            html`<ui-badge variant="soft" .color=${tone(c.status)}
-              >${c.kind.replace(" mailbox", "")} · ${c.account} — ${c.status}</ui-badge
+            html`<ui-tag .tone=${tone(c.status)}
+              >${c.kind.replace(" mailbox", "")} · ${c.account} — ${c.status}</ui-tag
             >`,
         )}
       </ui-flex>
@@ -329,91 +326,63 @@ export class GsInbox extends LightElement {
   }
 
   private _list(d: InboxPayload) {
-    const items: MenuItem[] = this._visible(d).map((m) => {
+    const items = this._visible(d).map((m) => {
       const [tone, label] = STATUS[m.status] ?? ["neutral", m.status];
-      return {
-        value: m.id,
-        active: m.id === this.selected,
-        label: html`<ui-flex direction="col" gap="1" full-width shrink>
-          <ui-flex justify="between" gap="2" full-width>
-            <ui-text variant="title-sm" truncate>${m.fromName || m.from}</ui-text>
-            <ui-text variant="body-sm" color="muted">${when(m.receivedAt)}</ui-text>
-          </ui-flex>
-          <ui-text variant="body-md" truncate>${m.subject}</ui-text>
-          <ui-flex gap="1" wrap>
-            <ui-badge size="xs" variant="soft" .color=${tone}>${label}</ui-badge>
-            <ui-badge size="xs" variant="ghost"
-              ><ui-icon .name=${channelIcon(m)} size="xs"></ui-icon>${channelLabel(m)}</ui-badge
-            >
-            ${m.files.length ? html`<ui-badge size="xs" variant="ghost">${m.files.length} file${m.files.length > 1 ? "s" : ""}</ui-badge>` : nothing}
-            <ui-ai-language .text=${`${m.subject}\n${m.body}`}></ui-ai-language>
-            ${
-              (this.urgency.get(m.id) ?? 0) >= 3
-                ? html`<ui-badge
-                    size="xs"
-                    variant="soft"
-                    .color=${(this.urgency.get(m.id) ?? 0) >= 4 ? "warning" : undefined}
-                    >Urgency ${this.urgency.get(m.id)}/5</ui-badge
-                  >`
-                : nothing
-            }
-          </ui-flex>
-        </ui-flex>`,
-      };
+      const urgency = this.urgency.get(m.id) ?? 0;
+      return html`<ui-list-item
+        action
+        lines="1"
+        ?selected=${m.id === this.selected}
+        .headline=${m.fromName || m.from}
+        .trailingText=${when(m.receivedAt)}
+        .supporting=${m.subject}
+        @click=${() => this._select(m.id)}
+      >
+        <ui-tag .tone=${tone}>${label}</ui-tag>
+        <ui-tag .icon=${channelIcon(m)}>${channelLabel(m)}</ui-tag>
+        ${m.files.length ? html`<ui-tag>${m.files.length} file${m.files.length > 1 ? "s" : ""}</ui-tag>` : nothing}
+        <ui-ai-language .text=${`${m.subject}\n${m.body}`}></ui-ai-language>
+        ${urgency >= 3 ? html`<ui-tag .tone=${urgency >= 4 ? "warning" : undefined}>Urgency ${urgency}/5</ui-tag>` : nothing}
+      </ui-list-item>`;
     });
-    return html`<ui-card variant="border" size="sm" shadow="false">
-      <ui-flex slot="heading" justify="between" align="center" gap="2" full-width wrap>
-        <ui-flex gap="2" align="center"
-          >Messages<ui-badge size="sm" variant="soft">${d.messages.length}</ui-badge></ui-flex
-        >
-        ${
+    return html`<ui-card size="sm" .count=${d.messages.length}>
+      <span slot="heading">Messages</span>
+      <ui-flex slot="trailing" gap="2" align="center" wrap
+        >${
           this.urgency.size
             ? html`<ui-button
                 size="xs"
-                .variant=${this.urgentFirst ? "soft" : "ghost"}
-                .color=${this.urgentFirst ? "primary" : undefined}
+                variant="text"
+                toggle
+                ?selected=${this.urgentFirst}
                 @click=${() => (this.urgentFirst = !this.urgentFirst)}
                 >Most urgent first</ui-button
               >`
             : nothing
-        }
-      </ui-flex>
-      <ui-tabs
-        variant="box"
+        }</ui-flex
+      >
+      <ui-button-group
+        label="Show messages"
         size="xs"
-        .surface=${false}
-        .label=${"Filter messages"}
-        .active=${FILTERS.findIndex((f) => f.key === this.filter)}
-        .items=${FILTERS.map((f) => ({
-          label:
-            f.key === "review" && d.stats.review
-              ? html`${f.label} <ui-badge size="xs" color="warning">${d.stats.review}</ui-badge>`
-              : f.label,
+        .value=${this.filter}
+        .options=${FILTERS.map((f) => ({
+          value: f.key,
+          label: f.key === "review" && d.stats.review ? `${f.label} · ${d.stats.review}` : f.label,
         }))}
-        @ui-change=${(e: CustomEvent<{ index: number }>) => (this.filter = FILTERS[e.detail.index].key)}
-      ></ui-tabs>
+        @ui-change=${(e: CustomEvent<{ value: string }>) => (this.filter = e.detail.value as Filter)}
+      ></ui-button-group>
       ${
         items.length
-          ? html`<ui-menu
-              size="sm"
-              width="full"
-              surface="false"
-              .items=${items}
-              @ui-select=${(e: CustomEvent<{ item: MenuItem }>) => this._select(String(e.detail.item.value))}
-            ></ui-menu>`
-          : html`<ui-text variant="body-md" color="muted">Nothing here.</ui-text>`
+          ? html`<ui-list variant="separated" label="Messages">${items}</ui-list>`
+          : html`<ui-empty-state size="sm">Nothing here.</ui-empty-state>`
       }
     </ui-card>`;
   }
 
   private _reviewQueue(d: InboxPayload) {
     const queue = d.messages.filter((m) => m.status === "Needs review");
-    return html`<ui-card variant="border" size="sm" shadow="false">
-      <ui-flex slot="heading" gap="2" align="center"
-        >Review queue<ui-badge size="sm" variant="soft" .color=${queue.length ? "warning" : "success"}
-          >${queue.length}</ui-badge
-        ></ui-flex
-      >
+    return html`<ui-card size="sm" .count=${queue.length} .countTone=${queue.length ? "warning" : "success"}>
+      <span slot="heading">Review queue</span>
       <ui-text variant="body-sm" color="muted"
         >Matches below 85% confidence are never linked automatically — a person picks the case.</ui-text
       >
@@ -423,9 +392,9 @@ export class GsInbox extends LightElement {
               ${queue.map(
                 (m) =>
                   html`<ui-flex gap="2" align="start">
-                    <ui-status size="sm" color="warning" label="Needs review"></ui-status>
+                    <ui-badge dot tone="warning" label="Needs review"></ui-badge>
                     <ui-flex direction="col" gap="0" grow shrink>
-                      <ui-button size="xs" variant="link" justify="start" @click=${() => this._select(m.id)}
+                      <ui-button size="xs" variant="text" justify="start" @click=${() => this._select(m.id)}
                         >${m.subject}</ui-button
                       >
                       <ui-text variant="body-sm" color="muted" truncate
@@ -435,17 +404,15 @@ export class GsInbox extends LightElement {
                   </ui-flex>`,
               )}
             </ui-flex>`
-          : html`<ui-text variant="body-md" color="muted">Nothing waiting — every reply is matched.</ui-text>`
+          : html`<ui-empty-state size="sm">Nothing waiting — every reply is matched.</ui-empty-state>`
       }
     </ui-card>`;
   }
 
   private _original(m: InboxMessage) {
-    return html`<ui-card variant="border" shadow="false">
-      <ui-flex slot="heading" justify="between" align="center" gap="2" full-width wrap>
-        <span>Original message</span>
-        <ui-badge size="sm" variant="ghost">Kept as received</ui-badge>
-      </ui-flex>
+    return html`<ui-card>
+      <span slot="heading">Original message</span>
+      <ui-flex slot="trailing" gap="2" align="center" wrap><ui-tag>Kept as received</ui-tag></ui-flex>
       <ui-mockup-window variant="bordered">
         <ui-flex direction="col" gap="3" padding="4">
           <ui-flex direction="col" gap="1">
@@ -499,9 +466,9 @@ export class GsInbox extends LightElement {
               ? html`<ui-flex gap="2" wrap>
                   ${m.files.map(
                     (f) =>
-                      html`<ui-badge variant="outline" size="md"
+                      html`<ui-tag variant="outline" size="md"
                         ><ui-icon name="file" size="xs"></ui-icon
-                        >${f.name}${f.note ? html` · <em>${f.note}</em>` : nothing}</ui-badge
+                        >${f.name}${f.note ? html` · <em>${f.note}</em>` : nothing}</ui-tag
                       >`,
                   )}
                 </ui-flex>`
@@ -518,46 +485,45 @@ export class GsInbox extends LightElement {
   }
 
   private _reading(m: InboxMessage) {
-    return html`<ui-card variant="border" shadow="false" heading="AI is reading">
+    return html`<ui-card heading="AI is reading">
       <ui-flex gap="3" align="center">
-        <ui-loading variant="dots" size="md" color="primary" label="Reading"></ui-loading>
+        <ui-loading size="md" color="primary" label="Reading"></ui-loading>
         <ui-text variant="body-md"
           >Reading the email${m.files.length ? ` and ${m.files.length} attachment${m.files.length > 1 ? "s" : ""}` : ""}
           (${m.files.map((f) => f.kind).join(", ") || "text"})…</ui-text
         >
       </ui-flex>
-      <ui-progress indeterminate width="full" color="primary"></ui-progress>
+      <ui-progress indeterminate></ui-progress>
     </ui-card>`;
   }
 
   private _extractPrompt(m: InboxMessage) {
     if (this.busy === "extract") return this._reading(m);
-    return html`<ui-card variant="dash" shadow="false" heading="Read it into a draft case">
+    return html`<ui-card variant="filled" heading="Read it into a draft case">
       <ui-text variant="body-md" color="muted"
         >The AI reads the email${m.files.length ? " and every attachment (Excel, PDF, Word, photos)" : ""} into a draft:
         customer, vessel, IMO, port, ETA, deadline and lines with IMPA / ISSA, part numbers and a confidence for every
         value. Nothing is created until you confirm.</ui-text
       >
-      <ui-button slot="actions" color="primary" size="sm" @click=${() => this._extract(m)}
+      <ui-button slot="actions" color="primary" size="xs" @click=${() => this._extract(m)}
         ><ui-icon name="sparkles" size="sm"></ui-icon>Extract with AI</ui-button
       >
     </ui-card>`;
   }
 
   private _conf(c: number) {
-    return html`<ui-badge size="sm" variant="soft" .color=${confTone(c)}>${pct(c)}</ui-badge>`;
+    return html`<ui-tag .tone=${confTone(c)}>${pct(c)}</ui-tag>`;
   }
 
   private _draftHeader(x: ExtractionResult) {
-    return html`<ui-card variant="border" shadow="false">
-      <ui-flex slot="heading" justify="between" align="center" gap="2" full-width wrap>
-        <span>Draft case</span>
-        <ui-flex gap="1" wrap
-          ><ui-badge size="sm" color="primary" variant="soft"
-            ><ui-icon name="sparkles" size="xs"></ui-icon>AI draft</ui-badge
-          >${x.newCustomer ? html`<ui-badge size="sm" color="accent" variant="soft">New customer</ui-badge>` : nothing}</ui-flex
-        >
-      </ui-flex>
+    return html`<ui-card>
+      <span slot="heading">Draft case</span>
+      <ui-flex slot="trailing" gap="2" align="center" wrap
+        ><ui-flex gap="1" wrap
+          ><ui-tag tone="primary" icon="sparkles">AI draft</ui-tag
+          >${x.newCustomer ? html`<ui-tag tone="primary">New customer</ui-tag>` : nothing}</ui-flex
+        ></ui-flex
+      >
       <ui-text variant="body-sm" color="muted"
         >Low-confidence values are never applied without a person checking them.</ui-text
       >
@@ -612,8 +578,7 @@ export class GsInbox extends LightElement {
       {
         key: "source",
         label: "Source",
-        render: (l) =>
-          html`<ui-badge size="sm" variant="ghost"><ui-icon name="file" size="xs"></ui-icon>${l.source}</ui-badge>`,
+        render: (l) => html`<ui-tag icon="file">${l.source}</ui-tag>`,
       },
       {
         key: "confidence",
@@ -624,24 +589,20 @@ export class GsInbox extends LightElement {
           >`,
       },
     ];
-    return html`<ui-card variant="border" shadow="false">
-      <ui-flex slot="heading" justify="between" align="center" gap="2" full-width wrap>
-        <ui-flex gap="2" align="center"
-          >Draft lines<ui-badge size="sm" variant="soft">${x.lines.length}</ui-badge></ui-flex
-        >
-        <ui-badge size="sm" color="primary" variant="soft"
-          ><ui-icon name="sparkles" size="xs"></ui-icon>AI draft</ui-badge
-        >
-      </ui-flex>
+    return html`<ui-card .count=${x.lines.length}>
+      <span slot="heading">Draft lines</span>
+      <ui-flex slot="trailing" gap="2" align="center" wrap
+        ><ui-tag tone="primary" icon="sparkles">AI draft</ui-tag></ui-flex
+      >
       <ui-table size="sm" .columns=${columns} .rows=${x.lines as unknown as Record<string, unknown>[]}></ui-table>
-      ${x.notes.map((n) => html`<ui-alert color="info" variant="soft">${n}</ui-alert>`)}
+      ${x.notes.map((n) => html`<ui-alert tone="info">${n}</ui-alert>`)}
     </ui-card>`;
   }
 
   private _missing(x: ExtractionResult) {
     if (!x.missing.length) return nothing;
-    return html`<ui-card variant="border" shadow="false" heading="Missing or unclear">
-      <ui-alert color="warning" variant="soft">${x.missing.join(" · ")}</ui-alert>
+    return html`<ui-card heading="Missing or unclear">
+      <ui-alert tone="warning">${x.missing.join(" · ")}</ui-alert>
       ${
         x.clarification
           ? html`<ui-text variant="label-lg">Clarification request — drafted, not sent</ui-text>
@@ -666,7 +627,7 @@ export class GsInbox extends LightElement {
     const owner = this.owner[m.id] ?? x.assignment.owner;
     const backup = this.backup[m.id] ?? x.assignment.backup;
     const locked = Boolean(m.createdCase);
-    return html`<ui-card variant="border" shadow="false" heading="Owner, backup and deadline">
+    return html`<ui-card heading="Owner, backup and deadline">
       <ui-text variant="body-sm" color="muted">Suggested by the assignment rules: ${x.assignment.rule}.</ui-text>
       <ui-grid fit="xs" gap="3">
         <ui-select
@@ -698,13 +659,13 @@ export class GsInbox extends LightElement {
 
   private _ack(m: InboxMessage, x: ExtractionResult) {
     const a = x.acknowledgement;
-    return html`<ui-card variant="border" shadow="false">
-      <ui-flex slot="heading" justify="between" align="center" gap="2" full-width wrap>
-        <span>Acknowledgement draft</span>
-        <ui-badge size="sm" variant="soft" .color=${m.acknowledgedAt ? "success" : a.manual ? "warning" : "neutral"}
-          >${m.acknowledgedAt ? `Sent once · ${full(m.acknowledgedAt)}` : a.manual ? "Send by hand" : "Sent once on create"}</ui-badge
-        >
-      </ui-flex>
+    return html`<ui-card>
+      <span slot="heading">Acknowledgement draft</span>
+      <ui-flex slot="trailing" gap="2" align="center" wrap
+        ><ui-tag .tone=${m.acknowledgedAt ? "success" : a.manual ? "warning" : "neutral"}
+          >${m.acknowledgedAt ? `Sent once · ${full(m.acknowledgedAt)}` : a.manual ? "Send by hand" : "Sent once on create"}</ui-tag
+        ></ui-flex
+      >
       <ui-mockup-window variant="filled">
         <ui-flex direction="col" gap="2" padding="4">
           <ui-text variant="label-md" emphasized color="primary" uppercase>Golden Sea for Trading & Marketing</ui-text>
@@ -721,19 +682,19 @@ export class GsInbox extends LightElement {
 
   private _createBar(m: InboxMessage, x: ExtractionResult) {
     if (m.createdCase)
-      return html`<ui-alert color="success" variant="soft">
+      return html`<ui-alert tone="success">
         Case ${m.createdCase.caseId} created from this message and linked to it.
         <ui-flex slot="actions" gap="2" wrap>
-          <ui-button size="sm" .href=${`/collections/cases/${m.createdCase.id}/rfqs`} color="primary"
+          <ui-button size="xs" .href=${`/collections/cases/${m.createdCase.id}/rfqs`} color="primary"
             >Send supplier RFQs</ui-button
           >
-          <ui-button size="sm" variant="soft" .href=${`/collections/cases/${m.createdCase.id}`}>Open case</ui-button>
+          <ui-button size="xs" variant="tonal" .href=${`/collections/cases/${m.createdCase.id}`}>Open case</ui-button>
         </ui-flex>
       </ui-alert>`;
     const flagged = x.lines.filter((l) => l.flag).length;
     const owner =
       this.users.find((u) => u.value === (this.owner[m.id] ?? x.assignment.owner))?.label ?? x.assignment.ownerName;
-    return html`<ui-card variant="border" shadow="false" heading="Create the case">
+    return html`<ui-card heading="Create the case">
         <ui-text variant="body-md"
           >${x.caseType === "service" ? "Service case" : "RFQ case"} for <strong>${x.customerName}</strong> with
           ${x.lines.length}
@@ -741,9 +702,9 @@ export class GsInbox extends LightElement {
           <strong>${owner}</strong>. The original message stays linked to it.</ui-text
         >
         <ui-flex slot="actions" gap="2" wrap>
-          <ui-button size="sm" variant="ghost" @click=${() => this._review(m, "not-related")}>Not an RFQ</ui-button>
+          <ui-button size="xs" variant="text" @click=${() => this._review(m, "not-related")}>Not an RFQ</ui-button>
           <ui-button
-            size="sm"
+            size="xs"
             color="primary"
             ?disabled=${this.busy === "create"}
             @click=${() => (this.confirming = true)}
@@ -764,7 +725,7 @@ export class GsInbox extends LightElement {
             ${flagged ? " Flagged lines stay “Clarification needed” until the customer answers." : ""}</ui-text
           >
         </ui-flex>
-        <ui-button slot="actions" variant="ghost" @click=${() => (this.confirming = false)}>Cancel</ui-button>
+        <ui-button slot="actions" variant="text" @click=${() => (this.confirming = false)}>Cancel</ui-button>
         <ui-button slot="actions" color="primary" @click=${() => this._create(m)}>Create case</ui-button>
       </ui-modal>`;
   }
@@ -775,11 +736,11 @@ export class GsInbox extends LightElement {
     const result = live ?? dup;
     const st = m.status;
     if (st === "New" && !result)
-      return html`<ui-card variant="dash" shadow="false" heading="Match this message">
+      return html`<ui-card variant="filled" heading="Match this message">
         ${
           this.busy === "match"
             ? html`<ui-flex gap="3" align="center"
-                ><ui-loading variant="dots" color="primary"></ui-loading
+                ><ui-loading color="primary"></ui-loading
                 ><ui-text variant="body-md"
                   >Looking for a reference, the thread, identical files and the sender…</ui-text
                 ></ui-flex
@@ -791,7 +752,7 @@ export class GsInbox extends LightElement {
         }
         <ui-button
           slot="actions"
-          size="sm"
+          size="xs"
           color="primary"
           ?disabled=${this.busy === "match"}
           @click=${() => this._match(m)}
@@ -805,12 +766,11 @@ export class GsInbox extends LightElement {
     const duplicate = m.classification === "Duplicate";
     if (st === "Needs review") {
       const candidates = match?.candidates ?? [];
-      return html`<ui-card variant="border" shadow="false">
-        <ui-flex slot="heading" justify="between" align="center" gap="2" full-width wrap
-          ><span>Needs a person</span>${this._conf(conf)}</ui-flex
-        >
-        <ui-alert color="warning" variant="soft">Uncertain match — not linked automatically.</ui-alert>
-        <ui-list framed="false" .items=${basis.map((b) => ({ heading: b }))}></ui-list>
+      return html`<ui-card>
+        <span slot="heading">Needs a person</span>
+        <ui-flex slot="trailing" gap="2" align="center" wrap>${this._conf(conf)}</ui-flex>
+        <ui-alert tone="warning">Uncertain match — not linked automatically.</ui-alert>
+        <ui-list>${basis.map((b) => html`<ui-list-item .supporting=${b} lines="3"></ui-list-item>`)}</ui-list>
         <ui-flex direction="col" gap="2">
           ${candidates.map(
             (c) =>
@@ -820,9 +780,9 @@ export class GsInbox extends LightElement {
                   <ui-text variant="body-sm" color="muted">${c.reason}</ui-text>
                 </ui-flex>
                 <ui-button
-                  size="sm"
+                  size="xs"
                   color="primary"
-                  variant="soft"
+                  variant="tonal"
                   ?disabled=${this.busy === "review"}
                   @click=${() => this._review(m, "link", c.case)}
                   >Link to ${c.caseId}</ui-button
@@ -831,39 +791,37 @@ export class GsInbox extends LightElement {
           )}
         </ui-flex>
         <ui-flex slot="actions" gap="2">
-          <ui-button size="sm" variant="ghost" @click=${() => this._review(m, "not-related")}>Not related</ui-button>
+          <ui-button size="xs" variant="text" @click=${() => this._review(m, "not-related")}>Not related</ui-button>
         </ui-flex>
       </ui-card>`;
     }
     if (st === "Ignored")
-      return html`<ui-alert color="info" variant="soft"
+      return html`<ui-alert tone="info"
         >Marked not related${match?.reviewedBy ? ` by ${match.reviewedBy}` : ""}.</ui-alert
       >`;
-    return html`<ui-card variant="border" shadow="false">
-      <ui-flex slot="heading" justify="between" align="center" gap="2" full-width wrap>
-        <span>${duplicate ? "Duplicate detected" : "Reply matched"}</span>
-        ${this._conf(conf)}
-      </ui-flex>
+    return html`<ui-card>
+      <span slot="heading">${duplicate ? "Duplicate detected" : "Reply matched"}</span>
+      <ui-flex slot="trailing" gap="2" align="center" wrap>${this._conf(conf)}</ui-flex>
       ${
         duplicate
-          ? html`<ui-alert color="info" variant="soft"
+          ? html`<ui-alert tone="info"
               >No new case —
               ${caseRef?.caseId ? `already linked to ${caseRef.caseId}` : "kept with the original message"}. No second
               acknowledgement.</ui-alert
             >`
-          : html`<ui-alert color="success" variant="soft"
+          : html`<ui-alert tone="success"
               >Matched to
               ${caseRef?.caseId ?? "the case"}${match?.reference ? ` by reference ${match.reference}` : ""}${match?.reviewedBy ? ` · confirmed by ${match.reviewedBy}` : ""}.</ui-alert
             >`
       }
-      <ui-list framed="false" .items=${basis.map((b) => ({ heading: b }))}></ui-list>
+      <ui-list>${basis.map((b) => html`<ui-list-item .supporting=${b} lines="3"></ui-list-item>`)}</ui-list>
       ${
         caseRef
           ? html`<ui-flex slot="actions" gap="2" wrap>
-              <ui-button size="sm" variant="soft" .href=${`/collections/cases/${caseRef.id}/rfqs`}
+              <ui-button size="xs" variant="tonal" .href=${`/collections/cases/${caseRef.id}/rfqs`}
                 >Supplier RFQs</ui-button
               >
-              <ui-button size="sm" color="primary" .href=${`/collections/cases/${caseRef.id}`}
+              <ui-button size="xs" color="primary" .href=${`/collections/cases/${caseRef.id}`}
                 >Open ${caseRef.caseId}</ui-button
               >
             </ui-flex>`
@@ -874,7 +832,7 @@ export class GsInbox extends LightElement {
 
   private _detail(m: InboxMessage | undefined) {
     if (!m)
-      return html`<ui-card variant="border" shadow="false" heading="No message selected"
+      return html`<ui-card heading="No message selected"
         ><ui-text variant="body-md" color="muted">Pick a message on the left.</ui-text></ui-card
       >`;
     const x = this.extracted[m.id];
@@ -888,14 +846,14 @@ export class GsInbox extends LightElement {
             ? html`${this._draftHeader(x)} ${this._draftLines(x)} ${this._missing(x)} ${this._assignment(m, x)}
               ${this._ack(m, x)} ${this._createBar(m, x)}`
             : m.createdCase
-              ? html`<ui-alert color="success" variant="soft"
+              ? html`<ui-alert tone="success"
                   >Case ${m.createdCase.caseId} was created from this message.
-                  <ui-button slot="actions" size="sm" .href=${`/collections/cases/${m.createdCase.id}`}
+                  <ui-button slot="actions" size="xs" .href=${`/collections/cases/${m.createdCase.id}`}
                     >Open case</ui-button
                   ></ui-alert
                 >`
               : m.status === "Ignored"
-                ? html`<ui-alert color="info" variant="soft">Marked “not an RFQ”.</ui-alert>`
+                ? html`<ui-alert tone="info">Marked “not an RFQ”.</ui-alert>`
                 : this._extractPrompt(m)
           : this._matchCard(m)
       }
@@ -903,10 +861,14 @@ export class GsInbox extends LightElement {
   }
 
   render() {
-    if (this.error) return html`<ui-alert color="error" variant="soft">${this.error}</ui-alert>`;
+    if (this.error)
+      return html`<ui-empty-state
+        tone="error"
+        heading="This page couldn't load"
+        .description=${this.error}
+      ></ui-empty-state>`;
     const d = this.data;
-    if (!d)
-      return html`<ui-flex justify="center" padding="8"><ui-loading size="lg" color="primary"></ui-loading></ui-flex>`;
+    if (!d) return html`<ui-empty-state loading></ui-empty-state>`;
     const side = html`<ui-flex direction="col" gap="4">${this._list(d)} ${this._reviewQueue(d)}</ui-flex>`;
     return html`<ui-flex direction="col" gap="6">
       ${this._header()} ${this._channels(d)}

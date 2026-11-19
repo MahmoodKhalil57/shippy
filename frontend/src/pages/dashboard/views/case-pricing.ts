@@ -169,13 +169,7 @@ export class GsCasePricing extends LightElement {
   }
 
   private _tile(label: string, value: string, note: string, color?: "success" | "error" | "warning") {
-    return html`<ui-card variant="border" size="sm" shadow="false">
-      <ui-flex direction="col" gap="1">
-        <ui-text variant="body-md" color="muted" truncate>${label}</ui-text>
-        <ui-text variant="headline-sm" leading="tight" .color=${color}>${value}</ui-text>
-        <ui-text variant="body-sm" color="muted" clamp="2">${note}</ui-text>
-      </ui-flex>
-    </ui-card>`;
+    return html`<ui-stat .label=${label} .value=${value} .note=${note} .tone=${color}></ui-stat>`;
   }
 
   private _approval(P: Pricing) {
@@ -184,41 +178,37 @@ export class GsCasePricing extends LightElement {
     const pending = a && !["Approved", "Rejected"].includes(a.status);
     const status =
       a?.status === "Approved"
-        ? html`<ui-alert color="success" variant="soft">${q?.number} approved — ready to send.</ui-alert>`
+        ? html`<ui-alert tone="success">${q?.number} approved — ready to send.</ui-alert>`
         : a?.status === "Rejected"
-          ? html`<ui-alert color="error" variant="soft"
-              >${q?.number} was returned. Adjust the pricing and request again.</ui-alert
-            >`
+          ? html`<ui-alert tone="error">${q?.number} was returned. Adjust the pricing and request again.</ui-alert>`
           : pending
-            ? html`<ui-alert color="info" variant="soft"
-                >${a.title} · ${a.status}. Karim Balbaa decides in Approvals.</ui-alert
-              >`
+            ? html`<ui-alert tone="info">${a.title} · ${a.status}. Karim Balbaa decides in Approvals.</ui-alert>`
             : nothing;
-    return html`<ui-card variant="border" shadow="false" heading="Approval">
+    return html`<ui-card heading="Approval">
       <ui-text variant="body-md" color="muted"
         >Rule: every customer quotation, discounts above ${P.policy.maxDiscountPct}% and margin exceptions go to Karim
         Balbaa. Exceptions travel with the request.</ui-text
       >
       ${
         P.exceptions.length
-          ? html`<ui-alert color="warning" variant="soft"
+          ? html`<ui-alert tone="warning"
               >${P.exceptions.length} exception${P.exceptions.length === 1 ? "" : "s"} — shown to the approver as
               “${P.approvalType}”.</ui-alert
             >`
-          : html`<ui-alert color="success" variant="soft">No exceptions — standard approval.</ui-alert>`
+          : html`<ui-alert tone="success">No exceptions — standard approval.</ui-alert>`
       }
       ${status}
       <ui-flex slot="actions" gap="2" wrap>
         ${
           q
-            ? html`<ui-button size="sm" variant="soft" .href=${`/collections/quotations/${q.id}/preview`}
+            ? html`<ui-button size="xs" variant="tonal" .href=${`/collections/quotations/${q.id}/preview`}
                 >Preview ${q.number}</ui-button
               >`
             : nothing
         }
-        ${pending ? html`<ui-button size="sm" variant="soft" href="/approvals">Open approvals</ui-button>` : nothing}
+        ${pending ? html`<ui-button size="xs" variant="tonal" href="/approvals">Open approvals</ui-button>` : nothing}
         <ui-button
-          size="sm"
+          size="xs"
           color="primary"
           ?disabled=${Boolean(pending) || !P.rows.length}
           @click=${() => {
@@ -248,7 +238,7 @@ export class GsCasePricing extends LightElement {
           @input=${(e: Event) => (this.note = (e.target as HTMLTextAreaElement).value)}
         ></ui-textarea>
       </ui-flex>
-      <ui-button slot="actions" variant="ghost" @click=${() => (this.asking = false)}>Cancel</ui-button>
+      <ui-button slot="actions" variant="text" @click=${() => (this.asking = false)}>Cancel</ui-button>
       <ui-button slot="actions" color="primary" ?disabled=${this.busy} @click=${() => void this._request()}
         >${this.busy ? "Requesting…" : "Request approval"}</ui-button
       >
@@ -261,7 +251,12 @@ export class GsCasePricing extends LightElement {
         "Soaad Amer (Sales) sees selling prices on the quotation; supplier costs, landed costs and margins are restricted to supply chain, finance and management.",
         this.quoteId ? { label: "View quotation", href: `/collections/quotations/${this.quoteId}/preview` } : undefined,
       );
-    if (this.error) return html`<ui-alert color="error" variant="soft">${this.error}</ui-alert>`;
+    if (this.error)
+      return html`<ui-empty-state
+        tone="error"
+        heading="This page couldn't load"
+        .description=${this.error}
+      ></ui-empty-state>`;
     const P = this.data;
     if (!P) return loadingBlock("Pricing lines…");
     const t = P.totals;
@@ -275,11 +270,11 @@ export class GsCasePricing extends LightElement {
         ${this._tile("Lines priced", `${P.rows.length} / ${P.rows.length + P.unpriced.length}`, P.unpriced.length ? `${P.unpriced.length} to follow as a revision` : "all lines priced")}
       </ui-grid>
 
-      <ui-card variant="border" shadow="false">
-        <ui-flex slot="heading" justify="between" align="center" gap="2" wrap full-width>
-          <span>Line pricing</span>
-          <ui-button size="xs" variant="ghost" href="/globals/pricing-policy">Pricing policy</ui-button>
-        </ui-flex>
+      <ui-card>
+        <span slot="heading">Line pricing</span>
+        <ui-flex slot="trailing" gap="2" align="center" wrap
+          ><ui-button size="xs" variant="text" href="/globals/pricing-policy">Pricing policy</ui-button></ui-flex
+        >
         <ui-text variant="body-md" color="muted"
           >Policy: target ${P.policy.targetPct}%, minimum ${P.policy.minPct}% (per store where set), discounts above
           ${P.policy.maxDiscountPct}% need approval. ${P.fxLabel}.</ui-text
@@ -320,7 +315,7 @@ export class GsCasePricing extends LightElement {
       </ui-card>
 
       <ui-grid fit="md" gap="4">
-        <ui-card variant="border" shadow="false" heading="Margin vs markup">
+        <ui-card heading="Margin vs markup">
           <ui-text variant="body-md" color="muted"
             >Same profit, two ways to read it — Golden Sea's policy is set on margin.</ui-text
           >
@@ -341,7 +336,7 @@ export class GsCasePricing extends LightElement {
           >
         </ui-card>
 
-        <ui-card variant="border" shadow="false" heading="Price build-up per line">
+        <ui-card heading="Price build-up per line">
           <ui-text variant="body-md" color="muted"
             >Supplier cost + shared charges + gross profit = selling price (EGP)</ui-text
           >
@@ -361,7 +356,7 @@ export class GsCasePricing extends LightElement {
       </ui-grid>
 
       <ui-grid fit="md" gap="4">
-        <ui-card variant="border" shadow="false" heading="Shared charges">
+        <ui-card heading="Shared charges">
           <ui-text variant="body-md" color="muted"
             >Allocated ${ALLOCATION.find((a) => a.value === P.allocation)?.label.toLowerCase()}. Estimates are marked;
             actuals replace them at close.</ui-text
@@ -372,11 +367,9 @@ export class GsCasePricing extends LightElement {
                 html`<ui-flex justify="between" align="center" gap="2" wrap>
                   <ui-text variant="body-md">${c.label}</ui-text>
                   <ui-flex gap="2" align="center">
-                    <ui-badge
-                      size="sm"
-                      variant="soft"
-                      .color=${c.status === "Estimate" ? "warning" : c.status === "Confirmed" ? "success" : "neutral"}
-                      >${c.status}</ui-badge
+                    <ui-tag
+                      .tone=${c.status === "Estimate" ? "warning" : c.status === "Confirmed" ? "success" : "neutral"}
+                      >${c.status}</ui-tag
                     >
                     <ui-text variant="title-sm">${egp(c.amountEGP)}</ui-text>
                   </ui-flex>
@@ -394,7 +387,7 @@ export class GsCasePricing extends LightElement {
           >
         </ui-card>
 
-        <ui-card variant="border" shadow="false" heading="Policy checks">
+        <ui-card heading="Policy checks">
           <ui-flex direction="col" gap="1">
             ${
               P.exceptions.length

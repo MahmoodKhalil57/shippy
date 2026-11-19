@@ -29,10 +29,8 @@ export const box = rcva("", {
       "base-100": "bg-surface text-on-surface",
       "base-200": "bg-surface-container text-on-surface",
       "base-300": "bg-surface-container-highest text-on-surface",
-      neutral: "bg-neutral text-neutral-content",
+      /** The brand band of a printed document (the quotation preview); not for app surfaces. */
       primary: "bg-primary text-primary-content",
-      secondary: "bg-secondary text-secondary-content",
-      accent: "bg-accent text-accent-content",
       /** A light primary tint with a primary border: something the AI produced, to check. */
       "primary-soft": "bg-primary-container text-on-surface",
     },

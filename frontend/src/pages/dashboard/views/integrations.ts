@@ -118,9 +118,7 @@ export class GsIntegrations extends LightElement implements ViewProps {
   /* ---------------------------------------------------------------- sections */
 
   private _status(c: Connection) {
-    return html`<ui-badge size="sm" variant="soft" .color=${STATUS[s(c.status)] ?? "neutral"}
-      >${s(c.status)}</ui-badge
-    >`;
+    return html`<ui-tag .tone=${STATUS[s(c.status)] ?? "neutral"}>${s(c.status)}</ui-tag>`;
   }
 
   private _expiry(v: unknown) {
@@ -169,7 +167,7 @@ export class GsIntegrations extends LightElement implements ViewProps {
         render: (c) =>
           this.busy === `conn-${c.index}`
             ? html`<ui-flex gap="2" align="center"
-                ><ui-loading size="xs" color="primary"></ui-loading
+                ><ui-loading size="sm" color="primary"></ui-loading
                 ><ui-text variant="body-sm" color="muted">Importing…</ui-text></ui-flex
               >`
             : c.status === "Token expired" || c.status === "To connect"
@@ -183,10 +181,8 @@ export class GsIntegrations extends LightElement implements ViewProps {
               : html`<ui-text variant="body-sm" color="muted">${s(c.notes)}</ui-text>`,
       },
     ];
-    return html`<ui-card variant="border" shadow="false">
-      <ui-flex slot="heading" gap="2" align="center" wrap>
-        Mailboxes <ui-badge size="sm" variant="soft">${rows.length}</ui-badge>
-      </ui-flex>
+    return html`<ui-card .count=${rows.length}>
+      <span slot="heading">Mailboxes</span>
       <ui-text variant="body-sm" color="muted"
         >Every email to these mailboxes becomes or joins a case, with its attachments kept. A failed sync never drops
         mail: it waits in the exception queue and imports once on reconnect.</ui-text
@@ -200,22 +196,23 @@ export class GsIntegrations extends LightElement implements ViewProps {
     const a = d.ack;
     const t = a[this.previewLang];
     const ar = this.previewLang === "ar";
-    return html`<ui-card variant="border" shadow="false">
-      <ui-flex slot="heading" justify="between" align="center" gap="2" wrap full-width>
-        <span>Branded acknowledgement</span>
-        <ui-flex gap="1">
-          <ui-button size="xs" .variant=${ar ? "ghost" : "soft"} @click=${() => (this.previewLang = "en")}
-            >English</ui-button
-          >
-          <ui-button size="xs" .variant=${ar ? "soft" : "ghost"} @click=${() => (this.previewLang = "ar")}
-            >العربية</ui-button
-          >
-        </ui-flex>
-      </ui-flex>
+    return html`<ui-card>
+      <span slot="heading">Branded acknowledgement</span>
+      <ui-button-group
+        slot="trailing"
+        label="Preview language"
+        size="xs"
+        .value=${this.previewLang}
+        .options=${[
+          { value: "en", label: "English" },
+          { value: "ar", label: "العربية" },
+        ]}
+        @ui-change=${(e: CustomEvent<{ value: string }>) => (this.previewLang = e.detail.value as "en" | "ar")}
+      ></ui-button-group>
       <ui-flex gap="2" wrap>
-        <ui-badge size="sm" variant="soft" color="success">${a.status} v${a.version} · ${a.approvedBy}</ui-badge>
-        <ui-badge size="sm" variant="outline">Sent once per thread</ui-badge>
-        <ui-badge size="sm" variant="outline">Never to internal senders</ui-badge>
+        <ui-tag tone="success">${a.status} v${a.version} · ${a.approvedBy}</ui-tag>
+        <ui-tag variant="outline">Sent once per thread</ui-tag>
+        <ui-tag variant="outline">Never to internal senders</ui-tag>
       </ui-flex>
       <ui-mockup-window>
         <ui-flex direction="col" gap="3" padding="4" dir=${ar ? "rtl" : "ltr"} lang=${ar ? "ar" : "en"}>
@@ -234,16 +231,14 @@ export class GsIntegrations extends LightElement implements ViewProps {
         >Example for GS-RFQ-0142. Wording, recipients and trigger were approved by management; changing them needs a new
         approval.</ui-text
       >
-      <ui-button size="xs" variant="ghost" href="/globals/message-templates">All message templates</ui-button>
+      <ui-button size="xs" variant="text" href="/globals/message-templates">All message templates</ui-button>
     </ui-card>`;
   }
 
   private _channel(c: Connection | undefined, title: string, text: string, extra: unknown = nothing) {
-    return html`<ui-card variant="border" size="sm" shadow="false">
-      <ui-flex slot="heading" justify="between" align="center" gap="2" wrap full-width>
-        <span>${title}</span>
-        ${c ? this._status(c) : nothing}
-      </ui-flex>
+    return html`<ui-card size="sm">
+      <span slot="heading">${title}</span>
+      <ui-flex slot="trailing" gap="2" align="center" wrap>${c ? this._status(c) : nothing}</ui-flex>
       ${c?.account ? html`<ui-text variant="label-lg">${s(c.account)}</ui-text>` : nothing}
       <ui-text variant="body-sm" color="muted">${text}</ui-text>
       ${c?.notes ? html`<ui-text variant="body-sm">${s(c.notes)}</ui-text>` : nothing} ${extra}
@@ -275,7 +270,7 @@ export class GsIntegrations extends LightElement implements ViewProps {
         "Egyptian e-invoicing (ETA)",
         "Invoices are signed and submitted to the tax authority; the UUID and status are stored on the invoice.",
         html`${eta?.tokenExpiresAt ? html`<ui-text variant="body-sm">Signing certificate: ${this._expiry(eta.tokenExpiresAt)}</ui-text>` : nothing}
-          <ui-button size="xs" variant="ghost" href="/automations">Submission failures → exception queue</ui-button>`,
+          <ui-button size="xs" variant="text" href="/automations">Submission failures → exception queue</ui-button>`,
       )}
       ${this._channel(by("AI extraction"), "AI extraction", "Reads PDF, Excel, Word and photos into draft lines. Drafts only.")}
       ${this._channel(by("Document storage"), "Documents", "Every file on its case, searchable.")}
@@ -288,20 +283,16 @@ export class GsIntegrations extends LightElement implements ViewProps {
       .split(",")
       .map((m) => m.trim())
       .filter(Boolean);
-    return html`<ui-card variant="border" shadow="false">
-      <ui-flex slot="heading" justify="between" align="center" gap="2" wrap full-width>
-        <span>Odoo</span>
-        ${o ? this._status(o) : nothing}
-      </ui-flex>
+    return html`<ui-card>
+      <span slot="heading">Odoo</span>
+      <ui-flex slot="trailing" gap="2" align="center" wrap>${o ? this._status(o) : nothing}</ui-flex>
       <ui-heading level="3" variant="title-md">Odoo for the books, SaaSTEMLY for the way you work.</ui-heading>
       <ui-text variant="body-md" color="muted"
         >Standard, supported Odoo holds contacts, sales and purchase orders, stock, invoices and accounting. The
         sourcing desk on top — inbox, comparison, approvals, automations — writes into it, so any Odoo partner can read
         your books.</ui-text
       >
-      <ui-flex gap="2" wrap
-        >${modules.map((m) => html`<ui-badge size="md" variant="soft" color="primary">${m}</ui-badge>`)}</ui-flex
-      >
+      <ui-flex gap="2" wrap>${modules.map((m) => html`<ui-tag size="md" tone="primary">${m}</ui-tag>`)}</ui-flex>
       <ui-text variant="body-sm" color="muted"
         >${s(o?.account)}${o?.lastSyncAt ? ` · last sync ${formatDate(s(o.lastSyncAt))}` : ""}</ui-text
       >
@@ -310,29 +301,30 @@ export class GsIntegrations extends LightElement implements ViewProps {
 
   private _import(d: IntegrationsView) {
     const i = d.emailImport;
-    const stat = (label: string, v: unknown, note: string, color?: "warning" | "error") =>
-      html`<ui-flex direction="col" gap="0">
-        <ui-text variant="body-sm" color="muted">${label}</ui-text>
-        <ui-text variant="headline-sm" .color=${color}>${Number(v ?? 0).toLocaleString("en-US")}</ui-text>
-        <ui-text variant="body-sm" color="muted">${note}</ui-text>
-      </ui-flex>`;
-    return html`<ui-card variant="border" shadow="false">
-      <ui-flex slot="heading" justify="between" align="center" gap="2" wrap full-width>
-        <span>Email history import — ${s(i.days)} days</span>
-        <ui-badge size="sm" variant="soft" color="info">${s(i.status)}</ui-badge>
-      </ui-flex>
-      <ui-grid fit="xs" gap="4">
-        ${stat("Emails scanned", i.scanned, "sales@, purchasing@, Gmail")}
-        ${stat("RFQ threads", i.rfqThreads, "become historical cases")}
-        ${stat("Likely duplicates", i.duplicates, "linked, not re-created")}
-        ${stat("Exceptions", i.exceptions, "unreadable attachments", "warning")}
-        ${stat("Flagged confidential", i.confidential, "excluded unless approved", "error")}
-      </ui-grid>
+    const stat = (label: string, v: unknown, note: string, tone?: "warning" | "error") => ({
+      label,
+      value: Number(v ?? 0).toLocaleString("en-US"),
+      note,
+      tone,
+    });
+    return html`<ui-card>
+      <span slot="heading">Email history import — ${s(i.days)} days</span>
+      <ui-flex slot="trailing" gap="2" align="center" wrap><ui-tag tone="info">${s(i.status)}</ui-tag></ui-flex>
+      <ui-description-list
+        size="lg"
+        .items=${[
+          stat("Emails scanned", i.scanned, "sales@, purchasing@, Gmail"),
+          stat("RFQ threads", i.rfqThreads, "become historical cases"),
+          stat("Likely duplicates", i.duplicates, "linked, not re-created"),
+          stat("Exceptions", i.exceptions, "unreadable attachments", "warning"),
+          stat("Flagged confidential", i.confidential, "excluded unless approved", "error"),
+        ]}
+      ></ui-description-list>
       <ui-text variant="body-sm" color="muted"
         >Dry run first; nothing is imported before approval, and no acknowledgements or reminders are sent for
         historical mail.</ui-text
       >
-      <ui-button size="sm" variant="soft" href="/inbox-history">Open inbox history</ui-button>
+      <ui-button size="xs" variant="tonal" href="/inbox-history">Open inbox history</ui-button>
     </ui-card>`;
   }
 
@@ -344,7 +336,7 @@ export class GsIntegrations extends LightElement implements ViewProps {
         ><ui-text variant="label-lg">${value}</ui-text></ui-flex
       >`;
     const management = this.user?.role === "management";
-    return html`<ui-card variant="border" shadow="false" heading="Backups, staging & export">
+    return html`<ui-card heading="Backups, staging & export">
       ${row("Schedule", s(b.schedule))}
       ${row("Copies", `${s(b.locations)} locations · kept ${s(b.retentionDays)} days`)}
       ${row("Last backup", b.lastBackupAt ? formatDate(s(b.lastBackupAt)) : "—")}
@@ -358,7 +350,7 @@ export class GsIntegrations extends LightElement implements ViewProps {
         ${
           this.busy === "staging"
             ? html`<ui-loading size="sm" color="primary"></ui-loading>`
-            : html`<ui-button size="sm" variant="soft" ?disabled=${!management} @click=${() => this._staging()}
+            : html`<ui-button size="xs" variant="tonal" ?disabled=${!management} @click=${() => this._staging()}
                 >Refresh staging copy</ui-button
               >`
         }
@@ -368,7 +360,7 @@ export class GsIntegrations extends LightElement implements ViewProps {
   }
 
   private _language(d: IntegrationsView) {
-    return html`<ui-card variant="border" shadow="false" heading="Language — English / العربية">
+    return html`<ui-card heading="Language — English / العربية">
       <ui-text variant="body-sm" color="muted"
         >The whole platform runs in English and Arabic: acknowledgements, quotations and invoices go out in the
         customer's language.</ui-text
@@ -385,9 +377,8 @@ export class GsIntegrations extends LightElement implements ViewProps {
         <ui-text variant="label-lg">Customer documents in</ui-text>
         ${LANG.map(
           (l) =>
-            html`<ui-toggle
+            html`<ui-checkbox
               size="sm"
-              color="primary"
               .label=${l.label}
               .checked=${d.language.documents.includes(l.value)}
               ?disabled=${!d.canSettings}
@@ -398,7 +389,7 @@ export class GsIntegrations extends LightElement implements ViewProps {
                   : d.language.documents.filter((x) => x !== l.value);
                 void this._setting({ documentLanguages: docs.length ? docs : ["en"] });
               }}
-            ></ui-toggle>`,
+            ></ui-checkbox>`,
         )}
       </ui-flex>
       ${d.canSettings ? nothing : html`<ui-text variant="body-sm" color="muted">Company settings are changed by management.</ui-text>`}
@@ -413,26 +404,28 @@ export class GsIntegrations extends LightElement implements ViewProps {
   }
 
   render() {
-    if (this.error) return html`<ui-alert color="error" variant="soft">${this.error}</ui-alert>`;
+    if (this.error)
+      return html`<ui-empty-state
+        tone="error"
+        heading="This page couldn't load"
+        .description=${this.error}
+      ></ui-empty-state>`;
     const d = this.data;
-    if (!d)
-      return html`<ui-flex justify="center" padding="8"><ui-loading size="lg" color="primary"></ui-loading></ui-flex>`;
+    if (!d) return html`<ui-empty-state loading></ui-empty-state>`;
     const r = this.reconnecting;
     return html`<ui-flex direction="col" gap="6">
-      <ui-flex justify="between" align="end" gap="4" wrap>
-        <ui-flex direction="col" gap="1" shrink>
-          <ui-text variant="label-md" color="muted" uppercase>Configuration · integrations</ui-text>
-          <ui-heading level="1" variant="page">Integrations & data</ui-heading>
-          <ui-text color="muted"
-            >Your mailboxes, website, WhatsApp, the tax authority and Odoo, connected — with daily backups, a staging
-            copy and your data exportable at any time.</ui-text
-          >
+      <ui-page-header>
+        <span slot="eyebrow">Configuration · integrations</span>
+        <span slot="heading">Integrations & data</span>
+        <span slot="subtitle"
+          >Your mailboxes, website, WhatsApp, the tax authority and Odoo, connected — with daily backups, a staging copy
+          and your data exportable at any time.</span
+        >
+        <ui-flex slot="actions" gap="2" wrap>
+          <ui-button size="xs" variant="tonal" href="/automations">Exception queue</ui-button>
+          <ui-button size="xs" variant="tonal" href="/globals/integrations">Edit connections</ui-button>
         </ui-flex>
-        <ui-flex gap="2" wrap>
-          <ui-button size="sm" variant="soft" href="/automations">Exception queue</ui-button>
-          <ui-button size="sm" variant="soft" href="/globals/integrations">Edit connections</ui-button>
-        </ui-flex>
-      </ui-flex>
+      </ui-page-header>
       ${this._mailboxes(d)}
       <ui-grid fit="md" gap="6" align="start">${this._ack(d)} ${this._odoo(d)}</ui-grid>
       ${this._channels(d)}
@@ -444,7 +437,7 @@ export class GsIntegrations extends LightElement implements ViewProps {
           none is imported, acknowledged or turned into a case twice.</ui-text
         >
         <ui-flex slot="actions" gap="2">
-          <ui-button variant="ghost" @click=${() => (this.reconnecting = null)}>Cancel</ui-button>
+          <ui-button variant="text" @click=${() => (this.reconnecting = null)}>Cancel</ui-button>
           <ui-button color="primary" @click=${() => this._reconnect()}>Sign in & reconnect</ui-button>
         </ui-flex>
       </ui-modal>

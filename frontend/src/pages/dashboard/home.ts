@@ -58,17 +58,18 @@ export class DashboardHome extends LightElement {
   }
 
   private _tile(t: HomeTile) {
-    return html`<ui-card variant="border" size="sm" shadow="false" .href=${t.href}>
-      <ui-flex direction="col" gap="1">
-        <ui-text variant="body-md" color="muted" truncate>${t.label}</ui-text>
-        <ui-text variant="headline-md" leading="tight" .color=${t.tone && t.tone !== "info" ? t.tone : undefined}
-          >${t.value}</ui-text
-        >
-        ${t.note ? html`<ui-text variant="body-sm" color="muted" clamp="2">${t.note}</ui-text>` : nothing}
-      </ui-flex>
+    return html`<ui-stat
+      size="lg"
+      .href=${t.href}
+      .label=${t.label}
+      .value=${t.value}
+      .note=${t.note ?? ""}
+      .tone=${t.tone && t.tone !== "info" ? t.tone : undefined}
+    >
       ${
         t.trend
           ? html`<ui-chart
+              slot="trend"
               kind="spark"
               .label=${`${t.label}, by week`}
               .labels=${t.trend.labels}
@@ -77,11 +78,11 @@ export class DashboardHome extends LightElement {
             ></ui-chart>`
           : nothing
       }
-    </ui-card>`;
+    </ui-stat>`;
   }
 
   private _chart(c: HomeChart) {
-    return html`<ui-card variant="border" shadow="false" .heading=${c.title}>
+    return html`<ui-card .heading=${c.title}>
       <ui-text variant="body-md" color="muted">${c.sub}</ui-text>
       <ui-chart
         .kind=${c.kind}
@@ -97,38 +98,23 @@ export class DashboardHome extends LightElement {
   }
 
   private _item(i: HomeItem) {
-    return html`<ui-flex gap="3" align="start">
-      <ui-status size="sm" .color=${STATUS[i.tone]} .label=${i.tone}></ui-status>
-      <ui-flex direction="col" gap="0" grow shrink>
-        ${
-          i.href
-            ? html`<ui-link variant="hover" .href=${i.href}><ui-text variant="label-lg">${i.title}</ui-text></ui-link>`
-            : html`<ui-text variant="label-lg">${i.title}</ui-text>`
-        }
-        <ui-text variant="body-sm" color="muted" clamp="2">${i.sub}</ui-text>
-      </ui-flex>
-      ${
-        i.badge
-          ? html`<ui-badge size="sm" variant="soft" .color=${i.tone === "error" ? "error" : "neutral"}
-              >${i.badge}</ui-badge
-            >`
-          : nothing
-      }
-    </ui-flex>`;
+    return html`<ui-list-item .headline=${i.title} .supporting=${i.sub} .href=${i.href}>
+      <ui-badge slot="leading" dot .tone=${STATUS[i.tone]} .label=${i.tone}></ui-badge>
+      ${i.badge ? html`<ui-tag slot="trailing" .tone=${i.tone === "error" ? "error" : "neutral"}>${i.badge}</ui-tag>` : nothing}
+    </ui-list-item>`;
   }
 
   private _list(l: Extract<HomeWidget, { kind: "lists" }>["lists"][number]) {
-    return html`<ui-card variant="border" shadow="false">
-      <ui-flex slot="heading" justify="between" align="center" gap="2" full-width>
-        <ui-flex gap="2" align="center"
-          >${l.title}<ui-badge size="sm" variant="soft">${l.items.length}</ui-badge></ui-flex
-        >
-        ${l.href ? html`<ui-button size="xs" variant="ghost" .href=${l.href}>${l.hrefLabel ?? "All"}</ui-button>` : nothing}
-      </ui-flex>
-      ${l.sub ? html`<ui-text variant="body-sm" color="muted">${l.sub}</ui-text>` : nothing}
-      <ui-flex direction="col" gap="3">
-        ${l.items.length ? l.items.map((i) => this._item(i)) : html`<ui-text variant="body-md" color="muted">${l.empty}</ui-text>`}
-      </ui-flex>
+    return html`<ui-card .count=${l.items.length} .subhead=${l.sub ?? ""}>
+      <span slot="heading">${l.title}</span>
+      <ui-flex slot="trailing" gap="2" align="center" wrap
+        >${l.href ? html`<ui-button size="xs" variant="text" .href=${l.href}>${l.hrefLabel ?? "All"}</ui-button>` : nothing}</ui-flex
+      >
+      ${
+        l.items.length
+          ? html`<ui-list>${l.items.map((i) => this._item(i))}</ui-list>`
+          : html`<ui-text variant="body-md" color="muted">${l.empty}</ui-text>`
+      }
     </ui-card>`;
   }
 
@@ -137,34 +123,24 @@ export class DashboardHome extends LightElement {
       {
         key: "caseId",
         label: "Case",
-        render: (c) =>
-          html`<ui-flex direction="col" gap="0">
-            <ui-link .href=${c.href} color="primary"
-              ><ui-text variant="title-sm" truncate>${c.caseId}</ui-text></ui-link
-            >
-            ${c.urgent ? html`<ui-text variant="body-sm" color="error">Urgent</ui-text>` : nothing}
-          </ui-flex>`,
+        render: (c) => html`<ui-link .href=${c.href}>${c.caseId}</ui-link>`,
+        supporting: (c) => (c.urgent ? { text: "Urgent", tone: "error" } : ""),
       },
       {
         key: "customer",
         label: "Customer · vessel",
-        render: (c) =>
-          html`<ui-flex direction="col" gap="0">
-            <ui-text variant="body-md">${c.customer}</ui-text>
-            <ui-text variant="body-sm" color="muted">${c.vessel} · ${c.port}</ui-text>
-          </ui-flex>`,
+        render: (c) => c.customer,
+        supporting: (c) => `${c.vessel} · ${c.port}`,
       },
       {
         key: "stage",
         label: "Stage",
         render: (c) =>
-          html`<ui-flex direction="col" gap="1" align="start">
-            <ui-flex gap="2" align="center">
-              <ui-status size="sm" .color=${c.tone} .label=${c.risk}></ui-status>
-              <ui-text variant="label-lg">${c.stage}</ui-text>
-            </ui-flex>
-            ${c.wait ? html`<ui-text variant="body-sm" color="muted">${c.wait}</ui-text>` : nothing}
+          html`<ui-flex gap="2" align="center">
+            <ui-badge dot .tone=${c.tone} .label=${c.risk}></ui-badge>
+            <ui-text variant="label-lg">${c.stage}</ui-text>
           </ui-flex>`,
+        supporting: (c) => c.wait ?? "",
       },
       {
         key: "lines",
@@ -173,37 +149,33 @@ export class DashboardHome extends LightElement {
           const l = c.lines;
           if (!l) return html`<ui-text variant="body-md" color="muted">—</ui-text>`;
           const total = l.ready + l.waiting + l.blocked + l.noOffer;
-          return html`<ui-flex direction="col" gap="1">
-            <ui-progress
-              color=${l.blocked ? "warning" : "success"}
-              width="xs"
-              .value=${l.ready}
-              .max=${total}
-              .label=${`${l.ready} of ${total} lines ready`}
-            ></ui-progress>
-            <ui-text variant="body-sm" color="muted"
-              >${l.ready}/${total} ready${l.blocked ? ` · ${l.blocked} blocked` : ""}</ui-text
-            >
-          </ui-flex>`;
+          return html`<ui-gauge
+            tone=${l.blocked ? "warning" : "success"}
+            width="xs"
+            .value=${l.ready}
+            .max=${total}
+            .label=${`${l.ready} of ${total} lines ready`}
+          ></ui-gauge>`;
+        },
+        supporting: (c) => {
+          const l = c.lines;
+          if (!l) return "";
+          const total = l.ready + l.waiting + l.blocked + l.noOffer;
+          return `${l.ready}/${total} ready${l.blocked ? ` · ${l.blocked} blocked` : ""}`;
         },
       },
       {
         key: "deadline",
         label: "Deadline",
-        render: (c) =>
-          html`<ui-flex direction="col" gap="0">
-            <ui-text variant="body-md">${c.deadline}</ui-text>
-            <ui-text variant="body-sm" .color=${c.overdue ? "error" : "muted"}>${c.due}</ui-text>
-          </ui-flex>`,
+        render: (c) => c.deadline,
+        supporting: (c) => (c.overdue ? { text: c.due, tone: "error" } : c.due),
       },
       {
         key: "next",
         label: "Next action · blocker",
-        render: (c) =>
-          html`<ui-flex direction="col" gap="0">
-            <ui-text variant="body-md">${c.next}</ui-text>
-            ${c.blocker ? html`<ui-text variant="body-sm" .color=${c.tone === "error" ? "error" : "muted"}>⚑ ${c.blocker}</ui-text>` : nothing}
-          </ui-flex>`,
+        render: (c) => c.next,
+        supporting: (c) =>
+          c.blocker ? { text: `⚑ ${c.blocker}`, tone: c.tone === "error" ? "error" : undefined } : "",
       },
       ...(q.owners
         ? [
@@ -227,13 +199,11 @@ export class DashboardHome extends LightElement {
           ]
         : []),
     ];
-    return html`<ui-card variant="border" shadow="false">
-      <ui-flex slot="heading" justify="between" align="center" gap="2" full-width>
-        <ui-flex gap="2" align="center"
-          >${q.title}<ui-badge size="sm" variant="soft">${q.cases.length}</ui-badge></ui-flex
-        >
-        <ui-button size="xs" variant="ghost" .href=${q.href}>All cases</ui-button>
-      </ui-flex>
+    return html`<ui-card .count=${q.cases.length}>
+      <span slot="heading">${q.title}</span>
+      <ui-flex slot="trailing" gap="2" align="center" wrap
+        ><ui-button size="xs" variant="text" .href=${q.href}>All cases</ui-button></ui-flex
+      >
       <ui-text variant="body-sm" color="muted">${q.sub}</ui-text>
       ${
         q.cases.length
@@ -243,7 +213,7 @@ export class DashboardHome extends LightElement {
               .columns=${columns}
               .rows=${q.cases as unknown as Record<string, unknown>[]}
             ></ui-table>`
-          : html`<ui-text variant="body-md" color="muted">No live cases.</ui-text>`
+          : html`<ui-empty-state size="sm">No live cases.</ui-empty-state>`
       }
     </ui-card>`;
   }
@@ -262,37 +232,33 @@ export class DashboardHome extends LightElement {
   }
 
   render() {
-    if (this.error) return html`<ui-alert color="error" variant="soft">${this.error}</ui-alert>`;
+    if (this.error)
+      return html`<ui-empty-state
+        tone="error"
+        heading="This page couldn't load"
+        .description=${this.error}
+      ></ui-empty-state>`;
     const h = this.home;
-    if (!h)
-      return html`<ui-flex justify="center" padding="8"
-        ><ui-loading variant="morph" size="lg" color="primary"></ui-loading
-      ></ui-flex>`;
+    if (!h) return html`<ui-empty-state loading></ui-empty-state>`;
     return html`<ui-flex direction="col" gap="6">
-      <ui-flex justify="between" align="end" gap="4" wrap>
-        <ui-flex direction="col" gap="1" shrink>
-          <ui-text variant="label-md" color="muted" uppercase>${h.eyebrow}</ui-text>
-          <ui-heading level="1" variant="page">${h.greeting}</ui-heading>
-          <ui-text color="muted">${h.subtitle}</ui-text>
-          <ui-ai-summary
-            label="While you were away"
-            context="Unread notifications for someone back at their desk at a ship chandler: say what needs them first."
-            .text=${this.unread}
-          ></ui-ai-summary>
-        </ui-flex>
-        <ui-flex gap="2" wrap>
+      <ui-page-header>
+        <span slot="eyebrow">${h.eyebrow}</span>
+        <span slot="heading">${h.greeting}</span>
+        <span slot="subtitle">${h.subtitle}</span>
+        <ui-ai-summary
+          label="While you were away"
+          context="Unread notifications for someone back at their desk at a ship chandler: say what needs them first."
+          .text=${this.unread}
+        ></ui-ai-summary>
+        <ui-flex slot="actions" gap="2" wrap>
           ${h.actions.map(
             (a) =>
-              html`<ui-button
-                size="sm"
-                .href=${a.href}
-                .color=${a.primary ? "primary" : undefined}
-                .variant=${a.primary ? undefined : "soft"}
+              html`<ui-button size="xs" .href=${a.href} .variant=${a.primary ? "filled" : "tonal"}
                 >${a.label}</ui-button
               >`,
           )}
         </ui-flex>
-      </ui-flex>
+      </ui-page-header>
       ${h.widgets.map((w) => this._widget(w))}
     </ui-flex>`;
   }

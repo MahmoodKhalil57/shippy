@@ -1,61 +1,40 @@
 import type { VariantProps } from "class-variance-authority";
 import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
-import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
+import { rcva } from "../../base/variants.ts";
+import { badge, type BadgeVariants } from "../data/badge.ts";
 import { iconSvg } from "../media/icon.ts";
 
 /**
- * Card: Groups and displays content in a readable way.
+ * Card: one subject's content and actions, set apart from the page (M3 cards).
  *
  * Purpose: Content containers & disclosure · Kind: primitive
- * Docs: https://daisyui.com/components/card/
  *
- * Every variant is responsive, e.g. the docs' responsive card:
- * `side="lg"` (vertical on small screens, image beside the body from `lg`).
- */
-/**
- * daisyUI grows every `<p>` in a card (`.card p { flex-grow: 1 }`, to push actions down), which
- * spreads text out whenever a card is stretched by its grid row; ours stay their natural height.
+ * Three variants, chosen by how much the card should stand apart, nothing else (M3):
+ *   outlined   a hairline (outline-variant) on the surface; the default and the right choice for
+ *              most dashboard content
+ *   filled     the strongest container tone, no line: a prompt, a highlighted option, a "next step"
+ *   elevated   a lifted surface (+1): a card that sits over busy content
+ * The header is built in: `heading`, an optional `count` (a badge after it), `subhead` (a line of
+ * supporting text) and a `trailing` slot at the end of the header row for a tag, a link or one
+ * or two small actions. Don't put cards inside cards (M3: use spacing, headlines or dividers).
+ * With `href` the whole card is a link: it lifts a level on hover, its edge picks up the primary
+ * colour and an arrow slides in.
+ *
+ * daisyUI grows every `<p>` in a card (`.card p { flex-grow: 1 }`); ours stay their natural height.
  */
 export const card = rcva("card [&_p]:grow-0", {
   variants: {
     variant: {
-      /** Outlined: a quiet hairline (M3's outlined card). */
-      border: "card-border border-outline-variant",
-      dash: "card-dash",
+      outlined: "card-border border-outline-variant bg-surface",
+      filled: "border border-transparent bg-surface-container-highest",
+      elevated: "border border-transparent bg-surface-container-low shadow-elevation-1",
     },
     size: {
-      xs: "card-xs",
       sm: "card-sm",
       md: "card-md",
-      lg: "card-lg",
-      xl: "card-xl",
     },
-    /** Image beside the body instead of above it. */
-    side: { true: "card-side" },
-    /** Image as a full background behind the body. */
-    imageFull: { true: "image-full" },
-    /** Background + text colour ("custom color" / "neutral" examples). */
-    color: {
-      base: "bg-surface",
-      neutral: "bg-neutral text-neutral-content",
-      primary: "bg-primary text-primary-content",
-      secondary: "bg-secondary text-secondary-content",
-      accent: "bg-accent text-accent-content",
-      none: "",
-    },
-    /** M3's elevated card: +1 at rest (filled and outlined cards — `shadow="false"` — sit at 0). */
-    shadow: { true: "shadow-elevation-1" },
-    /** Fixed width used throughout the docs (`w-96`), or full width. */
-    width: {
-      "96": "w-96",
-      full: "w-full",
-    },
-    /** Item of a Join ("selectable cards" example). */
-    joinItem: { true: "join-item" },
-    /** The whole card is a link (`href`): it lifts on hover with a spring, and shows focus. */
     /**
      * The whole card is a link (`href`): on hover it lifts a level on a spring, its edge picks up
      * the primary colour, and an arrow slides in at its top corner (`cardLinkIcon`); it shows
@@ -65,135 +44,86 @@ export const card = rcva("card [&_p]:grow-0", {
       true: "group/card relative [transition:translate_var(--duration-spatial-fast)_var(--ease-spatial-fast),box-shadow_var(--duration-effects-fast)_var(--ease-effects-fast),border-color_var(--duration-effects-fast)_var(--ease-effects-fast),outline-color_var(--duration-effects-fast)_var(--ease-effects-fast)] hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-elevation-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary motion-reduce:transition-none",
     },
   },
-  defaultVariants: { color: "base", shadow: true },
+  defaultVariants: { variant: "outlined" },
 });
 
-export const cardBody = rcva("card-body", {
-  variants: {
-    centered: { true: "items-center text-center" },
-    /** Dimmed body, e.g. a disabled selectable card. */
-    muted: { true: "opacity-60" },
-  },
-});
+export const cardBody = rcva("card-body");
+/** The header row: the heading (and count) at the start, the trailing items at the end. */
+export const cardHeader = rcva("flex flex-wrap items-center justify-between gap-x-3 gap-y-1");
+export const cardHeadingGroup = rcva("flex min-w-0 items-center gap-2");
 /** The title: tight, and clear of the link arrow on link cards. */
 export const cardTitle = rcva("card-title leading-snug tracking-tight", {
   variants: { link: { true: "pe-6" } },
 });
+export const cardTrailing = rcva("flex flex-wrap items-center gap-2");
+export const cardSubhead = rcva("text-body-md text-on-surface-variant");
 /** A link card's arrow: hidden until the card is hovered or focused, then slides in. */
 export const cardLinkIcon = rcva(
   "pointer-events-none absolute top-4 end-4 text-primary opacity-0 -translate-x-1 [transition:opacity_var(--duration-effects-fast)_var(--ease-effects-fast),translate_var(--duration-spatial-fast)_var(--ease-spatial-fast)] group-hover/card:translate-x-0 group-hover/card:opacity-100 group-focus-visible/card:translate-x-0 group-focus-visible/card:opacity-100 motion-reduce:translate-x-0",
 );
-export const cardActions = rcva("card-actions", {
-  variants: {
-    align: {
-      start: "justify-start",
-      center: "justify-center",
-      end: "justify-end",
-    },
-  },
-  defaultVariants: { align: "end" },
-});
-/** Figure wrapper; `padded` matches the "centered content and paddings" example. */
-export const cardFigure = rcva("", {
-  variants: {
-    padded: { true: "px-10 pt-10 [&>img]:rounded-md" },
-  },
-});
+export const cardActions = rcva("card-actions justify-end");
 
 export type CardVariants = VariantProps<typeof card>;
 
 /**
+ * @example <ui-card heading="Messages" .count=${messages.length}>…</ui-card>
  * @example
- * <ui-card heading="Card Title" image-src="/shoes.webp" image-alt="Shoes" width="96">
- *   <p>A card component has a figure, a body part, and inside body there are title and actions parts</p>
- *   <ui-button slot="actions" color="primary">Buy Now</ui-button>
+ * <ui-card heading="Line pricing" subhead="Policy: target 18%, minimum 12%">
+ *   <ui-button slot="trailing" size="xs" variant="ghost" href="/globals/pricing-policy">Pricing policy</ui-button>
+ *   …
  * </ui-card>
- * @example <ui-card side="lg" image-src="/movie.webp" heading="New movie is released!">…</ui-card>
- * @example <ui-card selectable="checkbox" name="urgent" color="accent" shadow="false" heading="Urgent">Same day delivery</ui-card>
+ * @example <ui-card variant="filled" heading="Read it into a draft case">…<ui-button slot="actions">Read</ui-button></ui-card>
+ * @example <ui-card href="/collections/cases" heading="Awaiting supplier">…</ui-card>
  *
- * Slots: `figure` (replaces the image), `heading` (rich title, e.g. with a badge),
- * `actions` (rendered in `card-actions`). Default children go in `card-body`.
- *
- * `selectable="checkbox" | "radio"` renders the card as a `<label>` around a
- * native input (`name`, `value`, `checked`, `disabled` are forwarded; native
- * `change` bubbles out). Radio cards sharing a `name` form one choice; for the
- * docs' joined group put them in a Join with `join-item`.
+ * Slots: `heading` (a rich title), `trailing` (end of the header row), `figure` (an image above
+ * the body), `actions` (a row at the bottom). Default children go in the body.
  */
 @customElement("ui-card")
 export class UiCard extends LightElement {
   @property() variant: CardVariants["variant"];
   @property() size: CardVariants["size"];
-  @property() color: CardVariants["color"];
-  @property() width: CardVariants["width"];
-  @property({ converter: responsiveBoolean }) side: Responsive<boolean> = false;
-  @property({ converter: responsiveBoolean, attribute: "image-full" }) imageFull: Responsive<boolean> = false;
-  @property({ converter: responsiveBoolean }) shadow: Responsive<boolean> = true;
-  @property({ converter: responsiveBoolean, attribute: "join-item" }) joinItem: Responsive<boolean> = false;
   @property() heading: Renderable = "";
+  /** A count after the heading (a badge). */
+  @property({ type: Number }) count?: number;
+  /** The count's tone, when it needs attention (`warning`, `error`). */
+  @property({ attribute: "count-tone" }) countTone: BadgeVariants["tone"];
+  /** Supporting text under the heading. */
+  @property() subhead: Renderable = "";
   /** Make the whole card a link. */
   @property() href?: string;
   @property({ attribute: "image-src" }) imageSrc?: string;
   @property({ attribute: "image-alt" }) imageAlt = "";
-  /** Put the image below the body. */
-  @property({ attribute: "image-position" }) imagePosition: "top" | "bottom" = "top";
-  @property({ converter: responsiveBoolean, attribute: "image-padded" }) imagePadded: Responsive<boolean> = false;
-  @property({ converter: responsiveBoolean }) centered: Responsive<boolean> = false;
-  @property({ attribute: "actions-align" }) actionsAlign: VariantProps<typeof cardActions>["align"] = "end";
-  /** Put the actions above the body content ("action on top" example). */
-  @property({ attribute: "actions-position" }) actionsPosition: "top" | "bottom" = "bottom";
-
-  /** Render as a selectable `<label>` with a native checkbox / radio. */
-  @property() selectable?: "checkbox" | "radio";
-  @property() name?: string;
-  @property() value?: string;
-  @property({ type: Boolean }) checked = false;
-  @property({ type: Boolean }) disabled = false;
 
   private _figure() {
-    const cls = cardFigure({ padded: this.imagePadded });
-    if (this.hasSlotted("figure")) return html`<figure class=${cls}>${this.slotted("figure")}</figure>`;
+    if (this.hasSlotted("figure")) return html`<figure>${this.slotted("figure")}</figure>`;
     if (!this.imageSrc) return nothing;
-    return html`<figure class=${cls}><img src=${this.imageSrc} alt=${this.imageAlt} /></figure>`;
+    return html`<figure><img src=${this.imageSrc} alt=${this.imageAlt} /></figure>`;
+  }
+
+  private _header() {
+    const title = this.hasSlotted("heading") ? this.slotted("heading") : this.heading;
+    const trailing = this.hasSlotted("trailing");
+    const count = this.count !== undefined;
+    if (!title && !trailing && !count) return nothing;
+    return html`<div class=${cardHeader()}>
+      <div class=${cardHeadingGroup()}>
+        ${title ? html`<h2 class=${cardTitle({ link: !!this.href })}>${title}</h2>` : nothing}
+        ${count ? html`<span class=${badge({ kind: "count", tone: this.countTone })}>${this.count}</span>` : nothing}
+      </div>
+      ${trailing ? html`<div class=${cardTrailing()}>${this.slotted("trailing")}</div>` : nothing}
+    </div>`;
   }
 
   render() {
-    const title = this.hasSlotted("heading") ? this.slotted("heading") : this.heading;
     const actions = this.hasSlotted("actions")
-      ? html`<div class=${cardActions({ align: this.actionsAlign })}>${this.slotted("actions")}</div>`
+      ? html`<div class=${cardActions()}>${this.slotted("actions")}</div>`
       : nothing;
-    const figure = this._figure();
-    const cls = card({
-      variant: this.variant,
-      size: this.size,
-      side: this.side,
-      imageFull: this.imageFull,
-      color: this.color,
-      shadow: this.shadow,
-      width: this.width,
-      joinItem: this.joinItem,
-      link: !!this.href,
-    });
-    const inner = html`${this.imagePosition === "top" ? figure : nothing}
-      <div class=${cardBody({ centered: this.centered, muted: this.disabled && !!this.selectable })}>
-        ${this.actionsPosition === "top" ? actions : nothing}
-        ${title ? html`<h2 class=${cardTitle({ link: !!this.href })}>${title}</h2>` : nothing} ${this.slotted()}
-        ${this.actionsPosition === "bottom" ? actions : nothing}
-      </div>
-      ${this.imagePosition === "bottom" ? figure : nothing}`;
-
-    if (this.selectable) {
-      return html`<label class=${cls}>
-        <input
-          type=${this.selectable}
-          name=${ifDefined(this.name)}
-          value=${ifDefined(this.value)}
-          .checked=${this.checked}
-          ?disabled=${this.disabled}
-          @change=${(e: Event) => (this.checked = (e.target as HTMLInputElement).checked)}
-        />
-        ${inner}
-      </label>`;
-    }
+    const cls = card({ variant: this.variant, size: this.size, link: !!this.href });
+    const inner = html`${this._figure()}
+      <div class=${cardBody()}>
+        ${this._header()} ${this.subhead ? html`<p class=${cardSubhead()}>${this.subhead}</p>` : nothing}
+        ${this.slotted()} ${actions}
+      </div>`;
     if (this.href)
       return html`<a href=${this.href} class=${cls}
         >${inner}<span class=${cardLinkIcon()} aria-hidden="true">${iconSvg("arrow-right", { size: "sm" })}</span></a

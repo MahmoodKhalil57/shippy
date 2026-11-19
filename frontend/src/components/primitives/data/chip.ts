@@ -10,8 +10,11 @@ import { iconSvg } from "../media/icon.ts";
  *
  * Purpose: Data & metrics · Kind: primitive (Shippy; M3 input / filter chip on daisyUI's badge)
  *
- * - `variant="soft"` (default): a tinted pill, for values inside a field (`<ui-combobox multiple>`).
- * - `variant="outline"`: a bordered chip on the page, e.g. an active filter.
+ * The variant is the M3 chip type:
+ * - `variant="input"` (default): a tinted pill for a value someone entered or picked, inside a
+ *   field (`<ui-combobox multiple>`).
+ * - `variant="filter"`: a bordered chip on the page for an active filter.
+ * A status or category word isn't a chip: that's a `<ui-tag>`. An action is a button.
  * `pressable` makes its content a button (`ui-press` when pressed, e.g. to edit a filter);
  * `removable` adds a ✕ (`ui-remove`). Both events bubble; the ✕ never fires `ui-press`.
  * The recipes are exported for primitives that draw chips inside their own markup.
@@ -19,8 +22,8 @@ import { iconSvg } from "../media/icon.ts";
 export const chip = rcva("inline-flex max-w-full items-center", {
   variants: {
     variant: {
-      soft: "badge badge-soft h-auto gap-1 py-0.5 whitespace-normal [overflow-wrap:anywhere]",
-      outline:
+      input: "badge badge-soft h-auto gap-1 py-0.5 whitespace-normal [overflow-wrap:anywhere]",
+      filter:
         "rounded-field border border-outline-variant bg-surface/70 [transition:border-color_var(--duration-effects-fast)_var(--ease-effects-fast)] hover:border-outline",
     },
     size: { sm: "text-body-sm", md: "text-body-md" },
@@ -28,10 +31,10 @@ export const chip = rcva("inline-flex max-w-full items-center", {
     removable: { true: "" },
   },
   compoundVariants: [
-    { variant: "soft", size: "sm", class: "badge-sm" },
-    { variant: "soft", removable: true, class: "pe-0.5" },
+    { variant: "input", size: "sm", class: "badge-sm" },
+    { variant: "input", removable: true, class: "pe-0.5" },
   ],
-  defaultVariants: { variant: "soft", size: "sm" },
+  defaultVariants: { variant: "input", size: "sm" },
 });
 /** The chip's content when it's pressable. */
 export const chipBody = rcva(
@@ -39,23 +42,23 @@ export const chipBody = rcva(
   {
     variants: {
       variant: {
-        soft: "rounded-full",
-        outline: "touch-target rounded-s-field py-1 ps-2.5 pe-1 state-layer",
+        input: "rounded-full",
+        filter: "touch-target rounded-s-field py-1 ps-2.5 pe-1 state-layer",
       },
     },
   },
 );
 /** The content when it isn't a button. */
 export const chipLabel = rcva("min-w-0", {
-  variants: { variant: { soft: "", outline: "truncate py-1 ps-2.5 pe-1" } },
+  variants: { variant: { input: "", filter: "truncate py-1 ps-2.5 pe-1" } },
 });
 export const chipRemove = rcva(
   "touch-target grid shrink-0 place-items-center text-on-surface-variant hover:text-on-surface focus-visible:outline-2 focus-visible:outline-primary",
   {
     variants: {
       variant: {
-        soft: "touch-target size-4 rounded-full state-layer",
-        outline: "touch-target size-7 rounded-e-field state-layer",
+        input: "touch-target size-4 rounded-full state-layer",
+        filter: "touch-target size-7 rounded-e-field state-layer",
       },
     },
   },
@@ -66,12 +69,12 @@ export type ChipVariants = VariantProps<typeof chip>;
 /**
  * @example <ui-chip removable @ui-remove=${() => drop(tag)}>urgent</ui-chip>
  * @example
- * <ui-chip variant="outline" size="md" pressable removable remove-label="Remove filter: Stage"
+ * <ui-chip variant="filter" size="md" pressable removable remove-label="Remove filter: Stage"
  *   @ui-press=${edit} @ui-remove=${remove}>Stage is any of Won</ui-chip>
  */
 @customElement("ui-chip")
 export class UiChip extends LightElement {
-  @property() variant: NonNullable<ChipVariants["variant"]> = "soft";
+  @property() variant: NonNullable<ChipVariants["variant"]> = "input";
   @property() size: ChipVariants["size"];
   @property({ type: Boolean }) pressable = false;
   @property({ type: Boolean }) removable = false;

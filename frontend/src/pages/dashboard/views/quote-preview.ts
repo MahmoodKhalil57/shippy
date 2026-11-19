@@ -259,8 +259,8 @@ export class GsQuotePreview extends LightElement {
       dir=${this.language === "ar" ? "rtl" : "ltr"}
     >
       <ui-flex direction="col" gap="5">
-        ${draft ? html`<ui-alert color="warning" variant="soft">${t.draft(Number(q.version) || 1)}</ui-alert>` : nothing}
-        ${q.status === "Superseded" ? html`<ui-alert color="info" variant="soft">Superseded — kept for audit. Not valid for ordering.</ui-alert>` : nothing}
+        ${draft ? html`<ui-alert tone="warning">${t.draft(Number(q.version) || 1)}</ui-alert>` : nothing}
+        ${q.status === "Superseded" ? html`<ui-alert tone="info">Superseded — kept for audit. Not valid for ordering.</ui-alert>` : nothing}
         <ui-flex justify="between" align="start" gap="4" wrap>
           <ui-flex direction="col" gap="0">
             <ui-heading level="2" variant="headline-sm" color="primary" tracking="wide">GOLDEN SEA</ui-heading>
@@ -317,16 +317,15 @@ export class GsQuotePreview extends LightElement {
         <ui-flex direction="col" gap="2">
           <ui-text emphasized italic>${t.remarks}</ui-text>
           <ui-list
-            .items=${[
+            >${[
               t.delivery(v.case.port, day(v.case.eta)),
               t.vat,
               t.qtyRule,
               t.valid(day(String(q.validUntil ?? ""))),
               t.pay(String(q.paymentTerms ?? "—")),
               ...(q.remarks ? String(q.remarks).split("\n") : []),
-            ].map((x) => ({ heading: x }))}
-            .framed=${false}
-          ></ui-list>
+            ].map((x) => html`<ui-list-item .supporting=${x} lines="3"></ui-list-item>`)}</ui-list
+          >
           <ui-text variant="body-md" italic>${t.wish}</ui-text>
         </ui-flex>
         <ui-flex justify="between" align="end" gap="4" wrap>
@@ -337,7 +336,7 @@ export class GsQuotePreview extends LightElement {
             >${v.approvedBy ? `${v.approvedBy} — authorised signature` : "Signature on approval"}</ui-text
           >
         </ui-flex>
-        <ui-box surface="accent" padding="3" rounded="field">
+        <ui-box surface="primary-soft" padding="3" rounded="field">
           <ui-flex direction="col" gap="0">
             <ui-text variant="body-sm" dir="ltr">+20 10 0000 0000 · Sales@goldensea.com.eg</ui-text>
             <ui-text variant="body-sm" dir="ltr">6th of October City, Giza Governorate · demo document</ui-text>
@@ -361,11 +360,11 @@ export class GsQuotePreview extends LightElement {
           | undefined,
       },
     ];
-    return html`<ui-card variant="border" shadow="false" heading="Decision state">
-      <ui-steps scrollable color="primary" .current=${v.step} .items=${items}></ui-steps>
+    return html`<ui-card heading="Decision state">
+      <ui-steps scrollable .current=${v.step} .items=${items}></ui-steps>
       <ui-flex gap="2" align="center" wrap>
-        <ui-badge size="sm" variant="soft" color="primary">${q.number}</ui-badge>
-        <ui-badge size="sm" variant="soft">${q.status}</ui-badge>
+        <ui-tag tone="primary">${q.number}</ui-tag>
+        <ui-tag>${q.status}</ui-tag>
         ${q.decision ? html`<ui-text variant="body-md" color="muted">${q.decision}</ui-text>` : nothing}
         ${
           (q.submission as { submittedAt?: string; method?: string } | undefined)?.submittedAt
@@ -379,7 +378,7 @@ export class GsQuotePreview extends LightElement {
       ${v.approvals.map(
         (a) =>
           html`<ui-flex gap="2" align="baseline" wrap>
-            <ui-status size="xs" .color=${a.tone} .label=${a.status}></ui-status>
+            <ui-badge dot .tone=${a.tone} .label=${a.status}></ui-badge>
             <ui-text variant="body-md"><strong>${a.type}:</strong> ${a.progress}</ui-text>
           </ui-flex>`,
       )}
@@ -392,7 +391,7 @@ export class GsQuotePreview extends LightElement {
         ${
           v.can.requestApproval
             ? html`<ui-button
-                size="sm"
+                size="xs"
                 color="primary"
                 ?disabled=${this.busy}
                 @click=${() => void this._act("request-approval", {}, "Approval requested from Karim Balbaa.")}
@@ -402,16 +401,16 @@ export class GsQuotePreview extends LightElement {
         }
         ${
           v.can.approve
-            ? html`<ui-button size="sm" variant="soft" color="error" @click=${() => this._open("return")}
+            ? html`<ui-button size="xs" variant="tonal" color="error" @click=${() => this._open("return")}
                   >Return</ui-button
                 >
-                <ui-button size="sm" color="success" @click=${() => this._open("approve")}>Approve</ui-button>`
+                <ui-button size="xs" color="primary" @click=${() => this._open("approve")}>Approve</ui-button>`
             : nothing
         }
-        ${v.can.send ? html`<ui-button size="sm" color="primary" @click=${() => this._open("send")}>Send to customer</ui-button>` : nothing}
-        ${v.can.decide ? html`<ui-button size="sm" variant="soft" @click=${() => this._open("decision")}>Record customer decision</ui-button>` : nothing}
-        ${v.can.revise ? html`<ui-button size="sm" variant="soft" @click=${() => this._open("revise")}>Create revision</ui-button>` : nothing}
-        <ui-button size="sm" variant="ghost" @click=${() => window.print()}>Print</ui-button>
+        ${v.can.send ? html`<ui-button size="xs" color="primary" @click=${() => this._open("send")}>Send to customer</ui-button>` : nothing}
+        ${v.can.decide ? html`<ui-button size="xs" variant="tonal" @click=${() => this._open("decision")}>Record customer decision</ui-button>` : nothing}
+        ${v.can.revise ? html`<ui-button size="xs" variant="tonal" @click=${() => this._open("revise")}>Create revision</ui-button>` : nothing}
+        <ui-button size="xs" variant="text" @click=${() => window.print()}>Print</ui-button>
       </ui-flex>
     </ui-card>`;
   }
@@ -459,7 +458,7 @@ export class GsQuotePreview extends LightElement {
           VAT)${v.internal?.marginPct !== undefined ? ` at ${pct(v.internal.marginPct)} margin` : ""}. It can then be
           sent to the customer.</ui-text
         >
-        ${v.internal?.exceptions ? html`<ui-alert color="warning" variant="soft">${v.internal.exceptions}</ui-alert>` : nothing}
+        ${v.internal?.exceptions ? html`<ui-alert tone="warning">${v.internal.exceptions}</ui-alert>` : nothing}
         ${reasonBox("Comment (optional)", "e.g. OK — confirm the launch cost before sending")}
       </ui-flex>`,
       return: html`<ui-flex direction="col" gap="3">
@@ -472,20 +471,16 @@ export class GsQuotePreview extends LightElement {
         <ui-flex gap="2" align="center" wrap
           >${aiBadge()}<ui-text variant="body-sm" color="muted">Nothing is sent until you confirm.</ui-text></ui-flex
         >
-        <ui-join label="Submission method">
-          <ui-button
-            size="sm"
-            .color=${this.method === "email" ? "primary" : undefined}
-            @click=${() => (this.method = "email")}
-            >Email from Odoo</ui-button
-          >
-          <ui-button
-            size="sm"
-            .color=${this.method === "portal" ? "primary" : undefined}
-            @click=${() => (this.method = "portal")}
-            >Customer portal</ui-button
-          >
-        </ui-join>
+        <ui-button-group
+          label="Submission method"
+          size="xs"
+          .value=${this.method}
+          .options=${[
+            { value: "email", label: "Email from Odoo" },
+            { value: "portal", label: "Customer portal" },
+          ]}
+          @ui-change=${(e: CustomEvent<{ value: string }>) => (this.method = e.detail.value as typeof this.method)}
+        ></ui-button-group>
         ${
           this.method === "email"
             ? html`<ui-mockup-window>
@@ -499,7 +494,7 @@ export class GsQuotePreview extends LightElement {
                   ${reasonBox("Message", "")}
                 </ui-flex>
               </ui-mockup-window>`
-            : html`<ui-alert color="info" variant="soft"
+            : html`<ui-alert tone="info"
                 >Enter the quotation in ${v.case.portal || "the customer's portal"}, then upload the confirmation
                 screenshot below — the submission is only complete when it matches the approved quote.</ui-alert
               >`
@@ -514,17 +509,13 @@ export class GsQuotePreview extends LightElement {
       </ui-flex>`,
       decision: html`<ui-flex direction="col" gap="3">
         <ui-text variant="body-md">The customer's decision on ${q.number}. No response never means lost.</ui-text>
-        <ui-join label="Decision">
-          ${DECISIONS.map(
-            (d) =>
-              html`<ui-button
-                size="sm"
-                .color=${this.decision === d ? (d === "Lost" ? "error" : "primary") : undefined}
-                @click=${() => (this.decision = d)}
-                >${d}</ui-button
-              >`,
-          )}
-        </ui-join>
+        <ui-button-group
+          label="Decision"
+          size="xs"
+          .value=${this.decision}
+          .options=${DECISIONS.map((d) => ({ value: d, label: d }))}
+          @ui-change=${(e: CustomEvent<{ value: string }>) => (this.decision = e.detail.value as typeof this.decision)}
+        ></ui-button-group>
         ${reasonBox(this.decision === "Lost" ? "Lost reason" : "Note", "e.g. PO NSM-PO-77231 received for lines 1–3")}
       </ui-flex>`,
     }[this.modal];
@@ -560,7 +551,7 @@ export class GsQuotePreview extends LightElement {
     const needsText = this.modal === "return" || (this.modal === "decision" && this.decision === "Lost");
     return html`<ui-modal open width="wide" .heading=${heading} @ui-close=${close}>
       ${body}
-      <ui-button slot="actions" variant="ghost" @click=${close}>Cancel</ui-button>
+      <ui-button slot="actions" variant="text" @click=${close}>Cancel</ui-button>
       <ui-button
         slot="actions"
         .color=${this.modal === "return" ? "error" : "primary"}
@@ -574,13 +565,14 @@ export class GsQuotePreview extends LightElement {
   private _portalCard(v: QuoteView) {
     if (!v.can.portalCheck && !this.portal) return nothing;
     const diffs = this.portal?.filter((r) => !r.matches) ?? [];
-    return html`<ui-card variant="border" shadow="false">
-      <ui-flex slot="heading" gap="2" align="center" wrap>Portal submission check ${aiBadge("AI check")}</ui-flex>
+    return html`<ui-card>
+      <span slot="heading">Portal submission check</span>
+      <ui-flex slot="trailing" gap="2" align="center" wrap>${aiBadge("AI check")}</ui-flex>
       <ui-text variant="body-md" color="muted"
         >For customers who buy through a procurement portal: upload the confirmation screenshot and the AI compares it
         with the approved quotation. The submission is complete only when every field matches.</ui-text
       >
-      ${this.checking ? html`<ui-flex gap="3" align="center"><ui-loading size="sm" color="secondary"></ui-loading><ui-text color="muted">Reading the screenshot…</ui-text></ui-flex>` : nothing}
+      ${this.checking ? html`<ui-flex gap="3" align="center"><ui-loading size="sm" color="primary"></ui-loading><ui-text color="muted">Reading the screenshot…</ui-text></ui-flex>` : nothing}
       ${
         this.portal && !this.checking
           ? html`<ui-table
@@ -593,8 +585,8 @@ export class GsQuotePreview extends LightElement {
                     key: "matches",
                     label: "",
                     render: (r: Record<string, unknown>) =>
-                      html`<ui-badge size="sm" variant="soft" .color=${r.matches ? "success" : "error"}
-                        >${r.matches ? "Match" : "Difference"}</ui-badge
+                      html`<ui-tag .tone=${r.matches ? "success" : "error"}
+                        >${r.matches ? "Match" : "Difference"}</ui-tag
                       >`,
                   },
                 ]}
@@ -602,18 +594,18 @@ export class GsQuotePreview extends LightElement {
               ></ui-table>
               ${
                 diffs.length
-                  ? html`<ui-alert color="warning" variant="soft"
+                  ? html`<ui-alert tone="warning"
                       >Not marked complete: ${diffs.map((r) => r.field.toLowerCase()).join(", ")} differ. Correct it in
                       the portal or record the customer's agreement.</ui-alert
                     >`
-                  : html`<ui-alert color="success" variant="soft">All fields match — submission complete.</ui-alert>`
+                  : html`<ui-alert tone="success">All fields match — submission complete.</ui-alert>`
               }`
           : nothing
       }
       <ui-button
         slot="actions"
-        size="sm"
-        variant="soft"
+        size="xs"
+        variant="tonal"
         ?disabled=${this.checking}
         @click=${() => void this._portalCheck()}
         >${this.portal ? "Check again" : "Upload screenshot & compare"}</ui-button
@@ -622,7 +614,12 @@ export class GsQuotePreview extends LightElement {
   }
 
   render() {
-    if (this.error) return html`<ui-alert color="error" variant="soft">${this.error}</ui-alert>`;
+    if (this.error)
+      return html`<ui-empty-state
+        tone="error"
+        heading="This page couldn't load"
+        .description=${this.error}
+      ></ui-empty-state>`;
     const v = this.view;
     if (!v) return loadingBlock("Preparing the quotation…");
     const q = v.quotation;
@@ -630,28 +627,26 @@ export class GsQuotePreview extends LightElement {
       ${this._status(v)}
       <ui-flex justify="between" align="center" gap="3" wrap>
         <ui-flex gap="2" align="center" wrap>
-          <ui-join label="Currency">
-            <ui-button size="sm" .color=${!this.egpView ? "primary" : undefined} @click=${() => (this.egpView = false)}
-              >${q.currency}</ui-button
-            >
-            <ui-button size="sm" .color=${this.egpView ? "primary" : undefined} @click=${() => (this.egpView = true)}
-              >EGP</ui-button
-            >
-          </ui-join>
-          <ui-join label="Language">
-            <ui-button
-              size="sm"
-              .color=${this.language === "en" ? "primary" : undefined}
-              @click=${() => (this.language = "en")}
-              >English</ui-button
-            >
-            <ui-button
-              size="sm"
-              .color=${this.language === "ar" ? "primary" : undefined}
-              @click=${() => (this.language = "ar")}
-              >العربية</ui-button
-            >
-          </ui-join>
+          <ui-button-group
+            label="Currency"
+            size="xs"
+            .value=${this.egpView ? "EGP" : "quote"}
+            .options=${[
+              { value: "quote", label: q.currency },
+              { value: "EGP", label: "EGP" },
+            ]}
+            @ui-change=${(e: CustomEvent<{ value: string }>) => (this.egpView = e.detail.value === "EGP")}
+          ></ui-button-group>
+          <ui-button-group
+            label="Language"
+            size="xs"
+            .value=${this.language}
+            .options=${[
+              { value: "en", label: "English" },
+              { value: "ar", label: "العربية" },
+            ]}
+            @ui-change=${(e: CustomEvent<{ value: string }>) => (this.language = e.detail.value as typeof this.language)}
+          ></ui-button-group>
         </ui-flex>
         <ui-text variant="body-sm" color="muted"
           >Customer-facing: supplier names, costs and margins are never printed.</ui-text
@@ -659,7 +654,7 @@ export class GsQuotePreview extends LightElement {
       </ui-flex>
       ${this._paper(v)}
       <ui-grid fit="md" gap="4">
-        <ui-card variant="border" shadow="false" heading="Versions">
+        <ui-card heading="Versions">
           <ui-flex direction="col" gap="2">
             ${v.versions.map(
               (x) =>
@@ -668,11 +663,9 @@ export class GsQuotePreview extends LightElement {
                     ><ui-text variant="body-md" ?emphasized=${x.id === q.id}>${x.number}</ui-text></ui-link
                   >
                   <ui-flex gap="2" align="center">
-                    <ui-badge
-                      size="sm"
-                      variant="soft"
-                      .color=${x.status === "Superseded" ? "neutral" : x.status === "Approved" || x.status === "Submitted" ? "success" : "warning"}
-                      >${x.status}${x.status === "Superseded" ? " · kept for audit" : ""}</ui-badge
+                    <ui-tag
+                      .tone=${x.status === "Superseded" ? "neutral" : x.status === "Approved" || x.status === "Submitted" ? "success" : "warning"}
+                      >${x.status}${x.status === "Superseded" ? " · kept for audit" : ""}</ui-tag
                     >
                     <ui-text variant="body-sm" color="muted">${q.currency} ${amount(x.totalExVat)}</ui-text>
                   </ui-flex>
@@ -682,7 +675,7 @@ export class GsQuotePreview extends LightElement {
         </ui-card>
         ${
           v.internal
-            ? html`<ui-card variant="border" shadow="false" heading="Internal — never printed">
+            ? html`<ui-card heading="Internal — never printed">
                 <ui-flex direction="col" gap="1">
                   <ui-text variant="body-md">Landed cost: ${egp(v.internal.landedCostEGP ?? 0)}</ui-text>
                   <ui-text variant="body-md">Gross profit: ${egp(v.internal.grossProfitEGP ?? 0)}</ui-text>
@@ -697,8 +690,8 @@ export class GsQuotePreview extends LightElement {
                   v.case.id
                     ? html`<ui-button
                         slot="actions"
-                        size="sm"
-                        variant="ghost"
+                        size="xs"
+                        variant="text"
                         .href=${`/collections/cases/${v.case.id}/pricing`}
                         >Pricing</ui-button
                       >`

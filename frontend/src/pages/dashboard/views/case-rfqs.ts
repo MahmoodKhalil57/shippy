@@ -203,7 +203,7 @@ export class GsCaseRfqs extends LightElement {
 
   private _stats(d: CaseRfqsPayload) {
     const tile = (label: string, value: number, note: string, color?: Tone) =>
-      html`<ui-card variant="border" size="sm" shadow="false">
+      html`<ui-card size="sm">
         <ui-flex direction="col" gap="1">
           <ui-text variant="body-md" color="muted" truncate>${label}</ui-text>
           <ui-text
@@ -239,7 +239,7 @@ export class GsCaseRfqs extends LightElement {
               <ui-link variant="hover" .href=${`/collections/suppliers/${r.supplier.id}`}
                 ><ui-text variant="label-lg">${r.supplier.name}</ui-text></ui-link
               >
-              ${r.supplier.isNew ? html`<ui-badge size="xs" color="accent" variant="soft">New supplier</ui-badge>` : nothing}
+              ${r.supplier.isNew ? html`<ui-tag tone="primary">New supplier</ui-tag>` : nothing}
             </ui-flex>
             <ui-text variant="body-sm" color="muted"
               >${[r.supplier.city, r.category].filter(Boolean).join(" · ")}</ui-text
@@ -250,9 +250,7 @@ export class GsCaseRfqs extends LightElement {
         key: "lineNos",
         label: "Lines",
         render: (r) =>
-          html`<ui-flex gap="1" wrap
-            >${r.lineNos.map((n) => html`<ui-badge size="xs" variant="outline">L${n}</ui-badge>`)}</ui-flex
-          >`,
+          html`<ui-flex gap="1" wrap>${r.lineNos.map((n) => html`<ui-tag variant="outline">L${n}</ui-tag>`)}</ui-flex>`,
       },
       {
         key: "sentAt",
@@ -266,8 +264,7 @@ export class GsCaseRfqs extends LightElement {
       {
         key: "status",
         label: "Status",
-        render: (r) =>
-          html`<ui-badge size="sm" variant="soft" .color=${STATUS[r.status] ?? "neutral"}>${r.status}</ui-badge>`,
+        render: (r) => html`<ui-tag .tone=${STATUS[r.status] ?? "neutral"}>${r.status}</ui-tag>`,
       },
       {
         key: "reminders",
@@ -290,19 +287,17 @@ export class GsCaseRfqs extends LightElement {
         label: "",
         render: (r) =>
           OPEN.includes(r.status) && !(r.escalated && r.reminders >= 2)
-            ? html`<ui-button size="xs" variant="soft" @click=${() => this._remind(r)}>Remind now</ui-button>`
+            ? html`<ui-button size="xs" variant="tonal" @click=${() => this._remind(r)}>Remind now</ui-button>`
             : nothing,
       },
     ];
-    return html`<ui-card variant="border" shadow="false">
-      <ui-flex slot="heading" justify="between" align="center" gap="2" full-width wrap>
-        <ui-flex gap="2" align="center"
-          >Supplier RFQs<ui-badge size="sm" variant="soft">${d.rfqs.length}</ui-badge></ui-flex
-        >
-        <ui-button size="sm" color="primary" ?disabled=${this.busy === "simulate"} @click=${() => this._simulate()}
+    return html`<ui-card .count=${d.rfqs.length}>
+      <span slot="heading">Supplier RFQs</span>
+      <ui-flex slot="trailing" gap="2" align="center" wrap
+        ><ui-button size="xs" color="primary" ?disabled=${this.busy === "simulate"} @click=${() => this._simulate()}
           ><ui-icon name="sync" size="sm"></ui-icon>Simulate replies</ui-button
-        >
-      </ui-flex>
+        ></ui-flex
+      >
       <ui-text variant="body-sm" color="muted"
         >Each supplier sees only the lines they can quote — never the client, the vessel or the client's files.</ui-text
       >
@@ -314,7 +309,7 @@ export class GsCaseRfqs extends LightElement {
               .columns=${columns}
               .rows=${d.rfqs as unknown as Record<string, unknown>[]}
             ></ui-table>`
-          : html`<ui-text variant="body-md" color="muted">No supplier RFQs yet — draft them below.</ui-text>`
+          : html`<ui-empty-state size="sm">No supplier RFQs yet — draft them below.</ui-empty-state>`
       }
     </ui-card>`;
   }
@@ -333,7 +328,7 @@ export class GsCaseRfqs extends LightElement {
       box: "end",
       end: html`<ui-flex direction="col" gap="1">
         <ui-flex gap="2" align="center" wrap>
-          <ui-badge size="sm" variant="soft" .color=${tone[e.outcome]}>${e.outcome}</ui-badge>
+          <ui-tag .tone=${tone[e.outcome]}>${e.outcome}</ui-tag>
           <ui-text variant="title-sm">${e.supplier}</ui-text>
           <ui-text variant="body-sm" mono color="muted">${e.reference}</ui-text>
         </ui-flex>
@@ -341,18 +336,16 @@ export class GsCaseRfqs extends LightElement {
         <ui-text variant="body-sm">${e.detail}</ui-text>
       </ui-flex>`,
     }));
-    return html`<ui-card variant="border" shadow="false" heading="Replies arriving">
+    return html`<ui-card heading="Replies arriving">
       <ui-timeline direction="vertical" compact .items=${items}></ui-timeline>
-      ${this.shown < this.events.length ? html`<ui-loading variant="dots" color="primary" label="More replies"></ui-loading>` : nothing}
+      ${this.shown < this.events.length ? html`<ui-loading color="primary" label="More replies"></ui-loading>` : nothing}
     </ui-card>`;
   }
 
   private _reviewQueue(d: CaseRfqsPayload) {
     if (!d.review.length) return nothing;
-    return html`<ui-card variant="border" shadow="false">
-      <ui-flex slot="heading" gap="2" align="center"
-        >Needs a person<ui-badge size="sm" color="warning" variant="soft">${d.review.length}</ui-badge></ui-flex
-      >
+    return html`<ui-card .count=${d.review.length} count-tone="warning">
+      <span slot="heading">Needs a person</span>
       <ui-text variant="body-sm" color="muted"
         >Anything the AI isn't sure of waits here — nothing uncertain is applied on its own.</ui-text
       >
@@ -366,28 +359,27 @@ export class GsCaseRfqs extends LightElement {
                     <ui-text variant="title-sm">${r.fromName}: “${r.subject}”</ui-text>
                     <ui-text variant="body-sm" color="muted">${at(r.receivedAt)}</ui-text>
                   </ui-flex>
-                  <ui-badge size="sm" variant="soft" color="warning">${pct(r.confidence)}</ui-badge>
+                  <ui-tag tone="warning">${pct(r.confidence)}</ui-tag>
                 </ui-flex>
                 ${r.basis.map((b) => html`<ui-text variant="body-sm">• ${b}</ui-text>`)}
-                ${r.uncertain.map((u) => html`<ui-alert color="warning" variant="soft">${u}</ui-alert>`)}
+                ${r.uncertain.map((u) => html`<ui-alert tone="warning">${u}</ui-alert>`)}
                 <ui-flex gap="2" wrap>
                   ${
                     r.kind === "new-supplier"
-                      ? html`<ui-button size="sm" color="primary" @click=${() => this._review(r.id, "link", d.case.id)}
+                      ? html`<ui-button size="xs" color="primary" @click=${() => this._review(r.id, "link", d.case.id)}
                           >Confirm offer</ui-button
                         >`
                       : r.candidates.map(
                           (c) =>
                             html`<ui-button
-                              size="sm"
-                              .color=${c.case === d.case.id ? "primary" : undefined}
-                              .variant=${c.case === d.case.id ? undefined : "soft"}
+                              size="xs"
+                              .variant=${c.case === d.case.id ? "filled" : "tonal"}
                               @click=${() => this._review(r.id, "link", c.case)}
                               >Link to ${c.caseId} (${pct(c.confidence)})</ui-button
                             >`,
                         )
                   }
-                  <ui-button size="sm" variant="ghost" @click=${() => this._review(r.id, "not-related")}
+                  <ui-button size="xs" variant="text" @click=${() => this._review(r.id, "not-related")}
                     >Not related</ui-button
                   >
                 </ui-flex>
@@ -400,7 +392,7 @@ export class GsCaseRfqs extends LightElement {
 
   private _replies(d: CaseRfqsPayload) {
     if (!d.replies.length) return nothing;
-    return html`<ui-card variant="border" shadow="false" heading="Replies matched">
+    return html`<ui-card heading="Replies matched">
       <ui-text variant="body-sm" color="muted"
         >Matched by reference, thread and sender — even when the supplier changed the subject.</ui-text
       >
@@ -411,9 +403,7 @@ export class GsCaseRfqs extends LightElement {
               <ui-flex gap="2" align="center" wrap>
                 <ui-text variant="label-lg">${r.fromName}</ui-text>
                 <ui-text variant="body-sm" color="muted">“${r.subject}” · ${at(r.receivedAt)}</ui-text>
-                <ui-badge size="xs" variant="soft" color="success"
-                  >${r.reference || "linked"} · ${pct(r.confidence)}</ui-badge
-                >
+                <ui-tag tone="success">${r.reference || "linked"} · ${pct(r.confidence)}</ui-tag>
               </ui-flex>
               <ui-text variant="body-sm" color="muted">${r.basis.slice(0, 2).join(" · ")}</ui-text>
             </ui-flex>`,
@@ -424,7 +414,7 @@ export class GsCaseRfqs extends LightElement {
 
   private _newSuppliers(d: CaseRfqsPayload) {
     if (!d.newSuppliers.length) return nothing;
-    return html`<ui-card variant="border" shadow="false" heading="New suppliers saved">
+    return html`<ui-card heading="New suppliers saved">
       <ui-text variant="body-sm" color="muted"
         >Saved the moment they replied — contact, category and a dated price with its validity, even without an
         order.</ui-text
@@ -438,7 +428,7 @@ export class GsCaseRfqs extends LightElement {
                   <ui-link variant="hover" .href=${`/collections/suppliers/${s.id}`}
                     ><ui-text variant="title-sm">${s.name}</ui-text></ui-link
                   >
-                  <ui-badge size="xs" color="accent" variant="soft">New · quoted, never ordered</ui-badge>
+                  <ui-tag tone="primary">New · quoted, never ordered</ui-tag>
                 </ui-flex>
                 <ui-text variant="body-sm" color="muted">${s.city} · ${s.source}</ui-text>
                 ${s.prices.map(
@@ -460,22 +450,22 @@ export class GsCaseRfqs extends LightElement {
     const picked = new Set(this.picked);
     const plan = this.plan;
     const preview = plan?.drafts[this.previewAt];
-    return html`<ui-card variant="border" shadow="false">
-      <ui-flex slot="heading" justify="between" align="center" gap="2" full-width wrap>
-        <span>Draft supplier RFQs</span>
-        <ui-tabs
-          variant="box"
-          size="xs"
-          .surface=${false}
-          .label=${"How to send"}
-          .active=${this.mode === "split" ? 0 : 1}
-          .items=${[{ label: "Split by category" }, { label: "Full list" }]}
-          @ui-change=${(e: CustomEvent<{ index: number }>) => {
-            this.mode = e.detail.index === 0 ? "split" : "full";
-            this.plan = null;
-          }}
-        ></ui-tabs>
-      </ui-flex>
+    return html`<ui-card>
+      <span slot="heading">Draft supplier RFQs</span>
+      <ui-button-group
+        slot="trailing"
+        label="How to send"
+        size="xs"
+        .value=${this.mode}
+        .options=${[
+          { value: "split", label: "Split by category" },
+          { value: "full", label: "Full list" },
+        ]}
+        @ui-change=${(e: CustomEvent<{ value: string }>) => {
+          this.mode = e.detail.value as "split" | "full";
+          this.plan = null;
+        }}
+      ></ui-button-group>
       <ui-text variant="body-sm" color="muted"
         >${this.mode === "split" ? "Each category goes to its specialists (best on-time first); a supplier asked for several categories gets one RFQ." : "General chandlers receive every line in one RFQ."}</ui-text
       >
@@ -499,8 +489,8 @@ export class GsCaseRfqs extends LightElement {
       </ui-grid>
       <ui-flex gap="2" wrap>
         <ui-button
-          size="sm"
-          variant="soft"
+          size="xs"
+          variant="tonal"
           ?disabled=${!picked.size || this.busy === "plan"}
           @click=${() => this._draft()}
           ><ui-icon name="sparkles" size="sm"></ui-icon
@@ -510,7 +500,7 @@ export class GsCaseRfqs extends LightElement {
       ${
         plan
           ? html`<ui-divider></ui-divider>
-              ${plan.held.length ? html`<ui-alert color="warning" variant="soft">Held back until clarified: ${plan.held.map((h) => `L${h.lineNo} (${h.reason})`).join(" · ")}</ui-alert>` : nothing}
+              ${plan.held.length ? html`<ui-alert tone="warning">Held back until clarified: ${plan.held.map((h) => `L${h.lineNo} (${h.reason})`).join(" · ")}</ui-alert>` : nothing}
               ${plan.skipped.length ? html`<ui-text variant="body-sm" color="muted">Skipped (already asked): ${plan.skipped.join(" · ")}</ui-text>` : nothing}
               <ui-flex direction="col" gap="2">
                 ${plan.drafts.map(
@@ -518,7 +508,7 @@ export class GsCaseRfqs extends LightElement {
                     html`<ui-flex justify="between" align="center" gap="2" wrap>
                       <ui-flex direction="col" gap="0" shrink>
                         <ui-flex gap="2" align="center" wrap>
-                          <ui-badge size="sm" variant="soft">Draft</ui-badge>
+                          <ui-tag>Draft</ui-tag>
                           <ui-text variant="title-sm">${r.supplierName}</ui-text>
                           <ui-text variant="body-sm" mono color="muted">${r.reference}</ui-text>
                         </ui-flex>
@@ -529,11 +519,13 @@ export class GsCaseRfqs extends LightElement {
                       <ui-flex gap="1">
                         <ui-button
                           size="xs"
-                          .variant=${i === this.previewAt ? "soft" : "ghost"}
+                          variant="text"
+                          toggle
+                          ?selected=${i === this.previewAt}
                           @click=${() => (this.previewAt = i)}
                           >Preview</ui-button
                         >
-                        <ui-button size="xs" variant="ghost" @click=${() => this._dropDraft(i)}>Remove</ui-button>
+                        <ui-button size="xs" variant="text" @click=${() => this._dropDraft(i)}>Remove</ui-button>
                       </ui-flex>
                     </ui-flex>`,
                 )}
@@ -541,10 +533,10 @@ export class GsCaseRfqs extends LightElement {
               ${
                 preview
                   ? html`<ui-flex gap="1" wrap>
-                        <ui-badge size="sm" color="success" variant="soft" icon="success">Client name removed</ui-badge>
-                        <ui-badge size="sm" color="success" variant="soft" icon="success">Vessel removed</ui-badge>
-                        <ui-badge size="sm" color="success" variant="soft" icon="success">No customer files</ui-badge>
-                        <ui-badge size="sm" color="success" variant="soft" icon="success">Our reference only</ui-badge>
+                        <ui-tag tone="success" icon="success">Client name removed</ui-tag>
+                        <ui-tag tone="success" icon="success">Vessel removed</ui-tag>
+                        <ui-tag tone="success" icon="success">No customer files</ui-tag>
+                        <ui-tag tone="success" icon="success">Our reference only</ui-tag>
                       </ui-flex>
                       <ui-mockup-window variant="bordered">
                         <ui-flex direction="col" gap="2" padding="4">
@@ -557,9 +549,9 @@ export class GsCaseRfqs extends LightElement {
                   : nothing
               }
               <ui-flex justify="end" gap="2" wrap>
-                <ui-button size="sm" variant="ghost" @click=${() => (this.plan = null)}>Discard drafts</ui-button>
+                <ui-button size="xs" variant="text" @click=${() => (this.plan = null)}>Discard drafts</ui-button>
                 <ui-button
-                  size="sm"
+                  size="xs"
                   color="primary"
                   ?disabled=${!plan.drafts.length || this.busy === "send"}
                   @click=${() => (this.confirming = true)}
@@ -581,7 +573,7 @@ export class GsCaseRfqs extends LightElement {
                     as a supplier answers, and the case owner is alerted after the second.</ui-text
                   >
                 </ui-flex>
-                <ui-button slot="actions" variant="ghost" @click=${() => (this.confirming = false)}>Cancel</ui-button>
+                <ui-button slot="actions" variant="text" @click=${() => (this.confirming = false)}>Cancel</ui-button>
                 <ui-button slot="actions" color="primary" @click=${() => this._send()}>Send RFQs</ui-button>
               </ui-modal>`
           : nothing
@@ -599,31 +591,34 @@ export class GsCaseRfqs extends LightElement {
         >
         <ui-steps
           scrollable
-          .color=${r.escalated ? "error" : "primary"}
+          .tone=${r.escalated ? "error" : "primary"}
           .current=${done - 1}
           .items=${r.schedule.map((s) => ({
-            label: html`${s.label}<br /><ui-text as="span" variant="body-sm" color="muted"
-                >${s.state === "skipped" ? "not needed" : s.state === "next" ? `next · ${at(s.at)}` : at(s.at)}</ui-text
-              >`,
-            marker: s.state === "done" ? "✓" : s.state === "skipped" ? "–" : undefined,
+            label: s.label,
+            supporting: s.state === "skipped" ? "not needed" : s.state === "next" ? `next · ${at(s.at)}` : at(s.at),
+            state: s.state === "done" || s.state === "skipped" ? s.state : undefined,
           }))}
         ></ui-steps>
       </ui-flex>`;
     };
-    return html`<ui-card variant="border" shadow="false" heading="Reminders and escalation">
+    return html`<ui-card heading="Reminders and escalation">
       <ui-text variant="body-md"
         >Reminder 1 after 24 h, reminder 2 after 48 h, then the case owner (${d.case.ownerName}) is alerted. Reminders
         stop the moment a supplier replies or declines.</ui-text
       >
-      ${open.length ? open.map(steps) : html`<ui-text variant="body-md" color="muted">No supplier is being chased right now.</ui-text>`}
+      ${open.length ? open.map(steps) : html`<ui-empty-state size="sm">No supplier is being chased right now.</ui-empty-state>`}
     </ui-card>`;
   }
 
   render() {
-    if (this.error) return html`<ui-alert color="error" variant="soft">${this.error}</ui-alert>`;
+    if (this.error)
+      return html`<ui-empty-state
+        tone="error"
+        heading="This page couldn't load"
+        .description=${this.error}
+      ></ui-empty-state>`;
     const d = this.data;
-    if (!d)
-      return html`<ui-flex justify="center" padding="8"><ui-loading size="lg" color="primary"></ui-loading></ui-flex>`;
+    if (!d) return html`<ui-empty-state loading></ui-empty-state>`;
     return html`<ui-flex direction="col" gap="4">
       ${this._stats(d)} ${this._table(d)} ${this._arrivals()} ${this._reviewQueue(d)}
       <ui-grid fit="md" gap="4">${this._replies(d)} ${this._newSuppliers(d)}</ui-grid>

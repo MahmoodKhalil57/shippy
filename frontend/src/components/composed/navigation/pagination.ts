@@ -83,7 +83,8 @@ export class UiPagination extends LightElement {
       .size=${this.size}
       .color=${o.active ? this.color : undefined}
       .variant=${this.variant}
-      .active=${!!o.active}
+      toggle
+      .selected=${!!o.active}
       .disabled=${!!o.disabled}
       .current=${o.current}
       .label=${o.label}
@@ -114,7 +115,6 @@ export class UiPagination extends LightElement {
           (p) =>
             html`<ui-button
               type="radio"
-              shape="square"
               .size=${this.size}
               .variant=${this.variant}
               .name=${this.name}

@@ -6,26 +6,17 @@ import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 
 /**
- * Progress: Progress bar for a task or the passing of time.
+ * Progress: how far along work the app is doing right now is (M3 linear progress indicator).
  *
  * Purpose: Data & metrics · Kind: primitive
  * Docs: https://daisyui.com/components/progress/
  *
- * All variants are responsive (e.g. `width="full md:sm"`).
+ * Always primary. A measurement (lines ready, checks passed, on-time rate) is a `<ui-gauge>`,
+ * not progress.
  */
-export const progress = rcva("progress", {
+export const progress = rcva("progress progress-primary", {
   variants: {
-    color: {
-      neutral: "progress-neutral",
-      primary: "progress-primary",
-      secondary: "progress-secondary",
-      accent: "progress-accent",
-      info: "progress-info",
-      success: "progress-success",
-      warning: "progress-warning",
-      error: "progress-error",
-    },
-    /** Bar width. daisyUI's default is the full container width; the docs use `sm` (w-56). */
+    /** Bar width; full by default. */
     width: {
       xs: "w-32",
       sm: "w-56",
@@ -34,19 +25,19 @@ export const progress = rcva("progress", {
       full: "w-full",
     },
   },
+  defaultVariants: { width: "full" },
 });
 
 export type ProgressVariants = VariantProps<typeof progress>;
 
 /**
- * @example <ui-progress value="40" color="primary" width="sm"></ui-progress>
+ * @example <ui-progress value="40" width="sm"></ui-progress>
  * @example <ui-progress indeterminate width="sm"></ui-progress>
  *
  * Leave `value` unset (or set `indeterminate`) for the animated indeterminate state.
  */
 @customElement("ui-progress")
 export class UiProgress extends LightElement {
-  @property() color: ProgressVariants["color"];
   @property() width: ProgressVariants["width"];
   @property({ type: Number }) value?: number;
   @property({ type: Number }) max = 100;
@@ -57,7 +48,7 @@ export class UiProgress extends LightElement {
   render() {
     const value = this.indeterminate ? undefined : this.value;
     return html`<progress
-      class=${progress({ color: this.color, width: this.width })}
+      class=${progress({ width: this.width })}
       value=${ifDefined(value)}
       max=${this.max}
       aria-label=${ifDefined(this.label)}

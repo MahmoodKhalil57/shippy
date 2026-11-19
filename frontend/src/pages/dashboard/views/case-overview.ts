@@ -139,20 +139,20 @@ export class GsCaseOverview extends LightElement implements ViewProps {
       marker: i < d.current ? "✓" : undefined,
     }));
     const step = d.steps[d.current]!;
-    return html`<ui-card variant="border" shadow="false">
-      <ui-flex slot="heading" justify="between" align="center" gap="2" wrap full-width>
-        <span>Lifecycle — first email to last payment</span>
-        <ui-badge size="sm" variant="soft" color="primary">Step ${d.current + 1} of ${d.steps.length}</ui-badge>
-      </ui-flex>
-      <ui-steps scrollable color="primary" .current=${d.current} .items=${items}></ui-steps>
+    return html`<ui-card>
+      <span slot="heading">Lifecycle — first email to last payment</span>
+      <ui-flex slot="trailing" gap="2" align="center" wrap
+        ><ui-tag tone="primary">Step ${d.current + 1} of ${d.steps.length}</ui-tag></ui-flex
+      >
+      <ui-steps scrollable .current=${d.current} .items=${items}></ui-steps>
       <ui-flex gap="2" align="center" wrap>
-        <ui-badge size="sm" variant="outline">Phase ${step.phase}</ui-badge>
+        <ui-tag variant="outline">Phase ${step.phase}</ui-tag>
         <ui-text variant="title-sm">${step.label}: ${d.stage}</ui-text>
         <ui-text variant="body-md" color="muted">${step.detail}</ui-text>
       </ui-flex>
       ${
         d.halted
-          ? html`<ui-alert color=${d.halted === "lost" ? "error" : "warning"} variant="soft"
+          ? html`<ui-alert tone=${d.halted === "lost" ? "error" : "warning"}
               >${d.halted === "lost" ? "The case ended here" : "Paused at the customer's decision"} —
               ${d.next}</ui-alert
             >`
@@ -167,19 +167,14 @@ export class GsCaseOverview extends LightElement implements ViewProps {
     total: number,
     color: "success" | "warning" | "error" | "neutral" | "info",
   ) {
-    return html`<ui-flex direction="col" gap="1">
-      <ui-flex justify="between" gap="2">
-        <ui-text variant="body-md">${label}</ui-text>
-        <ui-text variant="title-sm">${value} / ${total}</ui-text>
-      </ui-flex>
-      <ui-progress
-        .color=${color}
-        width="full"
-        .value=${value}
-        .max=${Math.max(total, 1)}
-        .label=${`${label}: ${value} of ${total} lines`}
-      ></ui-progress>
-    </ui-flex>`;
+    return html`<ui-gauge
+      .tone=${color}
+      .heading=${label}
+      value-text=${`${value} / ${total}`}
+      .value=${value}
+      .max=${Math.max(total, 1)}
+      .label=${`${label}: ${value} of ${total} lines`}
+    ></ui-gauge>`;
   }
 
   private _lines(d: CaseOverview) {
@@ -194,7 +189,7 @@ export class GsCaseOverview extends LightElement implements ViewProps {
         label: "Status",
         render: (r) =>
           html`<ui-flex gap="2" align="center">
-            <ui-status size="sm" .color=${BUCKET_COLOR[r.bucket]} .label=${BUCKET_LABEL[r.bucket]}></ui-status>
+            <ui-badge dot .tone=${BUCKET_COLOR[r.bucket]} .label=${BUCKET_LABEL[r.bucket]}></ui-badge>
             <ui-text variant="body-md">${r.status}</ui-text>
           </ui-flex>`,
       },
@@ -204,18 +199,16 @@ export class GsCaseOverview extends LightElement implements ViewProps {
         render: (r) =>
           r.confidence === undefined
             ? html`<ui-text variant="body-md" color="muted">—</ui-text>`
-            : html`<ui-badge size="sm" variant="soft" .color=${r.confidence < 0.85 ? "warning" : "neutral"}
-                >${Math.round(r.confidence * 100)}%</ui-badge
+            : html`<ui-tag .tone=${r.confidence < 0.85 ? "warning" : "neutral"}
+                >${Math.round(r.confidence * 100)}%</ui-tag
               >`,
       },
     ];
-    return html`<ui-card variant="border" shadow="false">
-      <ui-flex slot="heading" justify="between" align="center" gap="2" wrap full-width>
-        <span>Line progress</span>
-        <ui-badge size="sm" variant="soft" .color=${l.ready === l.total && l.total ? "success" : "warning"}
-          >${pct}% ready</ui-badge
-        >
-      </ui-flex>
+    return html`<ui-card>
+      <span slot="heading">Line progress</span>
+      <ui-flex slot="trailing" gap="2" align="center" wrap
+        ><ui-tag .tone=${l.ready === l.total && l.total ? "success" : "warning"}>${pct}% ready</ui-tag></ui-flex
+      >
       <ui-text variant="body-md" color="muted"
         >Each line moves on its own. A case with some lines ready is ${pct}% — never “done” until every line
         is.</ui-text
@@ -249,11 +242,11 @@ export class GsCaseOverview extends LightElement implements ViewProps {
   }
 
   private _next(d: CaseOverview) {
-    return html`<ui-card variant="border" shadow="false" heading="Next action">
+    return html`<ui-card heading="Next action">
       <ui-text emphasized>${d.next || "—"}</ui-text>
       ${
         d.blocker
-          ? html`<ui-alert color="warning" variant="soft"
+          ? html`<ui-alert tone="warning"
               ><span><strong>Blocker:</strong> ${d.blocker}</span></ui-alert
             >`
           : html`<ui-text variant="body-md" color="muted">No blocker.</ui-text>`
@@ -283,17 +276,17 @@ export class GsCaseOverview extends LightElement implements ViewProps {
   }
 
   private _owner(d: CaseOverview) {
-    return html`<ui-card variant="border" shadow="false">
-      <ui-flex slot="heading" justify="between" align="center" gap="2" wrap full-width>
-        <span>Owner & backup</span>
-        ${
+    return html`<ui-card>
+      <span slot="heading">Owner & backup</span>
+      <ui-flex slot="trailing" gap="2" align="center" wrap
+        >${
           d.canReassign
-            ? html`<ui-button size="xs" variant="soft" color="primary" @click=${() => this._openReassign()}
+            ? html`<ui-button size="xs" variant="tonal" color="primary" @click=${() => this._openReassign()}
                 >Reassign</ui-button
               >`
             : nothing
-        }
-      </ui-flex>
+        }</ui-flex
+      >
       ${this._person(d.owner, "Owner")} ${this._person(d.backup, "Backup")}
       ${
         d.handoverNote
@@ -307,13 +300,10 @@ export class GsCaseOverview extends LightElement implements ViewProps {
 
   private _contactRule(d: CaseOverview) {
     const c = d.customer;
-    return html`<ui-card variant="border" shadow="false" heading="Customer contact rule">
+    return html`<ui-card heading="Customer contact rule">
       <ui-text variant="title-sm">${c.name}</ui-text>
-      <ui-badge
-        size="md"
-        variant="soft"
-        .color=${c.strict ? "error" : c.contactRule === "one-follow-up" ? "warning" : "success"}
-        >${c.contactRuleLabel}</ui-badge
+      <ui-tag size="md" .tone=${c.strict ? "error" : c.contactRule === "one-follow-up" ? "warning" : "success"}
+        >${c.contactRuleLabel}</ui-tag
       >
       <ui-text variant="body-sm" color="muted"
         >${
@@ -328,10 +318,8 @@ export class GsCaseOverview extends LightElement implements ViewProps {
   }
 
   private _tasks(d: CaseOverview) {
-    return html`<ui-card variant="border" shadow="false">
-      <ui-flex slot="heading" gap="2" align="center">
-        Open tasks <ui-badge size="sm" variant="soft">${d.tasks.length}</ui-badge>
-      </ui-flex>
+    return html`<ui-card .count=${d.tasks.length}>
+      <span slot="heading">Open tasks</span>
       ${
         d.tasks.length
           ? d.tasks.map(
@@ -353,7 +341,7 @@ export class GsCaseOverview extends LightElement implements ViewProps {
                   >
                 </ui-flex>`,
             )
-          : html`<ui-text variant="body-md" color="muted">Nothing open.</ui-text>`
+          : html`<ui-empty-state size="sm">Nothing open.</ui-empty-state>`
       }
     </ui-card>`;
   }
@@ -371,7 +359,7 @@ export class GsCaseOverview extends LightElement implements ViewProps {
         label: "To · via",
         render: (q) =>
           html`<ui-flex direction="col" gap="0">
-            <ui-badge size="sm" variant="outline">${q.to}</ui-badge>
+            <ui-tag variant="outline">${q.to}</ui-tag>
             <ui-text variant="body-sm" color="muted">${q.via}</ui-text>
           </ui-flex>`,
       },
@@ -391,18 +379,18 @@ export class GsCaseOverview extends LightElement implements ViewProps {
         label: "Answer",
         render: (q) =>
           q.open
-            ? html`<ui-badge size="sm" variant="soft" color="warning">Waiting</ui-badge>`
+            ? html`<ui-tag tone="warning">Waiting</ui-tag>`
             : html`<ui-flex direction="col" gap="0">
                 <ui-text variant="body-md">${q.answer}</ui-text>
                 ${q.answeredAt ? html`<ui-text variant="body-sm" color="muted">${formatDate(q.answeredAt)}</ui-text>` : nothing}
               </ui-flex>`,
       },
     ];
-    return html`<ui-card variant="border" shadow="false">
-      <ui-flex slot="heading" gap="2" align="center" wrap>
-        Clarifications log
-        <ui-badge size="sm" variant="soft" .color=${open ? "warning" : "success"}>${open} open</ui-badge>
-      </ui-flex>
+    return html`<ui-card>
+      <span slot="heading">Clarifications log</span>
+      <ui-flex slot="trailing" gap="2" align="center" wrap
+        ><ui-tag .tone=${open ? "warning" : "success"}>${open} open</ui-tag></ui-flex
+      >
       <ui-text variant="body-sm" color="muted"
         >Questions and answers per line, to the customer, a supplier or internal. Clear lines keep moving while one
         waits.</ui-text
@@ -414,7 +402,7 @@ export class GsCaseOverview extends LightElement implements ViewProps {
               .columns=${columns}
               .rows=${d.clarifications as unknown as Record<string, unknown>[]}
             ></ui-table>`
-          : html`<ui-text variant="body-md" color="muted">No clarifications on this case.</ui-text>`
+          : html`<ui-empty-state size="sm">No clarifications on this case.</ui-empty-state>`
       }
     </ui-card>`;
   }
@@ -428,9 +416,9 @@ export class GsCaseOverview extends LightElement implements ViewProps {
         start: html`<ui-text variant="body-sm" color="muted">${formatDate(t.at)}</ui-text>`,
         end: html`<ui-flex direction="col" gap="1" padding="1">
           <ui-flex gap="2" align="center" wrap>
-            <ui-badge size="xs" variant="soft" .color=${k.color}>${k.label}</ui-badge>
+            <ui-tag .tone=${k.color}>${k.label}</ui-tag>
             <ui-text variant="body-sm" color="muted">${t.actor}</ui-text>
-            ${t.rule ? html`<ui-badge size="xs" variant="outline">rule: ${t.rule}</ui-badge>` : nothing}
+            ${t.rule ? html`<ui-tag variant="outline">rule: ${t.rule}</ui-tag>` : nothing}
           </ui-flex>
           <ui-text variant="body-md">${t.text}</ui-text>
         </ui-flex>`,
@@ -438,22 +426,21 @@ export class GsCaseOverview extends LightElement implements ViewProps {
       };
     });
     const counts = (k: TimelineEntry["kind"]) => d.timeline.filter((t) => t.kind === k).length;
-    const tab = (key: typeof this.filter, label: string) =>
-      html`<ui-button
+    return html`<ui-card>
+      <span slot="heading">Activity timeline — audit trail</span>
+      <ui-button-group
+        slot="trailing"
+        label="Show"
         size="xs"
-        .variant=${this.filter === key ? "soft" : "ghost"}
-        .color=${this.filter === key ? "primary" : undefined}
-        @click=${() => (this.filter = key)}
-        >${label}</ui-button
-      >`;
-    return html`<ui-card variant="border" shadow="false">
-      <ui-flex slot="heading" justify="between" align="center" gap="2" wrap full-width>
-        <span>Activity timeline — audit trail</span>
-        <ui-flex gap="1" wrap>
-          ${tab("all", `All ${d.timeline.length}`)} ${tab("auto", `Automatic ${counts("auto")}`)}
-          ${tab("human", `Human ${counts("human")}`)} ${tab("alert", `Alerts ${counts("alert")}`)}
-        </ui-flex>
-      </ui-flex>
+        .value=${this.filter}
+        .options=${[
+          { value: "all", label: `All ${d.timeline.length}` },
+          { value: "auto", label: `Automatic ${counts("auto")}` },
+          { value: "human", label: `Human ${counts("human")}` },
+          { value: "alert", label: `Alerts ${counts("alert")}` },
+        ]}
+        @ui-change=${(e: CustomEvent<{ value: string }>) => (this.filter = e.detail.value as typeof this.filter)}
+      ></ui-button-group>
       <ui-text variant="body-sm" color="muted"
         >Every automatic step names the rule that fired; every human step names the person. Nothing is edited after the
         fact.</ui-text
@@ -466,7 +453,7 @@ export class GsCaseOverview extends LightElement implements ViewProps {
       ${
         items.length
           ? html`<ui-timeline direction="vertical" compact snap-icon .items=${items}></ui-timeline>`
-          : html`<ui-text variant="body-md" color="muted">Nothing logged yet.</ui-text>`
+          : html`<ui-empty-state size="sm">Nothing logged yet.</ui-empty-state>`
       }
     </ui-card>`;
   }
@@ -499,8 +486,8 @@ export class GsCaseOverview extends LightElement implements ViewProps {
         ></ui-select>
         <ui-flex gap="2" align="center" wrap>
           <ui-button
-            size="sm"
-            variant="soft"
+            size="xs"
+            variant="tonal"
             color="primary"
             ?disabled=${this.drafting || !this.to}
             @click=${() => this._draft()}
@@ -510,10 +497,8 @@ export class GsCaseOverview extends LightElement implements ViewProps {
           ${this.drafting ? html`<ui-loading size="sm" color="primary"></ui-loading><ui-text variant="body-md" color="muted">Reading the case, clarifications and tasks…</ui-text>` : nothing}
           ${
             this.draftMeta
-              ? html`<ui-badge size="sm" variant="soft" color="accent">AI draft</ui-badge>
-                  <ui-badge size="sm" variant="soft"
-                    >${Math.round(this.draftMeta.confidence * 100)}% confidence</ui-badge
-                  >
+              ? html`<ui-tag tone="primary">AI draft</ui-tag>
+                  <ui-tag>${Math.round(this.draftMeta.confidence * 100)}% confidence</ui-tag>
                   <ui-text variant="body-sm" color="muted">from ${this.draftMeta.sources.join(", ")}</ui-text>`
               : nothing
           }
@@ -533,7 +518,7 @@ export class GsCaseOverview extends LightElement implements ViewProps {
         ></ui-ai-tools>
       </ui-flex>
       <ui-flex slot="actions" gap="2">
-        <ui-button variant="ghost" @click=${() => (this.reassignOpen = false)}>Cancel</ui-button>
+        <ui-button variant="text" @click=${() => (this.reassignOpen = false)}>Cancel</ui-button>
         <ui-button
           color="primary"
           ?disabled=${this.saving || !this.to || !this.note.trim()}
@@ -548,10 +533,14 @@ export class GsCaseOverview extends LightElement implements ViewProps {
   }
 
   render() {
-    if (this.error) return html`<ui-alert color="error" variant="soft">${this.error}</ui-alert>`;
+    if (this.error)
+      return html`<ui-empty-state
+        tone="error"
+        heading="This page couldn't load"
+        .description=${this.error}
+      ></ui-empty-state>`;
     const d = this.data;
-    if (!d)
-      return html`<ui-flex justify="center" padding="8"><ui-loading size="lg" color="primary"></ui-loading></ui-flex>`;
+    if (!d) return html`<ui-empty-state loading></ui-empty-state>`;
     return html`<ui-flex direction="col" gap="6">
       ${this._lifecycle(d)}
       <ui-grid

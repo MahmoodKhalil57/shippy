@@ -3,48 +3,41 @@ import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
-import { booleanAttribute, isOn, rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
-import { button, type ButtonVariants } from "./button.ts";
+import { rcva } from "../../base/variants.ts";
 import { iconSvg } from "../media/icon.ts";
+import { iconButton } from "./icon-button.ts";
 
 /**
- * FAB / Speed Dial: Floating button in a bottom corner that reveals extra
- * buttons when activated.
+ * FAB: the screen's one most important action, floating in the bottom corner (M3 floating action
+ * button).
  *
  * Purpose: Actions · Kind: primitive
- * Docs: https://daisyui.com/components/fab/
  *
- * Icons inside (bare `<svg>` content) get the docs' `size-6`.
- */
-export const fab = rcva("fab [&_svg]:size-6", {
-  variants: {
-    /** Open in a quarter circle instead of a vertical stack (max 4 actions). */
-    flower: { true: "fab-flower" },
-  },
-});
-
-/**
- * A speed-dial action's text label: a glass pill (src/styles/theme.css), so it reads on any
- * background the FAB opens over.
- */
-export const fabLabel = rcva("liquid-glass rounded-full px-3 py-1.5 text-label-lg whitespace-nowrap text-on-surface");
-
-/** Replaces the trigger with a close button while open (visual only, not focusable). */
-export const fabClose = rcva("fab-close");
-/** Replaces the trigger with a main action button while open. */
-export const fabMainAction = rcva("fab-main-action");
-/** Tooltip around a flower action (no room for text labels in a quarter circle). */
-export const fabTooltip = rcva("tooltip", {
-  variants: {
-    left: { true: "tooltip-left" },
-  },
-});
-
-/**
+ * One per screen. 56dp (`size="md"`, the default) or 96dp (`lg`), rounded (M3's large corner),
+ * at elevation +3 (+4 on hover). `color="primary"` (filled, the default) or `tonal` (the primary
+ * container). M3 retired the speed dial; actions that belong together go in a menu instead.
+ *
  * `panel` mode: the button opens a floating glass panel above it (an assistant, a help chat) that
- * stays open while the page is used, until closed. Header (title + close), a scrolling body
- * (the children), and a footer (`slot="footer"`, e.g. a message box).
+ * stays open while the page is used, until closed — M3's FAB expanding into a sheet. Header
+ * (title + close), a scrolling body (the children), and a footer (`slot="footer"`).
  */
+export const fab = rcva(
+  "btn touch-target border-transparent p-0 shadow-elevation-3 hover:shadow-elevation-4 [&_svg]:size-6",
+  {
+    variants: {
+      color: {
+        primary: "btn-primary",
+        tonal: "bg-primary-container text-on-primary-container state-layer",
+      },
+      size: {
+        md: "size-14 rounded-lg",
+        lg: "size-24 rounded-xl [&_svg]:size-9",
+      },
+    },
+    defaultVariants: { color: "primary", size: "md" },
+  },
+);
+
 export const fabDock = rcva(
   "fixed end-4 bottom-4 z-[60] flex flex-col items-end gap-3 pointer-events-none [&>*]:pointer-events-auto",
 );
@@ -74,31 +67,8 @@ export const fabPanelFooter = rcva("shrink-0 border-t border-outline-variant px-
 
 export type FabVariants = VariantProps<typeof fab>;
 
-export interface FabAction {
-  /** Button content (letter, icon…). */
-  content: Renderable;
-  /** Text label beside the button (vertical) or tooltip text (flower). */
-  label?: string;
-  /** Accessible name when `content` is an icon. */
-  ariaLabel?: string;
-  color?: ButtonVariants["color"];
-  href?: string;
-  disabled?: boolean;
-}
-
 /**
- * @example
- * <ui-fab trigger="F" color="primary"
- *   .actions=${[{ content: "A", label: "Label A" }, { content: "B", label: "Label B" }]}
- *   close="Close" @ui-select=${(e) => …}></ui-fab>
- * @example <ui-fab flower trigger="F" .mainAction=${{ content: "M" }} .actions=${[…]}></ui-fab>
- * @example <ui-fab trigger="+"></ui-fab>   <!-- single FAB, no speed dial -->
- * @example <ui-fab circle="false" trigger="F" .actions=${[…]}></ui-fab>   <!-- rectangle buttons -->
- *
- * The trigger can be rich markup via `slot="trigger"`. Without `actions`, the
- * authored children are rendered as the speed-dial items. `ui-select`
- * (detail: { action, index }) fires on click; `mainAction` click fires `ui-main`.
- *
+ * @example <ui-fab trigger-label="New case" @ui-main=${…}><ui-icon slot="trigger" name="plus"></ui-icon></ui-fab>
  * @example
  * <ui-fab panel heading="Assistant" trigger-label="Open the assistant" .open=${open}
  *   @ui-toggle=${(e) => (open = e.detail.open)}>
@@ -107,23 +77,16 @@ export interface FabAction {
  *   <ui-flex slot="footer">…message box…</ui-flex>
  * </ui-fab>
  *
- * `panel`: the button toggles a floating panel (`open`; `ui-toggle` with { open } on change). The
- * body scrolls; a conversation inside (`<ui-message-scroller>`) fills it and scrolls itself.
+ * Without `panel`, a click fires `ui-main`. With `panel` the button toggles the panel (`open`;
+ * `ui-toggle` with { open } on change).
  */
 @customElement("ui-fab")
 export class UiFab extends LightElement {
-  @property({ converter: responsiveBoolean }) flower: Responsive<boolean> = false;
-
   @property() trigger: Renderable = "";
+  /** The action's name (the button has only an icon). */
   @property({ attribute: "trigger-label" }) triggerLabel?: string;
-  @property() color: ButtonVariants["color"] = "primary";
-  @property() size: ButtonVariants["size"] = "lg";
-  /** Round action buttons (default). `circle="false"` for rectangular ones. */
-  @property({ converter: booleanAttribute }) circle = true;
-  @property({ attribute: false }) actions: FabAction[] = [];
-  /** Text for a `fab-close` replacement while open (true = no text). */
-  @property() close: string | boolean = false;
-  @property({ attribute: false }) mainAction?: FabAction;
+  @property() color: FabVariants["color"];
+  @property() size: FabVariants["size"];
   /** Panel mode: the button opens a floating panel (see `fabPanel`). */
   @property({ type: Boolean }) panel = false;
   /** Panel mode: whether the panel is open. */
@@ -136,15 +99,27 @@ export class UiFab extends LightElement {
     this.dispatchEvent(new CustomEvent("ui-toggle", { detail: { open }, bubbles: true }));
   }
 
-  private _renderPanel() {
+  render() {
     const trigger = this.hasSlotted("trigger") ? this.slotted("trigger") : this.trigger;
+    const cls = fab({ color: this.color, size: this.size });
+    if (!this.panel)
+      return html`<div class=${fabDock()}>
+        <button
+          type="button"
+          class=${cls}
+          aria-label=${ifDefined(this.triggerLabel)}
+          @click=${() => this.dispatchEvent(new CustomEvent("ui-main", { detail: {}, bubbles: true }))}
+        >
+          ${trigger}
+        </button>
+      </div>`;
     return html`<div class=${fabDock()}>
       <section class=${fabPanel({ hidden: !this.open })} role="dialog" aria-label=${ifDefined(this.triggerLabel)}>
         <header class=${fabPanelHead()}>
           <span class=${fabPanelTitle()}>${this.heading}</span>
           <button
             type="button"
-            class=${button({ variant: "ghost", size: "sm", shape: "circle" })}
+            class=${iconButton({ size: "xs" })}
             aria-label="Close"
             @click=${() => this._toggle(false)}
           >
@@ -156,103 +131,13 @@ export class UiFab extends LightElement {
       </section>
       <button
         type="button"
-        class=${button({ size: this.size, color: this.color, shape: "circle", class: "shadow-elevation-3 hover:shadow-elevation-4" })}
+        class=${cls}
         aria-label=${ifDefined(this.triggerLabel)}
         aria-expanded=${this.open ? "true" : "false"}
         @click=${() => this._toggle()}
       >
         ${trigger}
       </button>
-    </div>`;
-  }
-
-  private _btn(a: FabAction, onClick: () => void, extra = "") {
-    const cls = button({
-      size: this.size,
-      color: a.color,
-      shape: this.circle ? "circle" : undefined,
-      class: extra,
-    });
-    return a.href
-      ? html`<a class=${cls} href=${a.href} aria-label=${ifDefined(a.ariaLabel ?? a.label)} @click=${onClick}
-          >${a.content}</a
-        >`
-      : html`<button
-          class=${cls}
-          type="button"
-          ?disabled=${!!a.disabled}
-          aria-label=${ifDefined(a.ariaLabel ?? a.label)}
-          @click=${onClick}
-        >
-          ${a.content}
-        </button>`;
-  }
-
-  private _fire(name: string, detail: object) {
-    this.dispatchEvent(new CustomEvent(name, { detail, bubbles: true }));
-  }
-
-  // Items must stay direct children of `.fab` (it positions them with :nth-child).
-  private _action(a: FabAction, i: number) {
-    const onClick = () => this._fire("ui-select", { action: a, index: i });
-    if (!a.label) return this._btn(a, onClick);
-    if (isOn(this.flower)) {
-      // No room for text in a quarter circle: labels become tooltips.
-      return html`<div class=${fabTooltip({ left: i < 2 })} data-tip=${a.label}>${this._btn(a, onClick)}</div>`;
-    }
-    return html`<div><span class=${fabLabel()}>${a.label}</span> ${this._btn(a, onClick)}</div>`;
-  }
-
-  render() {
-    if (this.panel) return this._renderPanel();
-    const triggerContent = this.hasSlotted("trigger") ? this.slotted("trigger") : this.trigger;
-    const triggerCls = button({ size: this.size, color: this.color, shape: "circle" });
-    const items = this.actions.length ? this.actions.map((a, i) => this._action(a, i)) : this.slotted();
-    const single = !this.actions.length && !this.hasContent && !this.mainAction;
-
-    if (single) {
-      return html`<div class=${fab({ flower: this.flower })}>
-        <button
-          class=${triggerCls}
-          type="button"
-          aria-label=${ifDefined(this.triggerLabel)}
-          @click=${() => this._fire("ui-main", {})}
-        >
-          ${triggerContent}
-        </button>
-      </div>`;
-    }
-
-    const main = this.mainAction;
-    return html`<div class=${fab({ flower: this.flower })}>
-      <div
-        tabindex="0"
-        role="button"
-        class=${triggerCls}
-        aria-label=${ifDefined(this.triggerLabel)}
-        aria-haspopup="menu"
-      >
-        ${triggerContent}
-      </div>
-      ${
-        this.close !== false
-          ? html`<div class=${fabClose()}>
-              ${typeof this.close === "string" ? this.close : nothing}
-              <span class=${button({ size: this.size, color: "error", shape: "circle" })}>✕</span>
-            </div>`
-          : nothing
-      }
-      ${
-        main
-          ? isOn(this.flower)
-            ? this._btn(main, () => this._fire("ui-main", { action: main }), fabMainAction())
-            : html`<div class=${fabMainAction()}>
-                ${main.label ?? nothing}
-                ${this._btn({ color: "secondary", ...main }, () => this._fire("ui-main", { action: main }))}
-              </div>`
-          : nothing
-      }
-      ${items}
     </div>`;
   }
 }

@@ -77,14 +77,14 @@ export class UiConfirmation extends LightElement {
           ? html`<div class=${confirmationActions()}>
               <button
                 type="button"
-                class=${button({ variant: "ghost", size: "sm" })}
+                class=${button({ variant: "text", size: "xs" })}
                 @click=${() => this._answer(false)}
               >
                 ${this.denyLabel}
               </button>
               <button
                 type="button"
-                class=${button({ color: "primary", size: "sm" })}
+                class=${button({ color: "primary", size: "xs" })}
                 @click=${() => this._answer(true)}
               >
                 ${this.approveLabel}

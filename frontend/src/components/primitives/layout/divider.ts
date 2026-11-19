@@ -15,16 +15,7 @@ import { rcva } from "../../base/variants.ts";
  */
 export const divider = rcva("divider", {
   variants: {
-    color: {
-      neutral: "divider-neutral",
-      primary: "divider-primary",
-      secondary: "divider-secondary",
-      accent: "divider-accent",
-      success: "divider-success",
-      warning: "divider-warning",
-      info: "divider-info",
-      error: "divider-error",
-    },
+    /** M3: dividers are outline-variant hairlines that group content; no colours. */
     direction: {
       vertical: "divider-vertical",
       horizontal: "divider-horizontal",
@@ -44,17 +35,16 @@ const baseValue = (v: unknown) => (typeof v === "string" ? v.split(/\s+/).find((
 
 /**
  * @example <ui-divider>OR</ui-divider>
- * @example <ui-divider direction="horizontal" color="primary" placement="start"></ui-divider>
+ * @example <ui-divider direction="horizontal" placement="start"></ui-divider>
  * @example <ui-divider direction="lg:horizontal">OR</ui-divider>
  */
 @customElement("ui-divider")
 export class UiDivider extends LightElement {
-  @property() color: DividerVariants["color"];
   @property() direction: DividerVariants["direction"];
   @property() placement: DividerVariants["placement"];
 
   render() {
-    const cls = divider({ color: this.color, direction: this.direction, placement: this.placement });
+    const cls = divider({ direction: this.direction, placement: this.placement });
     const orientation = baseValue(this.direction) === "horizontal" ? "vertical" : "horizontal";
     // No whitespace inside the div: daisyUI only adds the gap for a label when
     // the divider is `:not(:empty)` (comments, like Lit's markers, don't count).

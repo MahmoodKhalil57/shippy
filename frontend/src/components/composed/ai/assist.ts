@@ -73,14 +73,14 @@ addEventListener(AI_CHANGE, () => {
 });
 
 const aiButton = (icon: IconName, label: string, onClick: () => void, disabled = false) =>
-  html`<ui-button variant="ghost" size="xs" ?disabled=${disabled} @click=${onClick}
+  html`<ui-button variant="text" size="xs" ?disabled=${disabled} @click=${onClick}
     ><ui-icon name=${icon} size="xs"></ui-icon>${label}</ui-button
   >`;
 
 /** A short line about the assist (what it did, what it's doing): an icon and small text. */
 const aiNote = (icon: IconName | "loading", text: unknown, color: "muted" | "error" = "muted") =>
   html`<ui-flex inline gap="1" align="center">
-    ${icon === "loading" ? html`<ui-loading size="xs"></ui-loading>` : html`<ui-icon name=${icon} size="xs"></ui-icon>`}
+    ${icon === "loading" ? html`<ui-loading size="sm"></ui-loading>` : html`<ui-icon name=${icon} size="xs"></ui-icon>`}
     <ui-text as="span" variant="body-sm" color=${color}>${text}</ui-text>
   </ui-flex>`;
 
@@ -101,7 +101,7 @@ const aiBox = (heading: unknown, content: unknown) =>
 
 /** A small label about the text (its language, a suggested category). */
 const aiBadge = (icon: IconName, text: unknown) =>
-  html`<ui-badge size="sm" variant="ghost"><ui-icon name=${icon} size="xs"></ui-icon>${text}</ui-badge>`;
+  html`<ui-tag><ui-icon name=${icon} size="xs"></ui-icon>${text}</ui-tag>`;
 
 /** Paragraphs and line breaks of plain text. */
 const paragraphs = (text: string) =>
@@ -749,8 +749,7 @@ export class UiAiFlag extends LightElement {
   render() {
     if (!this.hit) return nothing;
     return html`<ui-alert
-      color=${this.tone}
-      variant="soft"
+      tone=${this.tone}
       .heading=${`${this.heading}${pct(this.hit.confidence)}`}
       .description=${`${this.note} Spotted on this device — it can be wrong.`}
     ></ui-alert>`;
@@ -805,8 +804,8 @@ export class UiAiReplies extends AssistElement {
       ${this.replies.map(
         (r, i) =>
           html`<ui-button
-            variant="outline"
-            size="sm"
+            variant="outlined"
+            size="xs"
             multiline
             block
             justify="start"

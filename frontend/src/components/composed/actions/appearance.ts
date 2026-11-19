@@ -18,6 +18,7 @@ import { LightElement } from "../../base/light-element.ts";
 import { pickFile } from "../../base/pick-file.ts";
 import { SCHEMES, type Scheme } from "../../../styles/schemes.ts";
 import "../../primitives/actions/button.ts";
+import "../../primitives/actions/icon-button.ts";
 import "../../primitives/actions/dropdown.ts";
 import "../../primitives/data/swatches.ts";
 import "../../primitives/forms/choice-tile.ts";
@@ -147,15 +148,9 @@ export class UiAppearance extends LightElement {
   private _theme() {
     const current = (THEMES as readonly string[]).includes(this.value) ? (this.value as ThemeChoice) : "system";
     const next = THEMES[(THEMES.indexOf(current) + 1) % THEMES.length]!;
-    return html`<ui-button
-      variant="ghost"
-      shape="circle"
-      .label=${`Theme: ${current}. Switch to ${next}`}
-      title=${`Theme: ${current}. Switch to ${next}`}
-      @click=${() => void this._pick(next)}
-    >
+    return html`<ui-icon-button .label=${`Theme: ${current}. Switch to ${next}`} @click=${() => void this._pick(next)}>
       ${keyed(current, html`<ui-icon name=${THEME_ICON[current]} size="md" pop></ui-icon>`)}
-    </ui-button>`;
+    </ui-icon-button>`;
   }
 
   private _scheme() {
@@ -184,8 +179,8 @@ export class UiAppearance extends LightElement {
       align="end"
       panel="card"
       panel-width="64"
-      trigger-variant="ghost"
-      trigger-shape="circle"
+      trigger-variant="text"
+      trigger-shape="round"
       trigger-spaced="false"
       .triggerLabel=${label}
     >
@@ -218,8 +213,8 @@ export class UiAppearance extends LightElement {
       align="end"
       panel="card"
       panel-width="80"
-      trigger-variant="ghost"
-      trigger-shape="circle"
+      trigger-variant="text"
+      trigger-shape="round"
       trigger-spaced="false"
       .triggerLabel=${"Background image"}
     >

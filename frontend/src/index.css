@@ -114,7 +114,7 @@
   }
 }
 
-/* Theme change (<ui-theme-controller as="cycle">): the new theme is revealed by a circle growing
+/* Theme change (<ui-appearance kind="theme">): the new theme is revealed by a circle growing
    from the click point (--theme-reveal-x / -y) until it covers the screen (--theme-reveal-r), on
    Material Design 3's expressive slow spatial spring (full-screen motion: src/styles/motion.css).
    The old snapshot stays put underneath. */

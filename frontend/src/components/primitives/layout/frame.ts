@@ -6,6 +6,7 @@ import { styleMap } from "lit/directives/style-map.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { button } from "../actions/button.ts";
+import { iconButton } from "../actions/icon-button.ts";
 import { iconSvg, type IconName } from "../media/icon.ts";
 
 /**
@@ -339,7 +340,7 @@ export class UiFrameHeader extends LightElement {
 
   render() {
     const brand = this.brand
-      ? html`<a class=${button({ variant: "ghost", class: appShellBrand() })} href=${ifDefined(this.brandHref)}
+      ? html`<a class=${button({ variant: "text", class: appShellBrand() })} href=${ifDefined(this.brandHref)}
           >${this.brandIcon ? html`<span class=${appShellBrandMark()}>${iconSvg(this.brandIcon, { size: "md" })}</span>` : nothing}<span
             >${this.brand}</span
           ></a
@@ -413,7 +414,7 @@ export class UiFrameColumn extends LightElement {
     const panel = html`<div class=${appShellPanel({ side, open, sheet })} data-frame-panel>
       <button
         type="button"
-        class=${button({ variant: "ghost", shape: "circle", class: appShellToggle({ column: side }) })}
+        class=${iconButton({ class: appShellToggle({ column: side }) })}
         aria-label=${open ? `Collapse ${what}` : `Expand ${what}`}
         @click=${() => this._ask(!open)}
       >

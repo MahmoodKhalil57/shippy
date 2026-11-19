@@ -5,45 +5,33 @@ import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 
 /**
- * Loading: Animation indicating that something is loading.
+ * Loading: something is on its way (M3 loading and progress indicators; Apple progress indicators).
  *
  * Purpose: Feedback & system status · Kind: primitive
- * Docs: https://daisyui.com/components/loading/
+ *
+ * Two kinds, nothing decorative (M3: "never simply decorative"):
+ *   spinner   a small indeterminate wait inside a control or a line of text (a button, a row)
+ *   morph     M3 Expressive's loading indicator, for a wait of a few seconds over a page or a
+ *             card (use `<ui-empty-state loading>` for a whole page); with Reduce motion it pulses
+ * At least 24dp (`sm`) except inside a small control. It takes the text colour around it, or the
+ * primary colour. When the progress is known, show `<ui-progress>` instead (Apple: prefer a
+ * determinate indicator). `label` is what's announced; say what's happening ("Reading the case").
  */
 export const loading = rcva("loading", {
   variants: {
     variant: {
       spinner: "loading-spinner",
-      dots: "loading-dots",
-      ring: "loading-ring",
-      ball: "loading-ball",
-      bars: "loading-bars",
-      infinity: "loading-infinity",
-      /**
-       * M3 Expressive's loading indicator: a shape turning and morphing (circle, lobes, rounded
-       * square) on the expressive spatial spring — for waits of a few seconds (a page loading).
-       * With Reduce motion, a pulsing circle.
-       */
       morph:
         "[mask-image:none]! rounded-full bg-current [animation:m3-morph_calc(var(--duration-spatial)*4)_infinite] motion-reduce:[animation:m3-pulse_var(--duration-extra-long4)_var(--ease-standard)_infinite]",
     },
     size: {
-      xs: "loading-xs",
       sm: "loading-sm",
       md: "loading-md",
       lg: "loading-lg",
       xl: "loading-xl",
     },
-    /** The docs colour loaders with text-* utilities. */
     color: {
-      neutral: "text-neutral",
       primary: "text-primary",
-      secondary: "text-secondary",
-      accent: "text-accent",
-      info: "text-info",
-      success: "text-success",
-      warning: "text-warning",
-      error: "text-error",
     },
   },
   defaultVariants: { variant: "spinner" },
@@ -52,7 +40,7 @@ export const loading = rcva("loading", {
 export type LoadingVariants = VariantProps<typeof loading>;
 
 /**
- * @example <ui-loading variant="dots" size="lg" color="primary"></ui-loading>
+ * @example <ui-loading size="sm"></ui-loading>
  * @example <ui-loading variant="morph" size="lg" color="primary" label="Loading the page"></ui-loading>
  *
  * Children are ignored. `label` is announced to screen readers.

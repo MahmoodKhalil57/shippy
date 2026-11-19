@@ -39,7 +39,7 @@ export class UiSuggestions extends LightElement {
         (value) =>
           html`<button
             type="button"
-            class=${button({ variant: "soft", size: "sm", class: suggestion() })}
+            class=${button({ variant: "tonal", size: "xs", class: suggestion() })}
             ?disabled=${this.disabled}
             @click=${() => this.dispatchEvent(new CustomEvent("ui-select", { detail: { value }, bubbles: true }))}
           >

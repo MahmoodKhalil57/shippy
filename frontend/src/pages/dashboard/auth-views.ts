@@ -85,7 +85,7 @@ export class DashboardLogin extends LightElement {
         <ui-text variant="body-md" color="muted"
           >Golden Sea dashboard. A demo user is filled in; switch roles any time from the dashboard.</ui-text
         >
-        ${this.error ? html`<ui-alert color="error" variant="soft">${this.error}</ui-alert>` : nothing}
+        ${this.error ? html`<ui-alert tone="error">${this.error}</ui-alert>` : nothing}
         <ui-text-input
           legend="Email"
           name="email"
@@ -106,9 +106,9 @@ export class DashboardLogin extends LightElement {
       <ui-flex direction="col" gap="4">
         <ui-flex align="center" justify="between" gap="2" wrap>
           <ui-text variant="body-md" color="muted">Signing in as <strong>${this.email}</strong></ui-text>
-          <ui-button variant="ghost" size="xs" .disabled=${!!this.busy} @click=${() => this._back()}>Change</ui-button>
+          <ui-button variant="text" size="xs" .disabled=${!!this.busy} @click=${() => this._back()}>Change</ui-button>
         </ui-flex>
-        ${this.error ? html`<ui-alert color="error" variant="soft">${this.error}</ui-alert>` : nothing}
+        ${this.error ? html`<ui-alert tone="error">${this.error}</ui-alert>` : nothing}
         <ui-flex direction="col" gap="2">
           <ui-text emphasized>Authenticator code</ui-text>
           <ui-text variant="body-md" color="muted"
@@ -130,7 +130,7 @@ export class DashboardLogin extends LightElement {
           </ui-button>
         </ui-flex>
         <ui-divider>or</ui-divider>
-        <ui-button variant="outline" block .disabled=${!!this.busy} @click=${() => this._passkey()}>
+        <ui-button variant="outlined" block .disabled=${!!this.busy} @click=${() => this._passkey()}>
           ${
             this.busy === "passkey"
               ? html`<ui-loading size="sm"></ui-loading> Waiting for your device…`
@@ -176,12 +176,12 @@ export class DashboardLogin extends LightElement {
         <ui-flex direction="col" gap="1">
           <ui-flex gap="2" align="center" wrap>
             <ui-text variant="title-sm">Switch on Chrome's on-device AI</ui-text>
-            <ui-badge size="sm" variant="soft" color="primary">Recommended</ui-badge>
+            <ui-tag tone="primary">Recommended</ui-tag>
           </ui-flex>
           <ui-text variant="body-md"
             >In desktop Chrome, open <strong>chrome://flags</strong>, enable these flags, then click Relaunch:</ui-text
           >
-          <ui-flex gap="1" wrap>${flags.map((f) => html`<ui-badge size="sm" variant="ghost">${f}</ui-badge>`)}</ui-flex>
+          <ui-flex gap="1" wrap>${flags.map((f) => html`<ui-tag>${f}</ui-tag>`)}</ui-flex>
           <ui-text variant="body-sm" color="muted"
             >Also enable the Summarization, Writer, Rewriter, Proofreader, Translation and Language Detection APIs. For
             the first flag, choose "Enabled BypassPerfRequirement".</ui-text
@@ -195,7 +195,7 @@ export class DashboardLogin extends LightElement {
               ? nothing
               : html`<ui-flex>
                   <ui-button
-                    size="sm"
+                    size="xs"
                     ?disabled=${this.localAi === "loading"}
                     @click=${async () => {
                       this.localAi = "loading";
@@ -215,7 +215,7 @@ export class DashboardLogin extends LightElement {
     return html`<ui-flex justify="center" padding="4">
       <ui-box width="full" max="md" padding="fluid">
         <ui-flex direction="col" gap="4">
-          <ui-card heading=${this.step === "email" ? "Log in" : "Verify it's you"} variant="border">
+          <ui-card heading=${this.step === "email" ? "Log in" : "Verify it's you"}>
             ${this.step === "email" ? this._emailStep() : this._verifyStep()}
           </ui-card>
           ${this._onDeviceAi()}
@@ -246,7 +246,7 @@ export class DashboardFirstUser extends LightElement {
     const c = collectionOf(userSlug)!;
     return html`<ui-flex justify="center" padding="4">
       <ui-box width="full" max="lg" padding="fluid">
-        <ui-card heading="Create the first user" variant="border">
+        <ui-card heading="Create the first user">
           <ui-form label="Create the first user" @ui-submit=${() => this._submit()}>
             <ui-flex direction="col" gap="4">
               <ui-text variant="body-md" color="muted">The mock backend has no users yet.</ui-text>

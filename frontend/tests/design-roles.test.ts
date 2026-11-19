@@ -23,14 +23,8 @@ const files = (dir: string): string[] =>
     return e.isDirectory() ? files(p) : p.endsWith(".ts") && !p.endsWith("index.ts") ? [p] : [];
   });
 
-/** Their `size` prop is a decorative display scale (countdown digits, rotating hero words…). */
-const DISPLAY_SCALE = new Set([
-  "actions/swap.ts",
-  "data/countdown.ts",
-  "media/text-rotate.ts",
-  "showcase/diff.ts",
-  "people/avatar.ts",
-]);
+/** Its `size` prop is a display scale (avatar initials grow with the avatar). */
+const DISPLAY_SCALE = new Set(["people/avatar.ts"]);
 
 const base = (cls: string) => cls.replace(/^(?:[^[\]:]+:|\[[^\]]*\]:)*/, "").replace(/!$/, "");
 
@@ -78,8 +72,16 @@ describe("controls are easy to hit (M3 48px touch, WCAG 24px pointer targets)", 
       const { classes } = classStrings(readFileSync(file, "utf8"), file);
       // Table rows are full-width targets already (and a ::before hit area doesn't belong on a <tr>).
       const row = (c: string) => rel === "data/table.ts" && c.trim() === "state-layer";
+      // A button-like recipe whose base (`btn …`) has the target covers its variant strings.
+      const baseHasTarget = classes.some(
+        (c) => /(?:^|\s)btn(?:\s|$)/.test(c) && /(?:^|\s)touch-target(?:\s|$)/.test(c),
+      );
       const bad = classes.filter(
-        (c) => c.split(/\s+/).includes("state-layer") && !c.split(/\s+/).includes("touch-target") && !row(c),
+        (c) =>
+          c.split(/\s+/).includes("state-layer") &&
+          !c.split(/\s+/).includes("touch-target") &&
+          !row(c) &&
+          !(baseHasTarget && !/(?:^|\s)btn(?:\s|$)/.test(c)),
       );
       expect(bad, "add `touch-target` next to `state-layer`").toEqual([]);
     },
@@ -108,6 +110,52 @@ describe("everything that floats is glass", () => {
   it("every select's open list is glass (set once for all selects)", () => {
     const css = readFileSync(path.join(root, "styles/daisy-m3.css"), "utf8");
     expect(css).toMatch(/select::picker\(select\)\s*\{[^}]*@apply liquid-glass/);
+  });
+});
+
+describe("pages use the semantic components, not hand-built copies", () => {
+  const consumers = [...files(path.join(root, "pages")), ...files(path.join(root, "components/composed"))];
+  const rel = (f: string) => path.relative(root, f).split(path.sep).join("/");
+  const RULES: [RegExp, string][] = [
+    [
+      /<ui-badge\b(?![^>]*(?:\.count=|\bcount=|\sdot[\s>]))[^>]*>/,
+      "a badge is a count (.count) or a dot; a word is a <ui-tag>",
+    ],
+    [/<ui-flex slot="heading"/, 'a card header is the card\'s heading / count / subhead and slot="trailing"'],
+    [/<ui-heading level="1"/, "the page title is <ui-page-header>"],
+    [/<ui-card\b[^>]*\b(?:shadow|color|width)=/, 'cards take variant="outlined|filled|elevated" only'],
+    [/<ui-join\b/, "a set of options is a <ui-button-group> (ui-join is for inputs and pagination)"],
+    [
+      /<ui-button\b[^>]*\.(?:color|variant)=\$\{[^}]*\?\s*"(?:primary|tonal|soft)"\s*:\s*(?:undefined|"text"|"ghost")\s*\}/,
+      "selection isn't a colour swap: use <ui-button-group> or a toggle (toggle ?selected)",
+    ],
+    [/<ui-toggle\b/, "an on/off setting is a <ui-switch>; a statement someone confirms is a <ui-checkbox>"],
+    [
+      /<ui-(?:text-input|textarea|select|combobox)\b(?![^>]*\s[.?]?(?:label|legend|aria-label|leading|floating|placeholder)[=\s>])[^>]*>/,
+      "every field has a name: label, legend, aria-label (or a search field's placeholder)",
+    ],
+    [
+      /<ui-button\b(?:[^>]|\$\{[^}]*\})*>\s*<ui-icon\b[^>]*>\s*<\/ui-icon\s*>\s*<\/ui-button\s*>/,
+      "an icon-only action is <ui-icon-button label> (named, with a tooltip)",
+    ],
+    [
+      /<ui-text-input\b(?:[^>]|\$\{[^}]*\})*?\s(?:type|icon)="search"/,
+      "a search field is <ui-search label> (icon, clear, Escape)",
+    ],
+    [/<ui-button\b[^>]*variant="field"/, "a search launcher is <ui-search launcher>"],
+    [
+      /<ui-progress\b(?:[^>]|\$\{[^}]*\})*?\s\.?(?:color|tone)=/,
+      "progress is always primary; a measurement (3 of 5 ready) is a <ui-gauge tone>",
+    ],
+    [/<ui-steps\b(?:[^>]|\$\{[^}]*\})*?\s\.?color=/, "steps take one tone (primary, warning, error)"],
+  ];
+  it.each(consumers.map((f) => [rel(f), f]))("%s", (_, file) => {
+    const src = readFileSync(file, "utf8");
+    const composed = rel(file).startsWith("components/");
+    const bad = RULES.filter(([re]) => !(composed && re.source.includes("ui-join"))).flatMap(([re, why]) =>
+      re.test(src) ? [`${why}: ${src.match(re)![0].slice(0, 80)}`] : [],
+    );
+    expect(bad).toEqual([]);
   });
 });
 

@@ -114,17 +114,17 @@ export class GsGrowth extends LightElement {
   /* ---------------------------------------------------------------- sections */
 
   private _tile(label: string, value: number, note: string, color?: "error" | "warning") {
-    return html`<ui-card variant="border" size="sm" shadow="false">
-      <ui-flex direction="col" gap="1">
-        <ui-text variant="body-md" color="muted" truncate>${label}</ui-text>
-        <ui-text variant="headline-md" leading="tight" .color=${value ? color : undefined}>${value}</ui-text>
-        <ui-text variant="body-sm" color="muted" clamp="2">${note}</ui-text>
-      </ui-flex>
-    </ui-card>`;
+    return html`<ui-stat
+      size="lg"
+      .label=${label}
+      .value=${value}
+      .note=${note}
+      .tone=${value ? color : undefined}
+    ></ui-stat>`;
   }
 
   private _deal(d: Deal) {
-    return html`<ui-card variant="border" size="xs" shadow="false" .href=${d.href}>
+    return html`<ui-card size="sm" .href=${d.href}>
       <ui-flex direction="col" gap="1">
         <ui-text variant="title-sm">${d.name}</ui-text>
         <ui-text variant="body-sm" color="muted">${d.kind}</ui-text>
@@ -143,11 +143,11 @@ export class GsGrowth extends LightElement {
   }
 
   private _board(g: Growth) {
-    return html`<ui-card variant="border" shadow="false">
-      <ui-flex slot="heading" justify="between" align="center" gap="2" full-width wrap>
-        <span>Prospects by stage</span>
-        <ui-button size="xs" variant="ghost" href="/collections/opportunities">All opportunities</ui-button>
-      </ui-flex>
+    return html`<ui-card>
+      <span slot="heading">Prospects by stage</span>
+      <ui-flex slot="trailing" gap="2" align="center" wrap
+        ><ui-button size="xs" variant="text" href="/collections/opportunities">All opportunities</ui-button></ui-flex
+      >
       <ui-text variant="body-sm" color="muted"
         >Introduced → registration submitted → approved vendor → first RFQ → active account. Every open opportunity has
         a next step, or it's flagged.</ui-text
@@ -158,7 +158,7 @@ export class GsGrowth extends LightElement {
             html`<ui-flex direction="col" gap="2">
               <ui-flex justify="between" align="center" gap="2">
                 <ui-text variant="title-sm">${c.stage}</ui-text>
-                <ui-badge size="sm" variant="soft">${c.deals.length}</ui-badge>
+                <ui-badge .count=${c.deals.length}></ui-badge>
               </ui-flex>
               ${c.deals.length ? c.deals.map((d) => this._deal(d)) : html`<ui-text variant="body-sm" color="muted">—</ui-text>`}
             </ui-flex>`,
@@ -168,21 +168,15 @@ export class GsGrowth extends LightElement {
   }
 
   private _step(s: NextStep) {
-    return html`<ui-card variant="border" size="sm" shadow="false">
+    return html`<ui-card size="sm">
       <ui-flex direction="col" gap="2">
         <ui-flex gap="2" align="center" wrap>
-          <ui-badge
-            size="sm"
-            variant="soft"
-            color="info"
-            .icon=${html`<ui-icon .name=${CHANNEL_ICON[s.channel] ?? "phone"} size="xs"></ui-icon>`}
-            >${s.channel}</ui-badge
-          >
+          <ui-tag tone="info" .icon=${CHANNEL_ICON[s.channel] ?? "phone"}>${s.channel}</ui-tag>
           ${
             s.noNext
-              ? html`<ui-badge size="sm" variant="soft" color="error">No next step</ui-badge>`
-              : html`<ui-badge size="sm" variant="soft" .color=${s.overdue ? "error" : "neutral"}
-                  >${s.overdue ? `Overdue · ${s.due}` : s.due}</ui-badge
+              ? html`<ui-tag tone="error">No next step</ui-tag>`
+              : html`<ui-tag .tone=${s.overdue ? "error" : "neutral"}
+                  >${s.overdue ? `Overdue · ${s.due}` : s.due}</ui-tag
                 >`
           }
           <ui-text variant="body-sm" color="muted">${s.owner}</ui-text>
@@ -218,10 +212,8 @@ export class GsGrowth extends LightElement {
   }
 
   private _steps(g: Growth) {
-    return html`<ui-card variant="border" shadow="false">
-      <ui-flex slot="heading" gap="2" align="center" wrap
-        >Sales next steps<ui-badge size="sm" variant="soft">${g.steps.length}</ui-badge></ui-flex
-      >
+    return html`<ui-card .count=${g.steps.length}>
+      <span slot="heading">Sales next steps</span>
       <ui-text variant="body-sm" color="muted"
         >Each step has a channel, a date and what to say. Call or message yourself, then record what happened — the next
         step lands on the owner's follow-ups.</ui-text
@@ -247,15 +239,13 @@ export class GsGrowth extends LightElement {
         key: "supplied",
         label: "",
         render: (v) =>
-          html`<ui-badge size="sm" variant="soft" .color=${v.supplied ? "success" : "neutral"}
-            >${v.supplied ? "Supplied" : "Not yet"}</ui-badge
-          >`,
+          html`<ui-tag .tone=${v.supplied ? "success" : "neutral"}>${v.supplied ? "Supplied" : "Not yet"}</ui-tag>`,
       },
     ];
     const groups = g.fleets.map((f) => ({
       label: html`<ui-flex gap="2" align="center" wrap>
         <ui-link variant="hover" .href=${f.href}><ui-text variant="title-sm">${f.company}</ui-text></ui-link>
-        <ui-badge size="xs" variant="soft" .color=${f.tone}>${f.relation}</ui-badge>
+        <ui-tag .tone=${f.tone}>${f.relation}</ui-tag>
         <ui-text variant="body-sm" color="muted"
           >${f.vessels.length} of ${f.fleetSize} vessels on file · ${f.vessels.filter((v) => v.supplied).length}
           supplied</ui-text
@@ -263,7 +253,7 @@ export class GsGrowth extends LightElement {
       </ui-flex>`,
       rows: f.vessels as Row[],
     }));
-    return html`<ui-card variant="border" shadow="false" heading="Fleets per ship manager">
+    return html`<ui-card heading="Fleets per ship manager">
       <ui-text variant="body-sm" color="muted"
         >Vessels with IMO for customers and prospects — the room to grow is every vessel we don't supply yet.</ui-text
       >
@@ -286,7 +276,7 @@ export class GsGrowth extends LightElement {
       {
         key: "status",
         label: "Status",
-        render: (r) => html`<ui-badge size="sm" variant="soft" .color=${r.tone}>${r.status}</ui-badge>`,
+        render: (r) => html`<ui-tag .tone=${r.tone}>${r.status}</ui-tag>`,
       },
       {
         key: "dates",
@@ -306,19 +296,21 @@ export class GsGrowth extends LightElement {
           html`<ui-flex gap="1" wrap>
             ${r.documents.map(
               (d) =>
-                html`<ui-badge size="xs" variant="soft" .color=${DOC_COLOR[d.status] ?? "neutral"}
-                  >${d.name}${d.status === "Missing" ? " — missing" : ""}</ui-badge
+                html`<ui-tag .tone=${DOC_COLOR[d.status] ?? "neutral"}
+                  >${d.name}${d.status === "Missing" ? " — missing" : ""}</ui-tag
                 >`,
             )}
           </ui-flex>`,
       },
       { key: "next", label: "Next", render: (r) => html`<ui-text variant="body-sm">${r.next || "—"}</ui-text>` },
     ];
-    return html`<ui-card variant="border" shadow="false">
-      <ui-flex slot="heading" justify="between" align="center" gap="2" full-width wrap>
-        <span>Vendor registrations</span>
-        <ui-button size="xs" variant="ghost" href="/collections/vendor-registrations">All registrations</ui-button>
-      </ui-flex>
+    return html`<ui-card>
+      <span slot="heading">Vendor registrations</span>
+      <ui-flex slot="trailing" gap="2" align="center" wrap
+        ><ui-button size="xs" variant="text" href="/collections/vendor-registrations"
+          >All registrations</ui-button
+        ></ui-flex
+      >
       <ui-text variant="body-sm" color="muted"
         >Applications to become an approved supplier of a ship manager or owner.</ui-text
       >
@@ -355,10 +347,7 @@ export class GsGrowth extends LightElement {
       {
         key: "content",
         label: "Content",
-        render: (c) =>
-          html`<ui-badge size="sm" variant="soft" .color=${c.content === "Approved" ? "success" : "warning"}
-            >${c.content}</ui-badge
-          >`,
+        render: (c) => html`<ui-tag .tone=${c.content === "Approved" ? "success" : "warning"}>${c.content}</ui-tag>`,
       },
       {
         key: "status",
@@ -380,7 +369,7 @@ export class GsGrowth extends LightElement {
             : html`<ui-text variant="body-sm" color="muted">—</ui-text>`,
       },
     ];
-    return html`<ui-card variant="border" shadow="false" heading="Campaigns">
+    return html`<ui-card heading="Campaigns">
       <ui-text variant="body-sm" color="muted"
         >Approved lists and content only.
         ${g.canSend ? "You can schedule and send." : "Only Karim Balbaa schedules or sends."}</ui-text
@@ -451,32 +440,34 @@ export class GsGrowth extends LightElement {
           : nothing
       }
       <ui-flex slot="actions" gap="2">
-        <ui-button variant="ghost" @click=${() => (this.draft = null)}>Cancel</ui-button>
+        <ui-button variant="text" @click=${() => (this.draft = null)}>Cancel</ui-button>
         <ui-button color="primary" ?disabled=${this.busy} @click=${() => void this._save()}>Save outcome</ui-button>
       </ui-flex>
     </ui-modal>`;
   }
 
   render() {
-    if (this.error) return html`<ui-alert color="error" variant="soft">${this.error}</ui-alert>`;
+    if (this.error)
+      return html`<ui-empty-state
+        tone="error"
+        heading="This page couldn't load"
+        .description=${this.error}
+      ></ui-empty-state>`;
     const g = this.g;
-    if (!g)
-      return html`<ui-flex justify="center" padding="8"><ui-loading size="lg" color="primary"></ui-loading></ui-flex>`;
+    if (!g) return html`<ui-empty-state loading></ui-empty-state>`;
     return html`<ui-flex direction="col" gap="6">
-      <ui-flex justify="between" align="end" gap="4" wrap>
-        <ui-flex direction="col" gap="1" shrink>
-          <ui-text variant="label-md" color="muted" uppercase>Growth</ui-text>
-          <ui-heading level="1" variant="page">Growth board</ui-heading>
-          <ui-text color="muted"
-            >Prospects, fleets, introductions and vendor registrations — kept apart from operational RFQs, and linked to
-            the customer once business is won.</ui-text
-          >
+      <ui-page-header>
+        <span slot="eyebrow">Growth</span>
+        <span slot="heading">Growth board</span>
+        <span slot="subtitle"
+          >Prospects, fleets, introductions and vendor registrations — kept apart from operational RFQs, and linked to
+          the customer once business is won.</span
+        >
+        <ui-flex slot="actions" gap="2" wrap>
+          <ui-button size="xs" variant="tonal" href="/collections/campaigns">Campaigns</ui-button>
+          <ui-button size="xs" color="primary" href="/collections/opportunities/create">Add opportunity</ui-button>
         </ui-flex>
-        <ui-flex gap="2" wrap>
-          <ui-button size="sm" variant="soft" href="/collections/campaigns">Campaigns</ui-button>
-          <ui-button size="sm" color="primary" href="/collections/opportunities/create">Add opportunity</ui-button>
-        </ui-flex>
-      </ui-flex>
+      </ui-page-header>
       <ui-grid fit="xs" gap="4">
         ${this._tile("Open opportunities", g.totals.open, "prospects to active accounts")}
         ${this._tile("Next steps this week", g.totals.dueThisWeek, "calls, emails and visits planned")}

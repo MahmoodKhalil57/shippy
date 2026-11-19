@@ -2,7 +2,7 @@ import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
-import { button } from "../actions/button.ts";
+import { iconButton } from "../actions/icon-button.ts";
 import { iconSvg, type IconName } from "../media/icon.ts";
 
 /**
@@ -92,7 +92,7 @@ export class UiMessage extends LightElement {
     return html`<span class=${messageAction({ pressed })} data-tip=${label}>
       <button
         type="button"
-        class=${button({ variant: "ghost", size: "xs", shape: "square" })}
+        class=${iconButton({ size: "xs", shape: "square" })}
         aria-label=${label}
         aria-pressed=${pressed === undefined ? nothing : pressed ? "true" : "false"}
         @click=${onClick}

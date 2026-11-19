@@ -1,4 +1,4 @@
-import type { BadgeVariants } from "../../../components/primitives/data/badge.ts";
+import type { Tone } from "../../../components/primitives/data/tag.ts";
 import { api } from "../../../cms/client.ts";
 import type { BookLine, Check } from "../../../cms/endpoints/operations.ts";
 
@@ -8,7 +8,7 @@ import type { BookLine, Check } from "../../../cms/endpoints/operations.ts";
  * colours and the small "AI is reading" pause.
  */
 
-export type BadgeColor = BadgeVariants["color"];
+export type BadgeColor = Tone;
 export { statusColor } from "../shared.ts";
 
 export interface OpsPO {

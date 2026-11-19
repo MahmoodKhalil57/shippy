@@ -11,27 +11,25 @@ import { booleanAttribute, rcva } from "../../base/variants.ts";
  * Purpose: Navigation · Kind: primitive
  * Docs: https://daisyui.com/components/tab/
  *
- * Horizontal scroll when there's no room (docs): `scroll-area="xs"` (the max width
+ * Horizontal scroll when there's no room (docs): `scroll-area="xs"` (the max width — prefer fewer tabs: Apple avoids overflow tabs)
  * of the scroll area). Custom active color (docs): `active-color="primary"`.
  */
 /** Unselected tabs at 80% ink (daisyUI's faint default falls below WCAG AA). */
 export const tabs = rcva("tabs [&>.tab:not(.tab-active)]:text-on-surface-variant", {
   variants: {
+    /**
+     * M3 tabs: `primary` for a page's own sections (the record's tabs), `secondary` for sections
+     * inside one part of a page (a form's groups). Both mark the active tab with an underline.
+     * Tabs switch content; to choose an option or filter a list use `<ui-button-group>`.
+     * Keep to six or fewer (Apple), short noun labels.
+     */
     variant: {
-      box: "tabs-box",
-      border: "tabs-border",
-      lift: "tabs-lift",
+      primary: "tabs-border [&>.tab]:text-title-sm",
+      secondary: "tabs-border [&>.tab]:text-label-lg",
     },
     size: {
-      xs: "tabs-xs",
       sm: "tabs-sm",
       md: "tabs-md",
-      lg: "tabs-lg",
-      xl: "tabs-xl",
-    },
-    placement: {
-      top: "tabs-top",
-      bottom: "tabs-bottom",
     },
     /** Keep tabs on one line inside a scroll area. */
     scroll: { true: "min-w-max" },
@@ -52,16 +50,9 @@ export const tabsTab = rcva("tab [&>svg]:me-2 [&>svg]:size-4", {
     disabled: { true: "tab-disabled" },
     /** Above the sticky panels in a scroll area. */
     scroll: { true: "z-1" },
-    /** Active tab colors (docs "Tabs with custom color"). */
+    /** The active tab's indicator and label in the primary colour (M3). */
     activeColor: {
-      primary:
-        "[&.tab-active,&:checked]:text-primary-content [--tab-bg:var(--color-primary)] [--tab-border-color:var(--color-primary)]",
-      secondary:
-        "[&.tab-active,&:checked]:text-secondary-content [--tab-bg:var(--color-secondary)] [--tab-border-color:var(--color-secondary)]",
-      accent:
-        "[&.tab-active,&:checked]:text-accent-content [--tab-bg:var(--color-accent)] [--tab-border-color:var(--color-accent)]",
-      neutral:
-        "[&.tab-active,&:checked]:text-neutral-content [--tab-bg:var(--color-neutral)] [--tab-border-color:var(--color-neutral)]",
+      primary: "[&.tab-active,&:checked]:text-primary-ink [--tab-border-color:var(--color-primary)]",
     },
   },
 });
@@ -127,7 +118,6 @@ export class UiTabs extends LightElement {
   @property() mode: TabsMode = "tabs";
   @property() variant: TabsVariants["variant"];
   @property() size: TabsVariants["size"];
-  @property() placement: TabsVariants["placement"];
   /** Radio group name (radio mode). */
   @property() name = uid("tabs");
   /** Panel padding (`lg` = docs tabs-box example). */
@@ -164,7 +154,7 @@ export class UiTabs extends LightElement {
   }
 
   private _list() {
-    return tabs({ variant: this.variant, size: this.size, placement: this.placement, scroll: !!this.scrollArea });
+    return tabs({ variant: this.variant ?? "primary", size: this.size, scroll: !!this.scrollArea });
   }
 
   private _panel() {
@@ -181,7 +171,7 @@ export class UiTabs extends LightElement {
     >
       ${this.items.map((item, i) => {
         const on = i === this.active;
-        const cls = tabsTab({ active: on, disabled: item.disabled, activeColor: this.activeColor });
+        const cls = tabsTab({ active: on, disabled: item.disabled, activeColor: this.activeColor ?? "primary" });
         const common = { id: `${this._id}-${i}`, panel: `${this._id}-panel` };
         return item.href
           ? html`<a
@@ -221,12 +211,12 @@ export class UiTabs extends LightElement {
             ${activeItem.content}
           </div>`
         : nothing;
-    return this.placement === "bottom" ? html`${panel}${list}` : html`${list}${panel}`;
+    return html`${list}${panel}`;
   }
 
   private _renderRadio() {
     const tabCls = (disabled?: boolean) =>
-      tabsTab({ disabled, scroll: !!this.scrollArea, activeColor: this.activeColor });
+      tabsTab({ disabled, scroll: !!this.scrollArea, activeColor: this.activeColor ?? "primary" });
     const list = html`<div class=${this._list()}>
       ${this.items.map((item, i) => {
         const input = (cls: string) =>

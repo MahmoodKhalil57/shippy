@@ -2,163 +2,74 @@ import type { VariantProps } from "class-variance-authority";
 import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
-import { iconSvg, type IconName } from "../media/icon.ts";
-import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
-import { button, type ButtonVariants } from "../actions/button.ts";
+import { rcva } from "../../base/variants.ts";
+import { card, cardBody, cardLinkIcon } from "../containers/card.ts";
+import { iconSvg } from "../media/icon.ts";
 
 /**
- * Stat: Shows numbers and data in a block.
+ * Stat: one key figure — what it is, the number, a line of context, and optionally its trend
+ * (Apple: "gauges" / large-title numerals; M3: display / headline type for numerals).
  *
  * Purpose: Data & metrics · Kind: primitive
- * Docs: https://daisyui.com/components/stat/
  *
- * `stats` is the container; each `stat` block has title/value/desc parts, plus
- * an optional figure (icon/avatar) and actions (buttons). All variants are
- * responsive, e.g. the docs' `direction="vertical lg:horizontal"`.
+ * Drawn as a small outlined card (the same as `<ui-card size="sm">`), so a row of stats sits
+ * beside cards without a seam. `tone` colours the value when it means something (overdue,
+ * on target), in the tone's readable ink. With `href` the whole stat opens the list behind it.
+ * Put a sparkline in the `trend` slot (`<ui-chart kind="spark" slot="trend">`).
  */
-export const stats = rcva("stats", {
+export const statLabel = rcva("truncate text-body-md text-on-surface-variant");
+export const statValue = rcva("tabular-nums", {
   variants: {
-    direction: {
-      horizontal: "stats-horizontal",
-      vertical: "stats-vertical",
+    size: { md: "text-headline-sm", lg: "text-headline-md" },
+    tone: {
+      neutral: "text-on-surface",
+      success: "text-success-ink",
+      warning: "text-warning-ink",
+      error: "text-error-ink",
+      info: "text-info-ink",
+      primary: "text-primary-ink",
     },
-    shadow: { true: "shadow-elevation-1" },
-    /** Background + border ("With custom colors and button"). */
-    surface: { true: "bg-surface border border-outline-variant" },
   },
-  defaultVariants: { shadow: true },
+  defaultVariants: { size: "md", tone: "neutral" },
 });
+export const statNote = rcva("line-clamp-2 text-body-sm text-on-surface-variant");
+export const statText = rcva("flex min-w-0 flex-col gap-1");
 
-export const statItem = rcva("stat", {
-  variants: {
-    centered: { true: "place-items-center" },
-  },
-});
-
-const textColor = {
-  neutral: "text-neutral",
-  primary: "text-primary-ink",
-  secondary: "text-secondary-ink",
-  accent: "text-accent-ink",
-  info: "text-info-ink",
-  success: "text-success-ink",
-  warning: "text-warning-ink",
-  error: "text-error-ink",
-} as const;
-
-export const statTitle = rcva("stat-title");
-export const statValue = rcva("stat-value", { variants: { color: textColor } });
-export const statDesc = rcva("stat-desc", { variants: { color: textColor } });
-export const statFigure = rcva("stat-figure", { variants: { color: textColor } });
-export const statActions = rcva("stat-actions");
-/** Figure icon, as in the docs (`inline-block h-8 w-8 stroke-current`). */
-export const statIcon = rcva("inline-block h-8 w-8 stroke-current");
-/** Figure avatar, as in the docs. */
-export const statAvatar = rcva("avatar", { variants: { online: { true: "avatar-online" } } });
-export const statAvatarImage = rcva("w-16 rounded-full");
-
-export type StatVariants = VariantProps<typeof stats>;
-export type StatColor = keyof typeof textColor;
-
-/** The docs' stat figures, as system icons. */
-const STAT_ICONS = {
-  heart: "heart",
-  bolt: "bolt",
-  info: "info",
-  adjustments: "settings",
-  archive: "archive",
-} as const satisfies Record<string, IconName>;
-export type StatIconName = keyof typeof STAT_ICONS;
-
-export interface StatAction {
-  label: Renderable;
-  color?: ButtonVariants["color"];
-  onClick?: () => void;
-}
-
-export interface StatEntry {
-  heading?: Renderable;
-  value: Renderable;
-  desc?: Renderable;
-  /** Built-in icon name or any template for the side figure. */
-  figure?: StatIconName | Exclude<Renderable, string>;
-  /** Avatar image for the side figure (docs: "Tasks done"). */
-  avatar?: { src: string; alt?: string; online?: boolean };
-  valueColor?: StatColor;
-  descColor?: StatColor;
-  figureColor?: StatColor;
-  /** Show the value above the title (as in the docs' avatar example). */
-  valueFirst?: boolean;
-  /** Small buttons under the value. */
-  actions?: StatAction[];
-}
+export type StatVariants = VariantProps<typeof statValue>;
 
 /**
+ * @example <ui-stat label="Overdue" .value=${"EGP 96,400"} note="2 invoices · oldest 12 days" tone="error"></ui-stat>
  * @example
- * <ui-stat direction="vertical lg:horizontal" .items=${[
- *   { heading: "Total Likes", value: "25.6K", desc: "21% more than last month", figure: "heart", figureColor: "primary", valueColor: "primary" },
- *   { heading: "Tasks done", value: "86%", desc: "31 tasks remaining", descColor: "secondary", valueFirst: true,
- *     avatar: { src: "/a.webp", online: true }, figureColor: "secondary" },
- *   { heading: "Account balance", value: "$89,400", actions: [{ label: "Add funds", color: "success" }] },
- * ]}></ui-stat>
- *
- * Without `items`, authored children (hand-written `stat` blocks) are rendered inside `stats`.
+ * <ui-stat label="Awaiting supplier" .value=${2} note="1 RFQ awaiting reply" href="/collections/cases" size="lg">
+ *   <ui-chart slot="trend" kind="spark" …></ui-chart>
+ * </ui-stat>
  */
 @customElement("ui-stat")
 export class UiStat extends LightElement {
-  @property({ attribute: false }) items: StatEntry[] = [];
-  @property() direction: StatVariants["direction"];
-  @property({ converter: responsiveBoolean }) shadow: Responsive<boolean> = true;
-  @property({ converter: responsiveBoolean }) surface: Responsive<boolean> = false;
-  /** Center the content of every stat block. */
-  @property({ converter: responsiveBoolean }) centered: Responsive<boolean> = false;
-
-  private _figure(s: StatEntry) {
-    if (s.avatar) {
-      return html`<div class=${statAvatar({ online: s.avatar.online })}>
-        <div class=${statAvatarImage()}><img alt=${s.avatar.alt ?? ""} src=${s.avatar.src} /></div>
-      </div>`;
-    }
-    if (typeof s.figure === "string" && s.figure in STAT_ICONS) {
-      return iconSvg(STAT_ICONS[s.figure as StatIconName], {}, { class: statIcon() });
-    }
-    return s.figure;
-  }
-
-  private _item(s: StatEntry) {
-    const title = s.heading !== undefined ? html`<div class=${statTitle()}>${s.heading}</div>` : nothing;
-    const value = html`<div class=${statValue({ color: s.valueColor })}>${s.value}</div>`;
-    return html`<div class=${statItem({ centered: this.centered })}>
-      ${
-        s.figure !== undefined || s.avatar
-          ? html`<div class=${statFigure({ color: s.figureColor })}>${this._figure(s)}</div>`
-          : nothing
-      }
-      ${s.valueFirst ? html`${value}${title}` : html`${title}${value}`}
-      ${s.desc !== undefined ? html`<div class=${statDesc({ color: s.descColor })}>${s.desc}</div>` : nothing}
-      ${
-        s.actions?.length
-          ? html`<div class=${statActions()}>
-              ${s.actions.map(
-                (a) =>
-                  html`<button
-                    type="button"
-                    class=${button({ size: "xs", color: a.color })}
-                    @click=${() => a.onClick?.()}
-                  >
-                    ${a.label}
-                  </button>`,
-              )}
-            </div>`
-          : nothing
-      }
-    </div>`;
-  }
+  @property() label: Renderable = "";
+  @property() value: Renderable = "";
+  @property() note: Renderable = "";
+  @property() tone: StatVariants["tone"];
+  /** `lg` for the page's headline figures. */
+  @property() size: StatVariants["size"];
+  /** The whole stat links to the records behind the figure. */
+  @property() href?: string;
 
   render() {
-    return html`<div class=${stats({ direction: this.direction, shadow: this.shadow, surface: this.surface })}>
-      ${this.items.length ? this.items.map((s) => this._item(s)) : this.content}
+    const body = html`<div class=${cardBody()}>
+      <div class=${statText()}>
+        <p class=${statLabel()}>${this.label}</p>
+        <p class=${statValue({ size: this.size, tone: this.tone })}>${this.value}</p>
+        ${this.note ? html`<p class=${statNote()}>${this.note}</p>` : nothing}
+      </div>
+      ${this.slotted("trend")}
     </div>`;
+    const cls = card({ variant: "outlined", size: "sm", link: !!this.href });
+    return this.href
+      ? html`<a href=${this.href} class=${cls}
+          >${body}<span class=${cardLinkIcon()} aria-hidden="true">${iconSvg("arrow-right", { size: "sm" })}</span></a
+        >`
+      : html`<div class=${cls}>${body}</div>`;
   }
 }
 

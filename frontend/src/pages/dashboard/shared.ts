@@ -1,4 +1,4 @@
-import type { BadgeVariants } from "../../components/primitives/data/badge.ts";
+import type { Tone } from "../../components/primitives/data/tag.ts";
 import type { IconName } from "../../components/primitives/media/icon.ts";
 import { text } from "../../cms/runtime/util.ts";
 import type { CollectionConfig, GlobalConfig } from "payload";
@@ -6,7 +6,6 @@ import { API_ROUTE, DASHBOARD_ROUTE, api, withBase } from "../../cms/client.ts";
 import { bookmarks, type Bookmark } from "../../stores/index.ts";
 import config from "../../cms/config.ts";
 import type { Doc, FieldLike } from "../../cms/types.ts";
-import type { AlertVariants } from "../../components/primitives/feedback/alert.ts";
 
 /** Shared helpers for the dashboard (src/pages/dashboard). */
 
@@ -213,8 +212,16 @@ export function navigate(to: string, replace = false) {
 
 // ---------------------------------------------------------------- feedback
 
-export function toast(message: string, color: AlertVariants["color"] = "success") {
-  document.querySelector("ui-toast")?.push(message, { color, timeout: 4000 });
+/**
+ * A snackbar about what just happened. Errors stay until dismissed; everything else goes after 4s.
+ * (The tone of success / info / warning messages isn't shown: M3 snackbars carry no status icons.)
+ */
+export function toast(
+  message: string,
+  tone: "success" | "info" | "warning" | "error" = "success",
+  action?: { label: string; onClick: () => void },
+) {
+  document.querySelector("ui-snackbar")?.push(message, { tone: tone === "error" ? "error" : "neutral", action });
 }
 
 // ---------------------------------------------------------------- bookmarks
@@ -262,7 +269,7 @@ export const groupOf = (c: CollectionConfig) => (typeof c.admin?.group === "stri
  * progress blue, done green, ended or unknown grey. Used by the order-to-cash screens and by
  * collection lists for their status columns.
  */
-export function statusColor(status = ""): BadgeVariants["color"] {
+export function statusColor(status = ""): Tone {
   if (/not awarded|expired|cancelled|superseded|skipped|ignored/i.test(status)) return "neutral";
   if (
     /blocked|mismatch|rejected|invalid|declined|no response|on hold|held|overdue|short|damaged|wrong|missing|late|unreachable|clarification|not sourced|lost|failed|reversed/i.test(

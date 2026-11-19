@@ -115,18 +115,16 @@ export class GsInboxHistory extends LightElement {
   /* ---------------------------------------------------------------- parts */
 
   private _header(d: HistoryPayload) {
-    return html`<ui-flex justify="between" align="end" gap="4" wrap>
-      <ui-flex direction="col" gap="1" shrink>
-        <ui-text variant="label-md" color="muted" uppercase>Sourcing desk · your history</ui-text>
-        <ui-heading level="1" variant="page">Inbox history</ui-heading>
-        <ui-text color="muted">We organise your past, not just your future: every inbox, every year.</ui-text>
-      </ui-flex>
-      <ui-flex gap="2" wrap>
+    return html`<ui-page-header>
+      <span slot="eyebrow">Sourcing desk · your history</span>
+      <span slot="heading">Inbox history</span>
+      <span slot="subtitle">We organise your past, not just your future: every inbox, every year.</span>
+      <ui-flex slot="actions" gap="2" wrap>
         ${
           d.organised
-            ? html`<ui-badge color="success" variant="soft" icon="success">Organised</ui-badge>`
+            ? html`<ui-tag tone="success" icon="success">Organised</ui-tag>`
             : html`<ui-button
-                size="sm"
+                size="xs"
                 color="primary"
                 ?disabled=${this.busy === "organise"}
                 @click=${() => this._organise()}
@@ -134,11 +132,11 @@ export class GsInboxHistory extends LightElement {
               >`
         }
       </ui-flex>
-    </ui-flex>`;
+    </ui-page-header>`;
   }
 
   private _progress(d: HistoryPayload) {
-    return html`<ui-card variant="border" shadow="false" heading="Import progress">
+    return html`<ui-card heading="Import progress">
       <ui-steps scrollable .current=${this._step(d)} .items=${STEPS.map((label) => ({ label }))}></ui-steps>
       <ui-text variant="body-sm" color="muted"
         >Status:
@@ -157,7 +155,7 @@ export class GsInboxHistory extends LightElement {
       {
         key: "provider",
         label: "Source",
-        render: (m) => html`<ui-badge size="sm" variant="ghost">${m.provider}</ui-badge>`,
+        render: (m) => html`<ui-tag>${m.provider}</ui-tag>`,
       },
       { key: "years", label: "Years", render: (m) => html`<ui-text variant="body-md">${m.from}–${m.to}</ui-text>` },
       {
@@ -171,11 +169,11 @@ export class GsInboxHistory extends LightElement {
         render: (m) => html`<ui-text variant="body-md" align="end">${n(m.attachments as number)}</ui-text>`,
       },
     ];
-    return html`<ui-card variant="border" shadow="false">
-      <ui-flex slot="heading" justify="between" align="center" gap="2" full-width wrap>
-        <span>Mailboxes imported</span>
-        <ui-badge size="sm" variant="soft">${n(d.scanned)} messages · 2019–2026</ui-badge>
-      </ui-flex>
+    return html`<ui-card>
+      <span slot="heading">Mailboxes imported</span>
+      <ui-flex slot="trailing" gap="2" align="center" wrap
+        ><ui-tag>${n(d.scanned)} messages · 2019–2026</ui-tag></ui-flex
+      >
       <ui-text variant="body-sm" color="muted"
         >All of Golden Sea's mailboxes and WhatsApp exports, read in a dry run first — nothing is saved before
         approval.</ui-text
@@ -192,26 +190,21 @@ export class GsInboxHistory extends LightElement {
   }
 
   private _dedup(d: HistoryPayload) {
-    return html`<ui-card variant="border" shadow="false" heading="De-duplication">
+    return html`<ui-card heading="De-duplication">
       <ui-text variant="body-md"
         >The same email often sits in three mailboxes. Each message is kept once, with all its copies linked.</ui-text
       >
       <ui-flex direction="col" gap="3">
         ${d.dedup.map(
           (x) =>
-            html`<ui-flex direction="col" gap="1">
-              <ui-flex justify="between" gap="2"
-                ><ui-text variant="body-md">${x.label}</ui-text
-                ><ui-text variant="title-sm">− ${n(x.count)}</ui-text></ui-flex
-              >
-              <ui-progress
-                width="full"
-                color="neutral"
-                .value=${x.count}
-                .max=${d.scanned}
-                .label=${x.label}
-              ></ui-progress>
-            </ui-flex>`,
+            html`<ui-gauge
+              tone="neutral"
+              .heading=${x.label}
+              value-text=${`− ${n(x.count)}`}
+              .value=${x.count}
+              .max=${d.scanned}
+              .label=${`${x.label}: ${n(x.count)} removed`}
+            ></ui-gauge>`,
         )}
       </ui-flex>
       <ui-divider></ui-divider>
@@ -224,14 +217,14 @@ export class GsInboxHistory extends LightElement {
 
   private _scattered() {
     if (this.phase >= 0)
-      return html`<ui-card variant="border" shadow="false" heading="Organising your history">
+      return html`<ui-card heading="Organising your history">
         <ui-flex gap="3" align="center">
-          <ui-loading variant="dots" color="primary" label="Organising"></ui-loading>
+          <ui-loading color="primary" label="Organising"></ui-loading>
           <ui-text variant="body-md">${ORGANISE_PHASES[this.phase]}</ui-text>
         </ui-flex>
-        <ui-progress width="full" color="primary" .value=${this.phase + 1} .max=${ORGANISE_PHASES.length}></ui-progress>
+        <ui-progress .value=${this.phase + 1} .max=${ORGANISE_PHASES.length}></ui-progress>
       </ui-card>`;
-    return html`<ui-card variant="dash" shadow="false" heading="Years of emails, RFQs, offers and quotes · scattered">
+    return html`<ui-card variant="filled" heading="Years of emails, RFQs, offers and quotes · scattered">
       <ui-text variant="body-md" color="muted"
         >Press Organise: the AI reads the kept messages and builds your customers, vessels, suppliers and dated prices.
         Anything it isn't sure of comes to you first.</ui-text
@@ -239,7 +232,7 @@ export class GsInboxHistory extends LightElement {
       <ui-button
         slot="actions"
         color="primary"
-        size="sm"
+        size="xs"
         ?disabled=${this.busy === "organise"}
         @click=${() => this._organise()}
         ><ui-icon name="sparkles" size="sm"></ui-icon>Organise</ui-button
@@ -249,7 +242,7 @@ export class GsInboxHistory extends LightElement {
 
   private _totals(d: HistoryPayload) {
     const tile = (label: string, value: number, note: string) =>
-      html`<ui-card variant="border" size="sm" shadow="false">
+      html`<ui-card size="sm">
         <ui-flex direction="col" gap="1">
           <ui-text variant="body-md" color="muted">${label}</ui-text>
           <ui-text variant="headline-md" leading="tight">${n(value)}</ui-text>
@@ -265,7 +258,7 @@ export class GsInboxHistory extends LightElement {
   }
 
   private _newBadge(known: boolean) {
-    return known ? nothing : html`<ui-badge size="xs" color="accent" variant="soft">New to Odoo</ui-badge>`;
+    return known ? nothing : html`<ui-tag tone="primary">New to Odoo</ui-tag>`;
   }
 
   private _entities(d: HistoryPayload) {
@@ -327,13 +320,11 @@ export class GsInboxHistory extends LightElement {
         key: "ordered",
         label: "PO",
         render: (p) =>
-          p.ordered
-            ? html`<ui-badge size="xs" variant="soft" color="success">Ordered</ui-badge>`
-            : html`<ui-badge size="xs" variant="soft">No PO — still remembered</ui-badge>`,
+          p.ordered ? html`<ui-tag tone="success">Ordered</ui-tag>` : html`<ui-tag>No PO — still remembered</ui-tag>`,
       },
     ];
     const card = (heading: string, sub: string, columns: TableColumn<Row>[], rows: unknown[]) =>
-      html`<ui-card variant="border" shadow="false" .heading=${heading}>
+      html`<ui-card .heading=${heading}>
         <ui-text variant="body-sm" color="muted">${sub}</ui-text>
         <ui-table size="sm" .columns=${columns} .rows=${rows as Row[]}></ui-table>
       </ui-card>`;
@@ -346,10 +337,11 @@ export class GsInboxHistory extends LightElement {
   }
 
   private _review(d: HistoryPayload) {
-    return html`<ui-card variant="border" shadow="false">
-      <ui-flex slot="heading" gap="2" align="center"
-        >Uncertain items<ui-badge size="sm" variant="soft" .color=${d.pending ? "warning" : "success"}
-          >${d.pending ? `${d.pending} to review` : "all decided"}</ui-badge
+    return html`<ui-card>
+      <span slot="heading">Uncertain items</span>
+      <ui-flex slot="trailing" gap="2" align="center" wrap
+        ><ui-tag .tone=${d.pending ? "warning" : "success"}
+          >${d.pending ? `${d.pending} to review` : "all decided"}</ui-tag
         ></ui-flex
       >
       <ui-text variant="body-sm" color="muted"
@@ -362,10 +354,10 @@ export class GsInboxHistory extends LightElement {
               <ui-flex direction="col" gap="2">
                 <ui-flex justify="between" align="center" gap="2" wrap>
                   <ui-flex gap="2" align="center" wrap>
-                    <ui-badge size="sm" variant="soft" .color=${KIND_TONE[r.kind] ?? "neutral"}>${r.kind}</ui-badge>
+                    <ui-tag .tone=${KIND_TONE[r.kind] ?? "neutral"}>${r.kind}</ui-tag>
                     <ui-text variant="title-sm">${r.question}</ui-text>
                   </ui-flex>
-                  <ui-badge size="sm" variant="outline">${pct(r.confidence)}</ui-badge>
+                  <ui-tag variant="outline">${pct(r.confidence)}</ui-tag>
                 </ui-flex>
                 <ui-text variant="body-md"><strong>Proposal:</strong> ${r.proposal}</ui-text>
                 <ui-text variant="body-sm" color="muted"
@@ -374,27 +366,25 @@ export class GsInboxHistory extends LightElement {
                 ${
                   r.decision
                     ? html`<ui-flex gap="2" align="center" wrap>
-                        <ui-badge size="sm" variant="soft" .color=${r.decision === "Confirmed" ? "success" : "neutral"}
-                          >${r.decision}${r.reviewedBy ? ` by ${r.reviewedBy}` : ""}</ui-badge
+                        <ui-tag .tone=${r.decision === "Confirmed" ? "success" : "neutral"}
+                          >${r.decision}${r.reviewedBy ? ` by ${r.reviewedBy}` : ""}</ui-tag
                         >
                         ${
                           d.approved
                             ? nothing
                             : html`<ui-button
                                 size="xs"
-                                variant="ghost"
+                                variant="text"
                                 @click=${() => this._decide(r, r.decision === "Confirmed" ? "reject" : "confirm")}
                                 >Change</ui-button
                               >`
                         }
                       </ui-flex>`
                     : html`<ui-flex gap="2" wrap>
-                        <ui-button size="sm" color="primary" variant="soft" @click=${() => this._decide(r, "confirm")}
+                        <ui-button size="xs" color="primary" variant="tonal" @click=${() => this._decide(r, "confirm")}
                           >Confirm</ui-button
                         >
-                        <ui-button size="sm" variant="ghost" @click=${() => this._decide(r, "reject")}
-                          >Reject</ui-button
-                        >
+                        <ui-button size="xs" variant="text" @click=${() => this._decide(r, "reject")}>Reject</ui-button>
                       </ui-flex>`
                 }
               </ui-flex>
@@ -406,8 +396,8 @@ export class GsInboxHistory extends LightElement {
 
   private _approval(d: HistoryPayload) {
     if (d.approved)
-      return html`<ui-card variant="border" shadow="false" heading="Import approval">
-        <ui-alert color="success" variant="soft"
+      return html`<ui-card heading="Import approval">
+        <ui-alert tone="success"
           >Approved by ${d.approvedBy}. Your history is searchable from day one: ${n(d.totals.customers)} customers,
           ${n(d.totals.vessels)} vessels, ${n(d.totals.suppliers)} suppliers and ${n(d.totals.prices)} dated
           prices.</ui-alert
@@ -416,7 +406,7 @@ export class GsInboxHistory extends LightElement {
           d.created.length
             ? html`<ui-text variant="label-lg">New records (examples)</ui-text>
                 <ui-flex gap="2" wrap>
-                  ${d.created.map((c) => html`<ui-button size="xs" variant="soft" .href=${c.href}>${c.kind}: ${c.name}</ui-button>`)}
+                  ${d.created.map((c) => html`<ui-button size="xs" variant="tonal" .href=${c.href}>${c.kind}: ${c.name}</ui-button>`)}
                 </ui-flex>`
             : nothing
         }
@@ -426,24 +416,24 @@ export class GsInboxHistory extends LightElement {
       : d.pending
         ? `${d.pending} uncertain item${d.pending > 1 ? "s" : ""} still need a decision.`
         : "";
-    return html`<ui-card variant="border" shadow="false" heading="Import approval">
+    return html`<ui-card heading="Import approval">
       <ui-text variant="body-md"
         >Only management approves the import — nothing from the history becomes a record before Karim Balbaa says yes.
         Confidential threads stay out.</ui-text
       >
       ${
         d.canApprove
-          ? html`${blocked ? html`<ui-alert color="warning" variant="soft">${blocked}</ui-alert>` : nothing}
+          ? html`${blocked ? html`<ui-alert tone="warning">${blocked}</ui-alert>` : nothing}
               <ui-flex slot="actions" gap="2">
                 <ui-button
-                  size="sm"
+                  size="xs"
                   color="primary"
                   ?disabled=${Boolean(blocked) || this.busy === "approve"}
                   @click=${() => (this.confirming = true)}
                   ><ui-icon name="check" size="sm"></ui-icon>Approve import</ui-button
                 >
               </ui-flex>`
-          : html`<ui-alert color="info" variant="soft"
+          : html`<ui-alert tone="info"
               >Waiting for Karim Balbaa (management).
               ${blocked || "Everything is reviewed — it's ready for his approval."}</ui-alert
             >`
@@ -458,17 +448,21 @@ export class GsInboxHistory extends LightElement {
           and ${n(d.totals.prices)} dated prices from ${n(d.kept)} de-duplicated messages, with your ${d.review.length}
           decisions on the uncertain items. Rejected and confidential items are left out.</ui-text
         >
-        <ui-button slot="actions" variant="ghost" @click=${() => (this.confirming = false)}>Cancel</ui-button>
+        <ui-button slot="actions" variant="text" @click=${() => (this.confirming = false)}>Cancel</ui-button>
         <ui-button slot="actions" color="primary" @click=${() => this._approve()}>Approve import</ui-button>
       </ui-modal>
     </ui-card>`;
   }
 
   render() {
-    if (this.error) return html`<ui-alert color="error" variant="soft">${this.error}</ui-alert>`;
+    if (this.error)
+      return html`<ui-empty-state
+        tone="error"
+        heading="This page couldn't load"
+        .description=${this.error}
+      ></ui-empty-state>`;
     const d = this.data;
-    if (!d)
-      return html`<ui-flex justify="center" padding="8"><ui-loading size="lg" color="primary"></ui-loading></ui-flex>`;
+    if (!d) return html`<ui-empty-state loading></ui-empty-state>`;
     return html`<ui-flex direction="col" gap="6">
       ${this._header(d)} ${this._progress(d)}
       <ui-grid fit="md" gap="4">${this._mailboxes(d)} ${this._dedup(d)}</ui-grid>

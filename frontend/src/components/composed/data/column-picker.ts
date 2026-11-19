@@ -2,10 +2,11 @@ import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import "../../primitives/actions/button.ts";
+import "../../primitives/actions/icon-button.ts";
 import "../../primitives/actions/dropdown.ts";
 import "../../primitives/forms/checkbox.ts";
 import "../../primitives/layout/flex.ts";
-import "../../primitives/layout/join.ts";
+import "../../primitives/actions/button-group.ts";
 import "../../primitives/media/icon.ts";
 import "../../primitives/typography/text.ts";
 
@@ -77,8 +78,8 @@ export class UiColumnPicker extends LightElement {
       panel="card"
       panel-width="64"
       align="end"
-      trigger-variant="ghost"
-      trigger-size="sm"
+      trigger-variant="text"
+      trigger-size="xs"
       .label=${`Columns (${shown} of ${this.columns.length} shown)`}
     >
       <span slot="trigger"><ui-icon name="columns" size="sm"></ui-icon> Columns</span>
@@ -86,7 +87,7 @@ export class UiColumnPicker extends LightElement {
         <ui-text variant="title-sm">Columns</ui-text>
         ${
           changed
-            ? html`<ui-button size="xs" variant="ghost" @click=${() => this._emit([...this.defaults], [], true)}
+            ? html`<ui-button size="xs" variant="text" @click=${() => this._emit([...this.defaults], [], true)}
                 >Reset</ui-button
               >`
             : nothing
@@ -111,24 +112,22 @@ export class UiColumnPicker extends LightElement {
               ${
                 c.required
                   ? nothing
-                  : html`<ui-button
+                  : html`<ui-icon-button
+                        icon="arrow-up"
                         size="xs"
-                        variant="ghost"
                         shape="square"
                         .label=${`Move ${typeof c.label === "string" ? c.label : c.key} earlier`}
                         ?disabled=${i <= first}
                         @click=${() => this._move(i, -1)}
-                        ><ui-icon name="arrow-up" size="xs"></ui-icon
-                      ></ui-button>
-                      <ui-button
+                      ></ui-icon-button>
+                      <ui-icon-button
+                        icon="arrow-down"
                         size="xs"
-                        variant="ghost"
                         shape="square"
                         .label=${`Move ${typeof c.label === "string" ? c.label : c.key} later`}
                         ?disabled=${i === this.columns.length - 1}
                         @click=${() => this._move(i, 1)}
-                        ><ui-icon name="arrow-down" size="xs"></ui-icon
-                      ></ui-button>`
+                      ></ui-icon-button>`
               }
             </ui-flex>`,
         )}
@@ -138,24 +137,17 @@ export class UiColumnPicker extends LightElement {
           ? nothing
           : html`<ui-flex direction="col" gap="2">
               <ui-text variant="label-md" color="muted">Row height</ui-text>
-              <ui-join label="Row height">
-                ${(
-                  [
-                    ["0", "Default"],
-                    ["-1", "Compact"],
-                    ["-2", "Dense"],
-                  ] as const
-                ).map(
-                  ([value, label]) =>
-                    html`<ui-button
-                      size="xs"
-                      variant="ghost"
-                      ?active=${this.density === value}
-                      @click=${() => this._density(value)}
-                      >${label}</ui-button
-                    >`,
-                )}
-              </ui-join>
+              <ui-button-group
+                label="Row height"
+                size="xs"
+                .value=${this.density}
+                .options=${[
+                  { value: "0", label: "Default" },
+                  { value: "-1", label: "Compact" },
+                  { value: "-2", label: "Dense" },
+                ]}
+                @ui-change=${(e: CustomEvent<{ value: string }>) => this._density(e.detail.value as "0" | "-1" | "-2")}
+              ></ui-button-group>
             </ui-flex>`
       }
     </ui-dropdown>`;

@@ -2,7 +2,7 @@ import { html, nothing } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
-import { button } from "../actions/button.ts";
+import { iconButton } from "../actions/icon-button.ts";
 import { iconSvg } from "../media/icon.ts";
 
 /**
@@ -107,7 +107,7 @@ export class UiMessageScroller extends LightElement {
         this._away
           ? html`<button
               type="button"
-              class=${button({ size: "sm", shape: "circle", class: messageScrollerJump() })}
+              class=${iconButton({ variant: "tonal", size: "xs", class: messageScrollerJump() })}
               aria-label="Jump to latest"
               @click=${() => this.scrollToEnd()}
             >

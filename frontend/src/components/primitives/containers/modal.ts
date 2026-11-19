@@ -3,6 +3,9 @@ import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { booleanAttribute, rcva } from "../../base/variants.ts";
+import { button } from "../actions/button.ts";
+import { iconButton } from "../actions/icon-button.ts";
+import { iconSvg } from "../media/icon.ts";
 
 /**
  * Modal: Shows a dialog or box when a button is clicked.
@@ -15,21 +18,14 @@ import { booleanAttribute, rcva } from "../../base/variants.ts";
  */
 export const modal = rcva("modal", {
   variants: {
-    /** Vertical placement. daisyUI default: middle. */
+    /**
+     * Centred (M3 basic dialog), or `spotlight`: near the top, centred (command palettes), so the
+     * box keeps its place as results change.
+     */
     placement: {
-      top: "modal-top",
       middle: "modal-middle",
-      bottom: "modal-bottom",
-      /** Near the top, centred (command palettes): the box keeps its place as results change. */
       spotlight: "items-start pt-[clamp(0.5rem,12dvh_-_3rem,7rem)]",
     },
-    /** Horizontal placement. */
-    align: {
-      start: "modal-start",
-      end: "modal-end",
-    },
-    /** Force open; for the checkbox/anchor methods. `<dialog>` uses its `open` state instead. */
-    open: { true: "modal-open" },
   },
 });
 
@@ -63,7 +59,7 @@ export const modalActionForm = rcva("flex gap-2");
 export const modalBackdrop = rcva("modal-backdrop");
 /** Hidden checkbox for the CSS-only "modal using checkbox" method. */
 export const modalToggle = rcva("modal-toggle");
-export const modalClose = rcva("btn btn-sm btn-circle btn-ghost absolute right-2 top-2");
+export const modalClose = rcva("absolute top-2 end-2");
 
 export type ModalVariants = VariantProps<typeof modal>;
 
@@ -76,19 +72,25 @@ export type ModalVariants = VariantProps<typeof modal>;
  *   <ui-button slot="actions">Close</ui-button>
  * </ui-modal>
  * document.querySelector("ui-modal")!.show();
- * @example <ui-modal placement="bottom sm:middle" heading="Responsive">…</ui-modal>
+ * @example
+ * <ui-modal heading="Delete 3 bills?" confirm-label="Delete" confirm-tone="error" .open=${asking}
+ *   @ui-confirm=${remove} @ui-close=${() => (asking = false)}>They're removed for everyone.</ui-modal>
  * @example <ui-modal width="wide" heading="Wide">…</ui-modal>
  * @example <ui-modal placement="spotlight" width="palette" sections><ui-text-input slot="header" …></ui-text-input>…</ui-modal>
  *
  * Slots: `heading`, `actions` (rendered in `modal-action`, inside a
  * `<form method="dialog">` so any button closes the modal). With `sections`: `header` and
  * `footer` stay put and the content between them scrolls (command palettes).
- * Events: `ui-open`, `ui-close` (detail: `{ returnValue }`).
+ * Events: `ui-open`, `ui-close` (detail: `{ returnValue }`), `ui-confirm`.
+ *
+ * Confirmations (M3 dialogs; Apple alerts): `confirm-label` adds the action row itself — Cancel
+ * (always there, never disabled) and the confirm action, named with a verb ("Delete", not "OK").
+ * `confirm-tone="error"` for destructive ones; `confirm-disabled` until a choice is made. The
+ * confirm action fires `ui-confirm`; the page closes the dialog when the work is done.
  */
 @customElement("ui-modal")
 export class UiModal extends LightElement {
   @property() placement: ModalVariants["placement"];
-  @property() align: ModalVariants["align"];
   @property() width: VariantProps<typeof modalBox>["width"];
   @property({ type: Boolean, reflect: true }) open = false;
   @property() heading: Renderable = "";
@@ -98,6 +100,13 @@ export class UiModal extends LightElement {
   @property({ type: Boolean, attribute: "close-button" }) closeButton = false;
   /** Fixed `header` / `footer` slots around a scrolling body. */
   @property({ type: Boolean }) sections = false;
+  /** A confirmation's action, a verb ("Delete", "Send"): adds Cancel + this. */
+  @property({ attribute: "confirm-label" }) confirmLabel = "";
+  /** `error` for a destructive confirmation. */
+  @property({ attribute: "confirm-tone" }) confirmTone: "primary" | "error" = "primary";
+  /** Hold the confirm action until a choice is made (Cancel never is). */
+  @property({ type: Boolean, attribute: "confirm-disabled" }) confirmDisabled = false;
+  @property({ attribute: "cancel-label" }) cancelLabel = "Cancel";
 
   @query("dialog") private _dialog!: HTMLDialogElement;
 
@@ -143,7 +152,7 @@ export class UiModal extends LightElement {
   render() {
     const heading = this.hasSlotted("heading") ? this.slotted("heading") : this.heading;
     return html`<dialog
-      class=${modal({ placement: this.placement, align: this.align })}
+      class=${modal({ placement: this.placement })}
       aria-label=${typeof this.heading === "string" && this.heading ? this.heading : nothing}
       @close=${this._onClose}
       @pointerdown=${(e: PointerEvent) => (this.#pressedOutside = e.target === e.currentTarget)}
@@ -152,7 +161,9 @@ export class UiModal extends LightElement {
       <div class=${modalBox({ width: this.width, sections: this.sections })}>
         ${
           this.closeButton
-            ? html`<form method="dialog"><button class=${modalClose()} aria-label="Close">✕</button></form>`
+            ? html`<form method="dialog" class=${modalClose()}>
+                <button class=${iconButton({ size: "xs" })} aria-label="Close">${iconSvg("x", { size: "sm" })}</button>
+              </form>`
             : nothing
         }
         ${heading ? html`<h3 class=${modalHeading()}>${heading}</h3>` : nothing}
@@ -168,7 +179,21 @@ export class UiModal extends LightElement {
             ? html`<div class=${modalAction()}>
                 <form method="dialog" class=${modalActionForm()}>${this.slotted("actions")}</form>
               </div>`
-            : nothing
+            : this.confirmLabel
+              ? html`<div class=${modalAction()}>
+                  <form method="dialog" class=${modalActionForm()}>
+                    <button class=${button({ variant: "text" })}>${this.cancelLabel}</button>
+                  </form>
+                  <button
+                    type="button"
+                    class=${button({ color: this.confirmTone, variant: "filled" })}
+                    ?disabled=${this.confirmDisabled}
+                    @click=${() => this.dispatchEvent(new CustomEvent("ui-confirm", { bubbles: true }))}
+                  >
+                    ${this.confirmLabel}
+                  </button>
+                </div>`
+              : nothing
         }
       </div>
       ${

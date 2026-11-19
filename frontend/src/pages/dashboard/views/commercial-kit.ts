@@ -35,7 +35,7 @@ export const TONE: Record<Tone, StatusColor> = {
 /** A check / deviation line: a coloured dot and the text (wraps, never overflows). */
 export const flagRow = (f: Flag) =>
   html`<ui-flex gap="2" align="baseline">
-    <ui-status size="xs" .color=${TONE[f.tone]} .label=${f.tone}></ui-status>
+    <ui-badge dot .tone=${TONE[f.tone]} .label=${f.tone}></ui-badge>
     <ui-text variant="body-sm" .color=${f.tone === "error" ? "error" : undefined}>${f.text}</ui-text>
   </ui-flex>`;
 
@@ -46,9 +46,9 @@ export const flagList = (flags: Flag[], empty = "No issues") =>
 
 /** The card Sales sees instead of costs and margins. */
 export const hiddenForRole = (body: string, link?: { label: string; href: string }) =>
-  html`<ui-card variant="border" shadow="false" heading="Costs and margins are hidden for your role">
+  html`<ui-card heading="Costs and margins are hidden for your role">
     <ui-text color="muted">${body}</ui-text>
-    ${link ? html`<ui-button slot="actions" size="sm" variant="soft" .href=${link.href}>${link.label}</ui-button>` : nothing}
+    ${link ? html`<ui-button slot="actions" size="xs" variant="tonal" .href=${link.href}>${link.label}</ui-button>` : nothing}
   </ui-card>`;
 
 export const loadingBlock = (label = "Loading…") =>
@@ -57,5 +57,4 @@ export const loadingBlock = (label = "Loading…") =>
   </ui-flex>`;
 
 /** The "AI draft" marker on anything an AI step produced. */
-export const aiBadge = (label = "AI draft") =>
-  html`<ui-badge size="sm" variant="soft" color="secondary">✦ ${label}</ui-badge>`;
+export const aiBadge = (label = "AI draft") => html`<ui-tag tone="primary" icon="sparkles">${label}</ui-tag>`;

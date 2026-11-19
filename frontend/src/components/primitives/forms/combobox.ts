@@ -228,13 +228,13 @@ export class UiCombobox extends LightElement {
           this.multiple
             ? values.map(
                 (v) =>
-                  html`<span class=${chip({ variant: "soft", size: "sm", removable: !locked })}
+                  html`<span class=${chip({ variant: "input", size: "sm", removable: !locked })}
                     >${this._labelOf(v)}${
                       locked
                         ? nothing
                         : html`<button
                             type="button"
-                            class=${chipRemove({ variant: "soft" })}
+                            class=${chipRemove({ variant: "input" })}
                             aria-label=${`Remove ${this._labelOf(v)}`}
                             @click=${(e: Event) => {
                               e.stopPropagation();

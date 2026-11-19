@@ -2,7 +2,7 @@ import { html } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
-import { button } from "../actions/button.ts";
+import { iconButton } from "../actions/icon-button.ts";
 import { iconSvg } from "../media/icon.ts";
 
 /**
@@ -76,7 +76,7 @@ export class UiPromptInput extends LightElement {
           busy
             ? html`<button
                 type="button"
-                class=${button({ size: "sm", shape: "square" })}
+                class=${iconButton({ variant: "tonal", size: "xs", shape: "square" })}
                 aria-label="Stop"
                 @click=${() => this.dispatchEvent(new CustomEvent("ui-stop", { bubbles: true }))}
               >
@@ -84,7 +84,7 @@ export class UiPromptInput extends LightElement {
               </button>`
             : html`<button
                 type="button"
-                class=${button({ color: "primary", size: "sm", shape: "square" })}
+                class=${iconButton({ variant: "filled", size: "xs", shape: "square" })}
                 aria-label="Send"
                 ?disabled=${!this.value.trim()}
                 @click=${() => this._submit()}

@@ -203,10 +203,14 @@ export class GsCaseOrder extends LightElement implements ViewProps {
   /* ------------------------------------------------------------ render */
 
   render() {
-    if (this.error) return html`<ui-alert color="error" variant="soft">${this.error}</ui-alert>`;
+    if (this.error)
+      return html`<ui-empty-state
+        tone="error"
+        heading="This page couldn't load"
+        .description=${this.error}
+      ></ui-empty-state>`;
     const d = this.data;
-    if (!d)
-      return html`<ui-flex justify="center" padding="8"><ui-loading size="lg" color="primary"></ui-loading></ui-flex>`;
+    if (!d) return html`<ui-empty-state loading></ui-empty-state>`;
     return html`<ui-flex direction="col" gap="6">
       ${this._tiles(d)} ${this._poCheck(d)} ${this._partialAward(d)} ${this._supplierPos(d)} ${this._bills(d)}
       ${this._receipts(d)}
@@ -217,13 +221,7 @@ export class GsCaseOrder extends LightElement implements ViewProps {
   }
 
   private _tile(label: string, value: string, note: string, tone?: "error" | "warning" | "success") {
-    return html`<ui-card variant="border" size="sm" shadow="false">
-      <ui-flex direction="col" gap="1">
-        <ui-text variant="body-md" color="muted" truncate>${label}</ui-text>
-        <ui-text variant="headline-sm" leading="tight" .color=${tone}>${value}</ui-text>
-        <ui-text variant="body-sm" color="muted" clamp="2">${note}</ui-text>
-      </ui-flex>
-    </ui-card>`;
+    return html`<ui-stat .label=${label} .value=${value} .note=${note} .tone=${tone}></ui-stat>`;
   }
 
   private _tiles(d: CaseOps) {
@@ -268,17 +266,17 @@ export class GsCaseOrder extends LightElement implements ViewProps {
   }
 
   private _heading(title: string, badge?: TemplateResult | typeof nothing, actions?: TemplateResult | typeof nothing) {
-    return html`<ui-flex slot="heading" justify="between" align="center" gap="2" full-width wrap>
-      <ui-flex gap="2" align="center" wrap>${title}${badge ?? nothing}</ui-flex>
-      ${actions ? html`<ui-flex gap="2" wrap>${actions}</ui-flex>` : nothing}
-    </ui-flex>`;
+    return html`<span slot="heading">${title}</span>
+      <ui-flex slot="trailing" gap="2" align="center" wrap
+        >${badge ?? nothing}${actions ? html`<ui-flex gap="2" wrap>${actions}</ui-flex>` : nothing}</ui-flex
+      >`;
   }
 
   private _poCheck(d: CaseOps) {
     const po = d.customerPo;
     const isReading = this.busy === "po-check";
     if (!po)
-      return html`<ui-card variant="border" shadow="false">
+      return html`<ui-card>
         ${this._heading("Customer PO check")}
         ${
           isReading
@@ -289,12 +287,12 @@ export class GsCaseOrder extends LightElement implements ViewProps {
                 ></ui-flex
               >`
             : d.orderConfirmed
-              ? html`<ui-alert color="success" variant="soft"
+              ? html`<ui-alert tone="success"
                   >The customer's PO was checked against the approved quotation and validated — the sales order is
                   confirmed.</ui-alert
                 >`
               : d.poExpected
-                ? html`<ui-alert color="info" variant="soft">
+                ? html`<ui-alert tone="info">
                     <ui-flex direction="col" gap="1">
                       <strong>Nordvik's purchase order has just arrived by email.</strong>
                       <ui-text variant="body-md"
@@ -302,7 +300,7 @@ export class GsCaseOrder extends LightElement implements ViewProps {
                         refers to. Nothing is committed until a person resolves each mismatch.</ui-text
                       >
                     </ui-flex>
-                    <ui-button slot="actions" size="sm" color="primary" @click=${() => this._checkPo()}
+                    <ui-button slot="actions" size="xs" color="primary" @click=${() => this._checkPo()}
                       >Read customer PO</ui-button
                     >
                   </ui-alert>`
@@ -339,15 +337,15 @@ export class GsCaseOrder extends LightElement implements ViewProps {
         label: "Result",
         render: (r) => {
           const c = r.c as Check;
-          if (c.matches) return html`<ui-badge size="sm" variant="soft" color="success">Match</ui-badge>`;
+          if (c.matches) return html`<ui-tag tone="success">Match</ui-tag>`;
           if (c.resolution)
             return html`<ui-flex direction="col" gap="1" align="start">
-              <ui-badge size="sm" variant="soft" color="success">Amendment recorded</ui-badge>
+              <ui-tag tone="success">Amendment recorded</ui-tag>
               <ui-text variant="body-sm" color="muted"
                 >${c.resolution}${c.evidence ? " · evidence attached" : ""}</ui-text
               >
             </ui-flex>`;
-          return html`<ui-badge size="sm" variant="soft" color="error">Mismatch</ui-badge>`;
+          return html`<ui-tag tone="error">Mismatch</ui-tag>`;
         },
       },
       {
@@ -358,7 +356,7 @@ export class GsCaseOrder extends LightElement implements ViewProps {
           return !c.matches && !c.resolution
             ? html`<ui-button
                 size="xs"
-                variant="soft"
+                variant="tonal"
                 color="primary"
                 ?disabled=${Boolean(this.busy)}
                 @click=${() =>
@@ -376,18 +374,17 @@ export class GsCaseOrder extends LightElement implements ViewProps {
       },
     ];
     const blocked = po.status !== "Validated";
-    return html`<ui-card variant="border" shadow="false">
+    return html`<ui-card>
       ${this._heading(
         "Customer PO check",
-        html`<ui-badge size="sm" variant="soft" .color=${statusColor(po.status)}>${po.status}</ui-badge>`,
-        html`<ui-button size="xs" variant="ghost" ?disabled=${Boolean(this.busy)} @click=${() => this._checkPo()}
-          >${isReading ? html`<ui-loading size="xs"></ui-loading> Reading…` : "Re-run PO check"}</ui-button
+        html`<ui-tag .tone=${statusColor(po.status)}>${po.status}</ui-tag>`,
+        html`<ui-button size="xs" variant="text" ?disabled=${Boolean(this.busy)} @click=${() => this._checkPo()}
+          >${isReading ? html`<ui-loading size="sm"></ui-loading> Reading…` : "Re-run PO check"}</ui-button
         >`,
       )}
       <ui-text variant="body-md" color="muted"
         >${po.number} · received ${dayTime(po.receivedAt)} · matched to ${po.quotation} · billing entity
-        ${po.billingEntity ?? "—"} ·
-        <ui-badge size="xs" variant="outline" color="secondary">AI check · 96%</ui-badge></ui-text
+        ${po.billingEntity ?? "—"} · <ui-tag variant="outline">AI check · 96%</ui-tag></ui-text
       >
       <ui-table size="sm" .columns=${columns} .rows=${po.checks.map((c, i) => ({ c, i }))}></ui-table>
       <ui-ai-check
@@ -421,17 +418,13 @@ export class GsCaseOrder extends LightElement implements ViewProps {
       ></ui-ai-check>
       ${
         blocked
-          ? html`<ui-alert color="error" variant="soft"
+          ? html`<ui-alert tone="error"
               >Commitment blocked: ${po.openMismatches} mismatch${po.openMismatches === 1 ? "" : "es"} need the
               customer's written agreement (or an approved exception) before the sales order and supplier POs.</ui-alert
             >`
           : d.orderConfirmed
-            ? html`<ui-alert color="success" variant="soft"
-                >PO validated — sales order confirmed. Supplier POs follow below.</ui-alert
-              >`
-            : html`<ui-alert color="success" variant="soft"
-                >PO validated — every mismatch has written customer agreement.</ui-alert
-              >`
+            ? html`<ui-alert tone="success">PO validated — sales order confirmed. Supplier POs follow below.</ui-alert>`
+            : html`<ui-alert tone="success">PO validated — every mismatch has written customer agreement.</ui-alert>`
       }
       <ui-flex slot="actions" gap="2" wrap>
         ${
@@ -439,10 +432,10 @@ export class GsCaseOrder extends LightElement implements ViewProps {
             ? nothing
             : html`<ui-button
                 color="primary"
-                size="sm"
+                size="xs"
                 ?disabled=${blocked || Boolean(this.busy)}
                 @click=${() => this._confirmOrder()}
-                >${this.busy === "confirm" ? html`<ui-loading size="xs"></ui-loading>` : nothing} Confirm sales order &
+                >${this.busy === "confirm" ? html`<ui-loading size="sm"></ui-loading>` : nothing} Confirm sales order &
                 prepare supplier POs</ui-button
               >`
         }
@@ -456,7 +449,7 @@ export class GsCaseOrder extends LightElement implements ViewProps {
     const onPo = new Set(po.checks.filter((c) => c.lineNo > 0).map((c) => c.lineNo));
     const missing = d.lines.filter((l) => !onPo.has(l.lineNo));
     if (!missing.length) return nothing;
-    return html`<ui-card variant="border" shadow="false">
+    return html`<ui-card>
       ${this._heading("Partial award")}
       <ui-text variant="body-md" color="muted"
         >Quoted lines the customer didn't order: they stay open for a revision or close with a reason — a partly awarded
@@ -475,10 +468,10 @@ export class GsCaseOrder extends LightElement implements ViewProps {
             <ui-flex gap="2" align="center" wrap>
               ${
                 u
-                  ? html`<ui-badge size="sm" variant="soft" .color=${u.outcome === "Closed" ? "neutral" : "warning"}
-                      >${u.outcome === "Closed" ? "Closed" : "Open — revision to follow"}</ui-badge
+                  ? html`<ui-tag .tone=${u.outcome === "Closed" ? "neutral" : "warning"}
+                      >${u.outcome === "Closed" ? "Closed" : "Open — revision to follow"}</ui-tag
                     >`
-                  : html`<ui-badge size="sm" variant="soft" color="error">Undecided</ui-badge>`
+                  : html`<ui-tag tone="error">Undecided</ui-tag>`
               }
               ${
                 u?.outcome === "Closed"
@@ -488,7 +481,7 @@ export class GsCaseOrder extends LightElement implements ViewProps {
                           ? nothing
                           : html`<ui-button
                               size="xs"
-                              variant="ghost"
+                              variant="text"
                               ?disabled=${Boolean(this.busy)}
                               @click=${() => this._award(l.lineNo, "Open — revision to follow", "Revision to follow")}
                               >Keep open</ui-button
@@ -496,7 +489,7 @@ export class GsCaseOrder extends LightElement implements ViewProps {
                       }
                       <ui-button
                         size="xs"
-                        variant="soft"
+                        variant="tonal"
                         ?disabled=${Boolean(this.busy)}
                         @click=${() => (this.dialog = { kind: "award", lineNo: l.lineNo, description: l.description, reason: "" })}
                         >Close with reason</ui-button
@@ -548,8 +541,8 @@ export class GsCaseOrder extends LightElement implements ViewProps {
         label: "Route",
         render: (r) => {
           const drop = /dropship/i.test((r.p as OpsPO).deliverTo ?? "");
-          return html`<ui-badge size="sm" variant="outline" .color=${drop ? "accent" : "neutral"}
-            >${drop ? "Drop-ship to vessel" : `Warehouse · ${(r.p as OpsPO).deliverTo ?? "—"}`}</ui-badge
+          return html`<ui-tag variant="outline" .tone=${drop ? "accent" : "neutral"}
+            >${drop ? "Drop-ship to vessel" : `Warehouse · ${(r.p as OpsPO).deliverTo ?? "—"}`}</ui-tag
           >`;
         },
       },
@@ -577,16 +570,14 @@ export class GsCaseOrder extends LightElement implements ViewProps {
                   >
                   ${
                     paid
-                      ? html`<ui-badge size="xs" variant="soft" color="success"
-                          >Deposit paid ${money(p.paid, p.currency)}</ui-badge
-                        >`
+                      ? html`<ui-tag tone="success">Deposit paid ${money(p.paid, p.currency)}</ui-tag>`
                       : p.approval
                         ? html`<ui-link .href=${"/cash"}
-                            ><ui-badge size="xs" variant="soft" .color=${statusColor(p.approval.status)}
-                              >Payment approval: ${p.approval.status}</ui-badge
+                            ><ui-tag .tone=${statusColor(p.approval.status)}
+                              >Payment approval: ${p.approval.status}</ui-tag
                             ></ui-link
                           >`
-                        : html`<ui-badge size="xs" variant="soft" color="warning">Needs payment approval</ui-badge>`
+                        : html`<ui-tag tone="warning">Needs payment approval</ui-tag>`
                   }
                   ${p.balanceDue ? html`<ui-text variant="body-sm" color="muted">Balance on delivery · ${day(p.balanceDue)}</ui-text>` : nothing}
                 </ui-flex>`;
@@ -600,7 +591,7 @@ export class GsCaseOrder extends LightElement implements ViewProps {
         render: (r) => {
           const p = r.p as OpsPO;
           return html`<ui-flex direction="col" gap="1" align="start">
-            <ui-badge size="sm" variant="soft" .color=${statusColor(p.status)}>${p.status}</ui-badge>
+            <ui-tag .tone=${statusColor(p.status)}>${p.status}</ui-tag>
             ${p.acknowledgedAt ? html`<ui-text variant="body-sm" color="muted">Acknowledged ${day(p.acknowledgedAt)}</ui-text>` : nothing}
             ${
               p.recheckDone
@@ -620,7 +611,7 @@ export class GsCaseOrder extends LightElement implements ViewProps {
           if (!["Draft", "Awaiting approval"].includes(p.status) || !d.canSeeCosts) return nothing;
           return html`<ui-button
             size="xs"
-            variant="soft"
+            variant="tonal"
             color="primary"
             ?disabled=${Boolean(this.busy)}
             @click=${() => (p.recheckDone ? (this.dialog = { kind: "recheck", po: p, running: false }) : this._recheck(p))}
@@ -629,8 +620,8 @@ export class GsCaseOrder extends LightElement implements ViewProps {
         },
       },
     ];
-    return html`<ui-card variant="border" shadow="false">
-      ${this._heading("Supplier purchase orders", html`<ui-badge size="sm" variant="soft">${pos.length}</ui-badge>`)}
+    return html`<ui-card>
+      ${this._heading("Supplier purchase orders", html`<ui-badge .count=${pos.length}></ui-badge>`)}
       <ui-text variant="body-md" color="muted"
         >Created from the confirmed sales order — split suppliers and scheduled quantities. Price, availability, FX and
         lead time are re-checked before a PO is confirmed; Karim Balbaa approves. Deposits go through payment
@@ -639,7 +630,7 @@ export class GsCaseOrder extends LightElement implements ViewProps {
       ${
         pos.length
           ? html`<ui-table size="sm" .columns=${columns} .rows=${pos.map((p) => ({ p }))}></ui-table>`
-          : html`<ui-alert variant="soft" color=${d.customerPo?.status === "Validated" ? "info" : "warning"}
+          : html`<ui-alert tone=${d.customerPo?.status === "Validated" ? "info" : "warning"}
               >${
                 d.customerPo?.status === "Validated"
                   ? "Confirm the sales order to prepare the supplier POs."
@@ -693,19 +684,19 @@ export class GsCaseOrder extends LightElement implements ViewProps {
         label: "Status",
         render: (b) =>
           html`<ui-flex direction="col" gap="1" align="start">
-            <ui-badge size="sm" variant="soft" .color=${statusColor(String(b.status))}>${b.status}</ui-badge>
+            <ui-tag .tone=${statusColor(String(b.status))}>${b.status}</ui-tag>
             ${b.holdReason ? html`<ui-text variant="body-sm" color="error">${b.holdReason}</ui-text>` : nothing}
           </ui-flex>`,
       },
     ];
-    return html`<ui-card variant="border" shadow="false">
+    return html`<ui-card>
       ${this._heading(
         "Supplier bills — 3-way match",
         nothing,
         d.canFinance && d.bills.length
           ? html`<ui-button
               size="xs"
-              variant="soft"
+              variant="tonal"
               ?disabled=${Boolean(this.busy)}
               @click=${() => (this.dialog = { kind: "bill" })}
               >Book incoming bill</ui-button
@@ -718,13 +709,13 @@ export class GsCaseOrder extends LightElement implements ViewProps {
       >
       ${
         this.duplicateBlocked
-          ? html`<ui-alert color="error" variant="soft">Duplicate bill blocked — ${this.duplicateBlocked}</ui-alert>`
+          ? html`<ui-alert tone="error">Duplicate bill blocked — ${this.duplicateBlocked}</ui-alert>`
           : nothing
       }
       ${
         d.bills.length
           ? html`<ui-table size="sm" .columns=${columns} .rows=${d.bills as unknown as Row[]}></ui-table>`
-          : html`<ui-text variant="body-md" color="muted">No supplier bills yet.</ui-text>`
+          : html`<ui-empty-state size="sm">No supplier bills yet.</ui-empty-state>`
       }
     </ui-card>`;
   }
@@ -774,7 +765,7 @@ export class GsCaseOrder extends LightElement implements ViewProps {
         label: "Quality check",
         render: (r) =>
           html`<ui-flex direction="col" gap="1" align="start">
-            <ui-badge size="sm" variant="soft" .color=${statusColor(String(r.qc))}>${r.qc}</ui-badge>
+            <ui-tag .tone=${statusColor(String(r.qc))}>${r.qc}</ui-tag>
             ${r.claim ? html`<ui-text variant="body-sm" color="muted">${r.claim}</ui-text>` : nothing}
           </ui-flex>`,
       },
@@ -790,7 +781,7 @@ export class GsCaseOrder extends LightElement implements ViewProps {
             : html`<ui-text variant="body-sm" color="muted">—</ui-text>`,
       },
     ];
-    return html`<ui-card variant="border" shadow="false">
+    return html`<ui-card>
       ${this._heading("Receipts · lots · expiry · quality")}
       <ui-text variant="body-md" color="muted"
         >Warehouse receipts and drop-ship deliveries, with lot, expiry and quality check per line. A shortfall becomes a
@@ -799,7 +790,7 @@ export class GsCaseOrder extends LightElement implements ViewProps {
       <ui-table size="sm" .columns=${columns} .rows=${d.receipts as ReceiptRow[]}></ui-table>
       ${d.backorders.map(
         (b) =>
-          html`<ui-alert color="warning" variant="soft"
+          html`<ui-alert tone="warning"
             >${b.qty} × ${b.description} short from ${b.supplierName}: backorder ${day(b.date)}
             ${b.followsIn ? `— follows in ${b.followsIn}` : ""} (owner ${USERS[b.owner] ?? b.owner}).</ui-alert
           >`,
@@ -821,7 +812,7 @@ export class GsCaseOrder extends LightElement implements ViewProps {
   private _dialogBody(data: CaseOps) {
     const d = this.dialog;
     if (!d) return nothing;
-    const cancel = html`<ui-button variant="ghost" size="sm" @click=${() => (this.dialog = null)}>Cancel</ui-button>`;
+    const cancel = html`<ui-button variant="text" size="xs" @click=${() => (this.dialog = null)}>Cancel</ui-button>`;
     if (d.kind === "amend")
       return html`<ui-flex direction="col" gap="3">
         <ui-text variant="body-md"
@@ -842,7 +833,7 @@ export class GsCaseOrder extends LightElement implements ViewProps {
         ></ui-file-input>
         <ui-flex justify="end" gap="2">
           ${cancel}
-          <ui-button color="primary" size="sm" ?disabled=${!d.resolution.trim()} @click=${() => this._amend()}
+          <ui-button color="primary" size="xs" ?disabled=${!d.resolution.trim()} @click=${() => this._amend()}
             >Record amendment & lift block</ui-button
           >
         </ui-flex>
@@ -860,7 +851,7 @@ export class GsCaseOrder extends LightElement implements ViewProps {
         <ui-flex gap="2" wrap>
           ${["Vessel bought it locally", "Customer cancelled the item", "Price not accepted"].map(
             (r) =>
-              html`<ui-button size="xs" variant="ghost" @click=${() => (this.dialog = { ...d, reason: r })}
+              html`<ui-button size="xs" variant="text" @click=${() => (this.dialog = { ...d, reason: r })}
                 >${r}</ui-button
               >`,
           )}
@@ -869,7 +860,7 @@ export class GsCaseOrder extends LightElement implements ViewProps {
           ${cancel}
           <ui-button
             color="primary"
-            size="sm"
+            size="xs"
             ?disabled=${!d.reason.trim()}
             @click=${() => this._award(d.lineNo, "Closed", d.reason)}
             >Close line</ui-button
@@ -896,8 +887,8 @@ export class GsCaseOrder extends LightElement implements ViewProps {
               key: "ok",
               label: "",
               render: (r: Row) =>
-                html`<ui-badge size="sm" variant="soft" .color=${r.ok === false ? "warning" : "success"}
-                  >${r.ok === false ? "Changed" : "OK"}</ui-badge
+                html`<ui-tag .tone=${r.ok === false ? "warning" : "success"}
+                  >${r.ok === false ? "Changed" : "OK"}</ui-tag
                 >`,
             },
           ]}
@@ -905,7 +896,7 @@ export class GsCaseOrder extends LightElement implements ViewProps {
         ></ui-table>
         ${
           changed.length
-            ? html`<ui-alert color="warning" variant="soft"
+            ? html`<ui-alert tone="warning"
                 >${changed.map((c) => `${c.item}: ${c.now}`).join(" · ")} — the shortfall is scheduled as a backorder
                 (the customer promise stays as agreed).</ui-alert
               >`
@@ -922,10 +913,10 @@ export class GsCaseOrder extends LightElement implements ViewProps {
           ${cancel}
           ${
             data.isManagement
-              ? html`<ui-button size="sm" color="primary" @click=${() => this._confirmPo(d.po)}
+              ? html`<ui-button size="xs" color="primary" @click=${() => this._confirmPo(d.po)}
                   >Approve & confirm ${d.po.number}</ui-button
                 >`
-              : html`<ui-button size="sm" color="primary" @click=${() => this._askApproval(d.po)}
+              : html`<ui-button size="xs" color="primary" @click=${() => this._askApproval(d.po)}
                   >Ask Karim Balbaa to approve</ui-button
                 >`
           }
@@ -938,12 +929,10 @@ export class GsCaseOrder extends LightElement implements ViewProps {
         >Bill from <strong>${bill?.supplierName}</strong> received by email: <strong>${bill?.billNumber}</strong> ·
         ${money(bill?.amount, bill?.currency)} · PO ${bill?.poNumber} — read by AI (confidence 98%).</ui-text
       >
-      <ui-alert color="info" variant="soft"
-        >Booking checks the bill number against this supplier's bills first.</ui-alert
-      >
+      <ui-alert tone="info">Booking checks the bill number against this supplier's bills first.</ui-alert>
       <ui-flex justify="end" gap="2">
         ${cancel}
-        <ui-button color="primary" size="sm" @click=${() => this._bookDuplicate()}>Book bill</ui-button>
+        <ui-button color="primary" size="xs" @click=${() => this._bookDuplicate()}>Book bill</ui-button>
       </ui-flex>
     </ui-flex>`;
   }

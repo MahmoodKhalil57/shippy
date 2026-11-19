@@ -1,104 +1,104 @@
 import type { VariantProps } from "class-variance-authority";
-import { html, nothing } from "lit";
+import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import { ifDefined } from "lit/directives/if-defined.js";
-import { LightElement } from "../../base/light-element.ts";
-import { rcva, responsiveBoolean, type Breakpoint, type Responsive } from "../../base/variants.ts";
+import { LightElement, type Renderable } from "../../base/light-element.ts";
+import { rcva, type Breakpoint } from "../../base/variants.ts";
 
 /**
- * Tooltip: Shows a message when hovering over an element.
+ * Tooltip: a short description of what something is or does, on hover and keyboard focus
+ * (M3 tooltips; Apple: help tags).
  *
  * Purpose: Feedback & system status · Kind: primitive
- * Docs: https://daisyui.com/components/tooltip/
  *
- * Every variant is responsive, e.g. the docs' responsive position:
- * `align="start md:center" placement="md:right"`.
+ * - `plain` (default): a few words naming the control ("Bookmark this page"). Icon buttons have
+ *   one built in (`<ui-icon-button label>`), so most tooltips are those.
+ * - `rich`: a title, a sentence or two and at most one action (`slot="action"`), for something
+ *   that needs explaining. Never the only place important information lives (M3).
+ * The tip is a real element, linked to the first focusable child with `aria-describedby`, so it's
+ * read out and shows on keyboard focus too. Always the clear glass (the floating layer).
+ * `placement` / `align` are responsive; `from` makes it a tooltip only from a breakpoint up.
  */
-/** The glass bubble, shared with the menu's icon-only tooltips. */
 export const TOOLTIP_GLASS =
   "[&::before]:liquid-glass-clear [&::before]:text-on-surface [&>.tooltip-content]:liquid-glass-clear [&>.tooltip-content]:text-on-surface [&::after]:invisible";
 
-export const tooltip = rcva("", {
+export const tooltip = rcva(TOOLTIP_GLASS, {
   variants: {
-    /**
-     * The tooltip itself. Responsive, so it can be enabled only from a
-     * breakpoint ("only show for large screen": `lg:tooltip`).
-     */
     enabled: { true: "tooltip" },
-    /** Side the tooltip appears on. daisyUI default: top. */
     placement: {
       top: "tooltip-top",
       bottom: "tooltip-bottom",
       left: "tooltip-left",
       right: "tooltip-right",
     },
-    /** Alignment along that side. */
     align: {
       start: "tooltip-start",
       center: "tooltip-center",
       end: "tooltip-end",
     },
-    color: {
-      primary: "tooltip-primary",
-      secondary: "tooltip-secondary",
-      accent: "tooltip-accent",
-      info: "tooltip-info",
-      success: "tooltip-success",
-      warning: "tooltip-warning",
-      error: "tooltip-error",
-    },
-    /** Force open. */
-    open: { true: "tooltip-open" },
-    /**
-     * Clear liquid glass (src/styles/theme.css) instead of a solid bubble, without the arrow:
-     * the floating layer's material. On unless a `color` is set.
-     */
-    glass: { true: TOOLTIP_GLASS },
   },
   defaultVariants: { enabled: true },
 });
 
-export const tooltipContent = rcva("tooltip-content");
+export const tooltipContent = rcva("tooltip-content", {
+  variants: {
+    variant: {
+      plain: "text-body-sm",
+      rich: "flex max-w-80 flex-col items-start gap-1 rounded-md p-3 text-start text-body-md text-on-surface-variant",
+    },
+  },
+  defaultVariants: { variant: "plain" },
+});
+export const tooltipHeading = rcva("text-title-sm text-on-surface");
 
 export type TooltipVariants = VariantProps<typeof tooltip>;
 
+let ids = 0;
+
 /**
- * @example <ui-tooltip tip="hello" placement="bottom" color="primary"><ui-button>Hover me</ui-button></ui-tooltip>
+ * @example <ui-tooltip tip="Bookmark this page"><ui-button …>…</ui-button></ui-tooltip>
  * @example
- * <ui-tooltip>
- *   <span slot="tip">Wow!</span>
- *   <ui-button>Hover me</ui-button>
+ * <ui-tooltip variant="rich" heading="Landed cost" tip="Supplier price plus freight, duty and handling, per unit.">
+ *   <ui-link slot="action" href="/globals/pricing-policy">Pricing policy</ui-link>
+ *   <ui-text>Landed</ui-text>
  * </ui-tooltip>
- * @example <ui-tooltip tip="hello" from="lg"><ui-button>Only a tooltip on large screens</ui-button></ui-tooltip>
- * @example <ui-tooltip tip="hello" align="start md:center" placement="md:right">…</ui-tooltip>
  *
- * Children are the trigger. Plain text goes in `tip` (`data-tip`); rich content goes
- * in a `slot="tip"` child, rendered as `tooltip-content`.
+ * Children are the trigger.
  */
 @customElement("ui-tooltip")
 export class UiTooltip extends LightElement {
-  @property() tip?: string;
+  @property() tip: Renderable = "";
+  @property() heading: Renderable = "";
+  @property() variant: "plain" | "rich" = "plain";
   @property() placement: TooltipVariants["placement"];
   @property() align: TooltipVariants["align"];
-  @property() color: TooltipVariants["color"];
-  @property({ converter: responsiveBoolean }) open: Responsive<boolean> = false;
   /** Only be a tooltip from this breakpoint up. */
   @property() from?: Breakpoint;
 
+  private _id = `ui-tip-${++ids}`;
+
+  protected updated(changed: PropertyValues) {
+    super.updated?.(changed);
+    const target = this.querySelector<HTMLElement>(
+      ":scope > div > :is(a, button, input, select, textarea, [tabindex]), :scope > div :is(a, button, input, select, textarea, [tabindex]):not([role=tooltip] *)",
+    );
+    if (target && !target.getAttribute("aria-describedby")?.includes(this._id))
+      target.setAttribute("aria-describedby", `${target.getAttribute("aria-describedby") ?? ""} ${this._id}`.trim());
+  }
+
   render() {
-    const rich = this.hasSlotted("tip");
+    const rich = this.variant === "rich";
     return html`<div
       class=${tooltip({
         placement: this.placement,
         align: this.align,
-        color: this.color,
-        glass: !this.color,
-        open: this.open,
         enabled: this.from ? `false ${this.from}` : true,
       })}
-      data-tip=${ifDefined(rich ? undefined : this.tip)}
     >
-      ${rich ? html`<div class=${tooltipContent()} role="tooltip">${this.slotted("tip")}</div>` : nothing}
+      <div class=${tooltipContent({ variant: this.variant })} role="tooltip" id=${this._id}>
+        ${rich && this.heading ? html`<span class=${tooltipHeading()}>${this.heading}</span>` : nothing}
+        <span>${this.tip}</span>
+        ${rich ? this.slotted("action") : nothing}
+      </div>
       ${this.slotted()}
     </div>`;
   }

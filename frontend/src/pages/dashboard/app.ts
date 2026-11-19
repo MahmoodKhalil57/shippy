@@ -279,12 +279,12 @@ export class DashboardApp extends LightElement {
       panel="card"
       panel-width="72"
       panel-elevation="2"
-      trigger-variant="ghost"
-      trigger-shape="circle"
+      trigger-variant="text"
+      trigger-shape="round"
       trigger-spaced="false"
       .label=${`Switch user (demo) — signed in as ${text(this.user.name ?? this.user.email)}`}
       .heading=${html`<ui-flex align="center" justify="between" gap="2"
-        >Switch user <ui-badge size="xs" variant="soft" color="primary">Demo</ui-badge></ui-flex
+        >Switch user <ui-tag tone="primary">Demo</ui-tag></ui-flex
       >`}
     >
       <ui-avatar slot="trigger" size="xs" .initials=${initials(this.user)}></ui-avatar>
@@ -405,7 +405,7 @@ export class DashboardApp extends LightElement {
         const view = rootViews().find((v) => v.key === r.key)!;
         return (
           viewElement(view.Component, { access, user: this.user! }) ??
-          html`<ui-alert color="info" heading=${view.meta?.title ?? view.key}>This screen is loading.</ui-alert>`
+          html`<ui-alert tone="info" heading=${view.meta?.title ?? view.key}>This screen is loading.</ui-alert>`
         );
       }
       case "global":
@@ -417,18 +417,20 @@ export class DashboardApp extends LightElement {
           .access=${access}
         ></dashboard-edit-view>`;
       default:
-        return html`<ui-flex direction="col" align="start" gap="4">
-          <ui-heading level="1" variant="headline-sm">Nothing found</ui-heading>
-          <ui-text color="muted">There's no dashboard page at this address.</ui-text>
-          <ui-button href=${dashboardPath()} color="primary">Back to the dashboard</ui-button>
-        </ui-flex>`;
+        return html`<ui-empty-state
+          icon="compass"
+          heading="Nothing found"
+          description="There's no dashboard page at this address."
+        >
+          <ui-button slot="actions" href=${dashboardPath()} color="primary">Back to the dashboard</ui-button>
+        </ui-empty-state>`;
     }
   }
 
   render() {
     if (this.failure) {
       return html`<ui-container padding-x="4" padding-y="12">
-        <ui-alert color="error" heading="The mock backend couldn't start" .description=${this.failure}></ui-alert>
+        <ui-alert tone="error" heading="The mock backend couldn't start" .description=${this.failure}></ui-alert>
       </ui-container>`;
     }
     if (!this.ready) {
@@ -436,7 +438,7 @@ export class DashboardApp extends LightElement {
         ><ui-loading variant="morph" size="lg" color="primary"></ui-loading
       ></ui-flex>`;
     }
-    const toaster = html`<ui-toast position="top" align="end"></ui-toast>`;
+    const toaster = html`<ui-snackbar></ui-snackbar>`;
     if (!this.user) {
       return html`${
         this.route.name === "create-first-user"
@@ -487,8 +489,8 @@ export class DashboardApp extends LightElement {
             align="end"
             panel="card"
             panel-elevation="2"
-            trigger-variant="ghost"
-            trigger-shape="circle"
+            trigger-variant="text"
+            trigger-shape="round"
             trigger-spaced="false"
             .heading=${text(user.name ?? user.email)}
           >

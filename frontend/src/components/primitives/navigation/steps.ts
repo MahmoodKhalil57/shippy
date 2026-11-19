@@ -6,13 +6,16 @@ import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 
 /**
- * Steps: Shows a list of steps in a process.
+ * Steps: where something is in a fixed sequence (M3 / Apple progress through stages).
  *
  * Purpose: Navigation · Kind: primitive
  * Docs: https://daisyui.com/components/steps/
  *
- * Responsive (docs): `direction="vertical lg:horizontal"`.
- * Scrollable wrapper (docs): `scrollable`.
+ * Steps before `current` are done and show a tick; `current` is highlighted; later ones are
+ * still to come. One `tone` colours the done and current steps: primary, or warning / error
+ * when the sequence itself is in trouble (an escalation). An item can say it was `skipped`
+ * (a dash) or `done` out of order. `supporting` is the small line under a label ("next · 14:00").
+ * `direction="vertical lg:horizontal"` is responsive; `scrollable` lets a long row scroll.
  */
 export const steps = rcva("steps", {
   variants: {
@@ -25,57 +28,45 @@ export const steps = rcva("steps", {
 
 export const stepsStep = rcva("step", {
   variants: {
-    color: {
-      neutral: "step-neutral",
+    tone: {
       primary: "step-primary",
-      secondary: "step-secondary",
-      accent: "step-accent",
-      info: "step-info",
-      success: "step-success",
       warning: "step-warning",
       error: "step-error",
     },
     clickable: { true: "cursor-pointer" },
   },
 });
-/** Horizontal scroll wrapper for long step lists (docs "With scrollable wrapper"). */
+/** Horizontal scroll wrapper for long step lists. */
 export const stepsScroll = rcva("overflow-x-auto");
-
-/** Custom icon inside a step (replaces the number). */
-export const stepsIcon = rcva("step-icon");
+export const stepsSupporting = rcva("block text-body-sm text-on-surface-variant");
 
 export type StepsVariants = VariantProps<typeof steps>;
-export type StepsStepVariants = VariantProps<typeof stepsStep>;
+export type StepsTone = NonNullable<VariantProps<typeof stepsStep>["tone"]>;
 
 export interface StepItem {
   label: Renderable;
-  /** Overrides the progress color for this step. */
-  color?: StepsStepVariants["color"];
-  /** Custom icon (emoji, svg…) rendered in `step-icon`. */
-  icon?: Renderable;
-  /** Text shown in the circle instead of the number (`data-content`, e.g. "✓"). */
-  marker?: string;
+  /** A small line under the label: a time, who, "not needed". */
+  supporting?: Renderable;
+  /** Overrides the position-based state: `done` out of order, `skipped` (not needed). */
+  state?: "done" | "skipped";
 }
 
 /**
  * @example
- * <ui-steps color="primary" current="1" .items=${[
- *   { label: "Register" }, { label: "Choose plan" }, { label: "Purchase" }, { label: "Receive Product" },
+ * <ui-steps current="1" .items=${[
+ *   { label: "Request received" }, { label: "Call-back", supporting: "on the number on file" }, { label: "Approved" },
  * ]}></ui-steps>
  *
- * Steps with index <= `current` get `color` (completed + current step). Set
- * `current="-1"` to color none. With `clickable`, steps are buttons and fire
- * `ui-change` with `{ index, item }`. Without `items`, authored
- * `<li class="step">` children are rendered.
+ * Set `current="-1"` when nothing has started. With `clickable`, steps are buttons and fire
+ * `ui-change` with `{ index, item }`.
  */
 @customElement("ui-steps")
 export class UiSteps extends LightElement {
   @property({ attribute: false }) items: StepItem[] = [];
   @property() direction: StepsVariants["direction"];
-  @property() color: StepsStepVariants["color"] = "primary";
+  @property() tone: StepsTone = "primary";
   @property({ type: Number, reflect: true }) current = 0;
   @property({ type: Boolean }) clickable = false;
-  /** Wrap in a horizontally scrolling container (docs "With scrollable wrapper"). */
   @property({ type: Boolean }) scrollable = false;
 
   private _select(index: number) {
@@ -85,32 +76,31 @@ export class UiSteps extends LightElement {
   }
 
   render() {
-    const list = html`<ul class=${steps({ direction: this.direction })}>
-      ${
-        this.items.length
-          ? this.items.map((item, i) => {
-              const color = item.color ?? (i <= this.current ? this.color : undefined);
-              const body = html`${item.icon != null ? html`<span class=${stepsIcon()}>${item.icon}</span>` : nothing}${item.label}`;
-              return html`<li
-                class=${stepsStep({ color, clickable: this.clickable })}
-                data-content=${ifDefined(item.marker)}
-                aria-current=${ifDefined(i === this.current ? "step" : undefined)}
-                role=${ifDefined(this.clickable ? "button" : undefined)}
-                tabindex=${ifDefined(this.clickable ? "0" : undefined)}
-                @click=${this.clickable ? () => this._select(i) : nothing}
-                @keydown=${
-                  this.clickable
-                    ? (e: KeyboardEvent) =>
-                        (e.key === "Enter" || e.key === " ") && (e.preventDefault(), this._select(i))
-                    : nothing
-                }
-              >
-                ${body}
-              </li>`;
-            })
-          : this.content
-      }
-    </ul>`;
+    const list = html`<ol class=${steps({ direction: this.direction })}>
+      ${this.items.map((item, i) => {
+        const state = item.state ?? (i < this.current ? "done" : undefined);
+        const reached = state === "done" || i === this.current;
+        const marker = state === "done" ? "✓" : state === "skipped" ? "–" : undefined;
+        return html`<li
+          class=${stepsStep({ tone: reached ? this.tone : undefined, clickable: this.clickable })}
+          data-content=${ifDefined(marker)}
+          aria-current=${ifDefined(i === this.current ? "step" : undefined)}
+          role=${ifDefined(this.clickable ? "button" : undefined)}
+          tabindex=${ifDefined(this.clickable ? "0" : undefined)}
+          @click=${this.clickable ? () => this._select(i) : nothing}
+          @keydown=${
+            this.clickable
+              ? (e: KeyboardEvent) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), this._select(i))
+              : nothing
+          }
+        >
+          <span>
+            ${item.label}${item.supporting ? html`<span class=${stepsSupporting()}>${item.supporting}</span>` : nothing}
+            ${state === "skipped" ? html`<span class="sr-only">(skipped)</span>` : state === "done" ? html`<span class="sr-only">(done)</span>` : nothing}
+          </span>
+        </li>`;
+      })}
+    </ol>`;
     return this.scrollable ? html`<div class=${stepsScroll()}>${list}</div>` : list;
   }
 }

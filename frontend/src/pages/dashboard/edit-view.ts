@@ -337,7 +337,7 @@ export class DashboardEditView extends LightElement {
     return html`<ui-flex direction="col" gap="3">
       ${
         url && isImage
-          ? html`<ui-card image-src=${url} .imageAlt=${text(this.doc?.alt ?? "")} variant="border" size="sm">
+          ? html`<ui-card image-src=${url} .imageAlt=${text(this.doc?.alt ?? "")} size="sm">
               <ui-text variant="body-md">${text(this.doc?.filename)}</ui-text>
             </ui-card>`
           : url
@@ -363,10 +363,7 @@ export class DashboardEditView extends LightElement {
   }
 
   render() {
-    if (this.loading)
-      return html`<ui-flex justify="center" padding="8"
-        ><ui-loading variant="morph" size="lg" color="primary"></ui-loading
-      ></ui-flex>`;
+    if (this.loading) return html`<ui-empty-state loading></ui-empty-state>`;
     const g = this.globalSlug ? globalOf(this.globalSlug) : undefined;
     const c = this.globalSlug ? undefined : collectionOf(this.slug)!;
     const collectionPerms = c ? this.access.collections[c.slug] : undefined;
@@ -378,7 +375,7 @@ export class DashboardEditView extends LightElement {
     const isAccount = c?.slug === userSlug && location.pathname.endsWith("/account");
 
     if (this.docId && !this.doc) {
-      return html`<ui-alert color="warning" heading="Not found"
+      return html`<ui-alert tone="warning" heading="Not found"
         >This document doesn't exist or you can't read it.</ui-alert
       >`;
     }
@@ -401,7 +398,7 @@ export class DashboardEditView extends LightElement {
     const base = c && this.docId ? dashboardPath("collections", c.slug, this.docId) : "";
     const tabBar = tabs.length
       ? html`<ui-tabs
-          variant="border"
+          variant="primary"
           label=${`${heading} sections`}
           .active=${this.tab ? tabs.findIndex((t) => t.key === this.tab) + 1 : 0}
           .items=${[{ label: "Details", href: base }, ...tabs.map((t) => ({ label: t.label, href: `${base}${t.path}` }))]}
@@ -416,11 +413,10 @@ export class DashboardEditView extends LightElement {
         docId: this.docId,
       });
       return html`<ui-flex direction="col" gap="6">
-        <ui-flex direction="col" gap="1">
-          <ui-breadcrumbs .items=${crumbs}></ui-breadcrumbs>
-          <ui-heading level="1" variant="page">${heading}</ui-heading>
-        </ui-flex>
-        ${tabBar} ${el ?? html`<ui-alert color="info" heading=${active.label}>This screen is loading.</ui-alert>`}
+        <ui-page-header .heading=${heading}>
+          <ui-breadcrumbs slot="breadcrumbs" .items=${crumbs}></ui-breadcrumbs>
+        </ui-page-header>
+        ${tabBar} ${el ?? html`<ui-alert tone="info" heading=${active.label}>This screen is loading.</ui-alert>`}
       </ui-flex>`;
     }
 
@@ -460,18 +456,14 @@ export class DashboardEditView extends LightElement {
 
     return html`<ui-form label=${heading} @ui-submit=${() => this._save()}>
       <ui-flex direction="col" gap="6">
-        <ui-flex justify="between" align="end" gap="4" wrap>
-          <ui-flex direction="col" gap="1">
-            <ui-breadcrumbs .items=${crumbs}></ui-breadcrumbs>
-            <ui-flex align="center" gap="3" wrap>
-              <ui-heading level="1" variant="page">${heading}</ui-heading>
-              ${this.dirty ? html`<ui-badge color="warning" variant="soft" size="sm">Unsaved changes</ui-badge>` : nothing}
-            </ui-flex>
-          </ui-flex>
-          <ui-flex gap="2" wrap>
+        <ui-page-header>
+          <ui-breadcrumbs slot="breadcrumbs" .items=${crumbs}></ui-breadcrumbs>
+          <span slot="heading">${heading}</span>
+          <span slot="status">${this.dirty ? html`<ui-tag tone="warning">Unsaved changes</ui-tag>` : nothing}</span>
+          <ui-flex slot="actions" gap="2" wrap>
             ${
               this.docId && !isAccount && collectionPerms?.delete.permission
-                ? html`<ui-button variant="ghost" color="error" size="sm" @click=${() => (this.confirmDelete = true)}
+                ? html`<ui-button variant="text" color="error" size="xs" @click=${() => (this.confirmDelete = true)}
                     >Delete</ui-button
                   >`
                 : nothing
@@ -486,10 +478,10 @@ export class DashboardEditView extends LightElement {
                   >
                     ${this.saving ? "Saving…" : this.docId || g ? (this.dirty ? "Save" : "Saved") : "Create"}
                   </ui-button>`
-                : html`<ui-badge variant="outline">Read only</ui-badge>`
+                : html`<ui-tag variant="outline">Read only</ui-tag>`
             }
           </ui-flex>
-        </ui-flex>
+        </ui-page-header>
 
         ${
           c?.admin?.description && typeof c.admin.description === "string"
@@ -500,8 +492,7 @@ export class DashboardEditView extends LightElement {
         ${
           Object.keys(this.errors).length
             ? html`<ui-alert
-                color="error"
-                variant="soft"
+                tone="error"
                 heading=${`${Object.keys(this.errors).length} ${Object.keys(this.errors).length === 1 ? "field needs" : "fields need"} attention`}
                 >${Object.entries(this.errors)
                   .slice(0, 3)
@@ -531,13 +522,12 @@ export class DashboardEditView extends LightElement {
       <ui-modal
         heading=${`Delete ${heading}?`}
         .open=${this.confirmDelete}
+        confirm-label="Delete"
+        confirm-tone="error"
+        @ui-confirm=${() => this._delete()}
         @ui-close=${() => (this.confirmDelete = false)}
       >
         <ui-text>This can't be undone.</ui-text>
-        <ui-flex slot="actions" gap="2">
-          <ui-button variant="ghost" @click=${() => (this.confirmDelete = false)}>Cancel</ui-button>
-          <ui-button color="error" @click=${() => this._delete()}>Delete</ui-button>
-        </ui-flex>
       </ui-modal>
     </ui-form>`;
   }

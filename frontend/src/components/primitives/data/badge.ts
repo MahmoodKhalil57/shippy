@@ -1,87 +1,86 @@
 import type { VariantProps } from "class-variance-authority";
 import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import { LightElement, type Renderable } from "../../base/light-element.ts";
+import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
-import { iconSvg } from "../media/icon.ts";
 
 /**
- * Badge: Shows the status of specific data.
+ * Badge: a count or a dot (M3 badges): how many are waiting, or that something is new or in a
+ * state. Not a label — a word or two describing a record is a `<ui-tag>`.
  *
  * Purpose: Data & metrics · Kind: primitive
- * Docs: https://daisyui.com/components/badge/
  *
- * Inside headings/buttons it scales with the text; an empty badge renders as a dot.
- * All variants are responsive (e.g. `size="sm lg:lg"`).
+ * - **Count** (`count`): a small pill with a number, after a heading or a navigation item.
+ *   Over `max` it reads "99+" (M3: at most 4 characters). Zero shows nothing unless `show-zero`.
+ * - **Dot** (`dot`): a 6dp dot (M3's small badge) for "new", or for a row's state at a glance
+ *   (`tone`), always with a `label` for assistive tech, since colour alone says nothing.
+ * Tones are the tag tones; counts are neutral by default, "needs attention" counts `error`.
  */
-export const badge = rcva("badge", {
+export const badge = rcva("inline-flex shrink-0 items-center justify-center rounded-full align-middle tabular-nums", {
   variants: {
-    variant: {
-      /** Outline, dash and soft draw text in the badge's colour: mixed toward the ink so it reads at AA. */
-      outline:
-        "badge-outline [color:color-mix(in_oklab,var(--badge-color,var(--color-base-content))_25%,var(--color-base-content))]",
-      dash: "badge-dash [color:color-mix(in_oklab,var(--badge-color,var(--color-base-content))_25%,var(--color-base-content))]",
-      soft: "badge-soft [color:color-mix(in_oklab,var(--badge-color,var(--color-base-content))_25%,var(--color-base-content))]",
-      ghost: "badge-ghost",
+    kind: {
+      count: "h-4 min-w-4 px-1 text-label-sm",
+      dot: "size-1.5",
     },
-    color: {
-      neutral: "badge-neutral",
-      primary: "badge-primary",
-      secondary: "badge-secondary",
-      accent: "badge-accent",
-      info: "badge-info",
-      success: "badge-success",
-      warning: "badge-warning",
-      error: "badge-error",
-    },
-    size: {
-      xs: "badge-xs",
-      sm: "badge-sm",
-      md: "badge-md",
-      lg: "badge-lg",
-      xl: "badge-xl",
+    tone: {
+      neutral: "",
+      primary: "",
+      info: "",
+      success: "",
+      warning: "",
+      error: "",
     },
   },
+  compoundVariants: [
+    { kind: "count", tone: "neutral", class: "bg-surface-container-highest text-on-surface" },
+    { kind: "count", tone: "primary", class: "bg-primary text-primary-content" },
+    { kind: "count", tone: "info", class: "bg-info-container text-on-info-container" },
+    { kind: "count", tone: "success", class: "bg-success-container text-on-success-container" },
+    { kind: "count", tone: "warning", class: "bg-warning-container text-on-warning-container" },
+    { kind: "count", tone: "error", class: "bg-error text-error-content" },
+    { kind: "dot", tone: "neutral", class: "bg-outline" },
+    { kind: "dot", tone: "primary", class: "bg-primary" },
+    { kind: "dot", tone: "info", class: "bg-info" },
+    { kind: "dot", tone: "success", class: "bg-success" },
+    { kind: "dot", tone: "warning", class: "bg-warning" },
+    { kind: "dot", tone: "error", class: "bg-error" },
+  ],
+  defaultVariants: { kind: "count", tone: "neutral" },
 });
-
-/** Icon sized to the badge text, as in the docs' "Badge with icon". */
-export const badgeIcon = rcva("size-[1em]");
 
 export type BadgeVariants = VariantProps<typeof badge>;
 
-/** The docs' status icons. */
-export type BadgeIconName = "info" | "success" | "warning" | "error";
-const BADGE_ICON_NAMES: readonly string[] = ["info", "success", "warning", "error"] satisfies BadgeIconName[];
-
-/** Render one of the badge status icons (the system's `info` / `success` / `warning` / `error`). */
-export const badgeIconSvg = (name: BadgeIconName) => iconSvg(name, {}, { class: badgeIcon() });
-
 /**
- * @example <ui-badge color="primary" variant="soft" size="sm">New</ui-badge>
- * @example <ui-badge color="success" icon="success">Success</ui-badge>
- * @example <ui-badge color="primary" size="xs"></ui-badge>  (empty dot)
- * @example <ui-badge size="sm lg:lg">Responsive</ui-badge>
+ * @example <ui-badge .count=${cases.length}></ui-badge>
+ * @example <ui-badge tone="error" .count=${unread} max="99"></ui-badge>
+ * @example <ui-badge dot tone="warning" label="Needs review"></ui-badge>
  */
 @customElement("ui-badge")
 export class UiBadge extends LightElement {
-  @property() variant: BadgeVariants["variant"];
-  @property() color: BadgeVariants["color"];
-  @property() size: BadgeVariants["size"];
-  /** Leading icon: one of the docs' status icons, or any template (`.icon=${...}`). */
-  @property() icon?: BadgeIconName | Exclude<Renderable, string>;
-  /** Text label; authored children take precedence. */
-  @property() label = "";
-
-  private _icon() {
-    if (this.icon == null || this.icon === "") return nothing;
-    return typeof this.icon === "string" && BADGE_ICON_NAMES.includes(this.icon as BadgeIconName)
-      ? badgeIconSvg(this.icon as BadgeIconName)
-      : this.icon;
-  }
+  /** The number to show. */
+  @property({ type: Number }) count?: number;
+  /** Above this, show "max+". */
+  @property({ type: Number }) max = 99;
+  /** Show a zero count instead of nothing. */
+  @property({ type: Boolean, attribute: "show-zero" }) showZero = false;
+  /** A dot instead of a number. */
+  @property({ type: Boolean }) dot = false;
+  @property() tone: BadgeVariants["tone"];
+  /** Accessible name (a dot's meaning, or what's counted: "3 unread"). */
+  @property() label?: string;
 
   render() {
-    return html`<span class=${badge({ variant: this.variant, color: this.color, size: this.size })}
-      >${this._icon()}${this.hasContent ? this.content : this.label}</span
+    if (this.dot)
+      return html`<span
+        class=${badge({ kind: "dot", tone: this.tone })}
+        role="img"
+        aria-label=${this.label ?? this.tone ?? "status"}
+      ></span>`;
+    const n = this.count;
+    if (n === undefined || !Number.isFinite(n) || (n === 0 && !this.showZero)) return nothing;
+    const text = n > this.max ? `${this.max}+` : String(n);
+    return html`<span class=${badge({ kind: "count", tone: this.tone })} aria-label=${this.label ?? text}
+      >${text}</span
     >`;
   }
 }

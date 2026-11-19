@@ -138,12 +138,7 @@ export class GsRoles extends LightElement implements ViewProps {
 
   private _names(users: Person[]) {
     return users.length
-      ? html`<ui-flex gap="1" wrap>
-          ${users.map(
-            (u) =>
-              html`<ui-tooltip .tip=${u.name}><ui-badge size="sm" variant="outline">${u.name}</ui-badge></ui-tooltip>`,
-          )}
-        </ui-flex>`
+      ? html`<ui-flex gap="1" wrap> ${users.map((u) => html`<ui-tag variant="outline">${u.name}</ui-tag>`)} </ui-flex>`
       : html`<ui-text variant="body-sm" color="muted">System account</ui-text>`;
   }
 
@@ -165,22 +160,21 @@ export class GsRoles extends LightElement implements ViewProps {
         label: p.label,
         render: (r, i) =>
           edit
-            ? html`<ui-toggle
+            ? html`<ui-switch
                 size="sm"
-                color="success"
                 .checked=${r[p.key] === true}
                 aria-label=${`${r.label}: ${p.label}`}
                 @change=${(e: Event) => this._set(i, p.key, (e.target as HTMLInputElement).checked)}
-              ></ui-toggle>`
+              ></ui-switch>`
             : r[p.key] === true
               ? html`<ui-icon name="check" color="success" .label=${`${r.label} can: ${p.label}`}></ui-icon>`
               : html`<ui-icon name="minus" color="muted" .label=${`${r.label} cannot: ${p.label}`}></ui-icon>`,
       })),
     ];
-    return html`<ui-card variant="border" shadow="false">
-      <ui-flex slot="heading" justify="between" align="center" gap="2" wrap full-width>
-        <span>Permissions matrix</span>
-        ${
+    return html`<ui-card>
+      <span slot="heading">Permissions matrix</span>
+      <ui-flex slot="trailing" gap="2" align="center" wrap
+        >${
           edit
             ? html`<ui-button
                 size="xs"
@@ -189,9 +183,9 @@ export class GsRoles extends LightElement implements ViewProps {
                 @click=${() => (this.confirm = "matrix")}
                 >Save changes</ui-button
               >`
-            : html`<ui-badge size="sm" variant="soft">Read only — management edits</ui-badge>`
-        }
-      </ui-flex>
+            : html`<ui-tag>Read only — management edits</ui-tag>`
+        }</ui-flex
+      >
       <ui-text variant="body-sm" color="muted"
         >Who can see and approve what, per role and person. Named users and licences are confirmed in Phase 0.</ui-text
       >
@@ -200,14 +194,12 @@ export class GsRoles extends LightElement implements ViewProps {
   }
 
   private _enforced(d: RolesView) {
-    return html`<ui-card variant="border" shadow="false" heading="Enforced, not just written down">
+    return html`<ui-card heading="Enforced, not just written down">
       <ui-flex direction="col" gap="3">
         ${d.checks.map(
           (c) =>
             html`<ui-flex gap="3" align="start">
-              <ui-badge size="sm" variant="soft" .color=${c.pass ? "success" : "error"}
-                >${c.pass ? "Verified" : "Failing"}</ui-badge
-              >
+              <ui-tag .tone=${c.pass ? "success" : "error"}>${c.pass ? "Verified" : "Failing"}</ui-tag>
               <ui-flex direction="col" gap="0" shrink>
                 <ui-text variant="title-sm">${c.label}</ui-text>
                 <ui-text variant="body-sm" color="muted">${c.detail}</ui-text>
@@ -219,11 +211,11 @@ export class GsRoles extends LightElement implements ViewProps {
       <ui-flex direction="col" gap="2">
         ${d.permissions.map((p) => html`<ui-text variant="body-sm"><strong>${p.label}:</strong> ${p.enforced}</ui-text>`)}
       </ui-flex>
-      <ui-alert color="info" variant="soft"
+      <ui-alert tone="info"
         >Try it: switch the signed-in user to Soaad Amer (Sales) and open the pricing tab of GS-RFQ-0142 — costs and
         margins are gone.</ui-alert
       >
-      <ui-button size="sm" variant="soft" href="/collections/cases/gs-rfq-0142/pricing"
+      <ui-button size="xs" variant="tonal" href="/collections/cases/gs-rfq-0142/pricing"
         >Open GS-RFQ-0142 pricing</ui-button
       >
     </ui-card>`;
@@ -240,7 +232,7 @@ export class GsRoles extends LightElement implements ViewProps {
           const s = d.roster.shifts[i];
           return html`<ui-flex direction="col" gap="0">
             <ui-text variant="body-md">${s?.fromText} → ${s?.toText}</ui-text>
-            ${s?.now ? html`<ui-badge size="xs" color="primary" variant="soft">Now</ui-badge>` : nothing}
+            ${s?.now ? html`<ui-tag tone="primary">Now</ui-tag>` : nothing}
           </ui-flex>`;
         },
       },
@@ -251,6 +243,7 @@ export class GsRoles extends LightElement implements ViewProps {
           edit
             ? html`<ui-select
                 size="sm"
+                aria-label=${`On duty, ${d.roster.shifts[i]?.fromText ?? ""}`}
                 .options=${options}
                 .value=${s.user}
                 @change=${(e: Event) => this._shift(i, "user", (e.target as HTMLSelectElement).value)}
@@ -264,6 +257,7 @@ export class GsRoles extends LightElement implements ViewProps {
           edit
             ? html`<ui-select
                 size="sm"
+                aria-label=${`Backup, ${d.roster.shifts[i]?.fromText ?? ""}`}
                 .options=${options}
                 .value=${s.backup}
                 @change=${(e: Event) => this._shift(i, "backup", (e.target as HTMLSelectElement).value)}
@@ -271,10 +265,10 @@ export class GsRoles extends LightElement implements ViewProps {
             : html`<ui-text variant="body-md">${d.roster.shifts[i]?.backup?.name ?? "—"}</ui-text>`,
       },
     ];
-    return html`<ui-card variant="border" shadow="false">
-      <ui-flex slot="heading" justify="between" align="center" gap="2" wrap full-width>
-        <span>On-call roster</span>
-        ${
+    return html`<ui-card>
+      <span slot="heading">On-call roster</span>
+      <ui-flex slot="trailing" gap="2" align="center" wrap
+        >${
           edit
             ? html`<ui-button
                 size="xs"
@@ -283,9 +277,9 @@ export class GsRoles extends LightElement implements ViewProps {
                 @click=${() => (this.confirm = "roster")}
                 >Save roster</ui-button
               >`
-            : html`<ui-badge size="sm" variant="soft">Read only — management & office manager edit</ui-badge>`
-        }
-      </ui-flex>
+            : html`<ui-tag>Read only — management & office manager edit</ui-tag>`
+        }</ui-flex
+      >
       <ui-text variant="body-sm" color="muted"
         >Office hours Sun–Thu 08:00–17:00 Cairo. Outside them, urgent RFQs (or a vessel ETA under 24 h) alert the
         on-duty person by WhatsApp / SMS; the backup after ${d.roster.escalateAfterMinutes} min, then senior contacts:
@@ -302,7 +296,7 @@ export class GsRoles extends LightElement implements ViewProps {
 
   private _simulator() {
     const r = this.routing;
-    return html`<ui-card variant="border" shadow="false" heading="After-hours routing — try it">
+    return html`<ui-card heading="After-hours routing — try it">
       <ui-text variant="body-sm" color="muted"
         >Pick when an urgent RFQ arrives. The rule “After-hours & weekend RFQ” decides who is alerted; the alert is
         simulated and lands in that person's notifications.</ui-text
@@ -312,7 +306,7 @@ export class GsRoles extends LightElement implements ViewProps {
           (p) =>
             html`<ui-button
               size="xs"
-              variant=${r?.at === p.at ? "soft" : "outline"}
+              variant=${r?.at === p.at ? "tonal" : "outlined"}
               ?disabled=${this.routingBusy}
               @click=${() => this._simulate(p.at)}
               >${p.label}</ui-button
@@ -324,9 +318,7 @@ export class GsRoles extends LightElement implements ViewProps {
         r
           ? html`<ui-flex direction="col" gap="2">
               <ui-flex gap="2" align="center" wrap>
-                <ui-badge size="sm" variant="soft" .color=${r.inHours ? "info" : "warning"}
-                  >${r.inHours ? "Office hours" : "After hours"}</ui-badge
-                >
+                <ui-tag .tone=${r.inHours ? "info" : "warning"}>${r.inHours ? "Office hours" : "After hours"}</ui-tag>
                 <ui-text variant="title-sm">${r.atText}</ui-text>
               </ui-flex>
               <ui-text variant="body-md">${r.reason}</ui-text>
@@ -334,7 +326,7 @@ export class GsRoles extends LightElement implements ViewProps {
                 r.routedTo
                   ? html`<ui-steps
                       direction="vertical"
-                      color="warning"
+                      tone="warning"
                       .current=${0}
                       .items=${[
                         { label: `Now: ${r.routedTo.name} (on duty)` },
@@ -351,25 +343,27 @@ export class GsRoles extends LightElement implements ViewProps {
   }
 
   render() {
-    if (this.error) return html`<ui-alert color="error" variant="soft">${this.error}</ui-alert>`;
+    if (this.error)
+      return html`<ui-empty-state
+        tone="error"
+        heading="This page couldn't load"
+        .description=${this.error}
+      ></ui-empty-state>`;
     const d = this.data;
-    if (!d)
-      return html`<ui-flex justify="center" padding="8"><ui-loading size="lg" color="primary"></ui-loading></ui-flex>`;
+    if (!d) return html`<ui-empty-state loading></ui-empty-state>`;
     return html`<ui-flex direction="col" gap="6">
-      <ui-flex justify="between" align="end" gap="4" wrap>
-        <ui-flex direction="col" gap="1" shrink>
-          <ui-text variant="label-md" color="muted" uppercase>Team · access</ui-text>
-          <ui-heading level="1" variant="page">Roles & permissions</ui-heading>
-          <ui-text color="muted"
-            >Sales never sees costs or margins; approvals need a named person; bank-detail changes need two. Urgent RFQs
-            after hours go to whoever is on call.</ui-text
-          >
+      <ui-page-header>
+        <span slot="eyebrow">Team · access</span>
+        <span slot="heading">Roles & permissions</span>
+        <span slot="subtitle"
+          >Sales never sees costs or margins; approvals need a named person; bank-detail changes need two. Urgent RFQs
+          after hours go to whoever is on call.</span
+        >
+        <ui-flex slot="actions" gap="2" wrap>
+          <ui-button size="xs" variant="tonal" href="/collections/users">People</ui-button>
+          <ui-button size="xs" variant="tonal" href="/globals/approval-rules">Approval rules</ui-button>
         </ui-flex>
-        <ui-flex gap="2" wrap>
-          <ui-button size="sm" variant="soft" href="/collections/users">People</ui-button>
-          <ui-button size="sm" variant="soft" href="/globals/approval-rules">Approval rules</ui-button>
-        </ui-flex>
-      </ui-flex>
+      </ui-page-header>
       ${this._matrix(d)}
       <ui-grid fit="md" gap="6" align="start">${this._enforced(d)} ${this._simulator()}</ui-grid>
       ${this._roster(d)}
@@ -386,7 +380,7 @@ export class GsRoles extends LightElement implements ViewProps {
           }</ui-text
         >
         <ui-flex slot="actions" gap="2">
-          <ui-button variant="ghost" @click=${() => (this.confirm = "")}>Cancel</ui-button>
+          <ui-button variant="text" @click=${() => (this.confirm = "")}>Cancel</ui-button>
           <ui-button
             color="primary"
             @click=${() => (this.confirm === "matrix" ? this._saveMatrix() : this._saveRoster())}

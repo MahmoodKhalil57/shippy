@@ -11,8 +11,6 @@ import { durations, easings, springs } from "../plugins/motion.ts";
  * - easing: `--ease-*` (springs and M3's easing curves); never a raw cubic-bezier or keyword;
  * - Tailwind: `duration-(--duration-…)`, `ease-<token>`, `delay-(--…)`, never `duration-200`,
  *   `ease-in-out` or `delay-75`.
- * The only exceptions are daisyUI's ambient loops, which take a cycle length as their token
- * (`<ui-aura speed="2000">`, `<ui-text-rotate duration="6000">`).
  */
 
 const root = path.resolve(import.meta.dirname, "..");
@@ -36,7 +34,6 @@ const TOKENS = new Set([
   ...Object.keys(durations),
 ]);
 /** Ambient loops whose cycle length is the component's own token. */
-const AMBIENT = new Set(["components/primitives/media/aura.ts", "components/primitives/media/text-rotate.ts"]);
 
 /** A raw time (`.2s`, `150ms`) other than zero. */
 const RAW_TIME = /(?<![\w-])(?:\d*\.)?\d+m?s\b/g;
@@ -53,12 +50,12 @@ function timingProblems(value: string): string[] {
 }
 
 /** Problems in one class (variants like `hover:` stripped). */
-function classProblems(cls: string, file: string): string[] {
+function classProblems(cls: string): string[] {
   const base = cls.replace(/^(?:[^[\]:]+:|\[[^\]]*\]:)*/, "");
   const arbitrary = /^\[(transition|animation)[\w-]*:(.+)\]$/.exec(base);
   if (arbitrary) return timingProblems(arbitrary[2]!.replace(/_/g, " "));
   const duration = /^duration-(.+)$/.exec(base);
-  if (duration && !/^\(--(?:duration|settle)-[\w-]+\)$|^0$/.test(duration[1]!) && !AMBIENT.has(rel(file)))
+  if (duration && !/^\(--(?:duration|settle)-[\w-]+\)$|^0$/.test(duration[1]!))
     return [`${cls}: use a duration token, e.g. duration-(--duration-effects)`];
   const ease = /^ease-(.+)$/.exec(base);
   if (ease && !TOKENS.has(ease[1]!)) return [`${cls}: use an M3 easing (ease-spatial, ease-emphasized-decelerate…)`];
@@ -72,7 +69,7 @@ describe("primitives time their motion with M3's tokens", () => {
   it.each(files(primitivesDir, /\.ts$/).map((f) => [rel(f), f]))("%s", (_, file) => {
     const source = read(file);
     const { classes } = classStrings(source, file);
-    const bad = classes.flatMap((c) => c.split(/\s+/)).flatMap((c) => classProblems(c, file));
+    const bad = classes.flatMap((c) => c.split(/\s+/)).flatMap((c) => classProblems(c));
     // Script animations (Element.animate) read their timing from the tokens too.
     for (const m of source.matchAll(/\b(duration|easing|delay)\s*:\s*(\d+|"[^"]*")/g))
       bad.push(`${m[0]}: read the token (getComputedStyle(...).getPropertyValue("--duration-…"))`);
@@ -97,14 +94,13 @@ describe("stylesheets time their motion with M3's tokens", () => {
 
 describe("the motion checks themselves", () => {
   it("accept tokens and reject raw timings", () => {
-    const f = path.join(primitivesDir, "x.ts");
-    expect(classProblems("duration-(--duration-spatial)", f)).toEqual([]);
-    expect(classProblems("ease-emphasized-decelerate", f)).toEqual([]);
-    expect(classProblems("hover:[transition:width_var(--duration-spatial)_var(--ease-spatial)]", f)).toEqual([]);
-    expect(classProblems("duration-200", f)).not.toEqual([]);
-    expect(classProblems("ease-in-out", f)).not.toEqual([]);
-    expect(classProblems("delay-75", f)).not.toEqual([]);
-    expect(classProblems("[transition:color_0.2s]", f)).not.toEqual([]);
+    expect(classProblems("duration-(--duration-spatial)")).toEqual([]);
+    expect(classProblems("ease-emphasized-decelerate")).toEqual([]);
+    expect(classProblems("hover:[transition:width_var(--duration-spatial)_var(--ease-spatial)]")).toEqual([]);
+    expect(classProblems("duration-200")).not.toEqual([]);
+    expect(classProblems("ease-in-out")).not.toEqual([]);
+    expect(classProblems("delay-75")).not.toEqual([]);
+    expect(classProblems("[transition:color_0.2s]")).not.toEqual([]);
     expect(timingProblems("opacity .2s cubic-bezier(.4,0,.2,1)")).toHaveLength(2);
     expect(timingProblems("all 0s allow-discrete var(--duration-spatial)")).toEqual([]);
   });

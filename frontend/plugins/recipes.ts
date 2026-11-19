@@ -221,8 +221,17 @@ export function classStrings(source: string, filename: string): { classes: strin
     if (!isNode(node)) return;
     // `x === "swap" ? a : b`: the compared value is data, not a class.
     if (node.type === "BinaryExpression" && COMPARISON.has(node.operator as string)) return;
-    // cva's defaultVariants / compoundVariants conditions hold variant names, not classes.
-    if (node.type === "Property" && NOT_CLASSES.has(keyName(node.key) ?? "")) return;
+    // cva's defaultVariants / compoundVariants conditions hold variant names, not classes; a
+    // compound variant's own `class` / `className` are classes.
+    if (node.type === "Property" && NOT_CLASSES.has(keyName(node.key) ?? "")) {
+      if (keyName(node.key) === "compoundVariants") {
+        const items = ((node.value as AstNode).elements as AstNode[] | undefined) ?? [];
+        for (const item of items)
+          for (const p of (item?.properties as AstNode[] | undefined) ?? [])
+            if (["class", "className"].includes(keyName(p.key) ?? "")) strings(p.value, take);
+      }
+      return;
+    }
     // `recipe({ size: "sm" })`: classes computed by another recipe; its arguments
     // are variant values. (Method calls such as `[...].join(" ")` are still read.)
     if (node.type === "CallExpression" && (node.callee as AstNode).type === "Identifier") return;

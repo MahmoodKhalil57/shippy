@@ -72,7 +72,7 @@ export class GsAsk extends LightElement {
               ? html`<ui-flex gap="1" wrap align="center">
                   <ui-text variant="body-sm" color="muted">Sources:</ui-text>
                   ${a.sources.map(
-                    (s) => html`<ui-button size="xs" variant="soft" .href=${s.href}>${s.label}</ui-button>`,
+                    (s) => html`<ui-button size="xs" variant="tonal" .href=${s.href}>${s.label}</ui-button>`,
                   )}
                 </ui-flex>`
               : nothing
@@ -92,7 +92,7 @@ export class GsAsk extends LightElement {
                   ? html`<ui-chat placement="end" color="primary" author="You">${this.asking}</ui-chat>
                       <ui-chat author="Golden Sea assistant">
                         <ui-flex gap="2" align="center">
-                          <ui-loading variant="dots" size="sm" label="Reading"></ui-loading>
+                          <ui-loading size="sm" label="Reading"></ui-loading>
                           <ui-text variant="body-md">Reading cases, approvals, invoices and suppliers…</ui-text>
                         </ui-flex>
                       </ui-chat>`
@@ -104,13 +104,13 @@ export class GsAsk extends LightElement {
               pipeline. Answers come from the live records and link to them.</ui-text
             >`
       }
-      ${this.error ? html`<ui-alert color="error" variant="soft">${this.error}</ui-alert>` : nothing}
+      ${this.error ? html`<ui-alert tone="error">${this.error}</ui-alert>` : nothing}
       <ui-flex gap="2" align="center" wrap>
         <ui-text-input
           width="fill"
           size="sm"
-          icon="search"
           autocomplete="off"
+          aria-label="Question"
           placeholder="Ask Golden Sea…"
           .value=${this.question}
           @input=${(e: Event) => (this.question = (e.target as HTMLInputElement).value)}
@@ -118,7 +118,7 @@ export class GsAsk extends LightElement {
             if (e.key === "Enter") void this.ask();
           }}
         ></ui-text-input>
-        <ui-button size="sm" color="primary" ?disabled=${Boolean(this.asking)} @click=${() => void this.ask()}
+        <ui-button size="xs" color="primary" ?disabled=${Boolean(this.asking)} @click=${() => void this.ask()}
           ><ui-icon name="send" size="sm"></ui-icon>Ask</ui-button
         >
       </ui-flex>
@@ -129,7 +129,7 @@ export class GsAsk extends LightElement {
                 (s) =>
                   html`<ui-button
                     size="xs"
-                    variant="ghost"
+                    variant="text"
                     ?disabled=${Boolean(this.asking)}
                     @click=${() => void this.ask(s)}
                     >${s}</ui-button

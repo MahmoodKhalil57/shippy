@@ -95,6 +95,8 @@ export class UiSelect extends LightElement {
   @property({ attribute: false }) options: SelectOption[] = [];
   /** Disabled first option shown until a value is picked. */
   @property() placeholder?: string;
+  /** The accessible name when there's no visible label (a field in a table row). */
+  @property({ attribute: "aria-label" }) ariaLabelText?: string;
   @property() name?: string;
   @property() value = "";
   @property({ type: Boolean }) disabled = false;
@@ -161,7 +163,7 @@ export class UiSelect extends LightElement {
         autocomplete=${ifDefined(this.autocomplete)}
         ?disabled=${this.disabled}
         ?required=${this.required}
-        aria-label=${ifDefined(!this.label && !this.legend ? (this.leading ?? this.placeholder) : undefined)}
+        aria-label=${ifDefined(this.ariaLabelText ?? (!this.label && !this.legend ? (this.leading ?? this.placeholder) : undefined))}
         @change=${(e: Event) => (this.value = (e.target as HTMLSelectElement).value)}
       >
         ${

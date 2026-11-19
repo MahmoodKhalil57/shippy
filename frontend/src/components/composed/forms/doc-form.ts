@@ -3,6 +3,7 @@ import { customElement, property, state } from "lit/decorators.js";
 import type { Where } from "payload";
 import { matches } from "../../../cms/runtime/query.ts";
 import type { FieldLike } from "../../../cms/types.ts";
+import type { DropdownItem } from "../../primitives/actions/dropdown.ts";
 import { LightElement } from "../../base/light-element.ts";
 import "../../primitives/actions/button.ts";
 import "../../primitives/actions/dropdown.ts";
@@ -267,7 +268,7 @@ export class UiDocForm extends LightElement {
         </ui-collapse>`;
       case "tabs":
         return html`<ui-tabs
-          variant="border"
+          variant="secondary"
           .items=${(f.tabs ?? []).map((tab) => {
             const at = tab.name ? [...path, tab.name] : path;
             const errors = this._errorsIn(at, tab.name ? undefined : tab.fields);
@@ -381,20 +382,20 @@ export class UiDocForm extends LightElement {
       <ui-flex align="center" justify="between" gap="2" wrap>
         <ui-flex align="center" gap="2">
           <ui-text emphasized>${labelOf(f)}${f.required ? " *" : ""}</ui-text>
-          <ui-badge size="sm" variant="soft">${rows.length}${range ? ` · ${range}` : ""}</ui-badge>
+          <ui-tag>${rows.length}${range ? ` · ${range}` : ""}</ui-tag>
         </ui-flex>
         ${
           rows.length > 1
             ? html`<ui-flex gap="1">
-                <ui-button size="xs" variant="ghost" @click=${() => fold(false)}>Collapse all</ui-button>
-                <ui-button size="xs" variant="ghost" @click=${() => fold(true)}>Expand all</ui-button>
+                <ui-button size="xs" variant="text" @click=${() => fold(false)}>Collapse all</ui-button>
+                <ui-button size="xs" variant="text" @click=${() => fold(true)}>Expand all</ui-button>
               </ui-flex>`
             : nothing
         }
       </ui-flex>
       ${f.admin?.description ? html`<ui-text variant="body-md" color="muted">${f.admin.description}</ui-text>` : nothing}
       ${this._error(at)}
-      ${rows.length ? nothing : html`<ui-text variant="body-md" color="muted">No ${humanize(name).toLowerCase()} yet.</ui-text>`}
+      ${rows.length ? nothing : html`<ui-empty-state size="sm">No ${humanize(name).toLowerCase()} yet.</ui-empty-state>`}
       ${rows.map((row, i) => {
         const fields = f.type === "blocks" ? (blockOf(row)?.fields ?? []) : (f.fields ?? []);
         const open = isOpen(row, i);
@@ -405,18 +406,22 @@ export class UiDocForm extends LightElement {
           // Not the row's own number again ("Line 01 · 1").
           [this._rowLabel(fields, row)].find((l) => l !== String(i + 1) && l !== text(i + 1).padStart(2, "0")) ||
           "";
-        const menu = [
-          ...(sortable && i > 0 ? [{ label: "Move up", value: "up" }] : []),
-          ...(sortable && i < rows.length - 1 ? [{ label: "Move down", value: "down" }] : []),
-          ...(full ? [] : [{ label: "Duplicate", value: "duplicate" }]),
-          ...(removable ? [{ label: "Remove", value: "remove" }] : []),
+        const menu: DropdownItem[] = [
+          ...(sortable && i > 0 ? [{ label: "Move up", value: "up", icon: "arrow-up" as const }] : []),
+          ...(sortable && i < rows.length - 1
+            ? [{ label: "Move down", value: "down", icon: "arrow-down" as const }]
+            : []),
+          ...(full ? [] : [{ label: "Duplicate", value: "duplicate", icon: "copy" as const }]),
+          ...(removable
+            ? [{ label: "Remove", value: "remove", icon: "x" as const, destructive: true, separator: true }]
+            : []),
         ];
         return html`<ui-box border rounded="box" padding="3">
           <ui-flex direction="col" gap="3">
             <ui-flex align="center" justify="between" gap="2">
               <ui-button
-                size="sm"
-                variant="ghost"
+                size="xs"
+                variant="text"
                 .label=${`${open ? "Collapse" : "Expand"} ${kind} ${i + 1}`}
                 @click=${() => (this._folded = new Map(this._folded).set(rowId(row, i), !open))}
               >
@@ -425,16 +430,17 @@ export class UiDocForm extends LightElement {
                 ${name ? html`<ui-text as="span" variant="body-md" color="muted">${name}</ui-text>` : nothing}
               </ui-button>
               <ui-flex align="center" gap="1">
-                ${errors ? html`<ui-badge size="sm" color="error" variant="soft">${errors} ${errors === 1 ? "error" : "errors"}</ui-badge>` : nothing}
+                ${errors ? html`<ui-tag tone="error">${errors} ${errors === 1 ? "error" : "errors"}</ui-tag>` : nothing}
                 ${
                   this.readonly || !menu.length
                     ? nothing
                     : html`<ui-dropdown
                         mode="popover"
                         align="end"
-                        trigger-variant="ghost"
+                        trigger-variant="text"
                         trigger-size="xs"
-                        .label=${`${kind} ${i + 1} actions`}
+                        trigger-shape="round"
+                        .triggerLabel=${`${kind} ${i + 1} actions`}
                         .items=${menu}
                         @ui-select=${(e: CustomEvent<{ item: { value: string } }>) => {
                           e.stopPropagation();
@@ -477,8 +483,8 @@ export class UiDocForm extends LightElement {
             ? html`<ui-flex>
                 <ui-dropdown
                   mode="popover"
-                  trigger-variant="dash"
-                  trigger-size="sm"
+                  trigger-variant="outlined"
+                  trigger-size="xs"
                   .label=${`+ Add ${singular === "Row" ? "block" : singular.toLowerCase()}`}
                   .items=${allowedBlocks.map((b) => ({ label: blockLabel(b.slug), value: b.slug }))}
                   @ui-select=${(e: CustomEvent<{ item: { value: string } }>) => {
@@ -488,7 +494,7 @@ export class UiDocForm extends LightElement {
                 ></ui-dropdown>
               </ui-flex>`
             : html`<ui-flex
-                ><ui-button size="sm" variant="dash" @click=${() => add()}>+ Add ${singular}</ui-button></ui-flex
+                ><ui-button size="xs" variant="outlined" @click=${() => add()}>+ Add ${singular}</ui-button></ui-flex
               >`
       }
     </ui-flex>`;
@@ -502,11 +508,11 @@ export class UiDocForm extends LightElement {
       <ui-flex align="center" justify="between" gap="2" wrap>
         <ui-flex align="center" gap="2">
           <ui-text emphasized>${labelOf(f)}</ui-text>
-          <ui-badge size="sm" variant="soft">${view.total}</ui-badge>
+          <ui-badge .count=${view.total}></ui-badge>
         </ui-flex>
         ${
           view.createHref && f.admin?.allowCreate !== false && !this.readonly
-            ? html`<ui-button size="xs" variant="ghost" href=${view.createHref}>+ Create new</ui-button>`
+            ? html`<ui-button size="xs" variant="text" href=${view.createHref}>+ Create new</ui-button>`
             : nothing
         }
       </ui-flex>
@@ -860,7 +866,7 @@ export class UiDocForm extends LightElement {
       <ui-grid fit="xs" gap="2">
         ${previews.map(
           (o) =>
-            html`<ui-card size="xs" variant="border" image-src=${o.image!} .imageAlt=${o.label}>
+            html`<ui-card size="sm" image-src=${o.image!} .imageAlt=${o.label}>
               <ui-text variant="body-sm">${o.label}</ui-text>
             </ui-card>`,
         )}

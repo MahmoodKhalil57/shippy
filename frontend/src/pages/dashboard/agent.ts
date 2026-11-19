@@ -161,7 +161,7 @@ export class DashboardAgent extends LightElement {
   /** Saastama-Micro-3.5 is chosen but can't run here yet: offer the downloadable model. */
   private _setup() {
     if (this.model !== "aibrowser" || this.localAi === "native" || this.localAi === "local") return nothing;
-    return html`<ui-alert color="info" variant="soft">
+    return html`<ui-alert tone="info">
       <ui-flex direction="col" gap="2">
         <ui-text variant="title-sm">Saastama-Micro-3.5 runs on this computer</ui-text>
         <ui-text variant="body-md"
@@ -172,7 +172,7 @@ export class DashboardAgent extends LightElement {
         ${this.localAiError ? html`<ui-text variant="body-sm" color="error">${this.localAiError}</ui-text>` : nothing}
         <ui-flex gap="2" align="center" wrap>
           <ui-button
-            size="sm"
+            size="xs"
             color="primary"
             ?disabled=${this.localAi === "loading"}
             @click=${() => void this._downloadModel()}
@@ -418,7 +418,7 @@ export class DashboardAgent extends LightElement {
           <ui-markdown .text=${fenced("Details", JSON.stringify(item.input, null, 1))}></ui-markdown>
         </ui-confirmation>`;
       case "error":
-        return html`<ui-alert color="error" variant="soft">${item.text}</ui-alert>`;
+        return html`<ui-alert tone="error">${item.text}</ui-alert>`;
       default:
         return nothing;
     }
@@ -492,7 +492,7 @@ export class DashboardAgent extends LightElement {
         ></ui-model-selector>
         ${
           this.items.length && !this.busy
-            ? html`<ui-button slot="tools" size="xs" variant="ghost" @click=${() => this._restart()}
+            ? html`<ui-button slot="tools" size="xs" variant="text" @click=${() => this._restart()}
                 >New chat</ui-button
               >`
             : nothing

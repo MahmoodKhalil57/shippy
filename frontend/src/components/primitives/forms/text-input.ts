@@ -55,8 +55,6 @@ export const textInput = rcva("input", {
     },
     /** Monospaced digits (the docs' telephone example). */
     tabular: { true: "tabular-nums" },
-    /** Fully rounded, filled field without a border (app-shell header search). */
-    pill: { true: "rounded-full border-transparent bg-surface" },
   },
 });
 
@@ -77,7 +75,6 @@ const inputIcon = (name: IconName) => iconSvg(name, {}, { class: textInputIcon()
 
 /** The icons used in the daisyUI input examples, as system icons. */
 export const textInputIcons = {
-  search: inputIcon("search"),
   file: inputIcon("file"),
   user: inputIcon("user"),
   mail: inputIcon("mail"),
@@ -110,9 +107,11 @@ export type TextInputType =
  * <ui-text-input type="email" icon="mail" required validator placeholder="mail@site.com"
  *   validator-hint="Enter valid email address" hint-on-invalid></ui-text-input>
  * @example
- * <ui-text-input type="search" icon="search" placeholder="Search">
+ * <ui-text-input icon="key" placeholder="Licence key">
  *   <ui-kbd slot="end" size="sm">⌘</ui-kbd><ui-kbd slot="end" size="sm">K</ui-kbd>
  * </ui-text-input>
+ *
+ * A search field is `<ui-search>`, not a text input.
  * @example <ui-text-input leading="https://" placeholder="URL"></ui-text-input>
  * @example <ui-text-input floating label="Your Email" placeholder="mail@site.com"></ui-text-input>
  * @example <ui-text-input size="xs sm:sm md:md lg:lg xl:xl" width="full md:xs"></ui-text-input>
@@ -132,7 +131,6 @@ export class UiTextInput extends LightElement {
   @property({ converter: responsiveBoolean }) validator: Responsive<boolean> = false;
   /** Monospaced digits. */
   @property({ converter: responsiveBoolean }) tabular: Responsive<boolean> = false;
-  @property({ converter: responsiveBoolean }) pill: Responsive<boolean> = false;
   /** One of the docs' icons, shown before the field. */
   @property() icon?: TextInputIcon;
 
@@ -140,6 +138,8 @@ export class UiTextInput extends LightElement {
   @property() name?: string;
   @property() value = "";
   @property() placeholder?: string;
+  /** The accessible name when there's no visible label (a field in a table row). */
+  @property({ attribute: "aria-label" }) ariaLabelText?: string;
   @property({ type: Boolean }) disabled = false;
   @property({ type: Boolean }) required = false;
   @property({ type: Boolean }) readonly = false;
@@ -211,7 +211,7 @@ export class UiTextInput extends LightElement {
         inputmode=${ifDefined(this.inputmode)}
         title=${ifDefined(this.patternTitle)}
         list=${ifDefined(listId)}
-        aria-label=${ifDefined(!this.label && !this.legend ? (this.placeholder ?? this.leading) : undefined)}
+        aria-label=${ifDefined(this.ariaLabelText ?? (!this.label && !this.legend ? (this.placeholder ?? this.leading) : undefined))}
         @input=${this._onInput}
       />${
         listId
@@ -227,7 +227,6 @@ export class UiTextInput extends LightElement {
       size: this.size,
       width: this.width,
       validator: this.validator,
-      pill: this.pill,
     };
     const wrapped = this.icon || this.leading || this.trailing || this.hasSlotted("start") || this.hasSlotted("end");
 
