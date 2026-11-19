@@ -29,6 +29,7 @@ import {
   type MediaKind,
   type SummaryType,
 } from "../../../agent/built-in-ai.ts";
+import { AI_CHANGE, usingLocalModel } from "../../../agent/ai-polyfill.ts";
 
 /**
  * On-device AI assists: small, reviewable jobs on the text a person is looking at, run by
@@ -68,6 +69,13 @@ export const aiHeadline = rcva("flex items-start gap-1.5 text-xs text-base-conte
 export const aiSpinner = rcva("loading loading-spinner loading-xs");
 
 const RTL = new Set(["ar", "he", "fa", "ur"]);
+
+/** The AI elements; when AI APIs appear later (the downloadable model loaded), they look again. */
+const AI_TAGS =
+  "ui-ai-language, ui-ai-text, ui-ai-summary, ui-ai-tools, ui-ai-classify, ui-ai-check, ui-ai-read-file, ui-ai-extract, ui-ai-flag, ui-ai-replies, ui-ai-dictate";
+addEventListener(AI_CHANGE, () => {
+  for (const el of document.querySelectorAll<LightElement>(AI_TAGS)) el.requestUpdate("text");
+});
 
 const aiButton = (icon: IconName, label: string, onClick: () => void, disabled = false) =>
   html`<button type="button" class=${button({ variant: "ghost", size: "xs" })} ?disabled=${disabled} @click=${onClick}>
@@ -577,7 +585,8 @@ export class UiAiReadFile extends AssistElement {
   }
 
   render() {
-    if (!supported("LanguageModel")) return nothing;
+    // Photos and voice notes need Chrome's own model (the downloadable one reads text only).
+    if (!supported("LanguageModel") || usingLocalModel()) return nothing;
     return html`<div class=${aiText()}>
       <div class=${aiBar()}>
         ${aiButton("file", this.label, () => this._pick(), !!this.working)} ${this.status()}
@@ -662,6 +671,7 @@ export class UiAiExtract extends AssistElement {
 
   render() {
     if (!supported("LanguageModel") || !this.fields.length) return nothing;
+    if (this.source === "file" && usingLocalModel()) return nothing; // photos need Chrome's own model
     const values = this.values;
     const trigger =
       this.source === "paste"
@@ -878,7 +888,7 @@ export class UiAiDictate extends AssistElement {
   }
 
   render() {
-    if (!supported("LanguageModel") || !("mediaDevices" in navigator)) return nothing;
+    if (!supported("LanguageModel") || usingLocalModel() || !("mediaDevices" in navigator)) return nothing;
     return html`<span class=${aiBar()}>
       ${aiButton(this.recording ? "stop" : "mic", this.recording ? "Stop and write it down" : this.label, () => void this._toggle(), !!this.working)}
       ${this.recording ? html`<span class=${aiNote()} role="status"><span class=${aiSpinner()}></span>Listening…</span>` : this.status()}

@@ -86,6 +86,50 @@ const NAVIGATE =
   /^\s*(?:please\s+)?(?:go(?:\s+back)?\s+to|open(?:\s+up)?|take\s+me\s+to|navigate\s+to|bring\s+up)\s+(?:the\s+)?(.+?)(?:\s+page|\s+screen)?\s*[.!?]*\s*$/i;
 const HOME = /^\s*(?:take\s+me\s+|go\s+)?home\s*[.!?]*$/i;
 
+/**
+ * Requests a small model gets wrong more often than not, sent straight to the right tool; its
+ * own answer (already short, plain text, from the live records) is the reply. First match wins.
+ */
+const ROUTES: {
+  pattern: RegExp;
+  tool: string;
+  input: (m: RegExpExecArray, message: string) => Record<string, unknown>;
+}[] = [
+  {
+    pattern:
+      /^\s*(?:what(?:'s| is)\s+the\s+)?(?:status|state)\s+of\s+(.+?)\s*[?.!]*$|^\s*(?:where|how)\s+(?:is|are|does)\s+(GS-RFQ-\d+|.+?)\s+(?:at|stand(?:ing)?|going|doing)?\s*[?.!]*$/i,
+    tool: "case_status",
+    input: (m) => ({ case: (m[1] ?? m[2] ?? "").trim() }),
+  },
+  {
+    pattern:
+      /^\s*(?:what am i (?:looking at|seeing)|what(?:'s| is) (?:on )?(?:this|the) (?:screen|page)|explain (?:this|the) (?:page|screen))\b/i,
+    tool: "what_is_on_screen",
+    input: () => ({}),
+  },
+  {
+    pattern:
+      /\b(?:what(?:'s| is) waiting for me|my day|what should i do|what do i (?:have|need) to do|my (?:queue|tasks|work))\b/i,
+    tool: "my_day",
+    input: () => ({}),
+  },
+  {
+    pattern: /^\s*(?:find|search(?: for)?|look up|where is)\s+(.+?)\s*[?.!]*$/i,
+    tool: "find",
+    input: (m) => ({ query: m[1]!.trim() }),
+  },
+  {
+    pattern: /^\s*(?:how (?:do|can|does|to)|what (?:is|are) the|what does)\b/i,
+    tool: "platform_guide",
+    input: (_m, message) => ({ topic: message }),
+  },
+  {
+    pattern: /\b(?:owe|overdue|approv|late|pipeline|margin|deadline|supplier|invoice|payment|quotation|deliver)/i,
+    tool: "ask_golden_sea",
+    input: (_m, message) => ({ question: message }),
+  },
+];
+
 /** A tool as an OpenAI function tool. */
 const asFunction = (t: AgentTool) => ({
   type: "function",
@@ -144,6 +188,11 @@ export class CodexConversation {
   reset() {
     this.#previous = undefined;
     this.#browser.reset();
+  }
+
+  /** The on-device model changed (the downloadable one loaded): start again on it. */
+  modelChanged() {
+    this.#browser.forget();
   }
 
   /** Get a model ready ahead of the first message (the on-device one: prepare / download it). */
@@ -241,20 +290,44 @@ export class CodexConversation {
       const result = await this.#runTool("open_page", { page }, options);
       if (!result.startsWith("Error:")) return result.replace(/^Opened: /, "Opened ");
     }
+    // Common requests go straight to their tool: its answer comes from the records, not the model.
+    for (const route of ROUTES) {
+      const m = route.pattern.exec(message);
+      if (!m || !simpleTools().some((t) => t.name === route.tool)) continue;
+      const result = await this.#runTool(route.tool, route.input(m, message), options);
+      if (!result.startsWith("Error:")) return result;
+    }
     let input: BrowserInput = { text: withContext(message) };
-    for (let step = 0; step < 6; step++) {
+    // An answer from the records, for when the small model can't give a grounded one.
+    const grounded = async (fallback: string) => {
+      const answer = await this.#runTool("ask_golden_sea", { question: message }, options);
+      return answer.startsWith("Error:") ? fallback : answer;
+    };
+    let usedTool = false;
+    let lastResult = "";
+    const calls = new Set<string>();
+    for (let step = 0; step < 4; step++) {
       const next = await this.#browser.step(input, {
         instructions: BROWSER_INSTRUCTIONS,
         tools: simpleTools(),
         onStatus: (text) => options.onEvent({ type: "status", text }),
         signal: options.signal,
       });
-      if (next.action === "answer") return next.answer;
+      // A small model answering from nothing makes things up: answer from the records instead.
+      if (next.action === "answer") return usedTool ? next.answer : grounded(next.answer);
+      // The same call again means it's going round in circles: stop and answer.
+      const key = `${next.tool}:${JSON.stringify(next.arguments)}`;
+      if (calls.has(key)) return lastResult && !lastResult.startsWith("Error:") ? grounded(lastResult) : grounded("…");
+      calls.add(key);
+      usedTool = true;
       const result = await this.#runTool(next.tool, next.arguments, options);
+      lastResult = result;
       // Back as a tool response (native tool use) or a "Result of …" message (JSON steps); cut to
       // the room left in the on-device model's context (./browser-model.ts).
       input = { result: { tool: next.tool, callId: next.callId, text: result, error: result.startsWith("Error:") } };
     }
-    return "I stopped after many steps without finishing. Could you narrow the request?";
+    return lastResult && !lastResult.startsWith("Error:")
+      ? lastResult
+      : "I couldn't finish that. Could you ask it another way, or narrower?";
   }
 }

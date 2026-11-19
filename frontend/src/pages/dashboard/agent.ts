@@ -2,6 +2,7 @@ import { html, nothing, type TemplateResult } from "lit";
 import { customElement, query, state } from "lit/decorators.js";
 import { CODEX_MODELS, CodexConversation, codexConfig, type CodexEvent } from "../../agent/codex.ts";
 import { agentContext, agentTools, type AgentTool } from "../../agent/webmcp.ts";
+import { AI_CHANGE, localAiState, useLocalModel, type LocalAiState } from "../../agent/ai-polyfill.ts";
 import { LightElement } from "../../components/base/light-element.ts";
 import type { ConfirmationState } from "../../components/primitives/ai/confirmation.ts";
 import type { MessageRating } from "../../components/primitives/ai/message.ts";
@@ -134,8 +135,58 @@ export class DashboardAgent extends LightElement {
     if (agentTools().length > 3) this.#conversation.warmUp(this.model);
   };
 
+  /** Whether Saastama-Micro-3.5 can run here: Chrome's own AI, the downloaded model, or neither yet. */
+  @state() private localAi: LocalAiState = "native";
+  @state() private localAiError = "";
+
+  private _checkLocalAi = async () => {
+    const before = this.localAi;
+    this.localAi = await localAiState();
+    // Now on the downloaded model: whatever was prepared on the old API is dropped.
+    if (this.localAi === "local" && before !== "local") this.#conversation.modelChanged();
+    this._warmUp();
+  };
+
+  private async _downloadModel() {
+    this.localAi = "loading";
+    this.localAiError = "";
+    try {
+      await useLocalModel();
+    } catch (e) {
+      this.localAiError = `Couldn't load the model: ${(e as Error).message}`;
+    }
+    await this._checkLocalAi();
+  }
+
+  /** Saastama-Micro-3.5 is chosen but can't run here yet: offer the downloadable model. */
+  private _setup() {
+    if (this.model !== "aibrowser" || this.localAi === "native" || this.localAi === "local") return nothing;
+    return html`<ui-alert color="info" variant="soft">
+      <ui-flex direction="col" gap="2">
+        <ui-text size="sm" weight="semibold">Saastama-Micro-3.5 runs on this computer</ui-text>
+        <ui-text size="sm"
+          >This browser doesn't have Chrome's on-device AI switched on. Download the model once (about 800 MB, kept by
+          the browser — not in private windows) to use it here — nothing you type leaves this computer. Or turn on
+          Chrome's own (faster) with the steps on the login page.</ui-text
+        >
+        ${this.localAiError ? html`<ui-text size="xs" color="error">${this.localAiError}</ui-text>` : nothing}
+        <ui-flex gap="2" align="center" wrap>
+          <ui-button
+            size="sm"
+            color="primary"
+            ?disabled=${this.localAi === "loading"}
+            @click=${() => void this._downloadModel()}
+            >${this.localAi === "loading" ? "Loading…" : "Download the AI model (about 800 MB)"}</ui-button
+          >
+        </ui-flex>
+      </ui-flex>
+    </ui-alert>`;
+  }
+
   connectedCallback() {
     super.connectedCallback();
+    addEventListener(AI_CHANGE, this._checkLocalAi);
+    void this._checkLocalAi();
     addEventListener("agent-tools-change", this._warmUp);
     // Once the page has settled (an idle moment), not during its first paint.
     if ("requestIdleCallback" in window) requestIdleCallback(this._warmUp);
@@ -145,6 +196,7 @@ export class DashboardAgent extends LightElement {
   disconnectedCallback() {
     super.disconnectedCallback();
     removeEventListener("agent-tools-change", this._warmUp);
+    removeEventListener(AI_CHANGE, this._checkLocalAi);
   }
 
   private _pickModel(id: string) {
@@ -395,6 +447,7 @@ export class DashboardAgent extends LightElement {
             >I see the screen you're on, find records, explain what's waiting for you, take you anywhere and, with your
             OK, do things for you.</ui-text
           >
+          ${this._setup()}
           <ui-suggestions
             wrap
             .items=${suggestions()}

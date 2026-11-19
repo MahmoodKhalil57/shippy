@@ -4,6 +4,7 @@ import { customElement, state } from "lit/decorators.js";
 import { api, ApiError } from "../../cms/client.ts";
 import "../../components/index.ts";
 import { defaultLogin, demoPassword } from "./demo-users.ts";
+import { localAiState, useLocalModel, type LocalAiState } from "../../agent/ai-polyfill.ts";
 import { collectionOf, formFields, toast, userSlug } from "./shared.ts";
 
 /** Login and create-first-user. Both fire `dashboard-auth` once signed in. */
@@ -141,56 +142,69 @@ export class DashboardLogin extends LightElement {
     </ui-form>`;
   }
 
+  /** Chrome's on-device AI here: on, the downloadable model in use, or neither (offer it). */
+  @state() private localAi: LocalAiState = "off";
+
+  connectedCallback() {
+    super.connectedCallback();
+    void localAiState().then((s) => (this.localAi = s));
+  }
+
   /** How to turn on Chrome's on-device AI (Saastama-Micro-3.5 and the AI helpers on every screen). */
   private _onDeviceAi() {
-    const flag = (name: string, id: string, note = "") =>
-      html`<ui-flex gap="2" align="baseline" wrap>
-        <ui-text size="sm" weight="medium">${name}</ui-text>
-        <ui-text as="code" mono size="xs">${id}</ui-text>
-        ${note ? html`<ui-text size="xs" color="muted">${note}</ui-text>` : nothing}
-      </ui-flex>`;
-    return html`<ui-collapse heading="Turn on on-device AI (Chrome)" icon="arrow">
+    const flags = [
+      "#optimization-guide-on-device-model",
+      "#prompt-api",
+      "#prompt-api-multimodal-input",
+      "#prompt-api-tool-use",
+      "#prompt-api-sampling-mode",
+      "#on-device-model-speculative-decoding",
+      "#gemma4-for-built-in-ai",
+      "#decisions-api",
+    ];
+    const status =
+      this.localAi === "native"
+        ? "Chrome's on-device AI is on in this browser."
+        : this.localAi === "local"
+          ? "This browser uses the downloaded model."
+          : "";
+    return html`<ui-collapse heading="Turn on AI features" icon="arrow" mode="details">
       <ui-flex direction="col" gap="3">
-        <ui-text size="sm"
-          >The helper's default model, <strong>Saastama-Micro-3.5</strong>, and the AI on every screen (translate, catch
-          me up, checks, reading photos and voice notes) run inside Chrome on this computer — nothing is sent anywhere.
-          They are new Chrome features, so they need switching on once:</ui-text
-        >
-        <ui-text size="sm"
-          ><strong>1.</strong> Use Chrome on a desktop or laptop (Windows, macOS, Linux or ChromeOS), up to date. It
-          needs about 22 GB of free disk space, and a graphics card with more than 4 GB of memory or 16 GB of
-          RAM.</ui-text
-        >
-        <ui-text size="sm"
-          ><strong>2.</strong> Open <strong>chrome://flags</strong> in the address bar. Search for each of these and set
-          it to <strong>Enabled</strong>:</ui-text
-        >
+        ${status ? html`<ui-text size="sm" color="success">${status}</ui-text>` : nothing}
         <ui-flex direction="col" gap="1">
-          ${flag("Enables optimization guide on device", "#optimization-guide-on-device-model", "choose “Enabled BypassPerfRequirement”")}
-          ${flag("Prompt API", "#prompt-api")}
-          ${flag("Prompt API Multimodal Input", "#prompt-api-multimodal-input", "photos and voice notes")}
-          ${flag("Prompt API Tool Use", "#prompt-api-tool-use", "the helper's tools")}
-          ${flag("Prompt API Sampling Mode", "#prompt-api-sampling-mode")}
-          ${flag("Speculative Decoding for Built-in AI", "#on-device-model-speculative-decoding", "faster")}
-          ${flag("Gemma 4 for Built-in AI", "#gemma4-for-built-in-ai", "the stronger model")}
-          ${flag("Decisions API", "#decisions-api", "checks and categories")}
-          ${flag("Summarization API", "search “Summarization”", "catch me up")}
-          ${flag("Writer API / Rewriter API", "search “Writer” and “Rewriter”", "drafts and tone")}
-          ${flag("Proofreader API", "search “Proofreader”")}
-          ${flag("Translation API / Language Detection API", "search “Translation” and “Language detection”", "Arabic ↔ English")}
+          <ui-flex gap="2" align="center" wrap>
+            <ui-text size="sm" weight="semibold">Switch on Chrome's on-device AI</ui-text>
+            <ui-badge size="sm" variant="soft" color="primary">Recommended</ui-badge>
+          </ui-flex>
+          <ui-text size="sm"
+            >In desktop Chrome, open <strong>chrome://flags</strong>, enable these flags, then click Relaunch:</ui-text
+          >
+          <ui-flex gap="1" wrap>${flags.map((f) => html`<ui-badge size="sm" variant="ghost">${f}</ui-badge>`)}</ui-flex>
+          <ui-text size="xs" color="muted"
+            >Also enable the Summarization, Writer, Rewriter, Proofreader, Translation and Language Detection APIs. For
+            the first flag, choose "Enabled BypassPerfRequirement".</ui-text
+          >
         </ui-flex>
-        <ui-text size="sm"
-          ><strong>3.</strong> Click <strong>Relaunch</strong> at the bottom of the flags page.</ui-text
-        >
-        <ui-text size="sm"
-          ><strong>4.</strong> Come back here and click anywhere: Chrome downloads its model once (a few GB) in the
-          background. <strong>chrome://on-device-internals</strong> shows its progress.</ui-text
-        >
-        <ui-text size="xs" color="muted"
-          >Flag names change between Chrome versions; if one isn't there, search for the feature's name. Without them
-          everything still works — the AI buttons just don't appear, and the helper can use an OpenAI model
-          instead.</ui-text
-        >
+        <ui-flex direction="col" gap="1">
+          <ui-text size="sm" weight="semibold">Or download a model</ui-text>
+          <ui-text size="sm">It works in any browser. It is slower and reads text only.</ui-text>
+          ${
+            this.localAi === "native" || this.localAi === "local"
+              ? nothing
+              : html`<ui-flex>
+                  <ui-button
+                    size="sm"
+                    ?disabled=${this.localAi === "loading"}
+                    @click=${async () => {
+                      this.localAi = "loading";
+                      await useLocalModel().catch(() => undefined);
+                      this.localAi = await localAiState();
+                    }}
+                    >${this.localAi === "loading" ? "Loading…" : "Download (800 MB)"}</ui-button
+                  >
+                </ui-flex>`
+          }
+        </ui-flex>
       </ui-flex>
     </ui-collapse>`;
   }

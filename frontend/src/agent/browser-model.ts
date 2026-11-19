@@ -94,7 +94,7 @@ const tooLarge = (e: unknown) =>
   e instanceof Error && (e.name === "QuotaExceededError" || /too large/i.test(e.message));
 
 const NO_API =
-  'This browser has no built-in AI model. Saastama-Micro-3.5 runs on Chrome\'s on-device AI: see "Turn on on-device AI" on the login page.';
+  'This browser has no built-in AI model. Saastama-Micro-3.5 needs Chrome\'s on-device AI or the downloadable model: see "Turn on on-device AI" on the login page.';
 const UNAVAILABLE =
   "Chrome's built-in model isn't available on this device (it needs about 22 GB of free disk space and a GPU with more than 4 GB of memory, or 16 GB of RAM).";
 
@@ -118,7 +118,7 @@ export class BrowserModelChat {
 
   #monitor = (m: DownloadMonitor) =>
     m.addEventListener("downloadprogress", (e) =>
-      this.#status(`Downloading Chrome's built-in model… ${Math.round(e.loaded * 100)}%`),
+      this.#status(`Downloading the AI model… ${Math.round(e.loaded * 100)}%`),
     );
 
   /**
@@ -189,7 +189,10 @@ export class BrowserModelChat {
       .then((availability) => {
         if (availability === "available") return void this.#prepare(instructions, tools);
         if (availability === "unavailable") return;
-        // Downloading needs a user action: start at the next one, wherever it lands.
+        // Downloading needs a user action: now, if the person just clicked (e.g. "Download the
+        // model"); otherwise at the next one, wherever it lands.
+        if ((navigator as Navigator & { userActivation?: { isActive: boolean } }).userActivation?.isActive)
+          return void this.#prepare(instructions, tools);
         this.#awaitingActivation = true;
         const start = () => {
           removeEventListener("pointerdown", start, true);
@@ -210,7 +213,7 @@ export class BrowserModelChat {
     if (!this.#base) {
       const availability = await api.availability(LANGUAGES);
       if (availability === "unavailable") throw new Error(UNAVAILABLE);
-      if (availability !== "available") onStatus("Downloading Chrome's built-in model (once per device)…");
+      if (availability !== "available") onStatus("Downloading the AI model (once per device)…");
     }
     this.#status = onStatus;
     try {
@@ -335,5 +338,13 @@ export class BrowserModelChat {
   reset() {
     this.#session?.session.destroy();
     this.#session = null;
+  }
+
+  /** The model behind the API changed (e.g. the downloadable one loaded): drop everything prepared. */
+  forget() {
+    this.reset();
+    void this.#base?.then((b) => b.session.destroy()).catch(() => undefined);
+    this.#base = null;
+    this.#awaitingActivation = false;
   }
 }

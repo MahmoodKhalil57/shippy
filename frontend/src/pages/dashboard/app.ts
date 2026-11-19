@@ -18,6 +18,7 @@ import "./edit-view.ts";
 import "./list-view.ts";
 import "./command.ts";
 import { provideAgentContext, provideTools } from "../../agent/webmcp.ts";
+import { restoreLocalModel } from "../../agent/ai-polyfill.ts";
 import { dashboardTools, type AgentHost, type Appearance } from "./agent-tools.ts";
 import { asideRail, expandAsideSection, type AsideSection } from "./aside.ts";
 import { roleLabel, roleLogins, seedUsers, type SeedUser } from "./demo-users.ts";
@@ -109,6 +110,8 @@ export class DashboardApp extends LightElement {
   };
 
   private async _start() {
+    // The downloadable on-device model, if the person chose it on this browser (no Chrome flags).
+    void restoreLocalModel();
     try {
       await startMockBackend();
       await this._refresh();

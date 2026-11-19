@@ -11,7 +11,11 @@ import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts
  * Purpose: Content containers & disclosure · Kind: primitive
  * Docs: https://daisyui.com/components/collapse/
  */
-export const collapse = rcva("collapse", {
+/**
+ * `!visible`: Tailwind v4 also has a `collapse` utility (`visibility: collapse`), and on some pages
+ * it wins over daisyUI's component, hiding the whole thing; this keeps it visible.
+ */
+export const collapse = rcva("collapse !visible", {
   variants: {
     icon: {
       arrow: "collapse-arrow",
