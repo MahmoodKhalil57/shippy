@@ -16,7 +16,7 @@ export const sourcesSummary = rcva(
   "flex w-fit cursor-pointer list-none items-center gap-1.5 rounded-field px-1.5 py-1 -ms-1.5 font-medium text-base-content/80 hover:bg-base-content/5 focus-visible:outline-2 focus-visible:outline-primary [&::-webkit-details-marker]:hidden",
 );
 export const sourcesChevron = rcva(
-  "transition-transform duration-(--duration-effects) ease-effects group-open/sources:rotate-180 motion-reduce:transition-none",
+  "transition-transform duration-(--duration-spatial-fast) ease-spatial-fast group-open/sources:rotate-180 motion-reduce:transition-none",
 );
 export const sourcesList = rcva("mt-1 flex flex-col gap-0.5 border-s-2 border-base-content/10 ps-3");
 export const sourcesLink = rcva(

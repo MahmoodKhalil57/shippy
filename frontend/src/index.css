@@ -10,8 +10,23 @@
 @import "./styles/theme.css";
 /* Colour schemes (tweakcn, as daisyUI tokens): data-scheme on <html>. */
 @import "./styles/schemes.css";
+/* daisyUI's components on M3 motion. */
+@import "./styles/daisy-motion.css";
 
 @layer base {
+  /* Reduce motion (M3: subtle fades instead of sliding or scaling): everything that moves or
+     resizes on a spatial spring jumps straight to its end; colour and opacity still ease. */
+  @media (prefers-reduced-motion: reduce) {
+    :root {
+      --duration-spatial-fast: 0ms;
+      --duration-spatial: 0ms;
+      --duration-spatial-slow: 0ms;
+      --settle-spatial-fast: 0ms;
+      --settle-spatial: 0ms;
+      --settle-spatial-slow: 0ms;
+    }
+  }
+
   /* Component hosts (<ui-*>) add no box of their own, so their rendered markup
      takes part directly in the parent's flex/grid layout. */
   [data-ui] {

@@ -17,68 +17,65 @@ import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts
  */
 /**
  * Every button squashes a little when pressed and springs back (M3 expressive fast spatial
- * spring, src/styles/motion.css); daisyUI's colour/shadow transitions are kept.
+ * spring; colours and shadows on the effects spring: src/styles/daisy-motion.css).
  */
-export const button = rcva(
-  "btn [transition:color_0.2s,background-color_0.2s,border-color_0.2s,box-shadow_0.2s,scale_var(--duration-spatial-fast)_var(--ease-spatial-fast)] active:scale-[0.94] motion-reduce:active:scale-100",
-  {
-    variants: {
-      color: {
-        neutral: "btn-neutral",
-        primary: "btn-primary",
-        secondary: "btn-secondary",
-        accent: "btn-accent",
-        info: "btn-info",
-        success: "btn-success",
-        warning: "btn-warning",
-        error: "btn-error",
-      },
-      variant: {
-        /**
-         * Outline, dash, soft, ghost and link draw text in the button's colour: mixed toward the
-         * ink so it reads at WCAG AA (filled on hover, they use the colour's own content ink).
-         */
-        outline:
-          "btn-outline [&:not(:hover,:active,.btn-active)]:[color:color-mix(in_oklab,var(--btn-color,var(--color-base-content))_35%,var(--color-base-content))]",
-        dash: "btn-dash [&:not(:hover,:active,.btn-active)]:[color:color-mix(in_oklab,var(--btn-color,var(--color-base-content))_35%,var(--color-base-content))]",
-        soft: "btn-soft [&:not(:hover,:active,.btn-active)]:[color:color-mix(in_oklab,var(--btn-color,var(--color-base-content))_35%,var(--color-base-content))]",
-        ghost:
-          "btn-ghost [&:not(:hover,:active,.btn-active)]:[color:color-mix(in_oklab,var(--btn-color,var(--color-base-content))_35%,var(--color-base-content))]",
-        link: "btn-link [&:not(:hover,:active,.btn-active)]:[color:color-mix(in_oklab,var(--btn-color,var(--color-base-content))_35%,var(--color-base-content))]",
-        /**
-         * Looks like a search field (the app header's command-palette trigger): rounded, filled,
-         * placeholder-coloured text, a trailing `<ui-kbd>` hint. When its container (an `@container`)
-         * has less than 13rem, it shrinks to an icon-only circle at the start (beside the brand) — no screen breakpoint.
-         */
-        field:
-          "btn-ghost liquid-glass-clear h-11 w-full max-w-xl justify-start gap-2 rounded-full border-transparent px-4 font-normal text-base-content/75 hover:bg-base-100/60 hover:text-base-content [&>ui-kbd>span]:ms-auto @max-[13rem]:me-auto @max-[13rem]:size-10 @max-[13rem]:justify-center @max-[13rem]:px-0 @max-[13rem]:[&>ui-kbd]:hidden @max-[13rem]:[&>ui-text]:hidden",
-      },
-      size: {
-        xs: "btn-xs",
-        sm: "btn-sm",
-        md: "btn-md",
-        lg: "btn-lg",
-        xl: "btn-xl",
-      },
-      shape: {
-        square: "btn-square",
-        circle: "btn-circle",
-      },
-      wide: { true: "btn-wide" },
-      block: { true: "btn-block" },
-      active: { true: "btn-active" },
-      disabled: { true: "btn-disabled" },
-      /** Hide the button, e.g. `hide="lg"` where a sidebar it toggles is always open. */
-      hide: { true: "hidden" },
-      /** Content alignment, e.g. for full-width buttons in menus. */
-      justify: {
-        start: "justify-start",
-        center: "justify-center",
-        end: "justify-end",
-      },
+export const button = rcva("btn active:scale-[0.94] motion-reduce:active:scale-100", {
+  variants: {
+    color: {
+      neutral: "btn-neutral",
+      primary: "btn-primary",
+      secondary: "btn-secondary",
+      accent: "btn-accent",
+      info: "btn-info",
+      success: "btn-success",
+      warning: "btn-warning",
+      error: "btn-error",
+    },
+    variant: {
+      /**
+       * Outline, dash, soft, ghost and link draw text in the button's colour: mixed toward the
+       * ink so it reads at WCAG AA (filled on hover, they use the colour's own content ink).
+       */
+      outline:
+        "btn-outline [&:not(:hover,:active,.btn-active)]:[color:color-mix(in_oklab,var(--btn-color,var(--color-base-content))_35%,var(--color-base-content))]",
+      dash: "btn-dash [&:not(:hover,:active,.btn-active)]:[color:color-mix(in_oklab,var(--btn-color,var(--color-base-content))_35%,var(--color-base-content))]",
+      soft: "btn-soft [&:not(:hover,:active,.btn-active)]:[color:color-mix(in_oklab,var(--btn-color,var(--color-base-content))_35%,var(--color-base-content))]",
+      ghost:
+        "btn-ghost [&:not(:hover,:active,.btn-active)]:[color:color-mix(in_oklab,var(--btn-color,var(--color-base-content))_35%,var(--color-base-content))]",
+      link: "btn-link [&:not(:hover,:active,.btn-active)]:[color:color-mix(in_oklab,var(--btn-color,var(--color-base-content))_35%,var(--color-base-content))]",
+      /**
+       * Looks like a search field (the app header's command-palette trigger): rounded, filled,
+       * placeholder-coloured text, a trailing `<ui-kbd>` hint. When its container (an `@container`)
+       * has less than 13rem, it shrinks to an icon-only circle at the start (beside the brand) — no screen breakpoint.
+       */
+      field:
+        "btn-ghost liquid-glass-clear h-11 w-full max-w-xl justify-start gap-2 rounded-full border-transparent px-4 font-normal text-base-content/75 hover:bg-base-100/60 hover:text-base-content [&>ui-kbd>span]:ms-auto @max-[13rem]:me-auto @max-[13rem]:size-10 @max-[13rem]:justify-center @max-[13rem]:px-0 @max-[13rem]:[&>ui-kbd]:hidden @max-[13rem]:[&>ui-text]:hidden",
+    },
+    size: {
+      xs: "btn-xs",
+      sm: "btn-sm",
+      md: "btn-md",
+      lg: "btn-lg",
+      xl: "btn-xl",
+    },
+    shape: {
+      square: "btn-square",
+      circle: "btn-circle",
+    },
+    wide: { true: "btn-wide" },
+    block: { true: "btn-block" },
+    active: { true: "btn-active" },
+    disabled: { true: "btn-disabled" },
+    /** Hide the button, e.g. `hide="lg"` where a sidebar it toggles is always open. */
+    hide: { true: "hidden" },
+    /** Content alignment, e.g. for full-width buttons in menus. */
+    justify: {
+      start: "justify-start",
+      center: "justify-center",
+      end: "justify-end",
     },
   },
-);
+});
 
 export type ButtonVariants = VariantProps<typeof button>;
 

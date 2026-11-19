@@ -49,7 +49,7 @@ export const chartArea = rcva("fill-current stroke-none opacity-15", {
 export const chartBars = rcva("absolute inset-0 flex items-end gap-0.5");
 export const chartBarSlot = rcva("flex h-full min-w-0 flex-1 items-end justify-center gap-0.5");
 export const chartBar = rcva(
-  "h-(--bar) max-w-8 min-w-0 flex-1 rounded-t-[4px] bg-current transition-[height,opacity] duration-(--duration-spatial) ease-spatial motion-reduce:transition-none",
+  "h-(--bar) max-w-8 min-w-0 flex-1 rounded-t-[4px] bg-current [transition:height_var(--duration-spatial)_var(--ease-spatial),opacity_var(--duration-effects)_var(--ease-effects)] motion-reduce:transition-none",
   {
     variants: {
       series: { "0": SERIES[0], "1": SERIES[1], "2": SERIES[2] },
@@ -63,7 +63,7 @@ export const chartBar = rcva(
 /** Stacked bars: one column per x, the series' segments on top of each other (a build-up). */
 export const chartStack = rcva("flex h-full w-full max-w-8 min-w-0 flex-col-reverse");
 export const chartStackSegment = rcva(
-  "h-(--bar) w-full shrink-0 bg-current transition-[height,opacity] duration-(--duration-spatial) ease-spatial last:rounded-t-[4px] motion-reduce:transition-none",
+  "h-(--bar) w-full shrink-0 bg-current [transition:height_var(--duration-spatial)_var(--ease-spatial),opacity_var(--duration-effects)_var(--ease-effects)] last:rounded-t-[4px] motion-reduce:transition-none",
   {
     variants: {
       series: { "0": SERIES[0], "1": SERIES[1], "2": SERIES[2] },

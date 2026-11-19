@@ -86,9 +86,11 @@ export const menu = rcva(
        * Panes (like VS Code's side bar): the menu fills its container's height, every top-level
        * group's title stays on screen, and each open group scrolls inside its own share of the
        * height: open groups share it equally, and a group needing less gives the rest away.
+       * Opening or closing one, its share grows or shrinks on the same spring as its content
+       * (only `flex-grow` changes, so it animates), and the other panes move with it.
        */
       panes: {
-        true: "min-h-0 flex-1 [&>li]:min-h-8 [&>li]:shrink-0 [&>li]:max-h-max [&>li:has(>details[open])]:flex-[1_1_0%] [&>li>details]:h-full [&>li>details[open]::details-content]:[block-size:calc(100%_-_2rem)] [&>li>details>ul]:max-h-full [&>li>details>ul]:overflow-y-auto [&>li>details>ul]:overscroll-contain",
+        true: "min-h-0 flex-1 [&>li]:min-h-8 [&>li]:flex-[0_0_2rem] [&>li]:max-h-max [&>li]:[transition:flex-grow_var(--duration-spatial)_var(--ease-spatial)] motion-reduce:[&>li]:transition-none [&>li:has(>details[open])]:flex-[1_1_2rem] [&>li>details]:h-full [&>li>details::details-content]:[block-size:calc(100%_-_2rem)] [&>li>details[open]::details-content]:[block-size:calc(100%_-_2rem)] [&>li>details>ul]:max-h-full [&>li>details>ul]:overflow-y-auto [&>li>details>ul]:overscroll-contain",
       },
     },
     defaultVariants: { surface: true, rounded: true, iconSize: "md" },

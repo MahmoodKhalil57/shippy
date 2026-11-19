@@ -54,7 +54,7 @@ export const card = rcva("card [&_p]:grow-0", {
     joinItem: { true: "join-item" },
     /** The whole card is a link (`href`): it lifts on hover with a spring, and shows focus. */
     link: {
-      true: "transition-[translate,box-shadow] duration-(--duration-spatial-fast) ease-spatial-fast hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary motion-reduce:transition-none",
+      true: "[transition:translate_var(--duration-spatial-fast)_var(--ease-spatial-fast),box-shadow_var(--duration-effects-fast)_var(--ease-effects-fast),outline-color_var(--duration-effects-fast)_var(--ease-effects-fast)] hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary motion-reduce:transition-none",
     },
   },
   defaultVariants: { color: "base", shadow: true },

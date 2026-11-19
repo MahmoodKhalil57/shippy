@@ -24,7 +24,7 @@ export const messageScrollerEmpty = rcva("m-auto flex max-w-xs flex-col items-ce
   variants: { hidden: { true: "hidden" } },
 });
 export const messageScrollerJump = rcva(
-  "absolute bottom-2 left-1/2 -translate-x-1/2 shadow-md transition-[opacity,translate] duration-(--duration-effects) ease-effects starting:translate-y-2 starting:opacity-0 motion-reduce:transition-none",
+  "absolute bottom-2 left-1/2 -translate-x-1/2 shadow-md [transition:opacity_var(--duration-short3)_var(--ease-emphasized-decelerate),translate_var(--duration-medium1)_var(--ease-emphasized-decelerate)] starting:translate-y-2 starting:opacity-0 motion-reduce:transition-none",
 );
 
 /** How close to the bottom (px) still counts as "at the live edge". */

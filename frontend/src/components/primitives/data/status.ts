@@ -32,7 +32,7 @@ export const status = rcva("status", {
       xl: "status-xl",
     },
     /** Bounce animation ("Unread messages"). */
-    bounce: { true: "animate-bounce" },
+    bounce: { true: "animate-bounce motion-reduce:animate-none" },
   },
 });
 
@@ -40,7 +40,7 @@ export const status = rcva("status", {
 export const statusPingStack = rcva("inline-grid *:[grid-area:1/1]");
 /** The pinging copy; `ping` is responsive (e.g. `ping="lg"` pings from lg up). */
 export const statusPing = rcva("", {
-  variants: { ping: { true: "animate-ping" } },
+  variants: { ping: { true: "animate-ping motion-reduce:animate-none" } },
   defaultVariants: { ping: true },
 });
 

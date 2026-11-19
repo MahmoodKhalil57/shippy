@@ -36,7 +36,7 @@ export const messageBody = rcva("text-sm", {
 export const messageActions = rcva("flex items-center gap-0.5 text-base-content/75", {
   variants: {
     from: {
-      user: "opacity-0 transition-opacity duration-(--duration-effects) group-hover/message:opacity-100 group-focus-within/message:opacity-100 motion-reduce:transition-none",
+      user: "opacity-0 transition-opacity duration-(--duration-effects-fast) ease-effects-fast group-hover/message:opacity-100 group-focus-within/message:opacity-100 motion-reduce:transition-none",
       assistant: "",
     },
   },

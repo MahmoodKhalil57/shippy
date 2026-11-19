@@ -50,10 +50,22 @@ export const fabTooltip = rcva("tooltip", {
 export const fabDock = rcva(
   "fixed end-4 bottom-4 z-[60] flex flex-col items-end gap-3 pointer-events-none [&>*]:pointer-events-auto",
 );
-/** Closed, the panel stays mounted but hidden, so its content (a conversation) never lands in the page. */
+/**
+ * Closed, the panel stays mounted but hidden, so its content (a conversation) never lands in the page.
+ * It opens out of its button (M3's FAB expanding into a sheet: emphasized easing, 400ms) and folds
+ * back into it on the exit curve, quicker. With Reduce motion it only fades.
+ */
 export const fabPanel = rcva(
-  "liquid-glass flex h-[min(38rem,calc(100dvh-7rem))] w-[min(26rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-box origin-bottom-right transition-[opacity,scale] duration-(--duration-effects) ease-effects starting:scale-95 starting:opacity-0 motion-reduce:transition-none",
-  { variants: { hidden: { true: "hidden" } } },
+  "liquid-glass flex h-[min(38rem,calc(100dvh-7rem))] w-[min(26rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-box origin-bottom-right starting:scale-50 starting:opacity-0 motion-reduce:scale-100",
+  {
+    variants: {
+      hidden: {
+        true: "hidden scale-50 opacity-0 [transition:opacity_var(--duration-short3)_var(--ease-emphasized-accelerate),scale_var(--duration-short4)_var(--ease-emphasized-accelerate),display_var(--duration-short4)_allow-discrete]",
+        false:
+          "[transition:opacity_var(--duration-short4)_var(--ease-emphasized-decelerate),scale_var(--duration-medium4)_var(--ease-emphasized),display_var(--duration-medium4)_allow-discrete]",
+      },
+    },
+  },
 );
 export const fabPanelHead = rcva("flex shrink-0 items-center gap-2 border-b border-base-content/10 px-4 py-2.5");
 export const fabPanelTitle = rcva("min-w-0 flex-1 truncate text-sm font-semibold");

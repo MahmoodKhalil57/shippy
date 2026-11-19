@@ -203,8 +203,28 @@ export const appShellMain = rcva(
    * (container units, container queries), not to the window. Its scrollbar stays inside the
    * rounded corners (`--scrollbar-inset`, src/index.css).
    */
-  "@container/main min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-(--main-radius) liquid-glass-surface [--main-radius:clamp(1rem,3vw,2rem)] [--scrollbar-inset:var(--main-radius)]",
+  "@container/main min-h-0 flex-1 overflow-x-clip overflow-y-auto overscroll-contain rounded-(--main-radius) liquid-glass-surface [--main-radius:clamp(1rem,3vw,2rem)] [--scrollbar-inset:var(--main-radius)]",
 );
+
+/** The page inside the main panel: the box a page transition moves (see `pageTransition`). */
+export const appShellPage = rcva("");
+
+/**
+ * Material Design 3's transition patterns between pages (m3.material.io/styles/motion/transitions),
+ * for the page entering the main panel:
+ * - `top-level`: another destination of the navigation; fades in, with no movement (top-level
+ *   destinations aren't related, so nothing suggests they are).
+ * - `forward` / `backward`: one level deeper (a list → one of its records) or back up; slides in
+ *   a little from the side it comes from while fading in.
+ * - `lateral-forward` / `lateral-backward`: a peer at the same level (a record's next or previous
+ *   tab); slides in from that side, without a fade, as if swiped.
+ * Like every M3 transition they use the easing and duration tokens, not the bouncing springs.
+ * With Reduce motion every one is a short fade.
+ */
+export type PageTransition = "top-level" | "forward" | "backward" | "lateral-forward" | "lateral-backward";
+
+/** How far a page slides as it enters (M3's shared axis: 30dp). */
+const SLIDE = 30;
 
 /** The main panel with its footer under it; takes the room the columns leave. */
 export const appShellCenter = rcva("flex min-w-[13.5rem] flex-1 flex-col gap-1");
@@ -487,6 +507,46 @@ export class UiAppShell extends LightElement {
     return document.documentElement.clientWidth >= nav + aside + frame().chrome + MAIN_MIN;
   }
 
+  #pageAnimation?: Animation;
+
+  /**
+   * Plays an M3 transition pattern as a new page enters the main panel (call it once the new page
+   * has rendered). The page that left is already gone, so only the entering half plays: the panel
+   * shows nothing for a moment, as M3 wants (no cross-faded frames).
+   */
+  pageTransition(kind: PageTransition) {
+    const page = this.querySelector("main > div");
+    if (!(page instanceof HTMLElement)) return;
+    const css = getComputedStyle(this);
+    const token = (name: string) => css.getPropertyValue(name).trim();
+    const ms = (name: string) => Number.parseFloat(token(name)) || 0;
+    const rtl = css.direction === "rtl" ? -1 : 1;
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const from = (x: number) => `${x * rtl}px 0`;
+    const [keyframes, options]: [Keyframe[], KeyframeAnimationOptions] = reduce
+      ? [[{ opacity: 0 }, { opacity: 1 }], { duration: ms("--duration-short4"), easing: token("--ease-standard") }]
+      : kind === "top-level"
+        ? [
+            [{ opacity: 0 }, { opacity: 1 }],
+            { duration: ms("--duration-medium1"), easing: token("--ease-emphasized-decelerate") },
+          ]
+        : kind === "forward" || kind === "backward"
+          ? [
+              [
+                { opacity: 0, translate: from(kind === "forward" ? SLIDE : -SLIDE) },
+                { opacity: 1, offset: 0.35 },
+                { opacity: 1, translate: "0 0" },
+              ],
+              { duration: ms("--duration-medium2"), easing: token("--ease-emphasized-decelerate") },
+            ]
+          : [
+              [{ translate: from(kind === "lateral-forward" ? SLIDE * 4 : -SLIDE * 4) }, { translate: "0 0" }],
+              { duration: ms("--duration-medium2"), easing: token("--ease-emphasized-decelerate") },
+            ];
+    this.#pageAnimation?.cancel();
+    this.#pageAnimation = page.animate(keyframes, options);
+  }
+
   async toggleNav(open = !this.navOpen) {
     if (!open) return this._set(false, this.asideOpen);
     const aside = this._room("end", this.asideOpen, this._asideSheet);
@@ -658,7 +718,7 @@ export class UiAppShell extends LightElement {
           ${this._panel("start", this.navOpen, this._navSheet, this.navLabel, () => this.toggleNav(), "nav", "rail")}
         </nav>
         <div class=${appShellCenter()}>
-          <main class=${appShellMain()}>${this.slotted()}</main>
+          <main class=${appShellMain()}><div class=${appShellPage()}>${this.slotted()}</div></main>
           ${this.hasSlotted("footer") ? html`<footer class=${appShellPageFooter()}>${this.slotted("footer")}</footer>` : nothing}
         </div>
         <aside

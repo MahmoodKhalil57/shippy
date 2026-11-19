@@ -56,7 +56,7 @@ export const themeController = cva("theme-controller", {
 export const themeControllerIcon = cva("btn btn-ghost btn-circle");
 /** The `cycle` icon: each new one pops in with a turn, on M3's expressive fast spatial spring (it bounces). */
 export const themeControllerGlyph = cva(
-  "grid place-items-center transition-[scale,rotate,opacity] duration-(--duration-spatial-fast) ease-spatial-fast starting:-rotate-90 starting:scale-40 starting:opacity-0 motion-reduce:transition-none",
+  "grid place-items-center [transition:scale_var(--duration-spatial-fast)_var(--ease-spatial-fast),rotate_var(--duration-spatial-fast)_var(--ease-spatial-fast),opacity_var(--duration-effects-fast)_var(--ease-effects-fast)] starting:-rotate-90 starting:scale-40 starting:opacity-0 motion-reduce:transition-none",
 );
 
 /** `background`: the picker panel (a glass dropdown), its tiles, and their parts. */
@@ -71,7 +71,7 @@ export const themeControllerBackgroundsHead = cva(
 export const themeControllerBackgroundsCredit = cva("text-xs font-normal text-base-content/75");
 export const themeControllerBackgroundGrid = cva("grid grid-cols-2 gap-2");
 export const themeControllerBackground = cva(
-  "group/tile relative isolate grid aspect-[16/10] cursor-pointer place-items-center overflow-hidden rounded-field bg-base-200 text-base-content/70 ring-1 ring-base-content/10 transition-[box-shadow,scale] duration-(--duration-spatial-fast) ease-spatial-fast hover:ring-2 hover:ring-primary/50 active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary motion-reduce:transition-none",
+  "group/tile relative isolate grid aspect-[16/10] cursor-pointer place-items-center overflow-hidden rounded-field bg-base-200 text-base-content/70 ring-1 ring-base-content/10 [transition:box-shadow_var(--duration-effects-fast)_var(--ease-effects-fast),scale_var(--duration-spatial-fast)_var(--ease-spatial-fast)] hover:ring-2 hover:ring-primary/50 active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary motion-reduce:transition-none",
   {
     variants: {
       active: { true: "ring-2 ring-primary hover:ring-primary" },

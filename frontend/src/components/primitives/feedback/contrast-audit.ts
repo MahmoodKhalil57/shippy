@@ -20,7 +20,7 @@ import { contrast, luminance, rgba, type Rect } from "../layout/legibility.ts";
  */
 export const contrastAuditBox = rcva(
   "pointer-events-none fixed z-[70] rounded-sm ring-2 ring-error ring-offset-1 ring-offset-base-100 top-(--top) left-(--left) h-(--h) w-(--w)",
-  { variants: { focus: { true: "ring-4 animate-pulse" } } },
+  { variants: { focus: { true: "ring-4 animate-pulse motion-reduce:animate-none" } } },
 );
 export const contrastAuditLabel = rcva(
   "absolute -top-2 left-0 -translate-y-full rounded-sm bg-error px-1 text-[0.625rem] leading-4 font-semibold whitespace-nowrap text-error-content",

@@ -25,7 +25,7 @@ export const coachmarkSpot = rcva(
   "pointer-events-none fixed rounded-box shadow-[0_0_0_200vmax_color-mix(in_oklab,var(--color-neutral)_45%,transparent)] ring-2 ring-primary [transition:top_var(--duration-spatial)_var(--ease-spatial),left_var(--duration-spatial)_var(--ease-spatial),width_var(--duration-spatial)_var(--ease-spatial),height_var(--duration-spatial)_var(--ease-spatial)] motion-reduce:transition-none top-(--top) left-(--left) h-(--h) w-(--w)",
 );
 export const coachmarkCard = rcva(
-  "liquid-glass pointer-events-auto fixed flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-2 rounded-box p-4 text-base-content [transition:top_var(--duration-spatial)_var(--ease-spatial),left_var(--duration-spatial)_var(--ease-spatial)] motion-reduce:transition-none top-(--top) left-(--left) starting:opacity-0",
+  "liquid-glass pointer-events-auto fixed flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-2 rounded-box p-4 text-base-content [transition:top_var(--duration-spatial)_var(--ease-spatial),left_var(--duration-spatial)_var(--ease-spatial),opacity_var(--duration-effects)_var(--ease-effects)] motion-reduce:transition-none top-(--top) left-(--left) starting:opacity-0",
 );
 export const coachmarkEyebrow = rcva("flex items-center gap-2 text-xs font-medium text-base-content/70");
 export const coachmarkHeading = rcva("text-lg leading-snug font-semibold");
@@ -34,7 +34,7 @@ export const coachmarkFooter = rcva("mt-1 flex flex-wrap items-center justify-be
 export const coachmarkProgress = rcva("flex items-center gap-1");
 export const coachmarkSpinner = rcva("loading loading-spinner loading-xs");
 export const coachmarkDot = rcva(
-  "h-1.5 rounded-full transition-[width,background-color] duration-(--duration-spatial-fast) ease-spatial-fast",
+  "h-1.5 rounded-full [transition:width_var(--duration-spatial-fast)_var(--ease-spatial-fast),background-color_var(--duration-effects-fast)_var(--ease-effects-fast)]",
   {
     variants: { state: { done: "w-1.5 bg-primary/60", current: "w-4 bg-primary", todo: "w-1.5 bg-base-content/20" } },
   },

@@ -7,6 +7,7 @@ import { api, startMockBackend, withBase } from "../../cms/client.ts";
 import type { Doc } from "../../cms/types.ts";
 import type { MenuItem } from "../../components/primitives/navigation/menu.ts";
 import type { IconName } from "../../components/primitives/media/icon.ts";
+import type { PageTransition } from "../../components/primitives/layout/app-shell.ts";
 import { StoreController, preferences, notifications } from "../../stores/index.ts";
 import "../../components/index.ts";
 import "./auth-views.ts";
@@ -24,7 +25,9 @@ import { asideRail, expandAsideSection, type AsideSection } from "./aside.ts";
 import { roleLabel, roleLogins, seedUsers, type SeedUser } from "./demo-users.ts";
 import {
   dashboardPath,
+  collectionOf,
   config,
+  editTabs,
   globalLabel,
   humanize,
   labels,
@@ -37,6 +40,27 @@ import {
   userSlug,
   type Route,
 } from "./shared.ts";
+
+/**
+ * Which of M3's transition patterns moving from one page to another is (`ui-app-shell`'s
+ * `pageTransition`): into a record from its list (or anywhere) is forward and back to its list
+ * backward, another tab of the same record lateral, and everything else (the navigation's
+ * destinations) top-level. Nothing plays when only the query changes.
+ */
+function pageTransitionOf(from: Route, to: Route): PageTransition | undefined {
+  const same = (a: Route, b: Route) => JSON.stringify(a) === JSON.stringify(b);
+  if (same(from, to)) return undefined;
+  const record = (r: Route) => (r.name === "edit" || r.name === "create" ? r : undefined);
+  const a = record(from);
+  const b = record(to);
+  if (a?.name === "edit" && b?.name === "edit" && a.slug === b.slug && a.id === b.id) {
+    const tabs = editTabs(collectionOf(a.slug)!).map((t) => t.key);
+    return tabs.indexOf(b.tab ?? "") >= tabs.indexOf(a.tab ?? "") ? "lateral-forward" : "lateral-backward";
+  }
+  if (b) return "forward";
+  if (a && to.name === "list" && to.slug === a.slug) return "backward";
+  return "top-level";
+}
 
 /**
  * The dashboard: manages the in-browser mock backend's data, like Payload's
@@ -94,8 +118,11 @@ export class DashboardApp extends LightElement {
   }
 
   private _onRoute = () => {
+    const from = this.route;
     this.route = parseRoute(location.pathname);
     void this._guard();
+    const kind = pageTransitionOf(from, this.route);
+    if (kind) void this.updateComplete.then(() => this._shell?.pageTransition(kind));
   };
 
   private _onClick = (e: MouseEvent) => {

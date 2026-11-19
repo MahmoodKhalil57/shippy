@@ -51,7 +51,7 @@ export const traceTitle = rcva("min-w-0 truncate font-medium", {
 });
 export const traceDescription = rcva("min-w-0 truncate text-base-content/75");
 export const traceChevron = rcva(
-  "ms-auto shrink-0 text-base-content/75 transition-transform duration-(--duration-effects) ease-effects group-open/trace:rotate-180 motion-reduce:transition-none",
+  "ms-auto shrink-0 text-base-content/75 transition-transform duration-(--duration-spatial-fast) ease-spatial-fast group-open/trace:rotate-180 motion-reduce:transition-none",
 );
 export const traceContent = rcva("mt-1 mb-2 ms-6 flex flex-col gap-1.5");
 
