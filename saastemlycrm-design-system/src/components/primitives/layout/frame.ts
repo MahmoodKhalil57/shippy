@@ -233,9 +233,10 @@ export const appShellCenter = rcva("flex min-w-[13.5rem] flex-1 flex-col gap-1")
 
 /**
  * The page's footer (`slot="footer"`): one centred line under the main panel, on the frame
- * (e.g. a credit). Part of what the scrim keeps readable.
+ * (e.g. a credit), clear of the screen edge and quieter than the page: 65% is the faintest that
+ * keeps it WCAG AA in light (5.3:1) and dark (6.3:1). Part of what the scrim keeps readable.
  */
-export const appShellPageFooter = rcva("shrink-0 text-center text-body-sm leading-4 -mb-1");
+export const appShellPageFooter = rcva("shrink-0 pb-1.5 text-center text-body-sm leading-4 opacity-65");
 
 /**
  * A column's toggle: centred on its icon axis (where the rail's icons are centred, 2px inside
