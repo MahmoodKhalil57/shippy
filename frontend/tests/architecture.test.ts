@@ -148,7 +148,7 @@ describe("only primitives style things", () => {
   it("finds the files", () => {
     expect(primitives.length).toBeGreaterThan(60);
     expect(composed.length).toBeGreaterThan(0);
-    expect(consumers).toContain(path.join(src, "pages", "dashboard", "app.ts"));
+    expect(consumers).toContain(path.join(src, "app", "app.ts"));
     expect(apis.size).toBeGreaterThan(70);
   });
 

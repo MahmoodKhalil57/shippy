@@ -11,7 +11,7 @@ import { DEMO_NOW } from "./home.ts";
  *
  * Everything an AI or an integration does here is a deterministic stub: the PO "reading", the
  * supplier re-check, the agent's ETA email, the tax authority's answer and the collection draft.
- * People confirm every write in the dashboard (src/pages/dashboard/views/case-order.ts,
+ * People confirm every write in the dashboard (the views in src/cms/views/case-order.ts,
  * case-delivery.ts, cash.ts). Sales never receives supplier costs or payables.
  */
 
@@ -1147,7 +1147,7 @@ const bucketOf = (due: string) => {
 };
 
 /** GET /api/operations/cash — receivables, payables, approvals, bank changes and the 8-week forecast. */
-async function cash(req: PayloadRequest) {
+export async function cash(req: PayloadRequest) {
   const user = userOf(req);
   if (!user) return fail("You are not allowed to perform this action.", 401);
   const sales = isSales(req);
@@ -1418,8 +1418,13 @@ async function cash(req: PayloadRequest) {
  */
 async function collectionDraft(req: PayloadRequest) {
   if (!req.user) return fail("Sign in first.", 401);
-  const b = await body(req);
-  const inv = await byId(req, "invoices", str(b.invoice));
+  return collectionDraftFor(req, str((await body(req)).invoice));
+}
+
+/** The reminder draft for one invoice (also drawn by the cash view, src/cms/views/cash.ts). */
+export async function collectionDraftFor(req: PayloadRequest, invoice: string) {
+  if (!req.user) return fail("Sign in first.", 401);
+  const inv = await byId(req, "invoices", invoice);
   if (!inv) return fail("Invoice not found.", 404);
   const customer = await byId(req, "customers", str(idOf(inv.customer)));
   const rule = str(customer?.contactRule) || "allowed";

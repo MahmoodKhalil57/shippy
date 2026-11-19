@@ -1,5 +1,6 @@
 import { BrowserModelChat, type BrowserInput } from "./browser-model.ts";
 import { agentContext, agentTools, callAgentTool, type AgentTool } from "./webmcp.ts";
+import { BUSINESS, HELPER, ORG } from "./identity.ts";
 
 /**
  * The in-page helper's brain: a model that sees and works the app only through its WebMCP tools
@@ -41,7 +42,7 @@ export const codexConfig = () => ({
   model: meta("openai-model") || BROWSER_MODEL,
 });
 
-const INSTRUCTIONS = `You are the Golden Sea helper, built into the Golden Sea platform (marine supply: sourcing, quotations, approvals, purchasing, delivery, invoicing and cash). You help the signed-in person understand and use the platform.
+const INSTRUCTIONS = `You are the ${HELPER}, built into the ${ORG} platform (${ORG} is ${BUSINESS}). You help the signed-in person understand and use the platform.
 
 You perceive and act on the platform only through your tools, which are the platform's own WebMCP tools:
 - Call get_screen first to see what the person is looking at (the page, who they are and their role, and the data on screen). Call it again after anything changes.
@@ -56,7 +57,7 @@ Answer briefly and plainly, in the person's language. Refer to things by their n
  * The on-device model's brief: short, concrete, with an example for each kind of request — a
  * small model follows examples far better than rules. It gets only the simple tools.
  */
-const BROWSER_INSTRUCTIONS = `You are the Golden Sea helper inside the Golden Sea platform: a ship chandler's system for customer RFQs, supplier offers, quotations, approvals, orders, deliveries, invoices and payments.
+const BROWSER_INSTRUCTIONS = `You are the ${HELPER} inside the ${ORG} platform (${ORG} is ${BUSINESS}).
 Each request starts with who is asking, their role, and the page they are on.
 
 Use one tool, read its result, then answer in one to three short sentences. Say only what the tool result says; never invent numbers, names or dates. When the result names a page, say so.
@@ -67,7 +68,7 @@ Which tool to use:
 - "what's waiting for me?", "what should I do today?" → my_day
 - "status of Aurora Crest", "where is GS-RFQ-0142?" → case_status (case: "Aurora Crest")
 - "find Atlas Tankers", "invoice INV/2026/0371" → find (query: "Atlas Tankers")
-- "who owes us money?", "what needs approval?", "which suppliers are late?" → ask_golden_sea
+- "who owes us money?", "what needs approval?", "which suppliers are late?" → ask_records
 - "how do I send a quotation?", "what is the approvals queue?" → platform_guide (topic: "quotation")
 
 If a tool gives nothing useful, say so briefly and suggest the page to open. You cannot change records: when asked to, say which page does it.`;
@@ -131,7 +132,7 @@ const ROUTES: {
   },
   {
     pattern: /\b(?:owe|overdue|approv|late|pipeline|margin|deadline|supplier|invoice|payment|quotation|deliver)/i,
-    tool: "ask_golden_sea",
+    tool: "ask_records",
     input: (_m, message) => ({ question: message }),
   },
 ];
@@ -330,7 +331,7 @@ export class CodexConversation {
     let input: BrowserInput = { text: withContext(message) };
     // An answer from the records, for when the small model can't give a grounded one.
     const grounded = async (fallback: string) => {
-      const answer = await this.#runTool("ask_golden_sea", { question: message }, options);
+      const answer = await this.#runTool("ask_records", { question: message }, options);
       return answer.startsWith("Error:") ? fallback : answer;
     };
     let usedTool = false;
@@ -351,7 +352,7 @@ export class CodexConversation {
             ? `Decided to use **${toolTitle(next.tool)}**${Object.keys(next.arguments).length ? ` with ${JSON.stringify(next.arguments)}` : ""}.`
             : usedTool
               ? "Decided to answer."
-              : "Answered without checking any records, so the answer comes from Ask Golden Sea instead.",
+              : "Answered without checking any records, so the answer comes from Ask the records instead.",
           next.raw,
         ),
       });

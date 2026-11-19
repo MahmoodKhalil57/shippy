@@ -514,7 +514,7 @@ export async function caseProfit(req: PayloadRequest, id: string): Promise<CaseP
 /* ---------------------------------------------------------------- endpoints */
 
 /** Loads the case's profit for a user allowed to see it, or the error response. */
-async function guarded(req: PayloadRequest, act = false): Promise<CaseProfit | Response> {
+export async function guarded(req: PayloadRequest, act = false): Promise<CaseProfit | Response> {
   const me = meOf(req);
   if (!me) return unauthorized();
   if (str(me.role) === "sales") return fail(403, "Profit, costs and margins are not visible to Sales.");

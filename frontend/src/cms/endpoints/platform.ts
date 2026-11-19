@@ -235,7 +235,7 @@ export interface TimelineEntry {
 const lineNos = (v: unknown) =>
   ((v as { lineNo?: number }[] | undefined) ?? []).map((l) => Number(l.lineNo)).filter((n) => n > 0);
 
-async function overview(req: Req, id: string): Promise<CaseOverview | null> {
+export async function overview(req: Req, id: string): Promise<CaseOverview | null> {
   const c = (await req.payload.findByID({
     collection: "cases",
     id,

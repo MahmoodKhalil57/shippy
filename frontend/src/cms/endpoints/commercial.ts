@@ -188,7 +188,7 @@ interface Ctx {
   daysToEta: number;
 }
 
-async function load(req: PayloadRequest, caseId: string): Promise<Ctx | null> {
+export async function load(req: PayloadRequest, caseId: string): Promise<Ctx | null> {
   const c = await one(req, "cases", caseId);
   if (!c) return null;
   const [offers, suppliers, products, stock, pricelists, rfqs, fx] = await Promise.all([
@@ -702,7 +702,7 @@ function compareLine(ctx: Ctx, item: Item): CmpLine {
   };
 }
 
-function compare(ctx: Ctx): Compare {
+export function compare(ctx: Ctx): Compare {
   return {
     id: ctx.c.id,
     caseId: str(ctx.c.caseId),
@@ -812,7 +812,7 @@ export interface Pricing {
 
 const CHARGE_STATUSES = ["Estimate", "Confirmed", "Not applicable"];
 
-async function pricing(ctx: Ctx): Promise<Pricing> {
+export async function pricing(ctx: Ctx): Promise<Pricing> {
   const req = ctx.req;
   const cmp = compare(ctx);
   const policy = await policyOf(req);

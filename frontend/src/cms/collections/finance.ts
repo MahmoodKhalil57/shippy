@@ -1,10 +1,13 @@
 import type { CollectionConfig } from "payload";
 import { CURRENCIES, autoNumber, caseRef, financeAccess, idOf, logActivity, ruleError } from "./shared.ts";
+import { tones, viewEndpoint, type CollectionSettings } from "../types.ts";
 
 /** Customer invoices: from delivered quantities, never billing the same quantity twice. */
 export const Invoices: CollectionConfig = {
   slug: "invoices",
+  custom: { edit: { steps: { field: "status", skip: ["Overdue", "Cancelled"] } } } satisfies CollectionSettings,
   admin: {
+    components: { beforeList: [viewEndpoint("/views/summary/invoices/status")] },
     useAsTitle: "number",
     defaultColumns: ["number", "case", "amount", "currency", "paid", "dueDate", "status"],
     group: "Finance",
@@ -146,6 +149,14 @@ export const Invoices: CollectionConfig = {
       type: "select",
       defaultValue: "Draft",
       options: ["Draft", "Open", "Partially paid", "Paid", "Overdue", "Cancelled"],
+      custom: tones({
+        Draft: "neutral",
+        Open: "info",
+        "Partially paid": "warning",
+        Paid: "success",
+        Overdue: "error",
+        Cancelled: "neutral",
+      }),
       admin: { position: "sidebar" },
     },
     {

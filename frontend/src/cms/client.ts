@@ -182,4 +182,6 @@ export const api = {
     }>("GET", "/access"),
   get: <T>(path: string, query?: object) => request<T>("GET", path, undefined, query),
   post: <T>(path: string, body?: unknown) => request<T>("POST", path, body),
+  /** Any method, for actions a view declares (`{ call: { method, path, body } }`). */
+  call: <T>(method: string, path: string, body?: unknown) => request<T>(method, path, body),
 };

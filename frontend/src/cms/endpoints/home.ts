@@ -142,10 +142,9 @@ async function all(req: PayloadRequest, collection: string) {
   return r.docs as unknown as Doc[];
 }
 
-export const home: Endpoint = {
-  path: "/home",
-  method: "get",
-  handler: async (req) => {
+/** The signed-in user's day, by role (or a 401 response). */
+export async function homeData(req: PayloadRequest): Promise<Home | Response> {
+  {
     const me = req.user as unknown as (Doc & { name?: string; role?: string }) | null;
     if (!me)
       return Response.json({ errors: [{ message: "You are not allowed to perform this action." }] }, { status: 401 });
@@ -804,6 +803,15 @@ export const home: Endpoint = {
           ],
         };
     }
-    return Response.json({ role, eyebrow, greeting, ...body } satisfies Home);
+    return { role, eyebrow, greeting, ...body } satisfies Home;
+  }
+}
+
+export const home: Endpoint = {
+  path: "/home",
+  method: "get",
+  handler: async (req) => {
+    const h = await homeData(req);
+    return h instanceof Response ? h : Response.json(h);
   },
 };

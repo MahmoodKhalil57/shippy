@@ -853,7 +853,7 @@ export interface HistoryPayload {
   created: { kind: string; name: string; href: string }[];
 }
 
-async function historyPayload(req: Req): Promise<HistoryPayload> {
+export async function historyPayload(req: Req): Promise<HistoryPayload> {
   const integrations = obj(await req.payload.findGlobal({ slug: "integrations" as never, req }));
   const imp = obj(integrations.emailImport);
   const status = str(imp.status) || "Dry run ready";
@@ -1156,7 +1156,7 @@ function scheduleOf(r: Doc): RfqScheduleStep[] {
   return steps;
 }
 
-async function caseRfqsPayload(req: Req, caseDoc: Doc): Promise<CaseRfqsPayload> {
+export async function caseRfqsPayload(req: Req, caseDoc: Doc): Promise<CaseRfqsPayload> {
   const rfqs = await all(req, "supplier-rfqs", { case: { equals: caseDoc.id } }, "reference");
   const offers = await all(req, "offers", { case: { equals: caseDoc.id } });
   const suppliers = await all(req, "suppliers");
@@ -1464,7 +1464,7 @@ async function replyMessage(req: Req, data: Json) {
   return existing ?? create(req, "intake-messages", data);
 }
 
-async function simulateReplies(req: Req, caseDoc: Doc): Promise<ReplyEvent[]> {
+export async function simulateReplies(req: Req, caseDoc: Doc): Promise<ReplyEvent[]> {
   const onCase = await all(req, "supplier-rfqs", { case: { equals: caseDoc.id } }, "reference");
   const rfqs = onCase.filter((r) => ["Sent", "Awaiting reply"].includes(str(r.status)));
   const events: ReplyEvent[] = [];
@@ -1673,7 +1673,7 @@ const guard = (handler: (req: Req) => Promise<Response>) => async (req: Req) => 
   }
 };
 
-async function inboxPayload(req: Req): Promise<InboxPayload> {
+export async function inboxPayload(req: Req): Promise<InboxPayload> {
   const docs = (await all(req, "intake-messages", undefined, "-receivedAt")).filter(
     (m) => str(m.source) !== "History import",
   );
@@ -1701,7 +1701,7 @@ async function messageOr404(req: Req) {
   return msg;
 }
 
-async function caseOr404(req: Req) {
+export async function caseOr404(req: Req) {
   const c = await byId(req, "cases", str(req.routeParams?.id));
   if (!c) throw Object.assign(new Error("Case not found."), { status: 404 });
   return c;

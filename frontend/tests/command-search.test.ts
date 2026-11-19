@@ -7,7 +7,7 @@ import {
   stem,
   words,
   type SearchEntry,
-} from "../src/pages/dashboard/command-search.ts";
+} from "../src/app/command-search.ts";
 
 const entries: SearchEntry[] = [
   {

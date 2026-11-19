@@ -5,6 +5,7 @@ import { insightsEndpoints } from "./insights.ts";
 import { operationsEndpoints } from "./operations.ts";
 import { platformEndpoints } from "./platform.ts";
 import { sourcingEndpoints } from "./sourcing.ts";
+import { viewEndpoints } from "../views/index.ts";
 
 /** Every root endpoint (`/api/<path>`), by area. Collection endpoints live with their collection. */
 export const endpoints: Endpoint[] = [
@@ -14,4 +15,5 @@ export const endpoints: Endpoint[] = [
   ...operationsEndpoints,
   ...insightsEndpoints,
   ...platformEndpoints,
+  ...viewEndpoints,
 ];

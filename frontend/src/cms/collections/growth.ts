@@ -1,5 +1,6 @@
 import type { CollectionConfig } from "payload";
 import { deskAccess, management } from "./shared.ts";
+import type { CollectionSettings } from "../types.ts";
 
 export const GROWTH_STAGES = [
   "Prospect",
@@ -17,6 +18,7 @@ export const SALES_RESULTS = ["Reached — positive", "Reached — call back", "
 /** Growth pipeline — kept apart from operational RFQs; linked to the customer once business is won. */
 export const Opportunities: CollectionConfig = {
   slug: "opportunities",
+  custom: { list: { board: "stage" } } satisfies CollectionSettings,
   admin: {
     useAsTitle: "name",
     defaultColumns: ["name", "stage", "owner", "nextStepDue", "estimatedValue"],

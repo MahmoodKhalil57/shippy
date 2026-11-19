@@ -255,7 +255,7 @@ export class UiAiText extends AssistElement {
 /* ---------------------------------------------------------------- summary */
 
 /**
- * @example <ui-ai-summary .text=${caseHistory} label="Catch me up" context="A ship-supply case."></ui-ai-summary>
+ * @example <ui-ai-summary .text=${caseHistory} label="Catch me up" context="A customer order."></ui-ai-summary>
  * @example <ui-ai-summary .text=${approvalFacts} type="headline" auto></ui-ai-summary>
  *
  * Key points on a click; `auto` with `type="headline"` / `"tldr"` writes one line on its own
@@ -449,7 +449,7 @@ const decisionReady = async () => {
 const pct = (c?: number) => (c == null ? "" : ` · ${Math.round(c * 100)}%`);
 
 /**
- * @example <ui-ai-classify .text=${message.body} .options=${["New RFQ", "Supplier offer", …]} what="incoming emails to a ship chandler"></ui-ai-classify>
+ * @example <ui-ai-classify .text=${message.body} .options=${["New RFQ", "Supplier offer", …]} what="incoming emails to a supplier"></ui-ai-classify>
  *
  * The Decisions API when the browser has it (with its confidence), else the Prompt API. Runs on
  * its own when the model is there; otherwise a "Suggest a category" button. With `pickable`,
@@ -571,9 +571,9 @@ export class UiAiCheck extends AssistElement {
 @customElement("ui-ai-read-file")
 export class UiAiReadFile extends AssistElement {
   @property({ attribute: "image-prompt" }) imagePrompt =
-    "This is a photo from a customer or supplier of a ship chandler (an RFQ, a requisition, a nameplate or an invoice). List every item with its quantity and unit, one per line, then any reference numbers, vessel names and dates. Write only what you can read.";
+    "This is a photo from a customer or supplier (a request for quotation, a requisition, a nameplate or an invoice). List every item with its quantity and unit, one per line, then any reference numbers, names and dates. Write only what you can read.";
   @property({ attribute: "audio-prompt" }) audioPrompt =
-    "This is a voice note to a ship chandler. Transcribe it, then list any items with quantities and units, vessel names, ports and dates.";
+    "This is a voice note from a customer or supplier. Transcribe it, then list any items with quantities and units, names, places and dates.";
   @property() label = "Read a photo or voice note";
   /** Offer "Use this" (fires `ui-select` { value } with what was read). */
   @property({ type: Boolean }) pickable = false;

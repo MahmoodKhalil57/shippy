@@ -11,10 +11,12 @@ import {
   logActivity,
   ruleError,
 } from "./shared.ts";
+import { tones, viewEndpoint, type CollectionSettings } from "../types.ts";
 
 /** Customer quotations, versioned. A revision is a new document; the old version stays. */
 export const Quotations: CollectionConfig = {
   slug: "quotations",
+  custom: { edit: { steps: { field: "status", skip: ["Returned", "Superseded"] } } } satisfies CollectionSettings,
   admin: {
     useAsTitle: "number",
     defaultColumns: ["number", "case", "version", "status", "totalExVat", "currency", "validUntil"],
@@ -24,7 +26,7 @@ export const Quotations: CollectionConfig = {
       views: {
         edit: {
           preview: {
-            Component: "gs-quote-preview",
+            Component: viewEndpoint("/views/quote-preview/:id"),
             path: "/preview",
             tab: { label: "Preview & send", href: "/preview" },
           },
@@ -200,6 +202,14 @@ export const Quotations: CollectionConfig = {
       required: true,
       defaultValue: "Draft",
       options: ["Draft", "Awaiting approval", "Approved", "Returned", "Submitted", "Superseded"],
+      custom: tones({
+        Draft: "neutral",
+        "Awaiting approval": "warning",
+        Approved: "success",
+        Returned: "error",
+        Submitted: "info",
+        Superseded: "neutral",
+      }),
       admin: { position: "sidebar" },
     },
     {

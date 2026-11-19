@@ -1,5 +1,6 @@
 import type { Access, CollectionConfig } from "payload";
 import { deskAccess, idOf, loggedIn, management, ruleError } from "./shared.ts";
+import { tones, type CollectionSettings } from "../types.ts";
 
 /** Case timeline + audit log: every automatic step and human decision. Append-only. */
 export const Activities: CollectionConfig = {
@@ -56,6 +57,7 @@ export const Activities: CollectionConfig = {
  */
 export const Tasks: CollectionConfig = {
   slug: "tasks",
+  custom: { list: { board: "status", cardFields: ["type", "due", "owner"] } } satisfies CollectionSettings,
   admin: { useAsTitle: "title", defaultColumns: ["title", "type", "channel", "due", "owner", "status"], group: "Work" },
   defaultSort: "due",
   access: deskAccess,
@@ -138,6 +140,7 @@ export const Tasks: CollectionConfig = {
       type: "select",
       defaultValue: "Open",
       options: ["Open", "Done", "Skipped", "Cancelled"],
+      custom: tones({ Open: "info", Done: "success", Skipped: "neutral", Cancelled: "neutral" }),
       admin: { position: "sidebar" },
     },
     { name: "createdByRule", type: "text", admin: { position: "sidebar", readOnly: true } },

@@ -1,4 +1,5 @@
 import type { CollectionConfig } from "payload";
+import { tones, viewEndpoint, type CollectionSettings } from "../types.ts";
 import {
   CASE_TYPES,
   CURRENCIES,
@@ -69,30 +70,71 @@ export const Cases: CollectionConfig = {
     group: "Sourcing desk",
     description: "Client RFQs and everything that follows: supplier RFQs, quotes, POs, delivery and payment.",
     // The case workspace: one tab per step from first email to last payment (Payload custom
-    // edit views; elements in src/pages/dashboard/views).
+    // edit views drawn from view endpoints in src/cms/views).
+    // Counts by what each case is waiting for, above the list (src/cms/views/summary.ts).
     components: {
+      beforeList: [viewEndpoint("/views/summary/cases/wait")],
       views: {
         edit: {
-          overview: { Component: "gs-case-overview", path: "/overview", tab: { label: "Overview", href: "/overview" } },
-          rfqs: { Component: "gs-case-rfqs", path: "/rfqs", tab: { label: "Supplier RFQs", href: "/rfqs" } },
+          overview: {
+            Component: viewEndpoint("/views/case-overview/:id"),
+            path: "/overview",
+            tab: { label: "Overview", href: "/overview" },
+          },
+          rfqs: {
+            Component: viewEndpoint("/views/case-rfqs/:id"),
+            path: "/rfqs",
+            tab: { label: "Supplier RFQs", href: "/rfqs" },
+          },
           compare: {
-            Component: "gs-case-compare",
+            Component: viewEndpoint("/views/case-compare/:id"),
             path: "/compare",
             tab: { label: "Compare offers", href: "/compare" },
           },
-          pricing: { Component: "gs-case-pricing", path: "/pricing", tab: { label: "Pricing", href: "/pricing" } },
-          order: { Component: "gs-case-order", path: "/order", tab: { label: "Order & purchasing", href: "/order" } },
+          pricing: {
+            Component: viewEndpoint("/views/case-pricing/:id"),
+            path: "/pricing",
+            tab: { label: "Pricing", href: "/pricing" },
+          },
+          order: {
+            Component: viewEndpoint("/views/case-order/:id"),
+            path: "/order",
+            tab: { label: "Order & purchasing", href: "/order" },
+          },
           delivery: {
-            Component: "gs-case-delivery",
+            Component: viewEndpoint("/views/case-delivery/:id"),
             path: "/delivery",
             tab: { label: "Delivery & billing", href: "/delivery" },
           },
-          profit: { Component: "gs-case-profit", path: "/profit", tab: { label: "Profit & close", href: "/profit" } },
+          profit: {
+            Component: viewEndpoint("/views/case-profit/:id"),
+            path: "/profit",
+            tab: { label: "Profit & close", href: "/profit" },
+          },
         },
       },
     },
   },
   defaultSort: "deadline",
+  // A board by what each case waits for; the stage as steps above the form.
+  custom: {
+    list: { board: "wait", cardFields: ["customer", "vessel", "deadline", "owner"] },
+    edit: {
+      steps: {
+        field: "stage",
+        skip: [
+          "Awaiting corrected offer",
+          "Revision requested",
+          "Won — PO mismatch",
+          "Customs clearance",
+          "Held for vessel",
+          "On hold",
+          "Lost",
+          "Expired",
+        ],
+      },
+    },
+  } satisfies CollectionSettings,
   access: {
     read: () => true,
     create: ({ req }) => Boolean(req.user),
@@ -520,6 +562,30 @@ export const Cases: CollectionConfig = {
       required: true,
       defaultValue: "New",
       options: STAGES,
+      custom: tones({
+        New: "info",
+        Validating: "info",
+        Sourcing: "info",
+        "Awaiting supplier": "warning",
+        "Comparing offers": "info",
+        "Awaiting corrected offer": "warning",
+        "Awaiting management approval": "warning",
+        "Quotation submitted": "info",
+        "Awaiting customer decision": "warning",
+        "Revision requested": "warning",
+        "Won — PO mismatch": "error",
+        "Won — sales order confirmed": "success",
+        Purchasing: "info",
+        "Delivering (drop 1 of 2)": "info",
+        Delivered: "success",
+        "Invoiced — partially paid": "warning",
+        "Customs clearance": "info",
+        "Held for vessel": "warning",
+        "Closed — settled": "success",
+        "On hold": "error",
+        Lost: "neutral",
+        Expired: "neutral",
+      }),
       admin: { position: "sidebar" },
     },
     {
@@ -529,7 +595,20 @@ export const Cases: CollectionConfig = {
       options: [...QUOTE_DECISIONS, "Partially won"],
       admin: { position: "sidebar" },
     },
-    { name: "wait", type: "select", label: "Waiting for", options: WAITS, admin: { position: "sidebar" } },
+    {
+      name: "wait",
+      type: "select",
+      label: "Waiting for",
+      options: WAITS,
+      custom: tones({
+        "Awaiting supplier": "warning",
+        "Awaiting corrected offer": "warning",
+        "Awaiting internal approval": "warning",
+        "Awaiting customer decision": "info",
+        "Awaiting delivery or payment": "info",
+      }),
+      admin: { position: "sidebar" },
+    },
     {
       name: "tone",
       type: "select",

@@ -42,7 +42,7 @@ export type { PageTransition } from "../../primitives/layout/frame.ts";
  */
 /**
  * @example
- * <ui-app-shell brand="Golden Sea" brand-icon="anchor" brand-href="/" nav-open>
+ * <ui-app-shell brand="Acme" brand-icon="grid" brand-href="/" nav-open>
  *   <ui-search slot="search" label="Search"></ui-search>
  *   <ui-appearance slot="actions" kind="theme"></ui-appearance>
  *   <ui-menu slot="nav" .items=${items}></ui-menu>

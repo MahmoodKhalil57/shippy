@@ -114,7 +114,11 @@ describe("everything that floats is glass", () => {
 });
 
 describe("pages use the semantic components, not hand-built copies", () => {
-  const consumers = [...files(path.join(root, "pages")), ...files(path.join(root, "components/composed"))];
+  const consumers = [
+    ...files(path.join(root, "app")),
+    ...files(path.join(root, "cms/components")),
+    ...files(path.join(root, "components/composed")),
+  ];
   const rel = (f: string) => path.relative(root, f).split(path.sep).join("/");
   const RULES: [RegExp, string][] = [
     [
@@ -160,7 +164,11 @@ describe("pages use the semantic components, not hand-built copies", () => {
 });
 
 describe("pages and composed components set text by role", () => {
-  const consumers = [...files(path.join(root, "pages")), ...files(path.join(root, "components/composed"))];
+  const consumers = [
+    ...files(path.join(root, "app")),
+    ...files(path.join(root, "cms/components")),
+    ...files(path.join(root, "components/composed")),
+  ];
   it.each(consumers.map((f) => [path.relative(root, f).split(path.sep).join("/"), f]))("%s", (_, file) => {
     const src = readFileSync(file, "utf8");
     const bad = [...src.matchAll(/<ui-(?:text|heading)(?=[\s>])(?:[^>$]|\$\{[^}]*\})*?\s\.?(size|weight)=/g)].map((m) =>

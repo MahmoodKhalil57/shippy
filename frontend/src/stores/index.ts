@@ -27,7 +27,7 @@ export const preferences = createStore(
     /** Collection tables' row height (M3 density: 0 default, -1 compact, -2 dense), for every table. */
     listDensity: "0" as "0" | "-1" | "-2",
     /** Collection lists shown as cards instead of a table, by collection. */
-    listView: {} as Record<string, "table" | "cards">,
+    listView: {} as Record<string, "table" | "cards" | "board">,
   },
   { persist: "gs:preferences" },
 );
@@ -120,7 +120,7 @@ export const closePalette = () => palette.set({ open: false });
 
 export const tour = createStore(
   {
-    /** Id of the running guided tour (pages/dashboard/tours.ts), or null. */
+    /** Id of the running guided tour (src/cms/admin/tours.ts), or null. */
     active: null as string | null,
     step: 0,
     /** Tours already shown (demo-script ticks). */
@@ -156,7 +156,7 @@ export const dismissToast = (id: number) => toasts.set((s) => ({ items: s.items.
 
 /* ---------------------------------------------------------------- bookmarks */
 
-/** The signed-in user's bookmarks: a cache of their `bookmarks` documents (loaded per user, see pages/dashboard/shared.ts). */
+/** The signed-in user's bookmarks: a cache of their `bookmarks` documents (loaded per user, see src/app/shared.ts). */
 export interface Bookmark {
   id?: string;
   href: string;
