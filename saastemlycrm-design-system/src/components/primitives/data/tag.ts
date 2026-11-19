@@ -20,33 +20,33 @@ import { iconSvg, type IconName } from "../media/icon.ts";
  * reads at AA in every scheme. `variant="outline"` is a quieter neutral label for facts that sit
  * beside status tags (a phase, a type). One label, a few words, sentence case.
  */
-export const tag = rcva(
-  "inline-flex max-w-full shrink-0 items-center gap-1 rounded-sm align-middle whitespace-nowrap",
-  {
-    variants: {
-      tone: {
-        neutral: "bg-surface-container-high text-on-surface-variant",
-        primary: "bg-primary-container text-on-primary-container",
-        info: "bg-info-container text-on-info-container",
-        success: "bg-success-container text-on-success-container",
-        warning: "bg-warning-container text-on-warning-container",
-        error: "bg-error-container text-on-error-container",
-      },
-      /** Outlined, no fill: a quieter label beside status tags, in the tone's ink. */
-      variant: {
-        soft: "",
-        outline: "border border-current/25 bg-transparent!",
-      },
-      size: {
-        sm: "h-5 px-1.5 text-label-md",
-        md: "h-6 px-2 text-label-lg",
-      },
+export const tag = rcva("inline-flex max-w-full shrink-0 items-center gap-1 rounded-sm align-middle", {
+  variants: {
+    tone: {
+      neutral: "bg-surface-container-high text-on-surface-variant",
+      primary: "bg-primary-container text-on-primary-container",
+      info: "bg-info-container text-on-info-container",
+      success: "bg-success-container text-on-success-container",
+      warning: "bg-warning-container text-on-warning-container",
+      error: "bg-error-container text-on-error-container",
     },
-    defaultVariants: { tone: "neutral", variant: "soft", size: "sm" },
+    /** Outlined, no fill: a quieter label beside status tags, in the tone's ink. */
+    variant: {
+      soft: "",
+      outline: "border border-current/25 bg-transparent!",
+    },
+    size: {
+      sm: "min-h-5 px-1.5 py-0.5 text-label-md",
+      md: "min-h-6 px-2 py-0.5 text-label-lg",
+    },
   },
-);
-/** The text, ending in "…" when the tag is squeezed. */
-export const tagText = rcva("min-w-0 truncate");
+  defaultVariants: { tone: "neutral", variant: "soft", size: "sm" },
+});
+/**
+ * The text: on one line when the tag fits its row, else wrapped onto a second line (a tag never
+ * cuts its words: "Token expired" at the end of a long tag is the point of it).
+ */
+export const tagText = rcva("min-w-0 [overflow-wrap:anywhere] [text-wrap:balance]");
 
 export type TagVariants = VariantProps<typeof tag>;
 export type Tone = NonNullable<TagVariants["tone"]>;

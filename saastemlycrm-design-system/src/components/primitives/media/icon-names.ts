@@ -15,6 +15,7 @@ export const ICON_NAMES = [
   "chevron-right",
   "menu",
   "menu-panel",
+  "swap",
   "search",
   "sun",
   "moon",

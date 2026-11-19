@@ -393,6 +393,14 @@
      --frame-edge  to the screen edge 2px → 12px
    The shell registers them as lengths (CSS.registerProperty) so script reads them resolved. */
 :root {
+  /* The main panel's narrowest content box, the one size the frame is laid out from: what a
+     320px phone leaves it (320 − a 48px rail − its 2×2px border − its ~10px scrollbar). The
+     shell keeps the panel at least this wide, going compact (one rail, no edges) to do so. In px:
+     the shell reads it as written. */
+  --main-min: 258px;
+  /* Under this much content beside both rails, the frame goes compact (one rail, no edges): the
+     page gets the second rail's room back. Compact keeps `--main-min` down to a 320px phone. */
+  --main-comfort: 320px;
   --frame-rail: clamp(3rem, 2rem + 5vw, 6rem);
   --frame-gap: clamp(0.125rem, 0.625vw, 0.5rem);
   --frame-edge: clamp(0.125rem, 1.042vw - 0.083rem, 0.75rem);

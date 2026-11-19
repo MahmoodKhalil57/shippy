@@ -34,16 +34,20 @@ export type { PageTransition } from "../../primitives/layout/frame.ts";
  *   over. With no group open, closing starts with the second step.
  * The groups' own open state is never changed, so they come back as they were.
  *
- * Space: the main panel is never narrower than 320px (`MAIN_MIN`) beside the columns. Opening a
+ * Space: the main panel's content is never narrower than `--main-min` (258px, src/styles/theme.css:
+ * what a 320px phone leaves it) beside the columns. Opening a
  * column pushes the main panel when there is room; otherwise it first closes the other column if
  * that makes room, and failing that opens as a sheet over the page (its rail keeps its place)
  * with everything else dimmed. When the window shrinks, open columns close (side panel first)
  * until the main panel fits again.
  *
- * Compact: when even both rails leave the main panel under 320px, the frame goes full screen.
- * The side panel's rail moves under the navigation's (after a divider), the side panel takes no
- * room and opens only as a sheet, the frame's edges and gaps go to 0, and the main panel runs to
- * the screen's end and bottom edges (only its corner by the header and rail stays round).
+ * Compact: when both rails would leave the main panel's content under `--main-comfort` (320px),
+ * the frame goes full screen, trading the second rail for the page's room.
+ * The side panel's rail joins the navigation's in one rail that shows either at a time: the button
+ * at its top (where the navigation's toggle is) switches between them, so neither moves the other's
+ * icons. The side panel takes no room and opens only as a sheet, from that rail; the navigation
+ * opens from its section icons. The frame's edges and gaps go to 0, and the main panel runs to the
+ * screen's end and bottom edges (only its corner by the header and rail stays round).
  */
 /**
  * @example
@@ -67,10 +71,15 @@ const ASIDE_OPEN = 320; // w-80
 const frame = () => {
   const css = getComputedStyle(document.documentElement);
   const px = (name: string) => parseFloat(css.getPropertyValue(name)) || 0;
-  return { rail: px("--frame-rail"), chrome: 2 * px("--frame-gap") + 2 * px("--frame-edge") };
+  return {
+    rail: px("--frame-rail"),
+    chrome: 2 * px("--frame-gap") + 2 * px("--frame-edge"),
+    /** The main panel's narrowest content box (`--main-min`). */
+    mainMin: px("--main-min") || 258,
+    /** The content width under which a frame with both rails goes compact (`--main-comfort`). */
+    mainComfort: px("--main-comfort") || 320,
+  };
 };
-/** The main panel's minimum width; under it, the frame goes compact (full screen, one rail). */
-const MAIN_MIN = 320;
 
 @customElement("ui-app-shell")
 export class UiAppShell extends LightElement {
@@ -88,7 +97,9 @@ export class UiAppShell extends LightElement {
   @state() private _asideSheet = false;
   /** True until the first paint (see `appShell`'s `settling`). */
   @state() private _settling = true;
-  /** Full screen with one rail: both rails would leave the main panel under `MAIN_MIN`. */
+  /** Which rail a compact frame's one rail shows: the navigation's, or the side panel's. */
+  @state() private _railView: "own" | "extra" = "own";
+  /** Full screen with one rail: both rails would leave the main panel's content under `--main-comfort`. */
   @state() private _compact = false;
 
   /** Before the first render: fit the saved open columns to the window, so nothing shifts after. */
@@ -231,15 +242,30 @@ export class UiAppShell extends LightElement {
     return side === "end" && this._compact ? 0 : frame().rail;
   }
 
-  /** Whether the main panel keeps its minimum width with the columns taking this much room. */
-  private _fits(nav: number, aside: number) {
-    // A compact frame has no edges or gaps (`appShell`'s `compact`).
-    return document.documentElement.clientWidth >= nav + aside + (this._compact ? 0 : frame().chrome) + MAIN_MIN;
+  /**
+   * What the main panel takes beside its content: its border and its scrollbar, measured (the
+   * scrollbar's width is the browser's; before the panel is drawn, its 2×2px border only).
+   */
+  private _mainChrome() {
+    const main = this.querySelector("main");
+    return main ? main.offsetWidth - main.clientWidth : 4;
   }
 
-  /** The same, with the normal frame's edges and gaps (deciding whether to be compact at all). */
+  /** Whether the main panel's content keeps `--main-min` with the columns taking this much room. */
+  private _fits(nav: number, aside: number) {
+    // A compact frame has no edges or gaps (`appShell`'s `compact`).
+    const edges = this._compact ? 0 : frame().chrome;
+    return document.documentElement.clientWidth >= nav + aside + edges + this._mainChrome() + frame().mainMin;
+  }
+
+  /**
+   * Whether the normal frame (its edges and gaps, both rails) leaves the main panel's content at
+   * least `--main-comfort`: if not, the frame goes compact to give the page that room back.
+   */
   private _fitsFrame(nav: number, aside: number) {
-    return document.documentElement.clientWidth >= nav + aside + frame().chrome + MAIN_MIN;
+    return (
+      document.documentElement.clientWidth >= nav + aside + frame().chrome + this._mainChrome() + frame().mainComfort
+    );
   }
 
   /** Plays an M3 transition pattern as a new page enters the main panel (see `<ui-frame-main>`). */
@@ -286,7 +312,7 @@ export class UiAppShell extends LightElement {
 
   /** Window resized (or first layout): close pushing columns, side panel first, until the main panel fits. */
   private _refit = () => {
-    // Compact when both rails (the frame's normal, roomiest closed state) leave under MAIN_MIN.
+    // Compact when both rails (the frame's normal, roomiest closed state) leave under `--main-comfort`.
     this._compact = !this._fitsFrame(frame().rail, frame().rail);
     let nav = this.navOpen;
     let aside = this.asideOpen;
@@ -352,15 +378,15 @@ export class UiAppShell extends LightElement {
     const asideSheet = this.asideOpen && this._asideSheet;
     const compact = this._compact;
     // The side panel's rail moves between columns by property (see `railNodes`): in its own
-    // column normally, under the navigation's in a compact frame.
+    // column normally, above the navigation's in a compact frame.
     const asideRail = this.slottedNodes("aside-rail");
     return html`<ui-frame ?settling=${this._settling} ?compact=${compact} .scrim=${this._scrim}>
       <ui-frame-header
         .brand=${this.brand}
         .brandHref=${this.brandHref}
         .brandIcon=${this.brandIcon}
-        ?lift-start=${navSheet}
-        ?lift-end=${asideSheet}
+        ?lift-start=${navSheet || (compact && asideSheet)}
+        ?lift-end=${!compact && asideSheet}
         >${this.slotted("start")}${this.slotted("search")}${this.slotted("actions")}</ui-frame-header
       >
       <ui-frame-body>
@@ -373,6 +399,9 @@ export class UiAppShell extends LightElement {
           rail-slot="rail"
           footer-slot="nav-footer"
           .extraRailNodes=${compact ? asideRail : undefined}
+          rail-view=${this._railView}
+          extra-label=${this.asideLabel}
+          @ui-rail-switch=${(e: CustomEvent<{ view: "own" | "extra" }>) => (this._railView = e.detail.view)}
           @ui-column-toggle=${(e: CustomEvent<{ open: boolean }>) => void this.toggleNav(e.detail.open)}
           >${this.slotted("nav")}${this.slotted("rail")}${this.slotted("nav-footer")}</ui-frame-column
         >

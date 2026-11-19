@@ -324,6 +324,15 @@ export class UiMenu extends LightElement {
     requestAnimationFrame(tick);
   }
 
+  /**
+   * Opens the `details` group at `path` (its indices, top level first: `[2]` is the third item),
+   * whatever it was left at by hand: `open` on an item only sets the state it starts with.
+   */
+  openGroup(path: number[]) {
+    const details = this.querySelector<HTMLDetailsElement>(`details[data-menu-path="${path.join(".")}"]`);
+    if (details && !details.open) details.open = true;
+  }
+
   /** Open state of `js` submenus, keyed by item. */
   private _shown = new WeakMap<MenuItem, boolean>();
 
@@ -478,7 +487,11 @@ export class UiMenu extends LightElement {
     }
 
     return html`<li class=${li}>
-      <details ?open=${!!item.open} @toggle=${(e: Event) => this._toggled(item, path, e)}>
+      <details
+        data-menu-path=${path.join(".")}
+        ?open=${!!item.open}
+        @toggle=${(e: Event) => this._toggled(item, path, e)}
+      >
         <summary class=${menuLink({ anchor: this._anchor(item, path) })} @click=${this._opening}>
           ${this._label(item)}
         </summary>

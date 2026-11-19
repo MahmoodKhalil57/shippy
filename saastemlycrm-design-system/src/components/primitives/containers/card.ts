@@ -31,9 +31,13 @@ export const card = rcva("card [&_p]:grow-0", {
       filled: "border border-transparent bg-surface-container-highest",
       elevated: "border border-transparent bg-surface-container-low shadow-elevation-1",
     },
+    /**
+     * `md` (the default) pads fluidly with the panel it's in (a container: the main panel): 16px on
+     * a phone up to daisyUI's 24px from about a 600px panel, so a 320px screen keeps room for content.
+     */
     size: {
       sm: "card-sm",
-      md: "card-md",
+      md: "card-md [--card-p:clamp(1rem,4cqi,1.5rem)]",
     },
     /**
      * The whole card is a link (`href`): on hover it lifts a level on a spring, its edge picks up
@@ -44,7 +48,7 @@ export const card = rcva("card [&_p]:grow-0", {
       true: "group/card relative [transition:translate_var(--duration-spatial-fast)_var(--ease-spatial-fast),box-shadow_var(--duration-effects-fast)_var(--ease-effects-fast),border-color_var(--duration-effects-fast)_var(--ease-effects-fast),outline-color_var(--duration-effects-fast)_var(--ease-effects-fast)] hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-elevation-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary motion-reduce:transition-none",
     },
   },
-  defaultVariants: { variant: "outlined" },
+  defaultVariants: { variant: "outlined", size: "md" },
 });
 
 export const cardBody = rcva("card-body");

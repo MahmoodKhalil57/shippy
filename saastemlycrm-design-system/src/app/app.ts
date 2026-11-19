@@ -355,17 +355,31 @@ export class DashboardApp extends LightElement {
     ];
   }
 
-  /** The collapsed rail: one entry per group, linking to its first page. */
+  /**
+   * The collapsed rail: Dashboard (a page: it links), then one entry per section. A section's icon
+   * opens the navigation with that section expanded (`_openSection`), rather than jumping to its
+   * first page: what's in it is the choice.
+   */
   private _rail(): MenuItem[] {
     return [
       { label: "Dashboard", icon: this._icon("home"), href: dashboardPath(), active: this.route.name === "dashboard" },
-      ...this._groups().map((g) => ({
+      ...this._groups().map((g, i) => ({
         label: g.label,
         icon: this._icon(groupIcon(g.label)),
-        href: g.items[0]?.href,
         active: g.active,
+        // Its place in the open navigation (`_menu`: Dashboard first).
+        value: { section: g.label, path: [i + 1] },
       })),
     ];
+  }
+
+  /** A section's rail icon: open the navigation (pushing or as a sheet) with that section expanded. */
+  private async _openSection(section: { section: string; path: number[] }) {
+    this.#openedGroups.add(section.section);
+    this.requestUpdate();
+    await this._shell?.toggleNav(true);
+    await this.updateComplete;
+    this.querySelector<HTMLElementTagNameMap["ui-menu"]>('ui-menu[slot="nav"]')?.openGroup(section.path);
   }
 
   private _view() {
@@ -496,7 +510,16 @@ export class DashboardApp extends LightElement {
           </ui-dropdown>
         </ui-flex>
         <ui-menu slot="nav" layout="nav" width="full" surface="false" .items=${this._menu()}></ui-menu>
-        <ui-menu slot="rail" layout="rail" surface="false" .items=${this._rail()}></ui-menu>
+        <ui-menu
+          slot="rail"
+          layout="rail"
+          surface="false"
+          .items=${this._rail()}
+          @ui-select=${(e: CustomEvent<{ item: MenuItem }>) => {
+            const v = e.detail.item.value as { section: string; path: number[] } | undefined;
+            if (v?.section) void this._openSection(v);
+          }}
+        ></ui-menu>
         ${this._userSwitcher()}
         ${
           site().branding.poweredBy

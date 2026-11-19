@@ -19,6 +19,7 @@ import iChevronLeft from "~icons/line-md/chevron-left";
 import iChevronRight from "~icons/line-md/chevron-right";
 import iMenu from "~icons/line-md/menu";
 import iMenuPanel from "~icons/line-md/menu-fold-left";
+import iSwap from "~icons/line-md/arrows-horizontal";
 import iSearch from "~icons/line-md/search";
 import iSun from "~icons/line-md/sunny-outline";
 import iMoon from "~icons/line-md/moon";
@@ -156,6 +157,8 @@ export const ICONS = {
   menu: iMenu,
   /** Bars with an arrow: opens a side panel. */
   "menu-panel": iMenuPanel,
+  /** Swap one thing for another, side to side (a rail's two icon groups). */
+  swap: iSwap,
   search: iSearch,
   sun: iSun,
   moon: iMoon,

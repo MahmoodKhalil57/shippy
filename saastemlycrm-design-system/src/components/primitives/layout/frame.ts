@@ -43,7 +43,7 @@ export const appShell = rcva(
        */
       settling: { true: "[&_*]:transition-none!" },
       /**
-       * Too narrow for a 320px main panel beside both rails: the frame goes full screen. Its
+       * Too narrow for `--main-comfort` of content beside both rails: the frame goes full screen. Its
        * edges and gaps are 0, so the header, the rail and the main panel meet the screen's edges
        * and each other (the side panel's rail has moved into the navigation's: `merged`).
        */
@@ -56,10 +56,17 @@ export const appShell = rcva(
  * Header: brand, the search (centred in the room left between brand and actions; it collapses
  * to an icon when that room gets small — a container query, not a screen breakpoint), actions.
  */
-export const appShellHeader = rcva("flex h-16 items-center gap-[clamp(0.5rem,1vw,1rem)] px-(--frame-edge)");
+export const appShellHeader = rcva(
+  "@container/header flex h-16 items-center gap-[clamp(0.5rem,1vw,1rem)] px-[max(var(--frame-edge),0.25rem)]",
+);
 // layout: fixed (the menu button and the brand)
 export const appShellHeaderStart = rcva("flex min-w-0 shrink-0 items-center gap-1");
-export const appShellBrand = rcva("gap-2 rounded-full px-3 text-title-md tracking-tight");
+export const appShellBrand = rcva("gap-2 rounded-full px-3 text-title-md tracking-tight @max-[23.5rem]/header:px-1.5");
+/**
+ * The brand's name: on a header too narrow for the name, the search and the actions together (a
+ * 320px phone), only the mark shows; the name stays for screen readers (it's the link's name).
+ */
+export const appShellBrandName = rcva("@max-[23.5rem]/header:sr-only");
 /** The brand's mark (`brand-icon`): primary, on a soft primary disc. */
 export const appShellBrandMark = rcva("grid size-8 place-items-center rounded-full bg-primary/15 text-primary");
 export const appShellSearch = rcva("@container flex min-w-0 flex-1 justify-center");
@@ -183,7 +190,19 @@ export const appShellPanel = rcva(
         sheet: true,
         open: true,
         side: "end",
+        merged: false,
         class: "end-0 me-0 w-[calc(20rem_+_var(--frame-edge))] rounded-s-xl-increased",
+      },
+      /*
+       * Merged into the start column (a compact frame): the side panel's rail is on the start
+       * side, so its sheet grows out of that rail, like the navigation's, and folds back into it.
+       */
+      {
+        sheet: true,
+        open: true,
+        side: "end",
+        merged: true,
+        class: "start-0 ms-0 w-[calc(20rem_+_var(--frame-edge))] rounded-e-xl-increased",
       },
       /*
        * Closing a sheet: it stays a sheet (fixed, pinned, full height, background, shadow — every
@@ -204,8 +223,8 @@ export const appShellPanel = rcva(
 
 export const appShellMain = rcva(
   /*
-   * Never narrower than what a 320px screen leaves beside both rails (MAIN_MIN: 320 − 2×48 −
-   * 2×2 gaps − 2×2 edges). A size container (`main`), so pages size themselves to the panel
+   * Its content is never narrower than `--main-min` (the shell's room checks; src/styles/theme.css).
+   * A size container (`main`), so pages size themselves to the panel
    * (container units, container queries), not to the window. Its scrollbar stays inside the
    * rounded corners (`--scrollbar-inset`, src/index.css).
    * A 2px inset all round (a transparent border, not padding: a scroll container clips its content
@@ -228,15 +247,19 @@ export const appShellMain = rcva(
 export const appShellPage = rcva("");
 
 /** The main panel with its footer under it; takes the room the columns leave. */
-// layout: fixed (the main panel keeps room for content when both side columns are open)
-export const appShellCenter = rcva("flex min-w-[13.5rem] flex-1 flex-col gap-1");
+// layout: fixed (the main panel keeps `--main-min` for its content, plus its 2×2px border)
+export const appShellCenter = rcva("flex min-w-[calc(var(--main-min)_+_0.25rem)] flex-1 flex-col gap-1");
 
 /**
  * The page's footer (`slot="footer"`): one centred line under the main panel, on the frame
  * (e.g. a credit), clear of the screen edge and quieter than the page: 65% is the faintest that
  * keeps it WCAG AA in light (5.3:1) and dark (6.3:1). Part of what the scrim keeps readable.
  */
-export const appShellPageFooter = rcva("shrink-0 pb-1.5 text-center text-body-sm leading-4 opacity-65");
+// Centred in the band under the main panel: it reaches over the frame's bottom edge
+// (`-mb-(--frame-edge)`), so 4px gap + 4px above and 8px below, in a normal or a compact frame.
+export const appShellPageFooter = rcva(
+  "-mb-(--frame-edge) shrink-0 pt-1 pb-2 text-center text-body-sm leading-4 opacity-65",
+);
 
 /**
  * A column's toggle: centred on its icon axis (where the rail's icons are centred, 2px inside
@@ -261,8 +284,33 @@ export const appShellBackdrop = rcva(
  */
 export const appShellFooter = rcva("flex w-10 shrink-0 flex-col items-center gap-1 ms-0.5 pb-1 text-center");
 
-/** Between a column's own rail and the rail merged into it (`extra-rail-slot`). */
-export const appShellRailDivider = rcva("mx-auto h-px w-6 shrink-0 bg-outline-variant");
+/**
+ * A column's two rails when another column's rail is merged into it (a compact frame): stacked in
+ * one spot, so either shows in the same place.
+ */
+export const appShellRailGroups = rcva("grid min-h-0 flex-1 [&>*]:[grid-area:1/1]");
+
+/**
+ * One of those rails. One shows at a time, chosen with the switch at the top; switching slides them
+ * sideways, like pages of one strip: the column's own rail sits to the start, the merged one to the
+ * end, so the one leaving goes out its side as the other comes in from its own (M3 spatial spring
+ * for the slide, effects spring for the fade). The one leaving stays visible until it's out.
+ */
+export const appShellRailGroup = rcva("flex min-h-0 flex-col gap-3 motion-reduce:transition-none!", {
+  variants: {
+    shown: {
+      true: "visible translate-x-0 opacity-100 [transition:translate_var(--duration-spatial)_var(--ease-spatial),opacity_var(--duration-effects)_var(--ease-effects),visibility_0s]",
+      false:
+        "invisible pointer-events-none opacity-0 [transition:translate_var(--duration-spatial)_var(--ease-spatial),opacity_var(--duration-effects)_var(--ease-effects),visibility_0s_var(--duration-spatial)]",
+    },
+    /** Where it sits in the strip: the column's own rail at the start, the merged one at the end. */
+    place: { start: "", end: "" },
+  },
+  compoundVariants: [
+    { shown: false, place: "start", class: "-translate-x-full rtl:translate-x-full" },
+    { shown: false, place: "end", class: "translate-x-full rtl:-translate-x-full" },
+  ],
+});
 
 /** Wrapper that keeps a slot's nodes mounted while hidden. */
 export const appShellSlot = rcva("flex min-h-0 w-full flex-col gap-3", {
@@ -347,7 +395,7 @@ export class UiFrame extends LightElement {
   @property() scrim = "";
   /** Until the first paint: no transitions, so a reload shows the final layout at once. */
   @property({ type: Boolean }) settling = false;
-  /** Full screen: no edges or gaps (the shell sets it when the main panel would be under 320px). */
+  /** Full screen: no edges or gaps (the shell sets it when the main panel's content would be under `--main-comfort`). */
   @property({ type: Boolean }) compact = false;
 
   render() {
@@ -376,6 +424,7 @@ export class UiFrameHeader extends LightElement {
     const brand = this.brand
       ? html`<a class=${button({ variant: "text", class: appShellBrand() })} href=${ifDefined(this.brandHref)}
           >${this.brandIcon ? html`<span class=${appShellBrandMark()}>${iconSvg(this.brandIcon, { size: "md" })}</span>` : nothing}<span
+            class=${appShellBrandName()}
             >${this.brand}</span
           ></a
         >`
@@ -429,8 +478,16 @@ export class UiFrameColumn extends LightElement {
    * light-DOM slot is read once, so nodes handed over later go by property).
    */
   @property({ attribute: false }) railNodes?: Node[];
-  /** Another column's rail, shown under this one's after a divider (a compact frame merges them). */
+  /**
+   * Another column's rail merged into this one (a compact frame). One rail shows at a time
+   * (`railView`); while the column is closed, its toggle switches between them (`ui-rail-switch`),
+   * so neither moves the other's icons, and opening either column moves nothing.
+   */
   @property({ attribute: false }) extraRailNodes?: Node[];
+  /** Which rail shows: the column's own, or the merged one. */
+  @property({ attribute: "rail-view" }) railView: "own" | "extra" = "own";
+  /** The merged rail's column ("Side panel"): the switch's name. */
+  @property({ attribute: "extra-label" }) extraLabel = "";
   /** Its rail is shown in the other column: it takes no room and shows only when open, as a sheet. */
   @property({ type: Boolean }) merged = false;
 
@@ -455,23 +512,46 @@ export class UiFrameColumn extends LightElement {
     const { side, open, sheet, merged } = this;
     const what = this.label.toLowerCase();
     const extra = !!this.extraRailNodes?.length;
+    const showExtra = extra && this.railView === "extra";
+    // Closed with a merged rail, the toggle switches rails (the swap icon: it isn't a menu);
+    // otherwise it opens and closes the column.
+    const switches = extra && !open;
+    const toggle = switches
+      ? html`<button
+          type="button"
+          class=${iconButton({ class: appShellToggle({ column: side }) })}
+          aria-label=${showExtra ? `Show ${what} icons` : `Show ${this.extraLabel.toLowerCase()} icons`}
+          @click=${() => this.dispatchEvent(new CustomEvent("ui-rail-switch", { detail: { view: showExtra ? "own" : "extra" } }))}
+        >
+          ${iconSvg("swap", { size: "md" })}
+        </button>`
+      : html`<button
+          type="button"
+          class=${iconButton({ class: appShellToggle({ column: merged ? "start" : side }) })}
+          aria-label=${open ? `Collapse ${what}` : `Expand ${what}`}
+          @click=${() => this._ask(!open)}
+        >
+          ${iconSvg(side === "start" ? "menu" : "menu-panel", { size: "md" })}
+        </button>`;
     const panel = html`<div class=${appShellPanel({ side, open, sheet, merged })} data-frame-panel>
-      <button
-        type="button"
-        class=${iconButton({ class: appShellToggle({ column: side }) })}
-        aria-label=${open ? `Collapse ${what}` : `Expand ${what}`}
-        @click=${() => this._ask(!open)}
-      >
-        ${iconSvg(side === "start" ? "menu" : "menu-panel", { size: "md" })}
-      </button>
+      ${toggle}
       <div class=${appShellStack({ fill: true })}>
         <div class=${appShellSlot({ scroll: true, class: appShellNavList({ state: open ? "shown" : "hidden" }) })}>
           ${this.slotted(this.listSlot)}
         </div>
         <div class=${appShellSlot({ scroll: true, class: appShellNavRail({ state: open ? "hidden" : "shown" }) })}>
-          ${this.railNodes ?? this.slotted(this.railSlot)}
-          ${extra ? html`<div class=${appShellRailDivider()} role="separator"></div>` : nothing}
-          ${extra ? this.extraRailNodes : nothing}
+          ${
+            extra
+              ? html`<div class=${appShellRailGroups()}>
+                  <div class=${appShellRailGroup({ shown: !showExtra, place: "start" })} ?inert=${showExtra}>
+                    ${this.railNodes ?? this.slotted(this.railSlot)}
+                  </div>
+                  <div class=${appShellRailGroup({ shown: showExtra, place: "end" })} ?inert=${!showExtra}>
+                    ${this.extraRailNodes}
+                  </div>
+                </div>`
+              : (this.railNodes ?? this.slotted(this.railSlot))
+          }
         </div>
       </div>
       ${this.hasSlotted(this.footerSlot) ? html`<div class=${appShellFooter()}>${this.slotted(this.footerSlot)}</div>` : nothing}
