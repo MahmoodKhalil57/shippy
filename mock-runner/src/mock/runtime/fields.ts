@@ -1,7 +1,7 @@
-import type { FieldLike } from "saastemlycrm-design-system/contracts";
+import type { FieldLike } from "../../types.ts";
 import type { Where } from "payload";
-import { matches } from "saastemlycrm-design-system/payload";
-import { isObject, objectId } from "saastemlycrm-design-system/payload";
+import { matches } from "../../payload/index.ts";
+import { isObject, objectId } from "../../payload/index.ts";
 
 /**
  * Payload field semantics: which fields hold data, defaults, sanitising

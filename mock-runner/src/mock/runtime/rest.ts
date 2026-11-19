@@ -1,11 +1,11 @@
-import { parseJoins, parsePopulate, parseSelect } from "saastemlycrm-design-system/payload";
+import { parseJoins, parsePopulate, parseSelect } from "../../payload/index.ts";
 import type { Endpoint, Where } from "payload";
 import { parse } from "qs-esm";
-import type { Doc } from "saastemlycrm-design-system/contracts";
+import type { Doc } from "../../types.ts";
 import { Engine, type FileInput, type MockRequest } from "./engine.ts";
 import { seedHash, seedStore, topUpSeed, type Seeds } from "./seed.ts";
 import type { Snapshot } from "./store.ts";
-import { APIError, isObject, notFound, unauthorized } from "saastemlycrm-design-system/payload";
+import { APIError, isObject, notFound, unauthorized } from "../../payload/index.ts";
 
 /**
  * Payload's REST API on top of the Local API, as a `Request -> Response`

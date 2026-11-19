@@ -1,5 +1,5 @@
 import type { Engine } from "./engine.ts";
-import { text } from "saastemlycrm-design-system/payload";
+import { text } from "../../payload/index.ts";
 
 /**
  * Seed data: `src/cms/seed/<collection>.json` (an array of documents) and

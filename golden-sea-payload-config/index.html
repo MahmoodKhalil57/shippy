@@ -4,9 +4,8 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <!-- Offline support is the service worker's precache (src/mock/sw.ts, list written by
-         plugins/mock-backend.ts). -->
-    <!-- Title and description: the project's `branding` global (plugins/mock-backend.ts). -->
+    <!-- Offline support is the backend worker's precache (mock-runner/vite). -->
+    <!-- Title and description: the `branding` seed global (vite.config.ts). -->
     <meta name="theme-color" content="#0b1a26" />
     <meta name="description" content="A business dashboard." />
     <!-- The helper (bottom right) runs on an OpenAI Codex model (saastemlycrm-design-system/src/agent/codex.ts). A
@@ -31,7 +30,7 @@
       // Liquid glass refraction (SVG filters in backdrop-filter) is drawn by Chromium only.
       if (navigator.userAgentData) document.documentElement.dataset.glass = "refract";
     </script>
-    <script type="module" src="/src/main.ts"></script>
+    <script type="module" src="/app/main.ts"></script>
   </head>
   <body>
     <!-- The liquid-glass material's refraction (src/styles/theme.css): soft fractal noise, lit and

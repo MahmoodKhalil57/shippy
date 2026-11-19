@@ -14,7 +14,7 @@ const actionsOf = (b: ViewBlock): Action[] =>
  * Design rules that only show with real data: what the types and the lint rules can't see.
  * `designProblems` reads the blocks a screen drew (as `render` returned them) and says what
  * breaks the design, in words a screen's author can act on. Pure: tests run it in Node
- * (`mock-runner/testing`, `screenDesignProblems`), with each user's data.
+ * (`saastemlycrm-design-system/testing`, `screenDesignProblems`), with each user's data.
  *
  * Each limit comes from Material 3 or Apple's HIG (local copies: material-web/.m3-specs,
  * material-web/.apple-specs); the source is named next to it.

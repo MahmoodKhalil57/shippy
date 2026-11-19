@@ -27,15 +27,17 @@
       "name": "mock-runner",
       "version": "0.0.0",
       "dependencies": {
-        "golden-sea-payload-config": "workspace:*",
         "qs-esm": "^8.0.2",
-        "saastemlycrm-design-system": "workspace:*",
       },
       "devDependencies": {
         "@types/node": "^26.6.6",
         "payload": "3.94.0",
         "typescript": "~7.0.2",
         "vite": "npm:@voidzero-dev/vite-plus-core@8.3.8000",
+        "vite-plus": "1.7.0",
+      },
+      "peerDependencies": {
+        "payload": "3.94.0",
         "vite-plus": "1.7.0",
       },
     },

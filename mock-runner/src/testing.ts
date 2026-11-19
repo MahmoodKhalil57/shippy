@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
-import type { MockConfig } from "saastemlycrm-design-system/contracts";
+import type { BackendConfig } from "./types.ts";
 import { Engine } from "./mock/runtime/engine.ts";
 import { RestApi } from "./mock/runtime/rest.ts";
 import { seedsFromGlob, type Seeds } from "./mock/runtime/seed.ts";
@@ -18,7 +18,6 @@ import { MemoryStore } from "./mock/runtime/store.ts";
  */
 
 export { Engine, MemoryStore, RestApi, seedsFromGlob, type Seeds };
-export { screenDesignProblems, screensOf, type Screen, type ScreenCheckOptions } from "./screens.ts";
 
 /** A response, with its body parsed (JSON, else text) for loose API-test assertions. */
 export interface TestResponse {
@@ -47,7 +46,7 @@ export interface TestBackend {
 }
 
 export interface ResetOptions {
-  config?: MockConfig;
+  config?: BackendConfig;
   seeds?: SeedInput;
   store?: MemoryStore;
 }
@@ -89,7 +88,7 @@ async function read(res: Response): Promise<TestResponse> {
 
 /** The project's backend for tests: `Engine` + `RestApi` on a `MemoryStore`, seeded on first call. */
 export function testBackend(
-  config: MockConfig,
+  config: BackendConfig,
   seedInput: SeedInput = { collections: {}, globals: {} },
   { origin = "http://mock.test" }: { origin?: string } = {},
 ): TestBackend {

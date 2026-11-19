@@ -1,5 +1,5 @@
 import type { CollectionConfig, GlobalConfig, Where } from "payload";
-import type { Doc, FieldLike, MockConfig, PaginatedDocs } from "saastemlycrm-design-system/contracts";
+import type { Doc, FieldLike, BackendConfig, PaginatedDocs } from "../../types.ts";
 import { hashPassword, randomHex, signToken, verifyPassword, verifyToken } from "./auth.ts";
 import {
   applyDefaults,
@@ -13,8 +13,8 @@ import {
   validate,
   type FieldError,
 } from "./fields.ts";
-import { matches, paginate, sortDocs, valuesAt } from "saastemlycrm-design-system/payload";
-import { applySelect, selects, type JoinQuery, type Joins, type Select } from "saastemlycrm-design-system/payload";
+import { matches, paginate, sortDocs, valuesAt } from "../../payload/index.ts";
+import { applySelect, selects, type JoinQuery, type Joins, type Select } from "../../payload/index.ts";
 import type { Store } from "./store.ts";
 import {
   APIError,
@@ -26,7 +26,7 @@ import {
   plural,
   singular,
   text,
-} from "saastemlycrm-design-system/payload";
+} from "../../payload/index.ts";
 
 /**
  * The Local API (`payload.find`, `payload.create`…) over a `Store`, following
@@ -103,7 +103,7 @@ type HookName =
 const DEFAULT_DEPTH = 2;
 
 export class Engine {
-  readonly config: MockConfig;
+  readonly config: BackendConfig;
   readonly store: Store;
   /** Where the REST API lives, e.g. `/api` (used for upload URLs). */
   readonly apiRoute: string;
@@ -111,7 +111,7 @@ export class Engine {
   private readonly globals = new Map<string, GlobalConfig>();
   private secret?: string;
 
-  constructor(config: MockConfig, store: Store, options: { apiRoute?: string } = {}) {
+  constructor(config: BackendConfig, store: Store, options: { apiRoute?: string } = {}) {
     this.config = config;
     this.store = store;
     this.apiRoute = options.apiRoute ?? "/api";

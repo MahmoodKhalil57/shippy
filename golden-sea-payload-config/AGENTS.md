@@ -32,17 +32,26 @@ release. Add a tool name to select part of the graph. For example, run
 
 # golden-sea-payload-config
 
-Golden Sea's project: a Payload config and nothing else. Collections (`src/collections`), globals
+Golden Sea's project and its app. The config (`src/`): collections (`src/collections`), globals
 (`src/globals`, including the dashboard's own content: `branding`, `assistant`), endpoints with the
 business logic (`src/endpoints`, returning data, never UI), screens as widgets (`src/widgets`) and
 seed data (`src/seed`). Entry points: `.` (the config, `src/config.ts`) and `./seed` (`seedModules`,
 `seedUsers`).
 
+- **The app** is the only place the three packages meet: `index.html` and `app/main.ts` start the
+  backend (`startMockBackend()` from `mock-runner/client`) and hand the config to the dashboard
+  (`startDashboard` from `saastemlycrm-design-system/app`); `vite.config.ts` adds
+  `designSystem()` and `mockBackend({ config: "./src/config.ts", seed: "./src/seed.ts" })`, sets the
+  base (`/shippy/` for the build) and writes the page's title from the `branding` seed. `public/`
+  is the site's static files. `vp dev` runs it (`bun run dev` at the root); `vp build` writes the
+  demo to `../docs`. The OpenAI key meta in `index.html` stays empty in the repository.
+
 - **Contracts:** it imports only `saastemlycrm-design-system/contracts` (and `/payload`): the config
   types, `tones`, `CollectionSettings`, `widgets()` and the block vocabulary. Never the design
   system's components or app, never Lit: the config also runs in a service worker and, later, on
-  a server. It defines no custom elements. `tests/template.test.ts` enforces all of this (and that
-  the design system names no project or runner).
+  a server. It defines no custom elements. `tests/template.test.ts` enforces all of this, and that
+  the design system and the backend import neither other package. Only `app/`, `vite.config.ts`
+  and `tests/` import the dashboard and the backend (lint `overrides` allow it there).
 - **Screens:** see "Screens are widgets" in `saastemlycrm-design-system/AGENTS.md`. Anything the
   widget vocabulary can't draw becomes a generic block or component in the design system.
 - **Lint rules:** `vite.config.ts` loads the `saastemly` oxlint plugin from
@@ -54,13 +63,15 @@ seed data (`src/seed`). Entry points: `.` (the config, `src/config.ts`) and `./s
   globals and views; widgets and endpoints import it as `import * as link from "../links.ts"` and
   write `link.doc("cases", id, "pricing")`. `tests/links.test.ts` keeps its lists equal to the config.
 - **Design test:** `tests/design.test.ts` draws every screen as every seeded user and checks it with
-  the design system's data rules (`screenDesignProblems` from `mock-runner/testing`). A failure
+  the design system's data rules (`screenDesignProblems` from `saastemlycrm-design-system/testing`,
+  fed by the mock backend). A failure
   names the user, screen and widget, and what to change.
 - **Tests** (`tests/`, `vp test`): its behaviour against a backend, mock-runner's engine in memory
-  through `mock-runner/testing` (a dev dependency; `src` never imports it). `tests/backend.ts`
+  through `mock-runner/testing` (`src` never imports it). `tests/backend.ts`
   sets it up with this config and `seedModules`: `backend.reset()` in `beforeEach`, `call(...)`,
   `login("karim.youssef")` (demo password). `rest.test.ts`: collections, globals, access and seed
   over REST; `case-views`, `commercial`, `data-model`, `insights`, `operations`, `platform`,
   `sourcing`: every endpoint and widget page; `design.test.ts`: the design rules on real data;
+  `payload-parity.test.ts`: the dashboard's and the backend's `where` matching agree;
   `template.test.ts`: the packages' roles.
   `STATE-AUDIT.md` maps the state behind each screen.

@@ -1,7 +1,7 @@
 import path from "node:path";
 import { beforeEach, describe, expect, it } from "vite-plus/test";
-import { matches, sortDocs } from "saastemlycrm-design-system/payload";
-import type { MockConfig } from "saastemlycrm-design-system/contracts";
+import { matches, sortDocs } from "../src/payload/index.ts";
+import type { BackendConfig } from "../src/types.ts";
 import type { Where } from "payload";
 import { MemoryStore, seedsFromDir, testBackend } from "../src/testing.ts";
 import { fixture } from "./fixture/config.ts";
@@ -205,7 +205,7 @@ describe("REST: auth, endpoints, uploads, mock tools", () => {
     const summary = await call("GET", "/api/posts/p2/summary");
     expect(summary.body.summary).toBe("P-0002: Marine stores guide (Guides)");
     // Root-level endpoint, with route params, the Local API and the logged-in user.
-    const withRoot: MockConfig = {
+    const withRoot: BackendConfig = {
       ...fixture,
       endpoints: [
         {

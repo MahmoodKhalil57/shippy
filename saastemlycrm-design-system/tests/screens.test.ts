@@ -1,0 +1,78 @@
+import { describe, expect, it } from "vite-plus/test";
+import { block, links, widgets, type MockConfig } from "../src/contracts/index.ts";
+import { screenDesignProblems, screensOf, type ScreenBackend } from "../src/testing/index.ts";
+
+/** The screen check (src/testing/screens.ts) against a tiny fake of Payload's REST API. */
+
+const link = links();
+
+/** A config with users, posts and a settings global, and one root view drawing `items`. */
+const withScreen = (items: { label: string; href: string }[]): MockConfig => ({
+  collections: [
+    { slug: "users", auth: true, fields: [] },
+    { slug: "posts", fields: [] },
+  ],
+  globals: [{ slug: "settings", fields: [] }],
+  admin: {
+    components: {
+      views: {
+        board: {
+          path: "/board",
+          Component: widgets({ widgets: [{ title: "Board", render: () => block("actions", { items }) }] }),
+        },
+      },
+    },
+  },
+});
+
+/** Ada exists; anything else is a 404. */
+const backend: ScreenBackend = {
+  login: async (email) => ({ status: email === "ada@test" ? 200 : 401 }),
+  call: async (_method, url) =>
+    url === "/api/users/me"
+      ? { status: 200, body: { user: { id: "ada" } } }
+      : url.startsWith("/api/users/ada")
+        ? { status: 200, body: { id: "ada" } }
+        : { status: 404, body: {} },
+};
+
+const check = (items: { label: string; href: string }[], users = ["ada@test"]) =>
+  screenDesignProblems({ config: withScreen(items), backend, users, password: "x" });
+
+describe("screenDesignProblems", () => {
+  it("finds the config's screens", () => {
+    expect(screensOf(withScreen([])).map((s) => s.name)).toEqual(["/board"]);
+  });
+
+  it("passes links that lead somewhere", async () => {
+    expect(
+      await check([
+        { label: "Posts", href: link.list("posts") },
+        { label: "Settings", href: link.global("settings") },
+        { label: "Board", href: link.view("/board") },
+        { label: "Ada", href: link.doc("users", "ada") },
+      ]),
+    ).toEqual([]);
+  });
+
+  it("reports links that lead nowhere", async () => {
+    const problems = (
+      await check([
+        { label: "Gone", href: link.list("archive") },
+        { label: "Nobody", href: link.doc("users", "zed") },
+        { label: "Tab", href: link.doc("users", "ada", "billing") },
+        { label: "Global", href: link.global("theme") },
+        { label: "View", href: link.view("/nowhere") },
+      ])
+    ).join("\n");
+    expect(problems).toMatch(/no collection "archive"/);
+    expect(problems).toMatch(/no users document "zed"/);
+    expect(problems).toMatch(/no "billing" tab on users/);
+    expect(problems).toMatch(/no global "theme"/);
+    expect(problems).toMatch(/no view at "\/nowhere"/);
+  });
+
+  it("says who can't sign in", async () => {
+    expect(await check([], ["bob@test"])).toEqual(["bob@test: can't sign in (401)"]);
+  });
+});

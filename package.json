@@ -7,8 +7,8 @@
     "mock-runner"
   ],
   "scripts": {
-    "dev": "bun --cwd mock-runner run dev",
-    "build": "bun --cwd mock-runner run build"
+    "dev": "bun run --cwd golden-sea-payload-config dev",
+    "build": "bun run --cwd golden-sea-payload-config build"
   },
   "devEngines": {
     "packageManager": {

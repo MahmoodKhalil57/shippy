@@ -1,4 +1,4 @@
-import config, { seedModules } from "virtual:mock-project";
+import config, { seedModules } from "virtual:mock-backend";
 import { Engine } from "./runtime/engine.ts";
 import { RestApi } from "./runtime/rest.ts";
 import { seedsFromGlob } from "./runtime/seed.ts";

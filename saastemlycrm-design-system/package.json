@@ -14,6 +14,7 @@
     "./app": "./src/app/index.ts",
     "./contracts": "./src/contracts/index.ts",
     "./payload": "./src/payload/index.ts",
+    "./testing": "./src/testing/index.ts",
     "./client": "./src/api/client.ts",
     "./lint": {
       "types": "./lint/index.d.ts",

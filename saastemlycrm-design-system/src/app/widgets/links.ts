@@ -12,7 +12,7 @@ import { stringify } from "qs-esm";
  *   list("invoices", { status: "Overdue" })
  *
  * The `saastemly/no-raw-hrefs` lint rule reports `/collections/…` and `/globals/…` strings built by
- * hand; `screenDesignProblems` (mock-runner/testing) checks that every link a screen draws
+ * hand; `screenDesignProblems` (`saastemlycrm-design-system/testing`) checks that every link a screen draws
  * leads to a collection, document, tab, global or view that exists.
  */
 export interface Links<C extends string, G extends string, V extends string> {

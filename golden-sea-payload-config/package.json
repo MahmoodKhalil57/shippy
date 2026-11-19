@@ -2,7 +2,7 @@
   "name": "golden-sea-payload-config",
   "version": "0.0.0",
   "private": true,
-  "description": "Golden Sea's Payload config: collections, globals, endpoints, widgets and seed data, built on saastemlycrm-design-system's contracts.",
+  "description": "Golden Sea's Payload config (collections, globals, endpoints, widgets, seed) and its app: the design system's dashboard with the mock runner as its backend.",
   "files": [
     "src",
     "public"
@@ -16,16 +16,19 @@
     "./package.json": "./package.json"
   },
   "scripts": {
+    "dev": "vp dev",
+    "build": "tsc -p tsconfig.json && vp build",
+    "preview": "vp preview",
     "check": "vp check",
     "test": "vp test"
   },
   "dependencies": {
+    "mock-runner": "workspace:*",
     "qs-esm": "^8.0.2",
     "saastemlycrm-design-system": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
-    "mock-runner": "workspace:*",
     "payload": "3.94.0",
     "typescript": "~7.0.2",
     "vite": "npm:@voidzero-dev/vite-plus-core@8.3.8000",

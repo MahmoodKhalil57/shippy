@@ -9,18 +9,33 @@ import {
   type Widget,
   type WidgetPage,
   type WidgetScope,
-} from "saastemlycrm-design-system/contracts";
-import type { TestBackend } from "./testing.ts";
+} from "../contracts/index.ts";
 
 /**
  * Every screen of a project, drawn as each user sees it, and checked against the design rules
- * that need real data (`designProblems` in the design system's contracts). Knows no project: the
- * screens come from the config's component slots, the users from the seed.
+ * that need real data (`designProblems` in the contracts) and for links that lead nowhere.
+ * Knows no project and no backend: the screens come from the config's component slots, the data
+ * from any backend that serves Payload's REST API (`ScreenBackend`: a request and a sign-in),
+ * such as an in-memory test backend in Node, or a real Payload server.
  *
- *   it("every screen follows the design system", async () => {
- *     expect(await screenDesignProblems(backend, { password: "demo1234" })).toEqual([]);
- *   });
+ *   expect(
+ *     await screenDesignProblems({ config, backend, users: ["ana@example.test"], password: "demo" }),
+ *   ).toEqual([]);
  */
+
+/** Any backend that serves Payload's REST API: a request (as the signed-in user) and a sign-in. */
+export interface ScreenBackend {
+  // oxlint-disable-next-line typescript/no-explicit-any
+  call(method: "GET", url: string): Promise<{ status: number; body: any }>;
+  login(email: string, password: string, collection: string): Promise<{ status: number }>;
+}
+
+/** What `load`, `draw` and `brokenLink` need: the backend, the config and its API's route. */
+interface Ctx {
+  backend: ScreenBackend;
+  config: MockConfig;
+  api: string;
+}
 
 /** A screen of widgets, where it sits, and the document it's about (an edit tab, a list). */
 export interface Screen {
@@ -57,15 +72,15 @@ export function screensOf(config: MockConfig): Screen[] {
 }
 
 /** A source's data as the widget host loads it, through the REST API as the signed-in user. */
-async function load(backend: TestBackend, s: Source, scope: WidgetScope): Promise<{ status: number; data: unknown }> {
+async function load(ctx: Ctx, s: Source, scope: WidgetScope): Promise<{ status: number; data: unknown }> {
   const get = async (url: string) => {
-    const r = await backend.call("GET", url);
+    const r = await ctx.backend.call("GET", url);
     return { status: r.status, data: r.body as unknown };
   };
-  const api = backend.engine.apiRoute;
+  const api = ctx.api;
   if ("all" in s) {
     const parts = await Promise.all(
-      Object.entries(s.all).map(async ([k, x]) => [k, await load(backend, x, scope)] as const),
+      Object.entries(s.all).map(async ([k, x]) => [k, await load(ctx, x, scope)] as const),
     );
     const refused = parts.find(([, r]) => r.status !== 200);
     if (refused) return refused[1];
@@ -88,7 +103,7 @@ async function load(backend: TestBackend, s: Source, scope: WidgetScope): Promis
 }
 
 /** What each widget of a page draws for this user (titled widgets as cards, like the host). */
-async function draw(backend: TestBackend, page: WidgetPage, scope: WidgetScope, where: string) {
+async function draw(ctx: Ctx, page: WidgetPage, scope: WidgetScope, where: string) {
   const problems: string[] = [];
   const one = async (w: Widget): Promise<ViewBlock[]> => {
     if (w.visible && !w.visible(scope)) return [];
@@ -104,7 +119,7 @@ async function draw(backend: TestBackend, page: WidgetPage, scope: WidgetScope, 
     // Data widgets (`records`, `counts`, `fields`) are drawn by the design system from the field config.
     if (!w.render) return [];
     const at = `${where} › ${w.title ?? "widget"}`;
-    const { status, data } = w.source ? await load(backend, fill(w.source, scope), scope) : { status: 200, data: null };
+    const { status, data } = w.source ? await load(ctx, fill(w.source, scope), scope) : { status: 200, data: null };
     if (status === 403) return [];
     if (status !== 200) {
       problems.push(`${at}: its source answered ${status}`);
@@ -143,8 +158,8 @@ function hrefsIn(value: unknown, out = new Set<string>()): Set<string> {
  * document that doesn't exist (404; one this user may not open still exists). `undefined` when
  * it leads somewhere.
  */
-async function brokenLink(backend: TestBackend, href: string, known: Map<string, boolean>) {
-  const config = backend.engine.config;
+async function brokenLink(ctx: Ctx, href: string, known: Map<string, boolean>) {
+  const config = ctx.config;
   const t = linkTarget(href);
   if (t.kind === "outside") return undefined;
   if (t.kind === "global")
@@ -163,60 +178,65 @@ async function brokenLink(backend: TestBackend, href: string, known: Map<string,
   }
   const key = `${t.collection}/${t.id}`;
   if (!known.has(key)) {
-    const r = await backend.call(
-      "GET",
-      `${backend.engine.apiRoute}/${t.collection}/${encodeURIComponent(t.id)}?depth=0`,
-    );
+    const r = await ctx.backend.call("GET", `${ctx.api}/${t.collection}/${encodeURIComponent(t.id)}?depth=0`);
     known.set(key, r.status !== 404);
   }
   return known.get(key) ? undefined : `no ${t.collection} document "${t.id}"`;
 }
 
 export interface ScreenCheckOptions {
-  /** The seeded users' password (each user in the seed's auth collection signs in with it). */
+  /** The project's config: its screens are read from its component slots. */
+  config: MockConfig;
+  /** Where the data comes from. */
+  backend: ScreenBackend;
+  /** Who to draw the screens as (emails in the auth collection), all with `password`. */
+  users: string[];
   password: string;
   /** The auth collection (default `users`). */
   collection?: string;
+  /** The REST API's route (default `/api`). */
+  apiRoute?: string;
   /** Only these screens (by name), e.g. while fixing one. */
   only?: string[];
 }
 
 /**
- * Every screen as every seeded user, checked with `designProblems` and for links that lead
- * nowhere (`links()` builds them; this checks the data they're built from): one line per problem,
+ * Every screen as every user, checked with `designProblems` and for links that lead nowhere
+ * (`links()` builds them; this checks the data they're built from): one line per problem,
  * "<user> · <screen> › <widget>: <what's wrong>". Empty when the screens follow the design.
  */
-export async function screenDesignProblems(backend: TestBackend, options: ScreenCheckOptions): Promise<string[]> {
+export async function screenDesignProblems(options: ScreenCheckOptions): Promise<string[]> {
+  const { config, backend } = options;
   const collection = options.collection ?? "users";
-  const users = (backend.seeds.collections[collection] ?? []).filter((u) => typeof u.email === "string");
-  const screens = screensOf(backend.engine.config).filter((s) => !options.only || options.only.includes(s.name));
+  const ctx: Ctx = { backend, config, api: options.apiRoute ?? "/api" };
+  const screens = screensOf(config).filter((s) => !options.only || options.only.includes(s.name));
   const out = new Set<string>();
   /** Documents looked up by links, by `<collection>/<id>`: whether they exist. */
   const known = new Map<string, boolean>();
-  for (const u of users) {
-    const login = await backend.login(String(u.email), options.password, collection);
+  for (const email of options.users) {
+    const login = await backend.login(email, options.password, collection);
     if (login.status !== 200) {
-      out.add(`${String(u.email)}: can't sign in (${login.status})`);
+      out.add(`${email}: can't sign in (${login.status})`);
       continue;
     }
-    const me = (await backend.call("GET", `${backend.engine.apiRoute}/${collection}/me`)).body.user;
-    const who = String(u.email).split("@")[0];
+    const me = (await backend.call("GET", `${ctx.api}/${collection}/me`)).body.user;
+    const who = email.split("@")[0];
     for (const screen of screens) {
       let doc: WidgetScope["doc"];
       if (screen.docOf) {
-        const first = await backend.call("GET", `${backend.engine.apiRoute}/${screen.docOf}?limit=1&depth=0`);
+        const first = await backend.call("GET", `${ctx.api}/${screen.docOf}?limit=1&depth=0`);
         const id = first.status === 200 ? first.body.docs?.[0]?.id : undefined;
         if (id === undefined) continue;
         doc = { id: String(id), slug: screen.docOf };
       }
       const scope: WidgetScope = { user: me, doc, params: { ...screen.page.params } };
-      const { blocks, problems } = await draw(backend, screen.page, scope, screen.name);
-      // The same problem for several users is one line, named for the first.
+      const { blocks, problems } = await draw(ctx, screen.page, scope, screen.name);
       const links: string[] = [];
       for (const href of hrefsIn(blocks)) {
-        const broken = await brokenLink(backend, href, known);
+        const broken = await brokenLink(ctx, href, known);
         if (broken) links.push(`${screen.name}: link ${href} leads nowhere (${broken})`);
       }
+      // The same problem for several users is one line, named for the first.
       for (const p of [...problems, ...links, ...designProblems(blocks, screen.name)])
         if (![...out].some((x) => x.endsWith(` · ${p}`))) out.add(`${who} · ${p}`);
     }

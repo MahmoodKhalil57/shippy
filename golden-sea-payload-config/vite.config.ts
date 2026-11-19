@@ -1,7 +1,46 @@
+import { readFileSync } from "node:fs";
 import { recommended } from "saastemlycrm-design-system/lint";
-import { defineConfig } from "vite-plus";
+import { designSystem } from "saastemlycrm-design-system/vite";
+import mockBackend from "mock-runner/vite";
+import { defineConfig, type Plugin } from "vite-plus";
 
-export default defineConfig({
+/**
+ * Golden Sea's app: this Payload config (src) drawn by the design system's dashboard, with the
+ * mock runner as its backend in the browser. `vp dev` runs it; `vp build` writes the demo site to
+ * ../docs. The design system and the backend know nothing of this project: this file joins them.
+ */
+
+const branding = JSON.parse(readFileSync(new URL("./src/seed/globals/branding.json", import.meta.url), "utf8")) as {
+  name?: string;
+  description?: string;
+};
+const escapeHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+
+/** The page's title and description: the seeded `branding` global. */
+const brandedPage: Plugin = {
+  name: "golden-sea:branding",
+  transformIndexHtml(html) {
+    let out = html;
+    if (branding.name) out = out.replace(/<title>[^<]*<\/title>/, `<title>${escapeHtml(branding.name)}</title>`);
+    if (branding.description)
+      out = out.replace(/(<meta\s+name="description"\s+content=")[^"]*(")/, `$1${escapeHtml(branding.description)}$2`);
+    return out;
+  },
+};
+
+export default defineConfig(({ command, isPreview }) => ({
+  // The build is the demo website: GitHub Pages serves the repository's docs/ folder at /shippy/.
+  // The base lives here, not as a `--base` flag: Git Bash rewrites `/shippy/` on a command line
+  // into a Windows path ("C:/Program Files/Git/shippy/"), which broke every asset URL once.
+  base: command === "build" || isPreview ? "/shippy/" : "/",
+  plugins: [
+    // The design system: component stylesheets, Tailwind, cascade layers, icons.
+    ...designSystem(),
+    // The backend: a service worker serving this config's REST API from IndexedDB.
+    ...mockBackend({ config: "./src/config.ts", seed: "./src/seed.ts" }),
+    brandedPage,
+  ],
+  build: { outDir: "../docs", emptyOutDir: true },
   fmt: {
     ignorePatterns: ["bun.lock"],
     printWidth: 120,
@@ -19,11 +58,14 @@ export default defineConfig({
       ...recommended,
       "saastemly/sentence-case-titles": ["warn", { properNouns: ["Golden Sea"] }],
     },
+    // The app's entry (app/) and this file join the packages: they import the dashboard and the
+    // backend, which the config itself (src/) never does.
+    overrides: [{ files: ["app/**", "vite.config.ts"], rules: { "no-restricted-imports": "off" } }],
     options: { typeAware: true, typeCheck: true },
   },
-  // Its behaviour is tested against a backend: every endpoint and widget, through mock-runner's
-  // engine (`mock-runner/testing`).
+  // Its behaviour is tested against the backend's engine in Node (`mock-runner/testing`), and its
+  // screens against the design system's rules (`saastemlycrm-design-system/testing`).
   test: {
     include: ["tests/**/*.test.ts"],
   },
-});
+}));

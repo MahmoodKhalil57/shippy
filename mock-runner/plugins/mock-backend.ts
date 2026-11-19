@@ -1,90 +1,79 @@
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
 import { copyFile, readdir, readFile, writeFile } from "node:fs/promises";
-import { createRequire } from "node:module";
 import path from "node:path";
 import { build, type Plugin, type ResolvedConfig } from "vite-plus";
 
 /**
- * Serves and builds the in-browser mock backend (src/mock) for the project's config:
+ * Serves and builds the in-browser backend (src/mock) for a Payload config, inside the app that
+ * uses it. The app names its config and seed modules; this package names no project:
  *
- * - `<base>cms-sw.js`, the Service Worker. In dev it's a tiny module that
- *   imports src/mock/sw.ts through Vite (stamped, so editing the config or
- *   runtime installs a new worker and reloads the page). In `vp build` it's
- *   bundled into one classic script next to the app.
+ * - `<base>cms-sw.js`, the Service Worker. In dev it's a tiny module that imports src/mock/sw.ts
+ *   through Vite (stamped, so editing the config or runtime installs a new worker and reloads the
+ *   page). In `vp build` it's bundled into one classic script next to the app.
  *
  * The build also writes the worker's offline precache (`__PRECACHE__`, see src/mock/sw.ts): every
  * built file, versioned by a hash of their contents; full-size background photos are cached
  * after the app has started rather than before.
  *
- * Deep links into the dashboard (`<base>collections/cases/123`) load index.html
- * through Vite's SPA fallback in dev / preview, and through the worker once
- * it's installed (so static hosting works too).
+ * Deep links into the dashboard (`<base>collections/cases/123`) load index.html through Vite's
+ * SPA fallback in dev / preview, and through the worker once it's installed (so static hosting
+ * works too).
  */
 
-const SW_ENTRY = "src/mock/sw.ts";
-const PROJECT_MODULE = "virtual:mock-project";
+/** The worker's entry, in this package. */
+const SW_ENTRY = path.resolve(import.meta.dirname, "../src/mock/sw.ts");
+const BACKEND_MODULE = "virtual:mock-backend";
 
-/**
- * `virtual:mock-project`: the project the runner serves (its config, seed modules and seed users),
- * so the app and the worker import it without naming it.
- */
-function projectModule(project: string): Plugin {
-  const id = "\0" + PROJECT_MODULE;
+export interface MockBackendOptions {
+  /** A module whose default export is the Payload config (relative to the app's root). */
+  config: string;
+  /** A module exporting `seedModules` (`import.meta.glob` of the seed's JSON files). */
+  seed: string;
+  /** More folders whose edits change what the worker serves (the config's and seed's folders always do). */
+  watch?: string[];
+}
+
+/** `virtual:mock-backend`: the config and seed the worker serves (absolute paths). */
+function backendModule(paths: () => { config: string; seed: string }): Plugin {
+  const id = "\0" + BACKEND_MODULE;
+  const spec = (p: string) => JSON.stringify(p.split(path.sep).join("/"));
   return {
-    name: "mock-runner:project",
-    resolveId: (source) => (source === PROJECT_MODULE ? id : null),
-    load: (source) =>
-      source === id
-        ? `export { default } from "${project}";
-export { seedModules, seedUsers } from "${project}/seed";
-`
-        : null,
+    name: "mock-runner:backend-module",
+    resolveId: (source) => (source === BACKEND_MODULE ? id : null),
+    load(source) {
+      if (source !== id) return null;
+      const { config, seed } = paths();
+      return `export { default } from ${spec(config)};\nexport { seedModules } from ${spec(seed)};\n`;
+    },
   };
 }
 
-const escapeHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
-
 /**
- * The in-browser backend for `project` (a Payload config package exporting its config as default
- * and `./seed` with `seedModules` and `seedUsers`). The site's public files are the project's
- * (`<project>/public`), and the page's title and description come from its seeded `branding`
- * global (`<project>/seed/branding.json`) when it has one.
+ * The in-browser backend for an app: the worker serves the Payload REST API for the app's
+ * `config` and `seed`. The app registers it with `startMockBackend()` from `mock-runner/client`
+ * before it talks to `/api`.
  */
-export default function mockBackend(options: { project: string }): Plugin[] {
-  const require = createRequire(import.meta.url);
-  const projectDir = path.dirname(require.resolve(`${options.project}/package.json`));
-  /** Edits here change what the worker serves: the project and the runtime. */
-  const BACKEND_DIRS = [
-    path.join(projectDir, "src") + path.sep,
-    path.resolve(import.meta.dirname, "../src/mock") + path.sep,
-  ];
-  let branding: { name?: string; description?: string } = {};
-  try {
-    branding = JSON.parse(readFileSync(require.resolve(`${options.project}/seed/branding.json`), "utf8"));
-  } catch {
-    // No branding seed: the page keeps its neutral title.
-  }
+export default function mockBackend(options: MockBackendOptions): Plugin[] {
   let config: ResolvedConfig;
   let stamp = Date.now();
+  const abs = (p: string) => path.resolve(config.root, p);
+  const paths = () => ({ config: abs(options.config), seed: abs(options.seed) });
+  const modules = backendModule(paths);
+  /** Edits here change what the worker serves: the app's config and seed, and the runtime. */
+  const watched = () =>
+    [
+      ...new Set([
+        path.dirname(paths().config),
+        path.dirname(paths().seed),
+        ...(options.watch ?? []).map(abs),
+        path.dirname(SW_ENTRY),
+      ]),
+    ].map((d) => d + path.sep);
 
   return [
-    projectModule(options.project),
+    modules,
     {
       name: "mock-runner:backend",
-
-      config: () => ({ publicDir: path.join(projectDir, "public") }),
-
-      transformIndexHtml(html) {
-        let out = html;
-        if (branding.name) out = out.replace(/<title>[^<]*<\/title>/, `<title>${escapeHtml(branding.name)}</title>`);
-        if (branding.description)
-          out = out.replace(
-            /(<meta\s+name="description"\s+content=")[^"]*(")/,
-            `$1${escapeHtml(branding.description)}$2`,
-          );
-        return out;
-      },
 
       configResolved(resolved) {
         config = resolved;
@@ -92,18 +81,21 @@ export default function mockBackend(options: { project: string }): Plugin[] {
 
       configureServer(server) {
         const base = server.config.base;
-        server.watcher.add(BACKEND_DIRS);
+        const dirs = watched();
+        server.watcher.add(dirs);
         server.watcher.on("all", (_event, file) => {
-          if (!BACKEND_DIRS.some((d) => path.resolve(file).startsWith(d))) return;
+          if (!dirs.some((d) => path.resolve(file).startsWith(d))) return;
           stamp = Date.now();
           server.ws.send({ type: "full-reload" });
         });
+        // The worker's source lives in this package: Vite serves it through `/@fs/`.
+        const entry = `${base}@fs/${SW_ENTRY.split(path.sep).join("/").replace(/^\//, "")}`;
         server.middlewares.use((req, res, next) => {
           const url = (req.url ?? "").split("?")[0];
           if (url === `${base}cms-sw.js`) {
             res.setHeader("content-type", "text/javascript");
             res.setHeader("cache-control", "no-cache");
-            res.end(`import "${base}${SW_ENTRY}?v=${stamp}";\n`);
+            res.end(`import "${entry}?v=${stamp}";\n`);
             return;
           }
           next();
@@ -118,14 +110,14 @@ export default function mockBackend(options: { project: string }): Plugin[] {
           root: config.root,
           base: config.base,
           logLevel: "warn",
-          plugins: [projectModule(options.project)],
+          plugins: [backendModule(paths)],
           define: { __PRECACHE__: JSON.stringify(await precacheOf(out)) },
           build: {
             outDir: config.build.outDir,
             emptyOutDir: false,
             copyPublicDir: false,
             lib: {
-              entry: path.resolve(config.root, SW_ENTRY),
+              entry: SW_ENTRY,
               formats: ["iife"],
               name: "mockBackendWorker",
               fileName: () => "cms-sw.js",

@@ -32,31 +32,33 @@ release. Add a tool name to select part of the graph. For example, run
 
 # mock-runner
 
-Runs a Payload project's dashboard entirely in the browser, with nothing deployed: a service
-worker (`src/mock/sw.ts`, served as `<base>cms-sw.js` by `plugins/mock-backend.ts`) serves Payload's
-REST API from IndexedDB through a Payload-compatible engine (`src/mock/runtime`). The project is
-one setting, `mockBackend({ project: "golden-sea-payload-config" })` in `vite.config.ts`: the app
-(`src/main.ts`) and the worker import it as `virtual:mock-project` (its config, `seedModules`,
-`seedUsers`), the site's public files are the project's `public/`, and the page's title and
-description come from its `branding` seed. `src/main.ts` starts the worker and hands the project
-to the dashboard with `startDashboard({ config, seedUsers, ready })`. A real deployment (Payload on
-D1 and Workers) replaces only this package: the design system and the project stay.
+A Payload-compatible backend that runs in the browser, for any Payload config: a service worker
+(`src/mock/sw.ts`, served as `<base>cms-sw.js`) serves the config's REST API from IndexedDB through
+a Payload-compatible engine (`src/mock/runtime`). It imports neither the design system nor any
+project, and names no business (`golden-sea-payload-config/tests/template.test.ts` checks).
+A real deployment (Payload on D1 and Workers) replaces it.
 
-- **Run:** `vp dev` (or `bun run dev` at the workspace root). `vp build` writes the demo site to
-  `../docs` (GitHub Pages, base `/shippy/`), with an offline precache.
-- **Seed:** loaded from the project's `./seed` on first run; seed documents and globals added later
-  are written into existing browsers once. `/api/_mock/export|import|reset` snapshot or reset.
+- **Entry points:** `./vite` (`mockBackend({ config, seed, watch? })`, the Vite plugin: the app
+  names a module default-exporting its Payload config and one exporting `seedModules`; the worker
+  imports them as `virtual:mock-backend`, and the build bundles the worker with an offline
+  precache), `./client` (`startMockBackend()`: registers the worker and resolves once it controls
+  the page), `./testing` (the Node harness) and `./payload` (Payload's query semantics as this
+  backend implements them: `where`, sort, `select` / `populate` / `joins`, errors).
+- **Types:** `src/types.ts`: `BackendConfig` (the parts of a Payload config the engine reads, in
+  Payload's own types), `Doc`, `PaginatedDocs`, `FieldLike`.
+- **No app here:** it has no `index.html`, no dev server and no build of its own. An app
+  (Golden Sea's, in `golden-sea-payload-config`) adds the plugin and calls `startMockBackend()`.
+- **Seed:** loaded from the app's `seedModules` on first run; seed documents and globals added
+  later are written into existing browsers once. `/api/_mock/export|import|reset` snapshot or reset.
 - **Not emulated:** drafts/versions, localization, `richText` (plain text), querying through
   relationships (`author.name`), login with username, email flows, GraphQL.
 - **Tests** (`tests/`): the engine and REST API only (`rest.test.ts`: query syntax, select,
   populate, joins, access, auth, validation, hooks, endpoints, uploads, globals, export/reset,
   seed top-up), in Node on an in-memory store, against a fixture project (`tests/fixture/config.ts`
-  and its `seed/`), never a real one. A project's own tests (and the package-roles test) live in
-  the project.
-- **Test harness** (`mock-runner/testing`, `src/testing.ts`; Node only, imports no project):
+  and its `seed/`), never a real one.
+- **Test harness** (`mock-runner/testing`, `src/testing.ts`; Node only):
   `testBackend(config, seed)` builds an `Engine` + `RestApi` on a `MemoryStore` (seed: Vite glob
   modules such as a project's `seedModules`, or `Seeds`); it returns `call(method, url, body?,
   headers?)` (`{ status, body, text, res }`, JSON or `FormData` bodies), `login(email, password)`
   (session, as in the browser), `reset({ config?, seeds?, store? })` for `beforeEach`, and `api`,
   `engine`, `seeds`. Also `seedsFromDir(dir)`, `seedsFromGlob`, `Engine`, `RestApi`, `MemoryStore`.
-- **OpenAI key:** `index.html`'s `<meta name="openai-api-key">` stays empty in the repository.

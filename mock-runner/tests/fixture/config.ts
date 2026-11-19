@@ -1,5 +1,5 @@
 import type { Access, CollectionConfig, GlobalConfig } from "payload";
-import type { MockConfig } from "saastemlycrm-design-system/contracts";
+import type { BackendConfig } from "../../src/types.ts";
 
 /**
  * A tiny Payload config for the engine's own tests: no project, just enough of Payload's
@@ -122,7 +122,7 @@ const Settings: GlobalConfig = {
   ],
 };
 
-export const fixture: MockConfig = {
+export const fixture: BackendConfig = {
   admin: { user: "users" },
   collections: [Users, Categories, Posts, Notes, Media],
   globals: [Settings],

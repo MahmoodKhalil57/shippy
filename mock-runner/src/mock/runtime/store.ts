@@ -1,5 +1,5 @@
-import type { Doc } from "saastemlycrm-design-system/contracts";
-import { clone, text } from "saastemlycrm-design-system/payload";
+import type { Doc } from "../../types.ts";
+import { clone, text } from "../../payload/index.ts";
 
 /** A stored upload. */
 export interface StoredFile {
