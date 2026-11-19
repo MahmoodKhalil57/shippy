@@ -1,0 +1,280 @@
+import type { Access, CollectionConfig } from "payload";
+import { deskAccess, idOf, loggedIn, management, ruleError } from "./shared.ts";
+import { tones, type CollectionSettings } from "saastemlycrm-design-system/contracts";
+
+/** Case timeline + audit log: every automatic step and human decision. Append-only. */
+export const Activities: CollectionConfig = {
+  slug: "activities",
+  labels: { singular: "Activity", plural: "Activity log" },
+  admin: { useAsTitle: "text", defaultColumns: ["at", "case", "kind", "text", "actor"], group: "Work" },
+  defaultSort: "-at",
+  access: { read: loggedIn, create: loggedIn, update: () => false, delete: management },
+  fields: [
+    {
+      type: "row",
+      fields: [
+        {
+          name: "at",
+          type: "date",
+          required: true,
+          defaultValue: () => new Date().toISOString(),
+          admin: { date: { pickerAppearance: "dayAndTime" } },
+        },
+        { name: "case", type: "relationship", relationTo: "cases", index: true },
+        {
+          name: "kind",
+          type: "select",
+          options: [
+            { label: "Automatic", value: "auto" },
+            { label: "Human", value: "human" },
+            { label: "Alert", value: "alert" },
+          ],
+          defaultValue: "auto",
+        },
+      ],
+    },
+    { name: "text", type: "textarea", required: true },
+    {
+      type: "row",
+      fields: [
+        { name: "actor", type: "relationship", relationTo: "users" },
+        { name: "entity", type: "text", admin: { description: "collection/id of the record changed" } },
+        {
+          name: "rule",
+          type: "text",
+          label: "Automation rule",
+          admin: { description: "Set when an automation did it." },
+        },
+      ],
+    },
+    { name: "undoOf", type: "relationship", relationTo: "activities", label: "Undoes" },
+  ],
+};
+
+/**
+ * Everything someone has to do by a time: supplier reminders, customer follow-ups (respecting the
+ * account's contact rule), sales next steps, collections, delivery tasks.
+ */
+export const Tasks: CollectionConfig = {
+  slug: "tasks",
+  custom: { list: { board: "status", cardFields: ["type", "due", "owner"] } } satisfies CollectionSettings,
+  admin: { useAsTitle: "title", defaultColumns: ["title", "type", "channel", "due", "owner", "status"], group: "Work" },
+  defaultSort: "due",
+  access: deskAccess,
+  hooks: {
+    beforeChange: [
+      // Customer-facing follow-ups are refused for "do not chase" accounts (internal reminders only).
+      async ({ data, req }) => {
+        if (data.type !== "Customer follow-up" || !data.customer || data.internalOnly) return data;
+        const c = (await req.payload
+          .findByID({ collection: "customers", id: String(idOf(data.customer)), depth: 0 })
+          .catch(() => null)) as { contactRule?: string } | null;
+        if (c?.contactRule === "do-not-chase")
+          throw ruleError("This customer must not be chased — create an internal reminder instead.");
+        return data;
+      },
+    ],
+  },
+  fields: [
+    { name: "title", type: "text", required: true },
+    {
+      type: "row",
+      fields: [
+        {
+          name: "type",
+          type: "select",
+          required: true,
+          options: [
+            "Supplier reminder",
+            "Customer follow-up",
+            "Internal reminder",
+            "Sales next step",
+            "Collection",
+            "Delivery task",
+            "Clarification",
+          ],
+        },
+        {
+          name: "channel",
+          type: "select",
+          options: ["Email", "Call", "WhatsApp", "Site visit", "Meeting", "Internal"],
+        },
+        { name: "due", type: "date", required: true, admin: { date: { pickerAppearance: "dayAndTime" } } },
+      ],
+    },
+    {
+      type: "row",
+      fields: [
+        { name: "case", type: "relationship", relationTo: "cases" },
+        { name: "customer", type: "relationship", relationTo: "customers" },
+        { name: "supplier", type: "relationship", relationTo: "suppliers" },
+        { name: "opportunity", type: "relationship", relationTo: "opportunities" },
+      ],
+    },
+    { name: "who", type: "text", label: "Who (person / role)" },
+    { name: "goal", type: "text" },
+    { name: "script", type: "textarea", label: "What to say / draft" },
+    { name: "internalOnly", type: "checkbox", label: "Internal only (no customer contact)", defaultValue: false },
+    {
+      name: "outcome",
+      type: "group",
+      admin: { condition: (data) => data?.status === "Done" || data?.status === "Skipped" },
+      fields: [
+        {
+          type: "row",
+          fields: [
+            {
+              name: "result",
+              type: "select",
+              options: ["Reached — positive", "Reached — call back", "No answer", "Not interested", "Sent"],
+            },
+            { name: "nextDate", type: "date" },
+          ],
+        },
+        { name: "note", type: "textarea" },
+      ],
+    },
+    { name: "owner", type: "relationship", relationTo: "users", required: true, admin: { position: "sidebar" } },
+    {
+      name: "status",
+      type: "select",
+      defaultValue: "Open",
+      options: ["Open", "Done", "Skipped", "Cancelled"],
+      custom: tones({ Open: "info", Done: "success", Skipped: "neutral", Cancelled: "neutral" }),
+      admin: { position: "sidebar" },
+    },
+    { name: "createdByRule", type: "text", admin: { position: "sidebar", readOnly: true } },
+    {
+      name: "stopCondition",
+      type: "text",
+      admin: { position: "sidebar", description: "e.g. reply received, case closed" },
+    },
+  ],
+};
+
+/** Failed integrations and uncertain automation results — nothing fails silently; retries are idempotent. */
+export const IntegrationExceptions: CollectionConfig = {
+  slug: "integration-exceptions",
+  labels: { singular: "Exception", plural: "Exception queue" },
+  admin: {
+    useAsTitle: "summary",
+    defaultColumns: ["occurredAt", "source", "summary", "status", "retries"],
+    group: "Work",
+  },
+  defaultSort: "-occurredAt",
+  access: { read: loggedIn, create: loggedIn, update: loggedIn, delete: management },
+  fields: [
+    {
+      type: "row",
+      fields: [
+        { name: "occurredAt", type: "date", required: true, admin: { date: { pickerAppearance: "dayAndTime" } } },
+        {
+          name: "source",
+          type: "select",
+          required: true,
+          options: ["Outlook", "Gmail", "Website form", "AI extraction", "E-invoicing", "Automation rule", "Import"],
+        },
+      ],
+    },
+    { name: "summary", type: "text", required: true },
+    { name: "impact", type: "text" },
+    {
+      name: "idempotencyKey",
+      type: "text",
+      admin: { description: "Message-id / document id: a retry checks it first so nothing is created or sent twice." },
+    },
+    { name: "payload", type: "json", admin: { description: "Technical detail for the retry." } },
+    {
+      type: "row",
+      fields: [
+        { name: "retries", type: "number", min: 0, defaultValue: 0 },
+        { name: "lastRetryAt", type: "date" },
+      ],
+    },
+    {
+      name: "status",
+      type: "select",
+      defaultValue: "Open",
+      options: ["Open", "Waiting for review", "Resolved", "Auto-resolved", "Ignored"],
+      admin: { position: "sidebar" },
+    },
+    { name: "resolvedBy", type: "relationship", relationTo: "users", admin: { position: "sidebar" } },
+  ],
+};
+
+/** Only the signed-in user's own documents (a Payload Where-returning access function). */
+const own: Access = ({ req }) => (req.user ? { user: { equals: req.user.id } } : false);
+
+/**
+ * Per-user notifications (the side panel's bell): what happened that needs this person —
+ * approvals routed to them, replies on their cases, failures in their area. Each person sees
+ * only their own; opening one marks it read.
+ */
+export const Notifications: CollectionConfig = {
+  slug: "notifications",
+  labels: { singular: "Notification", plural: "Notifications" },
+  admin: { useAsTitle: "title", defaultColumns: ["at", "title", "kind", "read"], group: "Work" },
+  defaultSort: "-at",
+  access: { read: own, create: loggedIn, update: own, delete: own },
+  fields: [
+    {
+      name: "user",
+      type: "relationship",
+      relationTo: "users",
+      required: true,
+      index: true,
+      defaultValue: ({ user }: { user?: { id?: string } }) => user?.id,
+      admin: { position: "sidebar" },
+    },
+    { name: "title", type: "text", required: true },
+    { name: "detail", type: "text" },
+    {
+      type: "row",
+      fields: [
+        {
+          name: "kind",
+          type: "select",
+          required: true,
+          defaultValue: "Update",
+          options: ["Approval", "Reply", "Reminder", "Alert", "Payment", "Update"],
+          custom: tones({ Approval: "warning", Alert: "error", Payment: "success", Reply: "info", Reminder: "info" }),
+        },
+        {
+          name: "href",
+          type: "text",
+          label: "Link",
+          admin: { description: "Dashboard path it opens, e.g. /collections/cases/gs-rfq-0142." },
+        },
+      ],
+    },
+    {
+      name: "at",
+      type: "date",
+      required: true,
+      defaultValue: () => new Date().toISOString(),
+      admin: { position: "sidebar", date: { pickerAppearance: "dayAndTime" } },
+    },
+    { name: "read", type: "checkbox", defaultValue: false, admin: { position: "sidebar" } },
+  ],
+};
+
+/** Per-user bookmarks (the side panel's star): pages a person keeps coming back to. */
+export const Bookmarks: CollectionConfig = {
+  slug: "bookmarks",
+  labels: { singular: "Bookmark", plural: "Bookmarks" },
+  admin: { useAsTitle: "label", defaultColumns: ["label", "href"], group: "Work", hidden: true },
+  defaultSort: "createdAt",
+  access: { read: own, create: loggedIn, update: own, delete: own },
+  fields: [
+    {
+      name: "user",
+      type: "relationship",
+      relationTo: "users",
+      required: true,
+      index: true,
+      defaultValue: ({ user }: { user?: { id?: string } }) => user?.id,
+    },
+    { name: "label", type: "text", required: true },
+    { name: "href", type: "text", required: true },
+  ],
+};

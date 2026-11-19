@@ -1,0 +1,20 @@
+{
+  "name": "shippy",
+  "private": true,
+  "workspaces": [
+    "saastemlycrm-design-system",
+    "golden-sea-payload-config",
+    "mock-runner"
+  ],
+  "scripts": {
+    "dev": "bun --cwd mock-runner run dev",
+    "build": "bun --cwd mock-runner run build"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "bun",
+      "version": "1.4.5",
+      "onFail": "download"
+    }
+  }
+}

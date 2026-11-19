@@ -1,23 +1,19 @@
 import { defineConfig } from "vite-plus";
 
 export default defineConfig({
-  pack: {
-    deps: {
-      // tsdown <0.23 compatibility: resolve external dependency subpaths.
-      // Remove to preserve subpath imports as written (the new default).
-      // https://tsdown.dev/options/dependencies#deps-resolvedepsubpath
-      resolveDepSubpath: true,
-    },
-    dts: {
-      generator: "tsgo",
-    },
-    exports: true,
+  fmt: {
+    ignorePatterns: ["bun.lock"],
+    printWidth: 120,
+    sortPackageJson: true,
   },
   lint: {
-    options: {
-      typeAware: true,
-      typeCheck: true,
-    },
+    jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],
+    rules: { "vite-plus/prefer-vite-plus-imports": "error" },
+    options: { typeAware: true, typeCheck: true },
   },
-  fmt: {},
+  // Its behaviour is tested against a backend: mock-runner's tests run every endpoint and widget.
+  test: {
+    include: ["tests/**/*.test.ts"],
+    passWithNoTests: true,
+  },
 });

@@ -29,3 +29,21 @@ release. Add a tool name to select part of the graph. For example, run
 - [ ] If setup, runtime, or package-manager behavior looks wrong, run `vp env doctor` and include its output when asking for help.
 
 <!--VITE PLUS END-->
+
+# golden-sea-payload-config
+
+Golden Sea's project: a Payload config and nothing else. Collections (`src/collections`), globals
+(`src/globals`, including the dashboard's own content: `branding`, `assistant`), endpoints with the
+business logic (`src/endpoints`, returning data, never UI), screens as widgets (`src/widgets`) and
+seed data (`src/seed`). Entry points: `.` (the config, `src/config.ts`) and `./seed` (`seedModules`,
+`seedUsers`).
+
+- **Contracts:** it imports only `saastemlycrm-design-system/contracts` (and `/payload`): the config
+  types, `tones`, `CollectionSettings`, `widgets()` and the block vocabulary. Never the design
+  system's components or app, never Lit: the config also runs in a service worker and, later, on
+  a server. It defines no custom elements. `mock-runner/tests/template.test.ts` enforces all of
+  this.
+- **Screens:** see "Screens are widgets" in `saastemlycrm-design-system/AGENTS.md`. Anything the
+  widget vocabulary can't draw becomes a generic block or component in the design system.
+- **Tests:** its behaviour is tested against a backend: `mock-runner/tests` runs every endpoint and
+  widget page. `STATE-AUDIT.md` maps the state behind each screen.

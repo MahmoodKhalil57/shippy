@@ -1,40 +1,51 @@
 {
   "name": "saastemlycrm-design-system",
   "version": "0.0.0",
-  "description": "A starter for creating a TypeScript package.",
-  "homepage": "https://github.com/author/library#readme",
-  "bugs": {
-    "url": "https://github.com/author/library/issues"
-  },
-  "license": "MIT",
-  "author": "Author Name <author.name@mail.com>",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/author/library.git"
-  },
+  "private": true,
+  "description": "SaastemlyCRM's design system (Lit + daisyUI, Material Design 3 roles), the dashboard app and the contracts a Payload project implements.",
   "files": [
-    "dist"
+    "src",
+    "vite"
   ],
   "type": "module",
   "exports": {
-    ".": "./dist/index.mjs",
+    ".": "./src/index.ts",
+    "./app": "./src/app/index.ts",
+    "./contracts": "./src/contracts/index.ts",
+    "./payload": "./src/payload/index.ts",
+    "./client": "./src/api/client.ts",
+    "./styles.css": "./src/index.css",
+    "./vite": "./vite/index.ts",
+    "./src/*": "./src/*",
     "./package.json": "./package.json"
   },
-  "publishConfig": {
-    "access": "public"
-  },
   "scripts": {
-    "build": "vp pack",
-    "dev": "vp pack --watch",
-    "test": "vp test",
     "check": "vp check",
-    "prepublishOnly": "vp run build"
+    "test": "vp test"
+  },
+  "dependencies": {
+    "@iconify-json/devicon": "^1.2.82",
+    "@iconify-json/line-md": "^1.2.16",
+    "@iconify-json/logos": "^1.2.20",
+    "@iconify-json/material-symbols-light": "^1.2.102",
+    "@tailwindcss/vite": "^4.3.5",
+    "class-variance-authority": "^0.7.1",
+    "daisyui": "^5.8.1",
+    "lit": "^3.3.3",
+    "postcss": "^8.5.33",
+    "qs-esm": "^8.0.2",
+    "tailwindcss": "^4.3.5",
+    "unplugin-icons": "^24.0.0"
   },
   "devDependencies": {
-    "@types/node": "^26.6.5",
-    "typescript": "^7.0.2",
+    "@types/node": "^26.6.6",
+    "payload": "3.94.0",
+    "typescript": "~7.0.2",
     "vite": "npm:@voidzero-dev/vite-plus-core@8.3.8000",
     "vite-plus": "1.7.0"
+  },
+  "peerDependencies": {
+    "payload": "3.94.0"
   },
   "overrides": {
     "vite": "npm:@voidzero-dev/vite-plus-core@8.3.8000"

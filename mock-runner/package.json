@@ -2,13 +2,23 @@
   "name": "mock-runner",
   "version": "0.0.0",
   "private": true,
+  "description": "Runs a Payload project's dashboard entirely in the browser: a service worker serves Payload's REST API from IndexedDB.",
   "type": "module",
   "scripts": {
     "dev": "vp dev",
-    "build": "tsc && vp build",
-    "preview": "vp preview"
+    "build": "tsc -p tsconfig.json && vp build --base /shippy/",
+    "preview": "vp preview",
+    "check": "vp check",
+    "test": "vp test"
+  },
+  "dependencies": {
+    "golden-sea-payload-config": "workspace:*",
+    "qs-esm": "^8.0.2",
+    "saastemlycrm-design-system": "workspace:*"
   },
   "devDependencies": {
+    "@types/node": "^26.6.6",
+    "payload": "3.94.0",
     "typescript": "~7.0.2",
     "vite": "npm:@voidzero-dev/vite-plus-core@8.3.8000",
     "vite-plus": "1.7.0"

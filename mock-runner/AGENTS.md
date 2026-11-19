@@ -29,3 +29,23 @@ release. Add a tool name to select part of the graph. For example, run
 - [ ] If setup, runtime, or package-manager behavior looks wrong, run `vp env doctor` and include its output when asking for help.
 
 <!--VITE PLUS END-->
+
+# mock-runner
+
+Runs a Payload project's dashboard entirely in the browser, with nothing deployed: a service
+worker (`src/mock/sw.ts`, served as `<base>cms-sw.js` by `plugins/mock-backend.ts`) serves Payload's
+REST API from IndexedDB through a Payload-compatible engine (`src/mock/runtime`). `src/main.ts`
+starts the worker and hands the project (`golden-sea-payload-config`) to the dashboard with
+`startDashboard({ config, seedUsers, ready })`. A real deployment (Payload on D1 and Workers)
+replaces only this package: the design system and the project stay.
+
+- **Run:** `vp dev` (or `bun run dev` at the workspace root). `vp build` writes the demo site to
+  `../docs` (GitHub Pages, base `/shippy/`), with an offline precache.
+- **Seed:** loaded from the project's `./seed` on first run; seed documents and globals added later
+  are written into existing browsers once. `/api/_mock/export|import|reset` snapshot or reset.
+- **Not emulated:** drafts/versions, localization, `richText` (plain text), querying through
+  relationships (`author.name`), login with username, email flows, GraphQL.
+- **Tests** (`tests/`): the engine and REST API in Node with an in-memory store, every endpoint and
+  widget page of the project, and `template.test.ts`, which keeps the three packages in their roles.
+- **Assets:** `public/` holds the site's icons and the project's photos (`goldensea/`, `backgrounds/`).
+- **OpenAI key:** `index.html`'s `<meta name="openai-api-key">` stays empty in the repository.
