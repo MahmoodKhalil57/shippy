@@ -363,7 +363,10 @@ export class DashboardEditView extends LightElement {
   }
 
   render() {
-    if (this.loading) return html`<ui-flex justify="center" padding="8"><ui-loading></ui-loading></ui-flex>`;
+    if (this.loading)
+      return html`<ui-flex justify="center" padding="8"
+        ><ui-loading variant="morph" size="lg" color="primary"></ui-loading
+      ></ui-flex>`;
     const g = this.globalSlug ? globalOf(this.globalSlug) : undefined;
     const c = this.globalSlug ? undefined : collectionOf(this.slug)!;
     const collectionPerms = c ? this.access.collections[c.slug] : undefined;

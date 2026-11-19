@@ -30,6 +30,7 @@
           border-color var(--duration-effects-fast) var(--ease-effects-fast),
           outline-color var(--duration-effects-fast) var(--ease-effects-fast),
           box-shadow var(--duration-effects-fast) var(--ease-effects-fast),
+          border-radius var(--duration-spatial-fast) var(--ease-spatial-fast),
           transform var(--duration-spatial-fast) var(--ease-spatial-fast),
           translate var(--duration-spatial-fast) var(--ease-spatial-fast),
           scale var(--duration-spatial-fast) var(--ease-spatial-fast);

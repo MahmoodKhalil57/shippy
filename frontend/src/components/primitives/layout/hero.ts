@@ -67,7 +67,7 @@ export const heroText = rcva("", {
 export const heroOverlay = rcva("hero-overlay");
 export const heroHeading = rcva("text-5xl font-bold", { variants: { overImage: { true: "mb-5" } } });
 export const heroParagraph = rcva("", { variants: { overImage: { true: "mb-5", false: "py-6" } } });
-export const heroFigure = rcva("max-w-sm rounded-lg shadow-2xl");
+export const heroFigure = rcva("max-w-sm rounded-sm shadow-elevation-3");
 
 export type HeroVariants = VariantProps<typeof hero>;
 export type HeroContentVariants = VariantProps<typeof heroContent>;

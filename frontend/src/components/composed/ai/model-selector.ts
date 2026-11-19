@@ -59,7 +59,7 @@ export class UiModelSelector extends LightElement {
       align="start"
       panel="card"
       panel-width="64"
-      panel-shadow="lg"
+      panel-elevation="2"
       trigger-variant="ghost"
       trigger-size="xs"
       trigger-spaced="false"

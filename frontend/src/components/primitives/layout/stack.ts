@@ -45,15 +45,15 @@ export const stackLayer = rcva("", {
       /** Bordered card (docs "stacked cards"). */
       card: "card bg-base-100 border border-base-content text-center",
       /** Raised card (docs "stacked cards with shadow"). */
-      "card-raised": "card bg-base-100 shadow-md",
+      "card-raised": "card bg-base-100 shadow-elevation-1",
       /** Filled card (docs "stacked cards" with shadows). */
       "card-filled": "card bg-base-200 text-center",
       image: "rounded-box",
     },
-    shadow: {
-      sm: "shadow-sm",
-      md: "shadow-md",
-      base: "shadow",
+    /** M3 elevation of a layer. */
+    elevation: {
+      "1": "shadow-elevation-1",
+      "2": "shadow-elevation-2",
     },
   },
 });
@@ -88,11 +88,11 @@ export class UiStack extends LightElement {
       return html`<img
         src=${l.src}
         alt=${l.alt ?? ""}
-        class=${stackLayer({ look: l.look ?? "image", shadow: l.shadow })}
+        class=${stackLayer({ look: l.look ?? "image", elevation: l.elevation })}
       />`;
     }
     const isCard = typeof l.look === "string" && l.look.startsWith("card");
-    return html`<div class=${stackLayer({ look: l.look, shadow: l.shadow })}>
+    return html`<div class=${stackLayer({ look: l.look, elevation: l.elevation })}>
       ${
         isCard
           ? html`<div class=${stackLayerBody()}>

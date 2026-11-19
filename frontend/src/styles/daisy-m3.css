@@ -1,0 +1,29 @@
+/* daisyUI's components on Material Design 3's elevation (src/styles/theme.css): the scrims behind
+   modal surfaces. M3: "Scrims use the scrim color role at an opacity of 32%" (daisyUI uses 40%
+   black for dialogs and 40% for the drawer overlay). Same layer as src/styles/daisy-motion.css:
+   daisyUI's own top level, so these beat its rules and lose to any utility a primitive sets. */
+
+@layer utilities {
+  @layer daisyui {
+    .modal:popover-open,
+    .modal.modal-open,
+    .modal[open],
+    .modal:target,
+    .modal-toggle:checked + .modal,
+    .modal[popover]::backdrop {
+      background-color: color-mix(in oklab, var(--color-scrim) 32%, transparent);
+    }
+    .drawer-toggle:checked ~ .drawer-side > .drawer-overlay {
+      background-color: color-mix(in oklab, var(--color-scrim) 32%, transparent);
+    }
+  }
+}
+
+/* No built-in depth: daisyUI's `--depth: 1` gives every button, input and toggle a small shadow
+   and sheen. In M3, filled / tonal / outlined buttons, text fields and chips rest at level 0 —
+   they're set apart by colour, and rise only where a primitive asks (`shadow-elevation-*`).
+   Outside any layer, so it beats each daisyUI theme's own setting. */
+:root,
+[data-theme] {
+  --depth: 0;
+}

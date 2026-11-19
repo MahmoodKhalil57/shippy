@@ -44,7 +44,8 @@ export const dropdown = rcva("dropdown", {
 export const dropdownContent = rcva("dropdown-content z-50");
 
 /** Look of the panel, as in the daisyUI examples. */
-export const dropdownPanel = rcva("", {
+/** Nested corners inside the panel (its menu items) follow its own: `rounded-inner` (src/styles/theme.css). */
+export const dropdownPanel = rcva("[--outer-radius:var(--radius-box)] [--outer-padding:var(--space-100)]", {
   variants: {
     /** `menu` for item lists; `card` for free content (the docs' "Card as dropdown"). */
     kind: {
@@ -70,11 +71,11 @@ export const dropdownPanel = rcva("", {
       "2": "p-2",
       "4": "p-4",
     },
-    shadow: {
-      sm: "shadow-sm",
-      md: "shadow-md",
-      lg: "shadow-lg",
-      "2xl": "shadow-2xl",
+    /** M3 elevation: menus rest at +2 (the default); +3 for pickers that hold a task (date, search). */
+    elevation: {
+      "1": "shadow-elevation-1",
+      "2": "shadow-elevation-2",
+      "3": "shadow-elevation-3",
     },
     /** Gap between trigger and panel (the docs' navbar dropdown uses `mt-4`). */
     offset: {
@@ -142,8 +143,8 @@ export type DropdownMode = "focus" | "details" | "popover";
 
 /** Panel look per kind, from the docs examples. */
 const PANEL_DEFAULTS: Record<DropdownPanelKind, DropdownPanelVariants> = {
-  menu: { kind: "menu", surface: "glass", rounded: true, width: "52", padding: "2", shadow: "sm" },
-  card: { kind: "card", surface: "glass", width: "64", shadow: "md" },
+  menu: { kind: "menu", surface: "glass", rounded: true, width: "52", padding: "2", elevation: "2" },
+  card: { kind: "card", surface: "glass", width: "64", elevation: "2" },
   plain: {},
 };
 
@@ -200,7 +201,8 @@ export class UiDropdown extends LightElement {
   @property({ attribute: "panel-rounded", converter: responsiveBoolean }) panelRounded?: Responsive<boolean>;
   @property({ attribute: "panel-width" }) panelWidth: DropdownPanelVariants["width"];
   @property({ attribute: "panel-padding" }) panelPadding: DropdownPanelVariants["padding"];
-  @property({ attribute: "panel-shadow" }) panelShadow: DropdownPanelVariants["shadow"];
+  /** The panel's M3 elevation (default +2, as menus). */
+  @property({ attribute: "panel-elevation" }) panelElevation: DropdownPanelVariants["elevation"];
   @property({ attribute: "panel-offset" }) panelOffset: DropdownPanelVariants["offset"];
 
   @property({ attribute: false }) items: DropdownItem[] = [];
@@ -274,7 +276,7 @@ export class UiDropdown extends LightElement {
       width: this.panelWidth ?? d.width,
       // The docs' popover menu has no padding.
       padding: this.panelPadding ?? (popover ? undefined : d.padding),
-      shadow: this.panelShadow ?? d.shadow,
+      elevation: this.panelElevation ?? d.elevation,
       offset: this.panelOffset,
     });
   }

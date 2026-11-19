@@ -347,24 +347,24 @@ export class UiAppShell extends LightElement {
         <ui-frame-column
           side="start"
           .label=${this.navLabel}
-          ?open=${this.navOpen}
-          ?sheet=${this._navSheet}
+          .open=${this.navOpen}
+          .sheet=${this._navSheet}
           list-slot="nav"
           rail-slot="rail"
           footer-slot="nav-footer"
-          @ui-toggle=${(e: CustomEvent<{ open: boolean }>) => void this.toggleNav(e.detail.open)}
+          @ui-column-toggle=${(e: CustomEvent<{ open: boolean }>) => void this.toggleNav(e.detail.open)}
           >${this.slotted("nav")}${this.slotted("rail")}${this.slotted("nav-footer")}</ui-frame-column
         >
         <ui-frame-main>${this.slotted()}${this.slotted("footer")}</ui-frame-main>
         <ui-frame-column
           side="end"
           .label=${this.asideLabel}
-          ?open=${this.asideOpen}
-          ?sheet=${this._asideSheet}
+          .open=${this.asideOpen}
+          .sheet=${this._asideSheet}
           list-slot="aside"
           rail-slot="aside-rail"
           footer-slot="aside-footer"
-          @ui-toggle=${(e: CustomEvent<{ open: boolean }>) => void this.toggleAside(e.detail.open)}
+          @ui-column-toggle=${(e: CustomEvent<{ open: boolean }>) => void this.toggleAside(e.detail.open)}
           >${this.slotted("aside")}${this.slotted("aside-rail")}${this.slotted("aside-footer")}</ui-frame-column
         >
       </ui-frame-body>

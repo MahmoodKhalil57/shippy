@@ -261,7 +261,9 @@ export class DashboardHome extends LightElement {
     if (this.error) return html`<ui-alert color="error" variant="soft">${this.error}</ui-alert>`;
     const h = this.home;
     if (!h)
-      return html`<ui-flex justify="center" padding="8"><ui-loading size="lg" color="primary"></ui-loading></ui-flex>`;
+      return html`<ui-flex justify="center" padding="8"
+        ><ui-loading variant="morph" size="lg" color="primary"></ui-loading
+      ></ui-flex>`;
     return html`<ui-flex direction="col" gap="6">
       <ui-flex justify="between" align="end" gap="4" wrap>
         <ui-flex direction="col" gap="1" shrink>

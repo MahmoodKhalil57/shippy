@@ -22,7 +22,7 @@ export const hover3d = rcva("hover-3d", {
 });
 
 /** Rounded image figure used in the docs' image examples. */
-export const hover3dFigure = rcva("rounded-2xl", {
+export const hover3dFigure = rcva("rounded-lg", {
   variants: {
     /** `md`: the docs' single image (max-w-100). `sm`: the gallery images (w-60). */
     size: {

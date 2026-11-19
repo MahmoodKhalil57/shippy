@@ -107,8 +107,11 @@ export const menuLi = rcva("", {
   },
 });
 
-/** The `<a>` / `<button>` inside a menu `<li>` (and a submenu's `<summary>`). */
-export const menuLink = rcva("", {
+/**
+ * The `<a>` / `<button>` inside a menu `<li>` (and a submenu's `<summary>`). Its corners nest inside
+ * whatever panel holds the menu (`rounded-inner`: the panel's radius less its padding).
+ */
+export const menuLink = rcva("rounded-inner", {
   variants: {
     active: { true: "menu-active" },
     focus: { true: "menu-focus" },
@@ -118,12 +121,17 @@ export const menuLink = rcva("", {
      */
     anchor: {
       /** The highlight's target while its group is open. */
-      page: "[[open]_&]:[anchor-name:--menu-target]",
-      /**
-       * The group holding the active page: the highlight's target while the group is closed
-       * (or held shut), and drawn like the active item then, as in the rail.
+      /*
+       * The highlight's target while its group is open. Not while the group is still opening
+       * (`data-opening`, a moment set by the menu): its row isn't laid out yet, and the highlight
+       * would blink out and jump; the group's row keeps it until then, so it slides down instead.
        */
-      root: "[anchor-name:--menu-active-root] [:not([open])>&]:[anchor-name:--menu-active-root,--menu-target] [:not([open])>&]:text-primary [@container_style(--menu-expanded:0)]:text-primary [transition:color_var(--duration-effects)_var(--ease-effects)]",
+      page: "[details[open]:not([data-opening])_&]:[anchor-name:--menu-target]",
+      /**
+       * The group holding the active page: the highlight's target while the group is closed (or
+       * held shut, or still opening), and drawn like the active item then, as in the rail.
+       */
+      root: "[anchor-name:--menu-active-root] [details:not([open])>&]:[anchor-name:--menu-active-root,--menu-target] [details[data-opening]>&]:[anchor-name:--menu-active-root,--menu-target] [details:not([open])>&]:text-primary [@container_style(--menu-expanded:0)]:text-primary [transition:color_var(--duration-effects)_var(--ease-effects)]",
       both: "[anchor-name:--menu-active-root,--menu-target]",
     },
     /**
@@ -280,6 +288,39 @@ export class UiMenu extends LightElement {
   /** Keep the keyboard-focused item (`focus: true`, e.g. a palette's highlighted result) in view. */
   protected updated() {
     this.querySelector(".menu-focus")?.scrollIntoView({ block: "nearest" });
+    // The active page may have changed: the highlight has a new target.
+    this._follow();
+  }
+
+  #followUntil = 0;
+  #following = false;
+
+  /**
+   * The `nav` highlight is anchored to its target (CSS anchor positioning), but Chrome only
+   * re-resolves an anchored element's position when that element is laid out again — not when the
+   * anchor names move to another row (a group opening or closing, the page changing). So for a
+   * while after such a change (`ms`), nudge the highlight's layout every frame (a 0.001px margin,
+   * invisible): it then follows its target on its own spring, instead of staying put and jumping
+   * on some later layout.
+   */
+  private _follow(ms = 900) {
+    if (this.layout !== "nav" || this.panes) return;
+    this.#followUntil = performance.now() + ms;
+    if (this.#following) return;
+    this.#following = true;
+    let flip = false;
+    const tick = () => {
+      const highlight = this.querySelector<HTMLElement>("[data-menu-highlight]");
+      if (!highlight || !this.isConnected || performance.now() > this.#followUntil) {
+        highlight?.style.removeProperty("margin-top");
+        this.#following = false;
+        return;
+      }
+      flip = !flip;
+      highlight.style.marginTop = flip ? "0.001px" : "0px";
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
   }
 
   /** Open state of `js` submenus, keyed by item. */
@@ -354,6 +395,21 @@ export class UiMenu extends LightElement {
   }
 
   /** A `details` submenu opened or closed (by the user or `open`): fires `ui-toggle`. */
+  /**
+   * A group about to open (its summary clicked, before the browser opens it): marked
+   * `data-opening` for a moment (`--duration-short2`), so the highlight hands over from the group's
+   * row to the page's once that row is laid out (see `menuLink`'s `anchor`).
+   */
+  private _opening = (e: Event) => {
+    const details = (e.currentTarget as HTMLElement).parentElement;
+    if (!(details instanceof HTMLDetailsElement)) return;
+    this._follow();
+    if (details.open) return;
+    details.setAttribute("data-opening", "");
+    const ms = Number.parseFloat(getComputedStyle(details).getPropertyValue("--duration-short2")) || 100;
+    setTimeout(() => details.removeAttribute("data-opening"), ms);
+  };
+
   private _toggled(item: MenuItem, path: number[], e: Event) {
     const open = (e.currentTarget as HTMLDetailsElement).open;
     this.dispatchEvent(new CustomEvent("ui-toggle", { detail: { item, path, open }, bubbles: true }));
@@ -422,7 +478,9 @@ export class UiMenu extends LightElement {
 
     return html`<li class=${li}>
       <details ?open=${!!item.open} @toggle=${(e: Event) => this._toggled(item, path, e)}>
-        <summary class=${menuLink({ anchor: this._anchor(item, path) })}>${this._label(item)}</summary>
+        <summary class=${menuLink({ anchor: this._anchor(item, path) })} @click=${this._opening}>
+          ${this._label(item)}
+        </summary>
         <ul>
           ${this._list(item.children, path)}
         </ul>
@@ -451,7 +509,7 @@ export class UiMenu extends LightElement {
       })}
     >
       ${this.items.length ? this._list(this.items, []) : this.content}
-      ${this.layout === "nav" && !this.panes ? html`<li class=${menuIndicator()} role="presentation"></li>` : nothing}
+      ${this.layout === "nav" && !this.panes ? html`<li class=${menuIndicator()} role="presentation" data-menu-highlight></li>` : nothing}
     </ul>`;
   }
 }

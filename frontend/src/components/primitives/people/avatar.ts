@@ -37,8 +37,8 @@ export const avatarImage = rcva("", {
       /** No rounding (the docs' group / placeholder examples). */
       square: "",
       circle: "rounded-full",
-      rounded: "rounded",
-      "rounded-xl": "rounded-xl",
+      rounded: "rounded-xs",
+      "rounded-xl": "rounded-md",
       squircle: "mask mask-squircle",
       hexagon: "mask mask-hexagon-2",
       triangle: "mask mask-triangle",

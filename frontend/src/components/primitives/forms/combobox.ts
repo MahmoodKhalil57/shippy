@@ -38,11 +38,11 @@ export const comboboxClear = rcva(
 );
 /** The options: a glass popover under the field, growing down from it (M3 enter / exit). */
 export const comboboxList = rcva(
-  "liquid-glass m-0 mt-1 max-h-72 w-[anchor-size(width)] min-w-48 origin-top overflow-y-auto overscroll-contain rounded-box p-1 text-sm [position-area:bottom_span-right] [position-try-fallbacks:flip-block] scale-y-90 opacity-0 open:scale-y-100 open:opacity-100 [transition:opacity_var(--duration-short2)_var(--ease-emphasized-accelerate),scale_var(--duration-short3)_var(--ease-emphasized-accelerate),display_var(--duration-short3)_allow-discrete,overlay_var(--duration-short3)_allow-discrete] open:[transition:opacity_var(--duration-short3)_var(--ease-emphasized-decelerate),scale_var(--duration-medium1)_var(--ease-emphasized-decelerate),display_var(--duration-medium1)_allow-discrete,overlay_var(--duration-medium1)_allow-discrete] starting:open:scale-y-90 starting:open:opacity-0 motion-reduce:scale-y-100 [--scrollbar-inset:var(--radius-box)]",
+  "liquid-glass [--outer-radius:var(--radius-box)] [--outer-padding:var(--space-50)] shadow-elevation-2 m-0 mt-1 max-h-72 w-[anchor-size(width)] min-w-48 origin-top overflow-y-auto overscroll-contain rounded-box p-1 text-sm [position-area:bottom_span-right] [position-try-fallbacks:flip-block] scale-y-90 opacity-0 open:scale-y-100 open:opacity-100 [transition:opacity_var(--duration-short2)_var(--ease-emphasized-accelerate),scale_var(--duration-short3)_var(--ease-emphasized-accelerate),display_var(--duration-short3)_allow-discrete,overlay_var(--duration-short3)_allow-discrete] open:[transition:opacity_var(--duration-short3)_var(--ease-emphasized-decelerate),scale_var(--duration-medium1)_var(--ease-emphasized-decelerate),display_var(--duration-medium1)_allow-discrete,overlay_var(--duration-medium1)_allow-discrete] starting:open:scale-y-90 starting:open:opacity-0 motion-reduce:scale-y-100 [--scrollbar-inset:var(--radius-box)]",
 );
 export const comboboxGroup = rcva("px-3 pt-2 pb-1 text-xs font-semibold text-base-content/75");
 export const comboboxOption = rcva(
-  "flex cursor-pointer items-start gap-2 rounded-field px-3 py-1.5 [transition:background-color_var(--duration-effects-fast)_var(--ease-effects-fast)]",
+  "flex cursor-pointer items-start gap-2 rounded-inner px-3 py-1.5 [transition:background-color_var(--duration-effects-fast)_var(--ease-effects-fast)]",
   {
     variants: {
       active: { true: "bg-base-content/10" },

@@ -22,7 +22,7 @@ import { iconSvg } from "../media/icon.ts";
  */
 export const coachmark = rcva("contents [&>*]:z-[60]");
 export const coachmarkSpot = rcva(
-  "pointer-events-none fixed rounded-box shadow-[0_0_0_200vmax_color-mix(in_oklab,var(--color-neutral)_45%,transparent)] ring-2 ring-primary [transition:top_var(--duration-spatial)_var(--ease-spatial),left_var(--duration-spatial)_var(--ease-spatial),width_var(--duration-spatial)_var(--ease-spatial),height_var(--duration-spatial)_var(--ease-spatial)] motion-reduce:transition-none top-(--top) left-(--left) h-(--h) w-(--w)",
+  "pointer-events-none fixed rounded-box scrim-cutout ring-2 ring-primary [transition:top_var(--duration-spatial)_var(--ease-spatial),left_var(--duration-spatial)_var(--ease-spatial),width_var(--duration-spatial)_var(--ease-spatial),height_var(--duration-spatial)_var(--ease-spatial)] motion-reduce:transition-none top-(--top) left-(--left) h-(--h) w-(--w)",
 );
 export const coachmarkCard = rcva(
   "liquid-glass pointer-events-auto fixed flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-2 rounded-box p-4 text-base-content [transition:top_var(--duration-spatial)_var(--ease-spatial),left_var(--duration-spatial)_var(--ease-spatial),opacity_var(--duration-effects)_var(--ease-effects)] motion-reduce:transition-none top-(--top) left-(--left) starting:opacity-0",

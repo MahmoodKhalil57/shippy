@@ -44,7 +44,8 @@ export const card = rcva("card [&_p]:grow-0", {
       accent: "bg-accent text-accent-content",
       none: "",
     },
-    shadow: { true: "shadow-sm" },
+    /** M3's elevated card: +1 at rest (filled and outlined cards — `shadow="false"` — sit at 0). */
+    shadow: { true: "shadow-elevation-1" },
     /** Fixed width used throughout the docs (`w-96`), or full width. */
     width: {
       "96": "w-96",
@@ -54,7 +55,7 @@ export const card = rcva("card [&_p]:grow-0", {
     joinItem: { true: "join-item" },
     /** The whole card is a link (`href`): it lifts on hover with a spring, and shows focus. */
     link: {
-      true: "[transition:translate_var(--duration-spatial-fast)_var(--ease-spatial-fast),box-shadow_var(--duration-effects-fast)_var(--ease-effects-fast),outline-color_var(--duration-effects-fast)_var(--ease-effects-fast)] hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary motion-reduce:transition-none",
+      true: "[transition:translate_var(--duration-spatial-fast)_var(--ease-spatial-fast),box-shadow_var(--duration-effects-fast)_var(--ease-effects-fast),outline-color_var(--duration-effects-fast)_var(--ease-effects-fast)] hover:-translate-y-0.5 hover:shadow-elevation-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary motion-reduce:transition-none",
     },
   },
   defaultVariants: { color: "base", shadow: true },
@@ -81,7 +82,7 @@ export const cardActions = rcva("card-actions", {
 /** Figure wrapper; `padded` matches the "centered content and paddings" example. */
 export const cardFigure = rcva("", {
   variants: {
-    padded: { true: "px-10 pt-10 [&>img]:rounded-xl" },
+    padded: { true: "px-10 pt-10 [&>img]:rounded-md" },
   },
 });
 

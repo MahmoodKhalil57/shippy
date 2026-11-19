@@ -169,7 +169,7 @@ export class UiThemeController extends LightElement {
           <ul
             tabindex="-1"
             class=${dropdownContent({
-              class: dropdownPanel({ surface: "base-300", rounded: true, width: "52", padding: "2", shadow: "2xl" }),
+              class: dropdownPanel({ surface: "base-300", rounded: true, width: "52", padding: "2", elevation: "2" }),
             })}
           >
             ${this.themes.map((t) => html`<li>${this._choice(t, false)}</li>`)}

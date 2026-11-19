@@ -396,7 +396,9 @@ export class GsAutomations extends LightElement implements ViewProps {
     if (this.error) return html`<ui-alert color="error" variant="soft">${this.error}</ui-alert>`;
     const d = this.data;
     if (!d)
-      return html`<ui-flex justify="center" padding="8"><ui-loading size="lg" color="primary"></ui-loading></ui-flex>`;
+      return html`<ui-flex justify="center" padding="8"
+        ><ui-loading variant="morph" size="lg" color="primary"></ui-loading
+      ></ui-flex>`;
     return html`<ui-flex direction="col" gap="6">
       ${this._header()} ${this._tiles(d)}
       <ui-grid fit="lg" gap="6" align="start">${this._exceptions(d)} ${this._review(d)}</ui-grid>

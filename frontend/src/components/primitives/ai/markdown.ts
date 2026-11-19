@@ -19,7 +19,7 @@ export const markdownHeading = rcva("font-semibold text-base-content", {
 export const markdownList = rcva("flex flex-col gap-1 ps-5", {
   variants: { ordered: { true: "list-decimal", false: "list-disc" } },
 });
-export const markdownCode = rcva("rounded-sm bg-base-content/10 px-1 py-0.5 font-mono text-[0.8125em]");
+export const markdownCode = rcva("rounded-xs bg-base-content/10 px-1 py-0.5 font-mono text-[0.8125em]");
 export const markdownPre = rcva(
   "overflow-x-auto rounded-field bg-base-300 p-3 font-mono text-xs leading-normal whitespace-pre [--scrollbar-inset:var(--radius-field)]",
 );

@@ -20,7 +20,7 @@ import { button } from "../actions/button.ts";
 export const list = rcva("list", {
   variants: {
     /** Card look used in the docs examples. */
-    framed: { true: "bg-base-100 rounded-box shadow-md" },
+    framed: { true: "bg-base-100 rounded-box shadow-elevation-1" },
     /** The docs wrap lists in `w-full max-w-lg`. */
     width: {
       full: "w-full",

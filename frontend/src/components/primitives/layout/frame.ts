@@ -20,7 +20,7 @@ import { iconSvg, type IconName } from "../media/icon.ts";
  * - `<ui-frame-header>`: brand, `slot="start"`, `slot="search"`, `slot="actions"`; the parts over
  *   an open sheet are lifted above it (`lift-start`, `lift-end`).
  * - `<ui-frame-body>`: the row of columns and the main panel.
- * - `<ui-frame-column>`: a side column — its toggle (`ui-toggle`), its open list and its rail
+ * - `<ui-frame-column>`: a side column — its toggle (`ui-column-toggle`), its open list and its rail
  *   stacked, a footer, and its backdrop when it's a sheet. Its states (`open`, `sheet`) animate
  *   in two steps on M3's springs (src/styles/motion.css): groups collapse, then the column folds.
  * - `<ui-frame-main>`: the main panel (a size container, `@container/main`) and `slot="footer"`
@@ -152,19 +152,19 @@ export const appShellPanel = rcva(
         sheet: true,
         open: true,
         class:
-          "fixed inset-y-0 z-40 max-w-full liquid-glass pt-16 pb-(--frame-edge) shadow-2xl [transition:width_var(--duration-spatial)_var(--ease-spatial),position_0s_allow-discrete,z-index_0s_allow-discrete]",
+          "fixed inset-y-0 z-40 max-w-full liquid-glass pt-16 pb-(--frame-edge) shadow-elevation-1 [transition:width_var(--duration-spatial)_var(--ease-spatial),position_0s_allow-discrete,z-index_0s_allow-discrete]",
       },
       {
         sheet: true,
         open: true,
         side: "start",
-        class: "start-0 ms-0 w-[calc(18rem_+_var(--frame-edge))] rounded-e-[2rem]",
+        class: "start-0 ms-0 w-[calc(18rem_+_var(--frame-edge))] rounded-e-xl-increased",
       },
       {
         sheet: true,
         open: true,
         side: "end",
-        class: "end-0 me-0 w-[calc(20rem_+_var(--frame-edge))] rounded-s-[2rem]",
+        class: "end-0 me-0 w-[calc(20rem_+_var(--frame-edge))] rounded-s-xl-increased",
       },
       /*
        * Closing a sheet: it stays a sheet (fixed, pinned, full height, background, shadow — every
@@ -189,8 +189,11 @@ export const appShellMain = rcva(
    * 2×2 gaps − 2×2 edges). A size container (`main`), so pages size themselves to the panel
    * (container units, container queries), not to the window. Its scrollbar stays inside the
    * rounded corners (`--scrollbar-inset`, src/index.css).
+   * A 2px inset all round (a transparent border, not padding: a scroll container clips its content
+   * at the padding edge, so the gap stays while the page scrolls instead of scrolling away), so
+   * content never runs into the panel's rim.
    */
-  "@container/main min-h-0 flex-1 overflow-x-clip overflow-y-auto overscroll-contain rounded-(--main-radius) liquid-glass-surface [--main-radius:clamp(1rem,3vw,2rem)] [--scrollbar-inset:var(--main-radius)]",
+  "@container/main min-h-0 flex-1 overflow-x-clip overflow-y-auto overscroll-contain border-2 border-transparent rounded-(--main-radius) liquid-glass-surface [--main-radius:clamp(var(--radius-lg),3vw,var(--radius-xl-increased))] [--scrollbar-inset:var(--main-radius)]",
 );
 
 /** The page inside the main panel: the box a page transition moves (see `pageTransition`). */
@@ -215,9 +218,9 @@ export const appShellToggle = rcva("shrink-0", {
   },
 });
 
-/** Dims the page behind a sheet (lightly: the sheet's glass already sets it apart). */
+/** Dims the page behind a sheet: M3's scrim (the scrim role at 32%). */
 export const appShellBackdrop = rcva(
-  "fixed inset-0 z-30 bg-neutral/30 transition-opacity ease-effects duration-(--duration-effects) starting:opacity-0 motion-reduce:transition-none",
+  "fixed inset-0 z-30 bg-scrim/32 transition-opacity ease-effects duration-(--duration-effects) starting:opacity-0 motion-reduce:transition-none",
 );
 
 /**
@@ -372,7 +375,8 @@ export class UiFrameBody extends LightElement {
  *
  * `list-slot` / `rail-slot` / `footer-slot` rename its slots (default `list`, `rail`, `footer`),
  * so a shell can pass its own authored children straight through. The toggle and the backdrop fire
- * `ui-toggle` { open } with the state asked for.
+ * `ui-column-toggle` { open } with the state asked for. (Not `ui-toggle`: that's what a menu inside
+ * fires when one of its sections opens or closes, and it bubbles through the column.)
  */
 @customElement("ui-frame-column")
 export class UiFrameColumn extends LightElement {
@@ -400,7 +404,7 @@ export class UiFrameColumn extends LightElement {
   }
 
   private _ask(open: boolean) {
-    this.dispatchEvent(new CustomEvent("ui-toggle", { detail: { open }, bubbles: true }));
+    this.dispatchEvent(new CustomEvent("ui-column-toggle", { detail: { open } }));
   }
 
   render() {

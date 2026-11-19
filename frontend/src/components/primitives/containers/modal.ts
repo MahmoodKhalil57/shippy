@@ -37,7 +37,8 @@ export const modal = rcva("modal", {
  * The box is glass (it floats above the page; src/styles/theme.css) and pops in on M3's
  * expressive fast spatial spring (a little bounce), fading on the effects spring.
  */
-export const modalBox = rcva("modal-box liquid-glass motion-reduce:transition-none", {
+/** A dialog: M3 elevation +3, over a 32% scrim (src/styles/daisy-m3.css). */
+export const modalBox = rcva("modal-box liquid-glass shadow-elevation-3 motion-reduce:transition-none", {
   variants: {
     /** Box width ("dialog modal with custom width"). Default: daisyUI's. */
     width: {

@@ -74,7 +74,7 @@ export const text = rcva("", {
     /** Keep the text's own line breaks and wrap long words (messages, generated answers). */
     "pre-line": { true: "whitespace-pre-line [overflow-wrap:anywhere]" },
     /** A search match inside a result (with `as="mark"`). */
-    highlight: { true: "rounded-sm bg-primary/20 px-0.5 text-primary" },
+    highlight: { true: "rounded-xs bg-primary/20 px-0.5 text-primary" },
   },
 });
 

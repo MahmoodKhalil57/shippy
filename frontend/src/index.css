@@ -12,6 +12,8 @@
 @import "./styles/schemes.css";
 /* daisyUI's components on M3 motion. */
 @import "./styles/daisy-motion.css";
+/* daisyUI's scrims on M3 elevation. */
+@import "./styles/daisy-m3.css";
 
 @layer base {
   /* Reduce motion (M3: subtle fades instead of sliding or scaling): everything that moves or

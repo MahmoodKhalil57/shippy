@@ -21,11 +21,11 @@ export { auditContrast, type ContrastIssue } from "../../base/contrast.ts";
  * command palette's "Check colour contrast"), or by adding `?audit` to the URL.
  */
 export const contrastAuditBox = rcva(
-  "pointer-events-none fixed z-[70] rounded-sm ring-2 ring-error ring-offset-1 ring-offset-base-100 top-(--top) left-(--left) h-(--h) w-(--w)",
+  "pointer-events-none fixed z-[70] rounded-xs ring-2 ring-error ring-offset-1 ring-offset-base-100 top-(--top) left-(--left) h-(--h) w-(--w)",
   { variants: { focus: { true: "ring-4 animate-pulse motion-reduce:animate-none" } } },
 );
 export const contrastAuditLabel = rcva(
-  "absolute -top-2 left-0 -translate-y-full rounded-sm bg-error px-1 text-[0.625rem] leading-4 font-semibold whitespace-nowrap text-error-content",
+  "absolute -top-2 left-0 -translate-y-full rounded-xs bg-error px-1 text-[0.625rem] leading-4 font-semibold whitespace-nowrap text-error-content",
 );
 export const contrastAuditPanel = rcva(
   "liquid-glass fixed bottom-4 left-4 z-[71] flex max-h-[min(28rem,60dvh)] w-[min(26rem,calc(100vw-2rem))] flex-col gap-2 rounded-box p-3 text-sm",

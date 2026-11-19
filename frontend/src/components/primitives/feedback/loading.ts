@@ -19,6 +19,13 @@ export const loading = rcva("loading", {
       ball: "loading-ball",
       bars: "loading-bars",
       infinity: "loading-infinity",
+      /**
+       * M3 Expressive's loading indicator: a shape turning and morphing (circle, lobes, rounded
+       * square) on the expressive spatial spring — for waits of a few seconds (a page loading).
+       * With Reduce motion, a pulsing circle.
+       */
+      morph:
+        "[mask-image:none]! rounded-full bg-current [animation:m3-morph_calc(var(--duration-spatial)*4)_infinite] motion-reduce:[animation:m3-pulse_var(--duration-extra-long4)_var(--ease-standard)_infinite]",
     },
     size: {
       xs: "loading-xs",
@@ -46,6 +53,7 @@ export type LoadingVariants = VariantProps<typeof loading>;
 
 /**
  * @example <ui-loading variant="dots" size="lg" color="primary"></ui-loading>
+ * @example <ui-loading variant="morph" size="lg" color="primary" label="Loading the page"></ui-loading>
  *
  * Children are ignored. `label` is announced to screen readers.
  */

@@ -42,7 +42,7 @@ export const footer = rcva("footer", {
     },
     /** Top border (docs "Two footer"). */
     border: { true: "border-base-300 border-t" },
-    rounded: { true: "rounded" },
+    rounded: { true: "rounded-xs" },
     /** Vertically center the sections (docs "copyright text and social icons"). */
     centerItems: { true: "items-center" },
     /** Two rows of columns (docs "Footer with 2 rows"). */

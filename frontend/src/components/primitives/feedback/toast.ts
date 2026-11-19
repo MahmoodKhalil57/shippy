@@ -19,7 +19,7 @@ import { alert, alertDismiss, alertIconSvg, type AlertVariants } from "./alert.t
  * status shown by the icon's colour rather than a solid fill.
  */
 export const toast = rcva(
-  "toast z-50 [&>.alert]:liquid-glass [&>.alert]:border-transparent [&>.alert]:text-base-content [&>.alert>svg]:text-(--alert-color)",
+  "toast z-50 [&>.alert]:liquid-glass [&>.alert]:shadow-elevation-3 [&>.alert]:border-transparent [&>.alert]:text-base-content [&>.alert>svg]:text-(--alert-color)",
   {
     variants: {
       /** Horizontal placement. */

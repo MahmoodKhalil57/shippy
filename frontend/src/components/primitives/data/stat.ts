@@ -22,7 +22,7 @@ export const stats = rcva("stats", {
       horizontal: "stats-horizontal",
       vertical: "stats-vertical",
     },
-    shadow: { true: "shadow" },
+    shadow: { true: "shadow-elevation-1" },
     /** Background + border ("With custom colors and button"). */
     surface: { true: "bg-base-100 border border-base-300" },
   },

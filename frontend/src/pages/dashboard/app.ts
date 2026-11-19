@@ -278,7 +278,7 @@ export class DashboardApp extends LightElement {
       align="start"
       panel="card"
       panel-width="72"
-      panel-shadow="lg"
+      panel-elevation="2"
       trigger-variant="ghost"
       trigger-shape="circle"
       trigger-spaced="false"
@@ -432,7 +432,9 @@ export class DashboardApp extends LightElement {
       </ui-container>`;
     }
     if (!this.ready) {
-      return html`<ui-flex justify="center" padding="16"><ui-loading size="lg"></ui-loading></ui-flex>`;
+      return html`<ui-flex justify="center" padding="16"
+        ><ui-loading variant="morph" size="lg" color="primary"></ui-loading
+      ></ui-flex>`;
     }
     const toaster = html`<ui-toast position="top" align="end"></ui-toast>`;
     if (!this.user) {
@@ -484,7 +486,7 @@ export class DashboardApp extends LightElement {
           <ui-dropdown
             align="end"
             panel="card"
-            panel-shadow="lg"
+            panel-elevation="2"
             trigger-variant="ghost"
             trigger-shape="circle"
             trigger-spaced="false"

@@ -44,13 +44,12 @@ export const box = rcva("", {
       box: "rounded-box",
       full: "rounded-full",
     },
-    shadow: {
-      none: "shadow-none",
-      sm: "shadow-sm",
-      md: "shadow-md",
-      lg: "shadow-lg",
-      xl: "shadow-xl",
-      "2xl": "shadow-2xl",
+    /** M3 elevation: 0 (none) to +3 at rest; +4 / +5 are for hover and drag only. */
+    elevation: {
+      "0": "shadow-none",
+      "1": "shadow-elevation-1",
+      "2": "shadow-elevation-2",
+      "3": "shadow-elevation-3",
     },
     padding: {
       /** Scales with the window: 1rem → 4rem. */
@@ -130,7 +129,7 @@ export type BoxTag = keyof typeof BOX_TAGS;
 
 /**
  * @example <ui-box surface="base-100" border rounded="box" padding="4">…</ui-box>
- * @example <ui-box surface="base-200" padding="4 md:8" width="full md:96" shadow="sm">…</ui-box>
+ * @example <ui-box surface="base-200" padding="4 md:8" width="full md:96" elevation="1">…</ui-box>
  * @example <ui-box height="64" center surface="base-300" rounded="box">Centered</ui-box>
  * @example <ui-flex wrap gap="4"><ui-box basis="50%" grow>…</ui-box><ui-box basis="25%" grow>…</ui-box></ui-flex>
  */
@@ -140,7 +139,7 @@ export class UiBox extends LightElement {
   @property() surface: BoxVariants["surface"];
   @property({ converter: responsiveBoolean }) border: Responsive<boolean> = false;
   @property() rounded: BoxVariants["rounded"];
-  @property() shadow: BoxVariants["shadow"];
+  @property() elevation: BoxVariants["elevation"];
   @property() padding: BoxVariants["padding"];
   @property() width: BoxVariants["width"];
   @property() max: BoxVariants["max"];
@@ -162,7 +161,7 @@ export class UiBox extends LightElement {
       surface: this.surface,
       border: this.border,
       rounded: this.rounded,
-      shadow: this.shadow,
+      elevation: this.elevation,
       padding: this.padding,
       width: this.width,
       max: this.max,

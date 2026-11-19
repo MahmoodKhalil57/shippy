@@ -131,3 +131,19 @@ The forms render every Payload field type (payloadcms.com/docs/fields/overview) 
   - `<ui-frame-column>`: a side column with its toggle, its list and rail stack, its footer and its sheet backdrop.
   - `<ui-frame-main>`: the glass panel and the page footer; it plays the page transitions.
 - **Appearance:** the header's theme, colour-scheme and background controls are `<ui-appearance kind="theme|scheme|background">` (composed). The document-level changes and the circular reveal are in `src/components/base/appearance.ts`. `<ui-theme-controller>` keeps only daisyUI's pure-CSS modes (toggle, checkbox, swap, radio, buttons, dropdown).
+
+## Elevation, shape and spacing (Material Design 3)
+
+The tokens are in `src/styles/theme.css`. `tests/m3-tokens.test.ts` rejects anything off the scales in a primitive's classes.
+
+- **Spacing:** M3's dp scale, on a 4px Tailwind unit. The steps are `0.5` (2), `1` (4), `1.5` (6), `2` (8), `2.5` (10), `3` (12), `3.5` (14), `4` (16), `5` (20), `6` (24), `8` (32), `9` (36), `10` (40), `12` (48), `14` (56), `16` (64) and `18` (72). It's in px, so spacing stays the same when text is scaled up. Arbitrary values use the `--space-*` tokens (M3's names, e.g. `--space-300` is 24dp) or a fluid `clamp()`.
+- **Shape:** M3's corner scale: `rounded-none`, `-xs` (4), `-sm` (8), `-md` (12), `-lg` (16), `-lg-increased` (20), `-xl` (28), `-xl-increased` (32), `-2xl` (48) and `-full`. The colour scheme's role radii (`rounded-field`, `-box`, `-selector`) are the scheme's choices.
+- **Nested corners:** use `rounded-inner` (M3's optical roundness: inner radius = outer radius − padding). A container sets `--outer-radius` and `--outer-padding`. Dropdown panels, combobox lists and menu items already do.
+- **Elevation:** `shadow-elevation-1` … `-5` (M3's levels +1 … +5), or `shadow-none`.
+  - At rest, use 0 to +3; +4 and +5 are only for hover and drag. Hovered, a component rises one level.
+  - Mapping: cards +1 (rising to +2 on hover), menus and popovers +2 (the glass panels' default), dialogs, FABs, snackbars, date pickers and the jump-to-latest button +3, sheets +1 over a scrim.
+  - Separation comes from surface tones first. daisyUI's `--depth` is off, so buttons and fields rest at 0.
+- **Scrims:** the scrim role at 32%: `bg-scrim/32` (sheet backdrops), dialogs (`src/styles/daisy-m3.css`), and `scrim-cutout` for a spotlight.
+- **Shape morph:** M3's shape library has no web version, so morphs are border-radius ones on the expressive springs.
+  - Pressed, a button squares its corners (to at most `sm`; a round icon button to `md`) and springs back. A selected round button stays at `md`.
+  - `<ui-loading variant="morph">` is M3 Expressive's loading indicator, for page-level waits.

@@ -158,7 +158,7 @@ export class UiFab extends LightElement {
       </section>
       <button
         type="button"
-        class=${button({ size: this.size, color: this.color, shape: "circle", class: "shadow-lg" })}
+        class=${button({ size: this.size, color: this.color, shape: "circle", class: "shadow-elevation-3 hover:shadow-elevation-4" })}
         aria-label=${ifDefined(this.triggerLabel)}
         aria-expanded=${this.open ? "true" : "false"}
         @click=${() => this._toggle()}
