@@ -2,6 +2,7 @@ import type { Endpoint, PayloadRequest } from "payload";
 import { idOf, logActivity } from "../collections/shared.ts";
 import type { Doc } from "saastemlycrm-design-system/contracts";
 import { DEMO_NOW } from "./home.ts";
+import * as link from "../links.ts";
 
 /**
  * Root endpoints for: Offer comparison, pricing, quotations, approvals. Registered in ./index.ts.
@@ -1299,7 +1300,7 @@ async function approvalCard(req: PayloadRequest, a: Doc, users: Map<string, Doc>
   const links: ApprovalCard["links"] = [];
   const caseId = idOf(a.case);
   const c = caseId ? await one(req, "cases", caseId) : null;
-  if (c) links.push({ label: `Open ${str(c.caseId)}`, href: `/collections/cases/${c.id}/overview` });
+  if (c) links.push({ label: `Open ${str(c.caseId)}`, href: link.doc("cases", c.id, "overview") });
   const type = str(a.type);
   const sales = str(me?.role) === "sales";
   if (/quotation|discount/i.test(type)) {
@@ -1333,8 +1334,8 @@ async function approvalCard(req: PayloadRequest, a: Doc, users: Map<string, Doc>
       }
       if (internal.exceptions && !sales)
         evidence.push({ label: "Exceptions", value: internal.exceptions, tone: "warning" });
-      links.push({ label: "Preview quotation", href: `/collections/quotations/${q.id}/preview` });
-      if (!sales && c) links.push({ label: "Pricing", href: `/collections/cases/${c.id}/pricing` });
+      links.push({ label: "Preview quotation", href: link.doc("quotations", q.id, "preview") });
+      if (!sales && c) links.push({ label: "Pricing", href: link.doc("cases", c.id, "pricing") });
     }
   } else if (type === "Exchange rate") {
     const fx = await fxRates(req);
@@ -1359,7 +1360,7 @@ async function approvalCard(req: PayloadRequest, a: Doc, users: Map<string, Doc>
       label: "Open quotations re-checked",
       value: `${open.length} (prices in USD stay as approved; EGP costs move)`,
     });
-    links.push({ label: "Exchange rates", href: "/globals/fx-rates" });
+    links.push({ label: "Exchange rates", href: link.global("fx-rates") });
   } else if (type === "Bank detail change") {
     evidence.push({ label: "Supplier", value: "Port Said Welding Co. (S3) · approved supplier since 2019" });
     evidence.push({
@@ -1373,7 +1374,7 @@ async function approvalCard(req: PayloadRequest, a: Doc, users: Map<string, Doc>
       value: "Two people: finance + CEO. Payments to S3 on hold until both approve.",
       tone: "info",
     });
-    links.push({ label: "Supplier record", href: "/collections/suppliers/S3" });
+    links.push({ label: "Supplier record", href: link.doc("suppliers", "S3") });
   } else if (/deposit|payment/i.test(type)) {
     const pos = caseId ? await all(req, "purchase-orders", { case: { equals: caseId } }) : [];
     const po = pos[0];
@@ -1391,7 +1392,7 @@ async function approvalCard(req: PayloadRequest, a: Doc, users: Map<string, Doc>
         label: "Pro forma",
         value: `${str(side.proforma) || "attached"} · deposit ${num(side.depositPct, 50)}%`,
       });
-      links.push({ label: `PO ${str(po.number)}`, href: `/collections/purchase-orders/${po.id}` });
+      links.push({ label: `PO ${str(po.number)}`, href: link.doc("purchase-orders", po.id) });
     }
     evidence.push({ label: "Bank details", value: "Unchanged since 2025 — no call-back needed", tone: "success" });
   } else if (/alternative/i.test(type)) {

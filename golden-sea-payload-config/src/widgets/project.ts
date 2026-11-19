@@ -1,7 +1,8 @@
 import { block, note, type Action, type Tone } from "saastemlycrm-design-system/contracts";
-import { widgets, type Source, type Widget } from "saastemlycrm-design-system/contracts";
+import { from, widgets, type Source } from "saastemlycrm-design-system/contracts";
 import type { ProjectView } from "../endpoints/platform.ts";
 import { formatDate } from "./format.ts";
+import * as link from "../links.ts";
 
 /**
  * The delivery plan (/project), for Golden Sea: phases and work packages, each with the demo
@@ -13,12 +14,12 @@ import { formatDate } from "./format.ts";
 
 const plan: Source = { endpoint: "/project" };
 /** A widget drawn from the plan (one request, however many widgets use it). */
-const on = (w: Widget<ProjectView>): Widget<ProjectView> => ({ source: plan, ...w });
+const on = from<ProjectView>(plan);
 
 const PHASE_TONE: Record<string, Tone> = { 0: "neutral", 1: "primary", 2: "info", 3: "success" };
 const WEEKS = Array.from({ length: 13 }, (_, i) => `W${i + 1}`);
 
-const see = (href: string, label = "See it in the demo"): Action[] => (href ? [{ label, href, variant: "tonal" }] : []);
+const see = (href: string, label = "Open in demo"): Action[] => (href ? [{ label, href }] : []);
 const two = (i: number) => String(i + 1).padStart(2, "0");
 const passing = (d: ProjectView) => d.acceptance.filter((a) => a.pass).length;
 
@@ -59,7 +60,6 @@ const roadmap = on({
 const phases = on({
   render: (d) =>
     block("grid", {
-      fit: "md",
       blocks: d.phases.map((p) =>
         block("card", {
           heading: p.name,
@@ -215,19 +215,9 @@ export const projectPage = widgets({
     subtitle:
       "Four phases over 13 weeks, each shown in this demo. Every requirement from your brief is covered and proven by an acceptance test before the final payment.",
     actions: [
-      { label: "Start at the inbox", href: "/inbox", variant: "filled" },
-      { label: "Follow one case", href: "/collections/cases/gs-rfq-0142/overview" },
+      { label: "Start at the inbox", href: "/inbox", main: true },
+      { label: "Follow one case", href: link.doc("cases", "gs-rfq-0142", "overview") },
     ],
   },
-  widgets: [
-    milestones,
-    roadmap,
-    phases,
-    platform,
-    problems,
-    brief,
-    acceptance,
-    trust,
-    { grid: [monthly, payment], fit: "md" },
-  ],
+  widgets: [milestones, roadmap, phases, platform, problems, brief, acceptance, trust, { grid: [monthly, payment] }],
 });

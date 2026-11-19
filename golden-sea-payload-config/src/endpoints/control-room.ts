@@ -2,6 +2,7 @@ import type { Endpoint } from "payload";
 import type { Doc } from "saastemlycrm-design-system/contracts";
 import { history as H } from "./history.ts";
 import { MONEY_ROLES, NOW, all, docHref, idOf, meOf, num, str, unauthorized } from "./insights-shared.ts";
+import * as link from "../links.ts";
 
 /**
  * GET /api/control-room?period=4w|12w|6m — the management dashboards: pipeline & conversion,
@@ -110,7 +111,7 @@ export function controlRoom(
       label: "Open RFQs",
       value: String(live.length),
       note: `${live.filter((c) => c.urgent || c.tone === "danger").length} blocked or urgent`,
-      href: "/collections/cases",
+      href: link.list("cases"),
       trend: { labels: weeks, values: wk(H.inquiries), unit: "count" },
     },
     {
@@ -131,7 +132,7 @@ export function controlRoom(
       value: String(waitingSuppliers),
       note: `${rfqsOpen.length} supplier RFQ${rfqsOpen.length === 1 ? "" : "s"} without a full reply`,
       tone: waitingSuppliers ? "warning" : undefined,
-      href: "/collections/supplier-rfqs",
+      href: link.list("supplier-rfqs"),
       trend: { labels: H.weeks.slice(-nw), values: wk(H.waitTrend["Awaiting supplier"] ?? []), unit: "count" },
     },
   ];
@@ -147,7 +148,7 @@ export function controlRoom(
         label: "Receivables open",
         value: `USD ${(usdOpen / 1000).toFixed(1)}k`,
         note: `${receivable.length} open invoice${receivable.length === 1 ? "" : "s"} · ${receivable.filter((i) => i.dueDate && new Date(str(i.dueDate)) < NOW).length} overdue`,
-        href: "/collections/invoices",
+        href: link.list("invoices"),
       },
     );
 
@@ -254,7 +255,7 @@ export function controlRoom(
           unit: "count",
           rows: [...owners]
             .sort((a, b) => b[1] - a[1])
-            .map(([id, n]) => ({ label: userName(id), value: n, href: "/collections/cases" })),
+            .map(([id, n]) => ({ label: userName(id), value: n, href: link.list("cases") })),
         },
       ],
     },

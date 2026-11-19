@@ -21,6 +21,7 @@ import {
   type ExtractedLine,
   type Scenario,
 } from "./sourcing-data.ts";
+import * as link from "../links.ts";
 
 /**
  * Root endpoints for the sourcing desk (registered in ./index.ts):
@@ -715,7 +716,7 @@ async function createCaseFrom(req: Req, msg: Doc, input: Json) {
       owner,
       `New case ${str(c.caseId)} assigned to you`,
       `${x.customerName} · ${d.vessel} · quote due ${fmtDateTime(deadline)}`,
-      `/collections/cases/${c.id}`,
+      link.doc("cases", c.id),
       "Update",
     );
   return {
@@ -904,16 +905,15 @@ export async function historyPayload(req: Req): Promise<HistoryPayload> {
   if (approved) {
     for (const s of HISTORY_SUPPLIERS.filter((x) => !x.known)) {
       const [doc] = await all(req, "suppliers", { name: { equals: s.name } });
-      if (doc) created.push({ kind: "Supplier", name: s.name, href: `/collections/suppliers/${doc.id}` });
+      if (doc) created.push({ kind: "Supplier", name: s.name, href: link.doc("suppliers", doc.id) });
     }
     for (const c of [...HISTORY_CUSTOMERS.filter((x) => !x.known).map((x) => x.name), "Petro Delta"]) {
       const [doc] = await all(req, "customers", { name: { equals: c } });
-      if (doc) created.push({ kind: "Customer", name: c, href: `/collections/customers/${doc.id}` });
+      if (doc) created.push({ kind: "Customer", name: c, href: link.doc("customers", doc.id) });
     }
     for (const v of HISTORY_VESSELS.filter((x) => !x.known)) {
       const [doc] = await all(req, "vessels", { imo: { equals: v.imo } });
-      if (doc)
-        created.push({ kind: "Vessel", name: `${v.name} (IMO ${v.imo})`, href: `/collections/vessels/${doc.id}` });
+      if (doc) created.push({ kind: "Vessel", name: `${v.name} (IMO ${v.imo})`, href: link.doc("vessels", doc.id) });
     }
   }
   return {
@@ -1487,7 +1487,7 @@ async function remind(req: Req, rfq: Doc): Promise<ReplyEvent> {
       idOf(c?.owner),
       `${str(supplier?.name)} hasn't replied to ${str(rfq.reference)}`,
       `${ESCALATE_AFTER} reminders sent · ${str(c?.caseId)} quote due ${fmtDateTime(c?.deadline)} — call them or source elsewhere`,
-      `/collections/cases/${str(idOf(rfq.case))}/rfqs`,
+      link.doc("cases", str(idOf(rfq.case)), "rfqs"),
       "Alert",
     );
   }

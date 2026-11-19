@@ -1,8 +1,9 @@
 import { block, type Action, type Row, type ViewBlock } from "saastemlycrm-design-system/contracts";
-import { widget, widgets, type Source, type Widget } from "saastemlycrm-design-system/contracts";
+import { from, widget, widgets, type Source, type Widget } from "saastemlycrm-design-system/contracts";
 import type { Pricing } from "../endpoints/commercial.ts";
 import type { Doc } from "saastemlycrm-design-system/contracts";
 import { amount, egp, money, pct } from "./case-compare.ts";
+import * as link from "../links.ts";
 
 /**
  * Case tab "Pricing": the selected offers become landed costs (shared charges — launch, freight,
@@ -15,7 +16,7 @@ import { amount, egp, money, pct } from "./case-compare.ts";
  */
 
 const pricingOf: Source = { endpoint: "/commercial/cases/$doc.id/pricing" };
-const on = (w: Widget<Pricing>): Widget<Pricing> => ({ source: pricingOf, ...w });
+const on = from<Pricing>(pricingOf);
 const base = (P: Pricing) => `/commercial/cases/${encodeURIComponent(P.id)}`;
 
 const ALLOCATION = [
@@ -68,7 +69,7 @@ const stats = on({
 const lines = on({
   title: "Line pricing",
   skeleton: "table",
-  head: () => ({ actions: [{ label: "Pricing policy", variant: "text", href: "/globals/pricing-policy" }] }),
+  head: () => ({ actions: [{ label: "Pricing policy", href: link.global("pricing-policy") }] }),
   render: (P) => {
     const cur = P.currency;
     const rows = P.rows.map((r): Row => ({
@@ -157,7 +158,6 @@ const lines = on({
       blocks.push(
         block("text", {
           muted: true,
-          variant: "body-sm",
           text: P.unpriced
             .map((u) => `L${u.lineNo} · ${u.description} — ${u.status}: no cost yet, excluded from this version.`)
             .join("\n"),
@@ -191,7 +191,6 @@ const marginVsMarkup = on({
       }),
       block("text", {
         muted: true,
-        variant: "body-sm",
         text: "A 25% margin is a 33.3% markup: pricing “cost + 25%” would land at a 20% margin.",
       }),
     ];
@@ -248,7 +247,6 @@ const charges = on({
     }),
     block("text", {
       muted: true,
-      variant: "body-sm",
       text: "VAT: supply to a foreign vessel in transit is expected at 0% — finance confirms. The quotation shows prices excl. VAT.",
     }),
   ],
@@ -271,8 +269,8 @@ const approval = on({
     const a = P.approval;
     const pending = Boolean(a && !["Approved", "Rejected"].includes(a.status));
     const request: Action = {
-      label: "Request approval from Karim Balbaa",
-      variant: "filled",
+      label: "Request approval",
+      main: true,
       disabled: pending || !P.rows.length,
       call: { path: `${base(P)}/request-approval` },
       confirm: {
@@ -318,7 +316,7 @@ const approval = on({
             : []),
       block("actions", {
         items: [
-          ...(q ? [{ label: `Preview ${q.number}`, href: `/collections/quotations/${q.id}/preview` }] : []),
+          ...(q ? [{ label: `Preview ${q.number}`, href: link.doc("quotations", q.id, "preview") }] : []),
           ...(pending ? [{ label: "Open approvals", href: "/approvals" }] : []),
           request,
         ],
@@ -344,7 +342,7 @@ const forSales = widget<{ docs: Doc[] }>({
     ...(docs[0]
       ? [
           block("actions", {
-            items: [{ label: "View quotation", href: `/collections/quotations/${docs[0].id}/preview` }],
+            items: [{ label: "View quotation", href: link.doc("quotations", docs[0].id, "preview") }],
           }),
         ]
       : []),
@@ -356,7 +354,7 @@ export const casePricing = widgets({
     forSales as Widget,
     stats,
     lines,
-    { grid: [marginVsMarkup, buildUp], fit: "md" },
-    { grid: [charges, policy, approval], fit: "md" },
+    { grid: [marginVsMarkup, buildUp] },
+    { grid: [charges, policy, approval] },
   ],
 });

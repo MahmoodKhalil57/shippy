@@ -1,7 +1,8 @@
 import { block, note, type Action, type Cell, type Tone, type ViewBlock } from "saastemlycrm-design-system/contracts";
-import { widgets, type Source, type Widget } from "saastemlycrm-design-system/contracts";
+import { from, widgets, type Source, type Widget } from "saastemlycrm-design-system/contracts";
 import type { IntegrationsView } from "../endpoints/platform.ts";
 import { formatDate } from "./format.ts";
+import * as link from "../links.ts";
 
 /**
  * Integrations & data (/integrations): the connected channels — Outlook and Gmail mailboxes
@@ -15,7 +16,7 @@ import { formatDate } from "./format.ts";
 type Connection = IntegrationsView["connections"][number];
 
 const data: Source = { endpoint: "/integrations/status" };
-const on = (w: Widget<IntegrationsView>): Widget<IntegrationsView> => ({ source: data, ...w });
+const on = from<IntegrationsView>(data);
 
 const s = (v: unknown) => (typeof v === "string" || typeof v === "number" ? String(v) : "");
 const STATUS: Record<string, Tone> = {
@@ -31,13 +32,14 @@ const LANG = [
   { label: "English", value: "en" },
   { label: "العربية (Arabic)", value: "ar" },
 ];
-const DAY = 86_400_000;
 const status = (c?: Connection) => (c ? [{ label: s(c.status), tone: STATUS[s(c.status)] ?? "neutral" }] : undefined);
 const by = (d: IntegrationsView, kind: string) => d.connections.find((c) => c.kind === kind);
 
-function expiry(v: unknown): Cell {
-  if (!v) return null;
-  const days = Math.round((new Date(s(v)).getTime() - Date.now()) / DAY);
+/** When a token or certificate expires, and how soon (the endpoint counts the days). */
+function expiry(c?: Connection): Cell {
+  const v = c?.tokenExpiresAt;
+  const days = c?.expiresInDays;
+  if (!v || days == null) return null;
   return {
     text: `${formatDate(s(v))}${days < 0 ? " · expired" : days < 30 ? ` · in ${days} d` : ""}`,
     tone: days < 0 ? "error" : days < 30 ? "warning" : "neutral",
@@ -53,7 +55,7 @@ const mailboxes = on({
   render: (d) => {
     const reconnect = (c: Connection): Action => ({
       label: "Reconnect",
-      variant: "filled",
+      main: true,
       disabled: !d.canManage,
       call: { path: "/integrations/reconnect", body: { index: c.index } },
       confirm: {
@@ -83,7 +85,7 @@ const mailboxes = on({
           sync: c.lastSyncAt ? formatDate(s(c.lastSyncAt)) : null,
           poll: c.pollEveryMinutes ? `every ${s(c.pollEveryMinutes)} min` : "",
           imported: { text: ((Number(c.emailsImported) || 0) + c.live).toLocaleString("en-US"), strong: true },
-          expires: expiry(c.tokenExpiresAt),
+          expires: expiry(c),
           action:
             c.status === "Token expired" || c.status === "To connect"
               ? { text: "", actions: [reconnect(c)] }
@@ -130,7 +132,7 @@ const ack = on({
         "Example for GS-RFQ-0142. Wording, recipients and trigger were approved by management; changing them needs a new approval.",
       ),
       block("actions", {
-        items: [{ label: "All message templates", href: "/globals/message-templates", variant: "text" }],
+        items: [{ label: "All message templates", href: link.global("message-templates") }],
       }),
     ];
   },
@@ -147,7 +149,7 @@ const odoo = on({
       .map((m) => m.trim())
       .filter(Boolean);
     return [
-      block("text", { text: "Odoo for the books, SaaSTEMLY for the way you work.", variant: "title-md" }),
+      block("heading", { text: "Odoo for the books, SaaSTEMLY for the way you work." }),
       block("text", {
         text: "Standard, supported Odoo holds contacts, sales and purchase orders, stock, invoices and accounting. The sourcing desk on top — inbox, comparison, approvals, automations — writes into it, so any Odoo partner can read your books.",
         muted: true,
@@ -172,16 +174,15 @@ const channel = (
     render: (d) => {
       const c = by(d, kind);
       return [
-        ...(c?.account ? [block("text", { text: s(c.account), variant: "label-lg" })] : []),
+        ...(c?.account ? [block("heading", { text: s(c.account) })] : []),
         note(text),
-        ...(c?.notes ? [block("text", { text: s(c.notes), variant: "body-sm" })] : []),
+        ...(c?.notes ? [block("text", { text: s(c.notes) })] : []),
         ...extra(c),
       ];
     },
   });
 
 const channels: Widget = {
-  fit: "sm",
   grid: [
     channel(
       "Website form",
@@ -199,13 +200,13 @@ const channels: Widget = {
       "Egyptian e-invoicing (ETA)",
       "Invoices are signed and submitted to the tax authority; the UUID and status are stored on the invoice.",
       (eta) => {
-        const cert = expiry(eta?.tokenExpiresAt);
+        const cert = expiry(eta);
         return [
           ...(cert && typeof cert === "object"
             ? [block("details", { items: [{ label: "Signing certificate", value: cert }] })]
             : []),
           block("actions", {
-            items: [{ label: "Submission failures → exception queue", href: "/automations", variant: "text" }],
+            items: [{ label: "Exception queue", href: "/automations" }],
           }),
         ];
       },
@@ -325,13 +326,8 @@ export const integrationsPage = widgets({
       "Your mailboxes, website, WhatsApp, the tax authority and Odoo, connected — with daily backups, a staging copy and your data exportable at any time.",
     actions: [
       { label: "Exception queue", href: "/automations" },
-      { label: "Edit connections", href: "/globals/integrations" },
+      { label: "Edit connections", href: link.global("integrations") },
     ],
   },
-  widgets: [
-    mailboxes,
-    { grid: [ack, odoo], fit: "md" },
-    channels,
-    { grid: [emailImport, backups, language], fit: "md" },
-  ],
+  widgets: [mailboxes, { grid: [ack, odoo] }, channels, { grid: [emailImport, backups, language] }],
 });

@@ -1,5 +1,5 @@
-import { block, type Action, type Row, type Tone, type ViewBlock } from "saastemlycrm-design-system/contracts";
-import { widgets, type Source, type Widget } from "saastemlycrm-design-system/contracts";
+import { block, note, type Action, type Row, type Tone, type ViewBlock } from "saastemlycrm-design-system/contracts";
+import { from, widgets, type Source, type Widget } from "saastemlycrm-design-system/contracts";
 import type { HistoryPayload } from "../endpoints/sourcing.ts";
 
 /**
@@ -12,14 +12,13 @@ import type { HistoryPayload } from "../endpoints/sourcing.ts";
  */
 
 const history: Source = { endpoint: "/inbox-history" };
-const on = (w: Widget<HistoryPayload>): Widget<HistoryPayload> => ({ source: history, ...w });
+const on = from<HistoryPayload>(history);
 
 const n = (v: number) => v.toLocaleString("en-US");
 const pct = (c: number) => `${Math.round(c * 100)}%`;
 const DAY = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
 const day = (v: string) => (v ? DAY.format(new Date(v)) : "");
 const plural = (k: number) => (k > 1 ? "s" : "");
-const sub = (text: string) => block("text", { text, muted: true, variant: "body-sm" });
 
 const STEPS = ["Connect mailboxes", "Scan (dry run)", "De-duplicate", "Organise", "Review uncertain", "Approve import"];
 
@@ -34,7 +33,7 @@ const KIND_TONE: Record<string, Tone> = {
 const organise: Action = {
   label: "Organise",
   icon: "sparkles",
-  variant: "filled",
+  main: true,
   call: { path: "/inbox-history/organise" },
   done: "History organised — uncertain items are waiting for you",
 };
@@ -55,7 +54,7 @@ const progress = on({
   skeleton: "text",
   render: (d) => [
     block("steps", { current: step(d), items: STEPS.map((label) => ({ label })) }),
-    sub(
+    note(
       `Status: ${
         d.approved
           ? `imported · approved by ${d.approvedBy}`
@@ -74,7 +73,7 @@ const mailboxes = on({
   skeleton: "chart",
   head: (d) => ({ tags: [{ label: `${n(d.scanned)} messages · 2019–2026` }] }),
   render: (d) => [
-    sub(
+    note(
       "All of Golden Sea's mailboxes and WhatsApp exports, read in a dry run first — nothing is saved before approval.",
     ),
     block("table", {
@@ -122,7 +121,7 @@ const dedup = on({
       })),
     }),
     block("divider", {}),
-    block("stats", { size: "md", items: [{ label: "Business messages kept", value: n(d.kept), tone: "primary" }] }),
+    block("stats", { size: "md", items: [{ label: "Business messages kept", value: n(d.kept) }] }),
   ],
 });
 
@@ -133,7 +132,6 @@ const scattered = on({
     d.organised
       ? null
       : block("card", {
-          variant: "filled",
           heading: "Years of emails, RFQs, offers and quotes · scattered",
           blocks: [
             block("text", {
@@ -172,12 +170,11 @@ const entity = (
     skeleton: "table",
     render: (d) =>
       d.organised
-        ? block("card", { heading, blocks: [sub(intro(d)), block("table", { columns, rows: rows(d) })] })
+        ? block("card", { heading, blocks: [note(intro(d)), block("table", { columns, rows: rows(d) })] })
         : null,
   });
 
 const entities: Widget = {
-  fit: "lg",
   grid: [
     entity(
       "Customers — ship managers",
@@ -265,9 +262,8 @@ const review = on({
   skeleton: "list",
   render: (d): ViewBlock | null => {
     if (!d.organised) return null;
-    const decide = (id: string, decision: "confirm" | "reject", label: string, variant: Action["variant"]): Action => ({
+    const decide = (id: string, decision: "confirm" | "reject", label: string): Action => ({
       label,
-      variant,
       call: { path: `/inbox-history/review/${encodeURIComponent(id)}`, body: { decision } },
     });
     return block("card", {
@@ -276,7 +272,7 @@ const review = on({
         d.pending ? { label: `${d.pending} to review`, tone: "warning" } : { label: "all decided", tone: "success" },
       ],
       blocks: [
-        sub("Reviewed with you before they are saved — confirm the proposal or reject it."),
+        note("Reviewed with you before they are saved — confirm the proposal or reject it."),
         block("list", {
           variant: "separated",
           items: d.review.map((r) => ({
@@ -298,8 +294,8 @@ const review = on({
             actions: r.decision
               ? d.approved
                 ? undefined
-                : [decide(r.id, r.decision === "Confirmed" ? "reject" : "confirm", "Change", "text")]
-              : [decide(r.id, "confirm", "Confirm", "tonal"), decide(r.id, "reject", "Reject", "text")],
+                : [decide(r.id, r.decision === "Confirmed" ? "reject" : "confirm", "Change")]
+              : [decide(r.id, "confirm", "Confirm"), decide(r.id, "reject", "Reject")],
           })),
         }),
       ],
@@ -320,7 +316,7 @@ const approval = on({
         }),
         ...(d.created.length
           ? [
-              block("text", { text: "New records (examples)", variant: "label-lg" }),
+              block("heading", { text: "New records (examples)" }),
               block("actions", { items: d.created.map((c) => ({ label: `${c.kind}: ${c.name}`, href: c.href })) }),
             ]
           : []),
@@ -342,7 +338,7 @@ const approval = on({
                 {
                   label: "Approve import",
                   icon: "check",
-                  variant: "filled",
+                  main: true,
                   disabled: Boolean(blocked),
                   call: { path: "/inbox-history/approve" },
                   confirm: {
@@ -356,10 +352,9 @@ const approval = on({
             }),
           ]
         : [
-            block("alert", {
-              tone: "info",
-              text: `Waiting for Karim Balbaa (management). ${blocked || "Everything is reviewed — it's ready for his approval."}`,
-            }),
+            note(
+              `Waiting for Karim Balbaa (management). ${blocked || "Everything is reviewed — it's ready for approval."}`,
+            ),
           ]),
     ];
   },
@@ -379,5 +374,5 @@ export const inboxHistoryPage = widgets({
       };
     },
   },
-  widgets: [progress, { fit: "md", grid: [mailboxes, dedup] }, totals, entities, review, scattered, approval],
+  widgets: [progress, { grid: [mailboxes, dedup] }, totals, entities, review, scattered, approval],
 });

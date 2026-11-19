@@ -1,6 +1,7 @@
 import { block, type Action, type Entry, type ViewHeader } from "saastemlycrm-design-system/contracts";
-import { widgets, type Source, type Widget, type WidgetScope } from "saastemlycrm-design-system/contracts";
+import { from, widgets, type Source, type Widget, type WidgetScope } from "saastemlycrm-design-system/contracts";
 import type { ApprovalCard } from "../endpoints/commercial.ts";
+import * as link from "../links.ts";
 
 /**
  * Approvals (/approvals): everything that needs an authorised person — quotations, margin
@@ -18,7 +19,7 @@ interface Queue {
 }
 
 const queue: Source = { endpoint: "/commercial/approvals" };
-const on = (w: Widget<Queue>): Widget<Queue> => ({ source: queue, ...w });
+const on = from<Queue>(queue);
 const mineOf = (q: Queue) => q.pending.filter((a) => a.canDecide);
 const othersOf = (q: Queue) => q.pending.filter((a) => !a.canDecide);
 
@@ -64,7 +65,7 @@ function decisions(a: ApprovalCard, me: string): Action[] {
     },
     {
       label: "Approve",
-      variant: "filled",
+      main: true,
       call: call("Approve"),
       confirm: { heading: "Approve request", text: `${a.title}${twoPerson}\n${RECORDED}`, label: "Approve" },
       fields: [
@@ -139,7 +140,7 @@ const header = (q: unknown, { user }: WidgetScope): ViewHeader => {
       ? `${mine.length} decision${mine.length === 1 ? "" : "s"} waiting for you`
       : "Nothing waiting for you",
     subtitle: `${first ? `${first}, every` : "Every"} quotation, margin exception, payment, alternative item, bank-detail change and FX rate needs a named person. AI never approves.`,
-    actions: [{ label: "Approval rules", href: "/globals/approval-rules" }],
+    actions: [{ label: "Approval rules", href: link.global("approval-rules") }],
   };
 };
 

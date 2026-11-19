@@ -1,5 +1,6 @@
 import type { Endpoint, PayloadRequest } from "payload";
 import { cash, collectionDraftFor } from "./operations.ts";
+import * as link from "../links.ts";
 
 /**
  * Receivables & payables (/cash, src/cms/widgets/cash.ts) beyond GET /api/operations/cash:
@@ -332,7 +333,7 @@ export const cashEndpoints: Endpoint[] = [
       ok: true,
       invoices: found.map((r) => r.id),
       message: `Looks like it pays ${found.length === 1 ? "this invoice" : `these ${found.length} invoices`}: ${list}. A person records the payment.`,
-      ...(found.length === 1 ? { href: `/collections/invoices/${found[0]!.id}` } : {}),
+      ...(found.length === 1 ? { href: link.doc("invoices", found[0]!.id) } : {}),
     });
   }),
 ];

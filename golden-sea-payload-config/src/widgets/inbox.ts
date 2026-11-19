@@ -1,4 +1,5 @@
 import {
+  assist,
   block,
   type Action,
   type ListItem,
@@ -8,9 +9,17 @@ import {
   type Tone,
   type ViewBlock,
 } from "saastemlycrm-design-system/contracts";
-import { widgets, type Source, type Widget, type WidgetScope } from "saastemlycrm-design-system/contracts";
+import {
+  from,
+  widgets,
+  type DrawingWidget,
+  type Source,
+  type Widget,
+  type WidgetScope,
+} from "saastemlycrm-design-system/contracts";
 import type { ExtractionResult, InboxDetail, InboxMessage, InboxPayload } from "../endpoints/sourcing.ts";
 import { SIMULATED_FORWARD, SIMULATED_REPLY, SIMULATED_RFQ } from "../endpoints/sourcing-data.ts";
+import * as link from "../links.ts";
 
 /**
  * Inbox (`/inbox`): every channel in one list — Outlook and Gmail mailboxes, the website
@@ -35,7 +44,7 @@ type Detail = { d: InboxDetail; users: { docs: { id: string; name?: unknown }[] 
 const simulate = (kind: "rfq" | "forward" | "reply", label: string, done: string, primary = false): Action => ({
   label,
   icon: primary ? "mail" : undefined,
-  variant: primary ? "filled" : "tonal",
+  main: primary,
   call: { path: "/inbox/simulate", body: { kind } },
   done,
   // The endpoint's `href` (`?message=<new id>`) opens the new message.
@@ -101,7 +110,6 @@ const channels: Widget<InboxPayload> = {
     }),
     block("text", {
       muted: true,
-      variant: "body-sm",
       text: `Processed today: ${d.stats.processedToday} · duplicates suppressed: ${d.stats.duplicates} · waiting for a person: ${d.stats.review}`,
     }),
   ],
@@ -179,7 +187,6 @@ const reviewQueue: Widget<InboxPayload> = {
     return [
       block("text", {
         muted: true,
-        variant: "body-sm",
         text: "Matches below 85% confidence are never linked automatically — a person picks the case.",
       }),
       block("list", {
@@ -219,60 +226,57 @@ const OFFER_FIELDS = [
   { id: "validity", label: "Valid until" },
 ];
 
-const ai = (element: string, key: string, props: Record<string, unknown>): ViewBlock =>
-  block("custom", { element, key, props });
-
 /** The on-device assists on a message: category, warnings, offer details, short replies. */
 function assists(m: InboxMessage): ViewBlock[] {
   if (!m.body) return [];
   const text = `${m.subject}\n\n${m.body}`;
   return [
-    ai("ui-ai-language", "language", { text: `${m.subject}\n${m.body}` }),
-    ai("ui-ai-classify", "kind", {
+    assist("ui-ai-language", "language", { text: `${m.subject}\n${m.body}` }),
+    assist("ui-ai-classify", "kind", {
       text,
       options: MESSAGE_KINDS,
       what: "incoming emails and messages to a ship chandler",
     }),
-    ai("ui-ai-flag", "bank", {
+    assist("ui-ai-flag", "bank", {
       text: m.body,
       tone: "error",
       heading: "Asks to change bank or payment details",
       question: "Does this message ask to change bank account, IBAN or payment details?",
       note: "Don't act on it from the email: a bank-detail change needs two people (Finance and the CEO) and a call-back on the number already on file.",
     }),
-    ai("ui-ai-flag", "auto-reply", {
+    assist("ui-ai-flag", "auto-reply", {
       text: m.body,
       tone: "info",
       heading: "Looks like an automatic reply",
       question: "Is this an automatic reply (out of office, auto-acknowledgement) rather than a written answer?",
       note: "It doesn't answer the request — supplier reminders keep running.",
     }),
-    ai("ui-ai-flag", "cannot-supply", {
+    assist("ui-ai-flag", "cannot-supply", {
       text: m.body,
       tone: "warning",
       heading: "The sender can't supply",
       question: "Does the sender say they cannot supply, quote or deliver the requested items?",
       note: "Look for another supplier for these lines before the deadline.",
     }),
-    ai("ui-ai-extract", "offer", {
+    assist("ui-ai-extract", "offer", {
       text: m.body,
       source: "text",
       label: "Pull out the offer details",
       what: "supplier offer or reply to a ship chandler",
       fields: OFFER_FIELDS,
     }),
-    ai("ui-ai-replies", "replies", { text: m.body }),
+    assist("ui-ai-replies", "replies", { text: m.body }),
   ];
 }
 
 /** A reading-pane widget: the open message's detail, shown while `show` says so. */
-const pane = (w: Omit<Widget<Detail>, "source"> & { show?: (d: InboxDetail) => unknown }) =>
-  ({
+const onDetail = from<Detail>(detail);
+const pane = ({ show, ...w }: Omit<DrawingWidget<Detail>, "source"> & { show?: (d: InboxDetail) => unknown }) =>
+  onDetail({
     skeleton: "text",
-    source: detail,
     ...w,
-    hidden: (data: Detail, scope: WidgetScope) => (w.show ? !w.show(data.d) : false) || !!w.hidden?.(data, scope),
-  }) satisfies Widget<Detail>;
+    hidden: (data: Detail, scope: WidgetScope) => (show ? !show(data.d) : false) || !!w.hidden?.(data, scope),
+  });
 
 const nothingOpen = pane({
   title: "No message selected",
@@ -302,10 +306,9 @@ const original = pane({
           ]
         : []),
       ...assists(m),
-      ai("ui-ai-read-file", "read-file", {}),
+      assist("ui-ai-read-file", "read-file", {}),
       block("text", {
         muted: true,
-        variant: "body-sm",
         text: `Message id ${m.messageId} · re-processing the same message never creates a second case or acknowledgement.`,
       }),
     ];
@@ -318,7 +321,6 @@ const draft = (d: InboxDetail) => (d.rfq && d.message ? d.extraction : null);
 
 const extractPrompt = pane({
   title: "Read it into a draft case",
-  variant: "filled",
   show: (d) => d.rfq && d.message && !d.extraction && !d.message.createdCase && d.message.status !== "Ignored",
   render: ({ d }) => {
     const m = d.message!;
@@ -328,9 +330,7 @@ const extractPrompt = pane({
         text: `The AI reads the email${m.files.length ? " and every attachment (Excel, PDF, Word, photos)" : ""} into a draft: customer, vessel, IMO, port, ETA, deadline and lines with IMPA / ISSA, part numbers and a confidence for every value. Nothing is created until you confirm.`,
       }),
       block("actions", {
-        items: [
-          { label: "Extract with AI", icon: "sparkles", variant: "filled", call: { path: path(m.id, "extract") } },
-        ],
+        items: [{ label: "Extract with AI", icon: "sparkles", main: true, call: { path: path(m.id, "extract") } }],
       }),
     ];
   },
@@ -345,7 +345,7 @@ const rfqOutcome = pane({
       ? block("alert", {
           tone: "success",
           text: `Case ${m.createdCase.caseId} was created from this message.`,
-          actions: [{ label: "Open case", href: `/collections/cases/${m.createdCase.id}` }],
+          actions: [{ label: "Open case", href: link.doc("cases", m.createdCase.id) }],
         })
       : block("alert", { tone: "info", text: "Marked “not an RFQ”." });
   },
@@ -363,7 +363,6 @@ const draftHeader = pane({
   render: ({ d }) => [
     block("text", {
       muted: true,
-      variant: "body-sm",
       text: "Low-confidence values are never applied without a person checking them.",
     }),
     block("tiles", {
@@ -461,7 +460,7 @@ const assignment = pane({
   render: ({ d }) => {
     const a = d.extraction!.assignment;
     return [
-      block("text", { muted: true, variant: "body-sm", text: `Suggested by the assignment rules: ${a.rule}.` }),
+      block("text", { muted: true, text: `Suggested by the assignment rules: ${a.rule}.` }),
       block("details", {
         items: [
           { label: "Owner", value: a.ownerName },
@@ -471,7 +470,7 @@ const assignment = pane({
       }),
       ...(d.message!.createdCase
         ? []
-        : [block("text", { muted: true, variant: "body-sm", text: "Change them when you create the case." })]),
+        : [block("text", { muted: true, text: "Change them when you create the case." })]),
     ];
   },
 });
@@ -506,7 +505,6 @@ const acknowledgement = pane({
       }),
       block("text", {
         muted: true,
-        variant: "body-sm",
         text: `Template: ${a.template}. ${a.manual ? "WhatsApp / form source: the owner sends it — the system never messages the customer by itself here." : "Sent once from the approved template — never twice, even if the email is re-processed."}`,
       }),
     ];
@@ -547,7 +545,7 @@ function createAction(m: InboxMessage, x: ExtractionResult, users: Detail["users
   ];
   return {
     label: "Create case",
-    variant: "filled",
+    main: true,
     call: { path: path(m.id, "create-case") },
     confirm: {
       heading: "Create this case?",
@@ -572,8 +570,8 @@ const createCase = pane({
         tone: "success",
         text: `Case ${m.createdCase.caseId} created from this message and linked to it.`,
         actions: [
-          { label: "Send supplier RFQs", variant: "filled", href: `/collections/cases/${m.createdCase.id}/rfqs` },
-          { label: "Open case", href: `/collections/cases/${m.createdCase.id}` },
+          { label: "Send supplier RFQs", main: true, href: link.doc("cases", m.createdCase.id, "rfqs") },
+          { label: "Open case", href: link.doc("cases", m.createdCase.id) },
         ],
       });
     const flagged = x.lines.filter((l) => l.flag).length;
@@ -587,7 +585,6 @@ const createCase = pane({
           items: [
             {
               label: "Not an RFQ",
-              variant: "text",
               call: { path: path(m.id, "review"), body: { decision: "not-related" } },
               done: "Marked not related",
             },
@@ -610,14 +607,12 @@ const matching = pane({
     const match = m.match;
     const notRelated: Action = {
       label: "Not related",
-      variant: "text",
       call: { path: path(m.id, "review"), body: { decision: "not-related" } },
       done: "Marked not related",
     };
     if (m.status === "New" && !match)
       return block("card", {
         heading: "Match this message",
-        variant: "filled",
         blocks: [
           block("text", {
             muted: true,
@@ -628,7 +623,7 @@ const matching = pane({
               {
                 label: "Match reply",
                 icon: "sparkles",
-                variant: "filled",
+                main: true,
                 call: { path: path(m.id, "match") },
                 reply: true,
               },
@@ -686,8 +681,8 @@ const matching = pane({
           ? [
               block("actions", {
                 items: [
-                  { label: "Supplier RFQs", href: `/collections/cases/${caseRef.id}/rfqs` },
-                  { label: `Open ${caseRef.caseId}`, variant: "filled", href: `/collections/cases/${caseRef.id}` },
+                  { label: "Supplier RFQs", href: link.doc("cases", caseRef.id, "rfqs") },
+                  { label: `Open ${caseRef.caseId}`, main: true, href: link.doc("cases", caseRef.id) },
                 ],
               }),
             ]

@@ -1,8 +1,9 @@
-import { block, formatNumber, type NumberFormat, type ViewBlock } from "saastemlycrm-design-system/contracts";
-import { widgets, type Source, type Widget } from "saastemlycrm-design-system/contracts";
+import { block, note, formatNumber, type NumberFormat, type ViewBlock } from "saastemlycrm-design-system/contracts";
+import { from, widgets, type Source, type Widget } from "saastemlycrm-design-system/contracts";
 import type { Briefing } from "../endpoints/assistant.ts";
 import type { ControlRoom, CrRanked, CrSuppliers, CrWidget, Unit } from "../endpoints/control-room.ts";
 import { MONEY_ROLES } from "../endpoints/insights-shared.ts";
+import * as link from "../links.ts";
 
 /**
  * The control room (/control-room): "The business, live. Briefed at 07:00." for Karim Balbaa and
@@ -13,7 +14,7 @@ import { MONEY_ROLES } from "../endpoints/insights-shared.ts";
  */
 
 const room: Source = { endpoint: "/control-room", query: { period: "$param.period" } };
-const on = (w: Widget<ControlRoom>): Widget<ControlRoom> => ({ source: room, ...w });
+const on = from<ControlRoom>(room);
 
 /** How each unit reads. `-k` units are thousands, so their values are scaled up for `compact`. */
 const FORMAT: Record<Unit, NumberFormat> = {
@@ -27,14 +28,13 @@ const FORMAT: Record<Unit, NumberFormat> = {
 const scale = (u: Unit) => (u.endsWith("-k") ? 1000 : 1);
 const values = (u: Unit, v: number[]) => v.map((x) => x * scale(u));
 const fmt = (u: Unit, v: number) => formatNumber(v * scale(u), FORMAT[u]);
-const sub = (text: string) => block("text", { text, muted: true, variant: "body-sm" });
 
 function ranked(r: CrRanked): ViewBlock {
   const max = Math.max(1, ...r.rows.map((x) => x.value), r.minimum ?? 0);
   return block("card", {
     heading: r.title,
     blocks: [
-      sub(r.sub),
+      note(r.sub),
       block("gauges", {
         items: r.rows.map((row) => ({
           label: row.label,
@@ -55,7 +55,7 @@ function suppliers(s: CrSuppliers): ViewBlock {
   return block("card", {
     heading: s.title,
     blocks: [
-      sub(s.sub),
+      note(s.sub),
       block("table", {
         columns: [
           { key: "name", label: "Supplier" },
@@ -115,7 +115,7 @@ const section = (title: string): Widget<ControlRoom> =>
     head: (d) => ({ subhead: d.sections.find((s) => s.title === title)?.sub }),
     render: (d) => {
       const s = d.sections.find((x) => x.title === title);
-      return s ? block("grid", { fit: "md", blocks: s.widgets.map(chart) }) : null;
+      return s ? block("grid", { blocks: s.widgets.map(chart) }) : null;
     },
   });
 
@@ -126,9 +126,7 @@ const briefing: Widget<Briefing> = {
   skeleton: "text",
   head: () => ({
     tags: [{ label: "AI draft", tone: "primary", icon: "sparkles" }],
-    actions: [
-      { label: "Summarise", icon: "sparkles", variant: "tonal", call: { path: "/briefing/refresh" }, reply: true },
-    ],
+    actions: [{ label: "Summarise", icon: "sparkles", call: { path: "/briefing/refresh" }, reply: true }],
   }),
   render: (b) => {
     const seen = new Set<string>();
@@ -138,13 +136,12 @@ const briefing: Widget<Briefing> = {
       ...(sources.length
         ? [
             block("actions", {
-              items: sources.map((x) => ({ label: x.label, href: x.href, variant: "text" as const })),
+              items: sources.map((x) => ({ label: x.label, href: x.href })),
             }),
           ]
         : []),
       block("text", {
         muted: true,
-        variant: "body-sm",
         text: `${b.at === "07:00" ? "Written at 07:00" : `Summarised again at ${b.at}`} from ${b.read} live records. A draft to read — nothing is sent, priced or paid.`,
       }),
     ];
@@ -162,7 +159,7 @@ export const controlRoom = widgets({
       actions: [
         { label: "Approvals", href: "/approvals" },
         ...(MONEY_ROLES.includes(user.role ?? "") ? [{ label: "Receivables & payables", href: "/cash" }] : []),
-        { label: "All cases", href: "/collections/cases", variant: "filled" as const },
+        { label: "All cases", href: link.list("cases"), main: true },
       ],
     }),
   },
@@ -209,7 +206,7 @@ export const controlRoom = widgets({
     on({
       skeleton: "text",
       render: (d) => [
-        block("text", { text: "Management dashboards", variant: "title-md" }),
+        block("heading", { text: "Management dashboards" }),
         block("text", {
           text: "Today's numbers from the live records; trends from the reporting history.",
           muted: true,
@@ -231,7 +228,7 @@ export const controlRoom = widgets({
       render: (d) => {
         const s = d.sections.find((x) => x.title === "Profit & cash");
         return s
-          ? block("grid", { fit: "md", blocks: s.widgets.map(chart) })
+          ? block("grid", { blocks: s.widgets.map(chart) })
           : block("text", {
               text: "Gross profit, margins, receivables and cash flow are shown to management and finance only.",
               muted: true,

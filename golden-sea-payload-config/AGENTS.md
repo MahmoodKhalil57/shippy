@@ -45,10 +45,22 @@ seed data (`src/seed`). Entry points: `.` (the config, `src/config.ts`) and `./s
   the design system names no project or runner).
 - **Screens:** see "Screens are widgets" in `saastemlycrm-design-system/AGENTS.md`. Anything the
   widget vocabulary can't draw becomes a generic block or component in the design system.
+- **Lint rules:** `vite.config.ts` loads the `saastemly` oxlint plugin from
+  `saastemlycrm-design-system/lint` and spreads its `recommended` rules. `vp check` and the editor
+  then report: `no-restricted-imports` (only `/contracts` and `/payload`), `widgets-are-pure`,
+  `endpoints-return-data`, `prefer-entries`, `no-local-block-helpers`, `sentence-case-titles` (with
+  "Golden Sea" as a proper noun), `max-blocks` and `no-raw-hrefs`.
+- **Links:** `src/links.ts` narrows the design system's `links()` to this config's collections,
+  globals and views; widgets and endpoints import it as `import * as link from "../links.ts"` and
+  write `link.doc("cases", id, "pricing")`. `tests/links.test.ts` keeps its lists equal to the config.
+- **Design test:** `tests/design.test.ts` draws every screen as every seeded user and checks it with
+  the design system's data rules (`screenDesignProblems` from `mock-runner/testing`). A failure
+  names the user, screen and widget, and what to change.
 - **Tests** (`tests/`, `vp test`): its behaviour against a backend, mock-runner's engine in memory
   through `mock-runner/testing` (a dev dependency; `src` never imports it). `tests/backend.ts`
   sets it up with this config and `seedModules`: `backend.reset()` in `beforeEach`, `call(...)`,
   `login("karim.youssef")` (demo password). `rest.test.ts`: collections, globals, access and seed
   over REST; `case-views`, `commercial`, `data-model`, `insights`, `operations`, `platform`,
-  `sourcing`: every endpoint and widget page; `template.test.ts`: the packages' roles.
+  `sourcing`: every endpoint and widget page; `design.test.ts`: the design rules on real data;
+  `template.test.ts`: the packages' roles.
   `STATE-AUDIT.md` maps the state behind each screen.

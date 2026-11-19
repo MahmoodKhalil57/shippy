@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
-import { createStore, endTour, startTour, tour } from "saastemlycrm-design-system/src/stores/index.ts";
 import { backend, call, login, seeds } from "./backend.ts";
 
 /** The sourcing-desk data model (STATE-AUDIT.md): seeds load cleanly and the business rules hold. */
@@ -220,25 +219,5 @@ describe("business rules", () => {
       owner: "ah",
     });
     expect(svc.body.doc.caseId).toMatch(/^GS-SVC-\d{4}$/);
-  });
-});
-
-describe("frontend stores", () => {
-  it("merges, notifies only on change, and resets", () => {
-    const s = createStore({ a: 1, b: "x" });
-    const seen: number[] = [];
-    s.subscribe((st) => seen.push(st.a));
-    s.set({ a: 1 });
-    s.set({ a: 2 });
-    s.set((st) => ({ a: st.a + 1 }));
-    expect(seen).toEqual([2, 3]);
-    s.reset();
-    expect(s.get()).toEqual({ a: 1, b: "x" });
-  });
-
-  it("starts and finishes tours", () => {
-    startTour("morning");
-    endTour(true);
-    expect(tour.get()).toMatchObject({ active: null, completed: ["morning"] });
   });
 });

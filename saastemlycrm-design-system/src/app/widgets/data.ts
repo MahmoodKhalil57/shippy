@@ -50,8 +50,9 @@ function cellOf(f: FieldLike, doc: Doc): Cell {
   return text;
 }
 
-function records(w: Widget): Widget<{ docs: Doc[]; totalDocs: number }> {
-  const r = w.records!;
+type Kind<K extends string> = Extract<Widget, Record<K, unknown>>;
+
+function records({ records: r, ...w }: Kind<"records">): Widget<{ docs: Doc[]; totalDocs: number }> {
   const c = collectionOf(r.collection);
   if (!c) return { ...w, render: () => block("alert", { tone: "error", text: `No collection "${r.collection}".` }) };
   const all = dataFields(formFields(c));
@@ -117,8 +118,7 @@ function records(w: Widget): Widget<{ docs: Doc[]; totalDocs: number }> {
   };
 }
 
-function counts(w: Widget): Widget<Record<string, number>> {
-  const spec = w.counts!;
+function counts({ counts: spec, ...w }: Kind<"counts">): Widget<Record<string, number>> {
   const slug = spec.collection;
   const c = collectionOf(slug);
   let items: {
@@ -161,13 +161,18 @@ function counts(w: Widget): Widget<Record<string, number>> {
         size: "md",
         items: items
           .filter((x) => !hideEmpty || (n[x.key] ?? 0) > 0)
-          .map((x) => ({ label: x.label, value: String(n[x.key] ?? 0), note: x.note, tone: x.tone, href: x.href })),
+          .map((x) => ({
+            label: x.label,
+            value: String(n[x.key] ?? 0),
+            note: x.note,
+            tone: x.tone === "success" || x.tone === "warning" || x.tone === "error" ? x.tone : undefined,
+            href: x.href,
+          })),
       }),
   };
 }
 
-function fields(w: Widget, scope: WidgetScope): Widget<Doc> {
-  const spec = w.fields!;
+function fields({ fields: spec, ...w }: Kind<"fields">, scope: WidgetScope): Widget<Doc> {
   const c = scope.doc ? collectionOf(scope.doc.slug) : undefined;
   const all = c ? dataFields(fieldsOf(c)) : [];
   return {

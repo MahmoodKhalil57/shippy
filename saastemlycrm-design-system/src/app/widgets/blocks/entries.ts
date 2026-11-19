@@ -1,7 +1,7 @@
 import { html, nothing } from "lit";
 import "../../../components/index.ts";
 import { actionBar, cell, tag } from "../blocks.ts";
-import { defineBlock, type ViewContext } from "../registry.ts";
+import { defineBlock, renderBlock, type ViewContext } from "../registry.ts";
 import type { Entry, Tag } from "../schema.ts";
 
 /**
@@ -57,6 +57,14 @@ function parts(e: Entry, ctx: ViewContext) {
   `;
 }
 
+/** The attach button (when there is one) and the action bar. */
+const doing = (e: Entry, ctx: ViewContext) =>
+  e.attach
+    ? html`<ui-flex direction="col" gap="2"
+        >${renderBlock({ type: "attach", ...e.attach }, ctx)}${actionBar(e.actions, ctx)}</ui-flex
+      >`
+    : actionBar(e.actions, ctx);
+
 const heading = (e: Entry) => (e.href ? html`<ui-link .href=${e.href}>${e.heading}</ui-link>` : e.heading);
 const tags = (e: Entry) => [...(e.status ? [e.status] : []), ...(e.tags ?? [])];
 const meta = (e: Entry) => (e.meta ?? []).filter(Boolean).join(" · ");
@@ -67,7 +75,7 @@ const card = (e: Entry, ctx: ViewContext) =>
     <span slot="heading">${heading(e)}</span>
     ${tags(e).length ? html`<ui-flex slot="trailing" gap="1" align="center" wrap>${tags(e).map(tag)}</ui-flex>` : nothing}
     ${parts(e, ctx)}
-    ${e.actions?.length ? html`<ui-flex slot="actions" direction="col">${actionBar(e.actions, ctx)}</ui-flex>` : nothing}
+    ${e.actions?.length || e.attach ? html`<ui-flex slot="actions" direction="col">${doing(e, ctx)}</ui-flex>` : nothing}
   </ui-card>`;
 
 /** One entry as a row inside a card. */
@@ -80,7 +88,7 @@ const row = (e: Entry, ctx: ViewContext) =>
       </ui-flex>
       ${meta(e) ? html`<ui-text variant="body-sm" color="muted">${meta(e)}</ui-text>` : nothing}
     </ui-flex>
-    ${parts(e, ctx)} ${actionBar(e.actions, ctx)}
+    ${parts(e, ctx)} ${doing(e, ctx)}
   </ui-flex>`;
 
 defineBlock("entries", (b, ctx) => {

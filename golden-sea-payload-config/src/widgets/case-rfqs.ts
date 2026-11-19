@@ -1,6 +1,16 @@
-import { block, note, type Action, type Row, type Tone, type ViewBlock } from "saastemlycrm-design-system/contracts";
-import { widgets, type Source, type Widget } from "saastemlycrm-design-system/contracts";
+import {
+  block,
+  type IconName,
+  type Tag,
+  note,
+  type Action,
+  type Row,
+  type Tone,
+  type ViewBlock,
+} from "saastemlycrm-design-system/contracts";
+import { from, widgets, type Source } from "saastemlycrm-design-system/contracts";
 import type { CaseLine, CaseRfqRow, CaseRfqsPayload, ReplyEvent } from "../endpoints/sourcing.ts";
+import * as link from "../links.ts";
 
 /**
  * Case tab "Supplier RFQs": the case's lines go out to suppliers (split by category or as the
@@ -18,7 +28,7 @@ import type { CaseLine, CaseRfqRow, CaseRfqsPayload, ReplyEvent } from "../endpo
 
 const rfqs: Source = { endpoint: "/sourcing/cases/$doc.id" };
 /** A widget drawn from the case's supplier RFQs (one request, however many widgets use it). */
-const on = (w: Widget<CaseRfqsPayload>): Widget<CaseRfqsPayload> => ({ source: rfqs, ...w });
+const on = from<CaseRfqsPayload>(rfqs);
 
 const STATUS: Record<string, Tone> = {
   Draft: "neutral",
@@ -32,7 +42,7 @@ const STATUS: Record<string, Tone> = {
   "No response": "error",
 };
 const OPEN = ["Sent", "Awaiting reply", "Partial reply", "Clarification needed"];
-const OUTCOME: Record<ReplyEvent["outcome"], { tone: Tone; icon: string }> = {
+const OUTCOME: Record<ReplyEvent["outcome"], { tone: Tone; icon: IconName }> = {
   Replied: { tone: "success", icon: "success" },
   Declined: { tone: "neutral", icon: "x" },
   "Reminder sent": { tone: "warning", icon: "send" },
@@ -96,7 +106,7 @@ const table = on({
       {
         label: "Simulate replies",
         icon: "sync",
-        variant: "filled",
+        main: true,
         call: { path: "/case-rfqs/$doc.id/simulate-replies" },
         done: "Supplier replies are in — offers are on the Compare tab",
       },
@@ -120,7 +130,7 @@ const table = on({
         reference: { text: r.reference, mono: true, strong: true },
         supplier: {
           text: r.supplier.name,
-          href: `/collections/suppliers/${r.supplier.id}`,
+          href: link.doc("suppliers", r.supplier.id),
           tags: r.supplier.isNew ? [{ label: "New supplier", tone: "primary" }] : undefined,
         },
         where: [r.supplier.city, r.category].filter(Boolean).join(" · "),
@@ -175,23 +185,22 @@ const review = on({
       note("Anything the AI isn't sure of waits here — nothing uncertain is applied on its own."),
       ...d.review.map((r) =>
         block("card", {
-          variant: "outlined",
           heading: `${r.fromName}: “${r.subject}”`,
           subhead: at(r.receivedAt),
           tags: [{ label: pct(r.confidence), tone: "warning" }],
           blocks: [
-            block("text", { variant: "body-sm", text: r.basis.map((b) => `• ${b}`).join("\n") }),
+            block("text", { text: r.basis.map((b) => `• ${b}`).join("\n") }),
             ...r.uncertain.map((u) => block("alert", { tone: "warning", text: u })),
             block("actions", {
               items: [
                 ...(r.kind === "new-supplier"
-                  ? [{ label: "Confirm offer", variant: "filled" as const, ...decide(r.id, "link", d.case.id) }]
+                  ? [{ label: "Confirm offer", main: true, ...decide(r.id, "link", d.case.id) }]
                   : r.candidates.map((c) => ({
                       label: `Link to ${c.caseId} (${pct(c.confidence)})`,
                       variant: c.case === d.case.id ? ("filled" as const) : ("tonal" as const),
                       ...decide(r.id, "link", c.case),
                     }))),
-                { label: "Not related", variant: "text" as const, ...decide(r.id, "not-related") },
+                { label: "Not related", ...decide(r.id, "not-related") },
               ],
             }),
           ],
@@ -226,23 +235,20 @@ const newSuppliers = on({
       "Saved the moment they replied — contact, category and a dated price with its validity, even without an order.",
     ),
     block("grid", {
-      fit: "sm",
       blocks: d.newSuppliers.map((s) =>
         block("card", {
-          variant: "outlined",
           blocks: [
             block("list", {
               items: [
                 {
                   headline: s.name,
-                  href: `/collections/suppliers/${s.id}`,
+                  href: link.doc("suppliers", s.id),
                   supporting: `${s.city} · ${s.source}`,
                   tags: [{ label: "New · quoted, never ordered", tone: "primary" as const }],
                 },
               ],
             }),
             block("text", {
-              variant: "body-sm",
               text: s.prices
                 .map(
                   (p) =>
@@ -311,7 +317,6 @@ const composer = on({
           {
             label: "Draft RFQs",
             icon: "sparkles",
-            variant: "tonal",
             prompt: "Draft supplier RFQs",
             disabled: !sendable.length,
             reason: sendable.length ? undefined : "Every line is held until clarified.",
@@ -343,12 +348,9 @@ const composer = on({
   },
 });
 
-const ANONYMISED: { label: string; tone: Tone; icon: string }[] = [
-  "Client name removed",
-  "Vessel removed",
-  "No customer files",
-  "Our reference only",
-].map((label) => ({ label, tone: "success", icon: "success" }));
+const ANONYMISED: Tag[] = ["Client name removed", "Vessel removed", "No customer files", "Our reference only"].map(
+  (label) => ({ label, tone: "success", icon: "success" }),
+);
 
 /** The drafted RFQs kept on the server until a person sends (after a confirmation) or discards them. */
 const drafts = on({
@@ -364,14 +366,13 @@ const drafts = on({
       actions: [
         {
           label: "Discard drafts",
-          variant: "text",
           call: { path: "/sourcing/cases/$doc.id/plan/discard" },
           done: "Drafts discarded — nothing was sent",
         },
         {
           label: `Send ${n} RFQ${s}`,
           icon: "send",
-          variant: "filled",
+          main: true,
           call: { path: "/sourcing/cases/$doc.id/send" },
           confirm: {
             heading: "Send these supplier RFQs?",
@@ -407,7 +408,6 @@ const drafts = on({
               actions: [
                 {
                   label: "Remove",
-                  variant: "text",
                   call: { path: "/sourcing/cases/$doc.id/plan/remove", body: { reference: r.reference } },
                   done: `${r.reference} removed from the drafts`,
                 },
@@ -431,7 +431,7 @@ const reminders = on({
       }),
       ...(open.length
         ? open.flatMap((r): ViewBlock[] => [
-            block("text", { variant: "label-lg", text: `${r.supplier.name} · ${r.reference}` }),
+            block("text", { text: `${r.supplier.name} · ${r.reference}` }),
             block("steps", {
               tone: r.escalated ? "error" : "primary",
               current: r.schedule.filter((s) => s.state === "done").length - 1,
@@ -449,5 +449,5 @@ const reminders = on({
 
 export const caseRfqs = widgets({
   params: { send: "split" },
-  widgets: [stats, table, arriving, review, { grid: [replies, newSuppliers], fit: "md" }, composer, drafts, reminders],
+  widgets: [stats, table, arriving, review, { grid: [replies, newSuppliers] }, composer, drafts, reminders],
 });

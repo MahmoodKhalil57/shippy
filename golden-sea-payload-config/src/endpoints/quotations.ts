@@ -1,6 +1,7 @@
 import type { Endpoint, PayloadRequest } from "payload";
 import { commercialEndpoints, type QuoteView } from "./commercial.ts";
 import { bodyOf, failWith, forward } from "./forward.ts";
+import * as link from "../links.ts";
 
 /**
  * The actions of the quotation tab "Preview & send" (../widgets/quote-preview.ts) that answer in
@@ -54,7 +55,7 @@ export const quotationEndpoints: Endpoint[] = [
       if (r instanceof Response) return r;
       return Response.json({
         message: "New version created — the previous one is kept for audit.",
-        href: `/collections/quotations/${r.id}/preview`,
+        href: link.doc("quotations", r.id, "preview"),
       });
     },
   },

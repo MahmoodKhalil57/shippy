@@ -21,7 +21,7 @@ const joined = (...parts: (string | undefined | null)[]) => parts.filter((p) => 
 export function cellWords(c: Cell): string {
   if (c == null) return "";
   if (typeof c === "string" || typeof c === "number") return String(c);
-  return joined(c.text, ...(c.tags ?? []).map((t) => t.label));
+  return joined(c.text, ...("tags" in c && c.tags ? c.tags : []).map((t) => t.label));
 }
 
 /** A screen's header: its heading and subtitle. */

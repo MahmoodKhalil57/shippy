@@ -1,5 +1,5 @@
 import { html, nothing } from "lit";
-import type { IconName } from "../../components/primitives/media/icon.ts";
+import type { IconName } from "../../components/primitives/media/icon-names.ts";
 import type { TableColumn, TableSupporting } from "../../components/primitives/data/table.ts";
 import "../../components/index.ts";
 import { defineBlock, inCard, renderBlocks, type ViewContext } from "./registry.ts";
@@ -10,17 +10,24 @@ import { formatNumber, type Action, type Cell, type Tag } from "./schema.ts";
  * elements only. Importing this module registers them.
  */
 
-const icon = (name?: string) => (name ? (name as IconName) : undefined);
+const icon = (name?: IconName) => name;
 
 export const tag = (t: Tag) => html`<ui-tag .tone=${t.tone ?? "neutral"} .icon=${icon(t.icon)}>${t.label}</ui-tag>`;
 
-/** A filled action is primary, a destructive one is in the error colour. */
-const actionColor = (a: Action) => (a.tone === "error" ? "error" : a.variant === "filled" ? "primary" : undefined);
+const isLink = (a: Action) => !!a.href && !a.call && !a.print;
 
-export const action = (a: Action, ctx: ViewContext, size: "xs" | "sm" = "xs") =>
+/**
+ * How an action looks follows what it is: the main action is filled (primary), a link is a text
+ * button, anything else tonal; a destructive one is in the error colour. `linkLook` changes how
+ * links look where text buttons would get lost (a page header's actions).
+ */
+const look = (a: Action, linkLook: "text" | "tonal") => (a.main ? "filled" : isLink(a) ? linkLook : "tonal");
+const actionColor = (a: Action) => (a.tone === "error" ? "error" : a.main ? "primary" : undefined);
+
+export const action = (a: Action, ctx: ViewContext, size: "xs" | "sm" = "xs", linkLook: "text" | "tonal" = "text") =>
   html`<ui-button
     size=${size}
-    .variant=${a.variant ?? "tonal"}
+    .variant=${look(a, linkLook)}
     .color=${actionColor(a)}
     .href=${a.href}
     ?disabled=${a.disabled}
@@ -35,20 +42,18 @@ const withReason = (a: Action, ctx: ViewContext) =>
       >`
     : action(a, ctx);
 
-const isLink = (a: Action) => !!a.href && !a.call && !a.print;
-
 /**
  * A row of actions in one order everywhere, so a screen can't get the hierarchy wrong: links
  * first, as text buttons (past two, the rest go in "More"), then the other actions with the main
- * one last. At most one is filled: an earlier filled one is drawn tonal.
+ * one last. At most one is main (filled): an earlier one is drawn as a plain button.
  */
 export function actionBar(items: Action[] | undefined, ctx: ViewContext) {
   if (!items?.length) return nothing;
-  const links = items.filter(isLink).map((a): Action => ({ ...a, variant: "text" }));
+  const links = items.filter(isLink).map((a): Action => ({ ...a, main: false }));
   const rest = items.filter((a) => !isLink(a));
-  const main = rest.map((a) => a.variant).lastIndexOf("filled");
+  const main = rest.map((a) => !!a.main).lastIndexOf(true);
   const ordered = rest
-    .map((a, i): Action => (a.variant === "filled" && i !== main ? { ...a, variant: "tonal" } : a))
+    .map((a, i): Action => (a.main && i !== main ? { ...a, main: false } : a))
     .filter((_, i) => i !== main);
   if (main >= 0) ordered.push(rest[main]!);
   const shown = links.length > 2 ? links.slice(0, 1) : links;
@@ -94,13 +99,12 @@ export function cell(c: Cell, ctx?: ViewContext) {
         })}
     ></ui-switch>`;
   }
+  if (c.tag) return html`<ui-tag .tone=${c.tone ?? "neutral"}>${c.text}</ui-tag>`;
   const color = c.tone && c.tone !== "neutral" && c.tone !== "primary" ? c.tone : undefined;
-  let body = c.tag
-    ? html`<ui-tag .tone=${c.tone ?? "neutral"}>${c.text}</ui-tag>`
-    : html`<ui-text as="span" variant="body-md" .color=${color} ?mono=${c.mono} ?emphasized=${c.strong}
-        >${c.text}</ui-text
-      >`;
-  if (c.href && !c.tag) body = html`<ui-link .href=${c.href}>${body}</ui-link>`;
+  let body = html`<ui-text as="span" variant="body-md" .color=${color} ?mono=${c.mono} ?emphasized=${c.strong}
+    >${c.text}</ui-text
+  >`;
+  if (c.href) body = html`<ui-link .href=${c.href}>${body}</ui-link>`;
   if (c.dot)
     body = html`<ui-flex inline gap="2" align="center"
       ><ui-badge dot .tone=${c.dot} .label=${c.text}></ui-badge>${body}</ui-flex
@@ -146,7 +150,7 @@ defineBlock(
   "card",
   (b, ctx) =>
     html`<ui-card
-      .variant=${ctx.inCard ? "filled" : b.variant}
+      .variant=${ctx.inCard ? "filled" : undefined}
       .size=${ctx.inCard ? "sm" : undefined}
       .subhead=${b.subhead ?? ""}
       .count=${b.count}
@@ -164,7 +168,16 @@ defineBlock(
     </ui-card>`,
 );
 
-defineBlock("grid", (b, ctx) => html`<ui-grid .fit=${b.fit ?? "md"} gap="4">${renderBlocks(b.blocks, ctx)}</ui-grid>`);
+const WIDE = new Set(["chart", "table", "list", "card", "entries", "timeline", "message", "document"]);
+
+/** Wide columns for charts, tables, lists and cards; narrow ones for anything else. */
+defineBlock(
+  "grid",
+  (b, ctx) =>
+    html`<ui-grid .fit=${b.blocks.some((x) => WIDE.has(x.type)) ? "md" : "sm"} gap="4"
+      >${renderBlocks(b.blocks, ctx)}</ui-grid
+    >`,
+);
 
 defineBlock(
   "split",
@@ -195,7 +208,7 @@ defineBlock(
             .label=${s.label}
             .value=${s.value}
             .note=${s.note ?? ""}
-            .tone=${s.tone && s.tone !== "info" && s.tone !== "primary" ? s.tone : undefined}
+            .tone=${s.tone}
           >
             ${
               s.trend
@@ -214,8 +227,13 @@ defineBlock(
     >`,
 );
 
+defineBlock("heading", (b) => html`<ui-heading level="3" variant="title-sm">${b.text}</ui-heading>`);
+
 defineBlock("text", (b) => {
-  const text = html`<ui-text .variant=${b.variant ?? "body-md"} .color=${b.muted ? "muted" : undefined} pre-line
+  const text = html`<ui-text
+    .variant=${b.muted ? "body-sm" : "body-md"}
+    .color=${b.muted ? "muted" : undefined}
+    pre-line
     >${b.text}</ui-text
   >`;
   return b.speak

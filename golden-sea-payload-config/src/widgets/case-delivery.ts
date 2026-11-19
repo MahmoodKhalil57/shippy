@@ -1,5 +1,5 @@
-import { block, type Action, type Row, type ViewBlock } from "saastemlycrm-design-system/contracts";
-import { widgets, type Source, type Widget } from "saastemlycrm-design-system/contracts";
+import { block, type Entry, type Action, type Row } from "saastemlycrm-design-system/contracts";
+import { from, widgets, type Source } from "saastemlycrm-design-system/contracts";
 import {
   day,
   dayTime,
@@ -10,6 +10,7 @@ import {
   type OpsDelivery,
   type OpsInvoice,
 } from "./o2c-shared.ts";
+import * as link from "../links.ts";
 
 /**
  * Case tab "Delivery & billing" (/collections/cases/<id>/delivery): the vessel delivery plan
@@ -23,7 +24,7 @@ import {
 
 const ops: Source = { endpoint: "/operations/case/$doc.id" };
 /** A widget drawn from the case's order-to-cash data (one request, however many widgets use it). */
-const on = (w: Widget<CaseOps>): Widget<CaseOps> => ({ source: ops, ...w });
+const on = from<CaseOps>(ops);
 
 const own = "/case-delivery/$doc.id";
 const delivered = (x: OpsDelivery) => /confirmed/.test(x.status);
@@ -78,7 +79,6 @@ function etaAction(d: CaseOps): Action | undefined {
   ];
   return {
     label: "Agent email: ETA update",
-    variant: "tonal",
     call: { path: `${own}/eta` },
     confirm: {
       heading: "Agent email — ETA update",
@@ -148,7 +148,7 @@ const plan = on({
           { label: "Clearance", value: p.clearance ?? "—" },
         ],
       }),
-      block("text", { variant: "label-lg", text: `Pre-dispatch check — ${next.number}` }),
+      block("text", { text: `Pre-dispatch check — ${next.number}` }),
       block("tags", {
         items: checks.map(([label, ok]) => ({
           label,
@@ -160,122 +160,107 @@ const plan = on({
   },
 });
 
-function drop(d: CaseOps, x: OpsDelivery): ViewBlock {
+/** One drop: what goes, when and where, dispatch and receipt, and the proof that closes it. */
+function drop(d: CaseOps, x: OpsDelivery): Entry {
   const done = delivered(x);
   const signedBy = `Chief Officer, ${d.case.vessel || "vessel"}`;
-  const actions: ViewBlock[] = [];
-  if (!done && x.status !== "Cancelled")
-    actions.push(
-      block("attach", {
-        action: { label: "Confirm delivery…", variant: x.dispatchedAt ? "tonal" : "text" },
-        heading: `Confirm ${x.number} delivered`,
-        intro: `${x.lines.map((l) => `L${l.lineNo} × ${l.qty}`).join(" · ")} — ${x.place}`,
-        file: {
-          name: "proof",
-          legend: "Signed delivery note or photo (required)",
-          accept: "image/*,application/pdf",
-          hint: "Photo of the stamped note from the vessel, or the scanned PDF",
-          required: true,
-          upload: { collection: "media", data: { alt: `${x.number} signed`, kind: "Delivery note / POD" } },
-          sample: {
-            label: "Use the sample scan from the boarding officer",
-            filename: `${x.number}-signed.pdf`,
-            lines: [`Delivery note ${x.number}`, "Received on board — {signedBy}"],
-          },
-        },
-        fields: [
-          { type: "text", name: "signedBy", label: "Signed by (vessel)", required: true, defaultValue: signedBy },
-          {
-            type: "textarea",
-            name: "shortages",
-            label: "Shortages or damage noted on board",
-            defaultValue: "",
-            admin: { description: "Optional — becomes a claim" },
-          },
-        ],
-        dictate: { label: "Dictate shortages or damage", field: "shortages" },
-        extract: {
-          label: "Read the signed note from a photo",
-          what: "signed delivery note or receipt from a ship",
-          fields: [
-            { id: "signedBy", label: "Signed by", hint: "name and rank of the officer who signed" },
-            { id: "date", label: "Date" },
-            { id: "vessel", label: "Vessel" },
-            {
-              id: "remarks",
-              label: "Shortages or damage noted",
-              hint: "anything written about missing or damaged items",
-            },
-          ],
-          into: { signedBy: { field: "signedBy" }, remarks: { field: "shortages", append: true } },
-        },
-        missing: "No evidence, no “Delivered”: attach the signed note first.",
-        call: { path: "/operations/confirm-delivery", body: { delivery: x.id } },
-        confirmLabel: "Confirm delivered",
-        done: `${x.number} delivered — signed delivery note on file.`,
-      }),
-    );
-  if (done && !x.invoice && d.canFinance)
-    actions.push(
-      block("actions", {
-        items: [
-          {
-            label: "Invoice delivered quantities",
-            variant: "tonal",
-            call: { path: `${own}/invoice`, body: { delivery: x.id } },
-            reply: true,
-          },
-        ],
-      }),
-    );
-  return block("card", {
+  return {
+    id: x.id,
     heading: `Drop ${x.drop} · ${x.number}`,
-    tags: [{ label: x.status, tone: statusTone(x.status) }],
-    blocks: [
-      block("text", { muted: true, variant: "body-sm", text: `${dayTime(x.plannedAt)} · ${x.place}` }),
-      block("text", {
-        text: x.lines
-          .map((l) => `L${l.lineNo} · ${l.qty} × ${l.description}${l.lot ? ` · lot ${l.lot}` : ""}`)
-          .join("\n"),
-      }),
-      block("details", {
-        layout: "stacked",
-        items: [
-          {
-            label: "Dispatch",
-            value: x.dispatchedAt
-              ? { text: `Dispatched ${dayTime(x.dispatchedAt)}`, tone: "success" }
-              : { text: "Not dispatched yet", tone: "neutral" },
-          },
-          {
-            label: "Receipt",
-            value: done
-              ? {
-                  text: `Signed by ${x.confirmedBy ?? "vessel"} · ${dayTime(x.confirmedAt)}${x.proof ? " · signed delivery note on file" : ""}`,
-                  tone: "success",
-                }
-              : { text: "Confirmed receipt pending — signed delivery note required", tone: "warning" },
-          },
-          ...(x.shortages ? [{ label: "Shortages", value: { text: x.shortages, tone: "warning" as const } }] : []),
-          ...(x.invoice ? [{ label: "Invoiced", value: x.invoice }] : []),
-        ],
-      }),
-      ...actions,
+    meta: [dayTime(x.plannedAt), x.place],
+    status: { label: x.status, tone: statusTone(x.status) },
+    text: x.lines.map((l) => `L${l.lineNo} · ${l.qty} × ${l.description}${l.lot ? ` · lot ${l.lot}` : ""}`).join("\n"),
+    facts: [
+      {
+        label: "Dispatch",
+        value: x.dispatchedAt
+          ? { text: `Dispatched ${dayTime(x.dispatchedAt)}`, tone: "success" }
+          : { text: "Not dispatched yet", tone: "neutral" },
+      },
+      {
+        label: "Receipt",
+        value: done
+          ? {
+              text: `Signed by ${x.confirmedBy ?? "vessel"} · ${dayTime(x.confirmedAt)}${x.proof ? " · signed delivery note on file" : ""}`,
+              tone: "success",
+            }
+          : { text: "Confirmed receipt pending — signed delivery note required", tone: "warning" },
+      },
+      ...(x.shortages ? [{ label: "Shortages", value: { text: x.shortages, tone: "warning" as const } }] : []),
+      ...(x.invoice ? [{ label: "Invoiced", value: x.invoice }] : []),
     ],
-  });
+    attach:
+      !done && x.status !== "Cancelled"
+        ? {
+            action: { label: "Confirm delivery…", main: !!x.dispatchedAt },
+            heading: `Confirm ${x.number} delivered`,
+            intro: `${x.lines.map((l) => `L${l.lineNo} × ${l.qty}`).join(" · ")} — ${x.place}`,
+            file: {
+              name: "proof",
+              legend: "Signed delivery note or photo (required)",
+              accept: "image/*,application/pdf",
+              hint: "Photo of the stamped note from the vessel, or the scanned PDF",
+              required: true,
+              upload: { collection: "media", data: { alt: `${x.number} signed`, kind: "Delivery note / POD" } },
+              sample: {
+                label: "Use the sample scan from the boarding officer",
+                filename: `${x.number}-signed.pdf`,
+                lines: [`Delivery note ${x.number}`, "Received on board — {signedBy}"],
+              },
+            },
+            fields: [
+              { type: "text", name: "signedBy", label: "Signed by (vessel)", required: true, defaultValue: signedBy },
+              {
+                type: "textarea",
+                name: "shortages",
+                label: "Shortages or damage noted on board",
+                defaultValue: "",
+                admin: { description: "Optional — becomes a claim" },
+              },
+            ],
+            dictate: { label: "Dictate shortages or damage", field: "shortages" },
+            extract: {
+              label: "Read the signed note from a photo",
+              what: "signed delivery note or receipt from a ship",
+              fields: [
+                { id: "signedBy", label: "Signed by", hint: "name and rank of the officer who signed" },
+                { id: "date", label: "Date" },
+                { id: "vessel", label: "Vessel" },
+                {
+                  id: "remarks",
+                  label: "Shortages or damage noted",
+                  hint: "anything written about missing or damaged items",
+                },
+              ],
+              into: { signedBy: { field: "signedBy" }, remarks: { field: "shortages", append: true } },
+            },
+            missing: "No evidence, no “Delivered”: attach the signed note first.",
+            call: { path: "/operations/confirm-delivery", body: { delivery: x.id } },
+            confirmLabel: "Confirm delivered",
+            done: `${x.number} delivered — signed delivery note on file.`,
+          }
+        : undefined,
+    actions:
+      done && !x.invoice && d.canFinance
+        ? [
+            {
+              label: "Invoice delivered quantities",
+              call: { path: `${own}/invoice`, body: { delivery: x.id } },
+              reply: true,
+            },
+          ]
+        : undefined,
+  };
 }
 
 const drops = on({
   title: "Drops & proof of delivery",
+  subhead:
+    "“Delivered” needs evidence: dispatch and confirmed receipt are separate, and a drop is confirmed only with the signed delivery note or photo from the vessel.",
+  skeleton: "entries",
   hidden: (d) => !d.deliveries.length,
   head: (d) => ({ tags: [{ label: `${d.deliveries.filter(delivered).length} of ${d.deliveries.length} delivered` }] }),
-  render: (d) => [
-    block("text", {
-      muted: true,
-      text: "“Delivered” needs evidence: dispatch and confirmed receipt are separate, and a drop is confirmed only with the signed delivery note or photo from the vessel.",
-    }),
-    block("grid", { fit: "sm", blocks: d.deliveries.map((x) => drop(d, x)) }),
-  ],
+  render: (d) => block("entries", { items: d.deliveries.map((x) => drop(d, x)) }),
 });
 
 const backorders = on({
@@ -320,7 +305,7 @@ function eStatus(inv: OpsInvoice) {
     cell: {
       text: unreachable ? "Signature service unreachable" : s,
       tone: unreachable ? "error" : statusTone(s),
-      tag: true,
+      tag: true as const,
     },
     note: e.error ? { text: e.error, tone: "error" as const } : e.uuid ? `UUID ${e.uuid}` : "",
   };
@@ -331,12 +316,11 @@ function eAction(d: CaseOps, inv: OpsInvoice): Action | undefined {
   const s = inv.eInvoice.status ?? "Not submitted";
   if (s === "Valid") return undefined;
   const call = { path: `${own}/einvoice`, body: { invoice: inv.id } };
-  if (s === "Submitted") return { label: `Refresh status · ${inv.number}`, variant: "text", call, reply: true };
+  if (s === "Submitted") return { label: `Refresh status · ${inv.number}`, call, reply: true };
   const local = inv.vatTreatment === "14% standard";
   const rejected = s === "Rejected";
   return {
     label: `${rejected ? "Correct & resubmit" : inv.eInvoice.error ? "Retry (safe)" : "Sign & submit"} · ${inv.number}`,
-    variant: "tonal",
     call,
     prompt: `Sign & submit ${inv.number} to the tax authority`,
     confirm: {
@@ -392,7 +376,7 @@ const invoices = on({
     const rows: Row[] = d.invoices.map((i) => {
       const e = eStatus(i);
       return {
-        number: { text: i.number, href: `/collections/invoices/${i.id}`, strong: true },
+        number: { text: i.number, href: link.doc("invoices", i.id), strong: true },
         basis: `${i.basis ?? "Delivery"}${i.delivery ? ` · ${i.delivery}` : ""} · ${day(i.issuedAt)}`,
         lines: i.lines
           .map(
@@ -422,7 +406,6 @@ const invoices = on({
       if (d.canFinance && i.balance > 0)
         out.push({
           label: `Record payment · ${i.number}`,
-          variant: "text",
           call: { path: `${own}/payment`, body: { invoice: i.id } },
           prompt: `Record customer payment — ${i.number}`,
           fields: [

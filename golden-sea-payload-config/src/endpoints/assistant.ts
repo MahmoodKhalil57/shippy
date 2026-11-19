@@ -25,6 +25,7 @@ import {
   str,
   unauthorized,
 } from "./insights-shared.ts";
+import * as link from "../links.ts";
 
 /**
  * The AI layer of the control room, as deterministic stubs over live data:
@@ -238,7 +239,7 @@ export async function briefing(req: PayloadRequest, refresh = false): Promise<Br
     items.push({
       tone: "warning",
       text: `USD moved from ${active.toFixed(2)} to ${num(rate.egpPerUnit).toFixed(2)} EGP (${pct(((num(rate.egpPerUnit) - active) / active) * 100)}). The new rate waits for approval; open quotations are re-checked against the 15% minimum margin once it's active.`,
-      sources: [{ label: "FX rates", href: "/globals/fx-rates" }],
+      sources: [{ label: "FX rates", href: link.global("fx-rates") }],
     });
   const rec = receivable(w);
   if (rec.length && role !== "sales") {

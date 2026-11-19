@@ -1,6 +1,7 @@
 import { block, type Action, type Cell, type Row, type ViewBlock } from "saastemlycrm-design-system/contracts";
-import { widgets, type Source, type Widget } from "saastemlycrm-design-system/contracts";
+import { from, widgets, type Source } from "saastemlycrm-design-system/contracts";
 import type { CmpLine, CmpOffer, CmpPart, CompareWithDrafts, CorrectionDraft } from "../endpoints/commercial.ts";
+import * as link from "../links.ts";
 
 /**
  * Case tab "Compare offers": every offer checked against the customer's original line,
@@ -27,7 +28,7 @@ export const day = (iso: string) =>
 /* ------------------------------------------------------------ the widgets */
 
 const compareOf: Source = { endpoint: "/commercial/cases/$doc.id/compare" };
-const on = (w: Widget<CompareWithDrafts>): Widget<CompareWithDrafts> => ({ source: compareOf, ...w });
+const on = from<CompareWithDrafts>(compareOf);
 
 type Mode = "unit" | "landed";
 const modeOf = (params: Record<string, string>): Mode => (params.by === "landed" ? "landed" : "unit");
@@ -48,7 +49,6 @@ function selectOne(base: string, line: CmpLine, o: CmpOffer, sole: boolean): Act
   const best = o.id === line.best;
   return {
     label: sole ? "Selected" : "Select",
-    variant: "tonal",
     disabled: sole,
     call: { path: `${base}/select`, body: { lineNo: line.lineNo, parts: [{ offer: o.id, qty: line.qty }] } },
     confirm: {
@@ -70,7 +70,6 @@ function split(base: string, line: CmpLine, label: string, parts: CmpPart[], bes
   const per = line.baseQty / line.qty;
   return {
     label,
-    variant: best ? "tonal" : "text",
     call: { path: `${base}/split`, body: { lineNo: line.lineNo, offers: parts.map((p) => p.offer) } },
     confirm: {
       heading: `Line ${line.lineNo}: split sourcing`,
@@ -128,7 +127,6 @@ function offerRows(base: string, line: CmpLine, mode: Mode): Row[] {
     if (o.needsAcceptance && isSelected && !line.selection.customerAccepted)
       actions.push({
         label: "Record customer acceptance",
-        variant: "tonal",
         call: { path: `${base}/accept`, body: { lineNo: line.lineNo } },
         confirm: {
           heading: "Record customer acceptance",
@@ -208,7 +206,6 @@ function offerCheck(line: CmpLine): ViewBlock[] {
 
 function correction(base: string, o: CmpOffer, d: CorrectionDraft): ViewBlock {
   return block("card", {
-    variant: "outlined",
     open: false,
     heading: `Correction request · ${o.supplier} v${o.version}`,
     tags: [
@@ -226,7 +223,6 @@ function correction(base: string, o: CmpOffer, d: CorrectionDraft): ViewBlock {
       block("custom", { element: "ui-ai-text", key: o.id, props: { text: d.body, translatable: true } }),
       block("text", {
         muted: true,
-        variant: "body-sm",
         text: "The client is never named to the supplier. v1 stays on the case for audit; only a corrected version can be priced.",
       }),
       ...(d.sent
@@ -236,7 +232,7 @@ function correction(base: string, o: CmpOffer, d: CorrectionDraft): ViewBlock {
               items: [
                 {
                   label: "Send to supplier",
-                  variant: "filled",
+                  main: true,
                   call: { path: `${base}/correction`, body: { offer: o.id, send: true } },
                   confirm: {
                     heading: "Send the correction request?",
@@ -390,7 +386,7 @@ const next = on({
   skeleton: "text",
   render: (c) =>
     block("actions", {
-      items: [{ label: "Continue to pricing", variant: "filled", href: `/collections/cases/${c.id}/pricing` }],
+      items: [{ label: "Continue to pricing", main: true, href: link.doc("cases", c.id, "pricing") }],
     }),
 });
 

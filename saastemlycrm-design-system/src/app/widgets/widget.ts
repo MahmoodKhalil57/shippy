@@ -1,4 +1,4 @@
-import type { Action, CardBlock, Tag, Tone, ViewBlock, ViewHeader } from "./schema.ts";
+import type { Action, Tag, Tone, ViewBlock, ViewHeader } from "./schema.ts";
 
 /**
  * Widgets: how a project describes its screens next to its collections and globals.
@@ -88,7 +88,8 @@ export interface FieldsSpec {
   layout?: "stacked" | "inline";
 }
 
-export interface Widget<T = unknown> {
+/** What every widget that draws something can say about itself. */
+interface WidgetBase<T> {
   /**
    * Card heading: the widget is a card (shown with its heading while it loads). When it draws an
    * `entries` block it is a section instead: the heading over the entries' own cards (set
@@ -96,7 +97,6 @@ export interface Widget<T = unknown> {
    */
   title?: string;
   subhead?: string;
-  variant?: CardBlock["variant"];
   /** Tags, count and actions in the card's header, from the data. */
   head?(
     data: T,
@@ -108,21 +108,72 @@ export interface Widget<T = unknown> {
   hidden?(data: T, scope: WidgetScope): boolean;
   /** Where its data comes from. */
   source?: Source;
-  /** What it shows, from its data (or from nothing, without a source). */
-  render?(data: T, scope: WidgetScope): ViewBlock | ViewBlock[] | null | undefined;
-  /** Built-in data widgets. */
-  records?: RecordsSpec;
-  counts?: CountsSpec;
-  fields?: FieldsSpec;
-  /** Children side by side (as many columns as fit), or a main column and a side column. */
-  grid?: Widget[];
-  fit?: "xs" | "sm" | "md" | "lg";
-  split?: { main: Widget[]; side: Widget[] };
   /** The skeleton's shape while loading. */
   skeleton?: "card" | "stats" | "table" | "list" | "chart" | "text" | "entries";
   /** Shown instead of hiding the widget when its data is refused (403). */
   denied?: string;
 }
+
+/** A layout widget draws nothing of its own: no heading, source or header. */
+type NoBase = { [K in Exclude<keyof WidgetBase<unknown>, "visible">]?: never };
+
+type Only<K extends string> = {
+  [P in Exclude<"render" | "records" | "counts" | "fields" | "grid" | "split", K>]?: never;
+};
+
+/**
+ * A widget is exactly one kind: it draws its data (`render`), is a no-code data widget
+ * (`records`, `counts`, `fields`), or lays out other widgets (`grid`, `split`).
+ */
+export type Widget<T = unknown> =
+  | (WidgetBase<T> &
+      Only<"render"> & {
+        /** What it shows, from its data (or from nothing, without a source). */
+        render(data: T, scope: WidgetScope): ViewBlock | ViewBlock[] | null | undefined;
+      })
+  | (WidgetBase<T> & Only<"records"> & { records: RecordsSpec })
+  | (WidgetBase<T> & Only<"counts"> & { counts: CountsSpec })
+  | (WidgetBase<T> & Only<"fields"> & { fields: FieldsSpec })
+  /** Children side by side, as many columns as fit. */
+  | (NoBase & Only<"grid"> & { grid: Widget[]; visible?: (scope: WidgetScope) => boolean })
+  /** A main column and a side column. */
+  | (NoBase & Only<"split"> & { split: { main: Widget[]; side: Widget[] }; visible?: (scope: WidgetScope) => boolean });
+
+/** `$doc.id`, `$user.role`, `$param.period` in a string: the whole value when it's only that, else spliced in. */
+export function fill<T>(value: T, scope: WidgetScope): T {
+  const look = (path: string): unknown => {
+    const [root, key] = path.split(".");
+    if (root === "doc") return scope.doc?.[key as "id" | "slug"];
+    if (root === "user") return scope.user[key!];
+    if (root === "param") return scope.params[key!];
+    return undefined;
+  };
+  const scalar = (x: unknown) => (typeof x === "string" || typeof x === "number" ? String(x) : "");
+  const walk = (v: unknown): unknown => {
+    if (typeof v === "string") {
+      const whole = /^\$((?:doc|user|param)\.[\w-]+)$/.exec(v);
+      if (whole) return look(whole[1]!);
+      return v.replace(/\$((?:doc|user|param)\.[\w-]+)/g, (_, p: string) => encodeURIComponent(scalar(look(p))));
+    }
+    if (Array.isArray(v)) return v.map(walk);
+    if (v && typeof v === "object" && Object.getPrototypeOf(v) === Object.prototype)
+      return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, walk(x)]));
+    return v;
+  };
+  return walk(value) as T;
+}
+
+/** A widget that draws its data with `render`. */
+export type DrawingWidget<T = unknown> = Extract<Widget<T>, { render(data: T, scope: WidgetScope): unknown }>;
+
+/**
+ * Widgets that share one source: `const on = from<Cash>({ endpoint: "/cash" })`, then
+ * `on({ title, render })`. Each gets the source and stays typed by its data.
+ */
+export const from =
+  <T>(source: Source) =>
+  (w: Omit<DrawingWidget<T>, "source">): DrawingWidget<T> =>
+    ({ ...w, source }) as DrawingWidget<T>;
 
 /** The top of a root screen: fixed, or from data. */
 export type WidgetHeader =

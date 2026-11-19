@@ -1,8 +1,9 @@
 import { block, note, type Action, type Cell, type Tone } from "saastemlycrm-design-system/contracts";
-import { widgets, type Source, type Widget } from "saastemlycrm-design-system/contracts";
+import { from, widgets, type Source, type Widget } from "saastemlycrm-design-system/contracts";
 import type { AutomationsView } from "../endpoints/platform.ts";
 import type { Doc } from "saastemlycrm-design-system/contracts";
 import { formatDate } from "./format.ts";
+import * as link from "../links.ts";
 
 /**
  * Automations & exceptions (/automations): the rule registry (trigger, owner, due, approval,
@@ -13,7 +14,7 @@ import { formatDate } from "./format.ts";
  */
 
 const data: Source = { endpoint: "/automations" };
-const on = (w: Widget<AutomationsView>): Widget<AutomationsView> => ({ source: data, ...w });
+const on = from<AutomationsView>(data);
 
 const MODE: Record<string, { label: string; tone: Tone }> = {
   auto: { label: "Automatic", tone: "success" },
@@ -48,9 +49,8 @@ const PEOPLE = [
 ];
 
 /** The safe retry: the endpoint answers with what it did (the snackbar). */
-const retry = (x: Doc, label: string, variant: Action["variant"]): Action => ({
+const retry = (x: Doc, label: string): Action => ({
   label,
-  variant,
   call: { path: `/automations/retry/${encodeURIComponent(x.id)}` },
   reply: true,
 });
@@ -111,10 +111,10 @@ const exceptions = on({
         status: { text: s(x.status), tone: STATUS_TONE[s(x.status)] ?? "neutral", tag: true },
         action:
           x.status === "Open"
-            ? { text: "", actions: [retry(x, "Safe retry", "tonal")] }
+            ? { text: "", actions: [retry(x, "Safe retry")] }
             : x.status === "Waiting for review"
               ? { text: "In the review queue", tone: "neutral" }
-              : { text: "", actions: [retry(x, "Retry again", "text")] },
+              : { text: "", actions: [retry(x, "Retry again")] },
       })),
     }),
   ],
@@ -137,7 +137,7 @@ const review = on({
         tags:
           r.confidence === undefined ? undefined : [{ label: `${Math.round(r.confidence * 100)}%`, tone: "warning" }],
         actions: [
-          { label: "Open", href: r.href, variant: "text" },
+          { label: "Open", href: r.href },
           ...(r.kind === "exception"
             ? [
                 {
@@ -218,15 +218,12 @@ const boundaries: Widget = {
   title: "Automation boundaries",
   render: () =>
     block("grid", {
-      fit: "sm",
       blocks: [
         block("card", {
-          variant: "filled",
           heading: "Runs automatically under approved rules",
           blocks: [block("list", { items: AUTO.map((headline) => ({ headline, icon: "bolt" })) })],
         }),
         block("card", {
-          variant: "filled",
           heading: "Prepared for an authorised person",
           blocks: [block("list", { items: PEOPLE.map((headline) => ({ headline, icon: "user" })) })],
         }),
@@ -266,9 +263,9 @@ export const automationsPage = widgets({
     subtitle:
       "Every automation has a trigger, owner, due time, approval rule, retry behaviour and stop condition. Reprocessing never creates duplicates; failures land in the exception queue with a safe retry.",
     actions: [
-      { label: "All exceptions", href: "/collections/integration-exceptions" },
-      { label: "Full activity log", href: "/collections/activities" },
+      { label: "All exceptions", href: link.list("integration-exceptions") },
+      { label: "Full activity log", href: link.list("activities") },
     ],
   },
-  widgets: [stats, { grid: [exceptions, review], fit: "lg" }, registry, boundaries, audit],
+  widgets: [stats, { grid: [exceptions, review] }, registry, boundaries, audit],
 });

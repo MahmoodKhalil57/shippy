@@ -1,6 +1,7 @@
-import { block, note, type Action, type Entry, type Tone } from "saastemlycrm-design-system/contracts";
-import { widgets, type Source, type Widget } from "saastemlycrm-design-system/contracts";
+import { block, type IconName, note, type Action, type Entry, type Tone } from "saastemlycrm-design-system/contracts";
+import { from, widgets, type Source } from "saastemlycrm-design-system/contracts";
 import type { Growth, NextStep } from "../endpoints/growth-crm.ts";
+import * as link from "../links.ts";
 
 /**
  * The growth board (/growth): the growth CRM, kept apart from operational RFQs — prospects by
@@ -11,9 +12,9 @@ import type { Growth, NextStep } from "../endpoints/growth-crm.ts";
  */
 
 const data: Source = { endpoint: "/growth" };
-const on = (w: Widget<Growth>): Widget<Growth> => ({ source: data, ...w });
+const on = from<Growth>(data);
 
-const CHANNEL_ICON: Record<string, string> = {
+const CHANNEL_ICON: Record<string, IconName> = {
   Call: "phone",
   Email: "mail",
   WhatsApp: "chat",
@@ -49,18 +50,16 @@ const stats = on({
 
 const board = on({
   title: "Prospects by stage",
-  head: () => ({ actions: [{ label: "All opportunities", href: "/collections/opportunities", variant: "text" }] }),
+  head: () => ({ actions: [{ label: "All opportunities", href: link.list("opportunities") }] }),
   render: (g) => [
     note(
       "Introduced → registration submitted → approved vendor → first RFQ → active account. Every open opportunity has a next step, or it's flagged.",
     ),
     block("grid", {
-      fit: "xs",
       blocks: g.columns.map((c) =>
         block("card", {
           heading: c.stage,
           count: c.deals.length,
-          variant: "filled",
           blocks: [
             block("list", {
               empty: "—",
@@ -200,7 +199,7 @@ const registrations = on({
   title: "Vendor registrations",
   skeleton: "table",
   head: () => ({
-    actions: [{ label: "All registrations", href: "/collections/vendor-registrations", variant: "text" }],
+    actions: [{ label: "All registrations", href: link.list("vendor-registrations") }],
   }),
   render: (g) => [
     note("Applications to become an approved supplier of a ship manager or owner."),
@@ -285,9 +284,9 @@ export const growthPage = widgets({
     subtitle:
       "Prospects, fleets, introductions and vendor registrations — kept apart from operational RFQs, and linked to the customer once business is won.",
     actions: [
-      { label: "Campaigns", href: "/collections/campaigns" },
-      { label: "Add opportunity", href: "/collections/opportunities/create", variant: "filled" },
+      { label: "Campaigns", href: link.list("campaigns") },
+      { label: "Add opportunity", href: link.create("opportunities"), main: true },
     ],
   },
-  widgets: [stats, board, steps, { grid: [fleets, registrations], fit: "lg" }, campaigns],
+  widgets: [stats, board, steps, { grid: [fleets, registrations] }, campaigns],
 });

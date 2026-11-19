@@ -1,5 +1,5 @@
 import { block, note, type Action, type Row } from "saastemlycrm-design-system/contracts";
-import { widgets, type Source, type Widget } from "saastemlycrm-design-system/contracts";
+import { from, widgets, type Source } from "saastemlycrm-design-system/contracts";
 import { egp, formatDateTime, pct, signed } from "../endpoints/insights-shared.ts";
 import type { CaseProfit, CloseCheck, LineState } from "../endpoints/profit.ts";
 
@@ -10,7 +10,7 @@ import type { CaseProfit, CloseCheck, LineState } from "../endpoints/profit.ts";
  */
 
 const profitOf: Source = { endpoint: "/case-profit/$doc.id" };
-const on = (w: Widget<CaseProfit>): Widget<CaseProfit> => ({ source: profitOf, ...w });
+const on = from<CaseProfit>(profitOf);
 
 const STATE: Record<LineState, { label: string; tone: "success" | "warning" | "neutral" | "info" }> = {
   Confirmed: { label: "Actual", tone: "success" },
@@ -31,7 +31,7 @@ function actions(p: CaseProfit) {
   const billed = p.lines.filter((l) => l.kind === "charge" && l.state === "Billed");
   const actuals: Action = {
     label: "Confirm actuals",
-    variant: "filled",
+    main: true,
     call: { path: `${base}/actuals` },
     confirm: {
       heading: "Replace estimates with actuals",
@@ -81,7 +81,7 @@ function actions(p: CaseProfit) {
   };
   const close: Action = {
     label: "Close case",
-    variant: "filled",
+    main: true,
     call: { path: `${base}/close` },
     disabled: !p.canClose,
     reason: p.canClose
@@ -107,7 +107,7 @@ function checkAction(k: CloseCheck, p: CaseProfit, a: ReturnType<typeof actions>
       : k.action === "receipt"
         ? a.receipt
         : a.claim(p.claims.find((c) => !c.settled)?.ref ?? "");
-  return pick && { ...pick, label: k.actionLabel ?? pick.label, variant: "tonal" };
+  return pick && { ...pick, label: k.actionLabel ?? pick.label };
 }
 
 /** Closed, or not costed yet: the case's state above everything. */
@@ -317,10 +317,7 @@ const checklist = on({
             supporting: k.detail,
             icon: k.ok ? "success" : "warning",
             tags: k.ok ? [{ label: "Done", tone: "success" as const }] : [{ label: "Open", tone: "warning" as const }],
-            actions: [
-              ...k.sources.map((s): Action => ({ label: s.label, href: s.href, variant: "text" })),
-              ...(act ? [act] : []),
-            ],
+            actions: [...k.sources.map((s): Action => ({ label: s.label, href: s.href })), ...(act ? [act] : [])],
           };
         }),
       }),

@@ -9,7 +9,7 @@ import { action as actionButton, tag } from "./blocks.ts";
 import { expand } from "./data.ts";
 import { inCard, renderBlocks, type ViewContext } from "./registry.ts";
 import type { Action, ViewBlock, ViewHeader } from "./schema.ts";
-import type { Source, Widget, WidgetPage, WidgetScope } from "./widget.ts";
+import { fill, type Source, type Widget, type WidgetPage, type WidgetScope } from "./widget.ts";
 // More blocks: the app's own (./blocks/*.ts), each registering itself with `defineBlock`.
 import.meta.glob("./blocks/*.ts", { eager: true });
 
@@ -24,29 +24,7 @@ import.meta.glob("./blocks/*.ts", { eager: true });
  * blocks are kept across reloads and may fire `app-widgets-reload` to ask for fresh data.
  */
 
-/** `$doc.id`, `$user.role`, `$param.period` in a string: the whole value when it's only that, else spliced in. */
-export function fill<T>(value: T, scope: WidgetScope): T {
-  const look = (path: string): unknown => {
-    const [root, key] = path.split(".");
-    if (root === "doc") return scope.doc?.[key as "id" | "slug"];
-    if (root === "user") return scope.user[key!];
-    if (root === "param") return scope.params[key!];
-    return undefined;
-  };
-  const scalar = (x: unknown) => (typeof x === "string" || typeof x === "number" ? String(x) : "");
-  const walk = (v: unknown): unknown => {
-    if (typeof v === "string") {
-      const whole = /^\$((?:doc|user|param)\.[\w-]+)$/.exec(v);
-      if (whole) return look(whole[1]!);
-      return v.replace(/\$((?:doc|user|param)\.[\w-]+)/g, (_, p: string) => encodeURIComponent(scalar(look(p))));
-    }
-    if (Array.isArray(v)) return v.map(walk);
-    if (v && typeof v === "object" && Object.getPrototypeOf(v) === Object.prototype)
-      return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, walk(x)]));
-    return v;
-  };
-  return walk(value) as T;
-}
+export { fill };
 
 /**
  * Load a source whose placeholders are filled, as the signed-in user, through the REST API.
@@ -332,7 +310,7 @@ export class AppWidgets extends LightElement {
 
   #widget(w: Widget): TemplateResult | typeof nothing {
     if (w.visible && !w.visible(this.scope)) return nothing;
-    if (w.grid) return html`<ui-grid .fit=${w.fit ?? "md"} gap="4">${w.grid.map((x) => this.#widget(x))}</ui-grid>`;
+    if (w.grid) return html`<ui-grid fit="md" gap="4">${w.grid.map((x) => this.#widget(x))}</ui-grid>`;
     if (w.split)
       return html`<ui-grid
         sidebar
@@ -488,7 +466,7 @@ export class AppWidget extends LightElement {
         </ui-flex>
         ${body}
       </ui-flex>`;
-    return html`<ui-card .variant=${w.variant} .subhead=${subhead} .count=${head?.count} .countTone=${head?.countTone}>
+    return html`<ui-card .subhead=${subhead} .count=${head?.count} .countTone=${head?.countTone}>
       <span slot="heading">${w.title}</span>
       ${trailing("trailing")} ${body}
     </ui-card>`;

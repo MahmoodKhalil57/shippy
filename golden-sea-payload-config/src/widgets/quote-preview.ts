@@ -1,7 +1,8 @@
 import { block, type Action, type DocumentSpec } from "saastemlycrm-design-system/contracts";
-import { widgets, type Source, type Widget, type WidgetScope } from "saastemlycrm-design-system/contracts";
+import { from, widgets, type Source, type WidgetScope } from "saastemlycrm-design-system/contracts";
 import type { QuoteView } from "../endpoints/commercial.ts";
 import { egp, pct } from "../endpoints/insights-shared.ts";
+import * as link from "../links.ts";
 
 /**
  * Quotation tab "Preview & send" (/collections/quotations/:id/preview): the quotation as Golden
@@ -15,7 +16,7 @@ import { egp, pct } from "../endpoints/insights-shared.ts";
 
 const quote: Source = { endpoint: "/commercial/quotations/$doc.id" };
 /** A widget drawn from the quotation view (one request, however many widgets use it). */
-const on = (w: Widget<QuoteView>): Widget<QuoteView> => ({ source: quote, ...w });
+const on = from<QuoteView>(quote);
 
 type Lang = "en" | "ar";
 interface Line {
@@ -219,7 +220,7 @@ function actions(v: QuoteView, me: string): Action[] {
   if (v.can.requestApproval)
     out.push({
       label: "Request approval",
-      variant: "filled",
+      main: true,
       call: { path: `${data}/request-approval` },
       done: "Approval requested from Karim Balbaa.",
     });
@@ -250,7 +251,7 @@ function actions(v: QuoteView, me: string): Action[] {
       },
       {
         label: "Approve",
-        variant: "filled",
+        main: true,
         call: { path: decide, body: { decision: "Approve" } },
         confirm: {
           heading: `Approve ${q.number}`,
@@ -277,7 +278,7 @@ function actions(v: QuoteView, me: string): Action[] {
     const portal = Boolean(v.case.portal && /portal/i.test(v.case.portal) && !/Nordvik/.test(v.case.customer));
     out.push({
       label: "Send to customer",
-      variant: "filled",
+      main: true,
       call: { path: `${own}/send`, body: { to: v.case.email } },
       confirm: {
         heading: `Send ${q.number}`,
@@ -368,7 +369,7 @@ function actions(v: QuoteView, me: string): Action[] {
       assist: { field: "reason", tools: WRITING },
       reply: true,
     });
-  out.push({ label: "Print", variant: "text", print: true });
+  out.push({ label: "Print", print: true });
   return out;
 }
 
@@ -395,9 +396,7 @@ const status = on({
             }),
           ]
         : []),
-      ...(v.why.approve && v.approvalId && !v.can.approve
-        ? [block("text", { muted: true, variant: "body-sm", text: v.why.approve })]
-        : []),
+      ...(v.why.approve && v.approvalId && !v.can.approve ? [block("text", { muted: true, text: v.why.approve })] : []),
     ];
   },
 });
@@ -407,7 +406,6 @@ const choices = on({
   skeleton: "text",
   render: (v, scope) =>
     block("grid", {
-      fit: "sm",
       blocks: [
         block("choice", {
           param: "currency",
@@ -429,7 +427,6 @@ const choices = on({
         }),
         block("text", {
           muted: true,
-          variant: "body-sm",
           text: "Customer-facing: supplier names, costs and margins are never printed.",
         }),
       ],
@@ -449,7 +446,7 @@ const versions = on({
     return block("list", {
       items: v.versions.map((x) => ({
         headline: x.number,
-        href: `/collections/quotations/${x.id}/preview`,
+        href: link.doc("quotations", x.id, "preview"),
         selected: x.id === q.id,
         tags: [
           {
@@ -473,7 +470,7 @@ const internal = on({
   title: "Internal — never printed",
   hidden: (v) => !v.internal,
   head: (v) => ({
-    actions: v.case.id ? [{ label: "Pricing", variant: "text", href: `/collections/cases/${v.case.id}/pricing` }] : [],
+    actions: v.case.id ? [{ label: "Pricing", href: link.doc("cases", v.case.id, "pricing") }] : [],
   }),
   render: (v) => {
     const i = v.internal;
@@ -492,7 +489,7 @@ const internal = on({
           },
         ],
       }),
-      ...(i.exceptions ? [block("text", { muted: true, variant: "body-sm", text: i.exceptions })] : []),
+      ...(i.exceptions ? [block("text", { muted: true, text: i.exceptions })] : []),
     ];
   },
 });
@@ -551,5 +548,5 @@ const portal = on({
 
 export const quotePreview = widgets({
   params: { currency: "quote", lang: "en" },
-  widgets: [status, choices, copy, { grid: [versions, internal, portal], fit: "md" }],
+  widgets: [status, choices, copy, { grid: [versions, internal, portal] }],
 });

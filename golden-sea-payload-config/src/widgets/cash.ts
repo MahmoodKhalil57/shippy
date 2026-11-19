@@ -1,6 +1,7 @@
-import { block, type Action, type Row, type Tone, type ViewBlock } from "saastemlycrm-design-system/contracts";
-import { widgets, type Source, type Widget } from "saastemlycrm-design-system/contracts";
+import { block, note, type Action, type Row, type Tone, type ViewBlock } from "saastemlycrm-design-system/contracts";
+import { from, widgets, type Source, type Widget } from "saastemlycrm-design-system/contracts";
 import type { BankChange, Cash, CashPayables, Decision, Draft, Receivable } from "../endpoints/cash.ts";
+import * as link from "../links.ts";
 
 /**
  * Root view "Receivables & payables" (/cash): what customers owe (ageing by customer, collection
@@ -15,8 +16,8 @@ import type { BankChange, Cash, CashPayables, Decision, Draft, Receivable } from
 
 const cashData: Source = { endpoint: "/operations/cash" };
 const payablesData: Source = { endpoint: "/cash/payables" };
-const on = (w: Widget<Cash>): Widget<Cash> => ({ source: cashData, ...w });
-const onPayables = (w: Widget<CashPayables>): Widget<CashPayables> => ({ source: payablesData, ...w });
+const on = from<Cash>(cashData);
+const onPayables = from<CashPayables>(payablesData);
 
 /* ---------------------------------------------------------------- formats */
 
@@ -39,7 +40,6 @@ const dayTime = (iso?: string | null) => (valid(iso) ? TIME.format(new Date(Stri
 const usdK = { unit: "money", currency: "USD", compact: true } as const;
 const egpK = (v: number) => `EGP ${Math.round(v)}k`;
 const usdKText = (v: number) => `USD ${(v / 1000).toFixed(v < 10000 ? 1 : 0)}k`;
-const intro = (text: string) => block("text", { muted: true, text });
 
 /** The tone for a status word, as the collection lists colour it (src/app/shared.ts `statusColor`). */
 function statusTone(status = ""): Tone {
@@ -93,7 +93,6 @@ function reminderAction(r: Receivable, d: Draft): Action {
   const rule = ruleOf(d.rule);
   return {
     label: r.contactRule === "do-not-chase" ? "Internal reminder" : "Draft reminder",
-    variant: "tonal",
     call: { path: "/cash/reminder", body: { invoice: r.id } },
     confirm: {
       heading: `Collection reminder — ${r.number}`,
@@ -137,7 +136,6 @@ function decideActions(a: { id: string; title: string }, bank: BankChange["reque
   return [
     {
       label: "Reject",
-      variant: "text",
       call: call("Reject"),
       confirm: { heading: `Reject: ${a.title}`, label: "Reject", tone: "error" },
       fields: [{ type: "textarea", name: "reason", label: "Reason (required)", required: true }],
@@ -145,7 +143,7 @@ function decideActions(a: { id: string; title: string }, bank: BankChange["reque
     },
     {
       label: bank ? "Approve after call-back" : "Approve",
-      variant: "filled",
+      main: true,
       call: call("Approve"),
       confirm: {
         heading: `Approve: ${a.title}`,
@@ -212,7 +210,7 @@ const ageing = on({
   title: "Receivables ageing by customer",
   skeleton: "chart",
   render: (d) => [
-    intro(`Open balances in USD equivalent (USD/EGP ${d.fx.USD}, EUR/EGP ${d.fx.EUR}), by days past due.`),
+    note(`Open balances in USD equivalent (USD/EGP ${d.fx.USD}, EUR/EGP ${d.fx.EUR}), by days past due.`),
     block("chart", {
       label: "Receivables ageing by customer",
       chart: {
@@ -254,7 +252,7 @@ const forecast = on({
     if (d.canSeePayables)
       series.push({ name: "Cash out (payables + fixed costs)", values: d.cashOut.map((v) => v * 1000) });
     return [
-      intro(
+      note(
         `EGP thousands, by week. Receipts by invoice due date (overdue counted this week, chronic late payers a week later); payments by bill and balance due dates${
           d.fixedWeeklyEgp
             ? `, plus EGP ${Math.round(d.fixedWeeklyEgp / 1000)}k a week of fixed costs from the budget`
@@ -280,7 +278,7 @@ const collections: Widget<{ cash: Cash; drafts: Record<string, Draft> }> = {
   source: { all: { cash: cashData, drafts: { endpoint: "/cash/reminder-drafts" } } },
   head: ({ cash: d }) => ({ count: d.receivables.length }),
   render: ({ cash: d, drafts }) => [
-    intro(
+    note(
       "Reminders follow each customer's contact rule: “do not chase” accounts get an internal reminder only; for the others the AI drafts the email and a person reviews and sends it.",
     ),
     block("table", {
@@ -296,7 +294,7 @@ const collections: Widget<{ cash: Cash; drafts: Record<string, Draft> }> = {
         const draft = drafts[r.id];
         const rule = ruleOf(r.contactRule);
         return {
-          number: { text: r.number, href: `/collections/invoices/${r.id}`, strong: true },
+          number: { text: r.number, href: link.doc("invoices", r.id), strong: true },
           who: `${r.customerName}${r.caseId ? ` · ${r.caseId}` : ""}`,
           balance: money(r.balance, r.currency),
           paid: r.paid ? `of ${money(r.amount, r.currency)} · ${money(r.paid, r.currency)} paid` : null,
@@ -321,7 +319,6 @@ const remittance = on({
   render: (d) => [
     block("text", {
       muted: true,
-      variant: "body-sm",
       text: "Paste a customer's payment advice or remittance email: the invoice numbers and amount are read on this device, then matched to open invoices (by number, or by an equal balance). A person records the payment.",
     }),
     block("actions", {
@@ -329,7 +326,6 @@ const remittance = on({
         {
           label: "Read and match",
           icon: "sparkles",
-          variant: "tonal",
           disabled: !d.receivables.length,
           reason: d.receivables.length ? undefined : "No open invoices to match.",
           prompt: "Match a remittance",
@@ -376,7 +372,7 @@ const payables = onPayables({
   denied: "Supplier payables, payment approvals and bank details are not visible to Sales.",
   head: (d) => ({ count: d.payables.length }),
   render: (d) => [
-    intro(
+    note(
       "Deposits paid against pro formas, balances due on delivery, and bills held when PO, receipt and bill don't match.",
     ),
     block("table", {
@@ -402,7 +398,6 @@ const payables = onPayables({
                     actions: [
                       {
                         label: "Request payment approval",
-                        variant: "tonal" as const,
                         call: { path: "/cash/request-approval", body: { payable: p.id } },
                         confirm: {
                           heading: `Request payment approval — ${p.supplierName}`,
@@ -426,7 +421,7 @@ const payables = onPayables({
           supplier: {
             text: p.supplierName,
             strong: true,
-            href: p.caseId ? `/collections/cases/${p.case}/order` : undefined,
+            href: p.caseId ? link.doc("cases", p.case, "order") : undefined,
           },
           ref: `${p.po}${p.caseId ? ` · ${p.caseId}` : ""}${p.bill ? ` · bill ${p.bill.number}` : ""}`,
           stage: {
@@ -458,14 +453,11 @@ const approvals = onPayables({
     const items = d.approvals.flatMap((a, i): ViewBlock[] => {
       const decisions = decisionLines(a.decisions);
       const actions: Action[] = [
-        ...(a.canDecide
-          ? decideActions(a, false).map((x) => (x.variant === "filled" ? { ...x, variant: "tonal" as const } : x))
-          : []),
+        ...(a.canDecide ? decideActions(a, false).map((x): Action => ({ ...x, main: false as const })) : []),
         ...(a.status === "Approved" && d.canFinance && a.po
           ? [
               {
                 label: "Record payment",
-                variant: "tonal" as const,
                 call: { path: "/cash/record-payment", body: { approval: a.id } },
                 confirm: {
                   heading: `Record supplier payment — ${a.po.number}`,
@@ -489,10 +481,9 @@ const approvals = onPayables({
       ];
       return [
         ...(i ? [block("divider", {})] : []),
-        block("text", { text: a.title, variant: "title-md" }),
+        block("heading", { text: a.title }),
         block("text", {
           muted: true,
-          variant: "body-sm",
           text: [
             `${a.type}${a.caseId ? ` · ${a.caseId}` : ""}${a.po ? ` · ${money(a.amount, a.po.currency)}` : ""} · approvers ${a.approvers.map((p) => p.name).join(" or ")}`,
             a.detail ?? "",
@@ -506,7 +497,7 @@ const approvals = onPayables({
       ];
     });
     return [
-      intro(
+      note(
         "Every supplier payment needs the Financial Director or the CEO. Once approved, finance pays in the bank and records it here with the bank reference.",
       ),
       ...(items.length ? items : [block("empty", { heading: "Nothing waiting." })]),
@@ -525,7 +516,7 @@ function bankChange(d: CashPayables, b: BankChange, me: string): ViewBlock {
       ? [
           {
             label: "Apply new bank details",
-            variant: "filled" as const,
+            main: true,
             call: { path: "/cash/apply-bank", body: { approval: b.id } },
             done: `New bank details applied to ${b.supplierName} — verified by two people.`,
           },
@@ -542,7 +533,7 @@ function bankChange(d: CashPayables, b: BankChange, me: string): ViewBlock {
     heading: "Bank-detail change — two-person check",
     tags: [{ label: b.applied ? "Applied" : b.status, tone: b.applied ? "success" : statusTone(b.status) }],
     blocks: [
-      block("text", { text: b.title, variant: "label-lg" }),
+      block("heading", { text: b.title }),
       block("steps", {
         current: current - 1,
         items: [
@@ -570,7 +561,7 @@ function bankChange(d: CashPayables, b: BankChange, me: string): ViewBlock {
             }),
           ]
         : []),
-      ...(decisions ? [block("text", { text: decisions, variant: "body-sm" })] : []),
+      ...(decisions ? [block("text", { text: decisions })] : []),
       block("alert", {
         tone: b.applied ? "success" : "warning",
         text: b.applied
@@ -578,7 +569,7 @@ function bankChange(d: CashPayables, b: BankChange, me: string): ViewBlock {
           : `Payments to ${b.supplierName} stay on the old, verified account until two different people — Finance and the CEO — approve after a call-back on the number on file.`,
       }),
       ...(actions.length ? [block("actions", { items: actions })] : []),
-      ...(waiting ? [block("text", { text: waiting, muted: true, variant: "body-sm" })] : []),
+      ...(waiting ? [block("text", { text: waiting, muted: true })] : []),
     ],
   });
 }
@@ -594,8 +585,8 @@ export const cashPage = widgets({
       "What customers owe, what we owe suppliers, and what needs a decision. Money moves only in the bank — here people approve and record it.",
     actions: [
       { label: "Approvals queue", href: "/approvals" },
-      { label: "All invoices", href: "/collections/invoices" },
+      { label: "All invoices", href: link.list("invoices") },
     ],
   },
-  widgets: [tiles, { grid: [ageing, forecast], fit: "lg" }, collections, remittance, payables, approvals, bankChanges],
+  widgets: [tiles, { grid: [ageing, forecast] }, collections, remittance, payables, approvals, bankChanges],
 });

@@ -18,6 +18,7 @@ import { MemoryStore } from "./mock/runtime/store.ts";
  */
 
 export { Engine, MemoryStore, RestApi, seedsFromGlob, type Seeds };
+export { screenDesignProblems, screensOf, type Screen, type ScreenCheckOptions } from "./screens.ts";
 
 /** A response, with its body parsed (JSON, else text) for loose API-test assertions. */
 export interface TestResponse {

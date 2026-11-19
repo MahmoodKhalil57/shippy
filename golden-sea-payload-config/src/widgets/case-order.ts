@@ -1,6 +1,7 @@
-import { block, type Action, type Cell, type Row, type ViewBlock } from "saastemlycrm-design-system/contracts";
-import { widgets, type Source, type Widget } from "saastemlycrm-design-system/contracts";
+import { assist, block, type Action, type Cell, type Row, type ViewBlock } from "saastemlycrm-design-system/contracts";
+import { from, widgets, type Source } from "saastemlycrm-design-system/contracts";
 import { day, dayTime, money, person, statusTone, type CaseOps, type OpsPO } from "./o2c-shared.ts";
+import * as link from "../links.ts";
 
 /**
  * Case tab "Order & purchasing" (/collections/cases/<id>/order): the customer's PO checked line
@@ -14,7 +15,7 @@ import { day, dayTime, money, person, statusTone, type CaseOps, type OpsPO } fro
 
 const ops: Source = { endpoint: "/operations/case/$doc.id" };
 /** A widget drawn from the case's order-to-cash data (one request, however many widgets use it). */
-const on = (w: Widget<CaseOps>): Widget<CaseOps> => ({ source: ops, ...w });
+const on = from<CaseOps>(ops);
 
 const own = "/case-order/$doc.id";
 const plural = (n: number, one: string, many = `${one}es`) => (n === 1 ? one : many);
@@ -67,7 +68,7 @@ const tiles = on({
 
 const readPo: Action = {
   label: "Read customer PO",
-  variant: "filled",
+  main: true,
   call: { path: `${own}/po-check` },
   reply: true,
 };
@@ -79,7 +80,7 @@ function amendments(d: CaseOps): ViewBlock[] {
       ? []
       : [
           block("attach", {
-            action: { label: "Record amendment", variant: "tonal" },
+            action: { label: "Record amendment" },
             text: `${c.lineNo ? `L${c.lineNo}` : "Header"} · ${c.field}`,
             heading: `Record customer amendment — line ${c.lineNo || "header"}`,
             intro: `${c.field} — PO: ${c.po} · Quotation: ${c.quote}`,
@@ -123,8 +124,9 @@ const poCheck = on({
   head: (d) =>
     d.customerPo
       ? {
-          tags: [{ label: d.customerPo.status, tone: statusTone(d.customerPo.status) }],
-          actions: [{ ...readPo, label: "Re-run PO check", variant: "text" }],
+          subhead: `${d.customerPo.number} · received ${dayTime(d.customerPo.receivedAt)} · matched to ${d.customerPo.quotation} · billing entity ${d.customerPo.billingEntity ?? "—"}`,
+          tags: [{ label: d.customerPo.status, tone: statusTone(d.customerPo.status) }, { label: "AI check · 96%" }],
+          actions: [{ ...readPo, label: "Re-run PO check" }],
         }
       : {},
   render: (d) => {
@@ -161,11 +163,6 @@ const poCheck = on({
       note: c.resolution ? `${c.resolution}${c.evidence ? " · evidence attached" : ""}` : "",
     }));
     return [
-      block("text", {
-        muted: true,
-        text: `${po.number} · received ${dayTime(po.receivedAt)} · matched to ${po.quotation} · billing entity ${po.billingEntity ?? "—"}`,
-      }),
-      block("tags", { items: [{ label: "AI check · 96%" }] }),
       block("table", {
         columns: [
           { key: "line", label: "Line" },
@@ -177,37 +174,34 @@ const poCheck = on({
         rows,
       }),
       ...amendments(d),
-      block("custom", {
-        element: "ui-ai-check",
-        props: {
-          label: "Second look with AI",
-          text: po.checks
-            .map(
-              (c) =>
-                `${c.lineNo > 0 ? `Line ${c.lineNo}` : "Terms"} · ${c.field}: PO says "${c.po}", quotation ${po.quotation} says "${c.quote}"`,
-            )
-            .join("\n"),
-          questions: [
-            {
-              id: "prices",
-              prompt: "Are the prices on the customer's PO the same as on the quotation?",
-              yes: "Prices match the quotation",
-              no: "A price differs from the quotation",
-            },
-            {
-              id: "items",
-              prompt: "Are the items and quantities on the PO the same as on the quotation?",
-              yes: "Items and quantities match",
-              no: "An item or quantity differs",
-            },
-            {
-              id: "terms",
-              prompt: "Do the PO's commercial terms (payment, delivery, validity) match the quotation?",
-              yes: "Terms match",
-              no: "A term differs",
-            },
-          ],
-        },
+      assist("ui-ai-check", `po-${po.number}`, {
+        label: "Second look with AI",
+        text: po.checks
+          .map(
+            (c) =>
+              `${c.lineNo > 0 ? `Line ${c.lineNo}` : "Terms"} · ${c.field}: PO says "${c.po}", quotation ${po.quotation} says "${c.quote}"`,
+          )
+          .join("\n"),
+        questions: [
+          {
+            id: "prices",
+            prompt: "Are the prices on the customer's PO the same as on the quotation?",
+            yes: "Prices match the quotation",
+            no: "A price differs from the quotation",
+          },
+          {
+            id: "items",
+            prompt: "Are the items and quantities on the PO the same as on the quotation?",
+            yes: "Items and quantities match",
+            no: "An item or quantity differs",
+          },
+          {
+            id: "terms",
+            prompt: "Do the PO's commercial terms (payment, delivery, validity) match the quotation?",
+            yes: "Terms match",
+            no: "A term differs",
+          },
+        ],
       }),
       blocked
         ? block("alert", {
@@ -227,7 +221,7 @@ const poCheck = on({
               items: [
                 {
                   label: "Confirm sales order & prepare supplier POs",
-                  variant: "filled",
+                  main: true,
                   disabled: blocked,
                   call: { path: `${own}/confirm-order` },
                   reply: true,
@@ -273,14 +267,12 @@ const partialAward = on({
                     : [
                         {
                           label: "Keep open",
-                          variant: "text" as const,
                           call: award(l.lineNo, "Open — revision to follow", "Revision to follow"),
                           done: `Line ${l.lineNo}: kept open for a revision.`,
                         },
                       ]),
                   {
                     label: "Close with reason",
-                    variant: "tonal",
                     call: award(l.lineNo, "Closed"),
                     prompt: `Close line ${l.lineNo} (not awarded)`,
                     fields: [
@@ -343,7 +335,6 @@ function recheck(d: CaseOps, p: OpsPO): ViewBlock {
           actions: [
             {
               label: "Re-check & confirm",
-              variant: "tonal",
               call: { path: "/operations/po-recheck", body: { po: p.id } },
               done: `Re-checked price, availability, FX and lead time with ${p.supplierName}.`,
             },
@@ -355,7 +346,7 @@ function recheck(d: CaseOps, p: OpsPO): ViewBlock {
   const decide: Action = d.isManagement
     ? {
         label: `Approve & confirm ${p.number}`,
-        variant: "filled",
+        main: true,
         call: {
           method: "PATCH",
           path: `/purchase-orders/${encodeURIComponent(p.id)}`,
@@ -365,12 +356,11 @@ function recheck(d: CaseOps, p: OpsPO): ViewBlock {
       }
     : {
         label: "Ask Karim Balbaa to approve",
-        variant: "filled",
+        main: true,
         call: { path: `${own}/ask-approval`, body: { po: p.id } },
         done: `Approval requested from Karim Balbaa for ${p.number}.`,
       };
   return block("card", {
-    variant: "outlined",
     heading: `Re-check before confirming ${p.number}`,
     tags: [{ label: p.status, tone: statusTone(p.status) }],
     blocks: [
@@ -424,7 +414,7 @@ const supplierPos = on({
         .filter(Boolean)
         .join(" · ");
       return {
-        number: { text: p.number, href: `/collections/purchase-orders/${p.id}`, strong: true },
+        number: { text: p.number, href: link.doc("purchase-orders", p.id), strong: true },
         supplier: p.supplierName,
         lines: p.lines
           .map(
@@ -489,7 +479,6 @@ const bills = on({
       actions: [
         {
           label: "Book incoming bill",
-          variant: "tonal",
           call: { path: `${own}/book-bill` },
           confirm: {
             heading: "Book incoming supplier bill",

@@ -3,6 +3,7 @@ import type { Doc } from "saastemlycrm-design-system/contracts";
 import { CONTACT_RULES, ROLES } from "../collections/shared.ts";
 import { PERMISSIONS } from "../globals/index.ts";
 import { DEMO_NOW } from "./home.ts";
+import * as link from "../links.ts";
 
 /**
  * Root endpoints for the platform & trust screens: the case overview (lifecycle, line progress,
@@ -418,7 +419,7 @@ const timelineEntry = (a: Doc, name: (v: unknown) => string, cases?: Map<string,
     rule: str(a.rule),
     entity: str(a.entity),
     caseId: caseDoc ? str(caseDoc.caseId) : undefined,
-    caseHref: caseDoc ? `/collections/cases/${caseDoc.id}/overview` : undefined,
+    caseHref: caseDoc ? link.doc("cases", caseDoc.id, "overview") : undefined,
   };
 };
 
@@ -514,7 +515,7 @@ const reassign: Endpoint = {
       kind: "Update",
       title: `You now own ${o.caseId}`,
       detail: `Handover from ${str(me(req)?.name)}${moved ? ` · ${moved} open task${moved === 1 ? "" : "s"} moved to you` : ""}`,
-      href: `/collections/cases/${id}/overview`,
+      href: link.doc("cases", id, "overview"),
     });
     return json({
       ok: true,
@@ -568,7 +569,7 @@ const automations: Endpoint = {
           kind: "exception" as const,
           title: `${str(x.source)}: ${str(x.summary)}`,
           detail: str(x.impact),
-          href: `/collections/integration-exceptions/${x.id}`,
+          href: link.doc("integration-exceptions", x.id),
         })),
       ...messages
         .filter((m) => m.status === "Needs review")
@@ -588,7 +589,7 @@ const automations: Endpoint = {
             kind: "line" as const,
             title: `${str(c.caseId)} line ${str(l.lineNo)}: ${str(l.description)}`,
             detail: str(l.missing) || "Low extraction confidence",
-            href: `/collections/cases/${c.id}/overview`,
+            href: link.doc("cases", c.id, "overview"),
             confidence: l.confidence as number,
           })),
       ),
@@ -1004,7 +1005,8 @@ const rosterSave: Endpoint = {
 /* ================================================================ integrations */
 
 export interface IntegrationsView {
-  connections: (Record<string, unknown> & { index: number; live: number })[];
+  /** `expiresInDays`: days from the demo's "now" until the token or certificate expires. */
+  connections: (Record<string, unknown> & { index: number; live: number; expiresInDays: number | null })[];
   emailImport: Record<string, unknown>;
   backups: Record<string, unknown>;
   ack: {
@@ -1061,6 +1063,9 @@ const integrations: Endpoint = {
       connections: ((g.connections as Record<string, unknown>[] | undefined) ?? []).map((conn, index) => ({
         ...conn,
         index,
+        expiresInDays: conn.tokenExpiresAt
+          ? Math.round((new Date(str(conn.tokenExpiresAt)).getTime() - DEMO_NOW.getTime()) / DAY)
+          : null,
         live: messages.filter(
           (m) =>
             (m.mailbox && m.mailbox === conn.account) || (conn.kind === "Website form" && m.channel === "Website form"),
@@ -1281,27 +1286,27 @@ export const PLAN: Plan = {
         {
           name: "Reply matching & new suppliers",
           detail: "Changed subjects, duplicates, review queue, auto-saved suppliers and dated prices",
-          href: "/collections/cases/gs-rfq-0142/rfqs",
+          href: link.doc("cases", "gs-rfq-0142", "rfqs"),
         },
         {
           name: "Supplier RFQs",
           detail: "Full list or split by category, client hidden, statuses, reminders, escalation",
-          href: "/collections/cases/gs-rfq-0142/rfqs",
+          href: link.doc("cases", "gs-rfq-0142", "rfqs"),
         },
         {
           name: "Offer comparison",
           detail: "Deviations, versions, unit/pack normalisation, FX, landed cost, split sourcing",
-          href: "/collections/cases/gs-rfq-0142/compare",
+          href: link.doc("cases", "gs-rfq-0142", "compare"),
         },
         {
           name: "Pricing & approvals",
           detail: "Pricing policy, margin vs markup, shared charges, approval rules",
-          href: "/collections/cases/gs-rfq-0142/pricing",
+          href: link.doc("cases", "gs-rfq-0142", "pricing"),
         },
         {
           name: "Golden Sea quotation",
           detail: "Your layout, EGP/USD, Arabic, versions, decision states",
-          href: "/collections/quotations/q-0142-v1/preview",
+          href: link.doc("quotations", "q-0142-v1", "preview"),
         },
         {
           name: "Inbox history",
@@ -1331,22 +1336,22 @@ export const PLAN: Plan = {
         {
           name: "Customer PO check",
           detail: "PO vs quote version, partial awards; mismatches block the order",
-          href: "/collections/cases/gs-rfq-0136/order",
+          href: link.doc("cases", "gs-rfq-0136", "order"),
         },
         {
           name: "Supplier POs & bills",
           detail: "Deposits, pro formas, 3-way match, no duplicate bills",
-          href: "/collections/cases/gs-rfq-0136/order",
+          href: link.doc("cases", "gs-rfq-0136", "order"),
         },
         {
           name: "Drop-ship & warehouse",
           detail: "Lots, expiry, QC, shortfalls and backorders",
-          href: "/collections/cases/gs-rfq-0133/delivery",
+          href: link.doc("cases", "gs-rfq-0133", "delivery"),
         },
         {
           name: "Vessel delivery",
           detail: "Port, ETA, agent; ETA changes re-plan tasks; proof of delivery",
-          href: "/collections/cases/gs-rfq-0133/delivery",
+          href: link.doc("cases", "gs-rfq-0133", "delivery"),
         },
         {
           name: "Invoicing & Egyptian e-invoice (ETA)",
@@ -1371,7 +1376,7 @@ export const PLAN: Plan = {
         {
           name: "Actual profit & close",
           detail: "Actual vs expected, FX differences, claims and credit notes",
-          href: "/collections/cases/gs-rfq-0131/profit",
+          href: link.doc("cases", "gs-rfq-0131", "profit"),
         },
         {
           name: "Management dashboards",
@@ -1424,17 +1429,17 @@ export const PLAN: Plan = {
     [
       "Information scattered across Outlook, WhatsApp, Excel and people's heads",
       "One case per RFQ holds every email, file, decision and WhatsApp note. Search finds it by IMO, part number or supplier.",
-      "/collections/cases/gs-rfq-0142/overview",
+      link.doc("cases", "gs-rfq-0142", "overview"),
     ],
     [
       "The same lines retyped into RFQs, quotes, POs and invoices",
       "Lines are captured once and flow through all 16 steps. Nothing is typed twice.",
-      "/collections/cases/gs-rfq-0142/rfqs",
+      link.doc("cases", "gs-rfq-0142", "rfqs"),
     ],
     [
       "No clear owner; things fall through on leave or handover",
       "Every case has an owner, a backup, a next action and a deadline. AI writes the handover summary.",
-      "/collections/cases/gs-rfq-0142/overview",
+      link.doc("cases", "gs-rfq-0142", "overview"),
     ],
     [
       "The last price is lost when nothing was ordered",
@@ -1444,12 +1449,12 @@ export const PLAN: Plan = {
     [
       "The wrong item or spec reaches the customer",
       "Deviation checks catch the wrong part, pack, shelf life or spec. A person decides on equivalents.",
-      "/collections/cases/gs-rfq-0142/compare",
+      link.doc("cases", "gs-rfq-0142", "compare"),
     ],
     [
       "Chasing suppliers from memory",
       "Status per supplier, reminders that stop when they reply, escalation after two reminders.",
-      "/collections/cases/gs-rfq-0142/rfqs",
+      link.doc("cases", "gs-rfq-0142", "rfqs"),
     ],
     [
       "FX and cost changes eat the margin after quoting",
@@ -1469,24 +1474,24 @@ export const PLAN: Plan = {
   ],
   /** The brief, line by line (the deck's 22), with the phase and the screen that shows it. */
   requirements: [
-    ["Email creates the case; one history", 1, "/collections/cases/gs-rfq-0142/overview"],
+    ["Email creates the case; one history", 1, link.doc("cases", "gs-rfq-0142", "overview")],
     ["Outlook + Gmail, history import", 1, "/integrations"],
     ["Extract from Excel, Word, PDF, photo", 1, "/inbox"],
     ["Match replies when the subject changes", 1, "/inbox"],
-    ["Owner, backup, next action, queue", 1, "/collections/cases/gs-rfq-0142/overview"],
-    ["RFQs split by category, client hidden", 1, "/collections/cases/gs-rfq-0142/rfqs"],
+    ["Owner, backup, next action, queue", 1, link.doc("cases", "gs-rfq-0142", "overview")],
+    ["RFQs split by category, client hidden", 1, link.doc("cases", "gs-rfq-0142", "rfqs")],
     ["New supplier auto-saved with prices", 1, "/inbox-history"],
-    ["Supplier statuses, reminders", 1, "/collections/cases/gs-rfq-0142/rfqs"],
-    ["Deviation checks, versions", 1, "/collections/cases/gs-rfq-0142/compare"],
-    ["Normalised units, FX, landed cost", 1, "/collections/cases/gs-rfq-0142/compare"],
-    ["Pricing policy & approvals", 1, "/collections/cases/gs-rfq-0142/pricing"],
-    ["Decision states, contact rules", 1, "/collections/quotations/q-0142-v1/preview"],
-    ["Customer PO vs quote version", 2, "/collections/cases/gs-rfq-0136/order"],
-    ["Drop-ship, lots, expiry, QC", 2, "/collections/cases/gs-rfq-0133/delivery"],
-    ["ETA changes, delivery proof", 2, "/collections/cases/gs-rfq-0133/delivery"],
+    ["Supplier statuses, reminders", 1, link.doc("cases", "gs-rfq-0142", "rfqs")],
+    ["Deviation checks, versions", 1, link.doc("cases", "gs-rfq-0142", "compare")],
+    ["Normalised units, FX, landed cost", 1, link.doc("cases", "gs-rfq-0142", "compare")],
+    ["Pricing policy & approvals", 1, link.doc("cases", "gs-rfq-0142", "pricing")],
+    ["Decision states, contact rules", 1, link.doc("quotations", "q-0142-v1", "preview")],
+    ["Customer PO vs quote version", 2, link.doc("cases", "gs-rfq-0136", "order")],
+    ["Drop-ship, lots, expiry, QC", 2, link.doc("cases", "gs-rfq-0133", "delivery")],
+    ["ETA changes, delivery proof", 2, link.doc("cases", "gs-rfq-0133", "delivery")],
     ["Invoices, multi-currency, e-invoice", 2, "/cash"],
     ["Deposits, two-person bank check", 2, "/approvals"],
-    ["Actual vs expected profit", 3, "/collections/cases/gs-rfq-0131/profit"],
+    ["Actual vs expected profit", 3, link.doc("cases", "gs-rfq-0131", "profit")],
     ["Automation rules, exception queue", 1, "/automations"],
     ["Vessels, fleet, growth CRM", 3, "/growth"],
     ["Management dashboards", 3, "/control-room"],
@@ -1596,7 +1601,7 @@ async function acceptance(req: Req): Promise<AcceptanceTest[]> {
       2,
       "Three supplier offers with one wrong item",
       "Line comparison identifies the mismatch; correction draft created; revised offer replaces no historical evidence.",
-      "/collections/cases/gs-rfq-0142/compare",
+      link.doc("cases", "gs-rfq-0142", "compare"),
       acts("gs-rfq-0142").some((a) => a.kind === "alert" && /offered/.test(str(a.text))) &&
         rfqs.some((r) => idOf(r.case) === "gs-rfq-0142" && r.status === "Revised offer received"),
       "Deviation alert logged; revised offer received as a new version",
@@ -1605,7 +1610,7 @@ async function acceptance(req: Req): Promise<AcceptanceTest[]> {
       3,
       "Pack size and brand changes",
       "200 × 250 ml and 100 × 500 ml both equal 50 L; totals compare correctly. Written customer acceptance required.",
-      "/collections/cases/gs-rfq-0142/compare",
+      link.doc("cases", "gs-rfq-0142", "compare"),
       !!l3 && Number(l3.qty) * Number(l3.packSize) === 50,
       `Line 3: ${str(l3?.qty)} × ${str(l3?.packSize)} L = ${Number(l3?.qty) * Number(l3?.packSize)} L`,
     ),
@@ -1613,7 +1618,7 @@ async function acceptance(req: Req): Promise<AcceptanceTest[]> {
       4,
       "Quote submitted with no answer",
       "Case remains awaiting decision; internal reminders appear; customer contact restrictions are respected.",
-      "/collections/cases/gs-rfq-0139/overview",
+      link.doc("cases", "gs-rfq-0139", "overview"),
       atlas?.contactRule === "do-not-chase" &&
         tasks.some((x) => idOf(x.case) === "gs-rfq-0139" && x.internalOnly === true) &&
         caseById("gs-rfq-0139")?.stage === "Awaiting customer decision",
@@ -1623,7 +1628,7 @@ async function acceptance(req: Req): Promise<AcceptanceTest[]> {
       5,
       "PO refers to old price or wrong quantity",
       "Mismatch blocks commitment; approval and revised customer agreement are recorded.",
-      "/collections/cases/gs-rfq-0136/order",
+      link.doc("cases", "gs-rfq-0136", "order"),
       caseById("gs-rfq-0136")?.stage === "Won — PO mismatch" ||
         acts("gs-rfq-0136").some((a) => a.rule === "Customer PO check"),
       "GS-RFQ-0136: PO mismatch blocks the sales order",
@@ -1632,7 +1637,7 @@ async function acceptance(req: Req): Promise<AcceptanceTest[]> {
       6,
       "Split delivery with short shelf life",
       "One order supports two scheduled deliveries; stock, expiry, remaining quantity, billing and balances remain accurate.",
-      "/collections/cases/gs-rfq-0133/delivery",
+      link.doc("cases", "gs-rfq-0133", "delivery"),
       deliveries.filter((d) => idOf(d.case) === "gs-rfq-0133").length >= 2,
       `GS-RFQ-0133: ${deliveries.filter((d) => idOf(d.case) === "gs-rfq-0133").length} deliveries on one order`,
     ),
@@ -1648,7 +1653,7 @@ async function acceptance(req: Req): Promise<AcceptanceTest[]> {
       8,
       "Vessel ETA changes or supplier is late",
       "Affected delivery tasks are updated and escalated with a clear owner and next action.",
-      "/collections/cases/gs-rfq-0133/delivery",
+      link.doc("cases", "gs-rfq-0133", "delivery"),
       activities.some((a) => a.rule === "ETA change") && activities.some((a) => a.rule === "Escalate no response"),
       "ETA change re-planned tasks; no-response escalation logged",
     ),
@@ -1664,7 +1669,7 @@ async function acceptance(req: Req): Promise<AcceptanceTest[]> {
       10,
       "Order completed and settled",
       "Signed delivery evidence, invoices, actual costs, profit and residual balances reconcile.",
-      "/collections/cases/gs-rfq-0131/profit",
+      link.doc("cases", "gs-rfq-0131", "profit"),
       !!settled,
       settled ? `${str(settled.caseId)} closed and settled` : "GS-RFQ-0131 closes once its balance is collected",
       "Runs at settlement",

@@ -45,9 +45,9 @@ function queue(q: Extract<HomeWidget, { kind: "queue" }>): ViewBlock {
   return block("card", {
     heading: q.title,
     count: q.cases.length,
-    actions: [{ label: "All cases", href: q.href, variant: "text" }],
+    actions: [{ label: "All cases", href: q.href }],
     blocks: [
-      block("text", { text: q.sub, muted: true, variant: "body-sm" }),
+      block("text", { text: q.sub, muted: true }),
       block("table", {
         empty: "No live cases.",
         columns: [
@@ -93,7 +93,7 @@ function draw(w: HomeWidget): ViewBlock {
           label: t.label,
           value: t.value,
           note: t.note,
-          tone: t.tone,
+          tone: t.tone === "success" || t.tone === "warning" || t.tone === "error" ? t.tone : undefined,
           href: t.href,
           trend: t.trend && {
             labels: t.trend.labels,
@@ -104,7 +104,6 @@ function draw(w: HomeWidget): ViewBlock {
       });
     case "charts":
       return block("grid", {
-        fit: "md",
         blocks: w.charts.map((c) =>
           block("chart", {
             title: c.title,
@@ -123,13 +122,12 @@ function draw(w: HomeWidget): ViewBlock {
       });
     case "lists":
       return block("grid", {
-        fit: "md",
         blocks: w.lists.map((l) =>
           block("card", {
             heading: l.title,
             subhead: l.sub,
             count: l.items.length,
-            actions: l.href ? [{ label: l.hrefLabel ?? "All", href: l.href, variant: "text" }] : undefined,
+            actions: l.href ? [{ label: l.hrefLabel ?? "All", href: l.href }] : undefined,
             blocks: [
               block("list", {
                 empty: l.empty,
@@ -173,7 +171,7 @@ export const homePage = widgets({
           context: "Unread notifications for someone back at their desk at a ship chandler: say what needs them first.",
           text: n.docs.map((x) => `${String(x.kind)}: ${String(x.title)} — ${String(x.detail)}`).join("\n"),
         },
-        actions: h.actions.map((a) => ({ label: a.label, href: a.href, variant: a.primary ? "filled" : "tonal" })),
+        actions: h.actions.map((a) => ({ label: a.label, href: a.href, main: a.primary })),
       };
     },
   },

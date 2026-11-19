@@ -2,6 +2,7 @@ import type { Endpoint, PayloadRequest } from "payload";
 import { idOf, logActivity } from "../collections/shared.ts";
 import type { Doc } from "saastemlycrm-design-system/contracts";
 import { DEMO_NOW } from "./home.ts";
+import * as link from "../links.ts";
 
 /**
  * Root endpoints for order-to-cash: the customer PO check (PO vs approved quotation version,
@@ -951,7 +952,7 @@ async function etaChange(req: PayloadRequest) {
     title: `ETA change ${str(c.caseId)}: ${fmt(upd.eta)}`,
     detail: `${moved.length} drop(s) re-planned — re-confirm transport.`,
     kind: "Alert",
-    href: `/collections/cases/${id}/delivery`,
+    href: link.doc("cases", id, "delivery"),
   });
   return Response.json({ changed: moved.length, moved, eta: upd.eta, hours, text });
 }

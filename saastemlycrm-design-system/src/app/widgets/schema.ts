@@ -1,4 +1,5 @@
 import type { DocumentSpec } from "../../components/base/document-spec.ts";
+import type { IconName } from "../../components/primitives/media/icon-names.ts";
 /**
  * The block vocabulary: what a widget draws, as plain data.
  *
@@ -46,42 +47,54 @@ export function formatNumber(v: number, f: NumberFormat = {}): string {
 export interface Tag {
   label: string;
   tone?: Tone;
-  icon?: string;
+  icon?: IconName;
 }
 
 /**
  * A value in a table cell, a list's trailing slot or a description list. A string is plain
  * text; the object form adds a tone, a link, a tag look, a dot, a monospaced or emphasised look.
  */
-export type Cell =
-  | string
-  | number
-  | null
-  | undefined
-  | {
-      text: string;
-      tone?: Tone;
-      href?: string;
-      /** Draw it as a tag. */
-      tag?: boolean;
-      /** A status dot before the text. */
-      dot?: Tone;
-      mono?: boolean;
-      strong?: boolean;
-      /** A bar under the text: `value` of `max`. */
-      gauge?: { value: number; max: number; tone?: Tone; label?: string };
-      /** Buttons after the text (in a table, a row's own actions); `text` may be empty. */
-      actions?: Action[];
-      /** Tags after the text; `text` may be empty. */
-      tags?: Tag[];
-      /** Short lines under the text, each with a status dot (checks, flags). */
-      marks?: { text: string; tone?: Tone }[];
-      /**
-       * A switch that applies at once, named by `text` (not shown): flipping it sends `call` with
-       * `value: true | false` added to the body, then reloads. Without `call` it's read-only.
-       */
-      switch?: { value: boolean; call?: Action["call"]; done?: string };
-    };
+export type Cell = string | number | null | undefined | TextCell | TagCell | SwitchCell;
+
+/** Text with an optional tone, link, dot, gauge, tags, marks or buttons. */
+export interface TextCell {
+  text: string;
+  tone?: Tone;
+  href?: string;
+  /** A status dot before the text. */
+  dot?: Tone;
+  mono?: boolean;
+  strong?: boolean;
+  /** A bar under the text: `value` of `max`. */
+  gauge?: { value: number; max: number; tone?: Tone; label?: string };
+  /** Buttons after the text (in a table, a row's own actions); `text` may be empty. */
+  actions?: Action[];
+  /** Tags after the text; `text` may be empty. */
+  tags?: Tag[];
+  /** Short lines under the text, each with a status dot (checks, flags). */
+  marks?: { text: string; tone?: Tone }[];
+  tag?: never;
+  switch?: never;
+}
+
+/** The value drawn as a tag (a status). */
+export interface TagCell {
+  text: string;
+  tag: true;
+  tone?: Tone;
+  switch?: never;
+}
+
+/**
+ * A switch that applies at once, named by `text` (not shown): flipping it sends `call` with
+ * `value: true | false` added to the body, then reloads. Without `call` it's read-only.
+ */
+export interface SwitchCell {
+  text: string;
+  switch: { value: boolean; call?: Action["call"]; done?: string };
+  tag?: never;
+  tone?: never;
+}
 
 /** A form field for an action's prompt: Payload's field config (JSON parts only). */
 export interface PromptField {
@@ -100,12 +113,25 @@ export interface PromptField {
  * `confirm` (a dialog naming the verb) or `fields` (a small form whose values join the body),
  * then shows `done` and reloads the view.
  */
-export interface Action {
+/**
+ * The main action can't be destructive (HIG Buttons: "Don't assign the primary role to a button
+ * that performs a destructive action"): `main` and `tone: "error"` don't go together.
+ */
+export type Action = ActionBase & Emphasis;
+/** Main, or destructive, or neither: never both. */
+export type Emphasis = { main?: false; tone?: "error" } | { main?: boolean; tone?: never };
+
+interface ActionBase {
   label: string;
-  icon?: string;
-  variant?: "filled" | "tonal" | "outlined" | "text";
-  /** `error` for a destructive action. */
-  tone?: "primary" | "error";
+  icon?: IconName;
+  /**
+   * The one thing to do here: drawn filled and placed last. One per group; the design system
+   * draws a second one as a plain button. Everything else is drawn by its kind: a link (`href`
+   * only) as a text button, any other action as a tonal one.
+   */
+  main?: boolean;
+  /** `error` for a destructive action (never the main one). */
+  tone?: "error";
   href?: string;
   call?: { method?: "POST" | "PATCH" | "DELETE"; path: string; body?: Record<string, unknown> };
   confirm?: { heading: string; text?: string; label: string; tone?: "primary" | "error" };
@@ -151,7 +177,8 @@ export interface Stat {
   label: string;
   value: string;
   note?: string;
-  tone?: Tone;
+  /** Only when the figure means something (good, needs attention, wrong). */
+  tone?: "success" | "warning" | "error";
   href?: string;
   trend?: { labels: string[]; values: number[]; format?: NumberFormat };
 }
@@ -172,7 +199,7 @@ export interface ListItem {
   overline?: string;
   /** Status dot at the start. */
   dot?: Tone;
-  icon?: string;
+  icon?: IconName;
   href?: string;
   trailing?: Cell;
   tags?: Tag[];
@@ -225,6 +252,8 @@ export interface Entry {
   /** Something the reader must know before acting (why they can't). */
   notice?: { tone?: "info" | "success" | "warning" | "error"; text: string };
   actions?: Action[];
+  /** An action that asks for a file (proof, a signed note): the `attach` block, next to the actions. */
+  attach?: Omit<ViewBlocks["attach"], "type">;
 }
 
 /** Card-like container fields shared by `card`. */
@@ -235,7 +264,6 @@ export interface CardBlock {
   subhead?: string;
   count?: number;
   countTone?: Tone;
-  variant?: "outlined" | "filled" | "elevated";
   tags?: Tag[];
   actions?: Action[];
   blocks: ViewBlock[];
@@ -255,19 +283,24 @@ export interface ViewBlocks {
    * are rows between dividers. With no items it is one quiet line (`empty`).
    */
   entries: { type: "entries"; items: Entry[]; empty?: string };
-  /** Blocks side by side, as many columns as fit (`fit` is the narrowest column). */
-  grid: { type: "grid"; fit?: "xs" | "sm" | "md" | "lg"; blocks: ViewBlock[] };
+  /**
+   * Blocks side by side, as many columns as fit. The column width follows what's in it: charts,
+   * tables, lists and cards get wide columns, anything else narrow ones.
+   */
+  grid: { type: "grid"; blocks: ViewBlock[] };
   /** A main column and a narrower side column. */
   split: { type: "split"; main: ViewBlock[]; side: ViewBlock[] };
   stats: { type: "stats"; items: Stat[]; size?: "md" | "lg" };
+  /** A paragraph. `muted` makes it a quiet note (prefer `note(text)`). Headings are `heading` blocks. */
   text: {
     type: "text";
     text: string;
     muted?: boolean;
-    variant?: "body-md" | "body-sm" | "title-md" | "label-lg";
     /** Offer "Read aloud" (the browser's voice); a string is the language ("en-GB"). */
     speak?: boolean | string;
   };
+  /** A heading for the blocks after it, inside a card (one level under the card's own heading). */
+  heading: { type: "heading"; text: string };
   table: {
     type: "table";
     columns: Column[];
@@ -319,7 +352,7 @@ export interface ViewBlocks {
     text: string;
     actions?: Action[];
   };
-  empty: { type: "empty"; heading: string; description?: string; icon?: string; tone?: "neutral" | "error" };
+  empty: { type: "empty"; heading: string; description?: string; icon?: IconName; tone?: "neutral" | "error" };
   tags: { type: "tags"; items: Tag[] };
   actions: { type: "actions"; items: Action[] };
   /**
@@ -331,18 +364,18 @@ export interface ViewBlocks {
     param: string;
     label: string;
     value: string;
-    options: { value: string; label: string; icon?: string }[];
+    options: { value: string; label: string; icon?: IconName }[];
   };
   timeline: {
     type: "timeline";
     /** `icon` and `tone` replace the default tick (e.g. who or what made the entry). */
-    items: { time?: string; heading?: string; text?: string; done?: boolean; icon?: string; tone?: Tone }[];
+    items: { time?: string; heading?: string; text?: string; done?: boolean; icon?: IconName; tone?: Tone }[];
   };
   divider: { type: "divider" };
   /** A design-system element placed as it is (the `ui-ai-*` assists): `props` set on it, `key` tells instances apart. */
   custom: {
     type: "custom";
-    element: string;
+    element: AssistElement;
     props?: Record<string, unknown>;
     /** Tells several instances of the same element apart (one per line, per row…). */
     key?: string;
@@ -351,7 +384,7 @@ export interface ViewBlocks {
   attach: {
     type: "attach";
     /** The button that opens the dialog. */
-    action: Pick<Action, "label" | "icon" | "variant" | "tone" | "disabled" | "reason">;
+    action: Pick<ActionBase, "label" | "icon" | "disabled" | "reason"> & Emphasis;
     /** A line next to the button. */
     text?: string;
     heading: string;
@@ -467,6 +500,7 @@ export interface ViewBlocks {
 export type ViewBlock = ViewBlocks[keyof ViewBlocks];
 
 export type { DocumentSpec } from "../../components/base/document-spec.ts";
+export type { IconName } from "../../components/primitives/media/icon-names.ts";
 export type { AskAnswer } from "../../components/base/ask-spec.ts";
 
 /** The top of a root screen (an edit tab's top is the document's own header). */
@@ -480,8 +514,35 @@ export interface ViewHeader {
   summary?: { label: string; context: string; text: string };
 }
 
+/** The design system's on-device AI assists (src/components/composed/ai/assist.ts), the only elements a `custom` block places. */
+export type AssistElement =
+  | "ui-ai-language"
+  | "ui-ai-text"
+  | "ui-ai-summary"
+  | "ui-ai-tools"
+  | "ui-ai-classify"
+  | "ui-ai-check"
+  | "ui-ai-read-file"
+  | "ui-ai-extract"
+  | "ui-ai-flag"
+  | "ui-ai-replies"
+  | "ui-ai-dictate"
+  | "ui-speak";
+
+/** An on-device AI assist as a block: `key` tells several of the same element apart. */
+export const assist = (
+  element: AssistElement,
+  key: string,
+  props: Record<string, unknown> = {},
+): ViewBlocks["custom"] => ({
+  type: "custom",
+  element,
+  key,
+  props,
+});
+
 /** A quiet line of supporting text (what a section is for, a rule, a footnote). */
-export const note = (text: string): ViewBlocks["text"] => ({ type: "text", text, muted: true, variant: "body-sm" });
+export const note = (text: string): ViewBlocks["text"] => ({ type: "text", text, muted: true });
 
 /** Narrowing helper for builders: `block("card", { heading, blocks })`. */
 export const block = <K extends keyof ViewBlocks>(type: K, b: Omit<ViewBlocks[K], "type">): ViewBlocks[K] =>

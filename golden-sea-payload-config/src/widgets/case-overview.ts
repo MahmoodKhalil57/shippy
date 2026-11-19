@@ -1,5 +1,5 @@
 import { block, type Action, type Row, type Tone } from "saastemlycrm-design-system/contracts";
-import { widget, widgets, type Source, type Widget } from "saastemlycrm-design-system/contracts";
+import { from, widget, widgets, type Source } from "saastemlycrm-design-system/contracts";
 import type { CaseOverview, TimelineEntry } from "../endpoints/platform.ts";
 import { formatDate } from "./format.ts";
 
@@ -13,7 +13,7 @@ import { formatDate } from "./format.ts";
 
 const overview: Source = { endpoint: "/case-overview/$doc.id" };
 /** A widget drawn from the case overview (one request, however many widgets use it). */
-const on = (w: Widget<CaseOverview>): Widget<CaseOverview> => ({ source: overview, ...w });
+const on = from<CaseOverview>(overview);
 
 const KIND = {
   auto: { label: "Automatic", icon: "sync", tone: "info" },
@@ -55,7 +55,7 @@ const lifecycle = on({
         items: d.steps.map((s) => ({ label: s.label })),
       }),
       block("tags", { items: [{ label: `Phase ${step.phase}` }] }),
-      block("text", { variant: "title-md", text: `${step.label}: ${d.stage}` }),
+      block("text", { text: `${step.label}: ${d.stage}` }),
       block("text", { muted: true, text: step.detail }),
       ...(d.halted
         ? [
@@ -83,7 +83,6 @@ const lines = on({
         text: `Each line moves on its own. A case with some lines ready is ${pct}% — never “done” until every line is.`,
       }),
       block("grid", {
-        fit: "xs",
         blocks: [
           bar("Ready", l.ready, l.total, "success"),
           bar("Waiting", l.waiting, l.total, "warning"),
@@ -94,9 +93,8 @@ const lines = on({
       ...(f.started
         ? [
             block("divider", {}),
-            block("text", { variant: "label-lg", text: "After the order" }),
+            block("heading", { text: "After the order" }),
             block("grid", {
-              fit: "xs",
               blocks: [
                 bar("Ordered", f.ordered, f.total, "info"),
                 bar("Received", f.received, f.total, "info"),
@@ -147,7 +145,6 @@ const clarifications = on({
   render: (d) => [
     block("text", {
       muted: true,
-      variant: "body-sm",
       text: "Questions and answers per line, to the customer, a supplier or internal. Clear lines keep moving while one waits.",
     }),
     block("table", {
@@ -191,7 +188,6 @@ const timeline = on({
       }),
       block("text", {
         muted: true,
-        variant: "body-sm",
         text: "Every automatic step names the rule that fired; every human step names the person. Nothing is edited after the fact.",
       }),
       block("custom", {
@@ -225,7 +221,7 @@ const timeline = on({
 const next = on({
   title: "Next action",
   render: (d) => [
-    block("text", { variant: "label-lg", text: d.next || "—" }),
+    block("heading", { text: d.next || "—" }),
     d.blocker
       ? block("alert", { tone: "warning", heading: "Blocker", text: d.blocker })
       : block("text", { muted: true, text: "No blocker." }),
@@ -250,7 +246,6 @@ const next = on({
  */
 const reassign = (d: CaseOverview): Action => ({
   label: "Reassign",
-  variant: "tonal",
   call: { path: `/case-overview/${d.id}/reassign` },
   confirm: {
     heading: `Reassign ${d.caseId}`,
@@ -287,8 +282,8 @@ const owner = on({
   render: (d) => {
     const person = (p: CaseOverview["owner"], role: string) =>
       p
-        ? { headline: p.name, supporting: role, icon: "user" }
-        : { headline: `No ${role.toLowerCase()} set`, icon: "user" };
+        ? { headline: p.name, supporting: role, icon: "user" as const }
+        : { headline: `No ${role.toLowerCase()} set`, icon: "user" as const };
     return [
       block("list", { items: [person(d.owner, "Owner"), person(d.backup, "Backup")] }),
       ...(d.handoverNote
@@ -308,7 +303,7 @@ const owner = on({
 const contactRule = on({
   title: "Customer contact rule",
   render: ({ customer: c }) => [
-    block("text", { variant: "title-md", text: c.name }),
+    block("heading", { text: c.name }),
     block("tags", {
       items: [
         {
@@ -319,7 +314,6 @@ const contactRule = on({
     }),
     block("text", {
       muted: true,
-      variant: "body-sm",
       text: c.strict
         ? "Follow-ups for this customer are internal reminders only — the system refuses customer-facing chasers."
         : c.contactRule === "one-follow-up"

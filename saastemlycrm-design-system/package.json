@@ -4,6 +4,7 @@
   "private": true,
   "description": "SaastemlyCRM's design system (Lit + daisyUI, Material Design 3 roles), the dashboard app and the contracts a Payload project implements.",
   "files": [
+    "lint",
     "src",
     "vite"
   ],
@@ -14,6 +15,10 @@
     "./contracts": "./src/contracts/index.ts",
     "./payload": "./src/payload/index.ts",
     "./client": "./src/api/client.ts",
+    "./lint": {
+      "types": "./lint/index.d.ts",
+      "default": "./lint/index.js"
+    },
     "./styles.css": "./src/index.css",
     "./vite": "./vite/index.ts",
     "./src/*": "./src/*",

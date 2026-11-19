@@ -1,7 +1,8 @@
 import { block, note, type Action, type PromptField, type Row } from "saastemlycrm-design-system/contracts";
-import { widgets, type Source, type Widget } from "saastemlycrm-design-system/contracts";
+import { from, widgets, type Source, type Widget } from "saastemlycrm-design-system/contracts";
 import type { RolesView, Routing } from "../endpoints/platform.ts";
 import type { Doc } from "saastemlycrm-design-system/contracts";
+import * as link from "../links.ts";
 
 /**
  * Roles & permissions (/roles): the permissions matrix per role and person (the settings
@@ -23,7 +24,7 @@ const PRESETS = [
 ];
 
 const roles: Source = { endpoint: "/roles" };
-const on = (w: Widget<RolesView>): Widget<RolesView> => ({ source: roles, ...w });
+const on = from<RolesView>(roles);
 
 const str = (v: unknown) => (typeof v === "string" || typeof v === "number" ? String(v) : "");
 
@@ -85,7 +86,7 @@ const enforced = on({
     block("alert", {
       tone: "info",
       text: "Try it: switch the signed-in user to Soaad Amer (Sales) and open the pricing tab of GS-RFQ-0142 — costs and margins are gone.",
-      actions: [{ label: "Open GS-RFQ-0142 pricing", href: "/collections/cases/gs-rfq-0142/pricing" }],
+      actions: [{ label: "Open GS-RFQ-0142 pricing", href: link.doc("cases", "gs-rfq-0142", "pricing") }],
     }),
   ],
 });
@@ -116,7 +117,7 @@ const simulator: Widget<Routing> = {
       block("tags", {
         items: [{ label: r.inHours ? "Office hours" : "After hours", tone: r.inHours ? "info" : "warning" }],
       }),
-      block("text", { text: r.atText, variant: "title-md" }),
+      block("heading", { text: r.atText }),
       block("text", { text: r.reason }),
       ...(r.routedTo
         ? [
@@ -166,7 +167,7 @@ function save(d: RolesView, people: Doc[]): Action {
   ]);
   return {
     label: "Edit roster",
-    variant: "filled",
+    main: true,
     call: { path: "/roles/roster" },
     confirm: {
       heading: "Save the on-call roster?",
@@ -215,9 +216,9 @@ export const rolesPage = widgets({
     subtitle:
       "Sales never sees costs or margins; approvals need a named person; bank-detail changes need two. Urgent RFQs after hours go to whoever is on call.",
     actions: [
-      { label: "People", href: "/collections/users" },
-      { label: "Approval rules", href: "/globals/approval-rules" },
+      { label: "People", href: link.list("users") },
+      { label: "Approval rules", href: link.global("approval-rules") },
     ],
   },
-  widgets: [matrix, { grid: [enforced, simulator], fit: "md" }, roster],
+  widgets: [matrix, { grid: [enforced, simulator] }, roster],
 });

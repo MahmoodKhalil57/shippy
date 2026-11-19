@@ -7,6 +7,7 @@ import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
+import type { IconName } from "./icon-names.ts";
 import iCheck from "~icons/line-md/confirm";
 import iX from "~icons/line-md/close";
 import iInfo from "~icons/material-symbols-light/info-outline";
@@ -231,9 +232,9 @@ export const ICONS = {
   wallpaper: iWallpaper,
   "no-image": iNoImage,
   passkey: iPasskey,
-} as const;
+} as const satisfies Record<IconName, unknown>;
 
-export type IconName = keyof typeof ICONS;
+export type { IconName };
 
 /**
  * A named icon as an SVG template, for use inside other primitives. `label` makes it an image
