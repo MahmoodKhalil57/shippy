@@ -168,3 +168,19 @@ describe("layerVariantsCss (per-component sheets keep Tailwind's variant order)"
     expect(flat.indexOf("@layer v-max-sm")).toBeLessThan(flat.indexOf("@layer v-md"));
   });
 });
+
+describe("layerVariantsCss and daisyUI base rules", () => {
+  it("moves a component's base rule to `components`, but never one nested in another rule", () => {
+    const out = layerVariantsCss(String.raw`@layer utilities {
+  @layer daisyui.l1 { .input { display: inline-flex; } }
+  @layer daisyui.l1 { .mockup-browser .mockup-browser-toolbar { .input { font-size: .75rem; } } }
+}`)
+      .replace(/\s+/g, " ")
+      .replace(/\s*\{\s*/g, " { ");
+    // The bare base rule moved down…
+    expect(out).toMatch(/@layer components \{ @layer daisyui\.l1 \{ \.input \{ display: inline-flex/);
+    // …the toolbar's own `.input` stayed inside the toolbar (moving it would restyle every input).
+    expect(out).toMatch(/\.mockup-browser-toolbar \{ \.input \{ font-size: \.75rem/);
+    expect(out).not.toMatch(/@layer components[^]*\.input \{ font-size/);
+  });
+});

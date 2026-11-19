@@ -58,6 +58,10 @@ import iEdit from "~icons/material-symbols-light/edit-outline";
 import iStop from "~icons/material-symbols-light/stop-rounded";
 import iExternal from "~icons/material-symbols-light/open-in-new";
 import iArrowDown from "~icons/material-symbols-light/arrow-downward-rounded";
+import iArrowUp from "~icons/material-symbols-light/arrow-upward-rounded";
+import iFilter from "~icons/material-symbols-light/filter-list-rounded";
+import iColumns from "~icons/material-symbols-light/view-column-outline-rounded";
+import iTable from "~icons/material-symbols-light/table-rows-outline-rounded";
 import iThinking from "~icons/material-symbols-light/neurology-outline";
 import iTool from "~icons/material-symbols-light/build-outline";
 import iBlock from "~icons/material-symbols-light/block";
@@ -187,6 +191,10 @@ export const ICONS = {
   stop: iStop,
   external: iExternal,
   "arrow-down": iArrowDown,
+  "arrow-up": iArrowUp,
+  filter: iFilter,
+  columns: iColumns,
+  table: iTable,
   thinking: iThinking,
   tool: iTool,
   block: iBlock,

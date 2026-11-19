@@ -1,5 +1,6 @@
 import type { VariantProps } from "class-variance-authority";
 import { customElement, property } from "lit/decorators.js";
+import { styleMap } from "lit/directives/style-map.js";
 import { html, literal, type StaticValue } from "lit/static-html.js";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
@@ -15,6 +16,15 @@ import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts
  */
 export const box = rcva("", {
   variants: {
+    /**
+     * A share of a wrapping row (`<ui-flex wrap gap="4">`), from `--box-basis` (set by `basis`):
+     * the row's gap comes off it, and it never gets narrower than 12rem (or the row), so a row of
+     * shares wraps instead of squeezing on a narrow panel. `grow` lets it take spare room.
+     */
+    basis: {
+      true: "min-w-[min(100%,12rem)] shrink basis-[calc(var(--box-basis)_-_1rem)]",
+    },
+    grow: { true: "grow", false: "grow-0" },
     surface: {
       "base-100": "bg-base-100 text-base-content",
       "base-200": "bg-base-200 text-base-content",
@@ -114,6 +124,7 @@ export type BoxTag = keyof typeof BOX_TAGS;
  * @example <ui-box surface="base-100" border rounded="box" padding="4">…</ui-box>
  * @example <ui-box surface="base-200" padding="4 md:8" width="full md:96" shadow="sm">…</ui-box>
  * @example <ui-box height="64" center surface="base-300" rounded="box">Centered</ui-box>
+ * @example <ui-flex wrap gap="4"><ui-box basis="50%" grow>…</ui-box><ui-box basis="25%" grow>…</ui-box></ui-flex>
  */
 @customElement("ui-box")
 export class UiBox extends LightElement {
@@ -128,6 +139,13 @@ export class UiBox extends LightElement {
   @property() height: BoxVariants["height"];
   @property() overflow: BoxVariants["overflow"];
   @property({ converter: responsiveBoolean }) center: Responsive<boolean> = false;
+  /**
+   * Its share of a wrapping row: any CSS length or percentage (`50%`, `20rem`), e.g. a Payload
+   * field's `admin.width`. See the `basis` variant.
+   */
+  @property() basis?: string;
+  /** With `basis`: also take a share of the row's spare room. */
+  @property({ type: Boolean }) grow = false;
 
   render() {
     const tag = BOX_TAGS[this.as] ?? BOX_TAGS.div;
@@ -142,8 +160,12 @@ export class UiBox extends LightElement {
       height: this.height,
       overflow: this.overflow,
       center: this.center,
+      basis: !!this.basis,
+      grow: this.basis ? this.grow : undefined,
     });
-    return html`<${tag} class=${cls}>${this.content}</${tag}>`;
+    return html`<${tag} class=${cls} style=${styleMap(this.basis ? { "--box-basis": this.basis } : {})}
+      >${this.content}</${tag}
+    >`;
   }
 }
 

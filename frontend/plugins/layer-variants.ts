@@ -106,13 +106,19 @@ function wrappers(rule: Rule): AtRule[] {
   return chain;
 }
 
-/** Whether a rule sits in the top-level `@layer utilities` (where daisyUI emits its components). */
+/**
+ * Whether a rule sits in the top-level `@layer utilities` (where daisyUI emits its components),
+ * as a rule of its own: a rule nested in another (`.mockup-browser-toolbar { .input {…} }`, i.e.
+ * `.mockup-browser-toolbar .input`) only looks like a base rule, and moving it out of its parent
+ * would apply it to every `.input` on the page.
+ */
 function insideUtilities(rule: Rule): boolean {
   for (
     let p = rule.parent as ChildNode | Root | undefined;
     p && p.type !== "root";
     p = p.parent as ChildNode | Root | undefined
   ) {
+    if (p.type === "rule") return false;
     if (
       p.type === "atrule" &&
       (p as AtRule).name === "layer" &&

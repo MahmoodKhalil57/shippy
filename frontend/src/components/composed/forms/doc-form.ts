@@ -1,8 +1,16 @@
 import { html, nothing, type TemplateResult } from "lit";
-import { customElement, property } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
+import type { Where } from "payload";
+import { matches } from "../../../cms/runtime/query.ts";
 import type { FieldLike } from "../../../cms/types.ts";
 import { LightElement } from "../../base/light-element.ts";
 import "../../primitives/actions/button.ts";
+import "../../primitives/actions/dropdown.ts";
+import "../../primitives/data/table.ts";
+import "../../primitives/forms/combobox.ts";
+import "../../primitives/media/icon.ts";
+import "../../primitives/navigation/link.ts";
+import "../../primitives/containers/card.ts";
 import "../../primitives/containers/collapse.ts";
 import "../../primitives/data/badge.ts";
 import "../../primitives/forms/checkbox.ts";
@@ -24,11 +32,26 @@ import "../../primitives/typography/text.ts";
  * Purpose: Forms & input · Kind: composed (Text input / Textarea / Select /
  * Checkbox / Radio / Fieldset / Collapse / Tabs / Grid / Box / Button)
  *
- * Renders Payload's field types — text, email, textarea, code, json, number,
- * date, checkbox, select (incl. hasMany), radio, relationship / upload
- * (incl. hasMany and polymorphic), point, group, array, blocks, row,
- * collapsible, tabs — honouring `label`, `required`, `admin.description`,
- * `admin.placeholder`, `admin.readOnly`, `admin.hidden`, `admin.condition`.
+ * Renders every Payload field type (payloadcms.com/docs/fields/overview) the way Payload's Admin
+ * Panel does:
+ * - text / email (`hasMany` as chips), textarea (`admin.rows`, a counter with `maxLength`), code
+ *   and json (monospaced; JSON checked as it's typed), number (`admin.step`, `min` / `max`,
+ *   `hasMany` as chips), date (`admin.date.pickerAppearance`: dayOnly, dayAndTime, timeOnly,
+ *   monthOnly; `minDate` / `maxDate`), checkbox, point.
+ * - select, relationship and upload as a searchable combobox (`hasMany` as chips, polymorphic
+ *   `relationTo` grouped by collection, `admin.isClearable`); relationships link to the related
+ *   document and offer creating one (`admin.allowEdit` / `admin.allowCreate`); uploads preview
+ *   the picked file. radio (`admin.layout`).
+ * - array and blocks as collapsible rows (`admin.initCollapsed`) labelled by their first value,
+ *   with a menu to move, duplicate and remove (`admin.isSortable`), `minRows` / `maxRows`, and
+ *   blocks added from a menu; group (`admin.hideGutter`), row, collapsible (`initCollapsed`),
+ *   tabs (named and unnamed, with a count of the errors inside each tab).
+ * - join: the related documents as a table (`admin.defaultColumns`), given by the page in `joins`.
+ * Every field honours `label`, `required`, `admin.description`, `admin.placeholder`,
+ * `admin.readOnly`, `admin.hidden`, `admin.condition` and `admin.width` (its share of a row, or
+ * its width alone), and shows its error in place. `filterOptions` narrows what's offered:
+ * relationships and uploads to the related documents matching a `where` (or a function's
+ * `where`), selects to the options a function returns, blocks to the slugs it allows.
  * `richText` is edited as plain text.
  *
  * Works on a copy: every edit fires `ui-change` with the whole new value.
@@ -54,6 +77,22 @@ export interface DocFormChange {
 export interface RelationOption {
   value: string;
   label: string;
+  /** A second line in the picker (e.g. a file's type and size). */
+  description?: string;
+  /** The related document itself, for `filterOptions` (a `where` it must match). */
+  doc?: Data;
+  /** Uploads: a preview image of the file. */
+  image?: string;
+}
+
+/** A join field's related documents, ready to show (the page fetches them with `joins`). */
+export interface JoinView {
+  columns: { key: string; label: string }[];
+  rows: { id: string; href?: string; cells: Record<string, string> }[];
+  /** All related documents (the rows may be the first page). */
+  total: number;
+  /** Where "Create new" goes (absent: no creating). */
+  createHref?: string;
 }
 
 const humanize = (name: string) =>
@@ -93,15 +132,50 @@ export function setIn(root: Data, path: Path, value: unknown): Data {
   return copy as Data;
 }
 
-/** ISO string <-> `<input type=date|datetime-local>` value, in local time. */
-const toInputDate = (iso: unknown, dayOnly: boolean) => {
-  if (typeof iso !== "string" || !iso) return "";
+/** Payload's date picker appearances, as `<input>` types. */
+const DATE_INPUT = { dayOnly: "date", dayAndTime: "datetime-local", timeOnly: "time", monthOnly: "month" } as const;
+type DateAppearance = keyof typeof DATE_INPUT;
+const appearanceOf = (f: FieldLike): DateAppearance => {
+  const a = f.admin?.date?.pickerAppearance;
+  return a && a in DATE_INPUT ? (a as DateAppearance) : "dayOnly";
+};
+
+/** ISO string <-> the `<input>` value for an appearance, in local time. */
+const toInputDate = (iso: unknown, appearance: DateAppearance) => {
+  if ((typeof iso !== "string" && !(iso instanceof Date)) || !iso) return "";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
   const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString();
-  return dayOnly ? local.slice(0, 10) : local.slice(0, 16);
+  return {
+    dayOnly: local.slice(0, 10),
+    dayAndTime: local.slice(0, 16),
+    timeOnly: local.slice(11, 16),
+    monthOnly: local.slice(0, 7),
+  }[appearance];
 };
-const fromInputDate = (v: string) => (v ? new Date(v).toISOString() : null);
+const fromInputDate = (v: string, appearance: DateAppearance, previous: unknown) => {
+  if (!v) return null;
+  if (appearance === "timeOnly") {
+    // A time on the day the value already had (or today).
+    const day = typeof previous === "string" && previous ? new Date(previous) : new Date();
+    const [h, m] = v.split(":").map(Number);
+    day.setHours(h ?? 0, m ?? 0, 0, 0);
+    return day.toISOString();
+  }
+  return new Date(appearance === "monthOnly" ? `${v}-01T00:00` : v).toISOString();
+};
+
+/** Fields holding a value, with layout fields flattened (for row labels). */
+const valueFields = (fields: FieldLike[]): FieldLike[] =>
+  fields.flatMap((f) =>
+    f.type === "row" || f.type === "collapsible"
+      ? valueFields(f.fields ?? [])
+      : f.type === "tabs"
+        ? (f.tabs ?? []).flatMap((t) => (t.name ? [] : valueFields(t.fields)))
+        : f.name
+          ? [f]
+          : [],
+  );
 
 /**
  * @example
@@ -118,6 +192,17 @@ export class UiDocForm extends LightElement {
   /** Options for relationship / upload fields, by collection slug. */
   @property({ attribute: false }) relations: Record<string, RelationOption[]> = {};
   @property({ type: Boolean }) readonly = false;
+  /** Join fields' related documents, by field name. */
+  @property({ attribute: false }) joins: Record<string, JoinView> = {};
+  /** Links to related documents: `(slug, id)` opens one, `(slug)` creates one. Absent: no links. */
+  @property({ attribute: false }) relationHref?: (slug: string, id?: string) => string;
+  /** The signed-in user, for `filterOptions` functions (`{ user }`). */
+  @property({ attribute: false }) user: Data | null = null;
+
+  /** Array / block rows folded or unfolded by hand, by row id (the rest follow `initCollapsed`). */
+  @state() private _folded = new Map<string, boolean>();
+  /** JSON fields whose text doesn't parse (kept as typed), by path. */
+  @state() private _badJson = new Map<string, string>();
 
   private _set(path: Path, v: unknown) {
     this.value = setIn(this.value, path, v);
@@ -130,136 +215,315 @@ export class UiDocForm extends LightElement {
     return msg ? html`<ui-text size="sm" color="error">${msg}</ui-text>` : nothing;
   }
 
+  private _hasError(path: Path) {
+    return !!this.errors[path.join(".")];
+  }
+
+  /** Errors at or inside `path` (for tabs and folded rows). */
+  private _errorsIn(path: Path, fields?: FieldLike[]) {
+    const prefix = path.join(".");
+    const names = fields ? valueFields(fields).map((f) => f.name!) : undefined;
+    return Object.keys(this.errors).filter((k) => {
+      const rest = prefix ? (k === prefix || k.startsWith(`${prefix}.`) ? k.slice(prefix.length + 1) : null) : k;
+      if (rest == null) return false;
+      return !names || names.includes(rest.split(".")[0]!);
+    }).length;
+  }
+
   private _fields(fields: FieldLike[], data: Data, path: Path): TemplateResult {
     return html`<ui-flex direction="col" gap="4">${fields.map((f) => this._field(f, data, path))}</ui-flex>`;
   }
 
-  private _field(f: FieldLike, data: Data, path: Path): TemplateResult | typeof nothing {
-    if (f.hidden || f.admin?.hidden || f.type === "ui" || f.type === "join") return nothing;
+  private _field(f: FieldLike, data: Data, path: Path, inRow = false): TemplateResult | typeof nothing {
+    if (f.hidden || f.admin?.hidden || f.admin?.disabled || f.type === "ui") return nothing;
     if (f.admin?.condition && !f.admin.condition(this.value, data)) return nothing;
+    // A field with a width outside a row keeps that width (and still fits a narrow panel).
+    if (f.admin?.width && !inRow && f.type !== "row") {
+      return html`<ui-flex wrap>
+        <ui-box .basis=${`calc(${f.admin.width} + 1rem)`}>${this._field(f, data, path, true)}</ui-box>
+      </ui-flex>`;
+    }
 
     switch (f.type) {
       case "row": {
         const visible = (f.fields ?? []).filter((x) => !x.hidden && !x.admin?.hidden);
-        // As many fields side by side as fit (each at least 12rem): no breakpoints.
-        return html`<ui-grid fit="xs" gap="4">${visible.map((x) => this._field(x, data, path))}</ui-grid>`;
+        // Side by side, each taking its `admin.width` (or an equal share), wrapping when there's
+        // no room for 12rem each: no breakpoints.
+        return html`<ui-flex wrap gap="4" align="start">
+          ${visible.map(
+            (x) => html`<ui-box .basis=${x.admin?.width ?? "12rem"} grow>${this._field(x, data, path, true)}</ui-box>`,
+          )}
+        </ui-flex>`;
       }
       case "collapsible":
-        return html`<ui-collapse mode="checkbox" icon="arrow" open .heading=${labelOf(f) || "Details"}>
+        return html`<ui-collapse
+          mode="checkbox"
+          icon="arrow"
+          ?open=${!f.admin?.initCollapsed || this._errorsIn(path, f.fields) > 0}
+          .heading=${labelOf(f) || "Details"}
+        >
+          ${f.admin?.description ? html`<ui-text size="sm" color="muted">${f.admin.description}</ui-text>` : nothing}
           ${this._fields(f.fields ?? [], data, path)}
         </ui-collapse>`;
       case "tabs":
         return html`<ui-tabs
           variant="border"
-          .items=${(f.tabs ?? []).map((tab) => ({
-            label: typeof tab.label === "string" ? tab.label : humanize(tab.name ?? ""),
-            content: tab.name
-              ? this._fields(tab.fields, isObj(data[tab.name]) ? (data[tab.name] as Data) : {}, [...path, tab.name])
-              : this._fields(tab.fields, data, path),
-          }))}
+          .items=${(f.tabs ?? []).map((tab) => {
+            const at = tab.name ? [...path, tab.name] : path;
+            const errors = this._errorsIn(at, tab.name ? undefined : tab.fields);
+            const label = typeof tab.label === "string" ? tab.label : humanize(tab.name ?? "");
+            const description = (tab as { description?: unknown }).description;
+            return {
+              // A tab with errors inside says so, so they're found without opening every tab.
+              label: errors ? `${label} · ${errors} ${errors === 1 ? "error" : "errors"}` : label,
+              content: html`${typeof description === "string" ? html`<ui-text size="sm" color="muted">${description}</ui-text>` : nothing}
+              ${
+                tab.name
+                  ? this._fields(tab.fields, isObj(data[tab.name]) ? (data[tab.name] as Data) : {}, at)
+                  : this._fields(tab.fields, data, path)
+              }`,
+            };
+          })}
         ></ui-tabs>`;
       case "group": {
         const name = f.name!;
+        const inner = this._fields(f.fields ?? [], isObj(data[name]) ? (data[name] as Data) : {}, [...path, name]);
+        if (f.admin?.hideGutter) {
+          return html`<ui-flex direction="col" gap="2">
+            ${labelOf(f) ? html`<ui-text weight="semibold">${labelOf(f)}</ui-text>` : nothing}
+            ${f.admin?.description ? html`<ui-text size="sm" color="muted">${f.admin.description}</ui-text>` : nothing}
+            ${inner}
+          </ui-flex>`;
+        }
         return html`<ui-fieldset .legend=${labelOf(f)} .hint=${f.admin?.description ?? ""} surface="base-200">
-          ${this._fields(f.fields ?? [], isObj(data[name]) ? (data[name] as Data) : {}, [...path, name])}
+          ${inner}
         </ui-fieldset>`;
       }
       case "array":
       case "blocks":
         return this._rows(f, data, path);
+      case "join":
+        return this._join(f);
       default:
         return this._input(f, data, path);
     }
+  }
+
+  /**
+   * The label of an array / block row, as Payload's default row label: its first text value
+   * (text, then a choice or a relationship, then a number), so rows read "Line 03 · Lincoln Omnia 46".
+   */
+  private _rowLabel(fields: FieldLike[], row: Data): string {
+    const all = valueFields(fields).filter((f) => {
+      const v = row[f.name!];
+      return v != null && v !== "" && typeof v !== "object";
+    });
+    const pick = (types: string[]) => all.find((f) => types.includes(f.type));
+    const f =
+      pick(["text", "email", "textarea"]) ?? pick(["select", "radio", "relationship", "upload"]) ?? pick(["number"]);
+    if (!f) return "";
+    const v = row[f.name!];
+    if (f.type === "select" || f.type === "radio" || f.type === "relationship" || f.type === "upload")
+      return this._options(f, row, [text(v)]).find((o) => o.value === text(v))?.label ?? text(v);
+    return text(v);
   }
 
   private _rows(f: FieldLike, data: Data, path: Path) {
     const name = f.name!;
     const rows = Array.isArray(data[name]) ? (data[name] as Data[]) : [];
     const at = [...path, name];
-    const labels = (f as { labels?: { singular?: unknown } }).labels;
+    const labels = (f as { labels?: { singular?: unknown; plural?: unknown } }).labels;
     const singular = typeof labels?.singular === "string" ? labels.singular : "Row";
-    const move = (i: number, by: number) => {
-      const next = [...rows];
-      const [row] = next.splice(i, 1);
-      next.splice(i + by, 0, row);
-      this._set(at, next);
-    };
+    const sortable = f.admin?.isSortable !== false;
+    const full = f.maxRows != null && rows.length >= f.maxRows;
+    const removable = !(f.minRows != null && rows.length <= f.minRows);
     const add = (blockType?: string) => this._set(at, [...rows, { id: newId(), ...(blockType ? { blockType } : {}) }]);
     const blockOf = (row: Data) => f.blocks?.find((b) => b.slug === row.blockType);
     const blockLabel = (slug: string) => {
       const b = f.blocks?.find((x) => x.slug === slug);
       return typeof b?.labels?.singular === "string" ? b.labels.singular : humanize(slug);
     };
+    const rowId = (row: Data, i: number) => text(row.id ?? `${at.join(".")}.${i}`);
+    // blocks `filterOptions`: the block types that may be added here (true: all of them).
+    const permitted =
+      f.type === "blocks" && typeof f.filterOptions === "function"
+        ? f.filterOptions({ data: this.value, siblingData: data, user: this.user })
+        : true;
+    const allowedBlocks = (f.blocks ?? []).filter((b) => !Array.isArray(permitted) || permitted.includes(b.slug));
+    const isOpen = (row: Data, i: number) =>
+      this._folded.get(rowId(row, i)) ?? (!f.admin?.initCollapsed || this._errorsIn([...at, i]) > 0);
+    const fold = (open: boolean) => {
+      const next = new Map(this._folded);
+      rows.forEach((row, i) => next.set(rowId(row, i), open));
+      this._folded = next;
+    };
+    const act = (i: number, action: string) => {
+      const next = [...rows];
+      if (action === "up" || action === "down") {
+        const [row] = next.splice(i, 1);
+        next.splice(i + (action === "up" ? -1 : 1), 0, row!);
+      } else if (action === "duplicate") {
+        // Payload puts the copy right below the original.
+        next.splice(i + 1, 0, { ...structuredClone(rows[i]!), id: newId() });
+      } else if (action === "remove") next.splice(i, 1);
+      this._set(at, next);
+    };
+    const range =
+      f.minRows != null || f.maxRows != null
+        ? f.minRows != null && f.maxRows != null
+          ? `${f.minRows}–${f.maxRows}`
+          : f.maxRows != null
+            ? `up to ${f.maxRows}`
+            : `at least ${f.minRows}`
+        : "";
 
     return html`<ui-flex direction="col" gap="2">
-      <ui-flex align="center" gap="2">
-        <ui-text weight="semibold">${labelOf(f)}</ui-text>
-        <ui-badge size="sm" variant="soft">${rows.length}</ui-badge>
+      <ui-flex align="center" justify="between" gap="2" wrap>
+        <ui-flex align="center" gap="2">
+          <ui-text weight="semibold">${labelOf(f)}${f.required ? " *" : ""}</ui-text>
+          <ui-badge size="sm" variant="soft">${rows.length}${range ? ` · ${range}` : ""}</ui-badge>
+        </ui-flex>
+        ${
+          rows.length > 1
+            ? html`<ui-flex gap="1">
+                <ui-button size="xs" variant="ghost" @click=${() => fold(false)}>Collapse all</ui-button>
+                <ui-button size="xs" variant="ghost" @click=${() => fold(true)}>Expand all</ui-button>
+              </ui-flex>`
+            : nothing
+        }
       </ui-flex>
       ${f.admin?.description ? html`<ui-text size="sm" color="muted">${f.admin.description}</ui-text>` : nothing}
       ${this._error(at)}
-      ${rows.map(
-        (row, i) =>
-          html`<ui-box border rounded="box" padding="4">
-            <ui-flex direction="col" gap="3">
-              <ui-flex align="center" justify="between" gap="2">
-                <ui-text size="sm" weight="semibold">
-                  ${f.type === "blocks" ? blockLabel(text(row.blockType)) : singular} ${text(i + 1).padStart(2, "0")}
-                </ui-text>
+      ${rows.length ? nothing : html`<ui-text size="sm" color="muted">No ${humanize(name).toLowerCase()} yet.</ui-text>`}
+      ${rows.map((row, i) => {
+        const fields = f.type === "blocks" ? (blockOf(row)?.fields ?? []) : (f.fields ?? []);
+        const open = isOpen(row, i);
+        const errors = this._errorsIn([...at, i]);
+        const kind = f.type === "blocks" ? blockLabel(text(row.blockType)) : singular;
+        const name =
+          (f.type === "blocks" && typeof row.blockName === "string" && row.blockName) || this._rowLabel(fields, row);
+        const menu = [
+          ...(sortable && i > 0 ? [{ label: "Move up", value: "up" }] : []),
+          ...(sortable && i < rows.length - 1 ? [{ label: "Move down", value: "down" }] : []),
+          ...(full ? [] : [{ label: "Duplicate", value: "duplicate" }]),
+          ...(removable ? [{ label: "Remove", value: "remove" }] : []),
+        ];
+        return html`<ui-box border rounded="box" padding="3">
+          <ui-flex direction="col" gap="3">
+            <ui-flex align="center" justify="between" gap="2">
+              <ui-button
+                size="sm"
+                variant="ghost"
+                .label=${`${open ? "Collapse" : "Expand"} ${kind} ${i + 1}`}
+                @click=${() => (this._folded = new Map(this._folded).set(rowId(row, i), !open))}
+              >
+                <ui-icon name=${open ? "chevron-down" : "chevron-right"} size="sm"></ui-icon>
+                <ui-text as="span" size="sm" weight="semibold">${kind} ${text(i + 1).padStart(2, "0")}</ui-text>
+                ${name ? html`<ui-text as="span" size="sm" color="muted">${name}</ui-text>` : nothing}
+              </ui-button>
+              <ui-flex align="center" gap="1">
+                ${errors ? html`<ui-badge size="sm" color="error" variant="soft">${errors} ${errors === 1 ? "error" : "errors"}</ui-badge>` : nothing}
                 ${
-                  this.readonly
+                  this.readonly || !menu.length
                     ? nothing
-                    : html`<ui-flex gap="1">
-                        <ui-button
-                          size="xs"
-                          variant="ghost"
-                          label="Move up"
-                          .disabled=${i === 0}
-                          @click=${() => move(i, -1)}
-                          >↑</ui-button
-                        >
-                        <ui-button
-                          size="xs"
-                          variant="ghost"
-                          label="Move down"
-                          .disabled=${i === rows.length - 1}
-                          @click=${() => move(i, 1)}
-                          >↓</ui-button
-                        >
-                        <ui-button
-                          size="xs"
-                          variant="ghost"
-                          color="error"
-                          label="Remove"
-                          @click=${() =>
-                            this._set(
-                              at,
-                              rows.filter((_, j) => j !== i),
-                            )}
-                          >Remove</ui-button
-                        >
-                      </ui-flex>`
+                    : html`<ui-dropdown
+                        mode="popover"
+                        align="end"
+                        trigger-variant="ghost"
+                        trigger-size="xs"
+                        .label=${`${kind} ${i + 1} actions`}
+                        .items=${menu}
+                        @ui-select=${(e: CustomEvent<{ item: { value: string } }>) => {
+                          e.stopPropagation();
+                          act(i, e.detail.item.value);
+                        }}
+                        ><span slot="trigger">⋯</span></ui-dropdown
+                      >`
                 }
               </ui-flex>
-              ${this._fields(f.type === "blocks" ? (blockOf(row)?.fields ?? []) : (f.fields ?? []), row, [...at, i])}
             </ui-flex>
-          </ui-box>`,
-      )}
+            ${
+              open
+                ? html`${
+                    f.type === "blocks" &&
+                    !(blockOf(row) as { admin?: { disableBlockName?: boolean } } | undefined)?.admin?.disableBlockName
+                      ? html`<ui-text-input
+                          size="sm"
+                          width="full"
+                          leading="Name"
+                          placeholder="Optional"
+                          .value=${typeof row.blockName === "string" ? row.blockName : ""}
+                          .readonly=${this.readonly}
+                          @input=${(e: Event) => this._set([...at, i, "blockName"], (e.target as HTMLInputElement).value)}
+                        ></ui-text-input>`
+                      : nothing
+                  }${this._fields(fields, row, [...at, i])}`
+                : nothing
+            }
+          </ui-flex>
+        </ui-box>`;
+      })}
       ${
-        this.readonly
-          ? nothing
-          : html`<ui-flex gap="2" wrap>
-              ${
-                f.type === "blocks"
-                  ? (f.blocks ?? []).map(
-                      (b) =>
-                        html`<ui-button size="sm" variant="dash" @click=${() => add(b.slug)}
-                          >+ ${blockLabel(b.slug)}</ui-button
-                        >`,
-                    )
-                  : html`<ui-button size="sm" variant="dash" @click=${() => add()}>+ Add ${singular}</ui-button>`
-              }
-            </ui-flex>`
+        this.readonly || full
+          ? full && !this.readonly
+            ? html`<ui-text size="sm" color="muted"
+                >The most ${humanize(name).toLowerCase()} allowed is ${f.maxRows}.</ui-text
+              >`
+            : nothing
+          : f.type === "blocks"
+            ? html`<ui-flex>
+                <ui-dropdown
+                  mode="popover"
+                  trigger-variant="dash"
+                  trigger-size="sm"
+                  .label=${`+ Add ${singular === "Row" ? "block" : singular.toLowerCase()}`}
+                  .items=${allowedBlocks.map((b) => ({ label: blockLabel(b.slug), value: b.slug }))}
+                  @ui-select=${(e: CustomEvent<{ item: { value: string } }>) => {
+                    e.stopPropagation();
+                    add(e.detail.item.value);
+                  }}
+                ></ui-dropdown>
+              </ui-flex>`
+            : html`<ui-flex
+                ><ui-button size="sm" variant="dash" @click=${() => add()}>+ Add ${singular}</ui-button></ui-flex
+              >`
+      }
+    </ui-flex>`;
+  }
+
+  /** A join field: the documents that point at this one, read-only, with a way to add one. */
+  private _join(f: FieldLike) {
+    const view = this.joins[f.name!];
+    if (!view) return nothing;
+    return html`<ui-flex direction="col" gap="2">
+      <ui-flex align="center" justify="between" gap="2" wrap>
+        <ui-flex align="center" gap="2">
+          <ui-text weight="semibold">${labelOf(f)}</ui-text>
+          <ui-badge size="sm" variant="soft">${view.total}</ui-badge>
+        </ui-flex>
+        ${
+          view.createHref && f.admin?.allowCreate !== false && !this.readonly
+            ? html`<ui-button size="xs" variant="ghost" href=${view.createHref}>+ Create new</ui-button>`
+            : nothing
+        }
+      </ui-flex>
+      ${f.admin?.description ? html`<ui-text size="sm" color="muted">${f.admin.description}</ui-text>` : nothing}
+      <ui-table
+        size="sm"
+        bordered
+        .columns=${view.columns.map((c, i) => ({
+          key: c.key,
+          label: c.label,
+          render: (row: { href?: string; cells: Record<string, string> }) =>
+            i === 0 && row.href ? html`<ui-link href=${row.href}>${row.cells[c.key]}</ui-link>` : row.cells[c.key],
+        }))}
+        .rows=${view.rows}
+        .empty=${"None yet."}
+      ></ui-table>
+      ${
+        view.total > view.rows.length
+          ? html`<ui-text size="xs" color="muted">Showing ${view.rows.length} of ${view.total}.</ui-text>`
+          : nothing
       }
     </ui-flex>`;
   }
@@ -269,7 +533,14 @@ export class UiDocForm extends LightElement {
     const at = [...path, name];
     const v = data[name];
     const label = labelOf(f) + (f.required ? " *" : "");
-    const hint = f.admin?.description ?? "";
+    const description = f.admin?.description ?? "";
+    const color = this._hasError(at) ? ("error" as const) : undefined;
+    // A running count against `maxLength` (Payload validates it; this shows it coming).
+    const count =
+      f.maxLength != null && typeof v === "string" && !(f.type === "text" && f.hasMany)
+        ? `${v.length} / ${f.maxLength}`
+        : "";
+    const hint = [typeof description === "string" ? description : "", count].filter(Boolean).join(" · ") || description;
     const placeholder = textOf(f.admin?.placeholder);
     const disabled = this.readonly || !!f.admin?.readOnly;
     const set = (x: unknown) => this._set(at, x);
@@ -279,7 +550,26 @@ export class UiDocForm extends LightElement {
     switch (f.type) {
       case "text":
       case "email":
+        if (f.hasMany) {
+          control = html`<ui-combobox
+            .legend=${label}
+            .hint=${hint || "Type a value and press Enter."}
+            multiple
+            creatable
+            .color=${color}
+            .value=${Array.isArray(v) ? v.map(text) : []}
+            .placeholder=${placeholder ?? "Add…"}
+            .readonly=${disabled}
+            field-width="full"
+            @ui-change=${(e: CustomEvent<{ value: string[] }>) => set(e.detail.value)}
+          ></ui-combobox>`;
+          break;
+        }
         control = html`<ui-text-input
+          .color=${color}
+          .maxlength=${f.maxLength}
+          .minlength=${f.minLength}
+          autocomplete=${(f.admin?.autoComplete as string | undefined) ?? "off"}
           .legend=${label}
           .hint=${hint}
           .type=${f.type === "email" ? "email" : "text"}
@@ -292,29 +582,31 @@ export class UiDocForm extends LightElement {
         ></ui-text-input>`;
         break;
       case "number":
-        // hasMany numbers (e.g. line numbers 1, 2, 5) are edited as a comma-separated list.
+        // hasMany numbers (e.g. line numbers 1, 2, 5) as chips.
         if (f.hasMany) {
-          control = html`<ui-text-input
+          control = html`<ui-combobox
             .legend=${label}
-            .hint=${hint ?? "Comma-separated numbers"}
-            .value=${Array.isArray(v) ? v.join(", ") : v == null ? "" : text(v)}
+            .hint=${hint || "Type a number and press Enter."}
+            multiple
+            creatable
+            inputmode="decimal"
+            .color=${color}
+            .value=${Array.isArray(v) ? v.map(text) : []}
+            .placeholder=${placeholder ?? "Add…"}
             .readonly=${disabled}
             field-width="full"
-            width="full"
-            @input=${(e: Event) =>
-              set(
-                target(e)
-                  .value.split(",")
-                  .map((s) => s.trim())
-                  .filter(Boolean)
-                  .map(Number),
-              )}
-          ></ui-text-input>`;
+            @ui-change=${(e: CustomEvent<{ value: string[] }>) =>
+              set(e.detail.value.map(Number).filter((n) => Number.isFinite(n)))}
+          ></ui-combobox>`;
           break;
         }
         control = html`<ui-text-input
           .legend=${label}
           .hint=${hint}
+          .color=${color}
+          .placeholder=${placeholder}
+          .step=${f.admin?.step == null ? "any" : text(f.admin.step)}
+          inputmode="decimal"
           type="number"
           .min=${f.min == null ? undefined : text(f.min)}
           .max=${f.max == null ? undefined : text(f.max)}
@@ -326,16 +618,21 @@ export class UiDocForm extends LightElement {
         ></ui-text-input>`;
         break;
       case "date": {
-        const dayOnly = f.admin?.date?.pickerAppearance === "dayOnly";
+        const appearance = appearanceOf(f);
+        const bound = (d: unknown) =>
+          d == null ? undefined : toInputDate(new Date(d as string).toISOString(), appearance);
         control = html`<ui-text-input
           .legend=${label}
           .hint=${hint}
-          .type=${dayOnly ? "date" : "datetime-local"}
-          .value=${toInputDate(v, dayOnly)}
+          .color=${color}
+          .type=${DATE_INPUT[appearance]}
+          .min=${bound(f.admin?.date?.minDate)}
+          .max=${bound(f.admin?.date?.maxDate)}
+          .value=${toInputDate(v, appearance)}
           .readonly=${disabled}
           field-width="full"
           width="full"
-          @input=${(e: Event) => set(fromInputDate(target(e).value))}
+          @input=${(e: Event) => set(fromInputDate(target(e).value, appearance, v))}
         ></ui-text-input>`;
         break;
       }
@@ -343,8 +640,12 @@ export class UiDocForm extends LightElement {
       case "code":
       case "richText":
         control = html`<ui-textarea
-            .legend=${label}
+            .legend=${f.type === "code" && f.admin?.language ? `${label} · ${text(f.admin.language)}` : label}
             .hint=${hint}
+            .color=${color}
+            .rows=${f.admin?.rows ?? (f.type === "code" ? 8 : 3)}
+            ?mono=${f.type === "code"}
+            .maxlength=${f.maxLength}
             .value=${typeof v === "string" ? v : v == null ? "" : JSON.stringify(v)}
             .placeholder=${placeholder}
             .readonly=${disabled}
@@ -362,25 +663,36 @@ export class UiDocForm extends LightElement {
               : nothing
           }`;
         break;
-      case "json":
+      case "json": {
+        // Checked as it's typed; text that doesn't parse stays as typed (and isn't saved) until it does.
+        const key = at.join(".");
+        const bad = this._badJson.get(key);
         control = html`<ui-textarea
-          .legend=${label}
-          .hint=${hint}
-          .value=${v == null ? "" : JSON.stringify(v, null, 2)}
-          .readonly=${disabled}
-          field-width="full"
-          width="full"
-          height="48"
-          @change=${(e: Event) => {
-            const text = (e.target as HTMLTextAreaElement).value;
-            try {
-              set(text.trim() ? JSON.parse(text) : null);
-            } catch {
-              set(text);
-            }
-          }}
-        ></ui-textarea>`;
+            .legend=${label}
+            .hint=${hint}
+            .color=${bad != null || color ? "error" : undefined}
+            mono
+            .rows=${f.admin?.rows ?? 8}
+            .value=${bad ?? (v == null ? "" : JSON.stringify(v, null, 2))}
+            .readonly=${disabled}
+            field-width="full"
+            width="full"
+            @input=${(e: Event) => {
+              const raw = (e.target as HTMLTextAreaElement).value;
+              const next = new Map(this._badJson);
+              try {
+                const parsed: unknown = raw.trim() ? JSON.parse(raw) : null;
+                next.delete(key);
+                this._badJson = next;
+                set(parsed);
+              } catch {
+                this._badJson = next.set(key, raw);
+              }
+            }}
+          ></ui-textarea>
+          ${bad != null ? html`<ui-text size="sm" color="error">Not valid JSON yet — it's saved once it is.</ui-text>` : nothing}`;
         break;
+      }
       case "checkbox":
         control = html`<ui-checkbox
           .label=${labelOf(f)}
@@ -413,7 +725,7 @@ export class UiDocForm extends LightElement {
       case "radio":
       case "relationship":
       case "upload":
-        control = this._choice(f, v, set, label, hint, disabled);
+        control = this._choice(f, v, set, label, hint, disabled, color, placeholder, data);
         break;
       default:
         control = html`<ui-text size="sm" color="muted">${label}: unsupported field type "${f.type}"</ui-text>`;
@@ -421,18 +733,45 @@ export class UiDocForm extends LightElement {
     return html`<ui-flex direction="col" gap="1">${control}${this._error(at)}</ui-flex>`;
   }
 
-  private _options(f: FieldLike): RelationOption[] {
+  /**
+   * The choices a field offers. `filterOptions` narrows them (as Payload's does), given the
+   * document, the field's siblings and the user; `keep` (the current value) always stays listed
+   * so it still reads as a name. A function returning a promise is ignored here (the API still
+   * checks it on save).
+   */
+  private _options(f: FieldLike, siblingData: Data = {}, keep: string[] = []): RelationOption[] {
+    const filter = f.filterOptions;
+    const args = { data: this.value, siblingData, id: this.value.id, user: this.user, req: { user: this.user } };
     if (f.type === "select" || f.type === "radio") {
-      return (f.options ?? []).map((o) =>
+      let options = f.options ?? [];
+      if (f.type === "select" && typeof filter === "function") {
+        const offered = filter({ ...args, options });
+        if (Array.isArray(offered)) {
+          const allowed = new Set(
+            offered.map((o: unknown) => (typeof o === "string" ? o : (o as { value: string }).value)),
+          );
+          options = options.filter((o) => {
+            const value = typeof o === "string" ? o : o.value;
+            return allowed.has(value) || keep.includes(value);
+          });
+        }
+      }
+      return options.map((o) =>
         typeof o === "string" ? { value: o, label: o } : { value: o.value, label: text(o.label) },
       );
     }
-    const targets = Array.isArray(f.relationTo) ? f.relationTo : [f.relationTo ?? ""];
-    return targets.flatMap((slug) =>
-      (this.relations[slug] ?? []).map((o) =>
-        Array.isArray(f.relationTo) ? { value: `${slug}:${o.value}`, label: `${humanize(slug)}: ${o.label}` } : o,
-      ),
-    );
+    const poly = Array.isArray(f.relationTo);
+    const targets = poly ? (f.relationTo as string[]) : [(f.relationTo as string | undefined) ?? ""];
+    return targets.flatMap((slug) => {
+      const where = typeof filter === "function" ? filter({ ...args, relationTo: slug }) : filter;
+      const allowed = (o: RelationOption) =>
+        where == null ||
+        where === true ||
+        (where instanceof Promise ? true : where !== false && (!o.doc || matches(o.doc, where as Where)));
+      return (this.relations[slug] ?? [])
+        .filter((o) => allowed(o) || keep.includes(poly ? `${slug}:${o.value}` : o.value))
+        .map((o) => (poly ? { ...o, value: `${slug}:${o.value}`, group: humanize(slug) } : o));
+    });
   }
 
   private _choice(
@@ -442,8 +781,10 @@ export class UiDocForm extends LightElement {
     label: string,
     hint: unknown,
     disabled: boolean,
+    color: "error" | undefined,
+    placeholder: string | undefined,
+    siblingData: Data,
   ) {
-    const options = this._options(f);
     const poly = Array.isArray(f.relationTo);
     // Stored value -> option value (relationships may arrive populated; polymorphic as { relationTo, value }).
     const toOption = (x: unknown): string => {
@@ -451,6 +792,8 @@ export class UiDocForm extends LightElement {
       if (isObj(x) && "id" in x) return text(x.id);
       return x == null ? "" : text(x);
     };
+    const current = (Array.isArray(v) ? v : [v]).map(toOption).filter(Boolean);
+    const options = this._options(f, siblingData, current);
     const fromOption = (o: string): unknown => {
       if (!o) return null;
       if (!poly) return o;
@@ -458,38 +801,11 @@ export class UiDocForm extends LightElement {
       return { relationTo: o.slice(0, i), value: o.slice(i + 1) };
     };
 
-    if (f.hasMany) {
-      const selected = new Set((Array.isArray(v) ? v : []).map(toOption));
-      return html`<ui-fieldset .legend=${label} .hint=${hint ?? ""}>
-        <ui-flex gap="4" wrap>
-          ${
-            options.length
-              ? options.map(
-                  (o) =>
-                    html`<ui-checkbox
-                      size="sm"
-                      .label=${o.label}
-                      .checked=${selected.has(o.value)}
-                      .disabled=${disabled}
-                      @change=${(e: Event) => {
-                        const next = new Set(selected);
-                        if ((e.target as HTMLInputElement).checked) next.add(o.value);
-                        else next.delete(o.value);
-                        set(options.filter((x) => next.has(x.value)).map((x) => fromOption(x.value)));
-                      }}
-                    ></ui-checkbox>`,
-                )
-              : html`<ui-text size="sm" color="muted">Nothing to choose from yet.</ui-text>`
-          }
-        </ui-flex>
-      </ui-fieldset>`;
-    }
-
     if (f.type === "radio") {
       return html`<ui-radio
         .legend=${label}
         .hint=${hint ?? ""}
-        direction="horizontal"
+        direction=${f.admin?.layout === "vertical" ? "vertical" : "horizontal"}
         .options=${options}
         .value=${toOption(v)}
         .disabled=${disabled}
@@ -497,16 +813,56 @@ export class UiDocForm extends LightElement {
       ></ui-radio>`;
     }
 
-    return html`<ui-select
-      .legend=${label}
-      .hint=${hint ?? ""}
-      .options=${[{ label: "—", value: "" }, ...options]}
-      .value=${toOption(v)}
-      .disabled=${disabled}
-      field-width="full"
-      width="full"
-      @change=${(e: Event) => set(fromOption((e.target as HTMLSelectElement).value))}
-    ></ui-select>`;
+    const picked = f.hasMany ? (Array.isArray(v) ? v.map(toOption) : []) : toOption(v);
+    const field = (fieldHint: unknown) =>
+      html`<ui-combobox
+        .legend=${label}
+        .hint=${fieldHint ?? ""}
+        .options=${options}
+        .value=${picked}
+        ?multiple=${!!f.hasMany}
+        ?clearable=${f.admin?.isClearable ?? !f.required}
+        .color=${color}
+        .placeholder=${placeholder ?? (f.hasMany ? "Choose…" : "—")}
+        .readonly=${disabled}
+        field-width="full"
+        @ui-change=${(e: CustomEvent<{ value: string | string[] }>) =>
+          set(Array.isArray(e.detail.value) ? e.detail.value.map(fromOption) : fromOption(e.detail.value))}
+      ></ui-combobox>`;
+
+    if (f.type !== "relationship" && f.type !== "upload") return field(hint);
+
+    // Relationships and uploads: open what's picked and create a new one (small links in the
+    // hint line, so a row of fields stays aligned), and preview picked images.
+    const ids = (Array.isArray(picked) ? picked : [picked]).filter(Boolean);
+    const target = (id: string) => (poly ? id.slice(0, id.indexOf(":")) : (f.relationTo as string));
+    const bare = (id: string) => (poly ? id.slice(id.indexOf(":") + 1) : id);
+    const option = (id: string) => options.find((o) => o.value === id);
+    const href = this.relationHref;
+    const open =
+      href && f.admin?.allowEdit !== false && ids.length === 1
+        ? html`<ui-link href=${href(target(ids[0]!), bare(ids[0]!))}>Open</ui-link>`
+        : undefined;
+    const create =
+      href && !poly && f.admin?.allowCreate !== false && !disabled
+        ? html`<ui-link href=${href(f.relationTo as string)} target="_blank">+ New</ui-link>`
+        : undefined;
+    const parts = [hint || undefined, open, create].filter((x) => x != null);
+    const fieldHint = parts.length ? html`${parts.map((x, i) => html`${i ? " · " : ""}${x}`)}` : "";
+    const previews =
+      f.type === "upload" ? ids.map((id) => option(id)).filter((o): o is RelationOption => !!o?.image) : [];
+    if (!previews.length) return field(fieldHint);
+    return html`<ui-flex direction="col" gap="2">
+      ${field(fieldHint)}
+      <ui-grid fit="xs" gap="2">
+        ${previews.map(
+          (o) =>
+            html`<ui-card size="xs" variant="border" image-src=${o.image!} .imageAlt=${o.label}>
+              <ui-text size="xs">${o.label}</ui-text>
+            </ui-card>`,
+        )}
+      </ui-grid>
+    </ui-flex>`;
   }
 
   render() {

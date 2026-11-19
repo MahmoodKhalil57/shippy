@@ -86,6 +86,38 @@ describe("REST: reading", () => {
     expect(missing.body).toEqual({ errors: [{ name: "NotFound", message: "Not Found" }] });
   });
 
+  it("select: only the chosen fields (and id), or all but the excluded ones", async () => {
+    const only = await call("GET", "/api/cases?select[caseId]=true&select[customer]=true&depth=0&limit=2");
+    expect(Object.keys(only.body.docs[0]).sort()).toEqual(["caseId", "customer", "id"]);
+    const without = await call("GET", "/api/cases/gs-rfq-0142?select[lines]=false&depth=0");
+    expect(without.body).not.toHaveProperty("lines");
+    expect(without.body.caseId).toBe("GS-RFQ-0142");
+  });
+
+  it("populate: the fields of populated documents, per collection", async () => {
+    const { body } = await call(
+      "GET",
+      "/api/cases/gs-rfq-0142?depth=1&select[customer]=true&populate[customers][name]=true",
+    );
+    expect(Object.keys(body.customer).sort()).toEqual(["id", "name"]);
+  });
+
+  it("joins: related documents of a join field, counted, filtered, or skipped", async () => {
+    const all = await call("GET", "/api/vessels?depth=0&limit=0");
+    const atlas = all.body.docs.filter((v: { customer: string }) => v.customer === "atlas");
+    const { body } = await call(
+      "GET",
+      "/api/customers/atlas?depth=0&joins[vessels][count]=true&joins[vessels][limit]=1",
+    );
+    expect(body.vessels).toMatchObject({ totalDocs: atlas.length, hasNextPage: atlas.length > 1 });
+    expect(atlas.length).toBeGreaterThan(0);
+    expect(body.vessels.docs).toEqual([expect.any(String)]); // depth 0: ids
+    const populated = await call("GET", "/api/customers/atlas?depth=1");
+    expect(populated.body.vessels.docs[0]).toMatchObject({ customer: expect.anything(), name: expect.any(String) });
+    expect((await call("GET", "/api/customers/atlas?joins=false")).body).not.toHaveProperty("vessels");
+    expect((await call("GET", "/api/customers/atlas?select[name]=true")).body).not.toHaveProperty("vessels");
+  });
+
   it("applies access control: users need a login; password hashes never leak", async () => {
     const anonymous = await call("GET", "/api/users");
     expect(anonymous.status).toBe(403);
@@ -172,6 +204,20 @@ describe("REST: writing", () => {
     await login();
     const { body } = await call("POST", "/api/globals/settings", { marginFloor: 12 });
     expect(body.result.marginFloor).toBe(12);
+  });
+});
+
+describe("REST: filterOptions", () => {
+  it("rejects a relationship value its filterOptions don't allow, accepts one they do", async () => {
+    await login();
+    const { body } = await call("GET", "/api/products?limit=1&depth=0");
+    const id = body.docs[0].id as string;
+    // products.agency: only suppliers of kind "agency" (S10); S1 is a local supplier.
+    const bad = await call("PATCH", `/api/products/${id}`, { agency: "S1" });
+    expect(bad.status).toBe(400);
+    expect(JSON.stringify(bad.body)).toContain("invalid selections: S1");
+    const good = await call("PATCH", `/api/products/${id}`, { agency: "S10" });
+    expect(good.status).toBe(200);
   });
 });
 

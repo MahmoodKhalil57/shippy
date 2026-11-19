@@ -18,6 +18,10 @@ export const preferences = createStore(
     asideOpen: true,
     /** Side-panel sections that are collapsed, by id (everything else is open). */
     asideCollapsed: [] as string[],
+    /** Collection tables: the columns someone hid or showed, by collection (absent: the defaults). */
+    listColumns: {} as Record<string, string[]>,
+    /** Collection lists shown as cards instead of a table, by collection. */
+    listView: {} as Record<string, "table" | "cards">,
   },
   { persist: "gs:preferences" },
 );

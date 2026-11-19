@@ -37,6 +37,8 @@ export const textarea = rcva("textarea", {
       xl: "textarea-xl",
     },
     validator: { true: "validator" },
+    /** Code and JSON: monospaced, no wrapping, tab-sized indents. */
+    mono: { true: "font-mono text-sm [tab-size:2] whitespace-pre" },
     width: {
       auto: "w-auto",
       "64": "w-64",
@@ -75,6 +77,8 @@ export class UiTextarea extends LightElement {
   @property() width: TextareaVariants["width"];
   @property() height: TextareaVariants["height"];
   @property({ converter: responsiveBoolean }) validator: Responsive<boolean> = false;
+  /** Code and JSON (monospaced). */
+  @property({ type: Boolean }) mono = false;
 
   @property() name?: string;
   @property() value = "";
@@ -130,6 +134,7 @@ export class UiTextarea extends LightElement {
         width: this.width,
         height: this.height,
         validator: this.validator,
+        mono: this.mono,
       })}
       name=${ifDefined(this.name)}
       .value=${live(this.value)}

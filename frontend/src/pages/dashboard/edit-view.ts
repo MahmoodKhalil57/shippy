@@ -4,19 +4,28 @@ import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { api, ApiError } from "../../cms/client.ts";
 import type { Doc, FieldLike } from "../../cms/types.ts";
-import { setIn, type DocFormChange, type RelationOption } from "../../components/composed/forms/doc-form.ts";
+import {
+  setIn,
+  type DocFormChange,
+  type JoinView,
+  type RelationOption,
+} from "../../components/composed/forms/doc-form.ts";
 import "../../components/index.ts";
 import type { Access } from "./app.ts";
 import { viewElement } from "./views.ts";
 import {
+  cellText,
+  columnsOf,
   dashboardPath,
   collectionOf,
+  dataFields,
   fieldsOf,
   formatDate,
   formFields,
   globalLabel,
   editTabs,
   globalOf,
+  humanize,
   labels,
   navigate,
   splitSidebar,
@@ -39,6 +48,22 @@ function relationTargets(fields: FieldLike[], out = new Set<string>()): Set<stri
   }
   return out;
 }
+
+/** The collection's top-level join fields (shown as tables of the documents pointing at this one). */
+function joinFieldsOf(fields: FieldLike[]): (FieldLike & { collection: string })[] {
+  return fields.flatMap((f): (FieldLike & { collection: string })[] => {
+    if (f.type === "join" && f.name) return [f as FieldLike & { collection: string }];
+    if (f.type === "row" || f.type === "collapsible") return joinFieldsOf(f.fields ?? []);
+    if (f.type === "tabs") return (f.tabs ?? []).flatMap((t) => (t.name ? [] : joinFieldsOf(t.fields)));
+    return [];
+  });
+}
+
+const fileSize = (bytes: unknown) => {
+  const n = Number(bytes);
+  if (!Number.isFinite(n) || n <= 0) return "";
+  return n < 1024 ? `${n} B` : n < 1024 ** 2 ? `${(n / 1024).toFixed(0)} KB` : `${(n / 1024 ** 2).toFixed(1)} MB`;
+};
 
 /** Populated relationships (depth 1) back to ids, so the form edits plain values. */
 function unpopulate(fields: FieldLike[], data: Data): Data {
@@ -92,6 +117,7 @@ export class DashboardEditView extends LightElement {
   @state() private value: Data = {};
   @state() private errors: Record<string, string> = {};
   @state() private relations: Record<string, RelationOption[]> = {};
+  @state() private joins: Record<string, JoinView> = {};
   @state() private loading = true;
   @state() private saving = false;
   @state() private dirty = false;
@@ -121,7 +147,23 @@ export class DashboardEditView extends LightElement {
           const c = collectionOf(slug);
           if (!c || this.access.collections[slug]?.read.permission === false) return [slug, []] as const;
           const { docs } = await api.find(slug, { limit: 0, depth: 0 });
-          return [slug, docs.map((d) => ({ value: d.id, label: titleOf(c, d) }))] as const;
+          return [
+            slug,
+            docs.map((d): RelationOption => {
+              // Uploads: the file's type and size under its name, and a preview when it's an image.
+              const image = c.upload && text(d.mimeType ?? "").startsWith("image/") ? text(d.url ?? "") : "";
+              const description = c.upload
+                ? [text(d.mimeType ?? ""), fileSize(d.filesize)].filter(Boolean).join(" · ")
+                : "";
+              return {
+                value: d.id,
+                label: titleOf(c, d),
+                doc: d,
+                ...(description ? { description } : {}),
+                ...(image ? { image } : {}),
+              };
+            }),
+          ] as const;
         }),
       );
       this.relations = Object.fromEntries(lists);
@@ -130,9 +172,10 @@ export class DashboardEditView extends LightElement {
         this.doc = doc;
         this.value = unpopulate(this._fields, doc);
       } else if (this.docId) {
-        const doc = await api.findByID(this.slug, this.docId, { depth: 0 });
+        const doc = await api.findByID(this.slug, this.docId, { depth: 0, joins: false });
         this.doc = doc;
         this.value = unpopulate(this._fields, doc);
+        this.joins = await this._loadJoins();
       } else {
         this.doc = null;
         this.value = {};
@@ -143,6 +186,89 @@ export class DashboardEditView extends LightElement {
     } finally {
       this.loading = false;
     }
+  }
+
+  /**
+   * Join fields: the related documents (`joins[<field>][count]`, depth 1 so they come as
+   * documents), shown with the join's `admin.defaultColumns`.
+   */
+  private async _loadJoins(): Promise<Record<string, JoinView>> {
+    const fields = joinFieldsOf(this._fields);
+    if (!fields.length) return {};
+    const doc = await api.findByID(this.slug, this.docId, {
+      depth: 1,
+      select: Object.fromEntries(fields.map((f) => [f.name!, true])),
+      joins: Object.fromEntries(fields.map((f) => [f.name!, { count: true, limit: 10 }])),
+    });
+    return Object.fromEntries(
+      fields.flatMap((f) => {
+        const related = collectionOf(f.collection);
+        const value = doc[f.name!] as { docs?: Doc[]; totalDocs?: number } | undefined;
+        if (!related || !value) return [];
+        const relatedFields = dataFields(formFields(related));
+        const byName = new Map(relatedFields.map((x) => [x.name!, x]));
+        const names = f.admin?.defaultColumns?.length
+          ? f.admin.defaultColumns
+          : columnsOf(related)
+              .map((x) => x.name!)
+              .slice(0, 4);
+        const columns = names
+          // The join's own field (pointing back here) says nothing on this page.
+          .filter((n) => n !== (f as { on?: string }).on)
+          .map((n) => {
+            const field = byName.get(n);
+            return { key: n, label: typeof field?.label === "string" ? field.label : humanize(n) };
+          });
+        const cell = (n: string, d: Doc) => {
+          const field = byName.get(n) ?? { name: n, type: "text" };
+          const v = d[n];
+          const rel = typeof field.relationTo === "string" ? field.relationTo : undefined;
+          if (rel && typeof v === "string") return this.relations[rel]?.find((o) => o.value === v)?.label ?? v;
+          return cellText(field, v);
+        };
+        const view: JoinView = {
+          columns,
+          total: value.totalDocs ?? value.docs?.length ?? 0,
+          rows: (value.docs ?? []).map((d) => ({
+            id: String(d.id),
+            href: dashboardPath("collections", related.slug, String(d.id)),
+            cells: Object.fromEntries(columns.map((c) => [c.key, cell(c.key, d)])),
+          })),
+          ...(this.access.collections[related.slug]?.create.permission
+            ? { createHref: dashboardPath("collections", related.slug, "create") }
+            : {}),
+        };
+        return [[f.name!, view] as const];
+      }),
+    );
+  }
+
+  /** Related documents open in the dashboard; `create` makes a new one. */
+  private _relationHref = (slug: string, id?: string) => dashboardPath("collections", slug, id ?? "create");
+
+  /** Ctrl/⌘ + S saves, as in Payload. */
+  private _keydown = (e: KeyboardEvent) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s" && !this.tab) {
+      e.preventDefault();
+      if (!this.saving && !this.loading) void this._save();
+    }
+  };
+
+  /** Leaving with unsaved changes asks first (closing the tab or reloading). */
+  private _beforeUnload = (e: BeforeUnloadEvent) => {
+    if (this.dirty) e.preventDefault();
+  };
+
+  connectedCallback() {
+    super.connectedCallback();
+    window.addEventListener("keydown", this._keydown);
+    window.addEventListener("beforeunload", this._beforeUnload);
+  }
+
+  disconnectedCallback() {
+    window.removeEventListener("keydown", this._keydown);
+    window.removeEventListener("beforeunload", this._beforeUnload);
+    super.disconnectedCallback();
   }
 
   private async _save() {
@@ -197,6 +323,9 @@ export class DashboardEditView extends LightElement {
       .value=${this.value}
       .errors=${this.errors}
       .relations=${this.relations}
+      .joins=${this.joins}
+      .relationHref=${this._relationHref}
+      .user=${this.user}
       ?readonly=${readonly}
       @ui-change=${this._change}
     ></ui-doc-form>`;
@@ -346,8 +475,13 @@ export class DashboardEditView extends LightElement {
             }
             ${
               canSave
-                ? html`<ui-button type="submit" color="primary" .disabled=${this.saving}>
-                    ${this.saving ? "Saving…" : this.docId || g ? "Save" : "Create"}
+                ? html`<ui-button
+                    type="submit"
+                    color="primary"
+                    .disabled=${this.saving || (!this.dirty && !!(this.docId || g))}
+                    title="Ctrl + S"
+                  >
+                    ${this.saving ? "Saving…" : this.docId || g ? (this.dirty ? "Save" : "Saved") : "Create"}
                   </ui-button>`
                 : html`<ui-badge variant="outline">Read only</ui-badge>`
             }
@@ -360,6 +494,27 @@ export class DashboardEditView extends LightElement {
             : nothing
         }
         ${tabBar}
+        ${
+          Object.keys(this.errors).length
+            ? html`<ui-alert
+                color="error"
+                variant="soft"
+                heading=${`${Object.keys(this.errors).length} ${Object.keys(this.errors).length === 1 ? "field needs" : "fields need"} attention`}
+                >${Object.entries(this.errors)
+                  .slice(0, 3)
+                  .map(
+                    ([path, message]) =>
+                      `${humanize(
+                        path
+                          .split(".")
+                          .filter((p) => !/^\d+$/.test(p))
+                          .pop() ?? path,
+                      )}: ${message}`,
+                  )
+                  .join(" ")}${Object.keys(this.errors).length > 3 ? " …" : ""}</ui-alert
+              >`
+            : nothing
+        }
         <ui-grid
           sidebar
           gap="8"

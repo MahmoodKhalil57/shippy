@@ -55,7 +55,7 @@ Mock apps get a real-feeling backend with nothing deployed: a Service Worker ser
 - **API**: `fetch("/api/<collection>?where[...]&depth=1")`, `/api/<collection>/<id>`, `/api/globals/<slug>`, `/api/<auth-collection>/login|logout|me`, custom endpoints. Same routes, query syntax and response shapes as Payload. From pages, call `startMockBackend()` once (or use `api` from `src/cms/client.ts`, which does it for you).
 - **Dashboard**: the site root (`/`, `/collections/<slug>/<id>`, `/globals/<slug>`, `/account`), generated from the config and built from `ui-*` components (`src/pages/dashboard`, `ui-doc-form`). Seeded users log in with `demo1234`.
 - **Seed data**: `src/cms/seed/<collection>.json` and `src/cms/seed/globals/<slug>.json`, loaded on first run. Give documents an `id` to reference them from relationships. Local edits stay in the browser; `/api/_mock/export|import|reset` (no dashboard page) snapshot them or reset to the seed.
-- **Not emulated**: drafts/versions, localization, `richText` (edited as plain text), querying through relationships (`author.name`), `select`/`populate` options, login with username, email flows (verify/forgot password), GraphQL. Default access is Payload's: logged-in users only, unless a collection says otherwise.
+- **Not emulated**: drafts/versions, localization, `richText` (edited as plain text), querying through relationships (`author.name`), login with username, email flows (verify/forgot password), GraphQL. Default access is Payload's: logged-in users only, unless a collection says otherwise.
 - **Tests**: `tests/cms.test.ts` exercises the REST API in Node with an in-memory store.
 - **Demo screens** are Payload custom views: root views in `config.admin.components.views` (path, `Component` = a custom element, optional `nav`), collection tabs in `admin.components.views.edit` (the case workspace, the quotation preview). Each element lives in `src/pages/dashboard/views/<name>.ts` (auto-imported) and receives `access`, `user` and, for tabs, `slug`/`docId`. Their server logic is in custom endpoints (`src/cms/endpoints/<area>.ts`). The demo is set on Tue 17 Nov 2026 09:30 (`DEMO_NOW` in `src/cms/endpoints/home.ts`).
 - **Works offline**: the same Service Worker precaches the build for offline use: `plugins/mock-backend.ts` writes the list of built files (`__PRECACHE__`, versioned by their hash) into `cms-sw.js`; `src/cms/sw.ts` caches them on install (full-size background photos just after), serves them cache-first, and drops old caches on the next deploy. Dev has no precache.
@@ -73,3 +73,46 @@ All motion is M3's, from the generated tokens in `src/styles/motion.css` (`vpx p
 - **daisyUI's own transitions** are retimed in `src/styles/daisy-motion.css`. A primitive's own `transition-*` classes still win over that file.
 - **Pages:** `<dashboard-app>` picks the M3 pattern for each navigation and calls `<ui-app-shell>`'s `pageTransition()`. The navigation's destinations are `top-level` (a fade). Into a record is `forward` (a slide with a fade), back to its list is `backward`, and another tab of the same record is `lateral` (a slide without a fade).
 - **Reduce motion:** the spatial tokens are 0, so nothing slides or scales; fades remain. Add `motion-reduce:` fallbacks for keyframe animations.
+
+## Data tables (collection lists)
+
+Collection lists (`src/pages/dashboard/list-view.ts`) are built on Payload's REST query parameters, which the mock backend implements. `src/cms/runtime/select.ts` handles `select`, `populate` and `joins`; `locale` and `fallback-locale` are accepted but do nothing, because no field is localized.
+
+- `<ui-table>`:
+  - **Sorting:** columns marked `sortable` sort from their header; `sort` holds a Payload sort string and `ui-sort` reports changes. Shift-click sorts by several columns.
+  - **Columns:** `align: "end"` right-aligns numbers in tabular figures; `hiddenColumns` hides columns by key.
+  - **States:** `loading` dims the current rows, or shows skeleton rows when there are none; `empty` is what shows when there are no rows.
+- `<ui-filter-builder>`: its fields are typed text, number, date, select (also used for relationships) or boolean. It edits conditions as chips and emits a Payload `where`. The conversion lives in `src/components/base/filter-query.ts`, so pages can build the same `where` from saved conditions.
+- `<ui-column-picker>`: the "Columns" checklist, with Reset; it pairs with `hiddenColumns`.
+- **List page behaviour:**
+  - The table's state lives in the URL (`q`, `sort`, `page`, `limit`, `filters`, `match`, `view`).
+  - Table or cards: the cards view shows each record as a card (title, then the visible columns as label and value), with a Sort select in place of the headers. The choice is saved in `preferences.listView`; a `view` in the URL wins.
+  - The columns someone picks are saved in `preferences.listColumns`.
+  - Requests ask only for the visible fields (`select`), related titles (`populate`) and join counts (`joins[...][count]`).
+
+## Generated forms (`<ui-doc-form>`, `src/components/composed/forms/doc-form.ts`)
+
+The forms render every Payload field type (payloadcms.com/docs/fields/overview) and follow the Admin Panel's behaviour:
+
+- **Choices:** select, relationship and upload fields are a `<ui-combobox>`, a searchable picker. It uses chips for `hasMany`, groups polymorphic `relationTo` by collection, and offers an ✕ (`admin.isClearable`; on by default for optional fields). Text and number fields with `hasMany` are combobox chips you type into.
+- **Relationships:** the hint line links to "Open" the related document and to create a "+ New" one (`admin.allowEdit` / `admin.allowCreate`). Uploads preview the picked image.
+- **Dates:** `admin.date.pickerAppearance` (`dayOnly`, `dayAndTime`, `timeOnly`, `monthOnly`) picks the input, bounded by `minDate` / `maxDate`.
+- **Numbers and text:** numbers take `admin.step`. A textarea takes `admin.rows`, and shows a counter with `maxLength`. Code and JSON fields are monospaced. JSON is checked as it's typed and kept as typed until it parses.
+- **Arrays and blocks:**
+  - Rows collapse (`admin.initCollapsed`), with Collapse all / Expand all.
+  - Each row is labelled with its first value ("Line 03 · Lincoln Omnia 46").
+  - A ⋯ menu moves, duplicates (below the original) and removes rows (`admin.isSortable`, `minRows` / `maxRows`).
+  - Blocks are added from a menu and take an optional block name.
+- **Widths:** `admin.width` (`"50%"`, `"20rem"`) sets a field's share of its row (`<ui-box basis grow>` in a wrapping `<ui-flex>`). Fields without a width share what's left equally. A field never gets narrower than 12rem, so rows wrap on a narrow panel. A field with a width outside a row keeps that width.
+- **`filterOptions`:**
+  - Relationship and upload pickers offer only the related documents matching the `where`, or the `where` a function returns from `{ data, siblingData, id, relationTo, user, req }`.
+  - Selects offer the options their function returns.
+  - Blocks offer only the slugs their function allows.
+  - The current value always stays listed.
+  - The mock API enforces the same rules on save (`src/cms/runtime/fields.ts`). For example, Payload's error "This relationship field has the following invalid selections: S1".
+- **Layout fields:** a collapsible honours `admin.initCollapsed`. A group with `admin.hideGutter` has no box. Tabs show how many errors they hold.
+- **Join fields:** shown as a table of the documents pointing at this one (`admin.defaultColumns`, with a count and "+ Create new"). The page fetches them with `joins`.
+- **Errors:** a field with an error turns red, with its message in place. The edit page lists the fields that need attention at the top.
+- **Edit page:** Save stays disabled until something changes. Ctrl/⌘ + S saves. Leaving with unsaved changes asks first.
+
+`plugins/layer-variants.ts` moves only top-level daisyUI base rules (such as `.input`) to the `components` layer. A rule nested in another (daisyUI's `.mockup-browser-toolbar { .input {…} }`) stays where it is; moving it once gave every input on the page a search icon.

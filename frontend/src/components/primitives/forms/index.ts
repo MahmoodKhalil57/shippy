@@ -1,5 +1,6 @@
 export * from "./calendar.ts";
 export * from "./checkbox.ts";
+export * from "./combobox.ts";
 export * from "./fieldset.ts";
 export * from "./file-input.ts";
 export * from "./filter.ts";

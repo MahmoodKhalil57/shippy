@@ -4,6 +4,7 @@ import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
 import { button } from "../actions/button.ts";
+import { iconSvg } from "../media/icon.ts";
 import { badge } from "./badge.ts";
 
 /**
@@ -56,6 +57,47 @@ export const tableRow = rcva("", {
   },
 });
 
+/** A cell's alignment: numbers line up on the right, in tabular figures. */
+export const tableCell = rcva("", {
+  variants: {
+    align: { start: "", center: "text-center", end: "text-end tabular-nums whitespace-nowrap" },
+    /** Keep on one line (ids and references that would break at their hyphens). */
+    nowrap: { true: "whitespace-nowrap" },
+  },
+});
+
+/**
+ * A sortable column's header: a button showing which way it sorts (and, sorting by several
+ * columns, in which order). Unsorted, the arrows show on hover / focus only.
+ */
+export const tableSort = rcva(
+  "group/sort -mx-1.5 inline-flex items-center gap-1 rounded-field px-1.5 py-0.5 font-[inherit] text-[inherit] hover:bg-base-content/5 hover:text-base-content focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary [transition:background-color_var(--duration-effects-fast)_var(--ease-effects-fast),color_var(--duration-effects-fast)_var(--ease-effects-fast)]",
+  { variants: { align: { start: "", center: "", end: "flex-row-reverse" } } },
+);
+export const tableSortIcon = rcva(
+  "[transition:opacity_var(--duration-effects-fast)_var(--ease-effects-fast),rotate_var(--duration-spatial-fast)_var(--ease-spatial-fast)]",
+  {
+    variants: {
+      state: {
+        none: "opacity-0 group-hover/sort:opacity-60 group-focus-visible/sort:opacity-60",
+        asc: "text-primary",
+        desc: "text-primary rotate-180",
+      },
+    },
+  },
+);
+/** With several sort columns: this column's place among them. */
+export const tableSortOrder = rcva("text-[0.625rem] leading-none font-semibold text-primary tabular-nums");
+
+/** The body while new rows load: the current ones stay, dimmed. */
+export const tableBody = rcva("[transition:opacity_var(--duration-effects)_var(--ease-effects)]", {
+  variants: { busy: { true: "opacity-50" } },
+});
+/** A loading placeholder cell (M3's skeleton loader). */
+export const tableSkeleton = rcva("skeleton h-4 w-full max-w-40 rounded-field");
+/** The one row shown when there are no rows. */
+export const tableEmpty = rcva("py-10 text-center text-base-content/75");
+
 /** Cell anatomy from "Table with visual elements". */
 export const tablePerson = rcva("flex items-center gap-3");
 export const tablePersonAvatar = rcva("avatar");
@@ -88,6 +130,15 @@ export interface TableColumn<T extends TableRowData = TableRowData> {
   /** Render cells as `<th>` (with `pin-cols` these stick to the side). */
   header?: boolean;
   /**
+   * Sorting by this column from its header: `true` sorts by `key`, a string by that path
+   * (e.g. `"customer.name"`). See the table's `sort`.
+   */
+  sortable?: boolean | string;
+  /** `end` for numbers and amounts (right-aligned, tabular figures). */
+  align?: "start" | "center" | "end";
+  /** Keep the cells on one line (ids, references). */
+  nowrap?: boolean;
+  /**
    * Built-in cell layouts from the docs ("Table with visual elements"):
    * - `person`: value is `{ image, name, sub }` (avatar + two lines)
    * - `text-badge`: value is `{ text, badge }` (text with a small ghost badge below)
@@ -109,6 +160,14 @@ export interface TableGroup<T extends TableRowData = TableRowData> {
  *   .rows=${[{ name: "Cy Ganderton", job: "Quality Control Specialist" }]}></ui-table>
  * @example <ui-table pin-rows surface height="lg" .groups=${[{ label: "A", rows: [...] }]} .columns=${[...]}></ui-table>
  * @example <ui-table selectable .columns=${[{ key: "user", label: "Name", kind: "person" }, { key: "more", kind: "button", header: true }]}></ui-table>
+ *
+ * Sorting: give columns `sortable`; `sort` is the current order as a Payload sort string
+ * (`"-value"`, `"stage,-value"`). Clicking a header sorts by it (ascending, descending, then off);
+ * Shift-click adds it to the current sort instead. `ui-sort` carries `{ sort }`; the table only
+ * shows the order, the data comes sorted from whoever sets `rows`.
+ * `hidden-columns` (`.hiddenColumns`) hides columns by key (see `<ui-column-picker>`). `loading`
+ * dims the rows while new ones load, or shows skeleton rows when there are none yet; `empty` is
+ * shown when there are no rows.
  *
  * `selectable` adds a checkbox column; `ui-select` carries `{ selected: number[] }`
  * (row indexes). `ui-row-click` carries `{ row, index }`; `ui-cell-action` carries
@@ -144,6 +203,70 @@ export class UiTable extends LightElement {
   /** Repeat the header row in a `<tfoot>`. */
   @property({ type: Boolean }) footer = false;
   @property({ attribute: false }) selected: number[] = [];
+  /** The current order, as a Payload sort string: `"-value"`, `"stage,-value"`. */
+  @property() sort = "";
+  /** Keys of columns not shown. */
+  @property({ attribute: false }) hiddenColumns: string[] = [];
+  /** New rows are on their way. */
+  @property({ type: Boolean }) loading = false;
+  /** Shown in place of rows when there are none (and nothing is loading). */
+  @property({ attribute: false }) empty: Renderable = "";
+
+  private get _columns() {
+    return this.columns.filter((c) => !this.hiddenColumns.includes(c.key));
+  }
+
+  private get _sorts() {
+    return this.sort
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .map((s) => ({ path: s.replace(/^-/, ""), desc: s.startsWith("-") }));
+  }
+
+  /**
+   * Click: sort by this column alone; clicking it again goes ascending → descending → off.
+   * Shift-click: add it to the sort, or step it (ascending → descending → removed) in place.
+   */
+  private _sortBy(path: string, add: boolean) {
+    const sorts = this._sorts;
+    const at = sorts.findIndex((s) => s.path === path);
+    const step = (s?: { path: string; desc: boolean }) =>
+      !s ? [{ path, desc: false }] : !s.desc ? [{ path, desc: true }] : [];
+    const list = add
+      ? at < 0
+        ? [...sorts, ...step()]
+        : sorts.flatMap((s, i) => (i === at ? step(s) : [s]))
+      : step(sorts.length === 1 ? sorts[at] : undefined);
+    this.sort = list.map((s) => (s.desc ? `-${s.path}` : s.path)).join(",");
+    this.dispatchEvent(new CustomEvent("ui-sort", { detail: { sort: this.sort }, bubbles: true }));
+  }
+
+  private _headCell(c: TableColumn) {
+    const label = c.label ?? (c.kind === "button" ? "" : c.key);
+    if (!c.sortable) return html`<th class=${tableCell({ align: c.align }) || nothing}>${label}</th>`;
+    const path = typeof c.sortable === "string" ? c.sortable : c.key;
+    const sorts = this._sorts;
+    const at = sorts.findIndex((s) => s.path === path);
+    const state = at < 0 ? "none" : sorts[at]!.desc ? "desc" : "asc";
+    return html`<th
+      class=${tableCell({ align: c.align }) || nothing}
+      aria-sort=${state === "none" ? "none" : state === "asc" ? "ascending" : "descending"}
+    >
+      <button
+        type="button"
+        class=${tableSort({ align: c.align })}
+        title="Sort (Shift-click to sort by several columns)"
+        @click=${(e: MouseEvent) => this._sortBy(path, e.shiftKey)}
+      >
+        <span>${label}</span>
+        <span class=${tableSortIcon({ state })} aria-hidden="true"
+          >${iconSvg(state === "none" ? "unfold" : "arrow-up", { size: "sm" })}</span
+        >
+        ${sorts.length > 1 && at >= 0 ? html`<span class=${tableSortOrder()}>${at + 1}</span>` : nothing}
+      </button>
+    </th>`;
+  }
 
   private _toggle(index: number, on: boolean) {
     this.selected = on ? [...this.selected, index] : this.selected.filter((i) => i !== index);
@@ -178,15 +301,15 @@ export class UiTable extends LightElement {
             </th>`
           : nothing
       }
-      ${this.indexColumn ? html`<th></th>` : nothing}
-      ${this.columns.map((c) => html`<th>${c.label ?? (c.kind === "button" ? "" : c.key)}</th>`)}
+      ${this.indexColumn ? html`<th></th>` : nothing} ${this._columns.map((c) => this._headCell(c))}
     </tr>`;
   }
 
   private _row(row: TableRowData, index: number) {
     const cell = (c: TableColumn): TemplateResult => {
       const v = c.render ? c.render(row, index) : this._kind(c, row, index);
-      return c.header ? html`<th>${v}</th>` : html`<td>${v}</td>`;
+      const cls = tableCell({ align: c.align, nowrap: c.nowrap }) || nothing;
+      return c.header ? html`<th class=${cls}>${v}</th>` : html`<td class=${cls}>${v}</td>`;
     };
     return html`<tr
       class=${tableRow({ active: index === this.activeRow, hover: this.hover }) || nothing}
@@ -208,7 +331,7 @@ export class UiTable extends LightElement {
             </th>`
           : nothing
       }
-      ${this.indexColumn ? html`<th>${index + 1}</th>` : nothing} ${this.columns.map(cell)}
+      ${this.indexColumn ? html`<th>${index + 1}</th>` : nothing} ${this._columns.map(cell)}
     </tr>`;
   }
 
@@ -255,9 +378,7 @@ export class UiTable extends LightElement {
         offset += g.rows.length;
         return html`<thead>
             <tr>
-              <th colspan=${this.columns.length + (this.indexColumn ? 1 : 0) + (this.selectable ? 1 : 0)}>
-                ${g.label}
-              </th>
+              <th colspan=${this._span}>${g.label}</th>
             </tr>
           </thead>
           <tbody>
@@ -268,9 +389,33 @@ export class UiTable extends LightElement {
     return html`<thead>
         ${this._headRow(true)}
       </thead>
-      <tbody>
-        ${this.rows.map((r, i) => this._row(r, i))}
+      <tbody
+        class=${tableBody({ busy: this.loading && this.rows.length > 0 })}
+        aria-busy=${this.loading ? "true" : "false"}
+      >
+        ${
+          this.rows.length
+            ? this.rows.map((r, i) => this._row(r, i))
+            : this.loading
+              ? Array.from(
+                  { length: 5 },
+                  () =>
+                    html`<tr>
+                      ${this.selectable ? html`<th></th>` : nothing} ${this.indexColumn ? html`<th></th>` : nothing}
+                      ${this._columns.map((c) => html`<td class=${tableCell({ align: c.align }) || nothing}><div class=${tableSkeleton()}></div></td>`)}
+                    </tr>`,
+                )
+              : this.empty
+                ? html`<tr>
+                    <td colspan=${this._span} class=${tableEmpty()}>${this.empty}</td>
+                  </tr>`
+                : nothing
+        }
       </tbody>`;
+  }
+
+  private get _span() {
+    return this._columns.length + (this.indexColumn ? 1 : 0) + (this.selectable ? 1 : 0);
   }
 
   render() {

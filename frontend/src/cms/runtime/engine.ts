@@ -6,6 +6,7 @@ import {
   blockFields,
   childFields,
   dataFields,
+  joinFields,
   merge,
   runFieldHooks,
   sanitize,
@@ -13,6 +14,7 @@ import {
   type FieldError,
 } from "./fields.ts";
 import { matches, paginate, sortDocs, valuesAt } from "./query.ts";
+import { applySelect, selects, type JoinQuery, type Joins, type Select } from "./select.ts";
 import type { Store } from "./store.ts";
 import { APIError, clone, forbidden, isObject, notFound, objectId, plural, singular, text } from "./util.ts";
 
@@ -55,6 +57,26 @@ interface Common {
   depth?: number;
   showHiddenFields?: boolean;
   context?: Record<string, unknown>;
+  /** Payload `select`: `{ field: true }` returns only those fields (and `id`), `{ field: false }` all but those. */
+  select?: Select;
+  /** Payload `populate`: per related collection, the `select` for documents populated into this one. */
+  populate?: Record<string, Select>;
+  /** Payload `joins`: per join field `{ limit, page, sort, where, count }` or `false`; `false` skips them all. */
+  joins?: Joins;
+  /** Payload `locale` / `fallbackLocale`: accepted; this config has no localized fields, so every locale reads the same. */
+  locale?: string;
+  fallbackLocale?: string | false;
+}
+
+/** How one read goes: depth, access, and what to return. */
+interface ReadOptions {
+  depth: number;
+  override: boolean;
+  showHidden?: boolean;
+  findMany?: boolean;
+  select?: Select;
+  populate?: Record<string, Select>;
+  joins?: Joins;
 }
 
 type Hook = (args: Record<string, unknown>) => unknown;
@@ -217,7 +239,13 @@ export class Engine {
     fields: FieldLike[],
     data: Record<string, unknown>,
     root: Record<string, unknown>,
-    ctx: { req: MockRequest; depth: number; override: boolean; showHidden: boolean },
+    ctx: {
+      req: MockRequest;
+      depth: number;
+      override: boolean;
+      showHidden: boolean;
+      populate?: Record<string, Select>;
+    },
   ) {
     for (const f of dataFields(fields)) {
       const name = f.name!;
@@ -246,17 +274,22 @@ export class Engine {
   private async populate(
     f: FieldLike,
     value: unknown,
-    ctx: { req: MockRequest; depth: number; override: boolean },
+    ctx: { req: MockRequest; depth: number; override: boolean; populate?: Record<string, Select> },
   ): Promise<unknown> {
     const one = async (relationTo: string, id: unknown) => {
       if (isObject(id) || id == null || !this.hasCollection(relationTo)) return id;
       try {
+        // What a populated document returns: `populate[slug]`, else the collection's `defaultPopulate`.
+        const target = this.collection(relationTo) as CollectionConfig & { defaultPopulate?: Select };
         return await this.findByID({
           collection: relationTo,
           id: text(id),
           depth: ctx.depth - 1,
           req: ctx.req,
           overrideAccess: ctx.override,
+          select: ctx.populate?.[relationTo] ?? target.defaultPopulate,
+          populate: ctx.populate,
+          joins: false,
         });
       } catch {
         return id;
@@ -273,12 +306,7 @@ export class Engine {
   }
 
   /** The read pipeline every returned document goes through. */
-  private async afterRead(
-    slug: string,
-    doc: Doc,
-    req: MockRequest,
-    opts: { depth: number; override: boolean; showHidden?: boolean; findMany?: boolean },
-  ): Promise<Doc> {
+  private async afterRead(slug: string, doc: Doc, req: MockRequest, opts: ReadOptions): Promise<Doc> {
     const c = this.collection(slug);
     let d = clone(doc);
     d = await this.hooks(c, "beforeRead", { req, collection: c, context: req.context }, "doc", d);
@@ -287,7 +315,15 @@ export class Engine {
       depth: opts.depth,
       override: opts.override,
       showHidden: !!opts.showHidden,
+      populate: opts.populate,
     });
+    if (opts.joins !== false) {
+      for (const f of joinFields(this.fields(slug))) {
+        const query = opts.joins?.[f.name!];
+        if (query === false || !selects(opts.select, f.name!)) continue;
+        d[f.name!] = await this.join(f, d, query ?? {}, req, opts);
+      }
+    }
     await runFieldHooks("afterRead", this.fields(slug), d, {
       root: d,
       req,
@@ -310,7 +346,46 @@ export class Engine {
       "doc",
       d,
     );
-    return d;
+    return applySelect(d, opts.select);
+  }
+
+  /**
+   * A join field's value, as Payload returns it: the documents of `collection` whose `on` field
+   * points at this one, `{ docs, hasNextPage }` (and `totalDocs` when counted). Documents come
+   * populated while depth is left, as ids otherwise.
+   */
+  private async join(f: FieldLike, doc: Doc, query: JoinQuery, req: MockRequest, opts: ReadOptions) {
+    const field = f as FieldLike & {
+      collection: string;
+      on: string;
+      where?: Where;
+      defaultLimit?: number;
+      defaultSort?: string;
+    };
+    const where: Where = {
+      and: [
+        { [field.on]: { equals: doc.id } },
+        ...(field.where ? [field.where] : []),
+        ...(query.where ? [query.where] : []),
+      ],
+    };
+    const page = await this.find({
+      collection: field.collection,
+      where,
+      sort: query.sort ?? field.defaultSort,
+      limit: query.limit ?? field.defaultLimit ?? 10,
+      page: query.page ?? 1,
+      depth: Math.max(0, opts.depth - 1),
+      req,
+      overrideAccess: opts.override,
+      populate: opts.populate,
+      joins: false,
+    });
+    return {
+      docs: opts.depth > 0 ? page.docs : page.docs.map((d) => d.id),
+      hasNextPage: page.hasNextPage,
+      ...(query.count ? { totalDocs: page.totalDocs } : {}),
+    };
   }
 
   /** The write pipeline shared by create and update. */
@@ -350,6 +425,7 @@ export class Engine {
       ...(await validate(fields, doc, {
         root: doc,
         options: { req, operation: op, id: original?.id, user: req.user },
+        lookup: (collection, id) => this.store.get(collection, id),
       })),
       ...(await this.unique(slug, fields, doc, original?.id)),
     ];
@@ -422,7 +498,15 @@ export class Engine {
     const depth = args.depth ?? DEFAULT_DEPTH;
     page.docs = await Promise.all(
       page.docs.map((d) =>
-        this.afterRead(args.collection, d, req, { depth, override, showHidden: args.showHiddenFields, findMany: true }),
+        this.afterRead(args.collection, d, req, {
+          depth,
+          override,
+          showHidden: args.showHiddenFields,
+          findMany: true,
+          select: args.select,
+          populate: args.populate,
+          joins: args.joins,
+        }),
       ),
     );
     return page;
@@ -442,6 +526,9 @@ export class Engine {
       depth: args.depth ?? DEFAULT_DEPTH,
       override,
       showHidden: args.showHiddenFields,
+      select: args.select,
+      populate: args.populate,
+      joins: args.joins,
     });
   }
 
@@ -645,6 +732,7 @@ export class Engine {
       depth: args.depth ?? DEFAULT_DEPTH,
       override,
       showHidden: !!args.showHiddenFields,
+      populate: args.populate,
     });
     await runFieldHooks("afterRead", fields, doc, {
       root: doc,
@@ -657,7 +745,7 @@ export class Engine {
       globalType: args.slug,
       ...doc,
     });
-    return doc;
+    return applySelect(doc, args.select);
   }
 
   async updateGlobal(args: Common & { slug: string; data: Record<string, unknown> }) {
@@ -672,7 +760,11 @@ export class Engine {
     data = await this.hooks(g, "beforeValidate", hookArgs, "data", data);
     let doc = merge(fields, original, data);
     await applyDefaults(fields, doc, { user: req.user, req });
-    const errors = await validate(fields, doc, { root: doc, options: { req, operation: "update", user: req.user } });
+    const errors = await validate(fields, doc, {
+      root: doc,
+      options: { req, operation: "update", user: req.user },
+      lookup: (slug, id) => this.store.get(slug, id),
+    });
     if (errors.length) throw this.validationError(args.slug, errors);
     doc = await this.hooks(g, "beforeChange", hookArgs, "data", doc);
     await runFieldHooks("beforeChange", fields, doc, { ...hookArgs, root: doc, original, operation: "update" });

@@ -1,3 +1,4 @@
+import type { Joins, Select } from "./runtime/select.ts";
 import type { Where } from "payload";
 import { stringify } from "qs-esm";
 import type { Doc, PaginatedDocs } from "./types.ts";
@@ -100,12 +101,25 @@ export class ApiError extends Error {
   }
 }
 
-export interface FindOptions {
+/** Payload's REST query parameters for reads (payloadcms.com/docs/rest-api/overview). */
+export interface ReadOptions {
+  depth?: number;
+  /** Only these fields (`{ title: true }`), or all but these (`{ lines: false }`). */
+  select?: Select;
+  /** Per related collection, the fields of documents populated into this one. */
+  populate?: Record<string, Select>;
+  /** Per join field `{ limit, page, sort, where, count }`, or `false` to skip it (or all of them). */
+  joins?: Joins;
+  locale?: string;
+  "fallback-locale"?: string;
+}
+
+export interface FindOptions extends ReadOptions {
   where?: Where;
+  /** One field or several, `-` for descending: `"-quoteDeadline,ref"`. */
   sort?: string;
   limit?: number;
   page?: number;
-  depth?: number;
 }
 
 async function request<T>(method: string, path: string, body?: unknown, query?: object): Promise<T> {
@@ -135,7 +149,7 @@ const withFile = (data: Record<string, unknown>, file?: File | null) => {
 export const api = {
   find: <T = Doc>(collection: string, options: FindOptions = {}) =>
     request<PaginatedDocs<T>>("GET", `/${collection}`, undefined, options),
-  findByID: <T = Doc>(collection: string, id: string, options: { depth?: number } = {}) =>
+  findByID: <T = Doc>(collection: string, id: string, options: ReadOptions = {}) =>
     request<T>("GET", `/${collection}/${encodeURIComponent(id)}`, undefined, options),
   count: (collection: string, where?: Where) =>
     request<{ totalDocs: number }>("GET", `/${collection}/count`, undefined, { where }),
@@ -149,7 +163,7 @@ export const api = {
     request<{ doc: T; message: string }>("DELETE", `/${collection}/${encodeURIComponent(id)}`),
   deleteMany: (collection: string, where: Where) =>
     request<{ docs: Doc[]; errors: unknown[]; message: string }>("DELETE", `/${collection}`, undefined, { where }),
-  findGlobal: <T = Record<string, unknown>>(slug: string, options: { depth?: number } = {}) =>
+  findGlobal: <T = Record<string, unknown>>(slug: string, options: ReadOptions = {}) =>
     request<T>("GET", `/globals/${slug}`, undefined, options),
   updateGlobal: <T = Record<string, unknown>>(slug: string, data: Record<string, unknown>) =>
     request<{ result: T; message: string }>("POST", `/globals/${slug}`, data, { depth: 0 }),

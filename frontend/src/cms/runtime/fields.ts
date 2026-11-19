@@ -1,4 +1,6 @@
 import type { FieldLike } from "../types.ts";
+import type { Where } from "payload";
+import { matches } from "./query.ts";
 import { isObject, objectId } from "./util.ts";
 
 /**
@@ -26,6 +28,16 @@ export function dataFields(fields: FieldLike[]): FieldLike[] {
     } else if (f.name && f.type !== "ui" && f.type !== "join") out.push(f);
   }
   return out;
+}
+
+/** The collection's top-level join fields (virtual: filled in on read from the collection they point at). */
+export function joinFields(fields: FieldLike[]): FieldLike[] {
+  return fields.flatMap((f): FieldLike[] => {
+    if (f.type === "join" && f.name) return [f];
+    if (PRESENTATIONAL.has(f.type)) return joinFields(f.fields ?? []);
+    if (f.type === "tabs") return (f.tabs ?? []).flatMap((tab) => (tab.name ? [] : joinFields(tab.fields)));
+    return [];
+  });
 }
 
 /** Fields nested inside a data field (group / array / named tab). */
@@ -135,7 +147,13 @@ const empty = (v: unknown) => v === undefined || v === null || v === "" || (Arra
 export async function validate(
   fields: FieldLike[],
   data: Record<string, unknown>,
-  ctx: { root: Record<string, unknown>; path?: string; options: Record<string, unknown> },
+  ctx: {
+    root: Record<string, unknown>;
+    path?: string;
+    options: Record<string, unknown>;
+    /** Reads a related document (for relationship `filterOptions`). */
+    lookup?: (collection: string, id: string) => Promise<Record<string, unknown> | null | undefined>;
+  },
 ): Promise<FieldError[]> {
   const errors: FieldError[] = [];
   for (const f of dataFields(fields)) {
@@ -180,8 +198,46 @@ export async function validate(
           break;
         case "select":
         case "radio": {
-          const allowed = optionValues(f);
+          let allowed = optionValues(f);
+          // select `filterOptions`: only the options it returns for this document are accepted.
+          if (f.type === "select" && typeof f.filterOptions === "function") {
+            const offered = (await f.filterOptions({
+              data: ctx.root,
+              siblingData: data,
+              options: f.options ?? [],
+              req: ctx.options.req,
+            })) as FieldLike["options"];
+            if (Array.isArray(offered)) allowed = offered.map((o) => (typeof o === "string" ? o : o.value));
+          }
           if (values.some((x) => !allowed.includes(x as string))) fail("This field has an invalid selection.");
+          break;
+        }
+        case "relationship":
+        case "upload": {
+          if (!f.filterOptions || !ctx.lookup) break;
+          const invalid: string[] = [];
+          for (const x of values) {
+            const poly = isObject(x) && "relationTo" in x;
+            const relationTo = poly ? String(x.relationTo) : String(f.relationTo);
+            const raw = poly ? (x as { value: unknown }).value : x;
+            const id = String(isObject(raw) ? raw.id : raw);
+            const filter =
+              typeof f.filterOptions === "function"
+                ? await f.filterOptions({
+                    data: ctx.root,
+                    siblingData: data,
+                    id: ctx.root.id,
+                    relationTo,
+                    user: ctx.options.user,
+                    req: ctx.options.req,
+                  })
+                : f.filterOptions;
+            if (filter === true || filter == null) continue;
+            const doc = filter === false ? null : await ctx.lookup(relationTo, id);
+            if (!doc || !matches(doc, filter as Where)) invalid.push(id);
+          }
+          if (invalid.length)
+            fail(`This relationship field has the following invalid selections: ${invalid.join(", ")}`);
           break;
         }
         case "point":
@@ -196,8 +252,20 @@ export async function validate(
           }
           if (f.minRows != null && v.length < f.minRows) fail(`This field requires at least ${f.minRows} row(s).`);
           if (f.maxRows != null && v.length > f.maxRows) fail(`This field requires no more than ${f.maxRows} row(s).`);
+          // blocks `filterOptions`: a block type it doesn't allow here is an error.
+          const allowedBlocks =
+            f.type === "blocks" && typeof f.filterOptions === "function"
+              ? await f.filterOptions({ data: ctx.root, siblingData: data })
+              : true;
           for (const [i, row] of v.entries()) {
             if (!isObject(row)) continue;
+            if (Array.isArray(allowedBlocks) && !allowedBlocks.includes(row.blockType)) {
+              errors.push({
+                path: `${path}.${i}`,
+                message: `Block type "${String(row.blockType)}" isn't allowed here.`,
+              });
+              continue;
+            }
             const rowFields = f.type === "array" ? childFields(f) : blockFields(f, row.blockType);
             if (f.type === "blocks" && !f.blocks?.some((b) => b.slug === row.blockType)) {
               errors.push({ path: `${path}.${i}`, message: `Unknown block type "${String(row.blockType)}".` });

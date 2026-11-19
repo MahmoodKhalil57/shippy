@@ -1,3 +1,4 @@
+import { parseJoins, parsePopulate, parseSelect } from "./select.ts";
 import type { Endpoint, Where } from "payload";
 import { parse } from "qs-esm";
 import type { Doc } from "../types.ts";
@@ -129,7 +130,23 @@ export class RestApi {
     const e = this.engine;
     const segments = path.split("/").filter(Boolean).map(decodeURIComponent);
     const [first, second, third] = segments;
-    const base = { req, overrideAccess: false, depth: toNumber(query.depth, 2) };
+    // Payload's REST query parameters: depth, select, populate, joins, locale / fallback-locale
+    // (and, per route, where, sort, limit, page, pagination).
+    const base = {
+      req,
+      overrideAccess: false,
+      depth: toNumber(query.depth, 2),
+      select: parseSelect(query.select),
+      populate: parsePopulate(query.populate),
+      joins: parseJoins(query.joins),
+      locale: typeof query.locale === "string" ? query.locale : undefined,
+      fallbackLocale:
+        query["fallback-locale"] === "none" || query["fallback-locale"] === "false"
+          ? (false as const)
+          : typeof query["fallback-locale"] === "string"
+            ? query["fallback-locale"]
+            : undefined,
+    };
 
     if (first === "_mock") return this.mockTools(second, method, request);
     if (first === "access" && segments.length === 1) return json(await e.permissions(req));

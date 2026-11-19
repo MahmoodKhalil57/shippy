@@ -68,6 +68,14 @@ export interface FieldLike {
   defaultValue?: unknown;
   hasMany?: boolean;
   relationTo?: string | string[];
+  /**
+   * Payload's `filterOptions`: which choices a field offers (and accepts).
+   * - relationship / upload: a `where` the related documents must match, or a function of
+   *   `{ data, siblingData, id, relationTo, user, req }` returning `true` (all), `false` (none) or a `where`;
+   * - select: a function of `{ data, siblingData, options, req }` returning the options to offer;
+   * - blocks: a function of `{ data, siblingData }` returning the allowed block slugs, or `true`.
+   */
+  filterOptions?: Record<string, unknown> | ((args: Record<string, unknown>) => unknown);
   options?: (string | { label: unknown; value: string })[];
   fields?: FieldLike[];
   tabs?: { name?: string; label?: unknown; fields: FieldLike[] }[];
@@ -88,7 +96,33 @@ export interface FieldLike {
     description?: unknown;
     placeholder?: unknown;
     condition?: (data: Record<string, unknown>, siblingData: Record<string, unknown>) => boolean;
-    date?: { pickerAppearance?: string };
+    date?: {
+      pickerAppearance?: "dayAndTime" | "dayOnly" | "timeOnly" | "monthOnly";
+      minDate?: Date | string;
+      maxDate?: Date | string;
+    };
+    /** number: the input's step. */
+    step?: number;
+    /** textarea: visible lines. */
+    rows?: number;
+    /** radio: options side by side (default) or stacked. */
+    layout?: "horizontal" | "vertical";
+    /** array / blocks / collapsible: start folded. */
+    initCollapsed?: boolean;
+    /** array / blocks: rows can be reordered (default true). */
+    isSortable?: boolean;
+    /** select / relationship: an ✕ to empty it (default: when not required). */
+    isClearable?: boolean;
+    /** relationship / join: offer creating a related document (default true). */
+    allowCreate?: boolean;
+    /** relationship: offer opening the related document (default true). */
+    allowEdit?: boolean;
+    /** The field's width, e.g. `"50%"`: side by side with others in a row, or alone. */
+    width?: string;
+    /** group: no box around its fields. */
+    hideGutter?: boolean;
+    /** join: the related documents' columns. */
+    defaultColumns?: string[];
     [key: string]: unknown;
   };
 }
