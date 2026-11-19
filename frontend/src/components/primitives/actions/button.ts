@@ -74,6 +74,8 @@ export const button = rcva("btn active:scale-[0.94] motion-reduce:active:scale-1
       center: "justify-center",
       end: "justify-end",
     },
+    /** Text that wraps onto several lines (a suggested reply): the button grows to fit it. */
+    multiline: { true: "h-auto min-h-(--size) py-2 text-start font-normal whitespace-normal" },
   },
 });
 
@@ -101,6 +103,7 @@ export class UiButton extends LightElement {
   @property({ converter: responsiveBoolean }) wide: Responsive<boolean> = false;
   @property({ converter: responsiveBoolean }) block: Responsive<boolean> = false;
   @property({ converter: responsiveBoolean }) active: Responsive<boolean> = false;
+  @property({ type: Boolean }) multiline = false;
   @property({ converter: responsiveBoolean }) hide: Responsive<boolean> = false;
   /** Behaviour, not just looks: disables the native button / link. */
   @property({ type: Boolean }) disabled = false;
@@ -125,6 +128,7 @@ export class UiButton extends LightElement {
       wide: this.wide,
       block: this.block,
       active: this.active,
+      multiline: this.multiline,
       hide: this.hide,
       disabled: this.disabled && !!this.href,
     });

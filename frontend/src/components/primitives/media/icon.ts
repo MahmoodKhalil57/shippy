@@ -122,6 +122,13 @@ export const icon = rcva("inline-block shrink-0", {
       warning: "text-warning",
       error: "text-error",
     },
+    /**
+     * Pops in with a turn when it appears, on M3's expressive fast spatial spring (it bounces):
+     * for an icon that changes with a state (render a new one, e.g. with `keyed`, to replay it).
+     */
+    pop: {
+      true: "[transition:scale_var(--duration-spatial-fast)_var(--ease-spatial-fast),rotate_var(--duration-spatial-fast)_var(--ease-spatial-fast),opacity_var(--duration-effects-fast)_var(--ease-effects-fast)] starting:-rotate-90 starting:scale-40 starting:opacity-0 motion-reduce:transition-none",
+    },
   },
   defaultVariants: { size: "md", color: "current" },
 });
@@ -262,10 +269,12 @@ export class UiIcon extends LightElement {
   @property() color: IconVariants["color"];
   /** Accessible name; without it the icon is decorative (aria-hidden). */
   @property() label?: string;
+  /** Pop in with a turn when it appears (see the `pop` variant). */
+  @property({ type: Boolean }) pop = false;
 
   render() {
     if (this.name && this.name in ICONS) {
-      return iconSvg(this.name, { size: this.size, color: this.color }, { label: this.label });
+      return iconSvg(this.name, { size: this.size, color: this.color, pop: this.pop }, { label: this.label });
     }
     return html`<span
       class=${icon({ size: this.size, color: this.color, class: iconSlot() })}

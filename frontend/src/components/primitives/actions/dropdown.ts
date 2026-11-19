@@ -178,6 +178,8 @@ export class UiDropdown extends LightElement {
 
   /** Trigger text (or `slot="trigger"`). */
   @property() label: Renderable = "";
+  /** The trigger's accessible name and tooltip, for an icon-only trigger (`slot="trigger"`). */
+  @property({ attribute: "trigger-label" }) triggerLabel?: string;
   /** Built-in icon as the trigger (e.g. the docs' helper `info` icon). */
   @property({ attribute: "trigger-icon" }) triggerIcon?: keyof typeof dropdownIcons;
   /** Trigger look: `button` variants plus spacing / rounding / text tone. */
@@ -333,7 +335,14 @@ export class UiDropdown extends LightElement {
         ?open=${this.open}
         @toggle=${(e: Event) => (this.open = (e.target as HTMLDetailsElement).open)}
       >
-        <summary data-trigger class=${this._triggerCls()}>${this._trig()}</summary>
+        <summary
+          data-trigger
+          class=${this._triggerCls()}
+          aria-label=${ifDefined(this.triggerLabel)}
+          title=${ifDefined(this.triggerLabel)}
+        >
+          ${this._trig()}
+        </summary>
         ${panelTag(panelCls)}
       </details>`;
     }
@@ -345,6 +354,8 @@ export class UiDropdown extends LightElement {
       return html`<button
           data-trigger
           type="button"
+          aria-label=${ifDefined(this.triggerLabel)}
+          title=${ifDefined(this.triggerLabel)}
           class=${this._triggerCls()}
           popovertarget=${this._id}
           style="anchor-name:${anchor}"
@@ -365,7 +376,15 @@ export class UiDropdown extends LightElement {
     }
 
     return html`<div class=${dropdown(variants)}>
-      <div data-trigger tabindex="0" role="button" class=${this._triggerCls()} aria-haspopup="menu">
+      <div
+        data-trigger
+        tabindex="0"
+        role="button"
+        class=${this._triggerCls()}
+        aria-haspopup="menu"
+        aria-label=${ifDefined(this.triggerLabel)}
+        title=${ifDefined(this.triggerLabel)}
+      >
         ${this._trig()}
       </div>
       ${panelTag(panelCls)}

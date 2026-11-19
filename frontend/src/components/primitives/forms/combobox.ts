@@ -4,6 +4,7 @@ import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement, uid, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
+import { chip, chipRemove } from "../data/chip.ts";
 import { iconSvg } from "../media/icon.ts";
 import { fieldsetField, type FieldsetVariants } from "./fieldset.ts";
 
@@ -31,12 +32,6 @@ export const combobox = rcva(
   },
 );
 export const comboboxInput = rcva("min-w-20 flex-1 bg-transparent outline-none");
-export const comboboxChip = rcva(
-  "badge badge-soft badge-sm h-auto max-w-full gap-1 py-0.5 pe-0.5 whitespace-normal [overflow-wrap:anywhere]",
-);
-export const comboboxChipRemove = rcva(
-  "grid size-4 shrink-0 place-items-center rounded-full hover:bg-base-content/15 focus-visible:outline-2 focus-visible:outline-primary",
-);
 export const comboboxIcon = rcva("ms-auto flex shrink-0 items-center gap-0.5 text-base-content/60");
 export const comboboxClear = rcva(
   "grid size-6 place-items-center rounded-full hover:bg-base-content/10 hover:text-base-content focus-visible:outline-2 focus-visible:outline-primary",
@@ -233,13 +228,13 @@ export class UiCombobox extends LightElement {
           this.multiple
             ? values.map(
                 (v) =>
-                  html`<span class=${comboboxChip()}
+                  html`<span class=${chip({ variant: "soft", size: "sm", removable: !locked })}
                     >${this._labelOf(v)}${
                       locked
                         ? nothing
                         : html`<button
                             type="button"
-                            class=${comboboxChipRemove()}
+                            class=${chipRemove({ variant: "soft" })}
                             aria-label=${`Remove ${this._labelOf(v)}`}
                             @click=${(e: Event) => {
                               e.stopPropagation();

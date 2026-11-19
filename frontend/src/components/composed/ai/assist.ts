@@ -1,9 +1,17 @@
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { LightElement } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
-import { button } from "../actions/button.ts";
-import { iconSvg, type IconName } from "../media/icon.ts";
+import "../../primitives/actions/button.ts";
+import "../../primitives/ai/markdown.ts";
+import "../../primitives/data/badge.ts";
+import "../../primitives/feedback/alert.ts";
+import "../../primitives/feedback/loading.ts";
+import "../../primitives/forms/textarea.ts";
+import "../../primitives/layout/box.ts";
+import "../../primitives/layout/flex.ts";
+import type { IconName } from "../../primitives/media/icon.ts";
+import "../../primitives/media/icon.ts";
+import "../../primitives/typography/text.ts";
 import {
   availability,
   check,
@@ -35,7 +43,7 @@ import { AI_CHANGE, usingLocalModel } from "../../../agent/ai-polyfill.ts";
  * On-device AI assists: small, reviewable jobs on the text a person is looking at, run by
  * Chrome's built-in models (src/agent/built-in-ai.ts) — nothing leaves the machine.
  *
- * Purpose: AI · Kind: primitive (Shippy)
+ * Purpose: AI · Kind: composed (Button / Badge / Box / Alert / Textarea / Markdown / Text / Icon / Loading)
  *
  * - `<ui-ai-language>`: the language a text is in, as a badge.
  * - `<ui-ai-text>`: a message's text, with Translate (and back to the original) and "Catch me up".
@@ -55,19 +63,6 @@ import { AI_CHANGE, usingLocalModel } from "../../../agent/ai-polyfill.ts";
  * Each shows only what this browser supports. A model that still has to download starts at a
  * click and shows its progress; features that run on their own wait until the model is there.
  */
-export const aiNote = rcva("flex items-center gap-1.5 text-xs text-base-content/80", {
-  variants: { tone: { error: "text-error-ink", info: "" } },
-});
-export const aiBox = rcva("flex flex-col gap-1.5 rounded-field border border-primary/25 bg-primary/5 p-3 text-sm");
-export const aiBoxHead = rcva("flex items-center gap-1.5 text-xs font-semibold text-primary-ink");
-export const aiBar = rcva("flex flex-wrap items-center gap-1");
-export const aiText = rcva("flex flex-col gap-2 text-sm [overflow-wrap:anywhere]", {
-  variants: { rtl: { true: "text-right" } },
-});
-export const aiBadge = rcva("badge badge-sm badge-ghost gap-1 font-medium");
-export const aiHeadline = rcva("flex items-start gap-1.5 text-xs text-base-content/80 [&>svg]:mt-0.5 [&>svg]:shrink-0");
-export const aiSpinner = rcva("loading loading-spinner loading-xs");
-
 const RTL = new Set(["ar", "he", "fa", "ur"]);
 
 /** The AI elements; when AI APIs appear later (the downloadable model loaded), they look again. */
@@ -78,16 +73,56 @@ addEventListener(AI_CHANGE, () => {
 });
 
 const aiButton = (icon: IconName, label: string, onClick: () => void, disabled = false) =>
-  html`<button type="button" class=${button({ variant: "ghost", size: "xs" })} ?disabled=${disabled} @click=${onClick}>
-    ${iconSvg(icon, { size: "xs" })}${label}
-  </button>`;
+  html`<ui-button variant="ghost" size="xs" ?disabled=${disabled} @click=${onClick}
+    ><ui-icon name=${icon} size="xs"></ui-icon>${label}</ui-button
+  >`;
+
+/** A short line about the assist (what it did, what it's doing): an icon and small text. */
+const aiNote = (icon: IconName | "loading", text: unknown, color: "muted" | "error" = "muted") =>
+  html`<ui-flex inline gap="1" align="center">
+    ${icon === "loading" ? html`<ui-loading size="xs"></ui-loading>` : html`<ui-icon name=${icon} size="xs"></ui-icon>`}
+    <ui-text as="span" size="xs" color=${color}>${text}</ui-text>
+  </ui-flex>`;
+
+/** A row of assist buttons and notes. */
+const aiBar = (content: unknown) => html`<ui-flex wrap gap="1" align="center">${content}</ui-flex>`;
+
+/** Something the on-device model produced, to check: a tinted box under a small heading. */
+const aiBox = (heading: unknown, content: unknown) =>
+  html`<ui-box surface="primary-soft" rounded="field" padding="3">
+    <ui-flex direction="col" gap="2">
+      <ui-flex gap="1" align="center">
+        <ui-icon name="sparkles" size="xs" color="primary"></ui-icon>
+        <ui-text as="span" size="xs" weight="semibold" color="primary">${heading}</ui-text>
+      </ui-flex>
+      ${content}
+    </ui-flex>
+  </ui-box>`;
+
+/** A small label about the text (its language, a suggested category). */
+const aiBadge = (icon: IconName, text: unknown) =>
+  html`<ui-badge size="sm" variant="ghost"><ui-icon name=${icon} size="xs"></ui-icon>${text}</ui-badge>`;
 
 /** Paragraphs and line breaks of plain text. */
 const paragraphs = (text: string) =>
   text
     .split(/\n{2,}/)
     .filter((p) => p.trim())
-    .map((p) => html`<p>${p.split("\n").map((l, i) => html`${i ? html`<br />` : nothing}${l}`)}</p>`);
+    .map(
+      (p) => html`<ui-text size="sm">${p.split("\n").map((l, i) => html`${i ? html`<br />` : nothing}${l}`)}</ui-text>`,
+    );
+
+/** Asks the person for a photo or a recording (the browser's file picker; nothing is uploaded). */
+function pickFile(accept: string): Promise<File | null> {
+  return new Promise((resolve) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = accept;
+    input.addEventListener("change", () => resolve(input.files?.[0] ?? null), { once: true });
+    input.addEventListener("cancel", () => resolve(null), { once: true });
+    input.click();
+  });
+}
 
 /** What a running job shows: a spinner and what it's doing, or the download's progress. */
 abstract class AssistElement extends LightElement {
@@ -113,15 +148,13 @@ abstract class AssistElement extends LightElement {
 
   protected status() {
     if (this.working)
-      return html`<span class=${aiNote()} role="status"
-        ><span class=${aiSpinner()}></span>${
-          this.progress != null && this.progress < 1
-            ? `Getting the on-device model… ${Math.round(this.progress * 100)}%`
-            : this.working
-        }</span
-      >`;
-    if (this.error)
-      return html`<span class=${aiNote({ tone: "error" })}>${iconSvg("error", { size: "xs" })}${this.error}</span>`;
+      return aiNote(
+        "loading",
+        this.progress != null && this.progress < 1
+          ? `Getting the on-device model… ${Math.round(this.progress * 100)}%`
+          : this.working,
+      );
+    if (this.error) return aiNote("error", this.error, "error");
     return nothing;
   }
 }
@@ -144,11 +177,7 @@ export class UiAiLanguage extends LightElement {
   }
 
   render() {
-    return this.language
-      ? html`<span class=${aiBadge()} title="Detected on this device"
-          >${iconSvg("globe", { size: "xs" })}${languageName(this.language)}</span
-        >`
-      : nothing;
+    return this.language ? aiBadge("globe", languageName(this.language)) : nothing;
   }
 }
 
@@ -200,30 +229,23 @@ export class UiAiText extends AssistElement {
     const canTranslate = this.translatable && supported("Translator");
     const canSummarize = this.summarizable && supported("Summarizer");
     const target = (this.language || "en") === "en" ? languageName(this.alternate) : "English";
-    return html`<div class=${aiText()}>
+    return html`<ui-flex direction="col" gap="2">
       ${
         canTranslate || canSummarize || this.language
-          ? html`<div class=${aiBar()}>
-              ${this.language ? html`<span class=${aiBadge()}>${iconSvg("globe", { size: "xs" })}${languageName(this.language)}</span>` : nothing}
+          ? aiBar(
+              html` ${this.language ? aiBadge("globe", languageName(this.language)) : nothing}
               ${canTranslate ? aiButton("translate", this.translated ? "Show original" : `Translate to ${target}`, () => void this._translate(), !!this.working) : nothing}
               ${canSummarize ? aiButton("sparkles", this.summary ? "Hide summary" : "Catch me up", () => void this._summarize(), !!this.working) : nothing}
-              ${this.status()}
-            </div>`
+              ${this.status()}`,
+            )
           : nothing
       }
-      ${
-        this.summary
-          ? html`<div class=${aiBox()}>
-              <span class=${aiBoxHead()}>${iconSvg("sparkles", { size: "xs" })}Key points · on this device</span>
-              <ui-markdown .text=${this.summary}></ui-markdown>
-            </div>`
-          : nothing
-      }
-      <div class=${aiText({ rtl: RTL.has(lang) })} lang=${lang || nothing} dir=${RTL.has(lang) ? "rtl" : "auto"}>
+      ${this.summary ? aiBox("Key points · on this device", html`<ui-markdown .text=${this.summary}></ui-markdown>`) : nothing}
+      <ui-flex direction="col" gap="2" lang=${lang || nothing} dir=${RTL.has(lang) ? "rtl" : "auto"}>
         ${paragraphs(shown)}
-      </div>
-      ${this.translated ? html`<span class=${aiNote()}>${iconSvg("translate", { size: "xs" })}Translated on this device — check names and figures against the original.</span>` : nothing}
-    </div>`;
+      </ui-flex>
+      ${this.translated ? aiNote("translate", "Translated on this device — check names and figures against the original.") : nothing}
+    </ui-flex>`;
   }
 }
 
@@ -265,24 +287,18 @@ export class UiAiSummary extends AssistElement {
     if (!supported("Summarizer") || !this.text.trim()) return nothing;
     if (this.auto && this.type !== "key-points")
       return this.summary
-        ? html`<p class=${aiHeadline()} title="Summarised on this device">
-            ${iconSvg("sparkles", { size: "xs" })}${this.summary}
-          </p>`
+        ? html`<ui-flex gap="1" align="start" title="Summarised on this device">
+            <ui-icon name="sparkles" size="xs" color="primary"></ui-icon>
+            <ui-text size="xs" color="muted">${this.summary}</ui-text>
+          </ui-flex>`
         : nothing;
-    return html`<div class=${aiText()}>
-      <div class=${aiBar()}>
-        ${aiButton("sparkles", this.summary ? "Hide summary" : this.label, () => void this._run(), !!this.working)}
-        ${this.status()}
-      </div>
-      ${
-        this.summary
-          ? html`<div class=${aiBox()}>
-              <span class=${aiBoxHead()}>${iconSvg("sparkles", { size: "xs" })}Summary · on this device</span>
-              <ui-markdown .text=${this.summary}></ui-markdown>
-            </div>`
-          : nothing
-      }
-    </div>`;
+    return html`<ui-flex direction="col" gap="2">
+      ${aiBar(
+        html`${aiButton("sparkles", this.summary ? "Hide summary" : this.label, () => void this._run(), !!this.working)}
+        ${this.status()}`,
+      )}
+      ${this.summary ? aiBox("Summary · on this device", html`<ui-markdown .text=${this.summary}></ui-markdown>`) : nothing}
+    </ui-flex>`;
   }
 }
 
@@ -399,17 +415,17 @@ export class UiAiTools extends AssistElement {
     ];
     const buttons = items.filter(([k]) => show(k));
     if (!buttons.length) return nothing;
-    return html`<div class=${aiBar()} role="toolbar" aria-label="Writing help (on this device)">
-      ${buttons.map(([k, icon, label]) => aiButton(icon, label, () => void this._do(k), !!this.working || (k !== "draft" && empty)))}
+    return aiBar(
+      html` ${buttons.map(([k, icon, label]) => aiButton(icon, label, () => void this._do(k), !!this.working || (k !== "draft" && empty)))}
       ${
         this.working || this.error
           ? this.status()
           : this.done
-            ? html`<span class=${aiNote()}>${iconSvg("check", { size: "xs" })}${this.done}</span>
-                ${this.previous != null ? aiButton("retry", "Undo", () => this._undo()) : nothing}`
+            ? html`${aiNote("check", this.done)}
+              ${this.previous != null ? aiButton("retry", "Undo", () => this._undo()) : nothing}`
             : nothing
-      }
-    </div>`;
+      }`,
+    );
   }
 }
 
@@ -460,35 +476,26 @@ export class UiAiClassify extends AssistElement {
   render() {
     if (!decisionApi() || !this.text.trim() || !this.options.length) return nothing;
     const r = this.result;
-    return html`<div class=${aiBar()}>
-      ${
+    return aiBar(
+      html` ${
         r
-          ? html`<span class=${aiBadge()} title="Suggested on this device — check it"
-                >${iconSvg("sparkles", { size: "xs" })}${this.label}: ${r.category}${pct(r.confidence)}</span
-              >
-              ${
-                this.pickable
-                  ? aiButton("check", "Use this", () =>
-                      this.dispatchEvent(
-                        new CustomEvent("ui-select", { detail: { value: r.category }, bubbles: true }),
-                      ),
-                    )
-                  : nothing
-              }`
+          ? html`${aiBadge("sparkles", `${this.label}: ${r.category}${pct(r.confidence)}`)}
+            ${
+              this.pickable
+                ? aiButton("check", "Use this", () =>
+                    this.dispatchEvent(new CustomEvent("ui-select", { detail: { value: r.category }, bubbles: true })),
+                  )
+                : nothing
+            }`
           : this.working || this.error
             ? this.status()
             : aiButton("sparkles", "Suggest a category", () => void this._run())
-      }
-    </div>`;
+      }`,
+    );
   }
 }
 
 /* ---------------------------------------------------------------- checks */
-
-export const aiCheckList = rcva("flex flex-col gap-1");
-export const aiCheckItem = rcva("flex items-start gap-1.5 text-xs", {
-  variants: { ok: { true: "text-success-ink", false: "text-warning-ink" } },
-});
 
 /**
  * @example
@@ -517,38 +524,39 @@ export class UiAiCheck extends AssistElement {
   render() {
     if (!decisionApi() || !this.text.trim() || !this.questions.length) return nothing;
     const answers = this.answers;
-    return html`<div class=${aiText()}>
-      <div class=${aiBar()}>
-        ${aiButton("sparkles", answers ? "Check again" : this.label, () => void this._run(), !!this.working)}
-        ${this.status()}
-      </div>
+    return html`<ui-flex direction="col" gap="2">
+      ${aiBar(
+        html`${aiButton("sparkles", answers ? "Check again" : this.label, () => void this._run(), !!this.working)}
+        ${this.status()}`,
+      )}
       ${
         answers
-          ? html`<div class=${aiBox()}>
-              <span class=${aiBoxHead()}
-                >${iconSvg("sparkles", { size: "xs" })}Checked on this device — a person decides</span
-              >
-              <div class=${aiCheckList()} role="list">
+          ? aiBox(
+              "Checked on this device — a person decides",
+              html`<ui-flex direction="col" gap="1">
                 ${this.questions.map((q) => {
                   const a = answers.find((x) => x.id === q.id);
                   if (!a) return nothing;
-                  return html`<div class=${aiCheckItem({ ok: a.yes })} role="listitem">
-                    ${iconSvg(a.yes ? "check" : "warning", { size: "xs" })}<span
-                      >${a.yes ? q.yes : q.no}${pct(a.confidence)}</span
+                  return html`<ui-flex gap="1" align="start">
+                    <ui-icon
+                      name=${a.yes ? "check" : "warning"}
+                      size="xs"
+                      color=${a.yes ? "success" : "warning"}
+                    ></ui-icon>
+                    <ui-text size="xs" color=${a.yes ? "success" : "warning"}
+                      >${a.yes ? q.yes : q.no}${pct(a.confidence)}</ui-text
                     >
-                  </div>`;
+                  </ui-flex>`;
                 })}
-              </div>
-            </div>`
+              </ui-flex>`,
+            )
           : nothing
       }
-    </div>`;
+    </ui-flex>`;
   }
 }
 
 /* ---------------------------------------------------------------- photos & voice notes */
-
-export const aiFileInput = rcva("sr-only");
 
 /**
  * @example <ui-ai-read-file></ui-ai-read-file>
@@ -568,14 +576,8 @@ export class UiAiReadFile extends AssistElement {
   @property({ type: Boolean }) pickable = false;
   @state() private result: { name: string; kind: MediaKind; text: string } | null = null;
 
-  private _pick() {
-    this.querySelector<HTMLInputElement>("input[type=file]")?.click();
-  }
-
-  private async _read(e: Event) {
-    const input = e.target as HTMLInputElement;
-    const file = input.files?.[0];
-    input.value = "";
+  private async _read() {
+    const file = await pickFile("image/*,audio/*");
     if (!file) return;
     const kind: MediaKind = file.type.startsWith("audio/") ? "audio" : "image";
     const text = await this.run(kind === "audio" ? "Listening…" : "Reading the photo…", (p) =>
@@ -587,47 +589,31 @@ export class UiAiReadFile extends AssistElement {
   render() {
     // Photos and voice notes need Chrome's own model (the downloadable one reads text only).
     if (!supported("LanguageModel") || usingLocalModel()) return nothing;
-    return html`<div class=${aiText()}>
-      <div class=${aiBar()}>
-        ${aiButton("file", this.label, () => this._pick(), !!this.working)} ${this.status()}
-        <input class=${aiFileInput()} type="file" accept="image/*,audio/*" tabindex="-1" @change=${this._read} />
-      </div>
+    return html`<ui-flex direction="col" gap="2">
+      ${aiBar(html`${aiButton("file", this.label, () => void this._read(), !!this.working)} ${this.status()}`)}
       ${
         this.result
-          ? html`<div class=${aiBox()}>
-              <span class=${aiBoxHead()}
-                >${iconSvg("sparkles", { size: "xs" })}${this.result.kind === "audio" ? "Heard" : "Read"} from
-                ${this.result.name} · on this device — check it</span
-              >
-              <ui-markdown .text=${this.result.text}></ui-markdown>
-              ${
-                this.pickable
-                  ? html`<div class=${aiBar()}>
-                      ${aiButton("check", "Use this", () =>
-                        this.dispatchEvent(
-                          new CustomEvent("ui-select", { detail: { value: this.result!.text }, bubbles: true }),
+          ? aiBox(
+              `${this.result.kind === "audio" ? "Heard" : "Read"} from ${this.result.name} · on this device — check it`,
+              html`<ui-markdown .text=${this.result.text}></ui-markdown> ${
+                  this.pickable
+                    ? aiBar(
+                        aiButton("check", "Use this", () =>
+                          this.dispatchEvent(
+                            new CustomEvent("ui-select", { detail: { value: this.result!.text }, bubbles: true }),
+                          ),
                         ),
-                      )}
-                    </div>`
-                  : nothing
-              }
-            </div>`
+                      )
+                    : nothing
+                }`,
+            )
           : nothing
       }
-    </div>`;
+    </ui-flex>`;
   }
 }
 
 /* ---------------------------------------------------------------- filling fields */
-
-export const aiFields = rcva("grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm");
-export const aiFieldLabel = rcva("text-xs text-base-content/80");
-export const aiFieldValue = rcva("font-medium [overflow-wrap:anywhere]", {
-  variants: { missing: { true: "font-normal text-base-content/75 italic" } },
-});
-export const aiPaste = rcva(
-  "textarea textarea-sm w-full min-h-20 [field-sizing:content] max-h-48 placeholder:text-base-content/75",
-);
 
 /**
  * @example
@@ -657,10 +643,8 @@ export class UiAiExtract extends AssistElement {
     this.values = (await this.run("Reading…", (p) => extract(text, this.fields, this.what, p))) ?? null;
   }
 
-  private async _fromFile(e: Event) {
-    const input = e.target as HTMLInputElement;
-    const file = input.files?.[0];
-    input.value = "";
+  private async _fromFile() {
+    const file = await pickFile("image/*,audio/*");
     if (!file) return;
     const kind: MediaKind = file.type.startsWith("audio/") ? "audio" : "image";
     this.values =
@@ -675,81 +659,62 @@ export class UiAiExtract extends AssistElement {
     const values = this.values;
     const trigger =
       this.source === "paste"
-        ? html`<textarea
-              class=${aiPaste()}
-              aria-label=${this.label}
-              placeholder=${this.placeholder}
+        ? html`<ui-textarea
+              size="sm"
+              width="full"
+              .label=${this.label}
+              .rows=${3}
+              .placeholder=${this.placeholder}
               .value=${this.pasted}
               @input=${(e: Event) => (this.pasted = (e.target as HTMLTextAreaElement).value)}
-            ></textarea>
-            <div class=${aiBar()}>
-              ${aiButton("sparkles", this.label, () => void this._fromText(this.pasted), !!this.working || !this.pasted.trim())}
-              ${this.status()}
-            </div>`
+            ></ui-textarea>
+            ${aiBar(
+              html`${aiButton("sparkles", this.label, () => void this._fromText(this.pasted), !!this.working || !this.pasted.trim())}
+              ${this.status()}`,
+            )}`
         : this.source === "file"
-          ? html`<div class=${aiBar()}>
-              ${aiButton("file", this.label, () => this.querySelector<HTMLInputElement>("input[type=file]")?.click(), !!this.working)}
-              ${this.status()}
-              <input
-                class=${aiFileInput()}
-                type="file"
-                accept="image/*,audio/*"
-                tabindex="-1"
-                @change=${this._fromFile}
-              />
-            </div>`
-          : html`<div class=${aiBar()}>
-              ${aiButton("sparkles", this.label, () => void this._fromText(this.text), !!this.working || !this.text.trim())}
-              ${this.status()}
-            </div>`;
-    return html`<div class=${aiText()}>
+          ? aiBar(html`${aiButton("file", this.label, () => void this._fromFile(), !!this.working)} ${this.status()}`)
+          : aiBar(
+              html`${aiButton("sparkles", this.label, () => void this._fromText(this.text), !!this.working || !this.text.trim())}
+              ${this.status()}`,
+            );
+    return html`<ui-flex direction="col" gap="2">
       ${trigger}
       ${
         values
-          ? html`<div class=${aiBox()}>
-              <span class=${aiBoxHead()}
-                >${iconSvg("sparkles", { size: "xs" })}Found on this device — check before using</span
-              >
-              <div class=${aiFields()}>
-                ${this.fields.map((f) => {
-                  const v = values[f.id];
-                  const missing = v == null || v === "";
-                  return html`<span class=${aiFieldLabel()}>${f.label}</span
-                    ><span class=${aiFieldValue({ missing })}>${missing ? "not found" : String(v)}</span>`;
-                })}
-              </div>
-              ${
-                this.pickable
-                  ? html`<div class=${aiBar()}>
-                      ${aiButton("check", this.useLabel, () =>
-                        this.dispatchEvent(new CustomEvent("ui-select", { detail: { values }, bubbles: true })),
-                      )}
-                    </div>`
-                  : nothing
-              }
-            </div>`
+          ? aiBox(
+              "Found on this device — check before using",
+              html`<ui-flex direction="col" gap="1">
+                  ${this.fields.map((f) => {
+                    const v = values[f.id];
+                    const missing = v == null || v === "";
+                    return html`<ui-flex gap="2" align="baseline" wrap>
+                      <ui-text as="span" size="xs" color="muted">${f.label}</ui-text>
+                      ${
+                        missing
+                          ? html`<ui-text as="span" size="sm" color="muted" italic>not found</ui-text>`
+                          : html`<ui-text as="span" size="sm" weight="medium">${String(v)}</ui-text>`
+                      }
+                    </ui-flex>`;
+                  })}
+                </ui-flex>
+                ${
+                  this.pickable
+                    ? aiBar(
+                        aiButton("check", this.useLabel, () =>
+                          this.dispatchEvent(new CustomEvent("ui-select", { detail: { values }, bubbles: true })),
+                        ),
+                      )
+                    : nothing
+                }`,
+            )
           : nothing
       }
-    </div>`;
+    </ui-flex>`;
   }
 }
 
 /* ---------------------------------------------------------------- flags */
-
-export const aiFlag = rcva(
-  "flex items-start gap-2 rounded-field border p-2.5 text-sm [&>svg]:mt-0.5 [&>svg]:shrink-0",
-  {
-    variants: {
-      tone: {
-        warning: "border-warning/50 bg-warning/10",
-        error: "border-error/50 bg-error/10",
-        info: "border-info/40 bg-info/10",
-      },
-    },
-  },
-);
-export const aiFlagTitle = rcva("font-semibold");
-export const aiFlagNote = rcva("text-xs text-base-content/80");
 
 /**
  * @example
@@ -780,21 +745,16 @@ export class UiAiFlag extends LightElement {
 
   render() {
     if (!this.hit) return nothing;
-    return html`<div class=${aiFlag({ tone: this.tone })} role="alert">
-      ${iconSvg(this.tone === "info" ? "info" : "warning", { size: "sm" })}
-      <div>
-        <div class=${aiFlagTitle()}>${this.heading}${pct(this.hit.confidence)}</div>
-        <div class=${aiFlagNote()}>${this.note} Spotted on this device — it can be wrong.</div>
-      </div>
-    </div>`;
+    return html`<ui-alert
+      color=${this.tone}
+      variant="soft"
+      .heading=${`${this.heading}${pct(this.hit.confidence)}`}
+      .description=${`${this.note} Spotted on this device — it can be wrong.`}
+    ></ui-alert>`;
   }
 }
 
 /* ---------------------------------------------------------------- quick replies */
-
-export const aiReply = rcva(
-  "w-full rounded-field border border-base-content/15 bg-base-100 px-3 py-2 text-start text-sm hover:border-primary/50 hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-primary",
-);
 
 /**
  * @example <ui-ai-replies .text=${message.body}></ui-ai-replies>
@@ -826,9 +786,9 @@ export class UiAiReplies extends AssistElement {
 
   render() {
     if (!supported("LanguageModel") || !this.text.trim()) return nothing;
-    return html`<div class=${aiText()}>
-      <div class=${aiBar()}>
-        ${aiButton(
+    return html`<ui-flex direction="col" gap="2">
+      ${aiBar(
+        html` ${aiButton(
           "chat",
           this.replies.length ? "Other replies" : "Suggest replies",
           async () => {
@@ -837,15 +797,22 @@ export class UiAiReplies extends AssistElement {
           },
           !!this.working,
         )}
-        ${this.status()}
-      </div>
+        ${this.status()}`,
+      )}
       ${this.replies.map(
         (r, i) =>
-          html`<button type="button" class=${aiReply()} @click=${() => void this._pick(i)}>
-            ${r}${this.copied === i ? html` <span class=${aiNote()}>${iconSvg("check", { size: "xs" })}Copied</span>` : nothing}
-          </button>`,
+          html`<ui-button
+            variant="outline"
+            size="sm"
+            multiline
+            block
+            justify="start"
+            @click=${() => void this._pick(i)}
+          >
+            ${r}${this.copied === i ? html` · ${aiNote("check", "Copied")}` : nothing}
+          </ui-button>`,
       )}
-    </div>`;
+    </ui-flex>`;
   }
 }
 
@@ -889,10 +856,10 @@ export class UiAiDictate extends AssistElement {
 
   render() {
     if (!supported("LanguageModel") || usingLocalModel() || !("mediaDevices" in navigator)) return nothing;
-    return html`<span class=${aiBar()}>
-      ${aiButton(this.recording ? "stop" : "mic", this.recording ? "Stop and write it down" : this.label, () => void this._toggle(), !!this.working)}
-      ${this.recording ? html`<span class=${aiNote()} role="status"><span class=${aiSpinner()}></span>Listening…</span>` : this.status()}
-    </span>`;
+    return aiBar(
+      html` ${aiButton(this.recording ? "stop" : "mic", this.recording ? "Stop and write it down" : this.label, () => void this._toggle(), !!this.working)}
+      ${this.recording ? aiNote("loading", "Listening…") : this.status()}`,
+    );
   }
 }
 

@@ -7,7 +7,7 @@ import { api, startMockBackend, withBase } from "../../cms/client.ts";
 import type { Doc } from "../../cms/types.ts";
 import type { MenuItem } from "../../components/primitives/navigation/menu.ts";
 import type { IconName } from "../../components/primitives/media/icon.ts";
-import type { PageTransition } from "../../components/primitives/layout/app-shell.ts";
+import type { PageTransition } from "../../components/composed/layout/app-shell.ts";
 import { StoreController, preferences, notifications } from "../../stores/index.ts";
 import "../../components/index.ts";
 import "./auth-views.ts";
@@ -198,9 +198,7 @@ export class DashboardApp extends LightElement {
 
   /** The header's theme controllers (signed in only). */
   private _controller(kind: Appearance) {
-    return this.querySelector<HTMLElementTagNameMap["ui-theme-controller"]>(
-      `ui-theme-controller[as="${kind === "theme" ? "cycle" : kind}"]`,
-    );
+    return this.querySelector<HTMLElementTagNameMap["ui-appearance"]>(`ui-appearance[kind="${kind}"]`);
   }
 
   /** Logged out: login (or create-first-user when there are no users). Logged in: away from those. */
@@ -475,14 +473,14 @@ export class DashboardApp extends LightElement {
           .onLogout=${() => void this._logout()}
         ></dashboard-command>
         <ui-flex slot="actions" align="center" gap="1">
-          <ui-theme-controller
-            as="background"
+          <ui-appearance
+            kind="background"
             persist
             credit="Photos: Golden Sea, Pexels"
             .backgrounds=${BACKGROUNDS}
-          ></ui-theme-controller>
-          <ui-theme-controller as="scheme" persist></ui-theme-controller>
-          <ui-theme-controller as="cycle" persist></ui-theme-controller>
+          ></ui-appearance>
+          <ui-appearance kind="scheme" persist></ui-appearance>
+          <ui-appearance kind="theme" persist></ui-appearance>
           <ui-dropdown
             align="end"
             panel="card"

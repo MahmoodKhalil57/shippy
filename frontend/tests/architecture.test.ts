@@ -29,7 +29,8 @@ import {
  *      because Lit templates aren't type-checked.
  * 2. Primitives use theme colours only (no Tailwind palette or literal colours).
  * 3. Composed components are made of primitives; primitives never depend on
- *    composed components.
+ *    composed components, and never render another component (`ui-*`) either:
+ *    a primitive is one building block, a composition of them is composed.
  *
  * In addition, src/index.css generates no utilities from app code
  * (`source(none)`), and vite.config.ts lint rules ban classMap/styleMap
@@ -216,6 +217,17 @@ describe("composition", () => {
       .map((el) => apis.get(el.tag))
       .filter((api) => api && inside(primitivesDir)(api.file));
     expect(used.length).toBeGreaterThan(0);
+  });
+
+  // A primitive is one building block: it draws its own markup (and may borrow another
+  // primitive's recipes or icons), but never renders another `ui-*` element. Something built from
+  // other components is a composed component (src/components/composed), which in turn can't style.
+  it.each(cases(primitives))("%s renders no other component", (_, file) => {
+    const own = new Set([...read(file).matchAll(/@customElement\("([^"]+)"\)/g)].map((m) => m[1]));
+    const others = templateElements(read(file), file)
+      .map((el) => el.tag)
+      .filter((tag) => tag.startsWith("ui-") && !own.has(tag));
+    expect([...new Set(others)], "build it in src/components/composed, from primitives").toEqual([]);
   });
 
   it("primitives never import composed components", () => {

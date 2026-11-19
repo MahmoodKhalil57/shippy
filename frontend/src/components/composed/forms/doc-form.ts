@@ -19,7 +19,7 @@ import "../../primitives/forms/radio.ts";
 import "../../primitives/forms/select.ts";
 import "../../primitives/forms/text-input.ts";
 import "../../primitives/forms/textarea.ts";
-import "../../primitives/ai/assist.ts";
+import "../ai/assist.ts";
 import "../../primitives/layout/box.ts";
 import "../../primitives/layout/flex.ts";
 import "../../primitives/layout/grid.ts";

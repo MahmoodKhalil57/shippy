@@ -33,6 +33,8 @@ export const box = rcva("", {
       primary: "bg-primary text-primary-content",
       secondary: "bg-secondary text-secondary-content",
       accent: "bg-accent text-accent-content",
+      /** A light primary tint with a primary border: something the AI produced, to check. */
+      "primary-soft": "border border-primary/25 bg-primary/5 text-base-content",
     },
     border: { true: "border border-base-300" },
     rounded: {
@@ -67,6 +69,12 @@ export const box = rcva("", {
     },
     /** Width cap, so `width="full"` boxes stop growing (no breakpoint needed). */
     max: { sm: "max-w-sm", md: "max-w-md", lg: "max-w-lg", xl: "max-w-xl" },
+    /** At most this tall; what's more scrolls (a long list in a popover). */
+    maxHeight: {
+      "56": "max-h-56 overflow-y-auto overscroll-contain pe-1 [--scrollbar-inset:var(--radius-field)]",
+      "72": "max-h-72 overflow-y-auto overscroll-contain pe-1 [--scrollbar-inset:var(--radius-field)]",
+      "96": "max-h-[min(24rem,70dvh)] overflow-y-auto overscroll-contain pe-1 [--scrollbar-inset:var(--radius-field)]",
+    },
     width: {
       auto: "w-auto",
       full: "w-full",
@@ -136,6 +144,7 @@ export class UiBox extends LightElement {
   @property() padding: BoxVariants["padding"];
   @property() width: BoxVariants["width"];
   @property() max: BoxVariants["max"];
+  @property({ attribute: "max-height" }) maxHeight: BoxVariants["maxHeight"];
   @property() height: BoxVariants["height"];
   @property() overflow: BoxVariants["overflow"];
   @property({ converter: responsiveBoolean }) center: Responsive<boolean> = false;
@@ -157,6 +166,7 @@ export class UiBox extends LightElement {
       padding: this.padding,
       width: this.width,
       max: this.max,
+      maxHeight: this.maxHeight,
       height: this.height,
       overflow: this.overflow,
       center: this.center,

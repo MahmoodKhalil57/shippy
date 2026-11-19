@@ -6,7 +6,7 @@ import { AI_CHANGE, localAiState, useLocalModel, type LocalAiState } from "../..
 import { LightElement } from "../../components/base/light-element.ts";
 import type { ConfirmationState } from "../../components/primitives/ai/confirmation.ts";
 import type { MessageRating } from "../../components/primitives/ai/message.ts";
-import type { ModelGroup } from "../../components/primitives/ai/model-selector.ts";
+import type { ModelGroup } from "../../components/composed/ai/model-selector.ts";
 import type { Source } from "../../components/primitives/ai/sources.ts";
 import type { TraceStatus } from "../../components/primitives/ai/trace.ts";
 import "../../components/index.ts";

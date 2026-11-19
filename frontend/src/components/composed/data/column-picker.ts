@@ -1,22 +1,22 @@
 import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
-import { iconSvg } from "../media/icon.ts";
+import "../../primitives/actions/button.ts";
+import "../../primitives/actions/dropdown.ts";
+import "../../primitives/forms/checkbox.ts";
+import "../../primitives/layout/flex.ts";
+import "../../primitives/media/icon.ts";
+import "../../primitives/typography/text.ts";
 
 /**
  * Column picker: which of a data table's columns show — a "Columns" button opening a checklist,
  * with a way back to the defaults. Pairs with `<ui-table>`'s `hiddenColumns`.
  *
- * Purpose: Data & metrics · Kind: primitive (Shippy)
+ * Purpose: Data & metrics · Kind: composed (Dropdown / Checkbox / Button)
  *
  * `ui-change` carries `{ hidden }` (column keys). Columns marked `required` (e.g. the one that
  * links to the record) are always shown.
  */
-export const columnPickerTrigger = rcva("flex items-center gap-1");
-export const columnPickerList = rcva("flex flex-col gap-1");
-export const columnPickerHead = rcva("flex items-center justify-between gap-2 pb-1 text-sm font-semibold");
-
 export interface PickerColumn {
   key: string;
   label: Renderable;
@@ -53,9 +53,9 @@ export class UiColumnPicker extends LightElement {
       trigger-size="sm"
       .label=${`Columns (${shown} of ${this.columns.length} shown)`}
     >
-      <span slot="trigger" class=${columnPickerTrigger()}>${iconSvg("columns", { size: "sm" })} Columns</span>
-      <div class=${columnPickerHead()}>
-        <span>Columns</span>
+      <span slot="trigger"><ui-icon name="columns" size="sm"></ui-icon> Columns</span>
+      <ui-flex justify="between" align="center" gap="2">
+        <ui-text size="sm" weight="semibold">Columns</ui-text>
         ${
           changed
             ? html`<ui-button size="xs" variant="ghost" @click=${() => this._emit([...this.defaults])}
@@ -63,8 +63,8 @@ export class UiColumnPicker extends LightElement {
               >`
             : nothing
         }
-      </div>
-      <div class=${columnPickerList()} role="group" aria-label="Columns shown">
+      </ui-flex>
+      <ui-flex direction="col" gap="1">
         ${this.columns.map(
           (c) =>
             html`<ui-checkbox
@@ -78,7 +78,7 @@ export class UiColumnPicker extends LightElement {
               }}
             ></ui-checkbox>`,
         )}
-      </div>
+      </ui-flex>
     </ui-dropdown>`;
   }
 }

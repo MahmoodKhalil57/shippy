@@ -1,20 +1,22 @@
 import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
-import { iconSvg, type IconName } from "../media/icon.ts";
-import type { MenuItem } from "../navigation/menu.ts";
+import "../../primitives/actions/dropdown.ts";
+import type { IconName } from "../../primitives/media/icon.ts";
+import "../../primitives/media/icon.ts";
+import type { MenuItem } from "../../primitives/navigation/menu.ts";
+import "../../primitives/navigation/menu.ts";
+import "../../primitives/typography/text.ts";
 
 /**
  * Model selector: which model an agent runs on — a small chip (its icon and name) opening a menu
  * of models grouped by provider, each with an optional line about it.
  *
- * Purpose: AI · Kind: primitive (Shippy; after the AI Elements "Model Selector")
+ * Purpose: AI · Kind: composed (Dropdown / Menu / Icon; after the AI Elements "Model Selector")
  *
  * Opens upward (a popover, so a panel around it doesn't clip it). `ui-change` { value } fires on
  * a pick; the menu closes.
  */
-export const modelSelectorChip = rcva("flex items-center gap-1 text-xs font-semibold");
 
 export interface ModelOption {
   id: string;
@@ -45,7 +47,7 @@ export class UiModelSelector extends LightElement {
     const current = all.find((m) => m.id === this.value) ?? all[0];
     const item = (m: ModelOption): MenuItem => ({
       label: m.label,
-      icon: m.icon ? iconSvg(m.icon, { size: "sm" }) : undefined,
+      icon: m.icon ? html`<ui-icon name=${m.icon} size="sm"></ui-icon>` : undefined,
       active: m.id === current?.id,
       value: m.id,
       ...(m.description ? { card: true, description: m.description } : {}),
@@ -63,10 +65,10 @@ export class UiModelSelector extends LightElement {
       trigger-spaced="false"
       .label=${`Model: ${current?.label ?? ""}`}
     >
-      <span slot="trigger" class=${modelSelectorChip()}>
-        ${current?.icon ? iconSvg(current.icon, { size: "sm" }) : ""} ${current?.label}
-        ${iconSvg("unfold", { size: "sm" })}
-      </span>
+      <ui-text slot="trigger" as="span" size="xs" weight="semibold">
+        ${current?.icon ? html`<ui-icon name=${current.icon} size="sm"></ui-icon>` : ""} ${current?.label}
+        <ui-icon name="unfold" size="sm"></ui-icon>
+      </ui-text>
       <ui-menu
         width="full"
         surface="false"

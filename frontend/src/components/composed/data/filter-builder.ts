@@ -1,8 +1,16 @@
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { LightElement } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
-import { iconSvg } from "../media/icon.ts";
+import "../../primitives/actions/button.ts";
+import "../../primitives/actions/dropdown.ts";
+import "../../primitives/data/chip.ts";
+import "../../primitives/forms/checkbox.ts";
+import "../../primitives/forms/select.ts";
+import "../../primitives/forms/text-input.ts";
+import "../../primitives/layout/box.ts";
+import "../../primitives/layout/flex.ts";
+import "../../primitives/media/icon.ts";
+import "../../primitives/typography/text.ts";
 import {
   filterComplete,
   filterWhere,
@@ -21,7 +29,7 @@ export * from "../../base/filter-query.ts";
  * Lost"), each editable and removable, combined with "all" or "any". Its output is a Payload
  * `where` query (payloadcms.com/docs/queries/overview), ready for the REST API.
  *
- * Purpose: Data & metrics · Kind: primitive (Shippy)
+ * Purpose: Data & metrics · Kind: composed (Chip / Dropdown / Select / Text input / Checkbox / Button)
  *
  * The fields to filter on come from the page (`fields`): each with a type that picks its
  * operators and value control —
@@ -33,25 +41,6 @@ export * from "../../base/filter-query.ts";
  * and every type: is set / is empty.
  * `ui-change` carries `{ value, match, where }` whenever the conditions change.
  */
-export const filterBar = rcva("flex flex-wrap items-center gap-2");
-export const filterChip = rcva(
-  "inline-flex max-w-full items-center rounded-field border border-base-content/15 bg-base-100/70 text-sm [transition:border-color_var(--duration-effects-fast)_var(--ease-effects-fast)] hover:border-base-content/30",
-);
-export const filterChipBody = rcva(
-  "flex min-w-0 items-baseline gap-1 truncate rounded-s-field py-1 ps-2.5 pe-1 text-start hover:bg-base-content/5 focus-visible:outline-2 focus-visible:outline-primary",
-);
-export const filterChipOperator = rcva("text-base-content/70");
-export const filterChipValue = rcva("truncate font-medium");
-export const filterChipRemove = rcva(
-  "grid size-7 shrink-0 place-items-center rounded-e-field text-base-content/70 hover:bg-base-content/5 hover:text-base-content focus-visible:outline-2 focus-visible:outline-primary",
-);
-export const filterTrigger = rcva("flex items-center gap-1");
-export const filterEditor = rcva("flex w-full flex-col gap-3");
-export const filterOptions = rcva(
-  "flex max-h-56 flex-col gap-1 overflow-y-auto overscroll-contain pe-1 [--scrollbar-inset:var(--radius-field)]",
-);
-export const filterActions = rcva("flex items-center justify-end gap-2");
-
 interface OperatorChoice {
   operator: FilterOperator;
   label: string;
@@ -170,21 +159,19 @@ export class UiFilterBuilder extends LightElement {
     const field = this._field(c.field);
     const choice = choiceOf(field?.type ?? "text", c);
     const value = this._valueLabel(c);
-    return html`<span class=${filterChip()}>
-      <button type="button" class=${filterChipBody()} @click=${() => this._edit(i)}>
-        <span>${field?.label ?? c.field}</span>
-        <span class=${filterChipOperator()}>${choice.label}</span>
-        ${value ? html`<span class=${filterChipValue()}>${value}</span>` : nothing}
-      </button>
-      <button
-        type="button"
-        class=${filterChipRemove()}
-        aria-label=${`Remove filter: ${field?.label ?? c.field}`}
-        @click=${() => this._remove(i)}
-      >
-        ${iconSvg("x", { size: "xs" })}
-      </button>
-    </span>`;
+    return html`<ui-chip
+      variant="outline"
+      size="md"
+      pressable
+      removable
+      .removeLabel=${`Remove filter: ${field?.label ?? c.field}`}
+      @ui-press=${() => this._edit(i)}
+      @ui-remove=${() => this._remove(i)}
+    >
+      <span>${field?.label ?? c.field}</span>
+      <ui-text as="span" color="muted">${choice.label}</ui-text>
+      ${value ? html`<ui-text as="span" weight="medium">${value}</ui-text>` : nothing}
+    </ui-chip>`;
   }
 
   private _valueControl(draft: FilterCondition, field: FilterField) {
@@ -207,25 +194,27 @@ export class UiFilterBuilder extends LightElement {
               ></ui-text-input>`
             : nothing
         }
-        <div class=${filterOptions()} role="group" aria-label=${field.label}>
-          ${options.map(
-            (o) =>
-              html`<ui-checkbox
-                size="sm"
-                .label=${o.label}
-                .checked=${picked.includes(o.value)}
-                @change=${(e: Event) => {
-                  const on = (e.target as HTMLInputElement).checked;
-                  set(on ? [...picked, o.value] : picked.filter((v) => v !== o.value));
-                }}
-              ></ui-checkbox>`,
-          )}
-        </div>`;
+        <ui-box max-height="56"
+          ><ui-flex direction="col" gap="1">
+            ${options.map(
+              (o) =>
+                html`<ui-checkbox
+                  size="sm"
+                  .label=${o.label}
+                  .checked=${picked.includes(o.value)}
+                  @change=${(e: Event) => {
+                    const on = (e.target as HTMLInputElement).checked;
+                    set(on ? [...picked, o.value] : picked.filter((v) => v !== o.value));
+                  }}
+                ></ui-checkbox>`,
+            )}
+          </ui-flex></ui-box
+        >`;
     }
     return html`<ui-text-input
       size="sm"
       width="full"
-      aria-label="Value"
+      leading="Value"
       type=${field.type === "number" ? "number" : field.type === "date" ? "date" : "text"}
       placeholder=${field.type === "text" ? "Value" : ""}
       .value=${draft.value == null ? "" : String(draft.value)}
@@ -239,7 +228,7 @@ export class UiFilterBuilder extends LightElement {
     const field = this._field(draft.field);
     if (!field) return nothing;
     const choices = OPERATORS[field.type];
-    return html`<div class=${filterEditor()}>
+    return html`<ui-flex direction="col" gap="3" full-width>
       <ui-select
         size="sm"
         width="full"
@@ -268,7 +257,7 @@ export class UiFilterBuilder extends LightElement {
         }}
       ></ui-select>
       ${this._valueControl(draft, field)}
-      <div class=${filterActions()}>
+      <ui-flex justify="end" align="center" gap="2">
         ${
           this._editing >= 0
             ? html`<ui-button size="sm" variant="ghost" color="error" @click=${() => this._remove(this._editing)}
@@ -279,22 +268,22 @@ export class UiFilterBuilder extends LightElement {
         <ui-button size="sm" color="primary" ?disabled=${!filterComplete(draft)} @click=${() => this._apply()}
           >${this._editing >= 0 ? "Update" : "Add filter"}</ui-button
         >
-      </div>
-    </div>`;
+      </ui-flex>
+    </ui-flex>`;
   }
 
   render() {
     if (!this.fields.length) return nothing;
-    return html`<div class=${filterBar()} role="group" aria-label="Filters">
+    return html`<ui-flex wrap gap="2" align="center">
       ${this.value.map((c, i) => this._chip(c, i))}
       ${
         this.value.length > 1
           ? html`<ui-select
               size="sm"
-              aria-label="Match"
+              leading="Match"
               .options=${[
-                { label: "Match all", value: "and" },
-                { label: "Match any", value: "or" },
+                { label: "all", value: "and" },
+                { label: "any", value: "or" },
               ]}
               .value=${this.match}
               @change=${(e: Event) => this._emit(this.value, (e.target as HTMLSelectElement).value as FilterMatch)}
@@ -309,9 +298,7 @@ export class UiFilterBuilder extends LightElement {
         trigger-size="sm"
         .label=${"Add filter"}
       >
-        <span slot="trigger" class=${filterTrigger()} @click=${() => this._edit(-1)}
-          >${iconSvg("filter", { size: "sm" })} Filter</span
-        >
+        <span slot="trigger" @click=${() => this._edit(-1)}><ui-icon name="filter" size="sm"></ui-icon> Filter</span>
         ${this._editor()}
       </ui-dropdown>
       ${
@@ -319,7 +306,7 @@ export class UiFilterBuilder extends LightElement {
           ? html`<ui-button size="sm" variant="ghost" @click=${() => this._emit([])}>Clear filters</ui-button>`
           : nothing
       }
-    </div>`;
+    </ui-flex>`;
   }
 }
 

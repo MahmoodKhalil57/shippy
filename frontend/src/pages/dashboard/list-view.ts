@@ -9,7 +9,7 @@ import { api, type FindOptions } from "../../cms/client.ts";
 import type { Select } from "../../cms/runtime/select.ts";
 import type { Doc, FieldLike, PaginatedDocs } from "../../cms/types.ts";
 import "../../components/index.ts";
-import type { PickerColumn } from "../../components/primitives/data/column-picker.ts";
+import type { PickerColumn } from "../../components/composed/data/column-picker.ts";
 import {
   filterWhere,
   type FilterCondition,

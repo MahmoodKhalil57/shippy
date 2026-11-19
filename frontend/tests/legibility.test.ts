@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { contrast, luminance, sampleBehind } from "../src/components/primitives/layout/legibility.ts";
+import { contrast, luminance, sampleBehind } from "../src/components/base/legibility.ts";
 
 describe("legible chrome over a background image", () => {
   it("measures WCAG luminance and contrast", () => {

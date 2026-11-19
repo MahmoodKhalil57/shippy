@@ -7,7 +7,7 @@
  * - src/styles/schemes.css — each scheme's light and dark palette as daisyUI colour tokens under
  *   `:root[data-scheme="<id>"]`, a separate axis from light/dark (`data-theme`, or the OS when
  *   unset), so every scheme works with System / Dark / Light;
- * - src/components/primitives/actions/schemes.ts — the list the scheme picker shows (names and
+ * - src/styles/schemes.ts — the list the scheme picker shows (names and
  *   swatches).
  *
  * shadcn → daisyUI:
@@ -143,6 +143,6 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(import.met
   );
   const root = path.resolve(import.meta.dirname, "..");
   writeFileSync(path.join(root, "src/styles/schemes.css"), schemesCss(items));
-  writeFileSync(path.join(root, "src/components/primitives/actions/schemes.ts"), schemesModule(items));
+  writeFileSync(path.join(root, "src/styles/schemes.ts"), schemesModule(items));
   console.log(`wrote ${items.length} schemes from ${source}`);
 }
