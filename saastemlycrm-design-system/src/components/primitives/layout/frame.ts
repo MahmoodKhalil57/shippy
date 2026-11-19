@@ -42,6 +42,12 @@ export const appShell = rcva(
        * layout at once (open columns, expanded groups) instead of animating into it.
        */
       settling: { true: "[&_*]:transition-none!" },
+      /**
+       * Too narrow for a 320px main panel beside both rails: the frame goes full screen. Its
+       * edges and gaps are 0, so the header, the rail and the main panel meet the screen's edges
+       * and each other (the side panel's rail has moved into the navigation's: `merged`).
+       */
+      compact: { true: "[--frame-edge:0px] [--frame-gap:0px]" },
     },
   },
 );
@@ -109,6 +115,8 @@ export const appShellColumn = rcva(
         /** Shrinks once open groups have collapsed. */
         false: "w-(--frame-rail) delay-0 has-[details[open]]:delay-(--settle-spatial)",
       },
+      /** Its rail lives in the other column (compact frame): it takes no room, and shows only as a sheet. */
+      merged: { true: "w-0!", false: "" },
     },
     // layout: fixed (the frame's side columns; the shell folds them away when the room is short)
     compoundVariants: [
@@ -136,8 +144,14 @@ export const appShellPanel = rcva(
       },
       open: { true: "", false: "" },
       sheet: { true: "", false: "" },
+      /**
+       * Merged into the other column: hidden unless open as a sheet. Closing, it hides once it has
+       * folded (the sheet's own delayed `all` transition holds `visibility` until then).
+       */
+      merged: { true: "", false: "" },
     },
     compoundVariants: [
+      { merged: true, open: false, class: "invisible" },
       /*
        * Pushing: the panel is exactly its column plus the edge padding at every frame, and its
        * inset springs exactly like the column's width (same curve, duration and delay), so the
@@ -199,6 +213,15 @@ export const appShellMain = rcva(
    * content never runs into the panel's rim.
    */
   "@container/main min-h-0 flex-1 overflow-x-clip overflow-y-auto overscroll-contain border-2 border-transparent rounded-(--main-radius) liquid-glass-surface [--main-radius:clamp(var(--radius-lg),3vw,var(--radius-xl-increased))] [--scrollbar-inset:var(--main-radius)]",
+  {
+    variants: {
+      /**
+       * A compact frame: the panel runs to the screen's end and bottom edges, so only the corner
+       * that meets the header and the rail stays round.
+       */
+      compact: { true: "[--main-radius:0px] rounded-ss-lg" },
+    },
+  },
 );
 
 /** The page inside the main panel: the box a page transition moves (see `pageTransition`). */
@@ -236,6 +259,9 @@ export const appShellBackdrop = rcva(
  * icon wide), so a short note under the switcher spreads evenly either side of it and fits the rail.
  */
 export const appShellFooter = rcva("flex w-10 shrink-0 flex-col items-center gap-1 ms-0.5 pb-1 text-center");
+
+/** Between a column's own rail and the rail merged into it (`extra-rail-slot`). */
+export const appShellRailDivider = rcva("mx-auto h-px w-6 shrink-0 bg-outline-variant");
 
 /** Wrapper that keeps a slot's nodes mounted while hidden. */
 export const appShellSlot = rcva("flex min-h-0 w-full flex-col gap-3", {
@@ -320,11 +346,13 @@ export class UiFrame extends LightElement {
   @property() scrim = "";
   /** Until the first paint: no transitions, so a reload shows the final layout at once. */
   @property({ type: Boolean }) settling = false;
+  /** Full screen: no edges or gaps (the shell sets it when the main panel would be under 320px). */
+  @property({ type: Boolean }) compact = false;
 
   render() {
     return html`<div
       data-frame
-      class=${appShell({ settling: this.settling })}
+      class=${appShell({ settling: this.settling, compact: this.compact })}
       style=${styleMap(this.scrim ? { "--app-scrim": this.scrim } : {})}
     >
       ${this.content}
@@ -395,6 +423,15 @@ export class UiFrameColumn extends LightElement {
   @property({ attribute: "list-slot" }) listSlot = "list";
   @property({ attribute: "rail-slot" }) railSlot = "rail";
   @property({ attribute: "footer-slot" }) footerSlot = "footer";
+  /**
+   * Its rail as nodes, in place of `rail-slot` (when a shell moves a rail between columns: a
+   * light-DOM slot is read once, so nodes handed over later go by property).
+   */
+  @property({ attribute: false }) railNodes?: Node[];
+  /** Another column's rail, shown under this one's after a divider (a compact frame merges them). */
+  @property({ attribute: false }) extraRailNodes?: Node[];
+  /** Its rail is shown in the other column: it takes no room and shows only when open, as a sheet. */
+  @property({ type: Boolean }) merged = false;
 
   /**
    * Before opening as a sheet: start its width transition from the rail's width in px. Switching
@@ -414,9 +451,10 @@ export class UiFrameColumn extends LightElement {
   }
 
   render() {
-    const { side, open, sheet } = this;
+    const { side, open, sheet, merged } = this;
     const what = this.label.toLowerCase();
-    const panel = html`<div class=${appShellPanel({ side, open, sheet })} data-frame-panel>
+    const extra = !!this.extraRailNodes?.length;
+    const panel = html`<div class=${appShellPanel({ side, open, sheet, merged })} data-frame-panel>
       <button
         type="button"
         class=${iconButton({ class: appShellToggle({ column: side }) })}
@@ -430,18 +468,24 @@ export class UiFrameColumn extends LightElement {
           ${this.slotted(this.listSlot)}
         </div>
         <div class=${appShellSlot({ scroll: true, class: appShellNavRail({ state: open ? "hidden" : "shown" }) })}>
-          ${this.slotted(this.railSlot)}
+          ${this.railNodes ?? this.slotted(this.railSlot)}
+          ${extra ? html`<div class=${appShellRailDivider()} role="separator"></div>` : nothing}
+          ${extra ? this.extraRailNodes : nothing}
         </div>
       </div>
       ${this.hasSlotted(this.footerSlot) ? html`<div class=${appShellFooter()}>${this.slotted(this.footerSlot)}</div>` : nothing}
     </div>`;
     const column =
       side === "start"
-        ? html`<nav class=${appShellColumn({ side, push: open && !sheet })} aria-label=${this.label} data-frame-region>
+        ? html`<nav
+            class=${appShellColumn({ side, push: open && !sheet, merged })}
+            aria-label=${this.label}
+            data-frame-region
+          >
             ${panel}
           </nav>`
         : html`<aside
-            class=${appShellColumn({ side, push: open && !sheet })}
+            class=${appShellColumn({ side, push: open && !sheet, merged })}
             aria-label=${this.label}
             data-frame-region
           >
@@ -456,6 +500,8 @@ const SLIDE = 30;
 
 @customElement("ui-frame-main")
 export class UiFrameMain extends LightElement {
+  /** Full screen (a compact frame): only the corner by the header and rail stays round. */
+  @property({ type: Boolean }) compact = false;
   #pageAnimation?: Animation;
 
   /**
@@ -498,7 +544,7 @@ export class UiFrameMain extends LightElement {
 
   render() {
     return html`<div class=${appShellCenter()}>
-      <main class=${appShellMain()}><div class=${appShellPage()}>${this.slotted()}</div></main>
+      <main class=${appShellMain({ compact: this.compact })}><div class=${appShellPage()}>${this.slotted()}</div></main>
       ${this.hasSlotted("footer") ? html`<footer class=${appShellPageFooter()} data-frame-region>${this.slotted("footer")}</footer>` : nothing}
     </div>`;
   }

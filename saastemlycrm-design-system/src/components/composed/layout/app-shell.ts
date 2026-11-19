@@ -34,11 +34,16 @@ export type { PageTransition } from "../../primitives/layout/frame.ts";
  *   over. With no group open, closing starts with the second step.
  * The groups' own open state is never changed, so they come back as they were.
  *
- * Space: both rails are always shown, and the main panel never gets narrower than what a
- * 320px screen leaves it beside them (`MAIN_MIN`). Opening a column pushes the main panel when
- * there is room; otherwise it first closes the other column if that makes room, and failing that
- * opens as a sheet over the page (its rail keeps its place) with everything else dimmed. When the
- * window shrinks, open columns close (side panel first) until the main panel fits again.
+ * Space: the main panel is never narrower than 320px (`MAIN_MIN`) beside the columns. Opening a
+ * column pushes the main panel when there is room; otherwise it first closes the other column if
+ * that makes room, and failing that opens as a sheet over the page (its rail keeps its place)
+ * with everything else dimmed. When the window shrinks, open columns close (side panel first)
+ * until the main panel fits again.
+ *
+ * Compact: when even both rails leave the main panel under 320px, the frame goes full screen.
+ * The side panel's rail moves under the navigation's (after a divider), the side panel takes no
+ * room and opens only as a sheet, the frame's edges and gaps go to 0, and the main panel runs to
+ * the screen's end and bottom edges (only its corner by the header and rail stays round).
  */
 /**
  * @example
@@ -64,8 +69,8 @@ const frame = () => {
   const px = (name: string) => parseFloat(css.getPropertyValue(name)) || 0;
   return { rail: px("--frame-rail"), chrome: 2 * px("--frame-gap") + 2 * px("--frame-edge") };
 };
-/** The main panel's minimum: what the smallest supported screen (320px) leaves beside both rails. */
-const MAIN_MIN = 320 - 2 * 48 - 2 * 2 - 2 * 2;
+/** The main panel's minimum width; under it, the frame goes compact (full screen, one rail). */
+const MAIN_MIN = 320;
 
 @customElement("ui-app-shell")
 export class UiAppShell extends LightElement {
@@ -83,6 +88,8 @@ export class UiAppShell extends LightElement {
   @state() private _asideSheet = false;
   /** True until the first paint (see `appShell`'s `settling`). */
   @state() private _settling = true;
+  /** Full screen with one rail: both rails would leave the main panel under `MAIN_MIN`. */
+  @state() private _compact = false;
 
   /** Before the first render: fit the saved open columns to the window, so nothing shifts after. */
   protected willUpdate() {
@@ -218,13 +225,20 @@ export class UiAppShell extends LightElement {
     setTimeout(() => this._measureSoon(), 50);
   };
 
-  /** Room a column takes in the layout: open width when pushing, else its rail. */
+  /** Room a column takes in the layout: open width when pushing, else its rail (none when merged). */
   private _room(side: "start" | "end", open: boolean, sheet: boolean) {
-    return open && !sheet ? (side === "start" ? NAV_OPEN : ASIDE_OPEN) : frame().rail;
+    if (open && !sheet) return side === "start" ? NAV_OPEN : ASIDE_OPEN;
+    return side === "end" && this._compact ? 0 : frame().rail;
   }
 
   /** Whether the main panel keeps its minimum width with the columns taking this much room. */
   private _fits(nav: number, aside: number) {
+    // A compact frame has no edges or gaps (`appShell`'s `compact`).
+    return document.documentElement.clientWidth >= nav + aside + (this._compact ? 0 : frame().chrome) + MAIN_MIN;
+  }
+
+  /** The same, with the normal frame's edges and gaps (deciding whether to be compact at all). */
+  private _fitsFrame(nav: number, aside: number) {
     return document.documentElement.clientWidth >= nav + aside + frame().chrome + MAIN_MIN;
   }
 
@@ -272,6 +286,8 @@ export class UiAppShell extends LightElement {
 
   /** Window resized (or first layout): close pushing columns, side panel first, until the main panel fits. */
   private _refit = () => {
+    // Compact when both rails (the frame's normal, roomiest closed state) leave under MAIN_MIN.
+    this._compact = !this._fitsFrame(frame().rail, frame().rail);
     let nav = this.navOpen;
     let aside = this.asideOpen;
     const room = () => this._room("start", nav, this._navSheet) + this._room("end", aside, this._asideSheet);
@@ -334,7 +350,11 @@ export class UiAppShell extends LightElement {
   render() {
     const navSheet = this.navOpen && this._navSheet;
     const asideSheet = this.asideOpen && this._asideSheet;
-    return html`<ui-frame ?settling=${this._settling} .scrim=${this._scrim}>
+    const compact = this._compact;
+    // The side panel's rail moves between columns by property (see `railNodes`): in its own
+    // column normally, under the navigation's in a compact frame.
+    const asideRail = this.slottedNodes("aside-rail");
+    return html`<ui-frame ?settling=${this._settling} ?compact=${compact} .scrim=${this._scrim}>
       <ui-frame-header
         .brand=${this.brand}
         .brandHref=${this.brandHref}
@@ -352,10 +372,11 @@ export class UiAppShell extends LightElement {
           list-slot="nav"
           rail-slot="rail"
           footer-slot="nav-footer"
+          .extraRailNodes=${compact ? asideRail : undefined}
           @ui-column-toggle=${(e: CustomEvent<{ open: boolean }>) => void this.toggleNav(e.detail.open)}
           >${this.slotted("nav")}${this.slotted("rail")}${this.slotted("nav-footer")}</ui-frame-column
         >
-        <ui-frame-main>${this.slotted()}${this.slotted("footer")}</ui-frame-main>
+        <ui-frame-main ?compact=${compact}>${this.slotted()}${this.slotted("footer")}</ui-frame-main>
         <ui-frame-column
           side="end"
           .label=${this.asideLabel}
@@ -364,8 +385,10 @@ export class UiAppShell extends LightElement {
           list-slot="aside"
           rail-slot="aside-rail"
           footer-slot="aside-footer"
+          ?merged=${compact}
+          .railNodes=${compact ? [] : asideRail}
           @ui-column-toggle=${(e: CustomEvent<{ open: boolean }>) => void this.toggleAside(e.detail.open)}
-          >${this.slotted("aside")}${this.slotted("aside-rail")}${this.slotted("aside-footer")}</ui-frame-column
+          >${this.slotted("aside")}${this.slotted("aside-footer")}</ui-frame-column
         >
       </ui-frame-body>
     </ui-frame>`;

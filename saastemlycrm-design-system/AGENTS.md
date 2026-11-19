@@ -262,7 +262,8 @@ The forms render every Payload field type (payloadcms.com/docs/fields/overview) 
 ## App frame
 
 - **`<ui-app-shell>` (composed, `src/components/composed/layout/app-shell.ts`) holds the frame's logic:**
-  - whether a column pushes the main panel or opens as a sheet over it, from the room it needs (the main panel keeps the width a 320px screen would leave);
+  - whether a column pushes the main panel or opens as a sheet over it, from the room it needs (the main panel is never narrower than 320px, `MAIN_MIN`);
+  - **compact**, when even both rails would leave the main panel under 320px: the frame goes full screen. The side panel's rail moves under the navigation's (after a divider; the shell hands the same `<ui-menu>` to whichever column shows it, by `railNodes` / `extraRailNodes`, since a light-DOM slot is read once), the side panel takes no room (`merged`) and opens only as a sheet, the frame's edges and gaps are 0 (`<ui-frame compact>`), and the main panel runs to the screen's end and bottom edges with only its corner by the header and rail round (`<ui-frame-main compact>`). At 390px the main panel gets 339px instead of about 272px;
   - closing sheets when you navigate or press Escape;
   - the background scrim, sized so no text over the image fails WCAG AA.
 - **The frame primitives draw each state (`src/components/primitives/layout/frame.ts`):**
