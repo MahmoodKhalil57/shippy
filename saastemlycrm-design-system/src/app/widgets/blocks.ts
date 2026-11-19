@@ -2,7 +2,7 @@ import { html, nothing } from "lit";
 import type { IconName } from "../../components/primitives/media/icon.ts";
 import type { TableColumn, TableSupporting } from "../../components/primitives/data/table.ts";
 import "../../components/index.ts";
-import { defineBlock, renderBlocks, type ViewContext } from "./registry.ts";
+import { defineBlock, inCard, renderBlocks, type ViewContext } from "./registry.ts";
 import { formatNumber, type Action, type Cell, type Tag } from "./schema.ts";
 
 /**
@@ -28,18 +28,50 @@ export const action = (a: Action, ctx: ViewContext, size: "xs" | "sm" = "xs") =>
     >${a.icon ? html`<ui-icon .name=${icon(a.icon)} size="sm"></ui-icon>` : nothing}${a.label}</ui-button
   >`;
 
-const actionRow = (items: Action[] | undefined, ctx: ViewContext) =>
-  items?.length
-    ? html`<ui-flex gap="2" align="center" wrap>
-        ${items.map((a) =>
-          a.disabled && a.reason
-            ? html`<ui-flex direction="col" gap="1"
-                >${action(a, ctx)}<ui-text variant="body-sm" color="muted">${a.reason}</ui-text></ui-flex
-              >`
-            : action(a, ctx),
-        )}
-      </ui-flex>`
-    : nothing;
+const withReason = (a: Action, ctx: ViewContext) =>
+  a.disabled && a.reason
+    ? html`<ui-flex direction="col" gap="1"
+        >${action(a, ctx)}<ui-text variant="body-sm" color="muted">${a.reason}</ui-text></ui-flex
+      >`
+    : action(a, ctx);
+
+const isLink = (a: Action) => !!a.href && !a.call && !a.print;
+
+/**
+ * A row of actions in one order everywhere, so a screen can't get the hierarchy wrong: links
+ * first, as text buttons (past two, the rest go in "More"), then the other actions with the main
+ * one last. At most one is filled: an earlier filled one is drawn tonal.
+ */
+export function actionBar(items: Action[] | undefined, ctx: ViewContext) {
+  if (!items?.length) return nothing;
+  const links = items.filter(isLink).map((a): Action => ({ ...a, variant: "text" }));
+  const rest = items.filter((a) => !isLink(a));
+  const main = rest.map((a) => a.variant).lastIndexOf("filled");
+  const ordered = rest
+    .map((a, i): Action => (a.variant === "filled" && i !== main ? { ...a, variant: "tonal" } : a))
+    .filter((_, i) => i !== main);
+  if (main >= 0) ordered.push(rest[main]!);
+  const shown = links.length > 2 ? links.slice(0, 1) : links;
+  const more = links.length > 2 ? links.slice(1) : [];
+  const linkRow = html`${shown.map((a) => withReason(a, ctx))}${
+    more.length
+      ? html`<ui-dropdown
+          label="More"
+          trigger-variant="text"
+          trigger-size="xs"
+          align="start"
+          .items=${more.map((a) => ({ label: a.label, href: a.href }))}
+        ></ui-dropdown>`
+      : nothing
+  }`;
+  const buttons = ordered.map((a) => withReason(a, ctx));
+  if (!links.length || !ordered.length)
+    return html`<ui-flex gap="2" align="center" wrap>${links.length ? linkRow : buttons}</ui-flex>`;
+  return html`<ui-flex gap="2" align="center" justify="between" wrap>
+    <ui-flex gap="1" align="center" wrap>${linkRow}</ui-flex>
+    <ui-flex gap="2" align="center" wrap>${buttons}</ui-flex>
+  </ui-flex>`;
+}
 
 /** A cell value as text, a link, a tag, a dot and text, or text over a gauge. */
 export function cell(c: Cell, ctx?: ViewContext) {
@@ -109,10 +141,17 @@ const supporting = (c: Cell): TableSupporting => {
   return tone ? { text: c.text, tone } : c.text;
 };
 
+// Inside a card, a card is a filled panel (M3: no cards in cards).
 defineBlock(
   "card",
   (b, ctx) =>
-    html`<ui-card .variant=${b.variant} .subhead=${b.subhead ?? ""} .count=${b.count} .countTone=${b.countTone}>
+    html`<ui-card
+      .variant=${ctx.inCard ? "filled" : b.variant}
+      .size=${ctx.inCard ? "sm" : undefined}
+      .subhead=${b.subhead ?? ""}
+      .count=${b.count}
+      .countTone=${b.countTone}
+    >
       ${b.heading ? html`<span slot="heading">${b.heading}</span>` : nothing}
       ${
         b.tags?.length || b.actions?.length
@@ -121,7 +160,7 @@ defineBlock(
             >`
           : nothing
       }
-      ${renderBlocks(b.blocks, ctx)}
+      ${renderBlocks(b.blocks, inCard(ctx))}
     </ui-card>`,
 );
 
@@ -143,7 +182,11 @@ defineBlock(
 defineBlock(
   "stats",
   (b) =>
-    html`<ui-grid fit="xs" gap="4"
+    // Balanced rows: all in one row when they fit, else in even rows (never one left over).
+    html`<ui-grid
+      .balance=${b.items.length >= 2 && b.items.length <= 6 ? (String(b.items.length) as "2") : undefined}
+      .fit=${b.items.length >= 2 && b.items.length <= 6 ? undefined : "xs"}
+      gap="4"
       >${b.items.map(
         (s) =>
           html`<ui-stat
@@ -328,7 +371,7 @@ defineBlock(
 
 defineBlock("tags", (b) => html`<ui-flex gap="2" align="center" wrap>${b.items.map(tag)}</ui-flex>`);
 
-defineBlock("actions", (b, ctx) => actionRow(b.items, ctx));
+defineBlock("actions", (b, ctx) => actionBar(b.items, ctx));
 
 defineBlock(
   "choice",

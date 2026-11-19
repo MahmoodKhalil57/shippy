@@ -1,4 +1,4 @@
-import { block, type Action, type Tone } from "saastemlycrm-design-system/contracts";
+import { block, note, type Action, type Tone } from "saastemlycrm-design-system/contracts";
 import { widgets, type Source, type Widget } from "saastemlycrm-design-system/contracts";
 import type { ProjectView } from "../endpoints/platform.ts";
 import { formatDate } from "./format.ts";
@@ -19,7 +19,6 @@ const PHASE_TONE: Record<string, Tone> = { 0: "neutral", 1: "primary", 2: "info"
 const WEEKS = Array.from({ length: 13 }, (_, i) => `W${i + 1}`);
 
 const see = (href: string, label = "See it in the demo"): Action[] => (href ? [{ label, href, variant: "tonal" }] : []);
-const muted = (text: string) => block("text", { text, muted: true, variant: "body-sm" });
 const two = (i: number) => String(i + 1).padStart(2, "0");
 const passing = (d: ProjectView) => d.acceptance.filter((a) => a.pass).length;
 
@@ -50,7 +49,7 @@ const roadmap = on({
         tag: p.key,
       })),
     }),
-    muted(
+    note(
       "Each phase is approved on its own; a weekly 45-minute review keeps progress, baseline numbers and decisions in one place.",
     ),
   ],
@@ -104,7 +103,7 @@ const brief = on({
     tags: [{ label: `${d.requirements.length} / ${d.requirements.length} covered`, tone: "success" }],
   }),
   render: (d) => [
-    muted("Every requirement designed, with the screen that shows it and an acceptance test."),
+    note("Every requirement designed, with the screen that shows it and an acceptance test."),
     block("table", {
       columns: [
         { key: "requirement", label: "From your brief" },
@@ -146,7 +145,7 @@ const acceptance = on({
           },
         ],
       }),
-      muted(
+      note(
         `The ten scenarios you asked to see live, each with its evidence. Checked against the data in this demo ${formatDate(d.checkedAt)}; at go-live they run on your own data.`,
       ),
       block("table", {
@@ -189,7 +188,7 @@ const monthly = on({
   render: (d) => [
     block("text", { text: "One monthly plan keeps everything running after go-live.", muted: true }),
     block("list", { items: d.monthly.map(([title, text]) => ({ headline: title, supporting: text, icon: "check" })) }),
-    muted("Odoo licences are with Odoo directly. Larger change requests are scoped and agreed separately."),
+    note("Odoo licences are with Odoo directly. Larger change requests are scoped and agreed separately."),
   ],
 });
 

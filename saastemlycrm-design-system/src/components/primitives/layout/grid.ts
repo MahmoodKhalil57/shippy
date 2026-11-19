@@ -25,6 +25,18 @@ export const grid = rcva("grid", {
       lg: "grid-cols-[repeat(auto-fit,minmax(min(100%,26rem),1fr))]",
     },
     /**
+     * This many cells in even rows, by the grid's own width (a container query, so it works the
+     * same in a card or on the page): all in one row when they fit, else halves or thirds, else
+     * one per row. Never one cell left alone on a row (a row of stats).
+     */
+    balance: {
+      "2": "grid-cols-1 @sm:grid-cols-2",
+      "3": "grid-cols-1 @2xl:grid-cols-3",
+      "4": "grid-cols-1 @sm:grid-cols-2 @3xl:grid-cols-4",
+      "5": "grid-cols-1 @sm:grid-cols-2 @2xl:grid-cols-3 @4xl:grid-cols-5",
+      "6": "grid-cols-1 @sm:grid-cols-2 @2xl:grid-cols-3 @5xl:grid-cols-6",
+    },
+    /**
      * Main content and a sidebar (`items` with `role: "main"` / `"side"`), side by side while the
      * main part keeps at least 30rem, otherwise the sidebar wraps underneath. No breakpoints.
      */
@@ -97,6 +109,9 @@ export const grid = rcva("grid", {
   },
 });
 
+/** The container a `balance` grid measures. */
+export const gridBox = rcva("@container");
+
 /** A cell spanning several columns. */
 export const gridItem = rcva("", {
   variants: {
@@ -138,6 +153,7 @@ export interface GridItem {
  * @example <ui-grid fit="sm" gap="4">…cards…</ui-grid>   (as many 16rem+ columns as fit)
  * @example <ui-grid sidebar gap="8" .items=${[{ content: form, role: "main" }, { content: side, role: "side" }]}></ui-grid>
  * @example <ui-grid cols="1 md:2 lg:4" gap="4">…cards…</ui-grid>
+ * @example <ui-grid balance="4" gap="4">…four stats…</ui-grid>   (4, 2 + 2, or 1 per row)
  * @example <ui-grid cols="3" gap="6" .items=${[{ content: chart, span: "full md:2" }, { content: stats }]}></ui-grid>
  *
  * Authored children are the cells (component hosts are `display: contents`).
@@ -148,6 +164,7 @@ export interface GridItem {
 export class UiGrid extends LightElement {
   @property() cols: GridVariants["cols"];
   @property() fit: GridVariants["fit"];
+  @property() balance: GridVariants["balance"];
   @property({ converter: responsiveBoolean }) sidebar: Responsive<boolean> = false;
   @property() rows: GridVariants["rows"];
   @property() gap: GridVariants["gap"];
@@ -161,6 +178,7 @@ export class UiGrid extends LightElement {
     const cls = grid({
       cols: this.cols,
       fit: this.fit,
+      balance: this.balance,
       sidebar: this.sidebar,
       rows: this.rows,
       gap: this.gap,
@@ -169,7 +187,7 @@ export class UiGrid extends LightElement {
       flow: this.flow,
       padding: this.padding,
     });
-    return html`<div class=${cls}>
+    const body = html`<div class=${cls}>
       ${
         this.items.length
           ? repeat(
@@ -180,6 +198,8 @@ export class UiGrid extends LightElement {
           : this.content
       }
     </div>`;
+    // `balance` measures the grid's own box: a container around it.
+    return this.balance ? html`<div class=${gridBox()}>${body}</div>` : body;
   }
 }
 

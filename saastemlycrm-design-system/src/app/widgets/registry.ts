@@ -9,6 +9,8 @@ export interface ViewContext {
   setParam(param: string, value: string): void;
   /** Reload the view's data. */
   reload(): void;
+  /** Drawing inside a card: nested cards become panels, entries become rows. */
+  inCard?: boolean;
   /** Current view parameters. */
   params: Record<string, string>;
   /** The project element for a `custom` block, kept across reloads, with `props` set on it. */
@@ -35,5 +37,9 @@ export function renderBlock(block: ViewBlock, ctx: ViewContext): TemplateResult 
     return html`<ui-alert tone="warning" heading="Unknown block">No renderer for "${block.type}".</ui-alert>`;
   return render(block, ctx);
 }
+
+/** The same context, for blocks drawn inside a card. */
+export const inCard = (ctx: ViewContext): ViewContext =>
+  ctx.inCard ? ctx : Object.create(ctx, { inCard: { value: true } });
 
 export const renderBlocks = (blocks: ViewBlock[], ctx: ViewContext) => blocks.map((b) => renderBlock(b, ctx));

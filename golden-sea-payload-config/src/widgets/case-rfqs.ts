@@ -1,4 +1,4 @@
-import { block, type Action, type Row, type Tone, type ViewBlock } from "saastemlycrm-design-system/contracts";
+import { block, note, type Action, type Row, type Tone, type ViewBlock } from "saastemlycrm-design-system/contracts";
 import { widgets, type Source, type Widget } from "saastemlycrm-design-system/contracts";
 import type { CaseLine, CaseRfqRow, CaseRfqsPayload, ReplyEvent } from "../endpoints/sourcing.ts";
 
@@ -51,7 +51,6 @@ const DAY = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", y
 const at = (v: string) => (v ? FMT.format(new Date(v)) : "—");
 const day = (v: string) => (v ? DAY.format(new Date(v)) : "—");
 const pct = (c: number) => `${Math.round(c * 100)}%`;
-const note = (text: string) => block("text", { muted: true, variant: "body-sm", text });
 
 function remind(r: CaseRfqRow, ownerName: string): Action {
   const n = r.reminders + 1;

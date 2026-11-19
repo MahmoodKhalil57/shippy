@@ -1,4 +1,4 @@
-import { block, type Action, type PromptField, type Row } from "saastemlycrm-design-system/contracts";
+import { block, note, type Action, type PromptField, type Row } from "saastemlycrm-design-system/contracts";
 import { widgets, type Source, type Widget } from "saastemlycrm-design-system/contracts";
 import type { RolesView, Routing } from "../endpoints/platform.ts";
 import type { Doc } from "saastemlycrm-design-system/contracts";
@@ -26,7 +26,6 @@ const roles: Source = { endpoint: "/roles" };
 const on = (w: Widget<RolesView>): Widget<RolesView> => ({ source: roles, ...w });
 
 const str = (v: unknown) => (typeof v === "string" || typeof v === "number" ? String(v) : "");
-const muted = (text: string) => block("text", { text, muted: true, variant: "body-sm" });
 
 const matrix = on({
   title: "Permissions matrix",
@@ -54,7 +53,7 @@ const matrix = on({
       ),
     }));
     return [
-      muted(
+      note(
         `Who can see and approve what, per role and person. Named users and licences are confirmed in Phase 0.${
           edit ? " Changes apply to every person in the role and are logged on the audit trail." : ""
         }`,
@@ -105,7 +104,7 @@ const simulator: Widget<Routing> = {
         }
       : undefined;
     return [
-      muted(
+      note(
         "Pick when an urgent RFQ arrives. The rule “After-hours & weekend RFQ” decides who is alerted; the alert is simulated and lands in that person's notifications.",
       ),
       block("choice", {
@@ -133,7 +132,7 @@ const simulator: Widget<Routing> = {
             }),
             block("actions", { items: [alert!] }),
           ]
-        : [muted("Office hours — the case owner picks it up; no alert needed")]),
+        : [note("Office hours — the case owner picks it up; no alert needed")]),
     ];
   },
 };
@@ -188,7 +187,7 @@ const roster: Widget<RosterData> = {
       ? { actions: [save(d, people.docs)] }
       : { tags: [{ label: "Read only — management & office manager edit" }] },
   render: ({ roles: d }) => [
-    muted(
+    note(
       `Office hours Sun–Thu 08:00–17:00 Cairo. Outside them, urgent RFQs (or a vessel ETA under 24 h) alert the on-duty person by WhatsApp / SMS; the backup after ${d.roster.escalateAfterMinutes} min, then senior contacts: ${d.roster.senior.map((p) => p.name).join(", ")}.`,
     ),
     block("table", {

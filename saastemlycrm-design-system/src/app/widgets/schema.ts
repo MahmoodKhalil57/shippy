@@ -196,7 +196,39 @@ export interface ChartSpec {
   stacked?: boolean;
 }
 
+/**
+ * One of a set of like things (a request, a next step, a delivery), always drawn with the same
+ * anatomy, so every set reads the same way: a header (heading, meta line, status and tags), then
+ * what it's about (summary, text, facts), who stands where (people), quiet notes, a notice, and
+ * the actions (links first, the main action last, at most one filled).
+ */
+export interface Entry {
+  /** Tells entries apart across reloads (keeps its AI summary). */
+  id?: string;
+  heading: string;
+  /** The heading links here. */
+  href?: string;
+  /** Short facts under the heading, in one line joined with " · " (who, when, where). */
+  meta?: string[];
+  /** Its state: the first tag in the header. */
+  status?: Tag;
+  tags?: Tag[];
+  /** An on-device AI line saying what it's about and what matters: `text` summarised with `context`. */
+  summary?: { context: string; text: string };
+  text?: string;
+  /** Label and value pairs, one per row. */
+  facts?: { label: string; value: Cell; note?: string }[];
+  /** People and where they stand (sign-offs, attendees); `note` is what they said. */
+  people?: { name: string; state?: "done" | "declined" | "waiting"; note?: string }[];
+  /** Quiet lines (the rule that applies, history). */
+  notes?: string[];
+  /** Something the reader must know before acting (why they can't). */
+  notice?: { tone?: "info" | "success" | "warning" | "error"; text: string };
+  actions?: Action[];
+}
+
 /** Card-like container fields shared by `card`. */
+/** A card around content. Inside another card it is drawn as a filled panel, never a card in a card. */
 export interface CardBlock {
   type: "card";
   heading?: string;
@@ -217,6 +249,12 @@ export interface CardBlock {
  */
 export interface ViewBlocks {
   card: CardBlock;
+  /**
+   * A set of like things, each drawn the same way (`Entry`). On its own (or as a titled widget's
+   * content, which then becomes a section, not a card) each entry is a card; inside a card they
+   * are rows between dividers. With no items it is one quiet line (`empty`).
+   */
+  entries: { type: "entries"; items: Entry[]; empty?: string };
   /** Blocks side by side, as many columns as fit (`fit` is the narrowest column). */
   grid: { type: "grid"; fit?: "xs" | "sm" | "md" | "lg"; blocks: ViewBlock[] };
   /** A main column and a narrower side column. */
@@ -441,6 +479,9 @@ export interface ViewHeader {
   /** An AI summary under the subtitle: `text` summarised with `context`. */
   summary?: { label: string; context: string; text: string };
 }
+
+/** A quiet line of supporting text (what a section is for, a rule, a footnote). */
+export const note = (text: string): ViewBlocks["text"] => ({ type: "text", text, muted: true, variant: "body-sm" });
 
 /** Narrowing helper for builders: `block("card", { heading, blocks })`. */
 export const block = <K extends keyof ViewBlocks>(type: K, b: Omit<ViewBlocks[K], "type">): ViewBlocks[K] =>

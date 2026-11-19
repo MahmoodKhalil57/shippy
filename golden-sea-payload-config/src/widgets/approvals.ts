@@ -1,4 +1,4 @@
-import { block, type Action, type ViewBlock, type ViewHeader } from "saastemlycrm-design-system/contracts";
+import { block, type Action, type Entry, type ViewHeader } from "saastemlycrm-design-system/contracts";
 import { widgets, type Source, type Widget, type WidgetScope } from "saastemlycrm-design-system/contracts";
 import type { ApprovalCard } from "../endpoints/commercial.ts";
 
@@ -32,7 +32,6 @@ const day = (iso: string) =>
         timeZone: "UTC",
       })
     : "—";
-const muted = (text: string) => block("text", { text, muted: true, variant: "body-sm" });
 const RECORDED = "Recorded under your name with the time, on the request and the case timeline.";
 
 function decisions(a: ApprovalCard, me: string): Action[] {
@@ -81,74 +80,54 @@ function decisions(a: ApprovalCard, me: string): Action[] {
   ];
 }
 
-function card(a: ApprovalCard, me: string): ViewBlock {
+/** One request: what is decided, the evidence, who stands where, and the decision buttons. */
+function entry(a: ApprovalCard, me: string): Entry {
   const done = ["Approved", "Rejected"].includes(a.status);
-  const requested = `Requested by ${a.requestedBy}${a.requestedAt ? ` · ${day(a.requestedAt)}` : ""}`;
-  return block("card", {
+  return {
+    id: a.id,
     heading: a.title,
-    subhead: a.case ? `${a.case.caseId} · ${a.case.vessel} · ${requested}` : requested,
+    meta: [
+      a.case ? `${a.case.caseId} · ${a.case.vessel}` : "",
+      `Requested by ${a.requestedBy}`,
+      a.requestedAt ? day(a.requestedAt) : "",
+    ],
+    status: { label: a.status, tone: a.tone },
     tags: [
       { label: a.type, tone: "primary" },
-      { label: a.status, tone: a.tone },
       ...(a.twoPerson ? [{ label: "Two-person rule", tone: "warning" as const }] : []),
     ],
-    blocks: [
-      block("custom", {
-        element: "ui-ai-summary",
-        key: a.id,
-        props: {
-          type: "tldr",
-          auto: true,
-          context:
-            "An approval request at a ship chandler: say in one sentence what is being asked and what matters for the decision.",
-          text: [a.title, a.type, ...a.evidence.map((e) => `${e.label}: ${e.value}`), a.progress].join("\n"),
-        },
-      }),
-      block("details", {
-        layout: "inline",
-        items: a.evidence.map((e) => ({
-          label: e.label,
-          value:
-            e.tone === "success" || e.tone === "warning" || e.tone === "error"
-              ? { text: e.value, tone: e.tone }
-              : e.value,
-        })),
-      }),
-      block("divider", {}),
-      block("tags", {
-        items: a.approvers.map((p) => ({
-          label: `${p.name}${p.decision ? (p.decision === "Approve" ? " ✓" : " ✕") : ""}`,
-          tone: p.decision === "Approve" ? "success" : p.decision === "Reject" ? "error" : "neutral",
-        })),
-      }),
-      block("text", { text: a.progress, variant: "label-lg" }),
-      ...a.approvers.filter((p) => p.reason).map((p) => muted(`${p.name}: “${p.reason}”`)),
-      muted(`Who decides: ${a.rule}`),
-      ...(!done && !a.canDecide ? [block("alert", { tone: "info", text: a.why })] : []),
-      block("actions", {
-        items: [
-          ...a.links.map((l): Action => ({ label: l.label, href: l.href, variant: "text" })),
-          ...(a.canDecide ? decisions(a, me) : []),
-        ],
-      }),
+    summary: {
+      context:
+        "An approval request at a ship chandler: say in one sentence what is being asked and what matters for the decision.",
+      text: [a.title, a.type, ...a.evidence.map((e) => `${e.label}: ${e.value}`), a.progress].join("\n"),
+    },
+    facts: a.evidence.map((e) => ({
+      label: e.label,
+      value:
+        e.tone === "success" || e.tone === "warning" || e.tone === "error" ? { text: e.value, tone: e.tone } : e.value,
+    })),
+    people: a.approvers.map((p) => ({
+      name: p.name,
+      state: p.decision === "Approve" ? "done" : p.decision === "Reject" ? "declined" : "waiting",
+      note: p.reason,
+    })),
+    notes: [a.progress, `Who decides: ${a.rule}`],
+    notice: !done && !a.canDecide ? { tone: "info", text: a.why } : undefined,
+    actions: [
+      ...a.links.map((l): Action => ({ label: l.label, href: l.href })),
+      ...(a.canDecide ? decisions(a, me) : []),
     ],
-  });
+  };
 }
 
-/** One section of the queue: a card of approval cards. */
+/** One section of the queue: its requests, each on its own card. */
 const section = (title: string, sub: string, cards: (q: Queue) => ApprovalCard[], empty: string): Widget<Queue> =>
   on({
     title,
+    subhead: sub,
+    skeleton: "entries",
     head: (q) => ({ count: cards(q).length }),
-    render: (q, { user }) => {
-      const list = cards(q);
-      return [
-        block("text", { text: sub, muted: true }),
-        list.length
-          ? block("grid", { fit: "md", blocks: list.map((c) => card(c, user.id)) })
-          : block("text", { text: empty, muted: true }),
-      ];
-    },
+    render: (q, { user }) => block("entries", { items: cards(q).map((c) => entry(c, user.id)), empty }),
   });
 
 const header = (q: unknown, { user }: WidgetScope): ViewHeader => {

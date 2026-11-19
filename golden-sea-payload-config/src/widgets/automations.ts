@@ -1,4 +1,4 @@
-import { block, type Action, type Cell, type Tone } from "saastemlycrm-design-system/contracts";
+import { block, note, type Action, type Cell, type Tone } from "saastemlycrm-design-system/contracts";
 import { widgets, type Source, type Widget } from "saastemlycrm-design-system/contracts";
 import type { AutomationsView } from "../endpoints/platform.ts";
 import type { Doc } from "saastemlycrm-design-system/contracts";
@@ -31,7 +31,6 @@ const KIND_TONE = { auto: "info", human: "success", alert: "warning" } as const;
 const KIND_LABEL = { auto: "Automatic", human: "Human", alert: "Alert" } as const;
 
 const s = (v: unknown) => (typeof v === "string" || typeof v === "number" ? String(v) : "");
-const muted = (text: string) => block("text", { text, muted: true, variant: "body-sm" });
 
 const AUTO = [
   "Capture emails, link files, extract draft data, spot likely duplicates",
@@ -91,7 +90,7 @@ const exceptions = on({
   skeleton: "table",
   head: (d) => ({ tags: [{ label: `${d.stats.open} open`, tone: d.stats.open ? "error" : "success" }] }),
   render: (d) => [
-    muted(
+    note(
       "A retry first checks the idempotency key (message-id, invoice number, mailbox), so nothing is created, imported or sent twice. Retrying a resolved item changes nothing.",
     ),
     block("table", {
@@ -126,7 +125,7 @@ const review = on({
   skeleton: "list",
   head: (d) => ({ count: d.review.length, countTone: d.review.length ? "warning" : "success" }),
   render: (d) => [
-    muted(
+    note(
       "Below the confidence threshold the AI never applies a value: it leaves the field blank or the match unlinked and waits here for a person.",
     ),
     block("list", {
@@ -164,7 +163,7 @@ const registry = on({
   skeleton: "table",
   head: (d) => ({ tags: [{ label: `${d.rules.length} rules` }] }),
   render: (d) => [
-    muted(
+    note(
       d.canEdit
         ? "You can pause or enable rules; each change is logged."
         : "Management can pause or enable rules; everyone can read them.",
@@ -240,7 +239,7 @@ const audit = on({
   skeleton: "table",
   head: (d) => ({ tags: [{ label: `latest ${d.audit.length}` }] }),
   render: (d) => [
-    muted("Every automatic step and human decision, append-only."),
+    note("Every automatic step and human decision, append-only."),
     block("table", {
       columns: [
         { key: "at", label: "When" },

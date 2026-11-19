@@ -1,4 +1,4 @@
-import { block, type Action, type Tone, type ViewBlock } from "saastemlycrm-design-system/contracts";
+import { block, note, type Action, type Entry, type Tone } from "saastemlycrm-design-system/contracts";
 import { widgets, type Source, type Widget } from "saastemlycrm-design-system/contracts";
 import type { Growth, NextStep } from "../endpoints/growth-crm.ts";
 
@@ -23,8 +23,6 @@ const CHANNEL_ICON: Record<string, string> = {
 const DOC_TONE: Record<string, Tone> = { Submitted: "success", Ready: "info", Missing: "warning", Expired: "error" };
 /** A week after the demo's "today". */
 const IN_A_WEEK = "2026-11-24";
-
-const muted = (text: string) => block("text", { text, muted: true, variant: "body-sm" });
 
 const stats = on({
   skeleton: "stats",
@@ -53,7 +51,7 @@ const board = on({
   title: "Prospects by stage",
   head: () => ({ actions: [{ label: "All opportunities", href: "/collections/opportunities", variant: "text" }] }),
   render: (g) => [
-    muted(
+    note(
       "Introduced → registration submitted → approved vendor → first RFQ → active account. Every open opportunity has a next step, or it's flagged.",
     ),
     block("grid", {
@@ -136,48 +134,39 @@ function outcome(g: Growth, s: NextStep): Action {
   };
 }
 
-function step(g: Growth, s: NextStep): ViewBlock {
-  return block("card", {
+function step(g: Growth, s: NextStep): Entry {
+  return {
     heading: s.company,
-    subhead: [s.who, s.stage].filter(Boolean).join(" · "),
-    tags: [
-      { label: s.channel, tone: "info", icon: CHANNEL_ICON[s.channel] ?? "phone" },
-      s.noNext
-        ? { label: "No next step", tone: "error" }
-        : { label: s.overdue ? `Overdue · ${s.due}` : s.due, tone: s.overdue ? "error" : "neutral" },
-    ],
-    blocks: [
-      muted(s.owner),
-      block("text", { text: s.goal || "Plan the next step, or close the opportunity." }),
-      ...(s.script ? [block("details", { items: [{ label: "What to say", value: s.script }] })] : []),
-      ...(s.last
-        ? [
-            muted(
-              `Last: ${s.last.result}${s.last.note ? ` — ${s.last.note}` : ""} (${s.last.by}${s.last.at ? `, ${s.last.at}` : ""})`,
-            ),
-          ]
-        : []),
-      block("actions", { items: [outcome(g, s), { label: "Open", href: s.href, variant: "text" }] }),
-    ],
-  });
+    meta: [s.who, s.stage, s.owner],
+    status: s.noNext
+      ? { label: "No next step", tone: "error" }
+      : { label: s.overdue ? `Overdue · ${s.due}` : s.due, tone: s.overdue ? "error" : "neutral" },
+    tags: [{ label: s.channel, tone: "info", icon: CHANNEL_ICON[s.channel] ?? "phone" }],
+    text: s.goal || "Plan the next step, or close the opportunity.",
+    facts: s.script ? [{ label: "What to say", value: s.script }] : undefined,
+    notes: s.last
+      ? [
+          `Last: ${s.last.result}${s.last.note ? ` — ${s.last.note}` : ""} (${s.last.by}${s.last.at ? `, ${s.last.at}` : ""})`,
+        ]
+      : undefined,
+    actions: [{ label: "Open", href: s.href }, outcome(g, s)],
+  };
 }
 
 const steps = on({
   title: "Sales next steps",
+  subhead:
+    "Each step has a channel, a date and what to say. Call or message yourself, then record what happened — the next step lands on the owner's follow-ups.",
+  skeleton: "entries",
   head: (g) => ({ count: g.steps.length }),
-  render: (g) => [
-    muted(
-      "Each step has a channel, a date and what to say. Call or message yourself, then record what happened — the next step lands on the owner's follow-ups.",
-    ),
-    block("grid", { fit: "sm", blocks: g.steps.map((s) => step(g, s)) }),
-  ],
+  render: (g) => block("entries", { items: g.steps.map((s) => step(g, s)) }),
 });
 
 const fleets = on({
   title: "Fleets per ship manager",
   skeleton: "table",
   render: (g) => [
-    muted("Vessels with IMO for customers and prospects — the room to grow is every vessel we don't supply yet."),
+    note("Vessels with IMO for customers and prospects — the room to grow is every vessel we don't supply yet."),
     ...g.fleets.flatMap((f) => [
       block("list", {
         items: [
@@ -214,7 +203,7 @@ const registrations = on({
     actions: [{ label: "All registrations", href: "/collections/vendor-registrations", variant: "text" }],
   }),
   render: (g) => [
-    muted("Applications to become an approved supplier of a ship manager or owner."),
+    note("Applications to become an approved supplier of a ship manager or owner."),
     block("table", {
       columns: [
         { key: "company", label: "Company", supporting: "portal" },
@@ -267,7 +256,7 @@ const campaigns = on({
   title: "Campaigns",
   skeleton: "table",
   render: (g) => [
-    muted(
+    note(
       `Approved lists and content only. ${g.canSend ? "You can schedule and send." : "Only Karim Balbaa schedules or sends."}`,
     ),
     block("table", {

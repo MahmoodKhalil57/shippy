@@ -1,4 +1,4 @@
-import { block, type Action, type Row } from "saastemlycrm-design-system/contracts";
+import { block, note, type Action, type Row } from "saastemlycrm-design-system/contracts";
 import { widgets, type Source, type Widget } from "saastemlycrm-design-system/contracts";
 import { egp, formatDateTime, pct, signed } from "../endpoints/insights-shared.ts";
 import type { CaseProfit, CloseCheck, LineState } from "../endpoints/profit.ts";
@@ -24,7 +24,6 @@ const diffCell = (d: number) => ({
   text: signed(Math.round(d), egp),
   tone: d > 0 ? ("error" as const) : d < 0 ? ("success" as const) : undefined,
 });
-const note = (text: string) => block("text", { muted: true, variant: "body-sm", text });
 
 /** The case's actions: confirm actuals, record the receipt, settle a claim, close. */
 function actions(p: CaseProfit) {

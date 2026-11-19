@@ -1,4 +1,4 @@
-import { block, type Action, type Cell, type Tone, type ViewBlock } from "saastemlycrm-design-system/contracts";
+import { block, note, type Action, type Cell, type Tone, type ViewBlock } from "saastemlycrm-design-system/contracts";
 import { widgets, type Source, type Widget } from "saastemlycrm-design-system/contracts";
 import type { IntegrationsView } from "../endpoints/platform.ts";
 import { formatDate } from "./format.ts";
@@ -32,7 +32,6 @@ const LANG = [
   { label: "العربية (Arabic)", value: "ar" },
 ];
 const DAY = 86_400_000;
-const muted = (text: string) => block("text", { text, muted: true, variant: "body-sm" });
 const status = (c?: Connection) => (c ? [{ label: s(c.status), tone: STATUS[s(c.status)] ?? "neutral" }] : undefined);
 const by = (d: IntegrationsView, kind: string) => d.connections.find((c) => c.kind === kind);
 
@@ -65,7 +64,7 @@ const mailboxes = on({
       reply: true,
     });
     return [
-      muted(
+      note(
         "Every email to these mailboxes becomes or joins a case, with its attachments kept. A failed sync never drops mail: it waits in the exception queue and imports once on reconnect.",
       ),
       block("table", {
@@ -91,7 +90,7 @@ const mailboxes = on({
               : { text: s(c.notes), tone: "neutral" },
         })),
       }),
-      ...(d.canManage ? [] : [muted("Management, operations or the office manager reconnect mailboxes.")]),
+      ...(d.canManage ? [] : [note("Management, operations or the office manager reconnect mailboxes.")]),
     ];
   },
 });
@@ -127,7 +126,7 @@ const ack = on({
         dir: lang === "ar" ? "rtl" : "ltr",
         lang,
       }),
-      muted(
+      note(
         "Example for GS-RFQ-0142. Wording, recipients and trigger were approved by management; changing them needs a new approval.",
       ),
       block("actions", {
@@ -154,7 +153,7 @@ const odoo = on({
         muted: true,
       }),
       block("tags", { items: modules.map((label) => ({ label, tone: "primary" })) }),
-      muted(`${s(o?.account)}${o?.lastSyncAt ? ` · last sync ${formatDate(s(o.lastSyncAt))}` : ""}`),
+      note(`${s(o?.account)}${o?.lastSyncAt ? ` · last sync ${formatDate(s(o.lastSyncAt))}` : ""}`),
     ];
   },
 });
@@ -174,7 +173,7 @@ const channel = (
       const c = by(d, kind);
       return [
         ...(c?.account ? [block("text", { text: s(c.account), variant: "label-lg" })] : []),
-        muted(text),
+        note(text),
         ...(c?.notes ? [block("text", { text: s(c.notes), variant: "body-sm" })] : []),
         ...extra(c),
       ];
@@ -188,7 +187,7 @@ const channels: Widget = {
       "Website form",
       "Website quick-quote form",
       "“Request a quick quote” creates a draft case and contact; AI reads the items.",
-      (web) => (web ? [muted(`${(Number(web.emailsImported) || 0) + web.live} requests received`)] : []),
+      (web) => (web ? [note(`${(Number(web.emailsImported) || 0) + web.live} requests received`)] : []),
     ),
     channel(
       "WhatsApp",
@@ -240,7 +239,7 @@ const emailImport = on({
             item("Flagged confidential", i.confidential, "excluded unless approved", "error"),
           ],
         }),
-        muted(
+        note(
           "Dry run first; nothing is imported before approval, and no acknowledgements or reminders are sent for historical mail.",
         ),
         block("actions", { items: [{ label: "Open inbox history", href: "/inbox-history" }] }),
@@ -265,7 +264,7 @@ const backups = on({
           { label: "Staging copy", value: when(b.stagingRefreshedAt) },
         ],
       }),
-      muted(
+      note(
         "The staging copy is where changes are tried before they reach your team; email sending and integrations are switched off there. Your data is always yours: export everything at any time.",
       ),
       block("actions", {
@@ -289,7 +288,7 @@ const language = on({
   render: (d) => {
     const call = (body: Record<string, unknown>) => ({ path: "/integrations/language", body });
     return [
-      muted(
+      note(
         "The whole platform runs in English and Arabic: acknowledgements, quotations and invoices go out in the customer's language.",
       ),
       block("settings", {
@@ -309,7 +308,7 @@ const language = on({
           })),
         ],
       }),
-      ...(d.canSettings ? [] : [muted("Company settings are changed by management.")]),
+      ...(d.canSettings ? [] : [note("Company settings are changed by management.")]),
       block("settings", {
         items: [{ label: "Your language", value: d.myLanguage, options: LANG, call: call({ field: "mine" }) }],
       }),

@@ -48,6 +48,19 @@ export function blocksText(blocks: ViewBlock[], limits: TextLimits = {}): string
           );
         b.blocks.forEach(walk);
         break;
+      case "entries":
+        if (!b.items.length && b.empty) out.push(b.empty);
+        for (const e of b.items.slice(0, rows))
+          item(
+            joined(
+              e.heading,
+              e.status?.label,
+              ...(e.meta ?? []),
+              ...(e.facts ?? []).map((f) => `${f.label}: ${cellWords(f.value)}`),
+            ),
+          );
+        more(b.items.length);
+        break;
       case "grid":
         b.blocks.forEach(walk);
         break;

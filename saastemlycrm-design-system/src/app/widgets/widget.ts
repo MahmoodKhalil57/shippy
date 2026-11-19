@@ -89,7 +89,11 @@ export interface FieldsSpec {
 }
 
 export interface Widget<T = unknown> {
-  /** Card heading: the widget is a card (shown with its heading while it loads). */
+  /**
+   * Card heading: the widget is a card (shown with its heading while it loads). When it draws an
+   * `entries` block it is a section instead: the heading over the entries' own cards (set
+   * `skeleton: "entries"` to load in that shape).
+   */
   title?: string;
   subhead?: string;
   variant?: CardBlock["variant"];
@@ -115,7 +119,7 @@ export interface Widget<T = unknown> {
   fit?: "xs" | "sm" | "md" | "lg";
   split?: { main: Widget[]; side: Widget[] };
   /** The skeleton's shape while loading. */
-  skeleton?: "card" | "stats" | "table" | "list" | "chart" | "text";
+  skeleton?: "card" | "stats" | "table" | "list" | "chart" | "text" | "entries";
   /** Shown instead of hiding the widget when its data is refused (403). */
   denied?: string;
 }

@@ -7,7 +7,7 @@ import "../../components/index.ts";
 import { toast } from "../shared.ts";
 import { action as actionButton, tag } from "./blocks.ts";
 import { expand } from "./data.ts";
-import { renderBlocks, type ViewContext } from "./registry.ts";
+import { inCard, renderBlocks, type ViewContext } from "./registry.ts";
 import type { Action, ViewBlock, ViewHeader } from "./schema.ts";
 import type { Source, Widget, WidgetPage, WidgetScope } from "./widget.ts";
 // More blocks: the app's own (./blocks/*.ts), each registering itself with `defineBlock`.
@@ -430,6 +430,10 @@ export class AppWidget extends LightElement {
         return html`<ui-flex direction="col" gap="3"
           >${[0, 1, 2, 3].map(() => html`<ui-skeleton shape="line"></ui-skeleton>`)}</ui-flex
         >`;
+      case "entries":
+        return html`<ui-grid fit="md" gap="4"
+          >${[0, 1].map(() => html`<ui-skeleton shape="block"></ui-skeleton>`)}</ui-grid
+        >`;
       case "text":
         return html`<ui-flex direction="col" gap="2"
           ><ui-skeleton shape="line"></ui-skeleton><ui-skeleton shape="line" width="52"></ui-skeleton
@@ -444,6 +448,11 @@ export class AppWidget extends LightElement {
     const scope = this.host.scope;
     if (this.state === "denied" && !w.denied) return nothing;
     if (this.state === "ready" && w.hidden?.(this.data as never, scope)) return nothing;
+    const blocks = this.state === "ready" ? asBlocks(w.render?.(this.data as never, scope)) : [];
+    // A titled widget of entries is a section (a heading over the entries' cards), never a card
+    // around cards; any other titled widget is a card, and what it draws knows it's in one.
+    const section = !!w.title && (w.skeleton === "entries" || blocks.some((b) => b.type === "entries"));
+    const ctx = w.title && !section ? inCard(this.host.ctx) : this.host.ctx;
     const body =
       this.state === "loading"
         ? this.#skeleton()
@@ -451,24 +460,37 @@ export class AppWidget extends LightElement {
           ? html`<ui-alert tone="info">${w.denied}</ui-alert>`
           : this.state === "error"
             ? html`<ui-alert tone="error" heading="This couldn't load">${this.message}</ui-alert>`
-            : renderBlocks(asBlocks(w.render?.(this.data as never, scope)), this.host.ctx);
+            : renderBlocks(blocks, ctx);
     if (!w.title) return body;
     const head = this.state === "ready" ? w.head?.(this.data as never, scope) : undefined;
-    return html`<ui-card
-      .variant=${w.variant}
-      .subhead=${head?.subhead ?? w.subhead ?? ""}
-      .count=${head?.count}
-      .countTone=${head?.countTone}
-    >
+    const subhead = head?.subhead ?? w.subhead ?? "";
+    const trailing = (slot?: string) =>
+      head?.tags?.length || head?.actions?.length
+        ? html`<ui-flex slot=${slot ?? nothing} gap="2" align="center" wrap
+            >${head.tags?.map(tag)}${head.actions?.map((a) => actionButton(a, this.host.ctx))}</ui-flex
+          >`
+        : nothing;
+    if (section)
+      return html`<ui-flex direction="col" gap="3">
+        <ui-flex direction="col" gap="1">
+          <ui-flex gap="2" align="center" justify="between" wrap>
+            <ui-flex gap="2" align="center">
+              <ui-heading level="2" variant="title-lg">${w.title}</ui-heading>
+              ${
+                head?.count !== undefined
+                  ? html`<ui-badge show-zero .count=${head.count} .tone=${head.countTone}></ui-badge>`
+                  : nothing
+              }
+            </ui-flex>
+            ${trailing()}
+          </ui-flex>
+          ${subhead ? html`<ui-text variant="body-md" color="muted">${subhead}</ui-text>` : nothing}
+        </ui-flex>
+        ${body}
+      </ui-flex>`;
+    return html`<ui-card .variant=${w.variant} .subhead=${subhead} .count=${head?.count} .countTone=${head?.countTone}>
       <span slot="heading">${w.title}</span>
-      ${
-        head?.tags?.length || head?.actions?.length
-          ? html`<ui-flex slot="trailing" gap="2" align="center" wrap
-              >${head.tags?.map(tag)}${head.actions?.map((a) => actionButton(a, this.host.ctx))}</ui-flex
-            >`
-          : nothing
-      }
-      ${body}
+      ${trailing("trailing")} ${body}
     </ui-card>`;
   }
 }
