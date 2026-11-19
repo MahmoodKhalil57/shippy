@@ -16,6 +16,7 @@ import {
   type FilterField,
   type FilterMatch,
 } from "../../components/base/filter-query.ts";
+import { orderColumns } from "../../components/base/columns.ts";
 import type { TableColumn } from "../../components/primitives/data/table.ts";
 import { preferences, StoreController } from "../../stores/index.ts";
 import type { Access } from "./app.ts";
@@ -27,6 +28,7 @@ import {
   dataFields,
   formFields,
   labels,
+  statusColor,
   titleOf,
   toast,
   useAsTitle,
@@ -82,6 +84,22 @@ function allColumns(c: CollectionConfig): FieldLike[] {
   const stamps = c.timestamps === false ? [] : ["createdAt", "updatedAt"].map(pseudo);
   const seen = new Set<string>();
   return [...columnsOf(c), ...fields, ...stamps].filter((f) => !seen.has(f.name!) && seen.add(f.name!));
+}
+
+/** The column that links to the record: the title, else the first column. It stays first. */
+function linkColumnOf(c: CollectionConfig) {
+  const title = useAsTitle(c);
+  const all = allColumns(c);
+  return all.some((f) => f.name === title) ? title : all[0]?.name;
+}
+
+/** Every column in the order someone arranged them (`preferences.listColumnOrder`), link column first. */
+function orderedColumns(c: CollectionConfig, order: readonly string[] = []): FieldLike[] {
+  const link = linkColumnOf(c);
+  return orderColumns(
+    allColumns(c).map((f) => ({ key: f.name!, fixed: f.name === link, f })),
+    order,
+  ).map((x) => x.f);
 }
 
 /** What the URL holds. */
@@ -201,9 +219,18 @@ export class DashboardListView extends LightElement {
     return this.#prefs.value.listColumns[this.slug] ?? this.hiddenDefaults;
   }
 
+  private get columnOrder() {
+    return this.#prefs.value.listColumnOrder[this.slug] ?? [];
+  }
+
+  private get columnWidths() {
+    return this.#prefs.value.listColumnWidths[this.slug] ?? {};
+  }
+
+  /** The shown columns, in the person's order (the table, the cards and the CSV export agree). */
   private get visible() {
     const hidden = new Set(this.hiddenKeys);
-    return allColumns(this.collection).filter((f) => !hidden.has(f.name!));
+    return orderedColumns(this.collection, this.columnOrder).filter((f) => !hidden.has(f.name!));
   }
 
   private _filterFields(): FilterField[] {
@@ -351,6 +378,17 @@ export class DashboardListView extends LightElement {
     return cellText(f, v);
   }
 
+  /**
+   * A status or stage (a single select named `status`, `stage` or `…Status`) shows as a badge
+   * coloured by its meaning: problems red, waiting amber, in progress blue, done green.
+   */
+  private _status(f: FieldLike, doc: Doc) {
+    if (f.type !== "select" || f.hasMany || !/status|stage/i.test(f.name ?? "")) return undefined;
+    const label = this._cellText(f, doc);
+    if (!label || label === "—") return undefined;
+    return html`<ui-badge size="sm" variant="soft" .color=${statusColor(label)}>${label}</ui-badge>`;
+  }
+
   // ---------------------------------------------------------------- view
 
   /** Table or cards: the URL's `view` if it says, else what this person last chose for the collection. */
@@ -403,9 +441,9 @@ export class DashboardListView extends LightElement {
             <ui-grid cols="2" gap="3">
               ${fields.map(
                 (f) =>
-                  html`<ui-flex direction="col" gap="0">
+                  html`<ui-flex direction="col" gap="1" align="start">
                     <ui-text size="xs" color="muted">${labelOf(f)}</ui-text>
-                    <ui-text size="sm">${this._cellText(f, doc)}</ui-text>
+                    ${this._status(f, doc) ?? html`<ui-text size="sm">${this._cellText(f, doc)}</ui-text>`}
                   </ui-flex>`,
               )}
             </ui-grid>
@@ -416,15 +454,15 @@ export class DashboardListView extends LightElement {
 
   private _columns(): TableColumn<Doc>[] {
     const c = this.collection;
-    const title = useAsTitle(c);
-    const linkColumn = allColumns(c).some((f) => f.name === title) ? title : allColumns(c)[0]?.name;
+    const linkColumn = linkColumnOf(c);
     return allColumns(c).map((f) => {
       const target = relatedSlug(f);
       return {
         key: f.name!,
         label: labelOf(f),
+        fixed: f.name === linkColumn,
         align: f.type === "number" || isJoin(f) ? "end" : undefined,
-        nowrap: f.name === linkColumn || !!target,
+        nowrap: f.name === linkColumn || !!target || (f.type === "select" && /status|stage/i.test(f.name ?? "")),
         sortable: !isJoin(f) && !f.hasMany && f.type !== "relationship" && f.type !== "upload",
         render: (doc: Doc) => {
           if (f.name === linkColumn)
@@ -436,7 +474,7 @@ export class DashboardListView extends LightElement {
             return html`<ui-link variant="hover" href=${dashboardPath("collections", target, String(v.id))}
               >${this._cellText(f, doc)}</ui-link
             >`;
-          return this._cellText(f, doc);
+          return this._status(f, doc) ?? this._cellText(f, doc);
         },
       };
     });
@@ -472,11 +510,19 @@ export class DashboardListView extends LightElement {
           : html`<ui-text size="sm" color="muted">Create the first one.</ui-text>`
       }
     </ui-flex>`;
-    const pickerColumns: PickerColumn[] = all.map((f) => ({
+    const link = linkColumnOf(c);
+    const ordered = orderedColumns(c, this.columnOrder);
+    const pickerColumns: PickerColumn[] = ordered.map((f) => ({
       key: f.name!,
       label: labelOf(f),
-      required: f.name === title,
+      required: f.name === link,
     }));
+    const arranged =
+      Object.keys(this.columnWidths).length > 0 ||
+      ordered.map((f) => f.name).join() !==
+        orderedColumns(c)
+          .map((f) => f.name)
+          .join();
 
     return html`<ui-flex direction="col" gap="5">
       <ui-flex justify="between" align="end" gap="4" wrap>
@@ -542,8 +588,15 @@ export class DashboardListView extends LightElement {
               .columns=${pickerColumns}
               .hiddenColumns=${this.hiddenKeys}
               .defaults=${this.hiddenDefaults}
-              @ui-change=${(e: CustomEvent<{ hidden: string[] }>) => {
-                preferences.set((p) => ({ listColumns: { ...p.listColumns, [this.slug]: e.detail.hidden } }));
+              ?customized=${arranged}
+              @ui-change=${(e: CustomEvent<{ hidden: string[]; order: string[]; reset: boolean }>) => {
+                const { hidden, order, reset } = e.detail;
+                const slug = this.slug;
+                preferences.set((p) => ({
+                  listColumns: { ...p.listColumns, [slug]: hidden },
+                  listColumnOrder: { ...p.listColumnOrder, [slug]: order },
+                  listColumnWidths: reset ? { ...p.listColumnWidths, [slug]: {} } : p.listColumnWidths,
+                }));
                 void this._load();
               }}
             ></ui-column-picker>
@@ -607,6 +660,17 @@ export class DashboardListView extends LightElement {
               ?selectable=${perms?.delete.permission}
               .columns=${this._columns()}
               .hiddenColumns=${this.hiddenKeys}
+              reorderable
+              resizable
+              .columnOrder=${this.columnOrder}
+              .columnWidths=${this.columnWidths}
+              @ui-columns=${(e: CustomEvent<{ order: string[]; widths: Record<string, number> }>) => {
+                const slug = this.slug;
+                preferences.set((p) => ({
+                  listColumnOrder: { ...p.listColumnOrder, [slug]: e.detail.order },
+                  listColumnWidths: { ...p.listColumnWidths, [slug]: e.detail.widths },
+                }));
+              }}
               .rows=${r?.docs ?? []}
               .selected=${this.selected}
               .sort=${sort}

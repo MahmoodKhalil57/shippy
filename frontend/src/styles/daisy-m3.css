@@ -3,6 +3,14 @@
    black for dialogs and 40% for the drawer overlay). Same layer as src/styles/daisy-motion.css:
    daisyUI's own top level, so these beat its rules and lose to any utility a primitive sets. */
 
+/* Header cells hold their column's resize handle and drop line, so they position them. In the base
+   layer on purpose: daisyUI's pinned columns (`table-pin-cols`, position: sticky) still win. */
+@layer base {
+  .table :where(thead, tfoot) th {
+    position: relative;
+  }
+}
+
 @layer utilities {
   @layer daisyui {
     .modal:popover-open,
@@ -15,6 +23,19 @@
     }
     .drawer-toggle:checked ~ .drawer-side > .drawer-overlay {
       background-color: color-mix(in oklab, var(--color-scrim) 32%, transparent);
+    }
+
+    /* Read-only fields read as values, not as empty boxes waiting for input: a light tonal fill
+       (4% of the ink), no outline and no shadow. Keyboard focus still shows. */
+    input.input:read-only:not([type="checkbox"], [type="radio"]),
+    textarea.textarea:read-only,
+    .input:has(> input:read-only),
+    select.select:disabled,
+    .select:has(> select:disabled) {
+      background-color: color-mix(in oklab, var(--color-base-content) 4%, transparent);
+      border-color: transparent;
+      box-shadow: none;
+      cursor: default;
     }
   }
 }

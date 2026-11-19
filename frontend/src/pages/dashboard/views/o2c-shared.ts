@@ -9,6 +9,7 @@ import type { BookLine, Check } from "../../../cms/endpoints/operations.ts";
  */
 
 export type BadgeColor = BadgeVariants["color"];
+export { statusColor } from "../shared.ts";
 
 export interface OpsPO {
   id: string;
@@ -190,17 +191,6 @@ const valid = (iso?: string | null) => Boolean(iso) && !Number.isNaN(new Date(St
 export const day = (iso?: string | null) => (valid(iso) ? dayFmt.format(new Date(String(iso))) : "—");
 export const dayYear = (iso?: string | null) => (valid(iso) ? dayYearFmt.format(new Date(String(iso))) : "—");
 export const dayTime = (iso?: string | null) => (valid(iso) ? timeFmt.format(new Date(String(iso))) : "—");
-
-/** Badge colour for the statuses these screens show. */
-export function statusColor(status = ""): BadgeColor {
-  if (/blocked|mismatch|rejected|on hold|overdue|short|damaged|wrong|missing|late|unreachable/i.test(status))
-    return "error";
-  if (/awaiting|pending|partial|planned|rescheduled|draft|submitted|approved 1|open|due|deposit to pay/i.test(status))
-    return "warning";
-  if (/valid|matched|confirmed|ok|paid|received|delivered|approved|closed|acknowledged|reconciled/i.test(status))
-    return "success";
-  return "neutral";
-}
 
 /** The short visible "AI is reading" moment before a deterministic stub answers. */
 export const reading = (ms = 1000) => new Promise((r) => setTimeout(r, ms));

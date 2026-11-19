@@ -83,12 +83,18 @@ Collection lists (`src/pages/dashboard/list-view.ts`) are built on Payload's RES
   - **Sorting:** columns marked `sortable` sort from their header; `sort` holds a Payload sort string and `ui-sort` reports changes. Shift-click sorts by several columns.
   - **Columns:** `align: "end"` right-aligns numbers in tabular figures; `hiddenColumns` hides columns by key.
   - **States:** `loading` dims the current rows, or shows skeleton rows when there are none; `empty` is what shows when there are no rows.
+  - **Arranging columns** (opt in with `reorderable` / `resizable`; `columnOrder`, `columnWidths`, `ui-columns` with `{ order, widths }`):
+    - Move: drag a header (a mouse moves it after 6px sideways; touch needs a 350ms long press so swipes still scroll). The header lifts to elevation +2 and follows the pointer, the column's cells are tinted, and a primary line down the table shows where it lands. Escape cancels; the click that ends a drag never sorts. Keyboard: Ctrl + Shift + ← / → on a sortable header. A `fixed` column (the record link) stays first, because the whole-row link comes from the first cell.
+    - Resize: drag the line on a header's end edge (64–800px), or focus it and use ← / → (Shift: 48px steps). Double-click or Enter fits the column to its content again. A sized column's text ends in "…".
+    - Order is applied leniently (`src/components/base/columns.ts`): unknown keys are dropped, and a column added later keeps its place after the column it followed. Header cells are `position: relative` from the base layer (`daisy-m3.css`), so daisyUI's pinned columns stay sticky.
+  - **`<ui-column-picker>`** lists the columns in the table's order, with earlier / later arrows (the keyboard and screen-reader way to reorder). Reset restores the default columns and order, and the list page also clears the widths.
 - `<ui-filter-builder>`: its fields are typed text, number, date, select (also used for relationships) or boolean. It edits conditions as chips and emits a Payload `where`. The conversion lives in `src/components/base/filter-query.ts`, so pages can build the same `where` from saved conditions.
 - `<ui-column-picker>`: the "Columns" checklist, with Reset; it pairs with `hiddenColumns`.
 - **List page behaviour:**
   - The table's state lives in the URL (`q`, `sort`, `page`, `limit`, `filters`, `match`, `view`).
   - Table or cards: the cards view shows each record as a card (title, then the visible columns as label and value), with a Sort select in place of the headers. The choice is saved in `preferences.listView`; a `view` in the URL wins.
   - The columns someone picks are saved in `preferences.listColumns`.
+  - A status or stage (a single select named `status`, `stage` or `…Status`) shows as a soft badge in the table and on cards, coloured by `statusColor()` (`src/pages/dashboard/shared.ts`): problems red, waiting amber, in progress blue, done green, ended or other grey. A new status word that lands in the wrong colour gets added to its pattern there.
   - Requests ask only for the visible fields (`select`), related titles (`populate`) and join counts (`joins[...][count]`).
 
 ## Generated forms (`<ui-doc-form>`, `src/components/composed/forms/doc-form.ts`)

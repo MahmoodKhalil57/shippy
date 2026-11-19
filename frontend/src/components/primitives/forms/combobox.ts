@@ -286,7 +286,7 @@ export class UiCombobox extends LightElement {
                 </button>`
               : nothing
           }
-          ${iconSvg("unfold", { size: "sm" })}
+          ${locked ? nothing : iconSvg("unfold", { size: "sm" })}
         </span>
       </div>
       <ul

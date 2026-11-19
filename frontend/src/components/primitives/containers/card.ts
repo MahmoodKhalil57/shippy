@@ -4,6 +4,7 @@ import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
+import { iconSvg } from "../media/icon.ts";
 
 /**
  * Card: Groups and displays content in a readable way.
@@ -21,7 +22,8 @@ import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts
 export const card = rcva("card [&_p]:grow-0", {
   variants: {
     variant: {
-      border: "card-border",
+      /** Outlined: a quiet hairline (M3's outlined card). */
+      border: "card-border border-base-content/10",
       dash: "card-dash",
     },
     size: {
@@ -54,8 +56,13 @@ export const card = rcva("card [&_p]:grow-0", {
     /** Item of a Join ("selectable cards" example). */
     joinItem: { true: "join-item" },
     /** The whole card is a link (`href`): it lifts on hover with a spring, and shows focus. */
+    /**
+     * The whole card is a link (`href`): on hover it lifts a level on a spring, its edge picks up
+     * the primary colour, and an arrow slides in at its top corner (`cardLinkIcon`); it shows
+     * keyboard focus as a ring.
+     */
     link: {
-      true: "[transition:translate_var(--duration-spatial-fast)_var(--ease-spatial-fast),box-shadow_var(--duration-effects-fast)_var(--ease-effects-fast),outline-color_var(--duration-effects-fast)_var(--ease-effects-fast)] hover:-translate-y-0.5 hover:shadow-elevation-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary motion-reduce:transition-none",
+      true: "group/card relative [transition:translate_var(--duration-spatial-fast)_var(--ease-spatial-fast),box-shadow_var(--duration-effects-fast)_var(--ease-effects-fast),border-color_var(--duration-effects-fast)_var(--ease-effects-fast),outline-color_var(--duration-effects-fast)_var(--ease-effects-fast)] hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-elevation-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary motion-reduce:transition-none",
     },
   },
   defaultVariants: { color: "base", shadow: true },
@@ -68,7 +75,14 @@ export const cardBody = rcva("card-body", {
     muted: { true: "opacity-60" },
   },
 });
-export const cardTitle = rcva("card-title");
+/** The title: tight, and clear of the link arrow on link cards. */
+export const cardTitle = rcva("card-title leading-snug tracking-tight", {
+  variants: { link: { true: "pe-6" } },
+});
+/** A link card's arrow: hidden until the card is hovered or focused, then slides in. */
+export const cardLinkIcon = rcva(
+  "pointer-events-none absolute top-4 end-4 text-primary opacity-0 -translate-x-1 [transition:opacity_var(--duration-effects-fast)_var(--ease-effects-fast),translate_var(--duration-spatial-fast)_var(--ease-spatial-fast)] group-hover/card:translate-x-0 group-hover/card:opacity-100 group-focus-visible/card:translate-x-0 group-focus-visible/card:opacity-100 motion-reduce:translate-x-0",
+);
 export const cardActions = rcva("card-actions", {
   variants: {
     align: {
@@ -162,7 +176,7 @@ export class UiCard extends LightElement {
     const inner = html`${this.imagePosition === "top" ? figure : nothing}
       <div class=${cardBody({ centered: this.centered, muted: this.disabled && !!this.selectable })}>
         ${this.actionsPosition === "top" ? actions : nothing}
-        ${title ? html`<h2 class=${cardTitle()}>${title}</h2>` : nothing} ${this.slotted()}
+        ${title ? html`<h2 class=${cardTitle({ link: !!this.href })}>${title}</h2>` : nothing} ${this.slotted()}
         ${this.actionsPosition === "bottom" ? actions : nothing}
       </div>
       ${this.imagePosition === "bottom" ? figure : nothing}`;
@@ -180,7 +194,10 @@ export class UiCard extends LightElement {
         ${inner}
       </label>`;
     }
-    if (this.href) return html`<a href=${this.href} class=${cls}>${inner}</a>`;
+    if (this.href)
+      return html`<a href=${this.href} class=${cls}
+        >${inner}<span class=${cardLinkIcon()} aria-hidden="true">${iconSvg("arrow-right", { size: "sm" })}</span></a
+      >`;
     return html`<div class=${cls}>${inner}</div>`;
   }
 }

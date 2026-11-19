@@ -401,7 +401,10 @@ export class UiDocForm extends LightElement {
         const errors = this._errorsIn([...at, i]);
         const kind = f.type === "blocks" ? blockLabel(text(row.blockType)) : singular;
         const name =
-          (f.type === "blocks" && typeof row.blockName === "string" && row.blockName) || this._rowLabel(fields, row);
+          (f.type === "blocks" && typeof row.blockName === "string" && row.blockName) ||
+          // Not the row's own number again ("Line 01 · 1").
+          [this._rowLabel(fields, row)].find((l) => l !== String(i + 1) && l !== text(i + 1).padStart(2, "0")) ||
+          "";
         const menu = [
           ...(sortable && i > 0 ? [{ label: "Move up", value: "up" }] : []),
           ...(sortable && i < rows.length - 1 ? [{ label: "Move down", value: "down" }] : []),

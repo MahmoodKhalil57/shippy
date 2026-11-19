@@ -20,6 +20,10 @@ export const preferences = createStore(
     asideCollapsed: [] as string[],
     /** Collection tables: the columns someone hid or showed, by collection (absent: the defaults). */
     listColumns: {} as Record<string, string[]>,
+    /** Collection tables: the column order someone dragged into place, by collection (keys). */
+    listColumnOrder: {} as Record<string, string[]>,
+    /** Collection tables: the widths someone set, by collection, then column key (px). */
+    listColumnWidths: {} as Record<string, Record<string, number>>,
     /** Collection lists shown as cards instead of a table, by collection. */
     listView: {} as Record<string, "table" | "cards">,
   },

@@ -1,3 +1,4 @@
+import type { BadgeVariants } from "../../components/primitives/data/badge.ts";
 import type { IconName } from "../../components/primitives/media/icon.ts";
 import { text } from "../../cms/runtime/util.ts";
 import type { CollectionConfig, GlobalConfig } from "payload";
@@ -94,7 +95,13 @@ const dateFmt = new Intl.DateTimeFormat("en-GB", {
   hour: "2-digit",
   minute: "2-digit",
 });
-export const formatDate = (v: unknown) => (typeof v === "string" && v ? dateFmt.format(new Date(v)) : "");
+const dayFmt = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+/** A date for display; a date with no time of day (midnight) shows as just the day. */
+export const formatDate = (v: unknown) => {
+  if (typeof v !== "string" || !v) return "";
+  const d = new Date(v);
+  return d.getHours() === 0 && d.getMinutes() === 0 ? dayFmt.format(d) : dateFmt.format(d);
+};
 
 /** Plain-text cell value for a field. */
 export function cellText(f: FieldLike, v: unknown): string {
@@ -249,3 +256,37 @@ export const GROUP_ICONS: Record<string, IconName> = {
 
 /** A collection's group (`admin.group`), as shown in the navigation. */
 export const groupOf = (c: CollectionConfig) => (typeof c.admin?.group === "string" ? c.admin.group : "Collections");
+
+/**
+ * The badge colour for a status or stage, from its words: problems red, waiting amber, work in
+ * progress blue, done green, ended or unknown grey. Used by the order-to-cash screens and by
+ * collection lists for their status columns.
+ */
+export function statusColor(status = ""): BadgeVariants["color"] {
+  if (/not awarded|expired|cancelled|superseded|skipped|ignored/i.test(status)) return "neutral";
+  if (
+    /blocked|mismatch|rejected|invalid|declined|no response|on hold|held|overdue|short|damaged|wrong|missing|late|unreachable|clarification|not sourced|lost|failed|reversed/i.test(
+      status,
+    )
+  )
+    return "error";
+  if (
+    /awaiting|waiting|pending|partial|planned|rescheduled|draft|submitted|approved 1|open|due|deposit to pay|needs review|requested|revision|returned|on watch|under review|documents pending/i.test(
+      status,
+    )
+  )
+    return "warning";
+  if (
+    /new|sent|validating|sourcing|comparing|purchasing|delivering|customs|scheduled|loading|dispatched|on board|boat transfer|trial|ready|introduced|prospect|in progress/i.test(
+      status,
+    )
+  )
+    return "info";
+  if (
+    /valid|matched|confirmed|ok|paid|received|delivered|approved|closed|settled|acknowledged|reconciled|recorded|done|resolved|won|active|linked|created|replied|selected|ordered|invoiced|released|first rfq/i.test(
+      status,
+    )
+  )
+    return "success";
+  return "neutral";
+}
