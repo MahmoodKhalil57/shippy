@@ -26,8 +26,10 @@ export const descriptionList = rcva("m-0", {
   },
   defaultVariants: { layout: "stacked" },
 });
-export const descriptionItem = rcva("flex min-w-0 flex-col gap-0.5", {
-  variants: { layout: { stacked: "", inline: "contents" } },
+// The layouts set `display` themselves: a base `flex` would beat `contents` (Tailwind's order),
+// turning each inline pair into one grid cell.
+export const descriptionItem = rcva("min-w-0", {
+  variants: { layout: { stacked: "flex flex-col gap-0.5", inline: "contents" } },
 });
 export const descriptionLabel = rcva("text-label-md text-on-surface-variant");
 export const descriptionValue = rcva("m-0 min-w-0 [overflow-wrap:anywhere]", {
