@@ -16,9 +16,9 @@ import { rcva } from "../../base/variants.ts";
  * A contextual toolbar ("3 selected" and what to do with them) is the same element with its
  * own label.
  */
-export const toolbar = rcva("flex flex-wrap items-center gap-2");
+export const toolbar = rcva("flex max-w-full flex-wrap items-center gap-2");
 export const toolbarStart = rcva("flex min-w-0 flex-wrap items-center gap-2");
-export const toolbarEnd = rcva("ms-auto flex flex-wrap items-center gap-1");
+export const toolbarEnd = rcva("ms-auto flex max-w-full flex-wrap items-center gap-1");
 
 /**
  * @example

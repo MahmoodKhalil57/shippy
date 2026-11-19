@@ -14,7 +14,7 @@ import { label as labelRecipe } from "./label.ts";
  * Purpose: Forms & input · Kind: primitive
  * Docs: https://daisyui.com/components/textarea/
  */
-export const textarea = rcva("textarea", {
+export const textarea = rcva("textarea min-w-0", {
   variants: {
     color: {
       neutral: "textarea-neutral",
@@ -41,11 +41,11 @@ export const textarea = rcva("textarea", {
     mono: { true: "font-mono text-body-md [tab-size:2] whitespace-pre" },
     width: {
       auto: "w-auto",
-      "64": "w-64",
-      xs: "w-xs",
-      sm: "w-sm",
-      md: "w-md",
-      lg: "w-lg",
+      "64": "w-64 max-w-full",
+      xs: "w-xs max-w-full",
+      sm: "w-sm max-w-full",
+      md: "w-md max-w-full",
+      lg: "w-lg max-w-full",
       full: "w-full",
     },
     /** Fixed height (the docs' "Your bio" example uses `h-24`). */

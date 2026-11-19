@@ -279,11 +279,14 @@ defineBlock("list", (b, ctx) =>
                     : nothing
               }
               ${
-                i.trailing !== undefined || i.tags?.length || i.actions?.length
+                // Tags sit under the headline (the content slot); the trailing slot holds a value
+                // or an action (M3 Lists: trailing is "icon, icon button, or trailing text").
+                i.tags?.length ? i.tags.map(tag) : nothing
+              }
+              ${
+                i.trailing !== undefined || i.actions?.length
                   ? html`<ui-flex slot="trailing" gap="2" align="center" wrap
-                      >${i.tags?.map(tag)}${i.trailing !== undefined ? cell(i.trailing) : nothing}${i.actions?.map(
-                        (a) => action(a, ctx),
-                      )}</ui-flex
+                      >${i.trailing !== undefined ? cell(i.trailing) : nothing}${i.actions?.map((a) => action(a, ctx))}</ui-flex
                     >`
                   : nothing
               }

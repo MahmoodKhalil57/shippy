@@ -18,7 +18,7 @@ import { rcva } from "../../base/variants.ts";
  */
 export const gauge = rcva("flex min-w-0 flex-col gap-1", {
   variants: {
-    width: { xs: "w-32", sm: "w-56", full: "w-full" },
+    width: { xs: "w-32", sm: "w-56 max-w-full", full: "w-full" },
   },
   defaultVariants: { width: "full" },
 });

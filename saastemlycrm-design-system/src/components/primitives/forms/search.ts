@@ -24,7 +24,7 @@ import { kbd, kbdKeys } from "../showcase/kbd.ts";
  * 13rem it folds to the magnifying glass alone.
  */
 export const search = rcva(
-  "input flex items-center gap-2 [&_input::-webkit-search-cancel-button]:appearance-none [&_input]:min-w-0 [&_input]:grow",
+  "input flex min-w-0 items-center gap-2 [&_input::-webkit-search-cancel-button]:appearance-none [&_input]:min-w-0 [&_input]:grow",
   {
     variants: {
       size: { sm: "input-sm", md: "input-md", lg: "input-lg" },

@@ -36,7 +36,7 @@ export const alert = rcva(
 export const alertIcon = rcva("mt-0.5 size-5 shrink-0");
 export const alertBody = rcva("flex min-w-0 flex-col gap-0.5");
 export const alertHeading = rcva("text-title-sm");
-export const alertActions = rcva("col-start-2 flex flex-wrap items-center gap-2");
+export const alertActions = rcva("col-start-2 flex max-w-full flex-wrap items-center gap-2");
 
 export type AlertVariants = VariantProps<typeof alert>;
 export type AlertTone = NonNullable<AlertVariants["tone"]>;

@@ -80,7 +80,7 @@ export const tableWrapper = rcva("overflow-x-auto", {
     /** Fixed scroll height (the pinned examples use `h-96`). */
     height: { sm: "h-64", md: "h-80", lg: "h-96" },
     /** Fixed scroll width (the pinned-cols example uses `w-96`). */
-    width: { md: "w-80", lg: "w-96", full: "w-full" },
+    width: { md: "w-80 max-w-full", lg: "w-96 max-w-full", full: "w-full" },
   },
 });
 

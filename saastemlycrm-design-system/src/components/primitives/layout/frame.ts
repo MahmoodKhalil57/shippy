@@ -51,11 +51,13 @@ export const appShell = rcva(
  * to an icon when that room gets small — a container query, not a screen breakpoint), actions.
  */
 export const appShellHeader = rcva("flex h-16 items-center gap-[clamp(0.5rem,1vw,1rem)] px-(--frame-edge)");
+// layout: fixed (the menu button and the brand)
 export const appShellHeaderStart = rcva("flex min-w-0 shrink-0 items-center gap-1");
 export const appShellBrand = rcva("gap-2 rounded-full px-3 text-title-md tracking-tight");
 /** The brand's mark (`brand-icon`): primary, on a soft primary disc. */
 export const appShellBrandMark = rcva("grid size-8 place-items-center rounded-full bg-primary/15 text-primary");
 export const appShellSearch = rcva("@container flex min-w-0 flex-1 justify-center");
+// layout: fixed (icon buttons)
 export const appShellActions = rcva("flex shrink-0 items-center justify-end gap-1");
 
 /**
@@ -108,8 +110,10 @@ export const appShellColumn = rcva(
         false: "w-(--frame-rail) delay-0 has-[details[open]]:delay-(--settle-spatial)",
       },
     },
+    // layout: fixed (the frame's side columns; the shell folds them away when the room is short)
     compoundVariants: [
       { side: "start", push: true, class: "w-72" },
+      // layout: fixed (as above)
       { side: "end", push: true, class: "w-80" },
     ],
   },
@@ -201,6 +205,7 @@ export const appShellMain = rcva(
 export const appShellPage = rcva("");
 
 /** The main panel with its footer under it; takes the room the columns leave. */
+// layout: fixed (the main panel keeps room for content when both side columns are open)
 export const appShellCenter = rcva("flex min-w-[13.5rem] flex-1 flex-col gap-1");
 
 /**

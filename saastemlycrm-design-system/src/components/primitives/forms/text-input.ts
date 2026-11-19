@@ -18,7 +18,7 @@ import { label as labelRecipe } from "./label.ts";
  * `input` can sit on the `<input>` itself, or on a `<label>` wrapping the
  * `<input>` plus icons, kbd hints, badges or inline `label` text.
  */
-export const textInput = rcva("input", {
+export const textInput = rcva("input min-w-0", {
   variants: {
     color: {
       neutral: "input-neutral",
@@ -46,11 +46,11 @@ export const textInput = rcva("input", {
       /** Grows to fill a wrapping row, never narrower than 16rem (or the row). */
       fill: "min-w-[min(100%,16rem)] flex-1",
       auto: "w-auto",
-      "64": "w-64",
-      xs: "w-xs",
-      sm: "w-sm",
-      md: "w-md",
-      lg: "w-lg",
+      "64": "w-64 max-w-full",
+      xs: "w-xs max-w-full",
+      sm: "w-sm max-w-full",
+      md: "w-md max-w-full",
+      lg: "w-lg max-w-full",
       full: "w-full",
     },
     /** Monospaced digits (the docs' telephone example). */

@@ -40,7 +40,7 @@ export const fileInput = rcva("file-input", {
 });
 
 /** "With fieldset and label" parts. */
-export const fileInputFieldset = rcva("fieldset");
+export const fileInputFieldset = rcva("fieldset min-w-0 grid-cols-[minmax(0,1fr)]");
 export const fileInputLegend = rcva("fieldset-legend");
 export const fileInputHint = rcva("label");
 

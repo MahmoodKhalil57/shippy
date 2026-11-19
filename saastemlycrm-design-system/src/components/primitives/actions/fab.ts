@@ -22,7 +22,7 @@ import { iconButton } from "./icon-button.ts";
  * (title + close), a scrolling body (the children), and a footer (`slot="footer"`).
  */
 export const fab = rcva(
-  "btn touch-target border-transparent p-0 shadow-elevation-3 hover:shadow-elevation-4 [&_svg]:size-6",
+  "btn max-w-full touch-target border-transparent p-0 shadow-elevation-3 hover:shadow-elevation-4 [&_svg]:size-6",
   {
     variants: {
       color: {
@@ -58,6 +58,7 @@ export const fabPanel = rcva(
     },
   },
 );
+// layout: fixed (keeps its height in the panel's column; its title truncates)
 export const fabPanelHead = rcva("flex shrink-0 items-center gap-2 border-b border-outline-variant px-4 py-2.5");
 export const fabPanelTitle = rcva("min-w-0 flex-1 truncate text-title-sm");
 export const fabPanelBody = rcva(

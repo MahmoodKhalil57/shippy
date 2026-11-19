@@ -326,7 +326,7 @@ function lineCard(c: CompareWithDrafts, line: CmpLine, mode: Mode): ViewBlock {
     blocks.push(
       block("actions", {
         items: [
-          ...(line.split ? [split(base, line, `Use split ${line.split.text}`, line.split.parts, true)] : []),
+          ...(line.split ? [split(base, line, "Use suggested split", line.split.parts, true)] : []),
           split(
             base,
             line,

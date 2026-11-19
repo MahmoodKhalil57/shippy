@@ -15,7 +15,7 @@ import { button } from "../actions/button.ts";
 export const suggestions = rcva("flex gap-1.5", {
   variants: {
     wrap: {
-      true: "flex-wrap",
+      true: "max-w-full flex-wrap",
       false:
         "overflow-x-auto overscroll-x-contain [scrollbar-width:none] [mask-image:linear-gradient(to_right,transparent,black_1rem,black_calc(100%-1rem),transparent)] px-4 -mx-4",
     },

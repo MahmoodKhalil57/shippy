@@ -18,7 +18,7 @@ import { label as labelRecipe } from "./label.ts";
  * The open list (`::picker(select)`) is frosted glass for every select in the app, set once in
  * src/styles/daisy-m3.css: here the class sits on a wrapping label, where `::picker` can't reach.
  */
-export const select = rcva("select", {
+export const select = rcva("select min-w-0", {
   variants: {
     color: {
       neutral: "select-neutral",
@@ -45,11 +45,11 @@ export const select = rcva("select", {
     validator: { true: "validator" },
     width: {
       auto: "w-auto",
-      "64": "w-64",
-      xs: "w-xs",
-      sm: "w-sm",
-      md: "w-md",
-      lg: "w-lg",
+      "64": "w-64 max-w-full",
+      xs: "w-xs max-w-full",
+      sm: "w-sm max-w-full",
+      md: "w-md max-w-full",
+      lg: "w-lg max-w-full",
       full: "w-full",
     },
     /** Max height of the options picker (the docs' "custom dropdown height" uses `max-h-26`). */

@@ -28,7 +28,7 @@ export const skeleton = rcva("skeleton", {
       "20": "w-20",
       "28": "w-28",
       "32": "w-32",
-      "52": "w-52",
+      "52": "w-52 max-w-full",
     },
     /** Height override. */
     height: {
@@ -43,7 +43,7 @@ export const skeleton = rcva("skeleton", {
 /** Layouts of the docs' composite examples. */
 export const skeletonStack = rcva("flex flex-col gap-4", {
   variants: {
-    width: { "52": "w-52", full: "w-full" },
+    width: { "52": "w-52 max-w-full", full: "w-full" },
   },
 });
 export const skeletonRow = rcva("flex items-center gap-4");

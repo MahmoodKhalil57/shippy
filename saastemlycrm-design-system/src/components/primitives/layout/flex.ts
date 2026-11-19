@@ -63,7 +63,7 @@ export const flex = rcva("", {
       "12": "p-12",
       "16": "p-16",
     },
-    wrap: { true: "flex-wrap" },
+    wrap: { true: "max-w-full flex-wrap" },
     grow: { true: "grow" },
     /** Let text inside truncate instead of widening the row (min-width: 0). */
     shrink: { true: "min-w-0" },

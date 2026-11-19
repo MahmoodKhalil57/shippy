@@ -21,7 +21,7 @@ import { iconSvg, type IconName } from "../media/icon.ts";
  */
 export const buttonGroup = rcva("inline-flex max-w-full flex-wrap items-center gap-0.5");
 export const buttonGroupItem = rcva(
-  "btn btn-ghost touch-target state-layer gap-1 border-transparent bg-surface-container-highest text-on-surface [transition:border-radius_var(--duration-spatial-fast)_var(--ease-spatial-fast),background-color_var(--duration-effects-fast)_var(--ease-effects-fast)] rounded-sm first:rounded-s-full last:rounded-e-full focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary",
+  "btn btn-ghost max-w-full h-auto min-h-(--size) whitespace-normal [text-wrap:balance] touch-target state-layer gap-1 border-transparent bg-surface-container-highest text-on-surface [transition:border-radius_var(--duration-spatial-fast)_var(--ease-spatial-fast),background-color_var(--duration-effects-fast)_var(--ease-effects-fast)] rounded-sm first:rounded-s-full last:rounded-e-full focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary",
   {
     variants: {
       size: { xs: "btn-sm", sm: "btn-md" },

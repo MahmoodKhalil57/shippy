@@ -20,7 +20,7 @@ import { fieldsetField, type FieldsetVariants } from "./fieldset.ts";
  * array of strings with `multiple`.
  */
 export const combobox = rcva(
-  "input h-auto min-h-(--size) cursor-text flex-wrap items-center gap-1 py-1 [anchor-scope:--combobox]",
+  "input h-auto min-h-(--size) min-w-0 cursor-text max-w-full flex-wrap items-center gap-1 py-1 [anchor-scope:--combobox]",
   {
     variants: {
       color: { error: "input-error" },
@@ -32,13 +32,14 @@ export const combobox = rcva(
   },
 );
 export const comboboxInput = rcva("min-w-20 flex-1 bg-transparent outline-none");
+// layout: fixed (the clear and open icon buttons)
 export const comboboxIcon = rcva("ms-auto flex shrink-0 items-center gap-0.5 text-on-surface-variant");
 export const comboboxClear = rcva(
   "touch-target grid size-6 place-items-center rounded-full state-layer hover:text-on-surface focus-visible:outline-2 focus-visible:outline-primary",
 );
 /** The options: a glass popover under the field, growing down from it (M3 enter / exit). */
 export const comboboxList = rcva(
-  "liquid-glass [--outer-radius:var(--radius-box)] [--outer-padding:var(--space-50)] shadow-elevation-2 m-0 mt-1 max-h-72 w-[anchor-size(width)] min-w-48 origin-top overflow-y-auto overscroll-contain rounded-box p-1 text-body-md [position-area:bottom_span-right] [position-try-fallbacks:flip-block] scale-y-90 opacity-0 open:scale-y-100 open:opacity-100 [transition:opacity_var(--duration-short2)_var(--ease-emphasized-accelerate),scale_var(--duration-short3)_var(--ease-emphasized-accelerate),display_var(--duration-short3)_allow-discrete,overlay_var(--duration-short3)_allow-discrete] open:[transition:opacity_var(--duration-short3)_var(--ease-emphasized-decelerate),scale_var(--duration-medium1)_var(--ease-emphasized-decelerate),display_var(--duration-medium1)_allow-discrete,overlay_var(--duration-medium1)_allow-discrete] starting:open:scale-y-90 starting:open:opacity-0 motion-reduce:scale-y-100 [--scrollbar-inset:var(--radius-box)]",
+  "liquid-glass [--outer-radius:var(--radius-box)] [--outer-padding:var(--space-50)] shadow-elevation-2 m-0 mt-1 max-h-72 w-[anchor-size(width)] min-w-48 max-w-[calc(100vw-2rem)] origin-top overflow-y-auto overscroll-contain rounded-box p-1 text-body-md [position-area:bottom_span-right] [position-try-fallbacks:flip-block] scale-y-90 opacity-0 open:scale-y-100 open:opacity-100 [transition:opacity_var(--duration-short2)_var(--ease-emphasized-accelerate),scale_var(--duration-short3)_var(--ease-emphasized-accelerate),display_var(--duration-short3)_allow-discrete,overlay_var(--duration-short3)_allow-discrete] open:[transition:opacity_var(--duration-short3)_var(--ease-emphasized-decelerate),scale_var(--duration-medium1)_var(--ease-emphasized-decelerate),display_var(--duration-medium1)_allow-discrete,overlay_var(--duration-medium1)_allow-discrete] starting:open:scale-y-90 starting:open:opacity-0 motion-reduce:scale-y-100 [--scrollbar-inset:var(--radius-box)]",
 );
 export const comboboxGroup = rcva("px-3 pt-2 pb-1 text-label-md text-on-surface-variant");
 export const comboboxOption = rcva(

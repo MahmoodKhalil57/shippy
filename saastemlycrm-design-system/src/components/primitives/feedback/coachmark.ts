@@ -30,7 +30,7 @@ export const coachmarkCard = rcva(
 export const coachmarkEyebrow = rcva("flex items-center gap-2 text-label-md text-on-surface-variant");
 export const coachmarkHeading = rcva("text-title-lg leading-snug");
 export const coachmarkBody = rcva("text-body-md leading-relaxed text-on-surface-variant");
-export const coachmarkFooter = rcva("mt-1 flex flex-wrap items-center justify-between gap-2");
+export const coachmarkFooter = rcva("mt-1 flex max-w-full flex-wrap items-center justify-between gap-2");
 export const coachmarkProgress = rcva("flex items-center gap-1");
 export const coachmarkSpinner = rcva("loading loading-spinner loading-xs");
 export const coachmarkDot = rcva(
@@ -39,7 +39,7 @@ export const coachmarkDot = rcva(
     variants: { state: { done: "w-1.5 bg-primary/60", current: "w-4 bg-primary", todo: "w-1.5 bg-outline" } },
   },
 );
-export const coachmarkButton = rcva("btn btn-sm", {
+export const coachmarkButton = rcva("btn btn-sm max-w-full", {
   variants: { kind: { primary: "btn-primary", ghost: "btn-ghost", close: "btn-ghost btn-circle btn-xs" } },
 });
 

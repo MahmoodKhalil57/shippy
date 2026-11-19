@@ -29,8 +29,10 @@ import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts
  * src/styles/daisy-motion.css times it): it squares up to at most `sm` (8dp), and springs back
  * on release. Selected, it stays at `md` (12dp), as M3's toggle buttons do.
  */
+// Never wider than its container: a label too long for the room wraps (a last resort; M3 asks
+// for 1–3 words) instead of spilling past the card, and the button grows to hold it.
 export const button = rcva(
-  "btn touch-target active:scale-[0.94] motion-reduce:active:scale-100 active:rounded-[min(var(--radius-sm),var(--radius-field))]",
+  "btn touch-target max-w-full h-auto min-h-(--size) whitespace-normal [text-wrap:balance] active:scale-[0.94] motion-reduce:active:scale-100 active:rounded-[min(var(--radius-sm),var(--radius-field))]",
   {
     variants: {
       variant: {

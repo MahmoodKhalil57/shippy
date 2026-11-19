@@ -70,10 +70,10 @@ export const dropdownPanel = rcva(
       },
       rounded: { true: "rounded-box" },
       width: {
-        "52": "w-52",
-        "64": "w-64",
-        "72": "w-72",
-        "80": "w-80",
+        "52": "w-52 max-w-[calc(100vw-2rem)]",
+        "64": "w-64 max-w-[calc(100vw-2rem)]",
+        "72": "w-72 max-w-[calc(100vw-2rem)]",
+        "80": "w-80 max-w-[calc(100vw-2rem)]",
       },
       padding: {
         "0": "p-0",

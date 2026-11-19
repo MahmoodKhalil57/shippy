@@ -40,7 +40,7 @@ export const grid = rcva("grid", {
      * Main content and a sidebar (`items` with `role: "main"` / `"side"`), side by side while the
      * main part keeps at least 30rem, otherwise the sidebar wraps underneath. No breakpoints.
      */
-    sidebar: { true: "flex! flex-wrap items-start" },
+    sidebar: { true: "flex! max-w-full flex-wrap items-start" },
     cols: {
       "1": "grid-cols-1",
       "2": "grid-cols-2",

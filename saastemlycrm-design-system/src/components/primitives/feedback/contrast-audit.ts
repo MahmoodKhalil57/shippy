@@ -5,8 +5,10 @@ import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { auditContrast, type ContrastIssue } from "../../base/contrast.ts";
 import { auditProminence, type ProminenceIssue } from "../../base/prominence.ts";
+import { auditLayout, type LayoutIssue } from "../../base/layout.ts";
 
 export { auditContrast, type ContrastIssue } from "../../base/contrast.ts";
+export { auditLayout, type LayoutIssue } from "../../base/layout.ts";
 
 /**
  * Contrast audit: finds text on screen that fails WCAG contrast (AA: 4.5:1, or 3:1 for large text)
@@ -19,7 +21,11 @@ export { auditContrast, type ContrastIssue } from "../../base/contrast.ts";
  * under its scrim, sampled behind the text), then compares the text colour. Failures are outlined
  * on the page with their ratio, listed in a panel (click one to scroll to it) and logged with
  * `console.table`. Open it with `window.dispatchEvent(new Event("ui-contrast-audit"))` (the
- * command palette's "Check colour contrast"), or by adding `?audit` to the URL.
+ * command palette's "Check contrast and layout"), or by adding `?audit` to the URL.
+ *
+ * It also checks the layout at the current width (base/layout.ts): elements that escape their
+ * card or row, text squeezed to nothing, a page that scrolls sideways. Run it at a phone width
+ * and at a wide one.
  */
 export const contrastAuditBox = rcva(
   "pointer-events-none fixed z-[70] rounded-xs ring-2 ring-offset-1 ring-offset-base-100 top-(--top) left-(--left) h-(--h) w-(--w)",
@@ -27,7 +33,7 @@ export const contrastAuditBox = rcva(
     variants: {
       focus: { true: "ring-4 animate-pulse motion-reduce:animate-none" },
       /** Contrast failures in error, extra prominent buttons in warning. */
-      kind: { contrast: "ring-error", prominence: "ring-warning" },
+      kind: { contrast: "ring-error", prominence: "ring-warning", layout: "ring-info" },
     },
     defaultVariants: { kind: "contrast" },
   },
@@ -48,12 +54,12 @@ export const contrastAuditItem = rcva(
   "touch-target flex items-center gap-2 rounded-field px-2 py-1 text-start state-layer focus-visible:outline-2 focus-visible:outline-primary",
 );
 export const contrastAuditRatio = rcva("w-14 shrink-0 font-mono text-label-md", {
-  variants: { kind: { contrast: "text-error-ink", prominence: "text-warning-ink" } },
+  variants: { kind: { contrast: "text-error-ink", prominence: "text-warning-ink", layout: "text-info-ink" } },
   defaultVariants: { kind: "contrast" },
 });
 export const contrastAuditText = rcva("min-w-0 flex-1 truncate");
 export const contrastAuditSwatch = rcva("size-4 shrink-0 rounded-full ring-1 ring-outline-variant bg-(--swatch)");
-export const contrastAuditButton = rcva("btn btn-xs", {
+export const contrastAuditButton = rcva("btn btn-xs max-w-full", {
   variants: { kind: { ghost: "btn-ghost", primary: "btn-primary" } },
 });
 
@@ -66,6 +72,8 @@ export class UiContrastAudit extends LightElement {
   @state() private issues: ContrastIssue[] | null = null;
   /** Surfaces with more filled buttons than one or two (Apple HIG; base/prominence.ts). */
   @state() private prominence: ProminenceIssue[] = [];
+  /** What breaks the fluid layout at this width (base/layout.ts). */
+  @state() private layout: LayoutIssue[] = [];
   @state() private selected = -1;
   @state() private _tick = 0;
   #frame = 0;
@@ -97,6 +105,11 @@ export class UiContrastAudit extends LightElement {
     return auditContrast();
   }
 
+  /** The layout problems at the current width, without showing anything. */
+  measureLayout(): LayoutIssue[] {
+    return auditLayout();
+  }
+
   /** Audit the page now (closes any open dialog-free overlay first). */
   run() {
     this.issues = null;
@@ -104,6 +117,7 @@ export class UiContrastAudit extends LightElement {
     requestAnimationFrame(() => {
       const issues = auditContrast();
       this.prominence = auditProminence();
+      this.layout = auditLayout();
       this.issues = issues;
       // oxlint-disable-next-line no-console
       console.table(
@@ -128,7 +142,7 @@ export class UiContrastAudit extends LightElement {
     this.issues?.[i]?.element.scrollIntoView({ block: "center", behavior: "smooth" });
   }
 
-  private _box(element: Element, kind: "contrast" | "prominence", label: string, focus = false) {
+  private _box(element: Element, kind: "contrast" | "prominence" | "layout", label: string, focus = false) {
     const r = element.getBoundingClientRect();
     if (!r.width || r.bottom < 0 || r.top > innerHeight) return nothing;
     return html`<div
@@ -149,6 +163,7 @@ export class UiContrastAudit extends LightElement {
         .slice(0, 200)
         .map((issue, i) => this._box(issue.element, "contrast", `${issue.ratio.toFixed(1)}:1`, i === this.selected))}
       ${prominent.map((b) => this._box(b, "prominence", "filled"))}
+      ${this.layout.map((l) => this._box(l.element, "layout", l.kind))}
       <div class=${contrastAuditPanel()} role="dialog" aria-label="Contrast audit">
         <div class=${contrastAuditHead()}>
           <div>
@@ -170,6 +185,12 @@ export class UiContrastAudit extends LightElement {
                       keep one or two, make the rest tonal (variant="soft").`
                   : nothing
               }
+              ${
+                this.layout.length
+                  ? html`<br />${this.layout.length} layout ${this.layout.length === 1 ? "problem" : "problems"} at
+                      ${innerWidth}px: let it wrap or shrink.`
+                  : nothing
+              }
             </div>
           </div>
           <div>
@@ -182,6 +203,18 @@ export class UiContrastAudit extends LightElement {
           </div>
         </div>
         <div class=${contrastAuditList()}>
+          ${this.layout.map(
+            (l) =>
+              html`<button
+                type="button"
+                class=${contrastAuditItem()}
+                title=${l.detail}
+                @click=${() => l.element.scrollIntoView({ block: "center", behavior: "smooth" })}
+              >
+                <span class=${contrastAuditRatio({ kind: "layout" })}>${l.kind}</span>
+                <span class=${contrastAuditText()}>${l.detail} · ${l.element.textContent?.trim().slice(0, 60)}</span>
+              </button>`,
+          )}
           ${prominent.map(
             (b) =>
               html`<button

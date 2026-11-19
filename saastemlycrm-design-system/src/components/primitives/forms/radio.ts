@@ -41,7 +41,7 @@ export const radioGroup = rcva("flex", {
   variants: {
     direction: {
       vertical: "flex-col gap-2",
-      horizontal: "flex-row flex-wrap gap-4",
+      horizontal: "flex-row max-w-full flex-wrap gap-4",
     },
   },
   defaultVariants: { direction: "vertical" },

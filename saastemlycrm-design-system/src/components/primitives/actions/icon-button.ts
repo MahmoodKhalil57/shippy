@@ -19,7 +19,7 @@ import { iconSvg, type IconName } from "../media/icon.ts";
  * toolbars. Other primitives borrow `iconButton()` for their own icon controls.
  */
 export const iconButton = rcva(
-  "btn btn-square touch-target state-layer border-transparent p-0 active:rounded-[min(var(--radius-sm),var(--radius-field))] [&_svg]:size-5",
+  "btn btn-square max-w-full touch-target state-layer border-transparent p-0 active:rounded-[min(var(--radius-sm),var(--radius-field))] [&_svg]:size-5",
   {
     variants: {
       variant: {

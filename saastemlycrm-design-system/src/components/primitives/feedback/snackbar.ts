@@ -24,7 +24,7 @@ export const snackbarBody = rcva(
 );
 export const snackbarText = rcva("min-w-0 flex-1 py-1.5");
 export const snackbarAction = rcva(
-  "btn btn-ghost btn-sm state-layer touch-target border-transparent bg-transparent text-primary-ink",
+  "btn btn-ghost btn-sm max-w-full state-layer touch-target border-transparent bg-transparent text-primary-ink",
 );
 
 export interface SnackbarOptions {

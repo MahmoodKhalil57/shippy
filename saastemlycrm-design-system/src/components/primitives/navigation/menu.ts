@@ -44,7 +44,7 @@ export const menu = rcva(
       flush: { true: "p-0 [&_li>*]:rounded-none" },
       /** Widths used in the docs examples. */
       width: {
-        sm: "w-56",
+        sm: "w-56 max-w-full",
         xs: "w-full max-w-xs",
         full: "w-full",
         /** Fill the remaining space (docs drawer icon-only sidebar). */

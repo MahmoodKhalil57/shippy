@@ -10,7 +10,9 @@ import { rcva } from "../../base/variants.ts";
  * Purpose: Forms & input · Kind: primitive
  * Docs: https://daisyui.com/components/fieldset/
  */
-export const fieldset = rcva("fieldset", {
+// `min-w-0`: a fieldset is `min-width: min-content` by default, so it would refuse to shrink; its
+// one column is `minmax(0, 1fr)`, as a plain `1fr` is at least as wide as its widest line.
+export const fieldset = rcva("fieldset min-w-0 grid-cols-[minmax(0,1fr)]", {
   variants: {
     /** Box look used in the daisyUI examples (background + border + padding). */
     surface: {
@@ -20,11 +22,11 @@ export const fieldset = rcva("fieldset", {
     /** Docs examples use `w-xs` (fieldset) and `w-64` (checkbox / toggle). */
     width: {
       auto: "w-auto",
-      "64": "w-64",
-      xs: "w-xs",
-      sm: "w-sm",
-      md: "w-md",
-      lg: "w-lg",
+      "64": "w-64 max-w-full",
+      xs: "w-xs max-w-full",
+      sm: "w-sm max-w-full",
+      md: "w-md max-w-full",
+      lg: "w-lg max-w-full",
       full: "w-full",
     },
   },
@@ -32,8 +34,8 @@ export const fieldset = rcva("fieldset", {
 
 /** Title of the fieldset (`<legend>`). */
 export const fieldsetLegend = rcva("fieldset-legend");
-/** Label / helper text inside a fieldset (`label` component class). */
-export const fieldsetLabel = rcva("label", {
+/** Label / helper text inside a fieldset (`label` component class); it wraps (daisyUI's never does). */
+export const fieldsetLabel = rcva("label whitespace-normal", {
   variants: {
     /** Label wrapping a checkbox / radio / toggle: the whole row is clickable. */
     control: { true: "cursor-pointer touch-target" },

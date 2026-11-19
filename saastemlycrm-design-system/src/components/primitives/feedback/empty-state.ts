@@ -45,7 +45,7 @@ export const emptyStateHeading = rcva("", {
   },
 });
 export const emptyStateDescription = rcva("max-w-[50ch] text-body-md text-on-surface-variant");
-export const emptyStateActions = rcva("mt-2 flex flex-wrap justify-center gap-2");
+export const emptyStateActions = rcva("mt-2 flex max-w-full flex-wrap justify-center gap-2");
 
 export type EmptyStateVariants = VariantProps<typeof emptyState>;
 

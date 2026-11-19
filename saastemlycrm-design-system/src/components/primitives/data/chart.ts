@@ -87,9 +87,19 @@ export const chartTooltipRow = rcva("flex items-center gap-1.5 tabular-nums");
 export const chartSwatch = rcva("inline-block size-2 shrink-0 rounded-full bg-current", {
   variants: { series: { "0": SERIES[0], "1": SERIES[1], "2": SERIES[2] } },
 });
-export const chartAxis = rcva("flex justify-between gap-1 tabular-nums [&>span]:min-w-0 [&>span]:truncate");
+export const chartAxis = rcva("flex justify-between gap-1 tabular-nums [&>span]:min-w-0 [&>span]:truncate", {
+  variants: {
+    /**
+     * Which labels show, by the chart's own width (a container query, `chartAxisBox`): every
+     * label once there's room for them all, else the first and last, never labels cut short.
+     */
+    show: { all: "hidden @lg:flex", ends: "@lg:hidden" },
+  },
+});
+/** The box the axis measures (its labels' room). */
+export const chartAxisBox = rcva("@container");
 export const chartMax = rcva("pointer-events-none absolute -top-1 start-0 -translate-y-full tabular-nums");
-export const chartLegend = rcva("flex flex-wrap gap-x-3 gap-y-1 text-on-surface-variant");
+export const chartLegend = rcva("flex max-w-full flex-wrap gap-x-3 gap-y-1 text-on-surface-variant");
 export const chartLegendItem = rcva("inline-flex items-center gap-1.5");
 export const chartTable = rcva("sr-only");
 
@@ -300,11 +310,14 @@ export class UiChart extends LightElement {
       ${
         spark || !n
           ? nothing
-          : html`<div class=${chartAxis()} aria-hidden="true">
+          : html`<div class=${chartAxisBox()} aria-hidden="true">
               ${
                 this.kind === "bars" && n <= 8
-                  ? this.labels.slice(0, n).map((l) => html`<span>${l}</span>`)
-                  : html`<span>${first}</span><span>${last}</span>`
+                  ? html`<div class=${chartAxis({ show: "all" })}>
+                        ${this.labels.slice(0, n).map((l) => html`<span>${l}</span>`)}
+                      </div>
+                      <div class=${chartAxis({ show: "ends" })}><span>${first}</span><span>${last}</span></div>`
+                  : html`<div class=${chartAxis()}><span>${first}</span><span>${last}</span></div>`
               }
             </div>`
       }

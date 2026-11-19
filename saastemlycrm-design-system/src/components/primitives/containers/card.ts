@@ -49,13 +49,13 @@ export const card = rcva("card [&_p]:grow-0", {
 
 export const cardBody = rcva("card-body");
 /** The header row: the heading (and count) at the start, the trailing items at the end. */
-export const cardHeader = rcva("flex flex-wrap items-center justify-between gap-x-3 gap-y-1");
+export const cardHeader = rcva("flex max-w-full flex-wrap items-center justify-between gap-x-3 gap-y-1");
 export const cardHeadingGroup = rcva("flex min-w-0 items-center gap-2");
 /** The title: tight, and clear of the link arrow on link cards. */
 export const cardTitle = rcva("card-title leading-snug tracking-tight", {
   variants: { link: { true: "pe-6" } },
 });
-export const cardTrailing = rcva("flex flex-wrap items-center gap-2");
+export const cardTrailing = rcva("flex max-w-full flex-wrap items-center gap-2");
 export const cardSubhead = rcva("text-body-md text-on-surface-variant");
 /** A link card's arrow: hidden until the card is hovered or focused, then slides in. */
 export const cardLinkIcon = rcva(

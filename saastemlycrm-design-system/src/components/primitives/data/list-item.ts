@@ -57,8 +57,12 @@ export const listItemSupporting = rcva("text-body-md text-on-surface-variant", {
   variants: { lines: { "1": "line-clamp-1", "2": "line-clamp-2", "3": "line-clamp-3" } },
   defaultVariants: { lines: "2" },
 });
-export const listItemExtra = rcva("mt-1 flex flex-wrap items-center gap-1");
-export const listItemTrailing = rcva("flex shrink-0 items-center gap-2 self-center");
+export const listItemExtra = rcva("mt-1 flex max-w-full flex-wrap items-center gap-1");
+/**
+ * The trailing slot is smaller than the content (M3 Lists: leading and trailing "must be a smaller
+ * width than the content section"): at most 40% of the row; what doesn't fit wraps inside it.
+ */
+export const listItemTrailing = rcva("flex min-w-0 max-w-[40%] flex-wrap items-center justify-end gap-2 self-center");
 
 export type ListVariants = VariantProps<typeof list>;
 export type ListItemLines = "1" | "2" | "3";

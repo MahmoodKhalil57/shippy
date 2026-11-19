@@ -182,7 +182,7 @@ describe("case tabs", () => {
     expect(text(landed)).toMatch(/Landed · EGP/);
     const useSplit = blocks({ blocks: [helmet] })
       .find((b) => b.type === "actions")
-      .items.find((a: Json) => a.label.startsWith("Use split"));
+      .items.find((a: Json) => a.label === "Use suggested split");
     const values = Object.fromEntries(
       useSplit.fields.filter((f: Json) => f.name !== "reason").map((f: Json) => [f.name, f.defaultValue]),
     );
