@@ -26,7 +26,7 @@ import "../../components/index.ts";
 type Item =
   | { kind: "user"; text: string }
   | { kind: "assistant"; text: string; sources: Source[]; rating: MessageRating }
-  | { kind: "thinking"; started: number; seconds?: number }
+  | { kind: "thinking"; started: number; seconds?: number; notes?: string[] }
   | {
       kind: "tool";
       title: string;
@@ -229,10 +229,24 @@ export class DashboardAgent extends LightElement {
     const i = this.items.findLastIndex((x) => x.kind === "thinking" && x.seconds == null);
     if (i < 0) return;
     const t = this.items[i] as Extract<Item, { kind: "thinking" }>;
+    // Nothing was decided (the answer came straight from a tool): no line to show.
+    if (!t.notes?.length) {
+      this.items = this.items.filter((_, j) => j !== i);
+      return;
+    }
     this.#replace(i, { ...t, seconds: Math.max(1, Math.round((Date.now() - t.started) / 1000)) });
   }
 
   private _onEvent = (e: CodexEvent) => {
+    if (e.type === "thought") {
+      // Goes with the thinking line it explains (the latest one).
+      const i = this.items.findLastIndex((x) => x.kind === "thinking");
+      if (i >= 0) {
+        const t = this.items[i] as Extract<Item, { kind: "thinking" }>;
+        this.#replace(i, { ...t, notes: [...(t.notes ?? []), e.text] });
+      }
+      return;
+    }
     if (e.type === "status") {
       const last = this.items.at(-1);
       if (last?.kind === "progress") this.#replace(this.items.length - 1, { kind: "progress", text: e.text });
@@ -340,7 +354,8 @@ export class DashboardAgent extends LightElement {
           icon="thinking"
           status=${item.seconds == null ? "running" : "done"}
           .label=${item.seconds == null ? "Thinking…" : `Thought for ${item.seconds} s`}
-        ></ui-trace-line>`;
+          >${item.notes?.length ? html`<ui-markdown .text=${item.notes.join("\n\n")}></ui-markdown>` : nothing}</ui-trace-line
+        >`;
       case "progress":
         return html`<ui-trace-line icon="device" status="running" .label=${item.text}></ui-trace-line>`;
       case "tool":

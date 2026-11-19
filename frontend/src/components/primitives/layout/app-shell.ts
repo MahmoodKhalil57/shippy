@@ -22,6 +22,7 @@ import { cssLuminance, lumaOf, sampleBehind, type Luma, type Rect } from "./legi
  * states, never moving), then the open list or, closed, its rail — the same menu, icons only.
  * - start (navigation): `slot="nav"` (`<ui-menu layout="nav">`) / `slot="rail"` (`layout="rail"`)
  * - end (side panel): `slot="aside"` / `slot="aside-rail"`, likewise
+ * - under the main panel: `slot="footer"`, one centred line (e.g. a credit)
  *
  * Motion is CSS only (`nav-open` / `aside-open` flip) on Material Design 3 expressive springs
  * (src/styles/motion.css), in two back-to-back steps (the second starts as the first settles,
@@ -202,8 +203,17 @@ export const appShellMain = rcva(
    * (container units, container queries), not to the window. Its scrollbar stays inside the
    * rounded corners (`--scrollbar-inset`, src/index.css).
    */
-  "@container/main min-w-[13.5rem] flex-1 overflow-y-auto overscroll-contain rounded-(--main-radius) liquid-glass-surface [--main-radius:clamp(1rem,3vw,2rem)] [--scrollbar-inset:var(--main-radius)]",
+  "@container/main min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-(--main-radius) liquid-glass-surface [--main-radius:clamp(1rem,3vw,2rem)] [--scrollbar-inset:var(--main-radius)]",
 );
+
+/** The main panel with its footer under it; takes the room the columns leave. */
+export const appShellCenter = rcva("flex min-w-[13.5rem] flex-1 flex-col gap-1");
+
+/**
+ * The page's footer (`slot="footer"`): one centred line under the main panel, on the frame
+ * (e.g. a credit). Part of what the scrim keeps readable.
+ */
+export const appShellPageFooter = rcva("shrink-0 text-center text-xs leading-4 -mb-1");
 
 /**
  * A column's toggle: centred on its icon axis (where the rail's icons are centred, 2px inside
@@ -344,7 +354,7 @@ export class UiAppShell extends LightElement {
     // Two frames: the first paint happens with transitions off, then they come on.
     requestAnimationFrame(() => requestAnimationFrame(() => (this._settling = false)));
     for (const el of this.querySelectorAll(
-      ":scope > div > header, :scope > div > div > nav, :scope > div > div > aside",
+      ":scope > div > header, :scope > div > div > nav, :scope > div > div > aside, :scope > div > div > div > footer",
     )) {
       this.#regions.observe(el);
       // What's drawn over the image changes too (a group opens, a notification arrives).
@@ -412,7 +422,11 @@ export class UiAppShell extends LightElement {
     // The shell's own colour and background are the theme's base-content and base-200.
     const css = getComputedStyle(shell);
     this.#scrim = { ink: cssLuminance(css.color), surface: cssLuminance(css.backgroundColor) };
-    const regions = [...shell.querySelectorAll(":scope > header, :scope > div > nav, :scope > div > aside")];
+    const regions = [
+      ...shell.querySelectorAll(
+        ":scope > header, :scope > div > nav, :scope > div > aside, :scope > div > div > footer",
+      ),
+    ];
     const fails = (alpha: number) => {
       this.#scrim.alpha = alpha;
       return regions.some((r) => auditContrast(r).some((i) => i.overImage));
@@ -643,7 +657,10 @@ export class UiAppShell extends LightElement {
         >
           ${this._panel("start", this.navOpen, this._navSheet, this.navLabel, () => this.toggleNav(), "nav", "rail")}
         </nav>
-        <main class=${appShellMain()}>${this.slotted()}</main>
+        <div class=${appShellCenter()}>
+          <main class=${appShellMain()}>${this.slotted()}</main>
+          ${this.hasSlotted("footer") ? html`<footer class=${appShellPageFooter()}>${this.slotted("footer")}</footer>` : nothing}
+        </div>
         <aside
           class=${appShellColumn({ side: "end", push: this.asideOpen && !this._asideSheet })}
           aria-label=${this.asideLabel}

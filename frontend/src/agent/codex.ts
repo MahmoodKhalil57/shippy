@@ -85,6 +85,12 @@ ${message}`
 const NAVIGATE =
   /^\s*(?:please\s+)?(?:go(?:\s+back)?\s+to|open(?:\s+up)?|take\s+me\s+to|navigate\s+to|bring\s+up)\s+(?:the\s+)?(.+?)(?:\s+page|\s+screen)?\s*[.!?]*\s*$/i;
 const HOME = /^\s*(?:take\s+me\s+|go\s+)?home\s*[.!?]*$/i;
+/** "where are the invoices", "where is GS-RFQ-0142": open it when it's a page or a record. */
+const WHERE = /^\s*where\s+(?:is|are|can\s+i\s+find)\s+(?:the\s+|my\s+)?(.+?)\s*[?.!]*$/i;
+
+/** A step's decision in words, with the model's own output. */
+const decided = (what: string, raw?: string) =>
+  raw ? `${what}\n\n**Model output**\n\`\`\`\n${raw.slice(0, 1500)}\n\`\`\`` : what;
 
 /**
  * Requests a small model gets wrong more often than not, sent straight to the right tool; its
@@ -168,7 +174,9 @@ export type CodexEvent =
     }
   | { type: "text"; text: string }
   /** Progress that isn't a tool (e.g. the on-device model downloading). */
-  | { type: "status"; text: string };
+  | { type: "status"; text: string }
+  /** What the model decided at this step (shown when its "Thought for N s" line is opened). */
+  | { type: "thought"; text: string };
 
 export interface TurnOptions {
   /** Model id (default: index.html's openai-model). */
@@ -263,6 +271,22 @@ export class CodexConversation {
         .join("")
         .trim();
       const calls = output.filter((o): o is FunctionCall => o.type === "function_call");
+      const reasoning = output
+        .filter((o) => o.type === "reasoning")
+        .flatMap((o) => (o as { summary?: { text?: string }[] }).summary ?? [])
+        .map((s) => s.text ?? "")
+        .join("\n\n");
+      options.onEvent({
+        type: "thought",
+        text: [
+          reasoning,
+          calls.length
+            ? `Decided to use ${calls.map((c) => `**${agentTools().find((t) => t.name === c.name)?.title ?? c.name}** with ${c.arguments}`).join(", ")}.`
+            : "Decided to answer.",
+        ]
+          .filter(Boolean)
+          .join("\n\n"),
+      });
       if (!calls.length) return text;
       if (text) options.onEvent({ type: "text", text });
       input = [];
@@ -285,8 +309,9 @@ export class CodexConversation {
   /** A turn on the on-device model: it replies with a tool call or an answer, step by step. */
   async #browserTurn(message: string, options: TurnOptions): Promise<string> {
     // Plain navigation needs no model: open the page the person named, straight away.
-    const page = HOME.test(message) ? "home" : NAVIGATE.exec(message)?.[1];
+    const page = HOME.test(message) ? "home" : (NAVIGATE.exec(message)?.[1] ?? WHERE.exec(message)?.[1]);
     if (page) {
+      options.onEvent({ type: "thought", text: "A request to open a page: opened it directly, without the model." });
       const result = await this.#runTool("open_page", { page }, options);
       if (!result.startsWith("Error:")) return result.replace(/^Opened: /, "Opened ");
     }
@@ -294,6 +319,11 @@ export class CodexConversation {
     for (const route of ROUTES) {
       const m = route.pattern.exec(message);
       if (!m || !simpleTools().some((t) => t.name === route.tool)) continue;
+      const tool = simpleTools().find((t) => t.name === route.tool)!;
+      options.onEvent({
+        type: "thought",
+        text: `A common request: answered with **${tool.title ?? tool.name}** directly, from the records, without the model.`,
+      });
       const result = await this.#runTool(route.tool, route.input(m, message), options);
       if (!result.startsWith("Error:")) return result;
     }
@@ -312,6 +342,18 @@ export class CodexConversation {
         tools: simpleTools(),
         onStatus: (text) => options.onEvent({ type: "status", text }),
         signal: options.signal,
+      });
+      const toolTitle = (name: string) => simpleTools().find((t) => t.name === name)?.title ?? name;
+      options.onEvent({
+        type: "thought",
+        text: decided(
+          next.action === "tool"
+            ? `Decided to use **${toolTitle(next.tool)}**${Object.keys(next.arguments).length ? ` with ${JSON.stringify(next.arguments)}` : ""}.`
+            : usedTool
+              ? "Decided to answer."
+              : "Answered without checking any records, so the answer comes from Ask Golden Sea instead.",
+          next.raw,
+        ),
       });
       // A small model answering from nothing makes things up: answer from the records instead.
       if (next.action === "answer") return usedTool ? next.answer : grounded(next.answer);

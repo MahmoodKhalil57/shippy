@@ -62,9 +62,13 @@ const LANGUAGES = {
 const PREDICTABLE = { samplingMode: "most-predictable" };
 
 /** One step's reply: call a tool, or answer the person. */
-export type BrowserStep =
+export type BrowserStep = (
   | { action: "tool"; tool: string; arguments: Record<string, unknown>; callId?: string }
-  | { action: "answer"; answer: string };
+  | { action: "answer"; answer: string }
+) & {
+  /** What the model actually returned, for "Thought for N s" to show. */
+  raw?: string;
+};
 
 /** What goes to the model next: the person's message, or the result of the tool it called. */
 export type BrowserInput =
@@ -271,7 +275,8 @@ export class BrowserModelChat {
       message = [{ role: "user", content: [{ type: "tool-response", value }] }];
     }
     const reply = await session.prompt(message, { signal });
-    if (typeof reply === "string") return { action: "answer", answer: reply.trim() || "…" };
+    if (typeof reply === "string") return { action: "answer", answer: reply.trim() || "…", raw: reply };
+    const raw = JSON.stringify(reply, null, 1);
     const call = reply.find((c) => c.type === "tool-call")?.value as
       | { callId?: string; name?: string; arguments?: unknown }
       | undefined;
@@ -289,6 +294,7 @@ export class BrowserModelChat {
         tool: call.name,
         callId: call.callId,
         arguments: args && typeof args === "object" ? (args as Record<string, unknown>) : {},
+        raw,
       };
     }
     const text = reply
@@ -296,7 +302,7 @@ export class BrowserModelChat {
       .map((c) => String(c.value))
       .join("")
       .trim();
-    return { action: "answer", answer: text || "…" };
+    return { action: "answer", answer: text || "…", raw };
   }
 
   async #jsonStep(
@@ -329,9 +335,9 @@ export class BrowserModelChat {
     if (reply.action === "tool" && reply.tool) {
       const args =
         reply.arguments && typeof reply.arguments === "object" ? (reply.arguments as Record<string, unknown>) : {};
-      return { action: "tool", tool: reply.tool, arguments: args };
+      return { action: "tool", tool: reply.tool, arguments: args, raw: rawText };
     }
-    return { action: "answer", answer: reply.answer?.trim() || "…" };
+    return { action: "answer", answer: reply.answer?.trim() || "…", raw: rawText };
   }
 
   /** Forget the conversation (the prepared session stays, so the next one starts at once). */

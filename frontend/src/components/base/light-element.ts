@@ -41,7 +41,9 @@ export class LightElement extends LitElement {
 
   /** True when the author put any non-whitespace children inside the tag. */
   protected get hasContent() {
-    return this.slottedNodes().some((n) => n.nodeType !== Node.TEXT_NODE || n.textContent?.trim());
+    return this.slottedNodes().some(
+      (n) => n.nodeType === Node.ELEMENT_NODE || (n.nodeType === Node.TEXT_NODE && n.textContent?.trim()),
+    );
   }
 
   /** Authored children whose `slot` attribute is `name` (or, without a name, have none). */
