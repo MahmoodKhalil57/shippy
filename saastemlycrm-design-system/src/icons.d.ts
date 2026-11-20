@@ -2,6 +2,7 @@
 declare module "~icons/*" {
   import type { SVGTemplateResult } from "lit";
   /** `body(uid)`: the icon's markup; its internal ids are prefixed with `uid` (unique per copy). */
-  const icon: { viewBox: string; body: (uid: string) => SVGTemplateResult };
+  /** `animated`: it has SMIL animations, which `iconSvg` holds and paces (src/components/base/icon-motion.ts). */
+  const icon: { viewBox: string; animated: boolean; body: (uid: string) => SVGTemplateResult };
   export default icon;
 }

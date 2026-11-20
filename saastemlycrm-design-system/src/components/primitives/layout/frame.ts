@@ -602,6 +602,9 @@ export class UiFrameColumn extends LightElement {
   }
 }
 
+/** The motion tokens' values, read once each (they never change while the page runs). */
+const motionTokens = new Map<string, string>();
+
 /** How far a page slides as it enters (M3's shared axis: 30dp). */
 const SLIDE = 30;
 
@@ -619,10 +622,16 @@ export class UiFrameMain extends LightElement {
   pageTransition(kind: PageTransition) {
     const page = this.querySelector("main > div");
     if (!(page instanceof HTMLElement)) return;
-    const css = getComputedStyle(this);
-    const token = (name: string) => css.getPropertyValue(name).trim();
+    // The motion tokens are read once: reading styles here, just after the new page went in, made
+    // the browser restyle the whole page on the spot at every navigation.
+    const token = (name: string) => {
+      let v = motionTokens.get(name);
+      if (v === undefined)
+        motionTokens.set(name, (v = getComputedStyle(document.documentElement).getPropertyValue(name).trim()));
+      return v;
+    };
     const ms = (name: string) => Number.parseFloat(token(name)) || 0;
-    const rtl = css.direction === "rtl" ? -1 : 1;
+    const rtl = (this.closest("[dir]")?.getAttribute("dir") ?? document.dir) === "rtl" ? -1 : 1;
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const from = (x: number) => `${x * rtl}px 0`;
     const [keyframes, options]: [Keyframe[], KeyframeAnimationOptions] = reduce

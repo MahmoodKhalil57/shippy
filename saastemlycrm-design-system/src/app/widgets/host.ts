@@ -1,4 +1,6 @@
 import { html, nothing } from "lit";
+import { drawInTurn } from "./paint-queue.ts";
+import { yieldToMain } from "../../components/base/work-queue.ts";
 import { customElement, property, state } from "lit/decorators.js";
 import { api } from "../../api/client.ts";
 import type { Doc, FieldLike } from "../../contracts/config.ts";
@@ -164,7 +166,7 @@ export class AppWidgets extends LightElement {
   async refresh() {
     this.reload();
     // Widgets ask for their data as they update, in microtasks: a task later every request is out.
-    await new Promise((asked) => setTimeout(asked));
+    await yieldToMain();
     await Promise.allSettled(this.#cache.values());
   }
 
@@ -366,7 +368,12 @@ export class AppWidgets extends LightElement {
 
   protected willUpdate(changed: Map<PropertyKey, unknown>) {
     // Another page: the sizes its widgets told the board belong to the old one.
-    if (changed.has("page") && changed.get("page") !== undefined) this.sizes = new Map();
+    if (changed.has("page") && changed.get("page") !== undefined) {
+      this.sizes = new Map();
+      // Another page's header is never shown on this one: it loads afresh (a skeleton meanwhile).
+      this.header = null;
+      this.#headerFor = -1;
+    }
     const h = this.page.header;
     if (!h || !("render" in h)) this.header = h ?? null;
     else if (!h.source) this.header = h.render(null, this.scope);
@@ -394,6 +401,7 @@ export class AppWidgets extends LightElement {
           .widget=${expand(w, this.scope)}
           .host=${this}
           .version=${this.version}
+          .memory=${`${this.#boardKey}|${key}`}
           .report=${(s: TileSize | null) => this.#report(key, s)}
         ></app-widget>`,
       });
@@ -506,7 +514,12 @@ export class AppWidgets extends LightElement {
 
   #header() {
     const h = this.docId ? null : this.header;
-    if (!h) return nothing;
+    if (!h) {
+      // A header still loading takes its place as a skeleton of its height, so the board under it
+      // doesn't drop when the words arrive.
+      const loading = !this.docId && !!this.page.header && "render" in this.page.header && !!this.page.header.source;
+      return loading ? html`<ui-page-header loading></ui-page-header>` : nothing;
+    }
     return html`<ui-page-header .heading=${h.heading} .eyebrow=${h.eyebrow ?? ""} .subtitle=${h.subtitle ?? ""}>
       ${h.tags?.length ? html`<ui-flex slot="status" gap="2" wrap>${h.tags.map(tag)}</ui-flex>` : nothing}
       ${
@@ -588,6 +601,12 @@ export function arrangeMenu(a: TileArrange | undefined, title: string) {
   >`;
 }
 
+/**
+ * Each tile's height when it last showed, by screen and tile (this session): a skeleton waits at it,
+ * so coming back to a screen moves nothing when the data arrives.
+ */
+const tileHeights = new Map<string, number>();
+
 /** One widget: loads its data, shows a skeleton meanwhile, then its blocks (in a card when it has a title). */
 @customElement("app-widget")
 export class AppWidget extends LightElement {
@@ -598,6 +617,8 @@ export class AppWidget extends LightElement {
   @property({ attribute: false }) report?: (size: TileSize | null) => void;
   /** Its tile's layout menu (set by `<app-arrange>`). */
   @property({ attribute: false }) arrange?: TileArrange;
+  /** Where its tile's last height is kept (the screen and the tile): its skeleton waits at it. */
+  @property({ attribute: false }) memory = "";
   @state() private state: "loading" | "ready" | "denied" | "error" = "loading";
   #size: TileSize | null | undefined;
   @state() private data: unknown = null;
@@ -622,8 +643,18 @@ export class AppWidget extends LightElement {
     try {
       const data = await this.host.fetch(source);
       if (version !== this.version) return;
-      this.data = data;
-      this.state = "ready";
+      const show = () => {
+        this.data = data;
+        this.state = "ready";
+      };
+      // A first load waits its turn, top of the page first (./paint-queue.ts); a refresh shows at once.
+      if (this.state === "loading")
+        drawInTurn(this, async () => {
+          if (version !== this.version || this.state !== "loading") return;
+          show();
+          await this.updateComplete;
+        });
+      else show();
     } catch (e) {
       if (version !== this.version) return;
       this.state = (e as { status?: number }).status === 403 ? "denied" : "error";
@@ -681,6 +712,12 @@ export class AppWidget extends LightElement {
       .emphasis=${w.title ? w.emphasis : undefined}
       ?loading=${this.state === "loading"}
       ?bare=${!w.title}
+      .kind=${w.skeleton}
+      .waitHeight=${tileHeights.get(this.memory)}
+      @ui-tile-height=${(e: CustomEvent<{ height: number }>) => {
+        e.stopPropagation();
+        if (this.memory) tileHeights.set(this.memory, e.detail.height);
+      }}
       >${trailing} ${body}</ui-tile
     >`;
   }

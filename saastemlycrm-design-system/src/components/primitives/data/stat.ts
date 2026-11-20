@@ -70,6 +70,14 @@ export const statValue = rcva(`${text.label} grow tabular-nums`, {
 /** The delta chip and the note, on one line when both fit. */
 export const statMeta = rcva(`${row} items-center gap-x-2 gap-y-1`);
 export const statDelta = rcva("tabular-nums");
+/**
+ * The chip's words with the arrow inline before them, joined to the first word by a word joiner
+ * (U+2060: no line break on either side), so the arrow never sits on a line of its own; the rest of
+ * the words wrap after it like any text.
+ */
+/** U+2060: forbids a line break on either side of it. */
+const WORD_JOINER = String.fromCharCode(0x2060);
+export const statDeltaText = rcva(`${text.label} [&>svg]:inline [&>svg]:me-1 [&>svg]:align-[-0.125em]`);
 export const statNote = rcva(`${text.label} ${rowFill} line-clamp-2 text-body-sm text-on-surface-variant`);
 /** The sparkline's column (the trend slot), at the end of the figure's line. */
 export const statTrend = rcva(`${fixedWidth["16"]} ms-auto`);
@@ -114,7 +122,9 @@ export class UiStat extends LightElement {
   render() {
     const chip = this.delta
       ? html`<span class=${tag({ tone: this.deltaTone, class: statDelta() })}
-          >${iconSvg(DELTA_ICON[this.deltaDir], { size: "xs" }, { label: DELTA_WORD[this.deltaDir] })}${this.delta}</span
+          ><span class=${statDeltaText()}
+            >${iconSvg(DELTA_ICON[this.deltaDir], { size: "xs" }, { label: DELTA_WORD[this.deltaDir] })}${WORD_JOINER}${this.delta}</span
+          ></span
         >`
       : nothing;
     const body = html`<div class=${cardBody({ class: statBody() })}>

@@ -228,7 +228,10 @@ export class DashboardAside extends LightElement {
         {
           card: true,
           label: here ? "Remove this page" : "Bookmark this page",
-          description: here ? "Take it off your bookmarks" : this.pageTitle || undefined,
+          // Always a second line, so the row keeps its height while a new page's title is on its way
+          // (without one, every row under it jumped on each navigation).
+          description: here ? "Take it off your bookmarks" : this.pageTitle || "Keep it one click away",
+          oneLine: true,
           value: BOOKMARK_THIS,
         },
         ...marks.map((b) => ({

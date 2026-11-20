@@ -31,7 +31,10 @@ export default function icons() {
         ids.forEach((id, i) => {
           body = body.replaceAll(`id="${id}"`, `id="\${uid}-${i}"`).replaceAll(`#${id}`, `#\${uid}-${i}`);
         });
-        return `import { svg } from "lit";\nexport default { viewBox: ${JSON.stringify(viewBox)}, body: (uid) => svg\`${body}\` };\n`;
+        // Animated (SMIL `<animate>`, `<animateTransform>`, `<set>`): `iconSvg` holds and paces these
+        // (src/components/base/icon-motion.ts) rather than letting every copy start at once.
+        const animated = /<(animate|animateTransform|animateMotion|set)\b/.test(svg);
+        return `import { svg } from "lit";\nexport default { viewBox: ${JSON.stringify(viewBox)}, animated: ${animated}, body: (uid) => svg\`${body}\` };\n`;
       },
     },
   });

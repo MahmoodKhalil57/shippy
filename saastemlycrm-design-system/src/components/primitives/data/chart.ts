@@ -111,18 +111,20 @@ export const chartBand = rcva("fill-current stroke-none opacity-40", { variants:
 export const chartBars = rcva(`${row} absolute inset-0 items-end gap-0.5`);
 export const chartBarSlot = rcva(`${row} h-full min-w-0 flex-1 items-end justify-center gap-0.5`);
 /**
- * Bars grow from the baseline as they enter and when their value changes, one after the other
- * from the start of the axis (`--d`: 0 for the first to 1 for the last); not with Reduce motion.
+ * Bars grow from the baseline as they enter, one after the other from the start of the axis (`--d`:
+ * 0 for the first to 1 for the last); not with Reduce motion. They grow by `scale` (drawn by the
+ * compositor), never by `height`, which would lay out the whole page again on every frame.
  */
-export const chartBar = rcva(
-  "h-(--bar) max-w-12 min-w-0 flex-1 rounded-t-sm bg-current [transition:height_var(--duration-long2)_var(--ease-emphasized-decelerate)_calc(var(--d)*var(--duration-short4)),color_var(--duration-effects)_var(--ease-effects)] motion-reduce:transition-none starting:h-0",
-  { variants: { series: SERIES } },
-);
+const GROW =
+  "origin-bottom [transition:scale_var(--duration-long2)_var(--ease-emphasized-decelerate)_calc(var(--d)*var(--duration-short4)),color_var(--duration-effects)_var(--ease-effects)] motion-reduce:transition-none starting:scale-y-0";
+export const chartBar = rcva(`h-(--bar) max-w-12 min-w-0 flex-1 rounded-t-sm bg-current ${GROW}`, {
+  variants: { series: SERIES },
+});
 /** Stacked bars: one column per x, the series' segments on top of each other (a build-up). */
-export const chartStack = rcva(`${stackReverse} h-full w-full max-w-12 min-w-0`);
+export const chartStack = rcva(`${stackReverse} h-full w-full max-w-12 min-w-0 ${GROW}`);
 export const chartSegment = rcva(
   // A 2px gap between segments, inside each one's own height: the stack still measures its sum.
-  "h-(--bar) w-full border-b-2 border-transparent bg-current bg-clip-padding first:border-b-0 [transition:height_var(--duration-long2)_var(--ease-emphasized-decelerate)_calc(var(--d)*var(--duration-short4)),color_var(--duration-effects)_var(--ease-effects)] motion-reduce:transition-none starting:h-0",
+  "h-(--bar) w-full border-b-2 border-transparent bg-current bg-clip-padding first:border-b-0 [transition:color_var(--duration-effects)_var(--ease-effects)] motion-reduce:transition-none",
   { variants: { series: SERIES, top: { true: "rounded-t-sm", false: "" } } },
 );
 /** The highlighted bar's value, over it: it ends where the bar does, and never leaves the plot. */
@@ -259,7 +261,21 @@ export class UiChart extends LightElement {
   #uid = `chart-${++charts}`;
   /** How many points are on the x axis (set by `render`, read by `_fit`). */
   #points = 0;
-  #resize = new ResizeObserver(() => this._fit());
+  /**
+   * The axis's width and the widest label's, as the ResizeObserver last reported them. Read from its
+   * entries (sizes the browser already computed in its one layout pass), never from the elements:
+   * a chart that measured itself after each render forced a layout of the whole page per chart.
+   */
+  #axisWidth = 0;
+  #labelWidth = 0;
+  #resize = new ResizeObserver((entries) => {
+    for (const e of entries) {
+      const width = e.borderBoxSize?.[0]?.inlineSize ?? e.contentRect.width;
+      if ((e.target as HTMLElement).hasAttribute("data-chart-sizer")) this.#labelWidth = width;
+      else this.#axisWidth = e.contentBoxSize?.[0]?.inlineSize ?? e.contentRect.width;
+    }
+    this._fit();
+  });
 
   disconnectedCallback() {
     super.disconnectedCallback();
@@ -274,18 +290,23 @@ export class UiChart extends LightElement {
     if (changed.has("series") && this._hidden.size >= this.series.length) this._hidden = new Set();
   }
 
+  #observed = new WeakSet<Element>();
+
   protected updated() {
-    const axis = this.querySelector<HTMLElement>("[data-chart-axis]");
-    if (axis) this.#resize.observe(axis);
+    // Observing reports each new element's size on the next frame; nothing is read here.
+    for (const el of this.querySelectorAll<HTMLElement>("[data-chart-axis], [data-chart-sizer]"))
+      if (!this.#observed.has(el)) {
+        this.#observed.add(el);
+        this.#resize.observe(el);
+      }
+    // A new number of points (another range) re-thins the labels from the sizes already known.
     this._fit();
   }
 
   /** Thins the x labels to what fits: the widest label against the room its points have. */
   private _fit() {
-    const axis = this.querySelector<HTMLElement>("[data-chart-axis]");
-    const sizer = this.querySelector<HTMLElement>("[data-chart-sizer]");
-    if (!axis || !sizer) return;
-    const step = labelStep(this.#points, this.kind === "bars", axis.clientWidth, sizer.offsetWidth);
+    if (!this.#axisWidth || !this.#labelWidth) return;
+    const step = labelStep(this.#points, this.kind === "bars", this.#axisWidth, this.#labelWidth);
     if (step !== this._step) this._step = step;
   }
 
@@ -484,12 +505,12 @@ export class UiChart extends LightElement {
         if (v.stacked) {
           const top = v.shown.findLast((s) => s.values[i]! > 0)?.k;
           return html`<div class=${chartBarSlot()}>
-            <div class=${chartStack()}>
+            <div class=${chartStack()} style=${styleMap({ "--d": String(d) })}>
               ${v.series.map(
                 (s) =>
                   html`<div
                     class=${chartSegment({ series: slot(s.k), top: s.k === top })}
-                    style=${styleMap({ "--bar": height(s.on ? s.values[i]! : 0), "--d": String(d) })}
+                    style=${styleMap({ "--bar": height(s.on ? s.values[i]! : 0) })}
                   ></div>`,
               )}
             </div>

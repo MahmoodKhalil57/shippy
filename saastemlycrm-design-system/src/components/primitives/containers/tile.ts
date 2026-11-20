@@ -1,5 +1,7 @@
+import type { VariantProps } from "class-variance-authority";
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { styleMap } from "lit/directives/style-map.js";
 import type { TileSize } from "../../base/board.ts";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
@@ -39,6 +41,19 @@ export const tile = rcva("h-full", {
       l: "[--tile-cap:40rem] [--tile-wait:18rem]",
       full: "[--tile-cap:40rem] [--tile-wait:18rem]",
     },
+    /**
+     * What's on its way, when the screen says (`skeleton` on the widget): a strip of key figures or
+     * a few lines wait at about their own height instead of the size's.
+     */
+    kind: {
+      stats: "[--tile-wait-kind:6.5rem]",
+      text: "[--tile-wait-kind:5rem]",
+      card: "",
+      table: "",
+      list: "",
+      chart: "",
+      entries: "",
+    },
   },
 });
 export const tileBody = rcva(`${stack} relative gap-3`, {
@@ -48,9 +63,16 @@ export const tileBody = rcva(`${stack} relative gap-3`, {
     faded: { true: "[mask-image:linear-gradient(to_bottom,black_calc(100%_-_3rem),transparent)]", false: "" },
   },
 });
-export const tileWait = rcva(`${stack} min-h-(--tile-wait) gap-3`);
+/** The skeleton: a line over a block that fills the wait height (so the tile waits at that height). */
+export const tileWait = rcva(`${stack} min-h-[var(--tile-wait-kind,var(--tile-wait))] gap-3`);
+export const tileWaitBlock = rcva("min-h-8 w-full grow");
 /** The tile's own content (hidden while the skeleton shows). */
-export const tileContent = rcva(`${stack} gap-3`, { variants: { hidden: { true: "hidden", false: "" } } });
+export const tileContent = rcva(
+  // The content fades in as it takes the skeleton's place (from `display: none`, so `@starting-style`
+  // applies), rather than popping in.
+  `${stack} gap-3 [transition:opacity_var(--duration-effects)_var(--ease-effects)] starting:opacity-0 motion-reduce:transition-none`,
+  { variants: { hidden: { true: "hidden", false: "" } } },
+);
 export const tileMore = rcva("self-start");
 /**
  * An emphasised tile carries its edge in its fill: the border stays, transparent, so every tile has
@@ -62,6 +84,7 @@ export const tileTitle = rcva(`${text.label} text-title-md`);
 export const tileSubhead = rcva(`${text.prose} text-body-sm text-on-surface-variant`);
 
 export type TileEmphasis = "inverse" | "tinted";
+export type TileVariants = VariantProps<typeof tile>;
 
 /**
  * @example <ui-tile size="m" heading="Line pricing" .count=${6}><ui-tag slot="trailing">Draft</ui-tag>…</ui-tile>
@@ -81,30 +104,61 @@ export class UiTile extends LightElement {
   @property({ type: Boolean }) bare = false;
   /** A contrasting surface for the tile the screen is about (none on a `bare` tile: it has no surface). */
   @property() emphasis?: TileEmphasis;
+  /** What's on its way (sets the skeleton's height when nothing better is known). */
+  @property() kind: TileVariants["kind"];
+  /**
+   * The height this tile had last time it showed here (px): the skeleton takes it, so the tiles
+   * under it don't move when the data arrives. The tile reports its height with `ui-tile-height`.
+   */
+  @property({ type: Number }) waitHeight?: number;
   @state() private _open = false;
   @state() private _over = false;
-  #resize = new ResizeObserver(() => this._measure());
+  /**
+   * The body's and the content's heights, as the ResizeObserver last reported them. Read from its
+   * entries (sizes the browser already computed in its one layout pass), never from the elements:
+   * a tile that measured itself after each render forced a layout of the whole page per tile, which
+   * made opening a screen of tiles stall for seconds.
+   */
+  #bodyHeight = 0;
+  #contentHeight = 0;
+  #resize = new ResizeObserver((entries) => {
+    for (const e of entries) {
+      const height = e.borderBoxSize?.[0]?.blockSize ?? e.contentRect.height;
+      const el = e.target as HTMLElement;
+      if (el.hasAttribute("data-tile-root")) {
+        // Its loaded height, for the next time it waits here.
+        if (!this.loading && height > 0)
+          this.dispatchEvent(new CustomEvent("ui-tile-height", { detail: { height }, bubbles: true }));
+      } else if (el.hasAttribute("data-tile-content")) this.#contentHeight = height;
+      else this.#bodyHeight = e.contentBoxSize?.[0]?.blockSize ?? e.contentRect.height;
+    }
+    this._measure();
+  });
+  #observed = new WeakSet<Element>();
 
   disconnectedCallback() {
     super.disconnectedCallback();
     this.#resize.disconnect();
+    this.#observed = new WeakSet();
   }
 
   protected updated() {
-    const body = this.querySelector<HTMLElement>("[data-tile-body]");
-    const content = this.querySelector<HTMLElement>("[data-tile-content]");
-    if (body) this.#resize.observe(body);
-    if (content) this.#resize.observe(content);
-    this._measure();
+    // Observing reports each element's size on the next frame (and again whenever it changes);
+    // nothing is read here.
+    for (const el of this.querySelectorAll<HTMLElement>(
+      ":scope [data-tile-body], :scope [data-tile-content], :scope [data-tile-root]",
+    ))
+      if (!this.#observed.has(el) && el.closest("ui-tile") === this) {
+        this.#observed.add(el);
+        this.#resize.observe(el);
+      }
   }
 
   /** Whether the body holds more than its cap (then "Show all" is offered). */
   private _measure() {
     // The content's own box against the body's: `scrollHeight` would also count what's hidden on
     // purpose (a chart's table for screen readers).
-    const body = this.querySelector<HTMLElement>("[data-tile-body]");
-    const content = this.querySelector<HTMLElement>("[data-tile-content]");
-    const over = !!body && !!content && !this._open && content.offsetHeight > body.clientHeight + 1;
+    const over = !this._open && !!this.#bodyHeight && this.#contentHeight > this.#bodyHeight + 1;
     if (over !== this._over && !this._open) this._over = over;
   }
 
@@ -116,13 +170,18 @@ export class UiTile extends LightElement {
   render() {
     const waiting = html`<div class=${tileWait()} aria-busy="true">
       <div class=${skeleton({ shape: "line" })}></div>
-      <div class=${skeleton({ shape: "block" })}></div>
+      <div class=${skeleton({ shape: null, class: tileWaitBlock() })}></div>
     </div>`;
     // The authored children are always placed (a LightElement places them from its first render,
     // or the parent's later updates land outside the template); while loading they're hidden.
     const content = html`${this.loading ? waiting : nothing}
       <div class=${tileContent({ hidden: this.loading })} data-tile-content>${this.slotted()}</div>`;
-    if (this.bare) return html`<div class=${tile({ size: this.size })}>${content}</div>`;
+    // While loading, the height it had last time here (when known) holds its place.
+    const hold = styleMap(this.loading && this.waitHeight ? { minHeight: `${this.waitHeight}px` } : {});
+    if (this.bare)
+      return html`<div class=${tile({ size: this.size, kind: this.kind })} style=${hold} data-tile-root>
+        ${content}
+      </div>`;
     const trailing = this.hasSlotted("trailing");
     const header =
       this.heading || trailing || this.count !== undefined
@@ -150,7 +209,12 @@ export class UiTile extends LightElement {
           </button>`
         : nothing;
     const surface = this.emphasis ? card({ variant: null, size: "sm", class: tileEmphasis() }) : card({ size: "sm" });
-    return html`<div class=${tile({ size: this.size, class: surface })} data-surface=${this.emphasis ?? nothing}>
+    return html`<div
+      class=${tile({ size: this.size, kind: this.kind, class: surface })}
+      style=${hold}
+      data-surface=${this.emphasis ?? nothing}
+      data-tile-root
+    >
       <div class=${cardBody()}>
         ${header} ${this.subhead ? html`<p class=${tileSubhead()}>${this.subhead}</p>` : nothing}
         <div

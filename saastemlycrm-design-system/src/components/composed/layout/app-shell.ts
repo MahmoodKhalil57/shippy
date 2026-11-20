@@ -1,3 +1,4 @@
+import { whenIdle } from "../../base/work-queue.ts";
 import { html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { cssLuminance, lumaOf, sampleBehind, type Luma, type Rect } from "../../base/legibility.ts";
@@ -157,7 +158,6 @@ export class UiAppShell extends LightElement {
   /** The scrim over the background image (`<ui-frame scrim>`). */
   @state() private _scrim = "";
   #luma: { src: string; luma: Luma } | null = null;
-  #timer: ReturnType<typeof setTimeout> | undefined;
   #regions = new ResizeObserver(() => this._measureSoon());
   #content = new MutationObserver(() => this._measureSoon());
 
@@ -179,19 +179,31 @@ export class UiAppShell extends LightElement {
       }
       this.#luma = { src, luma: lumaOf(image) };
     }
-    this._measure();
+    // A new image: measure whatever the frame shows.
+    this._measure(true);
   };
 
   #dark = matchMedia("(prefers-color-scheme: dark)");
   #themeAttrs = new MutationObserver(() => this._measureSoon());
   private _measureSoonBound = () => this._measureSoon();
 
-  /** Re-measure once things settle: measuring audits the frame's text (tens of ms), so not on every frame of a column's animation. */
+  /**
+   * Re-measure once things settle: measuring audits the frame's text (tens of ms), so not on every
+   * frame of a column's animation, and never in the way of a navigation. One background-priority
+   * run (calls before it starts share it) that first waits for the frame's own animations to end.
+   */
   private _measureSoon() {
     if (!this.#luma) return;
-    clearTimeout(this.#timer);
-    this.#timer = setTimeout(() => this._measure(), 200);
+    whenIdle(this, async () => {
+      const moving = this._regions.flatMap((r) => r.getAnimations({ subtree: true }));
+      await Promise.allSettled(moving.map((a) => a.finished));
+      if (moving.length) return this._measureSoon();
+      this._measure();
+    });
   }
+
+  /** What the last audit saw: the frame's text, its size and the theme (the scrim depends only on these). */
+  #measured = "";
 
   /**
    * The least scrim (as much of the photo as possible) at which every text drawn over the image
@@ -199,9 +211,22 @@ export class UiAppShell extends LightElement {
    * it (the text's own colour, the cards and glass under it, the image pixels behind each text),
    * found by bisection. A floor keeps a hint of the theme's surface so the frame reads as one.
    */
-  private _measure() {
+  private _measure(force = false) {
     const shell = this._root;
     if (!this.#luma || !shell) return;
+    // Navigating changes which item is highlighted, not what text sits over the image: skip the
+    // audit when the frame's text, its size and the theme are what the last one saw.
+    const root = document.documentElement;
+    const seen = [
+      innerWidth,
+      innerHeight,
+      root.dataset.theme,
+      root.dataset.scheme,
+      this.#dark.matches,
+      ...this._regions.map((r) => `${r.clientWidth}x${r.clientHeight}:${r.textContent}`),
+    ].join("|");
+    if (!force && seen === this.#measured) return;
+    this.#measured = seen;
     // The frame's own colour and background are the theme's base-content and base-200.
     const css = getComputedStyle(shell);
     this.#scrim = { ink: cssLuminance(css.color), surface: cssLuminance(css.backgroundColor) };
@@ -251,7 +276,7 @@ export class UiAppShell extends LightElement {
   /** The theme or colour scheme changed (a theme controller in the header): re-measure once it's applied. */
   private _onThemeChange = (e: Event) => {
     if ((e.target as Element | null)?.tagName !== "UI-APPEARANCE") return;
-    setTimeout(() => this._measureSoon(), 50);
+    this._measureSoon();
   };
 
   /**
@@ -404,7 +429,6 @@ export class UiAppShell extends LightElement {
     this.#resize.disconnect();
     this.#regions.disconnect();
     this.#content.disconnect();
-    clearTimeout(this.#timer);
   }
 
   render() {

@@ -185,9 +185,13 @@ export const menuRailHeading = rcva(`invisible block ${text.line}`);
 /** A card item's parts: title row (title + badge), and the description under it. */
 export const menuCardHead = rcva(`${row} items-start gap-2`);
 export const menuCardTitle = rcva("min-w-0 flex-1 text-label-lg leading-snug [overflow-wrap:break-word]");
-export const menuCardDescription = rcva(
-  `${text.label} text-body-sm leading-snug text-on-surface-variant [.menu-active_&]:text-on-surface`,
-);
+export const menuCardDescription = rcva("leading-snug text-on-surface-variant [.menu-active_&]:text-on-surface", {
+  variants: {
+    /** `one`: always one line (cut with "…"), for a row whose height mustn't change with its text. */
+    lines: { wrap: `${text.label} text-body-sm`, one: `${text.line} text-body-sm` },
+  },
+  defaultVariants: { lines: "wrap" },
+});
 export const menuCardBody = rcva(
   `${stack} gap-0.5 [opacity:calc(1_-_var(--menu-collapse,0))] [transition:opacity_var(--duration-effects-fast)_var(--ease-effects-fast)] motion-reduce:transition-none`,
 );
@@ -238,6 +242,8 @@ export interface MenuItem {
   card?: boolean;
   /** A card's second line (e.g. a notification's detail, a tour's summary). */
   description?: Renderable;
+  /** Keep the description to one line (cut with "…"): the row's height never changes with it. */
+  oneLine?: boolean;
   /** Trailing badge text, rendered as `badge badge-xs`. */
   badge?: Renderable;
   badgeColor?: MenuBadgeVariants["color"];
@@ -372,7 +378,7 @@ export class UiMenu extends LightElement {
           <span class=${menuCardTitle()}>${item.label ?? nothing}</span>
           ${item.badge != null ? html`<span class=${menuBadge({ color: item.badgeColor, card: true })}>${item.badge}</span>` : nothing}
         </span>
-        ${item.description != null ? html`<span class=${menuCardDescription()}>${item.description}</span>` : nothing}
+        ${item.description != null ? html`<span class=${menuCardDescription({ lines: item.oneLine ? "one" : "wrap" })}>${item.description}</span>` : nothing}
       </span>`;
     }
     const text = this.iconOnly && item.icon ? nothing : (item.label ?? nothing);

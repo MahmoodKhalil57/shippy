@@ -4,6 +4,7 @@ import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { row, stack, text } from "./algebra.ts";
 import { heading } from "../typography/heading.ts";
+import { skeleton } from "../feedback/skeleton.ts";
 
 /**
  * Page header: the top of a page — where you are, what the page is, one line about it, and the
@@ -37,6 +38,14 @@ export const pageHeaderTitle = rcva(`${row} min-w-0 grow items-center gap-x-3 ga
 export const pageHeaderEyebrow = rcva("text-label-md text-on-surface-variant");
 export const pageHeaderSubtitle = rcva(`${text.prose} max-w-[80ch] text-body-md text-on-surface-variant`);
 export const pageHeaderActions = rcva(`${row} items-center gap-2`);
+/**
+ * A loading line: a skeleton the height of the text it stands for (a no-break space in that text's
+ * own role), so the header takes its real height before its words arrive and nothing under it
+ * moves when they do.
+ */
+/** A line's height in its text role, with nothing to read (U+00A0). */
+const NO_BREAK_SPACE = String.fromCharCode(0xa0);
+export const pageHeaderPlaceholder = rcva("inline-block rounded-sm align-middle");
 
 /**
  * @example
@@ -55,8 +64,22 @@ export class UiPageHeader extends LightElement {
   @property() heading: Renderable = "";
   @property() eyebrow: Renderable = "";
   @property() subtitle: Renderable = "";
+  /** The header's words are on their way: draw its lines as skeletons of their real heights. */
+  @property({ type: Boolean }) loading = false;
 
   render() {
+    if (this.loading) {
+      const line = (width: "20" | "32" | "52" | "full") =>
+        html`<span class=${skeleton({ shape: null, width, class: pageHeaderPlaceholder() })}>${NO_BREAK_SPACE}</span>`;
+      return html`<header class=${pageHeader()} aria-busy="true">
+        <p class=${pageHeaderEyebrow()}>${line("32")}</p>
+        <div class=${pageHeaderTitleRow()}>
+          <h1 class=${heading({ variant: "page" })}>${line("52")}</h1>
+        </div>
+        <p class=${pageHeaderSubtitle()}>${line("full")}</p>
+        ${this.slotted()}
+      </header>`;
+    }
     const title = this.hasSlotted("heading") ? this.slotted("heading") : this.heading;
     const eyebrow = this.hasSlotted("eyebrow") ? this.slotted("eyebrow") : this.eyebrow;
     const subtitle = this.hasSlotted("subtitle") ? this.slotted("subtitle") : this.subtitle;

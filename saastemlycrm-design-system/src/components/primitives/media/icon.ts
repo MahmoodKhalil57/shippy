@@ -5,6 +5,8 @@ import type { VariantProps } from "class-variance-authority";
 import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { ref } from "lit/directives/ref.js";
+import { holdIcon } from "../../base/icon-motion.ts";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { inlineRow } from "../layout/algebra.ts";
@@ -249,7 +251,7 @@ export type { IconName };
 let iconCopies = 0;
 
 export function iconSvg(name: IconName, variants: IconVariants = {}, opts: { label?: string; class?: string } = {}) {
-  const { viewBox, body } = ICONS[name];
+  const { viewBox, body, animated } = ICONS[name];
   const uid = `icon-${++iconCopies}`; // unique ids inside this copy (see plugins/icons.ts)
   return html`<svg
     class=${opts.class ?? icon(variants)}
@@ -258,6 +260,7 @@ export function iconSvg(name: IconName, variants: IconVariants = {}, opts: { lab
     role=${opts.label ? "img" : nothing}
     aria-label=${ifDefined(opts.label)}
     aria-hidden=${opts.label ? nothing : "true"}
+    ${animated ? ref(holdIcon) : nothing}
   >
     ${body(uid)}
   </svg>`;

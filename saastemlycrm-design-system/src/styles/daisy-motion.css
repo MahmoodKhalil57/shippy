@@ -347,11 +347,23 @@
           visibility var(--duration-short3) allow-discrete;
       }
 
-      /* Skeletons: M3's subtle pulse, sweeping from the top left to the bottom right. */
+      /* Skeletons: M3's subtle pulse, as an opacity animation the compositor draws. daisyUI's own
+         sweeps its gradient's background-position, which restyles and repaints on the main thread
+         every frame while any skeleton shows (a screen of loading tiles stalled navigation). */
       .skeleton {
-        animation: skeleton calc(var(--duration-extra-long4) * 2) var(--ease-standard) infinite;
+        animation: skeleton-pulse calc(var(--duration-extra-long4) * 2) var(--ease-standard) infinite;
       }
     }
+  }
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
   }
 }
 
