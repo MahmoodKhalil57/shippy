@@ -31,6 +31,8 @@ export interface MockBackendOptions {
   seed: string;
   /** More folders whose edits change what the worker serves (the config's and seed's folders always do). */
   watch?: string[];
+  /** A legal banner kept at the top of the built worker (the app passes its own, naming no business here). */
+  banner?: string;
 }
 
 /** `virtual:mock-backend`: the config and seed the worker serves (absolute paths). */
@@ -116,6 +118,12 @@ export default function mockBackend(options: MockBackendOptions): Plugin[] {
             outDir: config.build.outDir,
             emptyOutDir: false,
             copyPublicDir: false,
+            // This sub-build takes no config file, so it inherits nothing: set the production
+            // hardening here too. oxc minifies and mangles identifiers and tree-shakes; the app's
+            // legal banner is kept on top of the worker, which ships the whole engine and config.
+            minify: "oxc",
+            // `postBanner` is kept after minification (plain `banner` is minified away).
+            rollupOptions: options.banner ? { output: { postBanner: options.banner } } : undefined,
             lib: {
               entry: SW_ENTRY,
               formats: ["iife"],

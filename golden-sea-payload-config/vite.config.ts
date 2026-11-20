@@ -16,6 +16,18 @@ const branding = JSON.parse(readFileSync(new URL("./src/seed/globals/branding.js
 };
 const escapeHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
 
+/**
+ * A legal notice kept at the top of every built script. The bundle is minified (names mangled,
+ * dead code dropped), so the source is never shipped; this is the matching legal discouragement.
+ * A minifier strips ordinary comments, but a bundler banner is prepended after minifying, so it
+ * survives on every chunk. The app build and the service worker both carry it.
+ */
+const owner = branding.name ?? "This application";
+const license =
+  `/*! ${owner} — © ${new Date().getFullYear()}. All rights reserved. Proprietary.\n` +
+  ` * This is a minified build delivered only to run the application in your browser.\n` +
+  ` * Copying, redistribution, or reverse engineering of this bundle is not permitted. */`;
+
 /** The page's title and description: the seeded `branding` global. */
 const brandedPage: Plugin = {
   name: "golden-sea:branding",
@@ -36,11 +48,22 @@ export default defineConfig(({ command, isPreview }) => ({
   plugins: [
     // The design system: component stylesheets, Tailwind, cascade layers, icons.
     ...designSystem(),
-    // The backend: a service worker serving this config's REST API from IndexedDB.
-    ...mockBackend({ config: "./src/config.ts", seed: "./src/seed.ts" }),
+    // The backend: a service worker serving this config's REST API from IndexedDB. Its own bundle
+    // carries the same minification and legal banner as the app's (set in its build).
+    ...mockBackend({ config: "./src/config.ts", seed: "./src/seed.ts", banner: license }),
     brandedPage,
   ],
-  build: { outDir: "../docs", emptyOutDir: true },
+  build: {
+    outDir: "../docs",
+    emptyOutDir: true,
+    // Make the production hardening explicit so a default can't silently regress: oxc minifies
+    // and mangles identifiers, tree-shakes dead code, and the banner (a legal notice) is kept on
+    // every emitted chunk. Property names stay (Payload field names, Lit attributes and JSON keys
+    // are part of the contract), so this shrinks and obscures the code without breaking it.
+    minify: "oxc",
+    // `postBanner`, not `banner`: it is prepended after minification, so oxc can't strip it.
+    rollupOptions: { output: { postBanner: license } },
+  },
   fmt: {
     ignorePatterns: ["bun.lock"],
     printWidth: 120,
