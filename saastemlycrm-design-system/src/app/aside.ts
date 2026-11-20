@@ -29,8 +29,8 @@ import {
   toggleBookmark,
 } from "./shared.ts";
 import { loadTours } from "./site.ts";
-import { fill, leaves } from "./widgets/host.ts";
-import type { WidgetScope } from "./widgets/widget.ts";
+import { fill } from "./widgets/host.ts";
+import type { Widget, WidgetScope } from "./widgets/widget.ts";
 
 /** The side panel's sections, in order (ids are remembered in `preferences.asideCollapsed`). */
 export const ASIDE_SECTIONS = [
@@ -57,6 +57,13 @@ export const asideRail = (unread = 0): MenuItem[] =>
     value: s.id,
   }));
 
+/**
+ * What needs attention, per collection: the side panel's counters marked `tone: "warning"` (the
+ * ones a role acts on), summed by collection. The side panel fires them as `dashboard-attention`
+ * when it loads; the navigation shows them as count badges.
+ */
+export type Attention = Record<string, number>;
+
 /** Expands a section (the shell opens the panel itself, choosing push or sheet). */
 export const expandAsideSection = (id: AsideSection) =>
   preferences.set((p) => ({ asideCollapsed: (p.asideCollapsed ?? []).filter((x) => x !== id) }));
@@ -75,10 +82,21 @@ const kindColor = (kind: string): MenuItem["badgeColor"] => {
   return tone && tone !== "neutral" && tone !== "primary" ? tone : undefined;
 };
 
-/** The side panel's counters for this user: the `counts` items of `admin.custom.aside` they see. */
+/**
+ * The side panel's counters for this user: the `counts` items of `admin.custom.aside` they see.
+ * Read from the widgets as the config wrote them (the host's `leaves` turns a `counts` widget into
+ * a source and a render, which has no items left to read).
+ */
 function counters(user: Doc) {
   const scope: WidgetScope = { user: user as WidgetScope["user"], params: {} };
-  return leaves(settings.aside ?? [], scope).flatMap((w) => {
+  const visible = (list: Widget[]): Widget[] =>
+    list.flatMap((w) => {
+      if (w.visible && !w.visible(scope)) return [];
+      if (w.grid) return visible(w.grid);
+      if (w.split) return visible([...w.split.main, ...w.split.side]);
+      return [w];
+    });
+  return visible(settings.aside ?? []).flatMap((w) => {
     const spec = w.counts;
     if (!spec || !("items" in spec)) return [];
     return spec.items.map((x) => ({ ...x, collection: x.collection ?? spec.collection, where: fill(x.where, scope) }));
@@ -164,6 +182,11 @@ export class DashboardAside extends LightElement {
       badgeColor: counts[i] && w.tone === "warning" ? "warning" : undefined,
       href: dashboardPath("collections", w.collection),
     }));
+    const attention: Attention = {};
+    widgets.forEach((w, i) => {
+      if (w.tone === "warning" && counts[i]) attention[w.collection] = (attention[w.collection] ?? 0) + counts[i];
+    });
+    this.dispatchEvent(new CustomEvent("dashboard-attention", { detail: attention, bubbles: true }));
     this.tours = await loadTours();
     // Bookmarks: the signed-in user's own.
     if (this.#bookmarksFor !== user.id) {

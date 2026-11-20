@@ -63,11 +63,14 @@ export const menu = rcva(
       },
       /**
        * App navigation look, shared by the expanded list (`layout="nav"`) and the rail
-       * (`layout="rail"`): same text size and weight. Rows keep the menu's width (each item is capped
-       * at it), so long labels truncate.
+       * (`layout="rail"`): same text size and weight, and the same top-level rows: 36px tall (M3's
+       * 56dp navigation item, `NavigationRailHorizontalItemTokens.ActiveIndicatorHeight`, at
+       * density −5) with 20dp icons, and section headings tight above their rows, so twelve
+       * destinations fit a short window's rail without scrolling. A row and its icon are in the same place in
+       * both. Rows keep the menu's width (each item is capped at it), so long labels truncate.
        */
       nav: {
-        true: "[&>li]:max-w-full px-0 text-label-lg [&_.menu-title]:text-on-surface-variant [interpolate-size:allow-keywords] [&_details::details-content]:overflow-hidden [&_details::details-content]:[block-size:0] [&_details::details-content]:[transition:block-size_var(--duration-spatial)_var(--ease-spatial),content-visibility_var(--duration-spatial)_allow-discrete] [&_details[open]::details-content]:[block-size:auto] motion-reduce:[&_details::details-content]:transition-none",
+        true: "[&>li]:max-w-full [&>li>:is(a,button)]:min-h-9 [&>li>details>summary]:min-h-9 [&>li>:is(a,button)_svg]:size-5 [&>li>details>summary_svg]:size-5 px-0 text-label-lg [&_.menu-title]:text-on-surface-variant [&_.menu-title]:pt-1.5 [&_.menu-title]:pb-1 [&_.menu-title]:text-label-md [&_.menu-title]:select-none [&_.menu-title]:pointer-events-none [interpolate-size:allow-keywords] [&_details::details-content]:overflow-hidden [&_details::details-content]:[block-size:0] [&_details::details-content]:[transition:block-size_var(--duration-spatial)_var(--ease-spatial),content-visibility_var(--duration-spatial)_allow-discrete] [&_details[open]::details-content]:[block-size:auto] motion-reduce:[&_details::details-content]:transition-none",
       },
       /**
        * Open navigation list that can fold into the rail's look with motion: set
@@ -82,22 +85,23 @@ export const menu = rcva(
         true: "relative isolate [anchor-scope:all] supports-[anchor-name:--a]:[&_.menu-active]:bg-transparent [&_summary]:after:[opacity:calc(1_-_var(--menu-collapse,0))] [&_summary]:after:[transition:opacity_var(--duration-effects-fast)_var(--ease-effects-fast),rotate_var(--duration-spatial-fast)_var(--ease-spatial-fast),translate_var(--duration-spatial-fast)_var(--ease-spatial-fast)] motion-reduce:[&_summary]:after:transition-none",
       },
       /**
-       * Navigation rail: exactly the open list's items with the labels left out, so each icon and
-       * highlight sits where it does in the open list. Items are the icon pill (`w-11`), the
-       * width the open list's highlight folds to. The active item has the open list's highlight
-       * colour, so the selection looks the same whether the column is open or closed.
+       * Navigation rail: exactly the open list's top-level rows with the labels left out, so each
+       * icon and highlight sits where it does in the open list. Items are the icon pill (`w-11`:
+       * the row's 12px padding either side of a 20px icon), the width the open list's highlight
+       * folds to; a heading in the list is an empty slot of its height here. The active item has
+       * the open list's highlight colour, so the selection looks the same open or closed.
        */
-      rail: { true: "[&_li>*]:w-11 [&_.menu-active]:bg-primary/20" },
+      rail: { true: "[&_li>:is(a,button)]:w-11 [&_.menu-active]:bg-primary/20" },
       /**
        * Panes (like VS Code's side bar): the menu fills its container's height, every top-level
        * group's title stays on screen, and each open group scrolls inside its own share of the
        * height: open groups share it equally, and a group needing less gives the rest away.
        * Opening or closing one, its share grows or shrinks on the same spring as its content
        * (only `flex-grow` changes, so it animates), and the other panes move with it. A closed
-       * group is 2rem: its basis, and its floor (`min-h-8`), so it never shrinks below it.
+       * group is 2.25rem (a row): its basis, and its floor (`min-h-9`), so it never shrinks below it.
        */
       panes: {
-        true: "min-h-0 flex-1 [&>li]:min-h-8 [&>li]:flex-[0_1_2rem] [&>li]:max-h-max [&>li]:[transition:flex-grow_var(--duration-spatial)_var(--ease-spatial)] motion-reduce:[&>li]:transition-none [&>li:has(>details[open])]:flex-[1_1_2rem] [&>li>details]:h-full [&>li>details::details-content]:[block-size:calc(100%_-_2rem)] [&>li>details[open]::details-content]:[block-size:calc(100%_-_2rem)] [&>li>details>ul]:max-h-full [&>li>details>ul]:overflow-y-auto [&>li>details>ul]:overscroll-contain",
+        true: "min-h-0 flex-1 [&>li]:min-h-9 [&>li]:flex-[0_1_2.25rem] [&>li]:max-h-max [&>li]:[transition:flex-grow_var(--duration-spatial)_var(--ease-spatial)] motion-reduce:[&>li]:transition-none [&>li:has(>details[open])]:flex-[1_1_2.25rem] [&>li>details]:h-full [&>li>details::details-content]:[block-size:calc(100%_-_2.25rem)] [&>li>details[open]::details-content]:[block-size:calc(100%_-_2.25rem)] [&>li>details>ul]:max-h-full [&>li>details>ul]:overflow-y-auto [&>li>details>ul]:overscroll-contain",
       },
     },
     defaultVariants: { surface: true, rounded: true, iconSize: "md" },
@@ -175,6 +179,9 @@ export const menuNavLabel = rcva(
   `inline-block ${text.line} [opacity:calc(1_-_var(--menu-collapse,0))] [translate:calc(var(--menu-collapse,0)_*_-1rem)_0] [transition:opacity_var(--duration-effects-fast)_var(--ease-effects-fast),translate_var(--duration-spatial-fast)_var(--ease-spatial-fast)] motion-reduce:transition-none`,
 );
 
+/** A heading's slot in the rail: its line, kept for its height, with nothing to read. */
+export const menuRailHeading = rcva(`invisible block ${text.line}`);
+
 /** A card item's parts: title row (title + badge), and the description under it. */
 export const menuCardHead = rcva(`${row} items-start gap-2`);
 export const menuCardTitle = rcva("min-w-0 flex-1 text-label-lg leading-snug [overflow-wrap:break-word]");
@@ -200,6 +207,8 @@ export const menuBadge = rcva("badge badge-xs", {
     },
     /** In a card: on the title's first line, one line (the head wraps before it squeezes it). */
     card: { true: "mt-0.5 min-w-0 truncate" },
+    /** In the navigation list: at the row's end (M3: "In expanded nav rails, the badge should be placed next to the label text"). */
+    end: { true: "ms-auto" },
   },
 });
 
@@ -268,9 +277,9 @@ export type MenuSubmenuMode = "static" | "details" | "js";
  *
  * Icon-only menus: give items an `icon` and set `icon-only` (labels become
  * tooltips; `tooltip="top"` for horizontal menus, `"none"` for no tooltip).
- * App navigation (for `<ui-app-shell>`): `layout="nav"` for the open column and
- * `layout="rail"` for the collapsed one: the same items with only their icons (labels become
- * tooltips), so nothing moves between the two. The open list's labels slide in.
+ * App navigation (for `<ui-app-shell>`): `layout="nav"` for the expanded column and
+ * `layout="rail"` for the collapsed one: the same rows with only their icons (labels become
+ * tooltips, headings empty slots), so nothing moves between the two. The open list's labels slide in.
  * Without `items`, authored `<li>` children are rendered directly in the `<ul>`.
  * Fires `ui-select` with `{ item, path }` when an item is clicked.
  * Fires `ui-toggle` with `{ item, path, open }` when a `details` submenu opens or closes.
@@ -292,7 +301,7 @@ export class UiMenu extends LightElement {
   @property() submenu: MenuSubmenuMode = "details";
   @property({ type: Boolean, attribute: "icon-only" }) iconOnly = false;
   @property() tooltip: "top" | "right" | "bottom" | "none" = "right";
-  /** `nav`: app navigation list; `rail`: the same items, icons only (collapsed navigation column). */
+  /** `nav`: app navigation list; `rail`: the same rows, icons only (collapsed navigation column). */
   @property() layout: "list" | "nav" | "rail" = "list";
   /** Keep the keyboard-focused item (`focus: true`, e.g. a palette's highlighted result) in view. */
   protected updated() {
@@ -369,7 +378,7 @@ export class UiMenu extends LightElement {
     const text = this.iconOnly && item.icon ? nothing : (item.label ?? nothing);
     const label = this.layout === "nav" && text !== nothing ? html`<span class=${menuNavLabel()}>${text}</span>` : text;
     return html`${item.icon ?? nothing} ${label}
-    ${item.badge != null ? html`<span class=${menuBadge({ color: item.badgeColor })}>${item.badge}</span>` : nothing}`;
+    ${item.badge != null ? html`<span class=${menuBadge({ color: item.badgeColor, end: this.layout === "nav" })}>${item.badge}</span>` : nothing}`;
   }
 
   private _link(item: MenuItem, path: number[]) {
@@ -449,11 +458,15 @@ export class UiMenu extends LightElement {
     const li = menuLi({ disabled: item.disabled });
 
     if (item.heading && !item.children) {
-      return html`<li class=${menuTitle()}>${item.label}</li>`;
+      // In the rail a heading is an empty slot of its height, so the rows under it stay level with the list's.
+      return this.layout === "rail"
+        ? html`<li class=${menuTitle()} aria-hidden="true"><span class=${menuRailHeading()}>${item.label}</span></li>`
+        : // One line that fades with the labels as the list folds, never wrapped letter by letter in a narrow column.
+          html`<li class=${menuTitle()}><span class=${menuNavLabel()}>${item.label}</span></li>`;
     }
     if (item.heading && item.children) {
       return html`<li>
-        <h2 class=${menuTitle()}>${item.label}</h2>
+        <h2 class=${menuTitle()}><span class=${menuNavLabel()}>${item.label}</span></h2>
         <ul>
           ${this._list(item.children, path)}
         </ul>

@@ -39,6 +39,29 @@ describe("blocks as text (for agents)", () => {
     ]);
   });
 
+  it("reads a figure's delta in words and an agenda item's time first", () => {
+    expect(
+      blocksText([
+        block("stats", {
+          items: [
+            {
+              label: "Inquiries",
+              value: "62",
+              delta: { text: "+29%", dir: "up", good: true },
+              note: "vs the 4 weeks before",
+            },
+            { label: "Turnaround", value: "1.6 d", delta: { text: "−0.4 d", dir: "down", good: true } },
+          ],
+        }),
+        block("list", { items: [{ lead: "14:00", headline: "Call Acme", supporting: "Sales next step" }] }),
+      ]),
+    ).toEqual([
+      "- Inquiries: 62 (up +29% · vs the 4 weeks before)",
+      "- Turnaround: 1.6 d (down −0.4 d)",
+      "- 14:00 · Call Acme · Sales next step",
+    ]);
+  });
+
   it("reads a header's heading and subtitle", () => {
     expect(headerText({ heading: "Good morning", subtitle: "3 things need you" })).toEqual([
       "Good morning",

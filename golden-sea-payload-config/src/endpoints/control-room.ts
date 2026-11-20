@@ -9,6 +9,10 @@ import * as link from "../links.ts";
  * speed & workload, profit & cash, delivery & suppliers. Today's numbers (live cases, owners,
  * receivables, suppliers) come from the collections; trends from ./history.ts. Profit & cash is
  * only sent to management and finance roles.
+ *
+ * The period sets the key figures' window and how much of each trend shows at first (`show`).
+ * The trend charts always carry their whole history (`grain`, `ranges`), so each can be cut to
+ * another range on the screen without asking again.
  */
 
 export type Unit = "count" | "days" | "minutes" | "usd-k" | "egp-k" | "pct";
@@ -38,6 +42,11 @@ export interface CrChart {
   target?: number;
   targetLabel?: string;
   highlightLast?: boolean;
+  /** The series are parts of a whole (sales by source, deliveries by outcome). */
+  stacked?: boolean;
+  /** A trend over time: what one point is, and the ranges (in points) worth offering. */
+  grain?: "week" | "month";
+  ranges?: number[];
 }
 export interface CrRanked {
   kind: "ranked";
@@ -72,6 +81,8 @@ export interface CrSection {
 export interface ControlRoom {
   period: Period;
   periods: typeof PERIODS;
+  /** How many weeks and months of each trend the period shows at first. */
+  show: { week: number; month: number };
   /** Whether profit & cash were included (management and finance only). */
   money: boolean;
   tiles: CrTile[];
@@ -94,6 +105,9 @@ export function controlRoom(
   const mo = <T>(a: T[]) => a.slice(-nm);
   const weeks = wk(H.weeks);
   const months = mo(H.months);
+  /** The trend charts' ranges, in points: weeks and months of history. */
+  const WEEKS = [4, 8, 12];
+  const MONTHS = [3, 6];
   const label = PERIODS.find((p) => p.value === period)!.label.toLowerCase();
 
   const live = data.cases.filter((c) => !LIVE_END.includes(str(c.stage)));
@@ -168,11 +182,13 @@ export function controlRoom(
           sub: "RFQ cases per week of receipt",
           type: "line",
           unit: "count",
-          labels: weeks,
+          labels: H.weeks,
+          grain: "week",
+          ranges: WEEKS,
           series: [
-            { name: "Inquiries", values: wk(H.inquiries) },
-            { name: "Quoted", values: wk(H.quoted) },
-            { name: "Won", values: wk(H.won) },
+            { name: "Inquiries", values: H.inquiries },
+            { name: "Quoted", values: H.quoted },
+            { name: "Won", values: H.won },
           ],
         },
         {
@@ -181,8 +197,10 @@ export function controlRoom(
           sub: "Customer POs incl. partial awards",
           type: "bars",
           unit: "usd-k",
-          labels: months,
-          series: [{ name: "Value won", values: mo(H.wonValueK) }],
+          labels: H.months,
+          grain: "month",
+          ranges: MONTHS,
+          series: [{ name: "Value won", values: H.wonValueK }],
           highlightLast: true,
         },
         {
@@ -191,8 +209,10 @@ export function controlRoom(
           sub: "Value of POs ÷ value quoted, by month the RFQ arrived (November still open)",
           type: "line",
           unit: "pct",
-          labels: months,
-          series: [{ name: "Conversion", values: mo(H.conversion) }],
+          labels: H.months,
+          grain: "month",
+          ranges: MONTHS,
+          series: [{ name: "Conversion", values: H.conversion }],
           target: 35,
           targetLabel: "Target 35%",
         },
@@ -223,8 +243,10 @@ export function controlRoom(
           sub: "Median days from RFQ received to quote sent",
           type: "line",
           unit: "days",
-          labels: weeks,
-          series: [{ name: "Median days", values: wk(H.turnaround) }],
+          labels: H.weeks,
+          grain: "week",
+          ranges: WEEKS,
+          series: [{ name: "Median days", values: H.turnaround }],
           target: 1,
           targetLabel: "Target 1 d",
         },
@@ -234,8 +256,10 @@ export function controlRoom(
           sub: "Median minutes to acknowledge an RFQ — automation live since 6 Oct",
           type: "bars",
           unit: "minutes",
-          labels: weeks,
-          series: [{ name: "Minutes", values: wk(H.ackMinutes) }],
+          labels: H.weeks,
+          grain: "week",
+          ranges: WEEKS,
+          series: [{ name: "Minutes", values: H.ackMinutes }],
           highlightLast: true,
         },
         {
@@ -244,8 +268,10 @@ export function controlRoom(
           sub: "RFQs outside Sun–Thu 08:00–17:00, routed to the on-duty person",
           type: "bars",
           unit: "count",
-          labels: weeks,
-          series: [{ name: "Out-of-hours RFQs", values: wk(H.afterHours) }],
+          labels: H.weeks,
+          grain: "week",
+          ranges: WEEKS,
+          series: [{ name: "Out-of-hours RFQs", values: H.afterHours }],
           highlightLast: true,
         },
         {
@@ -281,10 +307,12 @@ export function controlRoom(
           sub: "Actual replaces estimates as costs are billed (November in progress)",
           type: "line",
           unit: "egp-k",
-          labels: months,
+          labels: H.months,
+          grain: "month",
+          ranges: MONTHS,
           series: [
-            { name: "Expected at quotation", values: mo(H.gpExpectedK) },
-            { name: "Actual", values: mo(H.gpActualK) },
+            { name: "Expected at quotation", values: H.gpExpectedK },
+            { name: "Actual", values: H.gpActualK },
           ],
         },
         {
@@ -299,10 +327,13 @@ export function controlRoom(
           kind: "chart",
           title: "Sales by source",
           sub: "Agency pricelists and own stock carry more margin than buying to order",
-          type: "bars",
+          type: "line",
+          stacked: true,
           unit: "egp-k",
-          labels: months,
-          series: H.sourceKeys.map((k) => ({ name: k, values: mo(H.sourceByMonth[k] ?? []) })),
+          labels: H.months,
+          grain: "month",
+          ranges: MONTHS,
+          series: H.sourceKeys.map((k) => ({ name: k, values: H.sourceByMonth[k] ?? [] })),
         },
         {
           kind: "ranked",
@@ -356,7 +387,7 @@ export function controlRoom(
       trend: H.supplierOnTime[s.id] ? mo(H.supplierOnTime[s.id]!) : undefined,
     }))
     .sort((a, b) => (b.onTime ?? -1) - (a.onTime ?? -1));
-  const deliveryWeeks = H.weeks.slice(-Math.min(6, nw));
+  const deliveryWeeks = H.weeks.slice(-6);
   sections.push({
     id: "delivery",
     title: "Delivery & suppliers",
@@ -373,8 +404,11 @@ export function controlRoom(
         title: "Deliveries by outcome",
         sub: "Deliveries to vessels per week",
         type: "bars",
+        stacked: true,
         unit: "count",
         labels: deliveryWeeks,
+        grain: "week",
+        ranges: [4, 6],
         series: Object.entries(H.deliveryOutcomes).map(([name, values]) => ({
           name,
           values: values.slice(-deliveryWeeks.length),
@@ -383,7 +417,7 @@ export function controlRoom(
     ],
   });
 
-  return { period, periods: PERIODS, money, tiles, sections };
+  return { period, periods: PERIODS, show: { week: nw, month: nm === 2 ? 3 : nm }, money, tiles, sections };
 }
 
 export const controlRoomEndpoints: Endpoint[] = [

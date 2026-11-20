@@ -138,8 +138,8 @@ export const inset = {
   "10": "w-full px-[min(40px,max(0px,calc((100%_-_7rem)/2)))]",
   "12": "w-full px-[min(48px,max(0px,calc((100%_-_7rem)/2)))]",
   "16": "w-full px-[min(64px,max(0px,calc((100%_-_7rem)/2)))]",
-  /** The page in the main panel: 16px on a phone (M3 compact margin) up to 40px. */
-  page: "w-full px-[min(clamp(1rem,5cqi,2.5rem),max(0px,calc((100%_-_7rem)/2)))]",
+  /** The page in the main panel: 16px on a phone up to 24px (M3 window margins: compact 16dp, medium and up 24dp). */
+  page: "w-full px-[min(clamp(1rem,3cqi,1.5rem),max(0px,calc((100%_-_7rem)/2)))]",
 } as const;
 
 /**
@@ -305,7 +305,7 @@ export const frame = {
   rail: "w-(--frame-rail)",
   navOpen: "w-(--frame-nav)",
   asideOpen: "w-(--frame-aside)",
-  /** The rail's 44px icon pills centred: (rail − 2.75rem) / 2 a side, and the rail is at least 3rem. */
+  /** The rail's 48px icon pills centred: (rail − 3rem) / 2 a side, and the rail is at least 3rem. */
   railInset: "px-[calc((var(--frame-rail)_-_2.75rem)/2)]",
   /** A panel reaches over the frame's edge: a negative margin the size of its transparent border (net 0). */
   edgeStart: "-ms-(--frame-edge) border-s-(length:--frame-edge)",

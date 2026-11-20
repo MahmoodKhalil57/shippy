@@ -109,6 +109,17 @@ async function update(req: Req, collection: string, id: string, data: Json): Pro
   })) as unknown as Doc;
 }
 
+/** An update with the collection's access rules applied to the signed-in user (what an Undo runs as). */
+async function updateAsUser(req: Req, collection: string, id: string, data: Json): Promise<Doc> {
+  return (await req.payload.update({
+    collection: collection as never,
+    id,
+    data: data as never,
+    req,
+    overrideAccess: false,
+  })) as unknown as Doc;
+}
+
 async function notify(
   req: Req,
   user: string | undefined,
@@ -1154,6 +1165,12 @@ export interface CaseRfqsPayload {
 
 /** The drafted supplier RFQs per case, kept until sent or discarded (`POST …/plan`). */
 const plans = new Map<string, RfqPlan>();
+/**
+ * Per case, the drafts as they were before one was removed or all were discarded, with what that
+ * left: what `…/plan/restore` (the Undo of both) puts back, as long as the drafts are still as
+ * it left them (not drafted again, not sent).
+ */
+const takenBack = new Map<string, { before: RfqPlan; after: RfqPlan | null }>();
 
 /**
  * The replies the last "Simulate replies" brought in, per case, shown as "Replies arriving" for a
@@ -1762,6 +1779,26 @@ export async function inboxDetail(req: Req, id: string): Promise<InboxDetail> {
   };
 }
 
+/** The call that puts a case's RFQ drafts back as they were (a reply's `undo`). */
+const restorePlan = (c: Doc) => ({ path: `/sourcing/cases/${encodeURIComponent(c.id)}/plan/restore`, body: {} });
+
+/** What a review changes on a message, so its Undo can put it back: its status and the case guessed. */
+const reviewedFrom = (msg: Doc) => ({ status: str(msg.status), case: idOf(obj(msg.match).case) ?? null });
+
+/** The supplier RFQ a linked reply was counted on (its offers saved, its status set), if any. */
+async function linkedReply(req: Req, msg: Doc): Promise<Doc | null> {
+  const match = obj(msg.match);
+  const rfqId = idOf(match.supplierRfq);
+  if (rfqId) return byId(req, "supplier-rfqs", rfqId);
+  const sender = (await all(req, "suppliers")).find((s) => domainOf(s) === senderDomain(msg.from));
+  const caseId = idOf(match.case);
+  if (!sender || !caseId) return null;
+  const [rfq] = await all(req, "supplier-rfqs", {
+    and: [{ case: { equals: caseId } }, { supplier: { equals: sender.id } }],
+  });
+  return rfq ?? null;
+}
+
 async function messageOr404(req: Req) {
   const msg = await byId(req, "intake-messages", str(req.routeParams?.id));
   if (!msg) throw Object.assign(new Error("Message not found."), { status: 404 });
@@ -1875,12 +1912,17 @@ export const sourcingEndpoints: Endpoint[] = [
       const input = await body(req);
       const decision = str(input.decision);
       const match = obj(msg.match);
+      // `undo`: the call that puts it back in the queue as it was (`…/reopen`), while it still can be.
+      const reopen = { path: `/inbox/${encodeURIComponent(msg.id)}/reopen`, body: reviewedFrom(msg) };
       if (decision === "not-related") {
         await update(req, "intake-messages", msg.id, {
           status: "Ignored",
           match: { ...match, reviewedBy: userId(req), reviewedAt: iso(DEMO_NOW.getTime()) },
         });
-        return json({ message: await toInboxMessage(req, (await byId(req, "intake-messages", msg.id))!) });
+        return json({
+          message: await toInboxMessage(req, (await byId(req, "intake-messages", msg.id))!),
+          undo: reopen,
+        });
       }
       const caseId = str(input.case) || str(idOf(match.case));
       const c = caseId ? await byId(req, "cases", caseId) : null;
@@ -1914,7 +1956,46 @@ export const sourcingEndpoints: Endpoint[] = [
         kind: "human",
         text: `“${str(msg.subject)}” from ${str(msg.fromName)} linked by ${who} after review${list(msg.offerDraft).length ? " — offer confirmed" : ""}.`,
       });
-      return json({ message: await toInboxMessage(req, (await byId(req, "intake-messages", msg.id))!) });
+      // A link that counted a supplier's reply on the case (offers, the RFQ's status) stands.
+      return json({
+        message: await toInboxMessage(req, (await byId(req, "intake-messages", msg.id))!),
+        undo: rfq ? null : reopen,
+      });
+    }),
+  },
+  {
+    // The Undo of a review: the person who filed the message puts it back in the queue, as it was.
+    path: "/inbox/:id/reopen",
+    method: "post",
+    handler: guard(async (req) => {
+      const msg = await messageOr404(req);
+      const match = obj(msg.match);
+      if (!["Ignored", "Linked"].includes(str(msg.status)) || !idOf(match.reviewedBy))
+        return fail(409, "This message isn't filed by a review — there is nothing to take back.");
+      if (idOf(match.reviewedBy) !== userId(req))
+        return fail(
+          403,
+          `${await userName(req, idOf(match.reviewedBy) ?? undefined)} filed this message — only they can take it back.`,
+        );
+      if (str(msg.status) === "Linked" && (await linkedReply(req, msg)))
+        return fail(409, "The supplier's reply is already counted on the case — the link can't be taken back.");
+      const was = obj(await body(req));
+      const before = ["New", "Needs review"].includes(str(was.status)) ? str(was.status) : "Needs review";
+      const guess = str(was.case) ? await byId(req, "cases", str(was.case)) : null;
+      await updateAsUser(req, "intake-messages", msg.id, {
+        status: before,
+        match: { ...match, case: guess?.id ?? null, reviewedBy: null, reviewedAt: null },
+      });
+      if (str(msg.status) === "Linked" && idOf(match.case))
+        await logActivity(req, {
+          case: idOf(match.case)!,
+          kind: "human",
+          text: `“${str(msg.subject)}” from ${str(msg.fromName)} put back in the review queue by ${await userName(req, userId(req))}.`,
+        });
+      return json({
+        doc: await toInboxMessage(req, (await byId(req, "intake-messages", msg.id))!),
+        message: "Back in the review queue",
+      });
     }),
   },
 
@@ -1969,13 +2050,32 @@ export const sourcingEndpoints: Endpoint[] = [
     handler: guard(async (req) => {
       const msg = await messageOr404(req);
       if (str(msg.source) !== "History import") return fail(400, "Not a history item.");
-      const decision = str((await body(req)).decision) === "reject" ? "Rejected" : "Confirmed";
+      const input = str((await body(req)).decision);
+      const path = `/inbox-history/review/${encodeURIComponent(msg.id)}`;
+      // The Undo of a decision: back to "needs a decision", while the import isn't approved.
+      if (input === "reopen") {
+        if (str(msg.status) === "Needs review") return fail(409, "This item is already waiting for a decision.");
+        if ((await historyPayload(req)).approved)
+          return fail(409, "The import is approved and saved — its decisions can't be taken back.");
+        if (idOf(obj(msg.match).reviewedBy) !== userId(req))
+          return fail(
+            403,
+            `${await userName(req, idOf(obj(msg.match).reviewedBy) ?? undefined)} decided this item — only they can take it back.`,
+          );
+        await updateAsUser(req, "intake-messages", msg.id, {
+          status: "Needs review",
+          history: { ...obj(msg.history), decision: null },
+          match: { ...obj(msg.match), reviewedBy: null, reviewedAt: null },
+        });
+        return json({ ...(await historyPayload(req)), message: "Back to needing a decision" });
+      }
+      const decision = input === "reject" ? "Rejected" : "Confirmed";
       await update(req, "intake-messages", msg.id, {
         status: decision === "Confirmed" ? "Linked" : "Ignored",
         history: { ...obj(msg.history), decision },
         match: { ...obj(msg.match), reviewedBy: userId(req), reviewedAt: iso(DEMO_NOW.getTime()) },
       });
-      return json(await historyPayload(req));
+      return json({ ...(await historyPayload(req)), undo: { path, body: { decision: "reopen" } } });
     }),
   },
   {
@@ -2012,6 +2112,7 @@ export const sourcingEndpoints: Endpoint[] = [
       const plan = await planRfqs(req, c, mode, only);
       if (plan.drafts.length) plans.set(c.id, plan);
       else plans.delete(c.id);
+      takenBack.delete(c.id);
       const n = plan.drafts.length;
       const message = n
         ? `${n} RFQ draft${n === 1 ? "" : "s"} ready — check them before sending`
@@ -2033,7 +2134,23 @@ export const sourcingEndpoints: Endpoint[] = [
       const drafts = plan.drafts.filter((d) => d.reference !== reference);
       if (drafts.length) plans.set(c.id, { ...plan, drafts });
       else plans.delete(c.id);
-      return json({ plan: plans.get(c.id) ?? null });
+      takenBack.set(c.id, { before: plan, after: plans.get(c.id) ?? null });
+      return json({ plan: plans.get(c.id) ?? null, undo: restorePlan(c) });
+    }),
+  },
+  {
+    // The Undo of removing a draft or discarding them all: the drafts as they were before.
+    path: "/sourcing/cases/:id/plan/restore",
+    method: "post",
+    handler: guard(async (req) => {
+      const c = await caseOr404(req);
+      const kept = takenBack.get(c.id);
+      if (!kept || (plans.get(c.id) ?? null) !== kept.after)
+        return fail(409, "The drafts have changed since (drafted again or sent) — there is nothing to put back.");
+      plans.set(c.id, kept.before);
+      takenBack.delete(c.id);
+      const n = kept.before.drafts.length;
+      return json({ plan: kept.before, message: `${n} RFQ draft${n === 1 ? "" : "s"} back — nothing was sent` });
     }),
   },
   {
@@ -2042,8 +2159,10 @@ export const sourcingEndpoints: Endpoint[] = [
     method: "post",
     handler: guard(async (req) => {
       const c = await caseOr404(req);
+      const plan = plans.get(c.id);
       plans.delete(c.id);
-      return json({ plan: null });
+      if (plan) takenBack.set(c.id, { before: plan, after: null });
+      return json({ plan: null, undo: plan ? restorePlan(c) : null });
     }),
   },
   {
@@ -2084,6 +2203,7 @@ export const sourcingEndpoints: Endpoint[] = [
         );
       }
       plans.delete(c.id);
+      takenBack.delete(c.id);
       if (["New", "Validating", "Sourcing"].includes(str(c.stage)))
         await update(req, "cases", c.id, { stage: "Awaiting supplier", wait: "Awaiting supplier" });
       await logActivity(req, {

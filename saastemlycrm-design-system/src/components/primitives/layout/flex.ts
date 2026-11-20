@@ -74,6 +74,12 @@ export const flex = rcva("", {
     grow: { true: "grow" },
     /** Let text inside truncate instead of widening the row (min-width: 0). */
     shrink: { true: "min-w-0" },
+    /**
+     * As an item of a row: takes the room the row's other items leave and shrinks to it (basis 0),
+     * so the row never breaks before it; text inside truncates (a name and a line under it beside
+     * an avatar).
+     */
+    fill: { true: "min-w-0 flex-1 basis-0" },
     fullWidth: { true: "w-full" },
     fullHeight: { true: "h-full" },
   },
@@ -116,6 +122,7 @@ export class UiFlex extends LightElement {
   @property({ converter: responsiveBoolean }) wrap: Responsive<boolean> = false;
   @property({ converter: responsiveBoolean }) grow: Responsive<boolean> = false;
   @property({ converter: responsiveBoolean }) shrink: Responsive<boolean> = false;
+  @property({ type: Boolean }) fill = false;
   @property({ attribute: "full-width", converter: responsiveBoolean }) fullWidth: Responsive<boolean> = false;
   @property({ attribute: "full-height", converter: responsiveBoolean }) fullHeight: Responsive<boolean> = false;
 
@@ -131,6 +138,7 @@ export class UiFlex extends LightElement {
       wrap: this.wrap,
       grow: this.grow,
       shrink: this.shrink,
+      fill: this.fill,
       fullWidth: this.fullWidth,
       fullHeight: this.fullHeight,
     });

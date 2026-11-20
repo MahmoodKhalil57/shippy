@@ -3,8 +3,13 @@ import type { Action, ViewBlock, ViewBlocks } from "./schema.ts";
 
 /** What a block renderer can ask of the view that holds it. */
 export interface ViewContext {
-  /** Run an action: navigate, or confirm / prompt, call the API, report, reload. */
-  run(action: Action): void;
+  /**
+   * Run an action: navigate, or confirm / prompt, call the API, report (with Undo when there is a
+   * way back), refresh. When the call goes out at once it returns a promise that settles once
+   * the screen shows the result (what a pressed button waits for); nothing when it navigates or
+   * opens a dialog first.
+   */
+  run(action: Action): Promise<void> | void;
   /** Set a view parameter (a `choice`) and reload with it. */
   setParam(param: string, value: string): void;
   /** Reload the view's data. */

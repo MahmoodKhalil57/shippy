@@ -64,10 +64,19 @@ const pct = (c: number) => `${Math.round(c * 100)}%`;
 
 function remind(r: CaseRfqRow, ownerName: string): Action {
   const n = r.reminders + 1;
+  const call = { path: `/sourcing/rfqs/${encodeURIComponent(r.id)}/remind` };
+  // The second one alerts the case owner (internal). The first goes to the supplier: outward,
+  // so it asks first and can't be undone.
+  if (n >= 2) return { label: "Remind now", call, done: `${r.reference}: Escalated to ${ownerName}` };
   return {
     label: "Remind now",
-    call: { path: `/sourcing/rfqs/${encodeURIComponent(r.id)}/remind` },
-    done: `${r.reference}: ${n >= 2 ? `Escalated to ${ownerName}` : `Reminder ${n} sent`}`,
+    call,
+    confirm: {
+      heading: `Send a reminder to ${r.supplier.name}?`,
+      text: `Reminder ${n} for ${r.reference} goes to the supplier now, from the approved template (client hidden).`,
+      label: "Send reminder",
+    },
+    done: `${r.reference}: Reminder ${n} sent`,
   };
 }
 

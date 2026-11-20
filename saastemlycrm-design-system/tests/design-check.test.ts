@@ -115,6 +115,36 @@ describe("tileProblems", () => {
     const alert = block("alert", { tone: "warning", text: "Careful." });
     expect(tile("full", [choice, actions, alert], null)).toEqual([]);
     expect(tile("full", [choice, text], null)[0]).toMatch(/text without a title/);
+    // A strip of key figures stands on the page: every figure carries its own label.
+    expect(tile("full", [block("stats", { items: [{ label: "Open", value: "3" }] })], null)).toEqual([]);
+  });
+
+  it("flags a second inverse tile on a screen (M3: inverse roles are applied selectively)", () => {
+    const board = (...emphasis: DrawnTile["emphasis"][]) =>
+      tileProblems(
+        emphasis.map((e, i) => ({ title: `Tile ${i + 1}`, size: "s", emphasis: e, blocks: [text] })),
+        "screen",
+      );
+    expect(board("inverse")).toEqual([]);
+    expect(board("inverse", "tinted", "tinted", undefined)).toEqual([]);
+    expect(board("inverse", undefined, "inverse")).toEqual([
+      "screen: 2 inverse tiles (Tile 1, Tile 3); keep the one the screen is about, make the others `tinted` or plain",
+    ]);
+    // Every placement of the three surfaces on a board of up to four tiles: flagged exactly when
+    // more than one is inverse.
+    const SURFACES: DrawnTile["emphasis"][] = [undefined, "tinted", "inverse"];
+    const boards = (n: number): DrawnTile["emphasis"][][] =>
+      n === 0 ? [[]] : boards(n - 1).flatMap((b) => SURFACES.map((s) => [...b, s]));
+    for (const b of [1, 2, 3, 4].flatMap(boards))
+      expect(board(...b).length, b.join()).toBe(b.filter((e) => e === "inverse").length > 1 ? 1 : 0);
+  });
+
+  it("flags an emphasis on an untitled tile: it has no surface to change", () => {
+    const stats = block("stats", { items: [{ label: "Open", value: "3" }] });
+    expect(tileProblems([{ size: "full", emphasis: "tinted", blocks: [stats] }], "screen")[0]).toMatch(
+      /`emphasis` on an untitled tile/,
+    );
+    expect(tileProblems([{ title: "Figures", size: "m", emphasis: "tinted", blocks: [stats] }], "screen")).toEqual([]);
   });
 });
 
@@ -123,12 +153,12 @@ describe("designProblems' tiles", () => {
   it("reads them from the drawn blocks: headed cards, inside grids and splits, and bare blocks", () => {
     const grid = block("card", { heading: "Inner", blocks: [block("grid", { blocks: [text] })] });
     const problems = designProblems(
-      [block("split", { main: [grid], side: [block("stats", { items: [{ label: "Open", value: "3" }] })] })],
+      [block("split", { main: [grid], side: [block("details", { items: [{ label: "Open", value: "3" }] })] })],
       "screen",
     );
     expect(problems).toEqual([
       "screen › Inner: a grid at the top of a tile; make its parts widgets of their own",
-      "screen › untitled tile: stats without a title; give the widget a `title`",
+      "screen › untitled tile: details without a title; give the widget a `title`",
     ]);
   });
 

@@ -21,7 +21,7 @@ import "./command.ts";
 import { provideAgentContext, provideTools } from "../agent/webmcp.ts";
 import { restoreLocalModel } from "../agent/ai-polyfill.ts";
 import { dashboardTools, type AgentHost, type Appearance } from "./agent-tools.ts";
-import { asideRail, expandAsideSection, type AsideSection } from "./aside.ts";
+import { asideRail, expandAsideSection, type AsideSection, type Attention } from "./aside.ts";
 import { roleLabel, roleLogins, seedUsers, type SeedUser } from "./demo-users.ts";
 import {
   dashboardPath,
@@ -96,6 +96,8 @@ export class DashboardApp extends LightElement {
   /** Navigation groups that have held the current page (kept open: navigating never closes a group). */
   #openedGroups = new Set<string>();
   #unread = new StoreController(this, notifications);
+  /** What needs attention, per collection (the side panel's warning counters): the navigation's count badges. */
+  @state() private attention: Attention = {};
 
   connectedCallback() {
     super.connectedCallback();
@@ -247,11 +249,12 @@ export class DashboardApp extends LightElement {
   }
 
   /**
-   * Demo user switcher, docked in the navigation's footer (never over the menu): the current
-   * user's avatar opens a "Switch user" card — one seeded user per role, name and role on two
-   * lines, the current one highlighted.
+   * The person signed in, docked in the navigation's footer (never over the menu): their avatar,
+   * with their name and role beside it while the navigation is expanded. It opens the demo's
+   * "Switch user" card — one seeded user per role, name and role on two lines, the current one
+   * highlighted.
    */
-  private _userSwitcher() {
+  private _userSwitcher(expanded: boolean) {
     if (!this.user || !roleLogins.length) return nothing;
     const initials = (user: object) => {
       const u = user as Record<string, unknown>;
@@ -268,34 +271,47 @@ export class DashboardApp extends LightElement {
       active: u.email === this.user?.email,
       value: u.email,
     }));
-    return html`<ui-dropdown
-      slot="nav-footer"
-      mode="popover"
-      side="top"
-      align="start"
-      panel="card"
-      panel-width="72"
-      panel-elevation="2"
-      trigger-variant="text"
-      trigger-shape="round"
-      trigger-spaced="false"
-      .label=${`Switch user (demo) — signed in as ${text(this.user.name ?? this.user.email)}`}
-      .heading=${html`<ui-flex align="center" justify="between" gap="2"
-        >Switch user <ui-tag tone="primary">Demo</ui-tag></ui-flex
-      >`}
-    >
-      <ui-avatar slot="trigger" size="xs" .initials=${initials(this.user)}></ui-avatar>
-      <ui-menu
-        width="full"
-        surface="false"
-        nowrap
-        .items=${items}
-        @ui-select=${(e: CustomEvent<{ item: MenuItem }>) => {
-          const u = roleLogins.find((x) => x.email === e.detail.item.value);
-          if (u) void this._switchTo(u);
-        }}
-      ></ui-menu>
-    </ui-dropdown>`;
+    // The avatar is the trigger in both states, so it stays where it is; the name and role appear beside it.
+    return html`<ui-flex slot="nav-footer" align="center" gap="2"
+      ><ui-dropdown
+        mode="popover"
+        side="top"
+        align="start"
+        panel="card"
+        panel-width="72"
+        panel-elevation="2"
+        trigger-variant="text"
+        trigger-shape="round"
+        trigger-spaced="false"
+        .label=${`Switch user (demo) — signed in as ${text(this.user.name ?? this.user.email)}`}
+        .heading=${html`<ui-flex align="center" justify="between" gap="2"
+          >Switch user <ui-tag tone="primary">Demo</ui-tag></ui-flex
+        >`}
+      >
+        <ui-avatar slot="trigger" size="xs" .initials=${initials(this.user)}></ui-avatar>
+        <ui-menu
+          width="full"
+          surface="false"
+          nowrap
+          .items=${items}
+          @ui-select=${(e: CustomEvent<{ item: MenuItem }>) => {
+            const u = roleLogins.find((x) => x.email === e.detail.item.value);
+            if (u) void this._switchTo(u);
+          }}
+        ></ui-menu> </ui-dropdown
+      >${
+        expanded
+          ? html`<ui-flex direction="col" gap="0" fill>
+              <ui-text as="div" variant="label-lg" align="start" truncate
+                >${text(this.user.name ?? this.user.email)}</ui-text
+              >
+              <ui-text as="div" variant="body-sm" color="muted" align="start" truncate
+                >${roleLabel(text(this.user.role))}</ui-text
+              >
+            </ui-flex>`
+          : nothing
+      }</ui-flex
+    >`;
   }
 
   private async _logout() {
@@ -312,7 +328,13 @@ export class DashboardApp extends LightElement {
       if (c.admin?.hidden === true || this.access?.collections[c.slug]?.read.permission === false) continue;
       const group = typeof c.admin?.group === "string" ? c.admin.group : "Collections";
       const href = dashboardPath("collections", c.slug);
-      groups.set(group, [...(groups.get(group) ?? []), { label: labels(c).plural, href, active: here(href) }]);
+      // What needs attention there (the side panel's warning counters), as a count badge.
+      const count = this.attention[c.slug];
+      const badge = count ? { badge: String(count), badgeColor: "warning" as const } : {};
+      groups.set(group, [
+        ...(groups.get(group) ?? []),
+        { label: labels(c).plural, href, active: here(href), ...badge },
+      ]);
     }
     const globals = (config.globals ?? [])
       .filter((g) => this.access?.globals[g.slug]?.read.permission !== false)
@@ -337,40 +359,65 @@ export class DashboardApp extends LightElement {
 
   private _icon = (name: IconName) => html`<ui-icon name=${name}></ui-icon>`;
 
-  /** The expanded navigation. */
-  private _menu(): MenuItem[] {
-    return [
-      { label: "Dashboard", icon: this._icon("home"), href: dashboardPath(), active: this.route.name === "dashboard" },
-      ...this._groups().map((g) => {
-        // Navigating opens the group of the page you went to, and never closes one (the user
-        // closes groups by hand).
-        if (g.active) this.#openedGroups.add(g.label);
-        return {
-          label: g.label,
-          icon: this._icon(groupIcon(g.label)),
-          open: this.#openedGroups.has(g.label),
-          children: g.items,
-        };
-      }),
-    ];
+  /** A group's icon; with something needing attention in the group, a dot on its corner (M3: a small badge on a rail destination). */
+  private _groupIcon(label: string, attention: boolean) {
+    const name = groupIcon(label);
+    return attention
+      ? html`<ui-indicator
+          ><ui-badge slot="item" dot tone="warning" label="Needs attention"></ui-badge><ui-icon name=${name}></ui-icon
+        ></ui-indicator>`
+      : this._icon(name);
   }
 
   /**
-   * The collapsed rail: Dashboard (a page: it links), then one entry per section. A section's icon
-   * opens the navigation with that section expanded (`_openSection`), rather than jumping to its
-   * first page: what's in it is the choice.
+   * The navigation, expanded and collapsed, from the same groups.
+   *
+   * Expanded (`menu`): Dashboard, then the groups as collapsible sections under their headings
+   * (`admin.custom.nav.groups[].section`: consecutive groups with the same one share it), each page
+   * with its count badge when something there needs attention.
+   *
+   * Collapsed (`rail`): Dashboard (a page: it links), then one destination per group, its icon
+   * over its label. A group's destination opens the navigation with that group expanded
+   * (`_openSection`), rather than jumping to its first page: what's in it is the choice.
    */
-  private _rail(): MenuItem[] {
-    return [
-      { label: "Dashboard", icon: this._icon("home"), href: dashboardPath(), active: this.route.name === "dashboard" },
-      ...this._groups().map((g, i) => ({
+  private _nav(): { menu: MenuItem[]; rail: MenuItem[] } {
+    const dashboard: MenuItem = {
+      label: "Dashboard",
+      icon: this._icon("home"),
+      href: dashboardPath(),
+      active: this.route.name === "dashboard",
+    };
+    const menu: MenuItem[] = [dashboard];
+    const rail: MenuItem[] = [dashboard];
+    const sections = new Map((settings.nav?.groups ?? []).map((g) => [g.label, g.section]));
+    let section: string | undefined;
+    for (const g of this._groups()) {
+      const heading = sections.get(g.label);
+      if (heading && heading !== section) {
+        // The rail keeps the heading's slot, so each icon stays level with its row.
+        menu.push({ label: heading, heading: true });
+        rail.push({ label: heading, heading: true });
+      }
+      section = heading;
+      // Navigating opens the group of the page you went to, and never closes one (the user
+      // closes groups by hand).
+      if (g.active) this.#openedGroups.add(g.label);
+      const attention = g.items.some((i) => i.badge != null);
+      rail.push({
         label: g.label,
-        icon: this._icon(groupIcon(g.label)),
+        icon: this._groupIcon(g.label, attention),
         active: g.active,
-        // Its place in the open navigation (`_menu`: Dashboard first).
-        value: { section: g.label, path: [i + 1] },
-      })),
-    ];
+        // Its place in the expanded navigation.
+        value: { section: g.label, path: [menu.length] },
+      });
+      menu.push({
+        label: g.label,
+        icon: this._groupIcon(g.label, attention),
+        open: this.#openedGroups.has(g.label),
+        children: g.items,
+      });
+    }
+    return { menu, rail };
   }
 
   /** A section's rail icon: open the navigation (pushing or as a sheet) with that section expanded. */
@@ -394,7 +441,7 @@ export class DashboardApp extends LightElement {
         );
       }
       case "list":
-        return html`<dashboard-list-view .slug=${r.slug} .access=${access}></dashboard-list-view>`;
+        return html`<dashboard-list-view .slug=${r.slug} .access=${access} .user=${this.user}></dashboard-list-view>`;
       case "create":
         return html`<dashboard-edit-view .slug=${r.slug} .access=${access}></dashboard-edit-view>`;
       case "edit":
@@ -463,20 +510,26 @@ export class DashboardApp extends LightElement {
       { label: "Account", href: dashboardPath("account"), active: this.route.name === "account" },
       { label: "Log out", value: "logout" },
     ];
-    const { navOpen, asideOpen } = this.#prefs.value;
+    // `navOpen` mirrors the frame (the shell decides it from the window's room and from
+    // `navExpanded`, what the person chose for the navigation); `asideOpen` is the side panel as
+    // the person left it, which the shell starts from where it fits beside the page.
+    const { navOpen, asideOpen, navExpanded } = this.#prefs.value;
+    const nav = this._nav();
     return html`
       <ui-app-shell
         .brand=${site().branding.name}
         .brandIcon=${site().branding.icon as IconName}
         brand-href=${dashboardPath()}
-        ?nav-open=${navOpen}
+        .navExpanded=${navExpanded}
         ?aside-open=${asideOpen}
         aside-label="Side panel"
-        @ui-change=${(e: CustomEvent<{ nav: boolean; aside: boolean }>) => {
+        @dashboard-attention=${(e: CustomEvent<Attention>) => (this.attention = e.detail)}
+        @ui-change=${(e: CustomEvent<{ nav: boolean; aside: boolean; expanded?: boolean }>) => {
           // Only the shell's own change: `ui-change` from anything inside it (the theme toggle,
           // inputs…) bubbles here too and isn't about the columns.
           if (e.target !== e.currentTarget) return;
-          preferences.set({ navOpen: e.detail.nav, asideOpen: e.detail.aside });
+          const { nav: navOpen, aside: asideOpen, expanded } = e.detail;
+          preferences.set({ navOpen, asideOpen, ...(expanded === undefined ? {} : { navExpanded: expanded }) });
         }}
       >
         <dashboard-command
@@ -514,18 +567,18 @@ export class DashboardApp extends LightElement {
             ></ui-menu>
           </ui-dropdown>
         </ui-flex>
-        <ui-menu slot="nav" layout="nav" width="full" surface="false" .items=${this._menu()}></ui-menu>
+        <ui-menu slot="nav" layout="nav" width="full" surface="false" .items=${nav.menu}></ui-menu>
         <ui-menu
           slot="rail"
           layout="rail"
           surface="false"
-          .items=${this._rail()}
+          .items=${nav.rail}
           @ui-select=${(e: CustomEvent<{ item: MenuItem }>) => {
             const v = e.detail.item.value as { section: string; path: number[] } | undefined;
             if (v?.section) void this._openSection(v);
           }}
         ></ui-menu>
-        ${this._userSwitcher()}
+        ${this._userSwitcher(navOpen)}
         ${
           site().branding.poweredBy
             ? html`<ui-text slot="footer" variant="body-sm" color="muted"
@@ -550,7 +603,7 @@ export class DashboardApp extends LightElement {
           .path=${location.pathname}
           .pageTitle=${this._title()}
         ></dashboard-aside>
-        <ui-container width="6xl" padding-x="fluid" padding-y="fluid"
+        <ui-container width="7xl" padding-x="fluid" padding-y="fluid"
           >${
             // Keyed by user: switching users mounts the page afresh, so it loads their data.
             keyed(user.id, this._view())

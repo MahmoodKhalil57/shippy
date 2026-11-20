@@ -47,6 +47,8 @@ export const history = {
   /** Receivables by age, USD thousands (all customers). */
   ageingKeys: ["Not due", "1–30 d", "31–60 d", "60+ d"],
   ageing: [41.7, 12.6, 3.1, 1.4],
+  /** Receivables outstanding at each week's end, USD thousands (the last is the sum of `ageing`). */
+  receivablesK: [49.2, 51, 47.8, 52.6, 55.1, 53.4, 56, 54.2, 57.9, 60.3, 61.5, 58.8],
   cashWeeks: ["24 Nov", "1 Dec", "8 Dec", "15 Dec", "22 Dec", "29 Dec", "5 Jan", "12 Jan"],
   /** Expected customer receipts and committed supplier payments, EGP thousands. */
   receiptsK: [180, 240, 150, 310, 220, 260, 190, 280],

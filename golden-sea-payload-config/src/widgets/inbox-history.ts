@@ -275,9 +275,11 @@ const review = on({
     ],
   }),
   render: (d): ViewBlock[] => {
+    // Decided at once; the snackbar's Undo puts the item back until the import is approved.
     const decide = (id: string, decision: "confirm" | "reject", label: string): Action => ({
       label,
       call: { path: `/inbox-history/review/${encodeURIComponent(id)}`, body: { decision } },
+      done: decision === "confirm" ? "Proposal confirmed" : "Proposal rejected — left out of the import",
     });
     return [
       note("Reviewed with you before they are saved — confirm the proposal or reject it."),

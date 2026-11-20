@@ -68,7 +68,11 @@ export function blocksText(blocks: ViewBlock[], limits: TextLimits = {}): string
         [...b.main, ...b.side].forEach(walk);
         break;
       case "stats":
-        for (const s of b.items) item(`${s.label}: ${s.value}${s.note ? ` (${s.note})` : ""}`);
+        for (const s of b.items) {
+          // A delta reads with its direction in words ("up +21%"): the chip's arrow isn't text.
+          const context = joined(s.delta && `${s.delta.dir} ${s.delta.text}`, s.note);
+          item(`${s.label}: ${s.value}${context ? ` (${context})` : ""}`);
+        }
         break;
       case "text":
         if (!b.muted && b.text.trim()) out.push(cut(b.text.trim(), width));
@@ -85,7 +89,14 @@ export function blocksText(blocks: ViewBlock[], limits: TextLimits = {}): string
         if (!b.items.length && b.empty) out.push(b.empty);
         for (const i of b.items.slice(0, rows))
           item(
-            joined(i.overline, i.headline, i.supporting, cellWords(i.trailing), ...(i.tags ?? []).map((t) => t.label)),
+            joined(
+              i.lead,
+              i.overline,
+              i.headline,
+              i.supporting,
+              cellWords(i.trailing),
+              ...(i.tags ?? []).map((t) => t.label),
+            ),
           );
         more(b.items.length);
         break;

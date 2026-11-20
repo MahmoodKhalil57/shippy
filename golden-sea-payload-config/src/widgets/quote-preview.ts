@@ -249,28 +249,13 @@ function actions(v: QuoteView, me: string): Action[] {
         assist: { field: "reason", tools: WRITING },
         done: "Returned to the preparer with your reason.",
       },
+      // Approving is internal and can be withdrawn until the quotation is sent: no dialog, the
+      // snackbar offers Undo (the endpoint's `undo`). Sending is the step that asks first.
       {
         label: "Approve",
         main: true,
         call: { path: decide, body: { decision: "Approve" } },
-        confirm: {
-          heading: `Approve ${q.number}`,
-          text: [
-            `Approve ${q.number} (${q.currency} ${amount(Number(q.totalExVat) || 0)} excl. VAT)${v.internal?.marginPct !== undefined ? ` at ${pct(v.internal.marginPct)} margin` : ""}. It can then be sent to the customer.`,
-            ...(v.internal?.exceptions ? ["", v.internal.exceptions] : []),
-          ].join("\n"),
-          label: "Approve",
-        },
-        fields: [
-          {
-            type: "textarea",
-            name: "reason",
-            label: "Comment (optional)",
-            admin: { placeholder: "e.g. OK — confirm the launch cost before sending" },
-          },
-        ],
-        assist: { field: "reason", tools: WRITING },
-        done: "Approved — the quotation can be sent.",
+        done: `Approved ${q.number} — it can be sent`,
       },
     );
   }

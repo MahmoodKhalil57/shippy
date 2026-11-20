@@ -10,3 +10,4 @@ export * from "./table.ts";
 export * from "./timeline.ts";
 export * from "./description-list.ts";
 export * from "./gauge.ts";
+export * from "./kanban.ts";

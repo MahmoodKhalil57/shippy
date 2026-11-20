@@ -54,6 +54,21 @@ seed data (`src/seed`). Entry points: `.` (the config, `src/config.ts`) and `./s
   and `tests/` import the dashboard and the backend (lint `overrides` allow it there).
 - **Screens:** see "Screens are widgets" in `saastemlycrm-design-system/AGENTS.md`. Anything the
   widget vocabulary can't draw becomes a generic block or component in the design system.
+- **Undo or a dialog** (the rule is `Reversal` in the design system's `schema.ts`): a reversible,
+  internal action happens at once and its endpoint answers with `undo: { path, body }`, the call
+  that takes it back (the snackbar's Undo). Today: an approval decision
+  (`/commercial/approvals/:id/withdraw`, until the quotation is sent, the payment recorded, the
+  bank details applied or the PO confirmed; never an exchange rate), an inbox review
+  (`/inbox/:id/reopen`, unless the link counted a supplier's reply), a history-import decision
+  (until the import is approved), a partial-award line (`/operations/po-award-undo`, until the
+  sales order is confirmed), an offer selection (`…/select-undo`, until a quotation is on its
+  way), removed or discarded RFQ drafts (`…/plan/restore`, until drafted again or sent), and
+  every switch and setting (the same call with the value it had). An undo endpoint checks access
+  as the signed-in user, lets only the person who acted take it back where it's a personal
+  decision, and answers 409 once the thing has moved on. Outward or irreversible actions keep
+  their `confirm` dialog and answer with no `undo`: sending RFQs, quotations, reminders and
+  correction requests, confirming a supplier PO, recording payments and receipts, applying bank
+  details, e-invoices, closing a case. "AI never sends, prices or pays without a person."
 - **Lint rules:** `vite.config.ts` loads the `saastemly` oxlint plugin from
   `saastemlycrm-design-system/lint` and spreads its `recommended` rules. `vp check` and the editor
   then report: `no-restricted-imports` (only `/contracts` and `/payload`), `widgets-are-pure`,
@@ -71,7 +86,9 @@ seed data (`src/seed`). Entry points: `.` (the config, `src/config.ts`) and `./s
   sets it up with this config and `seedModules`: `backend.reset()` in `beforeEach`, `call(...)`,
   `login("karim.youssef")` (demo password). `rest.test.ts`: collections, globals, access and seed
   over REST; `case-views`, `commercial`, `data-model`, `insights`, `operations`, `platform`,
-  `sourcing`: every endpoint and widget page; `design.test.ts`: the design rules on real data;
+  `sourcing`: every endpoint and widget page; `undo.test.ts`: each reversible action's Undo (it
+  puts things back as they were, runs as the signed-in user, and is refused once built on);
+  `design.test.ts`: the design rules on real data;
   `payload-parity.test.ts`: the dashboard's and the backend's `where` matching agree;
   `template.test.ts`: the packages' roles.
   `STATE-AUDIT.md` maps the state behind each screen.

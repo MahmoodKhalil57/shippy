@@ -245,15 +245,20 @@ export function navigate(to: string, replace = false) {
 // ---------------------------------------------------------------- feedback
 
 /**
- * A snackbar about what just happened. Errors stay until dismissed; everything else goes after 4s.
- * (The tone of success / info / warning messages isn't shown: M3 snackbars carry no status icons.)
+ * A snackbar about what just happened, in place of the one on screen (`<ui-snackbar>`). `success`
+ * (the default) shows the tick and `error` its mark; `info` and `warning` are plain. A message
+ * with an `action` or an error stays until it's used, dismissed or replaced; the rest go by
+ * themselves. An action that takes the thing back is `{ label: "Undo", onClick, undo: true }`:
+ * `undo` lets Ctrl / ⌘ + Z run it too. Returns the message's id.
  */
 export function toast(
   message: string,
   tone: "success" | "info" | "warning" | "error" = "success",
-  action?: { label: string; onClick: () => void },
+  action?: { label: string; onClick: () => void; undo?: boolean },
 ) {
-  document.querySelector("ui-snackbar")?.push(message, { tone: tone === "error" ? "error" : "neutral", action });
+  return document
+    .querySelector("ui-snackbar")
+    ?.push(message, { tone: tone === "success" || tone === "error" ? tone : "neutral", action });
 }
 
 // ---------------------------------------------------------------- bookmarks

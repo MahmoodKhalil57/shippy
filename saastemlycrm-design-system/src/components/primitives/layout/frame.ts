@@ -27,6 +27,12 @@ import { iconSvg, type IconName } from "../media/icon.ts";
  * - `<ui-frame-main>`: the main panel (a size container, `@container/main`) and `slot="footer"`
  *   under it; `pageTransition()` plays M3's transition patterns as a page enters.
  * Parts the shell measures carry `data-frame-region`; the root carries `data-frame`.
+ *
+ * Nothing moves an icon: a column's rail is its list with the labels left out (`<ui-menu
+ * layout="rail">` / `layout="nav"`: the same rows, 40px tall with 24px icons), both drawn in the
+ * same box (the panel's inset centres a 48px icon pill in the rail), so opening a column only
+ * reveals what is beside the icons. The header is 56px (M3's small app bar is 64dp; ours holds no
+ * page title).
  */
 /** One column that never grows past the viewport, whatever the page inside needs. */
 export const appShell = rcva(
@@ -53,11 +59,12 @@ export const appShell = rcva(
 );
 
 /**
- * Header: brand, the search (centred in the room left between brand and actions; it collapses
- * to an icon when that room gets small — a container query, not a screen breakpoint), actions.
+ * Header: brand, the search (centred in the room left between brand and actions, at most 28rem;
+ * it collapses to an icon when that room gets small — a container query, not a screen
+ * breakpoint), actions. 56px high.
  */
 export const appShellHeader = rcva(
-  "@container/header w-full flex flex-row flex-wrap max-w-full min-h-16 items-center gap-[clamp(0.5rem,1vw,1rem)] px-[max(var(--frame-edge),0.25rem)]",
+  "@container/header w-full flex flex-row flex-wrap max-w-full min-h-14 items-center gap-[clamp(0.5rem,1vw,1rem)] px-[max(var(--frame-edge),0.25rem)]",
 );
 export const appShellHeaderStart = rcva("flex flex-row flex-wrap max-w-full min-w-0 items-center gap-1");
 export const appShellBrand = rcva(
@@ -73,6 +80,8 @@ export const appShellBrandMark = rcva("grid size-8 place-items-center rounded-fu
 export const appShellSearch = rcva(
   "@container w-full flex flex-row flex-wrap max-w-full min-w-0 flex-1 justify-center",
 );
+/** The search itself: as wide as that room allows, up to 28rem. */
+export const appShellSearchBox = rcva("w-full max-w-md");
 export const appShellActions = rcva("flex flex-row flex-wrap max-w-full items-center justify-end gap-1");
 
 /**
@@ -136,8 +145,8 @@ export const appShellColumn = rcva(
 );
 
 /**
- * What a column shows: its toggle and menus. Inset so the 44px icon pills (and the toggle) sit
- * centred in the rail: `(--frame-rail − 2.75rem) / 2` from the column's edges. Each panel also
+ * What a column shows: its toggle and menus. Inset so the 48px icon pills (and the toggle) sit
+ * centred in the rail: `(--frame-rail − 3rem) / 2` from the column's edges. Each panel also
  * reaches over the frame's edge padding (a transparent border), so as a sheet it can meet the
  * screen edge without its icons moving. As a sheet it is lifted out of the layout (`fixed`, over
  * a backdrop) and widens there; closing, it stays lifted until it has folded back into the rail.
@@ -179,7 +188,7 @@ export const appShellPanel = rcva(
         sheet: true,
         open: true,
         class:
-          "fixed inset-y-0 z-40 max-w-full liquid-glass pt-16 pb-(--frame-edge) shadow-elevation-1 [transition:width_var(--duration-spatial)_var(--ease-spatial),position_0s_allow-discrete,z-index_0s_allow-discrete]",
+          "fixed inset-y-0 z-40 max-w-full liquid-glass pt-14 pb-(--frame-edge) shadow-elevation-1 [transition:width_var(--duration-spatial)_var(--ease-spatial),position_0s_allow-discrete,z-index_0s_allow-discrete]",
       },
       {
         sheet: true,
@@ -263,12 +272,12 @@ export const appShellPageFooter = rcva(
 );
 
 /**
- * A column's toggle: centred on its icon axis (where the rail's icons are centred, 2px inside
+ * A column's toggle: centred on its icon axis (where the rail's icons are centred, 4px inside
  * the 44px pill), at the same spot whether the column is open or closed.
  */
 export const appShellToggle = rcva("shrink-0 group/toggle", {
   variants: {
-    column: { start: "ms-0.5", end: "me-0.5 self-end" },
+    column: { start: "ms-1", end: "me-1 self-end" },
   },
 });
 
@@ -278,12 +287,17 @@ export const appShellBackdrop = rcva(
 );
 
 /**
- * A column's footer (`slot="nav-footer"` / `"aside-footer"`): pinned under the menus, on the same
- * icon axis as the column's toggle (e.g. an account switcher), in every state — rail, open, sheet.
- * Several elements stack, each always shown in full: they centre on the icon axis (the footer is one
- * icon wide), so a short note under the switcher spreads evenly either side of it and fits the rail.
+ * A column's footer (`slot="nav-footer"` / `"aside-footer"`): pinned under the menus (e.g. the
+ * person signed in), in every state — rail, open, sheet. It starts on the icon axis, so what it
+ * leads with (an avatar) stays where it is while the column opens and shows what follows it.
  */
-export const appShellFooter = rcva("flex w-10 shrink-0 flex-col items-center gap-1 ms-0.5 pb-1 text-center");
+export const appShellFooter = rcva(
+  // What follows the avatar (the name) appears once the column has opened, so it never shows
+  // squeezed into the rail's width while the column grows. The footer is one row tall and clips
+  // below it: while the column is still narrow the name wraps under the avatar, and without the
+  // clip that second line would lift the avatar until the column is wide enough.
+  "flex flex-col gap-1 ps-1 pb-1 max-h-11 overflow-y-clip [&>*>*+*]:[transition:opacity_var(--duration-effects)_var(--ease-effects)_var(--settle-spatial)] [&>*>*+*]:starting:opacity-0 motion-reduce:[&>*>*+*]:[transition:none]",
+);
 
 /**
  * A column's two rails when another column's rail is merged into it (a compact frame): stacked in
@@ -300,7 +314,7 @@ export const appShellRailGroups = rcva("grid min-h-0 flex-1 [&>*]:[grid-area:1/1
 export const appShellRailGroup = rcva("flex min-h-0 flex-col gap-3 motion-reduce:transition-none!", {
   variants: {
     shown: {
-      true: "visible translate-x-0 opacity-100 [transition:translate_var(--duration-spatial)_var(--ease-spatial),opacity_var(--duration-effects)_var(--ease-effects),visibility_0s]",
+      true: "translate-x-0 opacity-100 [transition:translate_var(--duration-spatial)_var(--ease-spatial),opacity_var(--duration-effects)_var(--ease-effects),visibility_0s]",
       false:
         "invisible pointer-events-none opacity-0 [transition:translate_var(--duration-spatial)_var(--ease-spatial),opacity_var(--duration-effects)_var(--ease-effects),visibility_0s_var(--duration-spatial)]",
     },
@@ -318,7 +332,10 @@ export const appShellSlot = rcva("flex min-h-0 w-full flex-col gap-3", {
   variants: {
     hidden: { true: "hidden" },
     /** The scrolling part of a column (its toggle stays put above it). */
-    scroll: { true: "flex-1 overflow-x-hidden overflow-y-auto overscroll-contain" },
+    // It scrolls without a scrollbar: while the column folds, one would show beside half-drawn rows.
+    scroll: {
+      true: "flex-1 overflow-x-hidden overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+    },
   },
 });
 
@@ -331,23 +348,30 @@ export const appShellSlot = rcva("flex min-h-0 w-full flex-col gap-3", {
 export const appShellNavList = rcva("motion-reduce:transition-none", {
   variants: {
     state: {
-      /** Unfold at once; groups expand as the column settles. */
-      shown: `visible [--menu-collapse:0] [--menu-expanded:1] [transition:visibility_0s,--menu-collapse_0s,--menu-expanded_0s_var(--settle-spatial)] [&_li>details>ul]:overflow-hidden [&_li>details>ul]:transition-[block-size] [&_li>details>ul]:duration-(--duration-spatial) [&_li>details>ul]:ease-spatial [&_li>details>ul]:delay-(--settle-spatial) [&_li>details>ul]:starting:[block-size:0] motion-reduce:[&_li>details>ul]:transition-none`,
+      /**
+       * Unfold once the column has grown: the labels, headings and chevrons fade in beside icons that
+       * never moved, so nothing shows cut off in a column still on its way open; groups expand then too.
+       */
+      shown: `visible [--menu-collapse:0] [--menu-expanded:1] [transition:visibility_0s,--menu-collapse_0s_var(--settle-spatial),--menu-expanded_0s_var(--settle-spatial)] [&_li>details>ul]:overflow-hidden [&_li>details>ul]:transition-[block-size] [&_li>details>ul]:duration-(--duration-spatial) [&_li>details>ul]:ease-spatial [&_li>details>ul]:delay-(--settle-spatial) [&_li>details>ul]:starting:[block-size:0] motion-reduce:[&_li>details>ul]:transition-none`,
       /** Groups collapse first; fold as they settle; hand over to the rail once folded. */
       hidden: `invisible [--menu-collapse:1] [--menu-expanded:0] [transition:visibility_0s_var(--settle-spatial),--menu-collapse_0s,--menu-expanded_0s] group-has-[details[open]]/column:[transition:visibility_0s_calc(var(--settle-spatial)_*_2),--menu-collapse_0s_var(--settle-spatial),--menu-expanded_0s] [&_li>details>ul]:overflow-hidden [&_li>details>ul]:[block-size:0] [&_li>details>ul]:transition-[block-size] [&_li>details>ul]:duration-(--duration-spatial) [&_li>details>ul]:ease-spatial [&_li>details>ul]:delay-0 motion-reduce:[&_li>details>ul]:transition-none`,
     },
   },
 });
-export const appShellNavRail = rcva("transition-[visibility] duration-0 motion-reduce:delay-0", {
-  variants: {
-    state: {
-      /** Takes over once the list has folded into its look. */
-      shown:
-        "visible delay-(--settle-spatial) group-has-[details[open]]/column:delay-[calc(var(--settle-spatial)_*_2)]",
-      hidden: "invisible delay-0",
+// The rail scrolls without a scrollbar: one would take a share of its 48px and push the icons off their axis.
+export const appShellNavRail = rcva(
+  "transition-[visibility] duration-0 motion-reduce:delay-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+  {
+    variants: {
+      state: {
+        /** Takes over once the list has folded into its look. */
+        shown:
+          "visible delay-(--settle-spatial) group-has-[details[open]]/column:delay-[calc(var(--settle-spatial)_*_2)]",
+        hidden: "invisible delay-0",
+      },
     },
   },
-});
+);
 
 /** Stacks a column's two views in one grid cell, so the one on its way out never pushes the other. */
 export const appShellStack = rcva("grid w-full min-h-0 grid-cols-[minmax(0,1fr)] [&>*]:[grid-area:1/1]", {
@@ -435,7 +459,7 @@ export class UiFrameHeader extends LightElement {
         ${brand} ${this.slotted("start")}
       </div>
       <div class=${appShellSearch({ class: appShellLift({ side: "start", lifted: this.liftStart }) })}>
-        ${this.slotted("search")}
+        <div class=${appShellSearchBox()}>${this.slotted("search")}</div>
       </div>
       <div class=${appShellActions({ class: appShellLift({ side: "end", lifted: this.liftEnd }) })}>
         ${this.slotted("actions")}
@@ -530,6 +554,7 @@ export class UiFrameColumn extends LightElement {
           type="button"
           class=${iconButton({ class: appShellToggle({ column: merged ? "start" : side }) })}
           aria-label=${open ? `Collapse ${what}` : `Expand ${what}`}
+          aria-expanded=${open ? "true" : "false"}
           @click=${() => this._ask(!open)}
         >
           ${iconSvg(side === "start" ? "menu" : "menu-panel", { size: "md" })}

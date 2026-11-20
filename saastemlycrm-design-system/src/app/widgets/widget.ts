@@ -116,7 +116,18 @@ interface WidgetBase<T> {
    * what its content usually needs).
    */
   size: TileSize;
+  /**
+   * A contrasting surface for the tile the screen is about (a titled widget only: a bare tile has
+   * no surface). `inverse` is M3's inverse surface: dark in a light theme, a raised surface in a
+   * dark one; one per screen, the design check reports a second (M3: one prominent item).
+   * `tinted` is the primary container. Every block reads on both: the surface re-scopes the
+   * colour roles for what's inside (src/styles/theme.css, "emphasis surfaces").
+   */
+  emphasis?: TileEmphasis;
 }
+
+/** The surface a tile can take to stand apart (`<ui-tile emphasis>`). */
+export type TileEmphasis = "inverse" | "tinted";
 
 /** A tile's header from the data: its count, tags and actions (and a subhead). */
 export interface WidgetHead {
@@ -236,6 +247,7 @@ export function eachTiles<T>(w: Widget<T>, data: T, scope: WidgetScope): { key: 
     widget: {
       title: e.title(item, i),
       size: w.size,
+      emphasis: w.emphasis,
       skeleton: w.skeleton,
       subhead: e.subhead?.(item, data, scope),
       head: e.head ? () => e.head!(item, data, scope) : undefined,

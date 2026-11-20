@@ -45,12 +45,25 @@ const reason = (required: boolean) => ({
   admin: { placeholder: "e.g. Delta is our approved helmet supplier; Nile only has 10 in stock" },
 });
 
+/**
+ * Selecting an offer is internal and reversible (the endpoint answers with `undo`: the line's
+ * selection as it was), so the best-fit offer is one press with Undo in the snackbar. Off the
+ * best fit, the form stays: it asks for the reason the approver reads.
+ */
 function selectOne(base: string, line: CmpLine, o: CmpOffer, sole: boolean): Action {
   const best = o.id === line.best;
+  const call = { path: `${base}/select`, body: { lineNo: line.lineNo, parts: [{ offer: o.id, qty: line.qty }] } };
+  if (best)
+    return {
+      label: sole ? "Selected" : "Select",
+      disabled: sole,
+      call,
+      done: `Line ${line.lineNo}: ${o.supplier} selected (best fit)`,
+    };
   return {
     label: sole ? "Selected" : "Select",
     disabled: sole,
-    call: { path: `${base}/select`, body: { lineNo: line.lineNo, parts: [{ offer: o.id, qty: line.qty }] } },
+    call,
     confirm: {
       heading: `Line ${line.lineNo}: select offer`,
       text: [

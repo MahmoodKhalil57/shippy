@@ -4,11 +4,18 @@ import type { Home, HomeCase, HomeChart, HomeUnit, HomeWidget } from "../endpoin
 
 /**
  * The dashboard's home (Payload `admin.components.views.dashboard`): the signed-in user's day,
- * tailored to their role by GET /api/home (../endpoints/home.ts): KPI tiles with trends, decision /
- * briefing / follow-up lists, the case queue and charts. Each role /home distinguishes has its own
- * tiles in its own order (`visible` by role), each titled here and drawing its part of /home's
- * data (lists and charts found by the title /home gives them). The header's "While you were away"
- * summary reads the user's unread notifications.
+ * tailored to their role by GET /api/home (../endpoints/home.ts). Every role's day has the same
+ * shape, so the first window says where they stand: a greeting whose subtitle is the day's live
+ * numbers, a strip of the four figures they steer by (the first tinted, each with how it moved and
+ * its trend), the chart their work turns on beside "Next up" (what's due, soonest first: the one
+ * inverse tile), then their two lists, their case queue and the other charts. Each tile draws its
+ * part of /home's data (lists and charts found by the title /home gives them), `visible` by role.
+ * The header's "While you were away" summary reads the user's unread notifications.
+ *
+ * The order fills the board's rows (saastemlycrm-design-system/AGENTS.md, "No lane left empty"):
+ * figures `full`; chart `m` + next up `s` (one row on 3 lanes; on 4 the first list joins it); three
+ * small cards, the two lists and a compact chart (`s` + `s` + `s`: a row on 3 lanes, pairs on 2);
+ * the queue `l`; the other charts `m`.
  */
 
 const home: Source = { endpoint: "/home" };
@@ -27,6 +34,7 @@ const scale = (unit: HomeUnit, values: number[]) => (unit.endsWith("-k") ? value
 
 type HomeList = Extract<HomeWidget, { kind: "lists" }>["lists"][number];
 type HomeQueue = Extract<HomeWidget, { kind: "queue" }>;
+type HomeAgenda = Extract<HomeWidget, { kind: "agenda" }>;
 
 /* ------------------------------------------------------------ the parts of /home's data */
 
@@ -85,7 +93,7 @@ function queueTable(q: HomeQueue): ViewBlock {
         due: c.overdue ? { text: c.due, tone: "error" } : c.due,
         next: c.next,
         blocker: c.blocker ? { text: `⚑ ${c.blocker}`, tone: c.tone === "error" ? "error" : undefined } : "",
-        owner: c.owner,
+        owner: c.owner ? { text: c.owner, person: true } : "",
         value: c.value === undefined ? null : `USD ${c.value.toLocaleString("en-US")}`,
       };
     }),
@@ -94,17 +102,35 @@ function queueTable(q: HomeQueue): ViewBlock {
 
 function stats(w: Extract<HomeWidget, { kind: "tiles" }>): ViewBlock {
   return block("stats", {
-    items: w.tiles.map((t) => ({
+    size: "md",
+    // The first figure is the row's headline: drawn tinted.
+    items: w.tiles.map((t, i) => ({
+      main: i === 0,
       label: t.label,
       value: t.value,
       note: t.note,
       tone: t.tone === "success" || t.tone === "warning" || t.tone === "error" ? t.tone : undefined,
       href: t.href,
+      delta: t.delta,
       trend: t.trend && {
         labels: t.trend.labels,
         values: scale(t.trend.unit, t.trend.values),
         format: FORMAT[t.trend.unit],
       },
+    })),
+  });
+}
+
+/** What's due, soonest first: each row led by its time. */
+function agenda(a: HomeAgenda): ViewBlock {
+  return block("list", {
+    empty: a.empty,
+    items: a.items.map((i) => ({
+      lead: i.lead,
+      headline: i.title,
+      supporting: i.sub,
+      href: i.href,
+      tags: i.late ? [{ label: "Late", tone: "error" as const }] : undefined,
     })),
   });
 }
@@ -144,11 +170,13 @@ function list(l: HomeList): ViewBlock {
 
 const on = from<Home>(home);
 
-/** The role's figures (/home sends one set per role). */
-const figures = (title: string): Widget<Home> =>
+/**
+ * The role's four figures (/home sends one set per role), as a strip across the page: untitled, so
+ * each figure is a card of its own (every one carries its label).
+ */
+const figures = (): Widget<Home> =>
   on({
-    title,
-    size: "m",
+    size: "full",
     skeleton: "stats",
     hidden: (h) => !of(h, "tiles"),
     render: (h) => {
@@ -157,11 +185,27 @@ const figures = (title: string): Widget<Home> =>
     },
   });
 
-/** One of /home's lists, by the title /home gives it. */
-const listTile = (title: string): Widget<Home> =>
+/** What's due next for this person: the screen's one inverse tile, beside the main chart. */
+const nextUp = (): Widget<Home> =>
+  on({
+    title: "Next up",
+    size: "s",
+    emphasis: "inverse",
+    skeleton: "list",
+    hidden: (h) => !of(h, "agenda"),
+    head: (h) => ({ subhead: of(h, "agenda")?.sub }),
+    render: (h) => {
+      const a = of(h, "agenda");
+      return a ? agenda(a) : null;
+    },
+  });
+
+/** One of /home's lists, by the title /home gives it: `tinted` for the list that waits on this person alone. */
+const listTile = (title: string, emphasis?: "tinted"): Widget<Home> =>
   on({
     title,
     size: "s",
+    emphasis,
     skeleton: "list",
     hidden: (h) => !listNamed(h, title),
     head: (h) => {
@@ -180,11 +224,11 @@ const listTile = (title: string): Widget<Home> =>
     },
   });
 
-/** One of /home's charts, by the title /home gives it. */
-const chartTile = (title: string): Widget<Home> =>
+/** One of /home's charts, by the title /home gives it: `s` for a few bars that read in one lane. */
+const chartTile = (title: string, size: "s" | "m" = "m"): Widget<Home> =>
   on({
     title,
-    size: "m",
+    size,
     skeleton: "chart",
     hidden: (h) => !chartNamed(h, title),
     head: (h) => ({ subhead: chartNamed(h, title)?.sub }),
@@ -225,62 +269,88 @@ const forRole = (role: string | null, tiles: Widget<Home>[]): Widget[] =>
       }) as Widget,
   );
 
-const decisions = () => listTile("Waiting for your decision");
-const briefing = () => listTile("Daily briefing");
-const followUps = () => listTile("Today's follow-ups");
+const DECISIONS = "Waiting for your decision";
+const BRIEFING = "Daily briefing";
+const FOLLOW_UPS = "Today's follow-ups";
+
+/**
+ * One role's day: its figures, its main chart beside what's due next, three small cards (its two
+ * lists and a compact chart), its queue, then its other charts.
+ */
+const day = (d: {
+  chart: string;
+  lists: [string, string];
+  small: string;
+  queue: string;
+  charts?: string[];
+}): Widget<Home>[] => [
+  figures(),
+  chartTile(d.chart),
+  nextUp(),
+  listTile(d.lists[0], d.lists[0] === DECISIONS ? "tinted" : undefined),
+  listTile(d.lists[1]),
+  chartTile(d.small, "s"),
+  queueTile(d.queue),
+  ...(d.charts ?? []).map((title) => chartTile(title)),
+];
 
 const days: Widget[] = [
-  ...forRole("management", [
-    decisions(),
-    briefing(),
-    figures("Business at a glance"),
-    chartTile("Inquiries, quotes and wins"),
-    chartTile("Value won per month"),
-    chartTile("Quotation turnaround"),
-    chartTile("Gross profit: expected vs actual"),
-    queueTile("All live cases"),
-  ]),
-  ...forRole("finance-director", [
-    decisions(),
-    briefing(),
-    figures("Money today"),
-    chartTile("Cash in vs cash out, next 8 weeks"),
-    chartTile("Receivables by age"),
-    chartTile("Gross profit: expected vs actual"),
-    queueTile("All live cases"),
-  ]),
-  ...forRole("operations", [
-    figures("Operations today"),
-    briefing(),
-    followUps(),
-    chartTile("Cash in vs cash out, next 8 weeks"),
-    chartTile("Time to acknowledge an RFQ"),
-    queueTile("My queue"),
-  ]),
-  ...forRole("sales", [
-    figures("My cases by wait"),
-    queueTile("My queue"),
-    briefing(),
-    listTile("Pipeline next steps"),
-    chartTile("Inquiries, quotes and wins"),
-    chartTile("Why we lose"),
-  ]),
-  ...forRole("office-admin", [
-    listTile("Inbox to triage"),
-    followUps(),
-    figures("Cases by wait"),
-    queueTile("Desk cases"),
-    chartTile("Out-of-hours requests"),
-    chartTile("Time to acknowledge an RFQ"),
-  ]),
-  ...forRole(null, [
-    figures("Cases by wait"),
-    queueTile("My queue"),
-    briefing(),
-    followUps(),
-    chartTile("My deadlines, next 7 days"),
-    chartTile("My quote turnaround"),
-  ]),
+  ...forRole(
+    "management",
+    day({
+      chart: "Inquiries, quotes and wins",
+      lists: [DECISIONS, BRIEFING],
+      small: "Value won per month",
+      queue: "All live cases",
+      charts: ["Quotation turnaround", "Gross profit: expected vs actual"],
+    }),
+  ),
+  ...forRole(
+    "finance-director",
+    day({
+      chart: "Cash in vs cash out, next 8 weeks",
+      lists: [DECISIONS, BRIEFING],
+      small: "Receivables by age",
+      queue: "All live cases",
+      charts: ["Gross profit: expected vs actual"],
+    }),
+  ),
+  ...forRole(
+    "operations",
+    day({
+      chart: "Cash in vs cash out, next 8 weeks",
+      lists: [FOLLOW_UPS, BRIEFING],
+      small: "Time to acknowledge an RFQ",
+      queue: "My queue",
+    }),
+  ),
+  ...forRole(
+    "sales",
+    day({
+      chart: "Inquiries, quotes and wins",
+      lists: ["Pipeline next steps", BRIEFING],
+      small: "Why we lose",
+      queue: "My queue",
+    }),
+  ),
+  ...forRole(
+    "office-admin",
+    day({
+      chart: "Out-of-hours requests",
+      lists: ["Inbox to triage", FOLLOW_UPS],
+      small: "Time to acknowledge an RFQ",
+      queue: "Desk cases",
+    }),
+  ),
+  ...forRole(
+    null,
+    day({
+      chart: "My deadlines, next 7 days",
+      lists: [FOLLOW_UPS, BRIEFING],
+      small: "My quote turnaround",
+      queue: "My queue",
+    }),
+  ),
 ];
 
 export const homePage = widgets({

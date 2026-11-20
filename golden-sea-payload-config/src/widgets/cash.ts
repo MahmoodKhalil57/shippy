@@ -141,20 +141,23 @@ function decideActions(a: { id: string; title: string }, bank: BankChange["reque
       fields: [{ type: "textarea", name: "reason", label: "Reason (required)", required: true }],
       done: `Rejected: ${a.title}.`,
     },
-    {
-      label: bank ? "Approve after call-back" : "Approve",
-      main: true,
-      call: call("Approve"),
-      confirm: {
-        heading: `Approve: ${a.title}`,
-        text: bank
-          ? `Call the supplier back on the number on file (${bank.phoneOnFile || "—"}) — never on a number from the request — and confirm the new account with them.`
-          : undefined,
-        label: "Approve",
-      },
-      fields: approveFields,
-      done: `Approved: ${a.title}.`,
-    },
+    // A bank-detail change asks for the call-back first (a form). A payment approval pays nothing
+    // (recording the payment is its own confirmed step), so it happens at once. Either can be
+    // withdrawn with the snackbar's Undo until the details are applied or the payment recorded.
+    bank
+      ? {
+          label: "Approve after call-back",
+          main: true,
+          call: call("Approve"),
+          confirm: {
+            heading: `Approve: ${a.title}`,
+            text: `Call the supplier back on the number on file (${bank.phoneOnFile || "—"}) — never on a number from the request — and confirm the new account with them.`,
+            label: "Approve",
+          },
+          fields: approveFields,
+          done: `Approved: ${a.title}.`,
+        }
+      : { label: "Approve", main: true, call: call("Approve"), done: `Approved: ${a.title}.` },
   ];
 }
 
@@ -207,7 +210,7 @@ const tiles = on({
   },
 });
 
-// Three series (the chart's limit): not due, 1–30, and 31+ days overdue.
+// One column per customer, its balance stacked by age: what's owed, and how much of it is late.
 const ageing = on({
   title: "Receivables ageing by customer",
   size: "m",
@@ -220,12 +223,9 @@ const ageing = on({
       label: "Receivables ageing by customer",
       chart: {
         kind: "bars",
+        stacked: true,
         labels: d.ageing.map((a) => a.customer.split(" ")[0]!),
-        series: [
-          { name: "Not due", values: d.ageing.map((a) => a.values[0]!) },
-          { name: "1–30 days", values: d.ageing.map((a) => a.values[1]!) },
-          { name: "31+ days", values: d.ageing.map((a) => a.values[2]! + a.values[3]!) },
-        ],
+        series: d.buckets.map((name, i) => ({ name, values: d.ageing.map((a) => a.values[i] ?? 0) })),
         format: usdK,
       },
     }),
@@ -526,6 +526,12 @@ function bankChange(d: CashPayables, b: BankChange, me: string): ViewBlock[] {
             label: "Apply new bank details",
             main: true,
             call: { path: "/cash/apply-bank", body: { approval: b.id } },
+            // Payments follow these details from now on: it asks first and can't be undone here.
+            confirm: {
+              heading: `Apply the new bank details to ${b.supplierName}?`,
+              text: "Two people approved the change. From now on payments to this supplier go to the new account.",
+              label: "Apply details",
+            },
             done: `New bank details applied to ${b.supplierName} — verified by two people.`,
           },
         ]

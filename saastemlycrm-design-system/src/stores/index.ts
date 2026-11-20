@@ -13,9 +13,18 @@ export type Theme = "system" | "light" | "dark";
 export const preferences = createStore(
   {
     theme: "system" as Theme,
-    /** App shell columns: navigation expanded (vs. rail) and side panel open. */
-    navOpen: true,
-    asideOpen: true,
+    /**
+     * App shell columns as they are now: navigation expanded (vs. rail) and side panel open (vs.
+     * its rail). `navOpen` mirrors the frame, which decides it from the window's room
+     * (`<ui-app-shell>`); the side panel starts as it was left, where it fits beside the page.
+     */
+    navOpen: false,
+    asideOpen: false,
+    /**
+     * What the person chose for the navigation: `true` expanded it beside the page, `false`
+     * collapsed it to the rail, `null` nothing yet (expanded from an extra-large window, the rail below).
+     */
+    navExpanded: null as boolean | null,
     /** Side-panel sections that are collapsed, by id (everything else is open). */
     asideCollapsed: [] as string[],
     /** Collection tables: the columns someone hid or showed, by collection (absent: the defaults). */

@@ -1,5 +1,6 @@
 import type { TileSize } from "../../components/base/board.ts";
 import type { Action, Cell, Entry, ViewBlock } from "./schema.ts";
+import type { TileEmphasis } from "./widget.ts";
 
 /** The buttons a block shows itself (not its children's). */
 const actionsOf = (b: ViewBlock): Action[] =>
@@ -70,11 +71,31 @@ export interface DrawnTile {
   title?: string;
   /** Unknown when only the drawn blocks are at hand: then the rules that need it don't run. */
   size?: TileSize;
+  /** The contrasting surface its widget asked for. */
+  emphasis?: TileEmphasis;
   blocks: ViewBlock[];
 }
 
-/** Blocks that may stand bare (an untitled tile): what steers the screen, or an alert. */
-const BARE: ReadonlySet<ViewBlock["type"]> = new Set<ViewBlock["type"]>(["choice", "actions", "alert", "document"]);
+/**
+ * Blocks that may stand bare (an untitled tile): what steers the screen, an alert, or a strip of
+ * key figures, where each figure is a labelled cell of its own (the header HIG asks a list or
+ * table for is on every cell).
+ */
+const BARE: ReadonlySet<ViewBlock["type"]> = new Set<ViewBlock["type"]>([
+  "choice",
+  "actions",
+  "alert",
+  "document",
+  "stats",
+]);
+
+/**
+ * Most tiles on one screen that take the inverse surface. M3's inverse roles are "applied
+ * selectively to components" to contrast with the UI around them: a second one contrasts with
+ * nothing, and the screen has two things asking to be read first (M3 Buttons says the same of
+ * actions: "a single prominent button for the primary action").
+ */
+export const MAX_INVERSE_TILES = 1;
 
 /** Whether a table is anywhere in these blocks. */
 const hasTable = (list: ViewBlock[]): boolean =>
@@ -113,12 +134,24 @@ function tileRules(t: DrawnTile, where: string): string[] {
       `${at}: ${t.blocks.length} blocks in ${t.size ? `an \`${t.size}\`` : "a"} tile (at most ${max}); keep it about one thing`,
     );
   // HIG Lists and tables: "use a label or a header to help people understand the context". Only
-  // what steers the screen (a choice, actions) or an alert stands without a title.
+  // what steers the screen (a choice, actions), an alert or a strip of labelled figures stands
+  // without a title.
   if (!t.title?.trim()) {
     const bare = [...new Set(t.blocks.filter((b) => !BARE.has(b.type)).map((b) => b.type))];
     if (bare.length) out.push(`${at}: ${bare.join(", ")} without a title; give the widget a \`title\``);
+    // An emphasis is a surface, and an untitled tile has none.
+    if (t.emphasis) out.push(`${at}: \`emphasis\` on an untitled tile does nothing; give the widget a \`title\``);
   }
   return out;
+}
+
+/** What breaks the tiles as a set: more than one inverse tile on the screen. */
+function boardRules(tiles: DrawnTile[], where: string): string[] {
+  const inverse = tiles.filter((t) => t.emphasis === "inverse" && t.title?.trim());
+  if (inverse.length <= MAX_INVERSE_TILES) return [];
+  return [
+    `${where}: ${inverse.length} inverse tiles (${inverse.map((t) => t.title).join(", ")}); keep the one the screen is about, make the others \`tinted\` or plain`,
+  ];
 }
 
 /**
@@ -145,9 +178,14 @@ function tilesOf(blocks: ViewBlock[]): DrawnTile[] {
 /**
  * What breaks the tiles' content: a table in an `s` tile, a grid or split at a tile's top, more
  * top-level blocks than its size holds (`MAX_TILE_BLOCKS`), an untitled tile that isn't a choice,
- * actions or an alert. Each tile is a widget's title, size and drawn blocks.
+ * actions, an alert or key figures, and more than one inverse tile on the screen
+ * (`MAX_INVERSE_TILES`). Each tile is a widget's title, size, emphasis and drawn blocks; the tiles
+ * are one screen's, as one person sees it.
  */
-export const tileProblems = (tiles: DrawnTile[], where: string): string[] => tiles.flatMap((t) => tileRules(t, where));
+export const tileProblems = (tiles: DrawnTile[], where: string): string[] => [
+  ...tiles.flatMap((t) => tileRules(t, where)),
+  ...boardRules(tiles, where),
+];
 
 /**
  * What breaks the design in these blocks; `where` names the screen and widget in messages. The

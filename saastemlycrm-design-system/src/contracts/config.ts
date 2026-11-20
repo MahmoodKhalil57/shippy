@@ -166,8 +166,12 @@ export interface CollectionSettings {
 }
 
 export interface DashboardSettings {
-  /** Navigation groups (`admin.group` names) in order, with their icons; others follow. */
-  nav?: { groups: { label: string; icon?: string }[] };
+  /**
+   * Navigation groups (`admin.group` names) in order, with their icons; others follow. `section`
+   * is the heading the group sits under in the expanded navigation (consecutive groups with the
+   * same one share it).
+   */
+  nav?: { groups: { label: string; icon?: string; section?: string }[] };
   /** The side panel's counters: widgets (usually `counts`, shown by role with `visible`). */
   aside?: Widget[];
   /**

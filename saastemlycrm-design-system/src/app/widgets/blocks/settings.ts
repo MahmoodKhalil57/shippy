@@ -5,14 +5,21 @@ import { defineBlock } from "../registry.ts";
 /**
  * `settings`: settings that apply as soon as they change. A `true` / `false` value is a switch,
  * a value with `options` is a select. A change sends `call` with `value` added to the body, shows
- * `done` (or the endpoint's `message`) and reloads. Without `call`, or `disabled`, it's read-only.
+ * `done` (or the endpoint's `message`) with Undo (the same call with the value it had) and
+ * reloads. Without `call`, or `disabled`, it's read-only.
  */
 
 defineBlock("settings", (b, ctx) => {
   type Item = (typeof b.items)[number];
   const send = (i: Item, value: boolean | string) =>
     i.call &&
-    ctx.run({ label: i.label, call: { ...i.call, body: { ...i.call.body, value } }, done: i.done, reply: true });
+    ctx.run({
+      label: i.label,
+      call: { ...i.call, body: { ...i.call.body, value } },
+      done: i.done,
+      reply: true,
+      undo: { ...i.call, body: { ...i.call.body, value: i.value } },
+    });
   return html`<ui-flex direction="col" gap="3"
     >${b.items.map((i) =>
       typeof i.value === "boolean"

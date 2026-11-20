@@ -5,7 +5,7 @@ import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import type { CollectionConfig, Where } from "payload";
 import { parse, stringify } from "qs-esm";
-import { api, type FindOptions } from "../api/client.ts";
+import { api, withBase, type FindOptions } from "../api/client.ts";
 import type { Select } from "../payload/select.ts";
 import type { Doc, FieldLike, PaginatedDocs } from "../contracts/config.ts";
 import "../components/index.ts";
@@ -17,9 +17,13 @@ import {
   type FilterMatch,
 } from "../components/base/filter-query.ts";
 import { orderColumns } from "../components/base/columns.ts";
+import { byColumn, columnOf, moved, NONE, valueOf } from "../components/base/kanban.ts";
+import type { KanbanColumn } from "../components/primitives/data/kanban.ts";
 import type { TableColumn } from "../components/primitives/data/table.ts";
 import { preferences, StoreController } from "../stores/index.ts";
 import type { Access } from "./app.ts";
+import type { DocState } from "./edit-view.ts";
+import { initialsOf } from "./widgets/blocks.ts";
 import {
   cellText,
   collectionOf,
@@ -31,6 +35,8 @@ import {
   collectionSettings,
   componentOf,
   isToned,
+  navigate,
+  parseRoute,
   titleOf,
   toneOf,
   toast,
@@ -49,6 +55,16 @@ import {
  * - `joins`: join columns (a customer's orders) come back as counts.
  * The table's state lives in the URL (`?q=…&sort=…&filters[0][field]=…`), so a filtered view can be
  * bookmarked, shared, and survives a reload; the columns someone picks are remembered per collection.
+ *
+ * - **Rows are one line** (`<ui-table lines="one">`): 44px, cut with "…", a person as an avatar and
+ *   name.
+ * - **A record opens in a sheet over the list** (`<ui-sheet>` around the edit page's own form,
+ *   `<dashboard-edit-view embedded>`), from a row, a card or a board card. The URL says which
+ *   (`?open=<id>`), so it can be shared and Back closes it; "Open full page" and a new tab go to
+ *   the record's own page, which stays as it was.
+ * - **The board moves records**: a card dragged to another column (or sent there from its menu)
+ *   changes at once, is saved with a PATCH, and the snackbar's Undo sends it back; a refused save
+ *   returns the card and says why. Only for people who may update the collection.
  */
 
 /** Field types a table cell can show. */
@@ -80,6 +96,15 @@ const labelOf = (f: FieldLike) =>
   typeof f.label === "string" ? f.label : f.name![0]!.toUpperCase() + f.name!.slice(1).replace(/([A-Z])/g, " $1");
 const relatedSlug = (f: FieldLike) =>
   (f.type === "relationship" || f.type === "upload") && typeof f.relationTo === "string" ? f.relationTo : undefined;
+/** A field that names one person: a relationship to a collection people sign in to. */
+const isPerson = (f: FieldLike) => {
+  const target = relatedSlug(f);
+  return !!target && !f.hasMany && !!collectionOf(target)?.auth;
+};
+/** The record the URL says is open in the sheet (`?open=<id>`). */
+const readOpen = () => new URLSearchParams(location.search).get("open") ?? "";
+/** How long the sheet takes to leave (its form stays in it meanwhile). */
+const SHEET_LEAVES = 300;
 
 /** Every column the collection's table can show: its listable fields, then the timestamps. */
 function allColumns(c: CollectionConfig): FieldLike[] {
@@ -154,6 +179,8 @@ function readQuery(): ListQuery {
 export class DashboardListView extends LightElement {
   @property() slug = "";
   @property({ attribute: false }) access!: Access;
+  /** Who is signed in (the open record's form reads it). */
+  @property({ attribute: false }) user: (Doc & { collection: string }) | null = null;
   @state() private result: PaginatedDocs | null = null;
   @state() private loading = false;
   @state() private query: ListQuery = { ...DEFAULTS };
@@ -165,12 +192,34 @@ export class DashboardListView extends LightElement {
   @state() private confirming = false;
   /** Choices for relationship filters, by field. */
   @state() private relatedOptions: Record<string, { label: string; value: string }[]> = {};
+  /** The record open in the sheet (the URL's `open`). */
+  @state() private openId = "";
+  /** The record whose form the sheet holds: it stays while the sheet slides out. */
+  @state() private sheetId = "";
+  /** What the open record's form says: its title, unsaved changes, saving. */
+  @state() private doc: DocState | null = null;
+  /** What to do once the open record's unsaved changes are let go (the question is on screen). */
+  @state() private leaving: (() => void) | null = null;
   #prefs = new StoreController(this, preferences);
   #request = 0;
   #typing?: ReturnType<typeof setTimeout>;
+  #emptying?: ReturnType<typeof setTimeout>;
 
   private get collection() {
     return collectionOf(this.slug)!;
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+    this.addEventListener("click", this._onClick);
+    window.addEventListener("popstate", this._onPop);
+  }
+
+  disconnectedCallback() {
+    this.removeEventListener("click", this._onClick);
+    window.removeEventListener("popstate", this._onPop);
+    clearTimeout(this.#emptying);
+    super.disconnectedCallback();
   }
 
   protected willUpdate(changed: PropertyValues<this>) {
@@ -181,6 +230,9 @@ export class DashboardListView extends LightElement {
       this.allMatching = false;
       this.result = null;
       this.relatedOptions = {};
+      this.openId = this.sheetId = readOpen();
+      this.doc = null;
+      this.leaving = null;
       void this._loadRelatedOptions();
     }
   }
@@ -194,6 +246,11 @@ export class DashboardListView extends LightElement {
     this.query = { ...this.query, ...("page" in next ? {} : { page: 1 }), ...next };
     this.selected = [];
     this.allMatching = false;
+    history.replaceState(history.state, "", this._url());
+  }
+
+  /** This list's address for its current state, with `open` as the record in the sheet. */
+  private _url(open = this.openId) {
     const { q, sort, page, limit, filters, match, view } = this.query;
     const qs = stringify(
       {
@@ -204,10 +261,101 @@ export class DashboardListView extends LightElement {
         filters: filters.length ? filters : undefined,
         match: filters.length > 1 && match === "or" ? match : undefined,
         view,
+        open: open || undefined,
       },
       { addQueryPrefix: true, encodeValuesOnly: true },
     );
-    history.replaceState(history.state, "", `${location.pathname}${qs}`);
+    return `${location.pathname}${qs}`;
+  }
+
+  // ---------------------------------------------------------------- the record in the sheet
+
+  /** Runs `then`; when the open record has unsaved changes, only after asking. */
+  private _leave(then: () => void) {
+    if (this.openId && this.doc?.dirty) this.leaving = then;
+    else then();
+  }
+
+  /** Opens a record in the sheet: a new history entry, so Back closes it (another record replaces it). */
+  private _open(id: string) {
+    if (id === this.openId) return;
+    this._leave(() => {
+      clearTimeout(this.#emptying);
+      const replace = !!this.openId && !!(history.state as { sheet?: boolean } | null)?.sheet;
+      this.openId = this.sheetId = id;
+      this.doc = null;
+      if (replace) history.replaceState({ sheet: true }, "", this._url());
+      else history.pushState({ sheet: true }, "", this._url());
+    });
+  }
+
+  /** The sheet is closed: the URL says so again (Back, when opening it added the entry), and its form goes. */
+  private _closed() {
+    if (this.openId) {
+      this.openId = "";
+      if ((history.state as { sheet?: boolean } | null)?.sheet) history.back();
+      else history.replaceState(history.state, "", this._url());
+    }
+    this.doc = null;
+    clearTimeout(this.#emptying);
+    this.#emptying = setTimeout(() => !this.openId && (this.sheetId = ""), SHEET_LEAVES);
+  }
+
+  /** Back and forward: the URL is the state (which record is open, the filters). */
+  private _onPop = () => {
+    const route = parseRoute(location.pathname);
+    if (route.name !== "list" || route.slug !== this.slug) return;
+    const open = readOpen();
+    if (this.openId && open !== this.openId && this.doc?.dirty) {
+      // Back with unsaved changes: stay on the record, and ask.
+      history.pushState({ sheet: true }, "", this._url());
+      this.leaving = () => (open ? this._open(open) : this._closed());
+      return;
+    }
+    const query = readQuery();
+    if (JSON.stringify(query) !== JSON.stringify(this.query)) {
+      this.query = query;
+      this.typed = query.q;
+    }
+    if (open === this.openId) return;
+    clearTimeout(this.#emptying);
+    this.openId = open;
+    this.doc = null;
+    if (open) this.sheetId = open;
+    else this.#emptying = setTimeout(() => !this.openId && (this.sheetId = ""), SHEET_LEAVES);
+  };
+
+  /**
+   * A click on one of this collection's records (a row, a card, a board card) opens it in the
+   * sheet instead of its page; with a modifier key or the middle button it goes where links go.
+   * Inside the sheet, a link that leaves the page asks first when there are unsaved changes.
+   */
+  private _onClick = (e: MouseEvent) => {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const path = e.composedPath();
+    const a = path.find((n): n is HTMLAnchorElement => n instanceof HTMLAnchorElement);
+    if (!a || a.target === "_blank" || a.hasAttribute("download") || a.origin !== location.origin) return;
+    const to = withBase(a.pathname);
+    const route = parseRoute(to);
+    if (path.some((n) => n instanceof Element && n.localName === "ui-sheet")) {
+      if (route.name === "not-found" || !this.doc?.dirty) return;
+      e.preventDefault();
+      this.leaving = () => navigate(to + a.search);
+      return;
+    }
+    if (route.name !== "edit" || route.slug !== this.slug || route.tab) return;
+    e.preventDefault();
+    this._open(route.id);
+  };
+
+  /** The open record's form (it saves itself; the sheet's Save asks it to). */
+  private get _form() {
+    return this.querySelector<HTMLElementTagNameMap["dashboard-edit-view"]>("ui-sheet dashboard-edit-view");
+  }
+
+  /** The widgets around the list count its records: they load again after a change. */
+  private _refreshAround() {
+    for (const el of this.#around.values()) (el as { reload?: () => void }).reload?.();
   }
 
   // ---------------------------------------------------------------- columns and filters
@@ -440,40 +588,122 @@ export class DashboardListView extends LightElement {
     return names ? names.flatMap((n) => all.filter((f) => f.name === n)) : this.visible.filter((f) => f.name !== title);
   }
 
-  /** A board: one column per option of the board field, each document an item in its column. */
+  /** The board's columns: the board field's options, by value. */
+  private _boardOptions() {
+    return (this.boardField?.options ?? []).map((o) =>
+      typeof o === "string" ? { value: o, label: o } : { value: o.value, label: text(o.label) },
+    );
+  }
+
+  /**
+   * Moves a record to another column of the board: at once on screen, then saved (a PATCH of the
+   * board field). The snackbar says where it went, with Undo, which sends it back the same way.
+   * A refused save returns the card and says why.
+   */
+  private async _move(id: string, to: string, undoable = true) {
+    const f = this.boardField;
+    const doc = this.result?.docs.find((d) => String(d.id) === id);
+    if (!f || !doc) return;
+    const options = this._boardOptions();
+    const none = `no ${labelOf(f).toLowerCase()}`;
+    const label = (column: string) => options.find((o) => o.value === column)?.label ?? none;
+    // Where it is now (src/components/base/kanban.ts: a value the board has no column for is in none).
+    const from = columnOf(
+      doc[f.name!],
+      options.map((o) => o.value),
+    );
+    if (from === to) return;
+    const put = (column: string) => {
+      if (!this.result) return;
+      const docs = moved(
+        this.result.docs,
+        (d) => String(d.id) === id,
+        column,
+        (d, value) => ({ ...d, [f.name!]: value }),
+      );
+      this.result = { ...this.result, docs };
+    };
+    const title = titleOf(this.collection, doc);
+    put(to);
+    try {
+      await api.update(this.slug, id, { [f.name!]: valueOf(to) });
+      toast(
+        `${title} → ${label(to)}`,
+        "success",
+        undoable ? { label: "Undo", undo: true, onClick: () => void this._move(id, from, false) } : undefined,
+      );
+      this._refreshAround();
+    } catch (e) {
+      put(from);
+      toast(`${title} stays in ${label(from)}: ${(e as Error).message}`, "error");
+    }
+  }
+
+  /**
+   * A board: one column per option of the board field, each record a card in its column. People
+   * who may update the collection move a card by dragging it, or from its menu ("Move to …").
+   */
   private _board(empty: unknown) {
     const c = this.collection;
     const f = this.boardField!;
     const r = this.result;
     if (!r?.docs.length) return this.loading || !r ? html`<ui-empty-state loading></ui-empty-state>` : empty;
-    const fields = this._cardFields().filter((x) => x.name !== f.name);
-    const options = (f.options ?? []).map((o) =>
-      typeof o === "string" ? { value: o, label: o } : { value: o.value, label: text(o.label) },
+    const shown = this._cardFields().filter((x) => x.name !== f.name);
+    const person = shown.find(isPerson);
+    const fields = shown.filter((x) => x !== person);
+    const options = this._boardOptions();
+    const columns = byColumn(
+      r.docs,
+      (d) => d[f.name!],
+      options.map((o) => o.value),
     );
-    const known = new Set(options.map((o) => o.value));
-    if (r.docs.some((d) => !known.has(d[f.name!] as string)))
-      options.push({ value: "", label: `No ${labelOf(f).toLowerCase()}` });
-    return html`<ui-grid fit="xs" gap="4">
-      ${options.map((o) => {
-        const docs = r.docs.filter((d) => (o.value ? d[f.name!] === o.value : !known.has(d[f.name!] as string)));
-        return html`<ui-card variant="filled" size="sm" .count=${docs.length}>
-          <span slot="heading"><ui-tag .tone=${toneOf(f, o.value, o.label)}>${o.label}</ui-tag></span>
-          <ui-list variant="separated">
-            ${docs.map(
-              (d) =>
-                html`<ui-list-item
-                  .headline=${titleOf(c, d)}
-                  .supporting=${fields
-                    .map((x) => this._cellText(x, d))
-                    .filter((t) => t && t !== "—")
-                    .join(" · ")}
-                  .href=${dashboardPath("collections", this.slug, String(d.id))}
-                ></ui-list-item>`,
-            )}
-          </ui-list>
-        </ui-card>`;
-      })}
-    </ui-grid>`;
+    const labelOfColumn = (key: string) =>
+      key === NONE ? `No ${labelOf(f).toLowerCase()}` : (options.find((o) => o.value === key)?.label ?? key);
+    const movable = !!this.access.collections[this.slug]?.update.permission;
+    const menu = (id: string, title: string, at: string) =>
+      html`<ui-dropdown
+        mode="popover"
+        align="end"
+        trigger-variant="text"
+        trigger-size="xs"
+        trigger-shape="round"
+        trigger-spaced="false"
+        .triggerLabel=${`Move ${title}`}
+        .items=${options.filter((o) => o.value !== at).map((o) => ({ label: `Move to ${o.label}`, value: o.value }))}
+        @ui-select=${(e: CustomEvent<{ item: { value: string } }>) => {
+          e.stopPropagation();
+          this.querySelector("ui-kanban")?.land(id);
+          void this._move(id, e.detail.item.value);
+        }}
+        ><span slot="trigger">⋯</span></ui-dropdown
+      >`;
+    const items: KanbanColumn[] = columns.map((o) => ({
+      key: o.key,
+      label: labelOfColumn(o.key),
+      heading: html`<ui-tag .tone=${toneOf(f, o.key, labelOfColumn(o.key))}>${labelOfColumn(o.key)}</ui-tag>`,
+      items: o.items.map((d) => {
+        const id = String(d.id);
+        const title = titleOf(c, d);
+        const who = person ? this._cellText(person, d) : "";
+        return {
+          key: id,
+          headline: title,
+          supporting: fields
+            .map((x) => this._cellText(x, d))
+            .filter((t) => t && t !== "—")
+            .join(" · "),
+          href: dashboardPath("collections", this.slug, id),
+          person: who && who !== "—" ? { name: who, initials: initialsOf(who) } : undefined,
+          trailing: movable ? menu(id, title, o.key) : undefined,
+        };
+      }),
+    }));
+    return html`<ui-kanban
+      ?movable=${movable}
+      .label=${`${labels(c).plural} by ${labelOf(f).toLowerCase()}`}
+      .columns=${items}
+      @ui-move=${(e: CustomEvent<{ key: string; to: string }>) => void this._move(e.detail.key, e.detail.to)}
+    ></ui-kanban>`;
   }
 
   #around = new Map<string, HTMLElement>();
@@ -524,6 +754,89 @@ export class DashboardListView extends LightElement {
     </ui-grid>`;
   }
 
+  /**
+   * The open record, in a sheet over the list: the edit page's own form, Save, and a link to its
+   * full page. Closing it (Escape, the scrim, ✕, Back) asks first when there are unsaved changes.
+   */
+  private _sheet() {
+    const c = this.collection;
+    const id = this.sheetId;
+    const s = this.doc;
+    const row = this.result?.docs.find((d) => String(d.id) === id);
+    const heading = s?.title || (row ? titleOf(c, row) : labels(c).singular);
+    const own = (e: Event) => e.target === e.currentTarget;
+    return html`<ui-sheet
+        size="lg"
+        .heading=${heading}
+        .subhead=${heading === labels(c).singular ? "" : labels(c).singular}
+        .open=${!!this.openId}
+        @ui-dismiss=${(e: Event) => {
+          // Only the sheet's own question: unsaved changes are asked about before it closes.
+          if (!own(e) || !this.doc?.dirty) return;
+          e.preventDefault();
+          this.leaving = () => this._closed();
+        }}
+        @ui-close=${(e: Event) => own(e) && this._closed()}
+      >
+        <span slot="trailing">${s?.dirty ? html`<ui-tag tone="warning">Unsaved changes</ui-tag>` : nothing}</span>
+        ${
+          id
+            ? html`<dashboard-edit-view
+                embedded
+                .slug=${this.slug}
+                .docId=${id}
+                .access=${this.access}
+                .user=${this.user}
+                @dashboard-doc-state=${(e: CustomEvent<DocState>) => (this.doc = e.detail)}
+                @dashboard-doc-saved=${() => {
+                  void this._load();
+                  this._refreshAround();
+                }}
+              ></dashboard-edit-view>`
+            : nothing
+        }
+        <ui-flex slot="actions" gap="2" align="center" wrap>
+          ${
+            !s || s.loading || !s.found
+              ? nothing
+              : s.canSave
+                ? html`<ui-button
+                    color="primary"
+                    title="Ctrl + S"
+                    .disabled=${s.saving || !s.dirty}
+                    @click=${() => this._form?.save()}
+                    >${s.saving ? "Saving…" : s.dirty ? "Save" : "Saved"}</ui-button
+                  >`
+                : html`<ui-tag variant="outline">Read only</ui-tag>`
+          }
+          ${
+            id
+              ? html`<ui-button variant="text" href=${dashboardPath("collections", this.slug, id)}
+                  >Open full page</ui-button
+                >`
+              : nothing
+          }
+        </ui-flex>
+      </ui-sheet>
+      <ui-modal
+        heading="Discard unsaved changes?"
+        .open=${!!this.leaving}
+        confirm-label="Discard"
+        confirm-tone="error"
+        cancel-label="Keep editing"
+        @ui-confirm=${() => {
+          const then = this.leaving;
+          this.leaving = null;
+          // Let go: nothing asks again on the way out.
+          if (this.doc) this.doc = { ...this.doc, dirty: false };
+          then?.();
+        }}
+        @ui-close=${() => (this.leaving = null)}
+      >
+        <ui-text>What you changed in ${heading} hasn't been saved.</ui-text>
+      </ui-modal>`;
+  }
+
   private _columns(): TableColumn<Doc>[] {
     const c = this.collection;
     const linkColumn = linkColumnOf(c);
@@ -534,8 +847,14 @@ export class DashboardListView extends LightElement {
         label: labelOf(f),
         fixed: f.name === linkColumn,
         align: f.type === "number" || isJoin(f) ? "end" : undefined,
-        nowrap: f.name === linkColumn || !!target || (f.type === "select" && /status|stage/i.test(f.name ?? "")),
         sortable: !isJoin(f) && !f.hasMany && f.type !== "relationship" && f.type !== "upload",
+        // A person (the owner, the requester): their avatar before their name.
+        avatar: isPerson(f)
+          ? (doc: Doc) => {
+              const name = this._cellText(f, doc);
+              return name && name !== "—" ? { initials: initialsOf(name) } : undefined;
+            }
+          : undefined,
         render: (doc: Doc) => {
           if (f.name === linkColumn)
             return html`<ui-link href=${dashboardPath("collections", this.slug, String(doc.id))}
@@ -739,8 +1058,8 @@ export class DashboardListView extends LightElement {
                       ? this._board(empty)
                       : html`<ui-table
                           size="md"
+                          lines="one"
                           density=${this.#prefs.value.listDensity}
-                          nowrap="max-lg"
                           bordered
                           hover
                           ?selectable=${perms?.delete.permission}
@@ -803,7 +1122,7 @@ export class DashboardListView extends LightElement {
           },
         ]}
       ></ui-board>
-      ${this._around("afterList")}
+      ${this._around("afterList")} ${this._sheet()}
 
       <ui-modal
         heading=${`Delete ${count} ${count === 1 ? singular : plural}?`}

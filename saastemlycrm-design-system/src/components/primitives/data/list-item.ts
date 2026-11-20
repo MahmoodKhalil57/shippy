@@ -3,7 +3,7 @@ import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
-import { inset, row, rowEnd, rowFill, stack, text } from "../layout/algebra.ts";
+import { fixedWidth, inset, row, rowEnd, rowFill, stack, text } from "../layout/algebra.ts";
 
 /**
  * List and list item: rows of records, each one subject (M3 lists; Apple lists).
@@ -12,6 +12,8 @@ import { inset, row, rowEnd, rowFill, stack, text } from "../layout/algebra.ts";
  *
  * `<ui-list>` holds `<ui-list-item>`s: divided by hairlines (the default), or as separate rounded
  * rows (`variant="separated"`). An item's anatomy, in M3's slots:
+ *   leading-text    a time or a date in a fixed leading column, so every row's headline starts
+ *                   on the same line (an agenda: what's due, in order)
  *   leading         a dot (`<ui-badge dot>`), an icon or an avatar (slot `leading`)
  *   overline        a small line above the headline
  *   headline        what the row is (the largest part)
@@ -50,12 +52,27 @@ export const listItem = rcva(
 );
 /** The listitem wrapper adds no layout of its own (the row inside is the box). */
 export const listItemWrap = rcva("block");
+/**
+ * The time or date that leads an agenda row: a 3rem column in tabular figures, in the row's main
+ * ink (it is what the row is ordered by). "09:30" and "17 Nov" fit on one line; "Wed 10:00" breaks
+ * at its space into two.
+ */
+export const listItemLeadingText = rcva(`${fixedWidth["12"]} ${text.label} text-label-lg tabular-nums`);
 export const listItemLeading = rcva(`${row} items-center self-start pt-1 text-on-surface-variant`);
 /** The content: the slot that takes the room (M3 Lists: "the largest-width slot"), never under 7rem. */
 export const listItemContent = rcva(`${stack} ${rowFill} gap-0.5`);
 export const listItemTop = rcva(`${row} items-baseline justify-between gap-x-2`);
 export const listItemOverline = rcva("text-label-sm text-on-surface-variant");
-export const listItemHeadline = rcva(`${text.line} text-title-sm`);
+/**
+ * The headline: one line, cut with an ellipsis. In an agenda row (one led by a time) it may take
+ * two: what is due is the row's point, and the time column and the chevron leave it little room.
+ */
+export const listItemHeadline = rcva("", {
+  variants: {
+    lines: { "1": `${text.line} text-title-sm`, "2": `${text.label} line-clamp-2 text-title-sm` },
+  },
+  defaultVariants: { lines: "1" },
+});
 export const listItemTrailingText = rcva(`${text.label} text-label-md text-on-surface-variant tabular-nums`);
 export const listItemSupporting = rcva(`${text.prose} text-body-md text-on-surface-variant`, {
   variants: { lines: { "1": "line-clamp-1", "2": "line-clamp-2", "3": "line-clamp-3" } },
@@ -79,6 +96,12 @@ export type ListItemLines = "1" | "2" | "3";
  *     <ui-tag slot="trailing" tone="warning">Awaiting supplier</ui-tag>
  *   </ui-list-item>
  * </ui-list>
+ * @example
+ * <ui-list>
+ *   <ui-list-item leading-text="14:00" headline="Client call" supporting="Acme Ltd" lines="1" href="/collections/tasks/t-1">
+ *     <ui-icon slot="trailing" name="chevron-right" size="sm"></ui-icon>
+ *   </ui-list-item>
+ * </ui-list>
  */
 @customElement("ui-list")
 export class UiList extends LightElement {
@@ -99,6 +122,8 @@ export class UiListItem extends LightElement {
   @property() supporting: Renderable = "";
   @property() overline: Renderable = "";
   @property({ attribute: "trailing-text" }) trailingText: Renderable = "";
+  /** A time or a date leading the row, in a fixed column (an agenda). */
+  @property({ attribute: "leading-text" }) leadingText: Renderable = "";
   /** Supporting text lines before "…". */
   @property() lines: ListItemLines = "2";
   /** The row is a link. */
@@ -123,13 +148,14 @@ export class UiListItem extends LightElement {
     });
     const headline = this.hasSlotted("headline") ? this.slotted("headline") : this.headline;
     const supporting = this.hasSlotted("supporting") ? this.slotted("supporting") : this.supporting;
-    const inner = html`${this.hasSlotted("leading") ? html`<span class=${listItemLeading()}>${this.slotted("leading")}</span>` : nothing}
+    const inner = html`${this.leadingText ? html`<span class=${listItemLeadingText()}>${this.leadingText}</span>` : nothing}
+      ${this.hasSlotted("leading") ? html`<span class=${listItemLeading()}>${this.slotted("leading")}</span>` : nothing}
       <span class=${listItemContent()}>
         ${this.overline ? html`<span class=${listItemOverline()}>${this.overline}</span>` : nothing}
         ${
           headline || this.trailingText
             ? html`<span class=${listItemTop()}>
-                <span class=${listItemHeadline()}>${headline}</span>
+                <span class=${listItemHeadline({ lines: this.leadingText ? "2" : "1" })}>${headline}</span>
                 ${this.trailingText ? html`<span class=${listItemTrailingText()}>${this.trailingText}</span>` : nothing}
               </span>`
             : nothing

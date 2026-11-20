@@ -282,7 +282,9 @@ describe("role dashboards (GET /api/home)", () => {
     expect(kinds(body)[0]).toBe("lists:decisions");
     const decisions = body.widgets[0].lists[0].items.map((i: { title: string }) => i.title);
     expect(decisions.length).toBeGreaterThan(0);
-    // The finance director already decided the bank change; the CEO still has to.
+    // The finance director already decided the bank change; the CEO still has to (it's
+    // "Approved 1 of 2", and waits for the second signature).
+    expect(decisions.some((t: string) => /bank/i.test(t))).toBe(true);
     await login("mohamed.helmy@goldensea.test");
     const fd = (await call("GET", "/api/home")).body;
     expect(fd.widgets[0].lists[0].items.every((i: { title: string }) => !/bank/i.test(i.title))).toBe(true);
@@ -306,6 +308,35 @@ describe("role dashboards (GET /api/home)", () => {
     expect(queue.value).toBe(false);
     expect(queue.cases.every((c: { value?: number }) => c.value === undefined)).toBe(true);
     expect(JSON.stringify(sales)).not.toMatch(/Gross profit|EGP \d/);
+  });
+
+  it("gives every role four figures, each delta in words, and what's due next, soonest first", async () => {
+    // oxlint-disable-next-line typescript/no-explicit-any
+    const part = (body: any, kind: string) => body.widgets.find((w: { kind: string }) => w.kind === kind);
+    for (const user of (seeds.collections.users ?? []) as { email: string }[]) {
+      await login(user.email);
+      const { body } = await call("GET", "/api/home");
+      // The greeting's subtitle is the day's live numbers.
+      expect(body.subtitle, user.email).toMatch(/^\d.* · .* · /);
+      const tiles = part(body, "tiles").tiles as { delta?: { text: string; dir: string; good?: boolean } }[];
+      expect(tiles, user.email).toHaveLength(4);
+      for (const { delta } of tiles) {
+        if (!delta) continue;
+        // The arrow agrees with the words: a rise reads "+", a fall "−", and no change says so.
+        expect(delta.text, user.email).toMatch({ up: /^\+/, down: /^−/, flat: /^(same as|no change)/ }[delta.dir]!);
+        if (delta.dir === "flat") expect(delta.good).toBeUndefined();
+      }
+      const agenda = part(body, "agenda").items as { lead: string; title: string }[];
+      expect(agenda.length, user.email).toBeGreaterThan(0);
+      expect(agenda.length, user.email).toBeLessThanOrEqual(5);
+    }
+    // The buyer's morning (17 Nov, 09:30): two follow-ups at 11:00, a supplier reply due at noon,
+    // a reminder at 15:00, then tomorrow.
+    await login("karim.youssef@goldensea.test");
+    const buyer = part((await call("GET", "/api/home")).body, "agenda");
+    expect(buyer.items.map((i: { lead: string }) => i.lead)).toEqual(["11:00", "11:00", "12:00", "15:00", "Wed"]);
+    expect(buyer.items[2].title).toBe("Port Said Welding Co.: reply due");
+    expect(buyer.sub).toBe("4 today · 7 later this week");
   });
 });
 

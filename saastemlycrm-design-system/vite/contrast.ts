@@ -5,7 +5,7 @@
  * tests/contrast.test.ts to check every scheme's text pairs.
  */
 
-type Lab = [number, number, number];
+export type Lab = [number, number, number];
 
 const oklch = (s: string): Lab | null => {
   const m = /oklch\(\s*([\d.]+%?)\s+([\d.]+)\s+([\d.]+)/.exec(s);
@@ -30,15 +30,42 @@ export function parseOklab(css: string): Lab | null {
 }
 
 /** Relative luminance (WCAG) of an OKLab colour, gamut-clipped to sRGB. */
-export function labLuminance([L, a, b]: Lab): number {
+export function labLuminance(lab: Lab): number {
+  const [R, G, B] = linearRgb(lab);
+  return 0.2126 * R + 0.7152 * G + 0.0722 * B;
+}
+
+/** `color-mix(in oklab, a, b p)`: `a` mixed with `b` at `p` (0 to 1). */
+export const mixOklab = (a: Lab, b: Lab, p: number): Lab => [
+  a[0] * (1 - p) + b[0] * p,
+  a[1] * (1 - p) + b[1] * p,
+  a[2] * (1 - p) + b[2] * p,
+];
+
+/** An OKLab colour as linear sRGB, gamut-clipped. */
+function linearRgb([L, a, b]: Lab): [number, number, number] {
   const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3;
   const m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3;
   const s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3;
   const clip = (v: number) => Math.min(1, Math.max(0, v));
-  const R = clip(4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s);
-  const G = clip(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s);
-  const B = clip(-0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s);
-  return 0.2126 * R + 0.7152 * G + 0.0722 * B;
+  return [
+    clip(4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s),
+    clip(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s),
+    clip(-0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s),
+  ];
+}
+
+/**
+ * Relative luminance of `ink` at `alpha` drawn over `fill` (an ink role with an opacity, such as
+ * `on-surface-variant`): composited the way a browser paints it, in gamma-encoded sRGB.
+ */
+export function luminanceOver(ink: Lab, fill: Lab, alpha: number): number {
+  const encode = (v: number) => (v <= 0.0031308 ? 12.92 * v : 1.055 * v ** (1 / 2.4) - 0.055);
+  const decode = (v: number) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+  const i = linearRgb(ink).map(encode);
+  const f = linearRgb(fill).map(encode);
+  const [R, G, B] = i.map((v, k) => decode(v * alpha + f[k]! * (1 - alpha)));
+  return 0.2126 * R! + 0.7152 * G! + 0.0722 * B!;
 }
 
 export const luminanceOf = (css: string) => {

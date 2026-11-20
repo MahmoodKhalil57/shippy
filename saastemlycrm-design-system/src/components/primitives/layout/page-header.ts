@@ -18,15 +18,24 @@ import { heading } from "../typography/heading.ts";
  *   heading       the title, when it needs markup (else the `heading` property)
  *   status        a tag beside the title ("Unsaved changes")
  *   subtitle      one line about the page (else the `subtitle` property)
- *   actions       the page's actions, at the end (M3: keep them few; one filled at most)
+ *   actions       the page's actions, at the end of the title's line (M3: keep them few; one
+ *                 filled at most)
  *   (default)     anything that belongs under the subtitle (an AI summary, a filter line)
- * On a narrow panel the actions wrap under the text.
+ *
+ * The header takes as little height as reads well, so the page's content starts high: the eyebrow,
+ * the title and the subtitle are 4dp apart, and the actions share the title's line, at its end
+ * (M3 App bars: the title and its "trailing elements" are one bar; HIG Toolbars: "Only specify one
+ * primary action, and put it on the trailing side of the toolbar"). When the panel is too narrow
+ * for the title and the actions on one line, the actions wrap under the title, at the start; the
+ * title itself only wraps once it has the whole line.
  */
-export const pageHeader = rcva(`${row} items-end justify-between gap-x-4 gap-y-3`);
-export const pageHeaderText = rcva(`${stack} min-w-0 flex-[1_1_24rem] gap-1`);
-export const pageHeaderTitleRow = rcva(`${row} items-center gap-x-3 gap-y-1`);
+export const pageHeader = rcva(`${stack} gap-1`);
+/** The title's line: the title group takes the room, the actions the end. */
+export const pageHeaderTitleRow = rcva(`${row} items-center justify-between gap-x-4 gap-y-2`);
+/** The title and its status tag: as wide as its words, so the actions wrap before the title does. */
+export const pageHeaderTitle = rcva(`${row} min-w-0 grow items-center gap-x-3 gap-y-1`);
 export const pageHeaderEyebrow = rcva("text-label-md text-on-surface-variant");
-export const pageHeaderSubtitle = rcva(`${text.prose} max-w-[70ch] text-body-lg text-on-surface-variant`);
+export const pageHeaderSubtitle = rcva(`${text.prose} max-w-[80ch] text-body-md text-on-surface-variant`);
 export const pageHeaderActions = rcva(`${row} items-center gap-2`);
 
 /**
@@ -52,15 +61,15 @@ export class UiPageHeader extends LightElement {
     const eyebrow = this.hasSlotted("eyebrow") ? this.slotted("eyebrow") : this.eyebrow;
     const subtitle = this.hasSlotted("subtitle") ? this.slotted("subtitle") : this.subtitle;
     return html`<header class=${pageHeader()}>
-      <div class=${pageHeaderText()}>
-        ${this.slotted("breadcrumbs")} ${eyebrow ? html`<p class=${pageHeaderEyebrow()}>${eyebrow}</p>` : nothing}
-        <div class=${pageHeaderTitleRow()}>
+      ${this.slotted("breadcrumbs")} ${eyebrow ? html`<p class=${pageHeaderEyebrow()}>${eyebrow}</p>` : nothing}
+      <div class=${pageHeaderTitleRow()}>
+        <div class=${pageHeaderTitle()}>
           <h1 class=${heading({ variant: "page" })}>${title}</h1>
           ${this.slotted("status")}
         </div>
-        ${subtitle ? html`<p class=${pageHeaderSubtitle()}>${subtitle}</p>` : nothing} ${this.slotted()}
+        ${this.hasSlotted("actions") ? html`<div class=${pageHeaderActions()}>${this.slotted("actions")}</div>` : nothing}
       </div>
-      ${this.hasSlotted("actions") ? html`<div class=${pageHeaderActions()}>${this.slotted("actions")}</div>` : nothing}
+      ${subtitle ? html`<p class=${pageHeaderSubtitle()}>${subtitle}</p>` : nothing} ${this.slotted()}
     </header>`;
   }
 }

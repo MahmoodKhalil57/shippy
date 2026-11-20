@@ -5,7 +5,7 @@ import { clampColumnWidth, COLUMN_MAX_WIDTH, COLUMN_MIN_WIDTH, moveColumn, order
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
 import { button } from "../actions/button.ts";
-import { inlineRow, row, scrolled, scrollX, text } from "../layout/algebra.ts";
+import { fixed, inlineRow, row, rowLine, scrolled, scrollX, stack, text } from "../layout/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
 import { tag } from "./tag.ts";
 
@@ -27,14 +27,21 @@ import { tag } from "./tag.ts";
  * - a row whose first cell links to its record opens it from anywhere on the row (the link's
  *   hit area covers the row; other links and controls in the row stay on top and keep working),
  *   and shows the link's keyboard focus as a ring around the whole row.
+ *
+ * Two ways to fit text (`lines`), both inside the scroller (`tableWrapper`, layout/algebra.ts
+ * `scrollX`), the only place the table is ever drawn:
+ * - `wrap` (the default): values wrap, in columns never narrower than 10rem (about 18 characters a
+ *   line); when the columns can't all have that, the table scrolls sideways instead of wrapping
+ *   values into a sliver. For what must be read whole (a printed document's lines).
+ * - `one`: a row is one line, 44px tall (Apple HIG's 44pt target; M3's 56dp list item at density
+ *   −3), so many rows fit and every row scans the same way. A column is as wide as its longest
+ *   value, up to 20rem (about 45 characters): past that the value ends in "…" (hovering shows it
+ *   whole), and the table scrolls sideways when its columns don't fit. A column's `supporting`
+ *   line makes its rows two lines, never more. The header is a quiet line of small labels.
  */
-// Columns are never narrower than 10rem (about 18 characters a line): when they can't all have
-// that, the table scrolls sideways (`tableWrapper`, layout/algebra.ts `scrollX`) instead of wrapping
-// values into a sliver. The table is only ever drawn inside that scroller.
 export const table = rcva(
   [
-    // layout: fixed (a 10rem column floor: the table scrolls sideways when its columns can't all have it)
-    `table ${scrolled.tableColumns}`,
+    "table",
     // header band
     "[&_thead_tr]:border-b [&_thead_tr]:border-outline-variant [&_thead_th]:bg-surface-container-low [&_thead_th]:text-label-md [&_thead_th]:tracking-wide [&_thead_th]:uppercase [&_:where(thead,tfoot)]:text-on-surface-variant",
     // rows
@@ -69,6 +76,12 @@ export const table = rcva(
         "-1": "[&_:is(th,td)]:py-2.5",
         "-2": "[&_:is(th,td)]:py-2",
       },
+      /** How values fit: wrapped in columns of at least 10rem, or one line each, cut at 20rem. */
+      lines: {
+        wrap: scrolled.tableColumns,
+        // `text-nowrap` on what's inside a cell: a tag balances its own lines (`text-wrap`), which would wrap it again.
+        one: "[&_tbody_tr]:h-11 [&_tbody_:is(td,th)]:max-w-80 [&_tbody_:is(td,th)]:py-1.5 [&_tbody_td]:truncate [&_tbody_td_*]:text-nowrap [&_thead_th]:py-2 [&_thead_th]:whitespace-nowrap [&_thead_th]:bg-transparent! [&_thead_th]:text-label-sm!",
+      },
       /** Table background ("Table with pinned-rows" uses base-200). */
       surface: { true: "bg-surface-container" },
       /**
@@ -77,6 +90,12 @@ export const table = rcva(
        */
       nowrap: { true: "" },
     },
+    // One-line rows at M3's densities: 44px, then 40 and 36 (4dp a step), the text unchanged.
+    compoundVariants: [
+      { lines: "one", density: "-1", class: "[&_tbody_tr]:h-10! [&_tbody_:is(td,th)]:py-1!" },
+      { lines: "one", density: "-2", class: "[&_tbody_tr]:h-9! [&_tbody_:is(td,th)]:py-0.5!" },
+    ],
+    defaultVariants: { lines: "wrap" },
   },
 );
 
@@ -129,7 +148,9 @@ export const tableHead = rcva("group/th", {
   },
 });
 /** A cell with a supporting line: the value, then a quieter line under it. */
-export const tableCellStack = rcva("flex flex-col gap-0.5");
+export const tableCellStack = rcva(`${stack} gap-0.5`);
+/** A line of a one-line row's cell: cut with "…" (the cell cuts its own text; a line in a stack cuts itself). */
+export const tableCellLine = rcva("", { variants: { one: { true: "min-w-0 truncate" } } });
 export const tableSupporting = rcva(`${text.label} text-body-sm`, {
   variants: {
     tone: {
@@ -196,23 +217,27 @@ export const tableSkeleton = rcva("skeleton h-4 w-full max-w-40 rounded-field");
 /** The one row shown when there are no rows. */
 export const tableEmpty = rcva("py-10 text-center text-on-surface-variant");
 
-/** Cell anatomy from "Table with visual elements". */
-export const tablePerson = rcva(`${row} items-center gap-3`);
-export const tablePersonAvatar = rcva("avatar");
-export const tablePersonImage = rcva("w-12 h-12 mask mask-squircle");
-export const tablePersonName = rcva("font-bold");
-export const tablePersonSub = rcva(`${text.label} text-body-md text-on-surface-variant`);
+/**
+ * A person's (or company's) cell: a 28px avatar (M3 lists: the primary container; the surface on a
+ * selected row, which is that colour itself), then the value on one line that takes the room and
+ * ends in "…" (`rowLine`), so the pair never wraps apart.
+ */
+export const tablePerson = rcva(`${row} items-center gap-2`);
+export const tablePersonAvatar = rcva(
+  `${fixed["7"]} ${row} items-center justify-center overflow-hidden rounded-full bg-primary-container text-label-sm text-on-primary-container [&>img]:size-full [&>img]:object-cover [tr[aria-selected=true]_&]:bg-surface [tr[aria-selected=true]_&]:text-on-surface`,
+);
+export const tablePersonName = rcva(rowLine);
 
 export type TableVariants = VariantProps<typeof table>;
 export type TableWrapperVariants = VariantProps<typeof tableWrapper>;
 
-/** Value shapes for the built-in cell kinds. */
-export interface TablePersonCell {
-  image: string;
-  imageAlt?: string;
-  name: Renderable;
-  sub?: Renderable;
+/** Who a cell is about: their picture, else their initials. */
+export interface TableAvatar {
+  src?: string;
+  initials?: string;
+  alt?: string;
 }
+/** Value shapes for the built-in cell kinds. */
 export interface TableTextBadgeCell {
   text: Renderable;
   badge?: Renderable;
@@ -233,6 +258,8 @@ export interface TableColumn<T extends TableRowData = TableRowData> {
    * customer, "3 days overdue" under the date. Muted, or in a tone (`{ text, tone }`).
    */
   supporting?: (row: T, index: number) => TableSupporting;
+  /** A person's cell: their avatar before the value (nothing for a row with no one). */
+  avatar?: (row: T, index: number) => TableAvatar | null | undefined;
   /** Render cells as `<th>` (with `pin-cols` these stick to the side). */
   header?: boolean;
   /**
@@ -251,11 +278,10 @@ export interface TableColumn<T extends TableRowData = TableRowData> {
   fixed?: boolean;
   /**
    * Built-in cell layouts from the docs ("Table with visual elements"):
-   * - `person`: value is `{ image, name, sub }` (avatar + two lines)
    * - `text-badge`: value is `{ text, badge }` (text with a small ghost badge below)
-   * - `button`: value is the label of a ghost xs button; clicks fire `ui-cell-action`
+   * - `button`: value is the label of a text xs button; clicks fire `ui-cell-action`
    */
-  kind?: "person" | "text-badge" | "button";
+  kind?: "text-badge" | "button";
 }
 
 export interface TableGroup<T extends TableRowData = TableRowData> {
@@ -270,7 +296,7 @@ export interface TableGroup<T extends TableRowData = TableRowData> {
  *   .columns=${[{ key: "name", label: "Name" }, { key: "job", label: "Job" }]}
  *   .rows=${[{ name: "Cy Ganderton", job: "Quality Control Specialist" }]}></ui-table>
  * @example <ui-table pin-rows surface height="lg" .groups=${[{ label: "A", rows: [...] }]} .columns=${[...]}></ui-table>
- * @example <ui-table selectable .columns=${[{ key: "user", label: "Name", kind: "person" }, { key: "more", kind: "button", header: true }]}></ui-table>
+ * @example <ui-table lines="one" selectable .columns=${[{ key: "name", label: "Name", avatar: (r) => ({ initials: r.initials }) }, { key: "more", kind: "button" }]}></ui-table>
  *
  * Sorting: give columns `sortable`; `sort` is the current order as a Payload sort string
  * (`"-value"`, `"stage,-value"`). Clicking a header sorts by it (ascending, descending, then off);
@@ -308,6 +334,8 @@ export class UiTable extends LightElement {
   @property() size: TableVariants["size"];
   /** M3 density: `-1` and `-2` make rows 4dp and 8dp shorter, text unchanged. */
   @property() density: TableVariants["density"];
+  /** `one`: every row one line (two with a `supporting` line), long values cut with "…". */
+  @property() lines: TableVariants["lines"];
   /** e.g. `nowrap="max-lg"`: one-line cells on small screens, scrolling sideways. */
   @property({ converter: responsiveBoolean }) nowrap: Responsive<boolean> = false;
   @property({ converter: responsiveBoolean }) surface: Responsive<boolean> = false;
@@ -770,16 +798,26 @@ export class UiTable extends LightElement {
 
   private _row(row: TableRowData, index: number) {
     const cell = (c: TableColumn): TemplateResult => {
+      const one = this.lines === "one";
       const value = c.render ? c.render(row, index) : this._kind(c, row, index);
       const s = c.supporting?.(row, index);
       const sup = s && typeof s === "object" && "text" in s ? s : { text: s as Renderable, tone: undefined };
-      const v =
+      const lines =
         sup.text != null && sup.text !== "" && sup.text !== nothing
           ? html`<div class=${tableCellStack()}>
-              <div>${value}</div>
-              <div class=${tableSupporting({ tone: sup.tone })}>${sup.text}</div>
+              <div class=${tableCellLine({ one }) || nothing}>${value}</div>
+              <div class=${tableSupporting({ tone: sup.tone, class: tableCellLine({ one }) })}>${sup.text}</div>
             </div>`
           : value;
+      const who = c.avatar?.(row, index);
+      const v = who
+        ? html`<div class=${tablePerson()}>
+            <span class=${tablePersonAvatar()} aria-hidden=${who.src ? nothing : "true"}
+              >${who.src ? html`<img src=${who.src} alt=${who.alt ?? ""} />` : (who.initials ?? "")}</span
+            >
+            <div class=${tablePersonName()}>${lines}</div>
+          </div>`
+        : lines;
       const cls =
         tableCell({
           align: c.align,
@@ -819,18 +857,6 @@ export class UiTable extends LightElement {
 
   private _kind(c: TableColumn, row: TableRowData, index: number): Renderable {
     const v = row[c.key];
-    if (c.kind === "person" && v && typeof v === "object") {
-      const p = v as TablePersonCell;
-      return html`<div class=${tablePerson()}>
-        <div class=${tablePersonAvatar()}>
-          <div class=${tablePersonImage()}><img src=${p.image} alt=${p.imageAlt ?? ""} /></div>
-        </div>
-        <div>
-          <div class=${tablePersonName()}>${p.name}</div>
-          ${p.sub != null ? html`<div class=${tablePersonSub()}>${p.sub}</div>` : nothing}
-        </div>
-      </div>`;
-    }
     if (c.kind === "text-badge" && v && typeof v === "object") {
       const t = v as TableTextBadgeCell;
       return html`${t.text}${
@@ -874,6 +900,7 @@ export class UiTable extends LightElement {
       <tbody
         class=${tableBody({ busy: this.loading && this.rows.length > 0 })}
         aria-busy=${this.loading ? "true" : "false"}
+        @mouseover=${this._hint}
       >
         ${
           this.rows.length
@@ -896,6 +923,16 @@ export class UiTable extends LightElement {
       </tbody>`;
   }
 
+  /** A one-line row's value that was cut shows whole on hover (the cell's `title`): what "…" hides stays a hover away. */
+  private _hint = (e: Event) => {
+    if (this.lines !== "one") return;
+    const cell = (e.target as Element).closest?.("td");
+    if (!cell) return;
+    const cut = [cell, ...cell.querySelectorAll<HTMLElement>("div")].some((el) => el.scrollWidth > el.clientWidth + 1);
+    if (cut) cell.title = cell.innerText.trim();
+    else cell.removeAttribute("title");
+  };
+
   private get _span() {
     return this._columns.length + (this.indexColumn ? 1 : 0) + (this.selectable ? 1 : 0);
   }
@@ -907,6 +944,7 @@ export class UiTable extends LightElement {
       pinCols: this.pinCols,
       size: this.size,
       density: this.density,
+      lines: this.lines,
       surface: this.surface,
       nowrap: this.nowrap,
     });

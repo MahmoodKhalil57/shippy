@@ -359,6 +359,12 @@ function recheck(d: CaseOps, p: OpsPO): ViewBlock[] {
           path: `/purchase-orders/${encodeURIComponent(p.id)}`,
           body: { status: "Confirmed", recheckDone: true },
         },
+        // Outward and not reversible (the supplier receives the order): it asks first, no Undo.
+        confirm: {
+          heading: `Confirm ${p.number}?`,
+          text: `${p.number} goes to ${p.supplierName} as a confirmed order. That can't be undone here.`,
+          label: "Confirm & send",
+        },
         done: `${p.number} confirmed — sent to ${p.supplierName}.`,
       }
     : {

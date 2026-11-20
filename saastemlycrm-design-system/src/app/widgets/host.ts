@@ -11,8 +11,9 @@ import { orderColumns } from "../../components/base/columns.ts";
 import type { BoardItem } from "../../components/primitives/layout/board.ts";
 import { preferences, StoreController } from "../../stores/index.ts";
 import { inCard, renderBlocks, type ViewContext } from "./registry.ts";
-import type { Action, ViewBlock, ViewHeader } from "./schema.ts";
+import type { Action, UndoCall, ViewBlock, ViewHeader } from "./schema.ts";
 import type { TileSize } from "./tile.ts";
+import { doneText, undoOf, type ActionReply } from "./undo.ts";
 import { eachTiles, fill, type Source, type Widget, type WidgetPage, type WidgetScope } from "./widget.ts";
 // More blocks: the app's own (./blocks/*.ts), each registering itself with `defineBlock`.
 import.meta.glob("./blocks/*.ts", { eager: true });
@@ -21,11 +22,14 @@ import.meta.glob("./blocks/*.ts", { eager: true });
  * Draws a screen of widgets (./widget.ts): `<app-widgets .page=${{ header, params, widgets }}>`,
  * set from the config by `widgets({ … })` through Payload's component slots.
  *
- * Each widget loads its own data and shows a skeleton until it arrives; the same request made by
- * several widgets goes out once. The host runs actions (navigation, a confirmation or a small
- * form, the request, a snackbar, then every widget reloads) and keeps the screen's parameters
- * in the URL, so a reload or a shared link shows the same thing. Elements placed by `custom`
- * blocks are kept across reloads and may fire `app-widgets-reload` to ask for fresh data.
+ * Each widget loads its own data and shows a skeleton until it first arrives; the same request
+ * made by several widgets goes out once. The host runs actions: navigation, or a confirmation or
+ * a small form, then the request, with the pressed button busy until the screen shows the
+ * result; a snackbar that names what happened and offers Undo when there is a way back; and a
+ * refresh in place (every widget keeps what it shows until its new data is in). It keeps the
+ * screen's parameters in the URL, so a reload or a shared link shows the same thing. Elements
+ * placed by `custom` blocks are kept across reloads and may fire `app-widgets-reload` to ask for
+ * fresh data.
  */
 
 export { fill };
@@ -152,6 +156,18 @@ export class AppWidgets extends LightElement {
     this.version++;
   }
 
+  /**
+   * Reload, and settle once the new data is in. Every widget keeps what it shows until its own
+   * answer arrives (skeletons are for the first load), so the screen changes in place, once.
+   * Every source is asked again: the host can't know what an endpoint changed.
+   */
+  async refresh() {
+    this.reload();
+    // Widgets ask for their data as they update, in microtasks: a task later every request is out.
+    await new Promise((asked) => setTimeout(asked));
+    await Promise.allSettled(this.#cache.values());
+  }
+
   ctx: ViewContext = {
     run: (a) => this.run(a),
     setParam: (param, value) => {
@@ -179,7 +195,12 @@ export class AppWidgets extends LightElement {
 
   // ---------------------------------------------------------------- actions
 
-  run(action: Action) {
+  /**
+   * Run an action. A call that goes out at once returns a promise that settles when the screen
+   * shows its result (the pressed button is busy until then, ./blocks.ts); navigating, printing
+   * or opening a dialog first returns nothing.
+   */
+  run(action: Action): Promise<void> | void {
     const a = fill(action, this.scope);
     if (a.print) return window.print();
     if (a.href) {
@@ -194,34 +215,57 @@ export class AppWidgets extends LightElement {
       if (a.prefill) void this.#prefill(a.prefill, this.draft[a.prefill.when]);
       return;
     }
-    void this.#call(a);
+    return this.#call(a);
   }
 
+  /**
+   * Send an action's call and answer at once: the snackbar says what happened (`done`, or the
+   * endpoint's `message` with `reply`) and offers Undo when there is a way back, then the
+   * widgets refresh in place. Whether there is one is the server's to say: a reply's
+   * `undo: { path, body }` wins over the action's own, and `undo: null` takes it away (./schema.ts
+   * `Reversal` has the rule for which actions get Undo and which keep their dialog).
+   */
   async #call(a: Action, values: Record<string, unknown> = {}) {
     if (!a.call) return;
     this.busy = true;
+    let r: ActionReply | null;
     try {
-      const r = await api.call<{ message?: unknown; href?: unknown } | null>(a.call.method ?? "POST", a.call.path, {
-        ...a.call.body,
-        ...values,
-      });
-      this.pending = null;
-      const said = a.reply && typeof r?.message === "string" ? r.message : "";
-      if (a.done || said) toast(a.done ?? said);
-      if (a.reply && typeof r?.href === "string") {
-        // Another page draws itself; the same page (only its parameters changed) reloads.
-        const same = new URL(r.href, location.href).pathname === location.pathname;
-        this.run({ label: a.label, href: r.href });
-        if (!same) return;
-      }
-      this.reload();
+      r = await api.call<ActionReply | null>(a.call.method ?? "POST", a.call.path, { ...a.call.body, ...values });
     } catch (e) {
       const msg = (e as Error).message || "That didn't work.";
       if (this.pending) this.failed = msg;
       else toast(msg, "error");
+      return;
     } finally {
       this.busy = false;
     }
+    this.pending = null;
+    const undo = undoOf(r, a);
+    const message = doneText(r, a, !!undo);
+    if (message) toast(message, "success", undo && { label: "Undo", undo: true, onClick: () => void this.#undo(undo) });
+    if (a.reply && typeof r?.href === "string") {
+      // Another page draws itself; the same page (only its parameters changed) reloads.
+      const same = new URL(r.href, location.href).pathname === location.pathname;
+      void this.run({ label: a.label, href: r.href });
+      if (!same) return;
+    }
+    await this.refresh();
+  }
+
+  /**
+   * Undo: send the call that takes the action back, say so, and show the result (HIG Undo and
+   * redo: "Show the results of an undo"). The endpoint decides whether it still can: once the
+   * thing has moved on, its refusal is what the snackbar says. The person may have gone to
+   * another page since, so whichever screens are showing refresh.
+   */
+  async #undo(u: UndoCall) {
+    try {
+      const r = await api.call<ActionReply | null>(u.method ?? "POST", u.path, u.body ?? {});
+      toast(u.done ?? (typeof r?.message === "string" && r.message ? r.message : "Undone"));
+    } catch (e) {
+      toast((e as Error).message || "That couldn't be undone.", "error");
+    }
+    for (const host of this.isConnected ? [this] : document.querySelectorAll("app-widgets")) void host.refresh();
   }
 
   /** An action's `prefill`: ask the server for a field's value when another field changes. */
@@ -434,13 +478,17 @@ export class AppWidgets extends LightElement {
     });
   }
 
-  /** An `each` widget's data, loaded once per version (null while it loads). */
+  /**
+   * An `each` widget's data, loaded once per version. Null only until it first arrives: on a
+   * refresh its tiles stay as they are until the new data is in (no loading tile in between).
+   */
   @state() private each = new Map<string, { version: number; data?: unknown; refused?: boolean }>();
   #eachData(key: string, w: Widget) {
     const got = this.each.get(key);
-    if (got?.version === this.version) return "data" in got || got.refused ? got : null;
+    const last = got && ("data" in got || got.refused) ? got : null;
+    if (got?.version === this.version) return last;
     const version = this.version;
-    this.each.set(key, { version });
+    this.each.set(key, { ...got, version });
     if (!w.source) {
       this.each.set(key, { version, data: null });
       return this.each.get(key)!;
@@ -448,7 +496,7 @@ export class AppWidgets extends LightElement {
     this.fetch(w.source)
       .then((data) => version === this.version && (this.each = new Map(this.each).set(key, { version, data })))
       .catch(() => version === this.version && (this.each = new Map(this.each).set(key, { version, refused: true })));
-    return null;
+    return last;
   }
 
   #report(key: string, size: TileSize | null) {
@@ -525,7 +573,6 @@ export function arrangeMenu(a: TileArrange | undefined, title: string) {
     ...(a.arranged ? [{ label: "Reset layout", value: "reset", destructive: true }] : []),
   ];
   return html`<ui-dropdown
-    slot="trailing"
     mode="popover"
     align="end"
     trigger-variant="text"
@@ -614,21 +661,27 @@ export class AppWidget extends LightElement {
             : renderBlocks(blocks, ctx);
     const head = this.state === "ready" ? w.head?.(this.data as never, scope) : undefined;
     const subhead = head?.subhead ?? w.subhead ?? "";
-    const trailing =
-      head?.tags?.length || head?.actions?.length
-        ? html`<ui-flex slot="trailing" gap="2" align="center" wrap
-            >${head.tags?.map(tag)}${head.actions?.map((a) => actionButton(a, this.host.ctx))}</ui-flex
-          >`
-        : nothing;
+    // One trailing group, there from the first render: a slotted element is routed to the header
+    // when the tile first draws, so what arrives with the data (tags, actions, the layout menu)
+    // goes inside it rather than beside it.
+    const trailing = w.title
+      ? html`<ui-flex slot="trailing" gap="1" align="center" wrap
+          >${head?.tags?.map(tag)}${head?.actions?.map((a) => actionButton(a, this.host.ctx))}${arrangeMenu(
+            this.arrange,
+            w.title,
+          )}</ui-flex
+        >`
+      : nothing;
     return html`<ui-tile
       .size=${w.size}
       .heading=${w.title ?? ""}
       .subhead=${subhead}
       .count=${head?.count}
       .countTone=${head?.countTone}
+      .emphasis=${w.title ? w.emphasis : undefined}
       ?loading=${this.state === "loading"}
       ?bare=${!w.title}
-      >${trailing} ${w.title ? arrangeMenu(this.arrange, w.title) : nothing} ${body}</ui-tile
+      >${trailing} ${body}</ui-tile
     >`;
   }
 }

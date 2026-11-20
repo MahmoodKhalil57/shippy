@@ -2,13 +2,15 @@ import type { Endpoint, PayloadRequest } from "payload";
 import { idOf, logActivity } from "../collections/shared.ts";
 import type { Doc } from "saastemlycrm-design-system/contracts";
 import { DEMO_NOW } from "./home.ts";
+import { BANK_REQUESTS } from "./operations.ts";
 import * as link from "../links.ts";
 
 /**
  * Root endpoints for: Offer comparison, pricing, quotations, approvals. Registered in ./index.ts.
  *
  * - GET  /api/commercial/cases/:id/compare         offers per line, normalised to EGP per base unit (+ correction drafts)
- * - POST /api/commercial/cases/:id/select          select an offer or a split, with a reason
+ * - POST /api/commercial/cases/:id/select          select an offer or a split, with a reason (answers with `undo`)
+ * - POST /api/commercial/cases/:id/select-undo     the line's selection and status as they were before
  * - POST /api/commercial/cases/:id/split           a split from a form: quantities `q0…` for `offers`
  * - POST /api/commercial/cases/:id/accept          record the customer's written acceptance (alternative pack)
  * - POST /api/commercial/cases/:id/correction      draft (and send) a correction request for a deviating offer
@@ -18,7 +20,9 @@ import * as link from "../links.ts";
  * - GET  /api/commercial/quotations/:id            the quotation as the customer gets it, versions, decisions
  * - POST /api/commercial/quotations/:id/:action    request-approval · send · revise · decision · portal-check
  * - GET  /api/commercial/approvals                 the approvals queue with evidence and who can decide
- * - POST /api/commercial/approvals/:id/decide      approve / return with a reason (collection hooks enforce the rules)
+ * - POST /api/commercial/approvals/:id/decide      approve / return with a reason (collection hooks enforce the rules);
+ *                                                  answers with `undo`, the call below, while it can be withdrawn
+ * - POST /api/commercial/approvals/:id/withdraw    the approver takes their own decision back (refused once it's built on)
  *
  * Sales never sees costs or margins: compare and pricing refuse them (403), quotations omit internals.
  */
@@ -1488,6 +1492,115 @@ async function decide(req: PayloadRequest, id: string, decision: "Approve" | "Re
   return updated;
 }
 
+/* ---------------------------------------------------------------- withdrawing a decision (Undo) */
+
+type Decision = { user?: unknown; decision?: string; at?: string; reason?: string };
+const decisionsOf = (a: Doc) =>
+  ((a.decisions as Decision[] | undefined) ?? []).map((d) => ({ ...d, user: idOf(d.user) }));
+const FINAL = ["Approved", "Rejected"];
+
+/** The quotation a final decision on this request approved or returned (the request's subject). */
+async function decidedQuotation(req: PayloadRequest, a: Doc): Promise<Doc | null> {
+  const subject = subjectOf(a);
+  return /quotation|discount/i.test(str(a.type)) && subject ? one(req, "quotations", subject) : null;
+}
+
+/**
+ * Why the signed-in approver can't take their decision on this request back, or "" when they can.
+ * It's theirs to withdraw while it is the last decision recorded and nothing has been built on
+ * it: after a final decision the quotation must still be as that decision left it (not sent, not
+ * revised), the payment not recorded, the new bank details not applied, the supplier PO not
+ * confirmed. An exchange rate is in use the moment it's approved, so that decision stands.
+ */
+async function withdrawBlock(req: PayloadRequest, a: Doc): Promise<string> {
+  const me = userOf(req);
+  const decisions = decisionsOf(a);
+  const last = decisions.at(-1);
+  if (!decisions.some((d) => d.user === me?.id)) return "You have no decision on this request to withdraw.";
+  if (last?.user !== me?.id) return "Someone decided after you — the request has moved on.";
+  if (!FINAL.includes(str(a.status))) return "";
+  const type = str(a.type);
+  if (type === "Exchange rate") return "An exchange-rate decision takes effect at once — propose a new rate instead.";
+  if (/quotation|discount/i.test(type)) {
+    const q = await decidedQuotation(req, a);
+    // An older request that names no quotation: what its decision moved can't be told, so it stands.
+    if (!q) return "This request doesn't name its quotation — the decision can't be withdrawn.";
+    const left = a.status === "Approved" ? "Approved" : "Returned";
+    if (q.status !== left)
+      return `${str(q.number)} is already ${str(q.status).toLowerCase()} — the decision can't be withdrawn.`;
+  }
+  if (/deposit|payment/i.test(type)) {
+    const paid = await all(req, "payments", { approval: { equals: a.id } });
+    if (paid.length) return "The payment is already recorded — the decision can't be withdrawn.";
+  }
+  if (type === "Bank detail change") {
+    const request = BANK_REQUESTS[a.id];
+    const supplier = request ? await one(req, "suppliers", request.supplier) : null;
+    const bank = (supplier?.bank as { iban?: string; verified?: boolean } | undefined) ?? {};
+    if (request && bank.verified && bank.iban === request.requested.iban)
+      return "The new bank details are already applied — the decision can't be withdrawn.";
+  }
+  if (type === "Supplier PO") {
+    const po = subjectOf(a) ? await one(req, "purchase-orders", str(subjectOf(a))) : null;
+    if (po && !["Draft", "Awaiting approval"].includes(str(po.status)))
+      return `${str(po.number)} is already ${str(po.status).toLowerCase()} — the decision can't be withdrawn.`;
+  }
+  return "";
+}
+
+/**
+ * The call that takes the signed-in approver's decision on this request back, for a reply's
+ * `undo` (the snackbar's Undo), or null when it can't be withdrawn (any more).
+ */
+export async function withdrawal(
+  req: PayloadRequest,
+  approval: string,
+): Promise<{ path: string; body: Record<string, unknown> } | null> {
+  const a = await one(req, "approvals", approval);
+  if (!a || (await withdrawBlock(req, a))) return null;
+  return { path: `/commercial/approvals/${encodeURIComponent(a.id)}/withdraw`, body: {} };
+}
+
+/** Takes the signed-in approver's own decision back and puts what it had released back in the queue. */
+async function withdraw(req: PayloadRequest, id: string) {
+  const a = await one(req, "approvals", id);
+  if (!a) throw Object.assign(new Error("Approval not found."), { status: 404 });
+  const blocked = await withdrawBlock(req, a);
+  if (blocked) throw Object.assign(new Error(blocked), { status: 409 });
+  const me = userOf(req);
+  const mine = decisionsOf(a).at(-1)!;
+  // What the final decision moved goes back to waiting, as the request left it.
+  const q = FINAL.includes(str(a.status)) ? await decidedQuotation(req, a) : null;
+  // As the approver: the collection's own access rules and hooks apply to the write.
+  const updated = (await req.payload.update({
+    collection: "approvals" as never,
+    id,
+    data: { decisions: decisionsOf(a).slice(0, -1) } as never,
+    req,
+    depth: 0,
+    overrideAccess: false,
+  })) as unknown as Doc;
+  const caseId = idOf(a.case);
+  if (q) {
+    await update(req, "quotations", q.id, {
+      status: "Awaiting approval",
+      approvedBy: null,
+      decision: "Awaiting management approval",
+    });
+    if (caseId)
+      await update(req, "cases", caseId, {
+        wait: "Awaiting internal approval",
+        nextAction: `Karim Balbaa: approve ${str(q.number)}`,
+      });
+  }
+  await logActivity(req, {
+    case: caseId,
+    text: `${str(me?.name)} withdrew their ${mine.decision === "Approve" ? "approval" : "return"} of “${str(a.title)}” — it is waiting for a decision again.`,
+    entity: `approvals/${id}`,
+  });
+  return updated;
+}
+
 /* ---------------------------------------------------------------- correction requests */
 
 /** A correction request to a supplier whose offer has the wrong part: the AI draft, or what was sent. */
@@ -1612,6 +1725,8 @@ export const commercialEndpoints: Endpoint[] = [
         const reason = str(b.reason).trim();
         if (!isBest && !reason)
           return fail(400, "Give a reason: this isn't the best-fit offer (kept for the approver).");
+        // What the line was before, for the Undo (`…/select-undo`).
+        const was = { status: item.status ?? null, selection: item.selection ?? null };
         const parts: CmpPart[] = [];
         for (const p of wanted)
           parts.push({
@@ -1622,6 +1737,8 @@ export const commercialEndpoints: Endpoint[] = [
             ),
             qty: num(p.qty),
           });
+        // Own stock or a pricelist row became an offer record: that selection stands (no undo).
+        const made = parts.some((p, i) => p.offer !== wanted[i]!.offer);
         const prev = new Set(line.selection.parts.map((p) => p.offer));
         const same = parts.length === prev.size && parts.every((p) => prev.has(p.offer));
         const accepted = same && line.selection.customerAccepted;
@@ -1648,7 +1765,76 @@ export const commercialEndpoints: Endpoint[] = [
           entity: `cases/${ctx.c.id}`,
         });
         const fresh = await load(req, ctx.c.id);
-        return Response.json(compare(fresh!));
+        return Response.json({
+          ...compare(fresh!),
+          undo: made
+            ? null
+            : {
+                path: `/commercial/cases/${encodeURIComponent(ctx.c.id)}/select-undo`,
+                body: { lineNo, offers: parts.map((p) => p.offer), was },
+              },
+        });
+      },
+      { costs: true },
+    ),
+  },
+  {
+    // The Undo of a selection: the line goes back to the selection and status it had (`was`).
+    // Refused once the line was selected again, or a quotation priced with it is on its way.
+    path: "/commercial/cases/:id/select-undo",
+    method: "post",
+    handler: handle(
+      async (req) => {
+        const ctx = await load(req, caseParam(req));
+        if (!ctx) return fail(404, "Case not found.");
+        const b = await body(req);
+        const lineNo = num(b.lineNo);
+        const item = ctx.items.find((i) => i.lineNo === lineNo);
+        if (!item) return fail(404, `Line ${lineNo} not found.`);
+        const now = (item.selection?.offers ?? []).map((o) => str(idOf(o)));
+        const then = (Array.isArray(b.offers) ? b.offers : []).map(str);
+        if (!then.length || now.length !== then.length || now.some((o, i) => o !== then[i]))
+          return fail(409, `Line ${lineNo} has been selected again since — nothing to take back.`);
+        const quoted = (await all(req, "quotations", { case: { equals: ctx.c.id } })).find((q) =>
+          ["Awaiting approval", "Approved", "Submitted"].includes(str(q.status)),
+        );
+        if (quoted)
+          return fail(
+            409,
+            `${str(quoted.number)} is ${str(quoted.status).toLowerCase()} with this selection — revise the quotation instead.`,
+          );
+        const was = (b.was && typeof b.was === "object" ? b.was : {}) as {
+          status?: unknown;
+          selection?: Selection | null;
+        };
+        const onLine = new Set(ctx.offers.filter((o) => num(o.lineNo) === lineNo).map((o) => o.id));
+        const back = (was.selection?.offers ?? []).map((o) => str(idOf(o)));
+        if (back.some((o) => !onLine.has(o))) return fail(400, `That isn't a selection of line ${lineNo}.`);
+        const items = ctx.items.map((i) =>
+          i.lineNo === lineNo
+            ? {
+                ...i,
+                status: str(was.status) || "Ready to select",
+                selection: was.selection ?? { offers: [], splitQty: [] },
+              }
+            : i,
+        );
+        // As the signed-in user: the case's own access rules apply to the write.
+        await req.payload.update({
+          collection: "cases" as never,
+          id: ctx.c.id,
+          data: { items } as never,
+          req,
+          depth: 0,
+          overrideAccess: false,
+        });
+        await logActivity(req, {
+          case: ctx.c.id,
+          text: `L${lineNo}: selection taken back by ${str(userOf(req)?.name)}${back.length ? " — the earlier selection applies again" : ""}.`,
+          entity: `cases/${ctx.c.id}`,
+        });
+        const fresh = await load(req, ctx.c.id);
+        return Response.json({ ...compare(fresh!), message: `Line ${lineNo}: selection taken back` });
       },
       { costs: true },
     ),
@@ -1991,7 +2177,18 @@ export const commercialEndpoints: Endpoint[] = [
           : c.status === "Rejected"
             ? `Returned: ${c.title}`
             : `Your approval is recorded — ${c.progress}.`;
-      return Response.json({ ...c, message });
+      // `undo`: how to take it back while nothing is built on it (null once it can't be).
+      return Response.json({ ...c, message, undo: await withdrawal(req, doc.id) });
+    }),
+  },
+  {
+    // The Undo of a decision: the approver takes their own decision back (see `withdrawBlock`).
+    path: "/commercial/approvals/:id/withdraw",
+    method: "post",
+    handler: handle(async (req) => {
+      const doc = await withdraw(req, str(req.routeParams?.id));
+      const c = await approvalCard(req, doc, byId(await all(req, "users")));
+      return Response.json({ ...c, message: `Decision withdrawn — ${c.title} is waiting again` });
     }),
   },
 ];

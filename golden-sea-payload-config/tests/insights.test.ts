@@ -80,7 +80,10 @@ describe("control room (/api/control-room)", () => {
     expect(kb.money).toBe(true);
     expect(kb.sections.map((s: { id: string }) => s.id)).toEqual(["pipeline", "speed", "money", "delivery"]);
     const turnaround = kb.sections[1].widgets.find((w: { title: string }) => w.title === "Quote turnaround");
-    expect(turnaround.labels).toHaveLength(4);
+    // The period sets what shows at first; a trend always carries its whole history for the chart to cut.
+    expect(kb.show).toEqual({ week: 4, month: 3 });
+    expect(turnaround.labels).toHaveLength(12);
+    expect(turnaround.ranges).toEqual([4, 8, 12]);
     await login("soaad.amer");
     const sa = (await call("GET", "/api/control-room")).body;
     expect(sa.money).toBe(false);

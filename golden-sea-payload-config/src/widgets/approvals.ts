@@ -9,7 +9,14 @@ import * as link from "../links.ts";
  * shows what is being decided and the evidence behind it, who decides and why you can't (when you
  * can't). Approve / Return with a reason go through the approvals collection, whose hooks enforce
  * one decision per approver and the two-person rule. Data: GET /api/commercial/approvals;
- * deciding: POST /api/commercial/approvals/:id/decide, which answers with what it recorded.
+ * deciding: POST /api/commercial/approvals/:id/decide, which answers with what it recorded and
+ * how to take it back.
+ *
+ * A decision is internal and reversible until something is built on it (the quotation sent, the
+ * payment recorded): approving happens at once and the snackbar offers Undo (…/withdraw), with
+ * no "are you sure?". Two forms stay, because they ask for something: returning needs a reason,
+ * and a two-person request takes one approver's note for the other. Both can be undone the
+ * same way.
  */
 
 interface Queue {
@@ -63,21 +70,23 @@ function decisions(a: ApprovalCard, me: string): Action[] {
       ],
       reply: true,
     },
-    {
-      label: "Approve",
-      main: true,
-      call: call("Approve"),
-      confirm: { heading: "Approve request", text: `${a.title}${twoPerson}\n${RECORDED}`, label: "Approve" },
-      fields: [
-        {
-          type: "textarea",
-          name: "reason",
-          label: "Comment (optional)",
-          admin: { placeholder: "e.g. Call-back done on the number on file" },
-        },
-      ],
-      reply: true,
-    },
+    a.twoPerson
+      ? {
+          label: "Approve",
+          main: true,
+          call: call("Approve"),
+          confirm: { heading: "Approve request", text: `${a.title}${twoPerson}\n${RECORDED}`, label: "Approve" },
+          fields: [
+            {
+              type: "textarea",
+              name: "reason",
+              label: "Note for the other approver (optional)",
+              admin: { placeholder: "e.g. Call-back done on the number on file" },
+            },
+          ],
+          reply: true,
+        }
+      : { label: "Approve", main: true, call: call("Approve"), reply: true },
   ];
 }
 

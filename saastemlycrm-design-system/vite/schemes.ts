@@ -1,7 +1,7 @@
 /**
  * Colour schemes for daisyUI, imported from a tweakcn registry (shadcn/ui themes).
  *
- *   vpx plugins/schemes.ts [path/to/tweakcn/registry.json]   (default: ../../tweakcn/registry.json)
+ *   vpx vite/schemes.ts [path/to/tweakcn/registry.json]   (default: ../../tweakcn/registry.json)
  *
  * Writes, both committed (the registry isn't needed to build):
  * - src/styles/schemes.css — each scheme's light and dark palette as daisyUI colour tokens under
@@ -19,9 +19,17 @@
  *   radius → field and selector radii, ×1.5 for boxes
  * info / success / warning keep daisyUI's own (tweakcn has none). Fonts are left out: they name
  * web fonts the app doesn't load.
+ *
+ * Each scheme also gets its chart colours (`--chart-1` … `-6`, `--chart-muted`, each
+ * `light-dark(for light surfaces, for dark surfaces)`), derived from its own tokens and the surface
+ * roles in src/styles/theme.css (./chart-colors.ts); so does the default scheme (daisyUI's own
+ * themes, no `data-scheme`). tweakcn's own `chart-*` colours aren't used: they aren't checked
+ * against the surfaces.
  */
 import { readFileSync, writeFileSync } from "node:fs";
+import { CHART_TOKENS, chartPair, themeRules, type ThemeRules, type Tokens } from "./chart-colors.ts";
 import { readableInk } from "./contrast.ts";
+import { createRequire } from "node:module";
 import path from "node:path";
 
 type Vars = Record<string, string>;
@@ -52,7 +60,7 @@ const TOKENS: [daisy: string, shadcn: string, fallback?: string][] = [
  * A palette as daisyUI tokens. daisyUI's base-200 sits a step darker than base-100 (the frame
  * around the main panel); where a theme's sidebar is just its background, it is derived so.
  */
-function palette(vars: Vars, mode: "light" | "dark"): string[] {
+function palette(vars: Vars, mode: "light" | "dark"): Map<string, string> {
   const tokens = new Map<string, string>();
   for (const [daisy, shadcn, fallback] of TOKENS) {
     let value = vars[shadcn] ?? (fallback && (vars[fallback] ?? fallback));
@@ -67,7 +75,39 @@ function palette(vars: Vars, mode: "light" | "dark"): string[] {
     const f = tokens.get(fill);
     if (i && f) tokens.set(ink, readableInk(i, f));
   }
-  return [...tokens].map(([daisy, value]) => `--color-${daisy}: ${value};`);
+  return tokens;
+}
+const lines = (tokens: Map<string, string>) => [...tokens].map(([daisy, value]) => `--color-${daisy}: ${value};`);
+
+const STYLES = path.resolve(import.meta.dirname, "../src/styles");
+/** What the chart colours are derived against: the surface roles in src/styles/theme.css. */
+export const chartRules = (): ThemeRules => themeRules(readFileSync(path.join(STYLES, "theme.css"), "utf8"));
+
+/**
+ * A scheme's chart colours, each 3:1 against every surface it's drawn on
+ * (tests/chart-colors.test.ts): `--chart-1: light-dark(<on light surfaces>, <on dark surfaces>);`.
+ */
+export function chartLines(light: Tokens, dark: Tokens, rules: ThemeRules): string[] {
+  const pair = chartPair(light, dark, rules);
+  return CHART_TOKENS.map((name) => `--${name}: light-dark(${pair.light[name]}, ${pair.dark[name]});`);
+}
+
+/**
+ * The default scheme's palettes: daisyUI's own light and dark themes, with the fills
+ * src/styles/daisy-m3.css darkens (its `:root:not([data-scheme])` rules; the `[data-theme="dark"]`
+ * one is dark only).
+ */
+export function defaultPalettes(): { light: Tokens; dark: Tokens } {
+  const daisy = path.dirname(createRequire(import.meta.url).resolve("daisyui/package.json"));
+  const colours = (css: string): Tokens =>
+    Object.fromEntries([...css.matchAll(/--color-([a-z0-9-]+):\s*([^;]+);/g)].map((m) => [m[1]!, m[2]!.trim()]));
+  const theme = (name: string) => colours(readFileSync(path.join(daisy, `theme/${name}.css`), "utf8"));
+  const m3 = readFileSync(path.join(STYLES, "daisy-m3.css"), "utf8");
+  const overrides = (selector: RegExp) =>
+    colours([...m3.matchAll(new RegExp(`${selector.source}\\s*\\{([^}]*)\\}`, "g"))].map((b) => b[1]).join("\n"));
+  const both = overrides(/:root:not\(\[data-scheme\]\)/);
+  const darkOnly = overrides(/:root:not\(\[data-scheme\]\)\[data-theme="dark"\]/);
+  return { light: { ...theme("light"), ...both }, dark: { ...theme("dark"), ...both, ...darkOnly } };
 }
 
 /** Ink / fill pairs that must contrast (text on buttons, badges, alerts and the page). */
@@ -90,15 +130,26 @@ const block = (selector: string, lines: string[], indent = "") =>
   `${indent}${selector} {\n${lines.map((l) => `${indent}  ${l}`).join("\n")}\n${indent}}`;
 
 export function schemesCss(items: RegistryItem[]): string {
+  const rules = chartRules();
+  const defaults = defaultPalettes();
   const parts = items.map((item) => {
     const id = item.name;
+    const light = palette(item.cssVars.light, "light");
+    const dark = palette(item.cssVars.dark, "dark");
+    const charts = chartLines(Object.fromEntries(light), Object.fromEntries(dark), rules);
     return [
       `/* ${item.title ?? id} */`,
-      block(`:root[data-scheme="${id}"]`, [...palette(item.cssVars.light, "light"), ...radii(item)]),
-      block(`:root[data-scheme="${id}"][data-theme="dark"]`, palette(item.cssVars.dark, "dark")),
-      `@media (prefers-color-scheme: dark) {\n${block(`:root[data-scheme="${id}"]:not([data-theme])`, palette(item.cssVars.dark, "dark"), "  ")}\n}`,
+      block(`:root[data-scheme="${id}"]`, [...lines(light), ...charts, ...radii(item)]),
+      block(`:root[data-scheme="${id}"][data-theme="dark"]`, lines(dark)),
+      `@media (prefers-color-scheme: dark) {\n${block(`:root[data-scheme="${id}"]:not([data-theme])`, lines(dark), "  ")}\n}`,
     ].join("\n");
   });
+  parts.unshift(
+    [
+      "/* The default scheme (daisyUI's own themes, no data-scheme): its chart colours only. */",
+      block(":root:not([data-scheme])", chartLines(defaults.light, defaults.dark, rules)),
+    ].join("\n"),
+  );
   return `/* GENERATED by plugins/schemes.ts from a tweakcn registry. Do not edit; run \`vpx plugins/schemes.ts\`.
    Colour schemes as daisyUI tokens, chosen with data-scheme on <html> (<ui-appearance
    kind="scheme">); light or dark comes from data-theme, or the OS when it is unset. */

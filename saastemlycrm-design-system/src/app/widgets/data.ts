@@ -44,7 +44,10 @@ function cellOf(f: FieldLike, doc: Doc): Cell {
   if (!text || text === "—") return null;
   if ((f.type === "relationship" || f.type === "upload") && typeof f.relationTo === "string") {
     const id = v && typeof v === "object" && "id" in v ? String((v as Doc).id) : undefined;
-    return id ? { text, href: dashboardPath("collections", f.relationTo, id) } : text;
+    const href = id ? dashboardPath("collections", f.relationTo, id) : undefined;
+    // One person (a relationship to a collection people sign in to): their avatar and name.
+    if (!f.hasMany && collectionOf(f.relationTo)?.auth) return { text, person: true, href };
+    return href ? { text, href } : text;
   }
   if (isToned(f)) return { text, tone: toneOf(f, v, text) as Tone, tag: true };
   return text;

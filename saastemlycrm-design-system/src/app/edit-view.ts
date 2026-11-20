@@ -101,9 +101,27 @@ function unpopulate(fields: FieldLike[], data: Data): Data {
   return out;
 }
 
+/** What the owner of an embedded form draws around it: the record's title, and what Save can do now. */
+export interface DocState {
+  title: string;
+  loading: boolean;
+  saving: boolean;
+  dirty: boolean;
+  /** This person may change the record. */
+  canSave: boolean;
+  /** The record exists and can be read. */
+  found: boolean;
+}
+
 /**
  * Create / edit a document (`slug` + optional `docId`), or edit a global
  * (`globalSlug`). Sidebar fields go in a side column, as in Payload.
+ *
+ * `embedded` (a record in a sheet over its list, ./list-view.ts): only the record's own parts, in
+ * one column: its steps, the form (with the form's own tabs) and its sidebar fields; the record's
+ * other views are on its full page. The
+ * owner draws the title and Save around it: it reads `dashboard-doc-state` (a `DocState`, fired
+ * whenever it changes), calls `save()`, and hears `dashboard-doc-saved` after each save.
  */
 @customElement("dashboard-edit-view")
 export class DashboardEditView extends LightElement {
@@ -114,6 +132,8 @@ export class DashboardEditView extends LightElement {
   @property({ attribute: false }) user: (Doc & { collection: string }) | null = null;
   /** A custom edit tab (`admin.components.views.edit.<key>`) to show instead of the form. */
   @property() tab = "";
+  /** In a sheet over the list: the form only; the owner draws the title and Save. */
+  @property({ type: Boolean }) embedded = false;
 
   @state() private doc: Doc | null = null;
   @state() private value: Data = {};
@@ -129,6 +149,31 @@ export class DashboardEditView extends LightElement {
 
   protected updated(changed: PropertyValues<this>) {
     if (changed.has("slug") || changed.has("docId") || changed.has("globalSlug")) void this._load();
+    this._report();
+  }
+
+  #reported = "";
+  /** Embedded: tells the owner what to draw around the form, whenever that changes. */
+  private _report() {
+    if (!this.embedded) return;
+    const c = collectionOf(this.slug);
+    const detail: DocState = {
+      title: c && this.doc ? titleOf(c, this.doc) : "",
+      loading: this.loading,
+      saving: this.saving,
+      dirty: this.dirty,
+      canSave: !!this.access?.collections[this.slug]?.update.permission,
+      found: !!this.doc,
+    };
+    const key = JSON.stringify(detail);
+    if (key === this.#reported) return;
+    this.#reported = key;
+    this.dispatchEvent(new CustomEvent<DocState>("dashboard-doc-state", { detail }));
+  }
+
+  /** Saves the form, unless it is loading or already saving. */
+  save() {
+    if (!this.saving && !this.loading) void this._save();
   }
 
   private get _fields(): FieldLike[] {
@@ -288,6 +333,7 @@ export class DashboardEditView extends LightElement {
       if (this.docId) {
         const { message } = await api.update(this.slug, this.docId, data, this.file);
         toast(message);
+        this.dispatchEvent(new CustomEvent("dashboard-doc-saved", { detail: { id: this.docId } }));
         await this._load();
       } else {
         const { doc, message } = await api.create(this.slug, data, this.file);
@@ -378,7 +424,7 @@ export class DashboardEditView extends LightElement {
       .filter((o) => !skip.includes(o.value));
     const off = skip.includes(value);
     return html`<ui-flex direction="col" gap="2">
-      ${off ? html`<ui-tag .tone=${toneOf(f, value, value)}>${value}</ui-tag>` : nothing}
+      ${off ? html`<ui-flex><ui-tag .tone=${toneOf(f, value, value)}>${value}</ui-tag></ui-flex>` : nothing}
       <ui-steps
         scrollable
         .tone=${off ? "error" : "primary"}
@@ -506,6 +552,33 @@ export class DashboardEditView extends LightElement {
       }
     </ui-flex>`;
 
+    const count = Object.keys(this.errors).length;
+    const problems = count
+      ? html`<ui-alert tone="error" heading=${`${count} ${count === 1 ? "field needs" : "fields need"} attention`}
+          >${Object.entries(this.errors)
+            .slice(0, 3)
+            .map(
+              ([path, message]) =>
+                `${humanize(
+                  path
+                    .split(".")
+                    .filter((p) => !/^\d+$/.test(p))
+                    .pop() ?? path,
+                )}: ${message}`,
+            )
+            .join(" ")}${count > 3 ? " …" : ""}</ui-alert
+        >`
+      : nothing;
+
+    // In a sheet: one column, and no page header (the sheet has the title and Save).
+    if (this.embedded) {
+      return html`<ui-form label=${heading} @ui-submit=${() => this._save()}>
+        <ui-flex direction="col" gap="5">
+          ${this._stage()} ${problems} ${this._form(main, readonly)} ${hasSide ? side : nothing}
+        </ui-flex>
+      </ui-form>`;
+    }
+
     return html`<ui-form label=${heading} @ui-submit=${() => this._save()}>
       <ui-flex direction="col" gap="6">
         <ui-page-header>
@@ -540,27 +613,7 @@ export class DashboardEditView extends LightElement {
             ? html`<ui-text color="muted">${c.admin.description}</ui-text>`
             : nothing
         }
-        ${this._stage()} ${tabBar} ${this._summary()}
-        ${
-          Object.keys(this.errors).length
-            ? html`<ui-alert
-                tone="error"
-                heading=${`${Object.keys(this.errors).length} ${Object.keys(this.errors).length === 1 ? "field needs" : "fields need"} attention`}
-                >${Object.entries(this.errors)
-                  .slice(0, 3)
-                  .map(
-                    ([path, message]) =>
-                      `${humanize(
-                        path
-                          .split(".")
-                          .filter((p) => !/^\d+$/.test(p))
-                          .pop() ?? path,
-                      )}: ${message}`,
-                  )
-                  .join(" ")}${Object.keys(this.errors).length > 3 ? " …" : ""}</ui-alert
-              >`
-            : nothing
-        }
+        ${this._stage()} ${tabBar} ${this._summary()} ${problems}
         <ui-board
           .items=${[
             // The form's own parts as bare tiles: a form is never height-capped.

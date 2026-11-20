@@ -821,7 +821,7 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
       name: "call_workflow",
       title: "Run a workflow",
       description:
-        "Call a workflow endpoint from list_workflows (fill the :params). GET reads data; POST performs the action the matching button would (sending, approving, creating orders…), with the same access rules.",
+        "Call a workflow endpoint from list_workflows (fill the :params). GET reads data; POST performs the action the matching button would (sending, approving, creating orders…), with the same access rules. When a reply has `undo` ({ path, body }), that is the POST that takes the action back while it still can be (what the screen's Undo sends); a reply without one can't be undone.",
       inputSchema: schema(
         {
           method: { type: "string", enum: ["get", "post"] },

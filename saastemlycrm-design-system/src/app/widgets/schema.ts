@@ -54,7 +54,7 @@ export interface Tag {
  * A value in a table cell, a list's trailing slot or a description list. A string is plain
  * text; the object form adds a tone, a link, a tag look, a dot, a monospaced or emphasised look.
  */
-export type Cell = string | number | null | undefined | TextCell | TagCell | SwitchCell;
+export type Cell = string | number | null | undefined | TextCell | TagCell | PersonCell | SwitchCell;
 
 /** Text with an optional tone, link, dot, gauge, tags, marks or buttons. */
 export interface TextCell {
@@ -67,7 +67,11 @@ export interface TextCell {
   strong?: boolean;
   /** A bar under the text: `value` of `max`. */
   gauge?: { value: number; max: number; tone?: Tone; label?: string };
-  /** Buttons after the text (in a table, a row's own actions); `text` may be empty. */
+  /**
+   * Buttons after the text; `text` may be empty. In a table these are the row's own actions: put
+   * the one thing to do with a row in its last column. They are never drawn filled there (a list
+   * of rows has no single main action: a link is a text button, anything else tonal).
+   */
   actions?: Action[];
   /** Tags after the text; `text` may be empty. */
   tags?: Tag[];
@@ -75,6 +79,7 @@ export interface TextCell {
   marks?: { text: string; tone?: Tone }[];
   tag?: never;
   switch?: never;
+  person?: never;
 }
 
 /** The value drawn as a tag (a status). */
@@ -83,17 +88,30 @@ export interface TagCell {
   tag: true;
   tone?: Tone;
   switch?: never;
+  person?: never;
+}
+
+/** A person (an owner, a requester): their avatar, from their initials, and their name on one line. */
+export interface PersonCell {
+  text: string;
+  person: true;
+  href?: string;
+  tag?: never;
+  switch?: never;
+  tone?: never;
 }
 
 /**
  * A switch that applies at once, named by `text` (not shown): flipping it sends `call` with
- * `value: true | false` added to the body, then reloads. Without `call` it's read-only.
+ * `value: true | false` added to the body, then reloads; the snackbar's Undo sends the value it
+ * had. Without `call` it's read-only.
  */
 export interface SwitchCell {
   text: string;
   switch: { value: boolean; call?: Action["call"]; done?: string };
   tag?: never;
   tone?: never;
+  person?: never;
 }
 
 /** A form field for an action's prompt: Payload's field config (JSON parts only). */
@@ -111,15 +129,47 @@ export interface PromptField {
 /**
  * Something a person can do. `href` navigates. `call` sends a request to the API, after
  * `confirm` (a dialog naming the verb) or `fields` (a small form whose values join the body),
- * then shows `done` and reloads the view.
+ * then shows `done` in the snackbar, with Undo when there is a way back, and refreshes the view.
  */
 /**
  * The main action can't be destructive (HIG Buttons: "Don't assign the primary role to a button
  * that performs a destructive action"): `main` and `tone: "error"` don't go together.
  */
-export type Action = ActionBase & Emphasis;
+export type Action = ActionBase & Emphasis & Reversal;
 /** Main, or destructive, or neither: never both. */
 export type Emphasis = { main?: false; tone?: "error" } | { main?: boolean; tone?: never };
+
+/**
+ * The call that takes an action back, offered as **Undo** in the snackbar: `path` and `body`
+ * like an action's `call`. `done` is what the snackbar says once it's undone (else the undo
+ * endpoint's `message`, else "Undone").
+ */
+export type UndoCall = NonNullable<ActionBase["call"]> & { done?: string };
+
+/**
+ * **Undo, or a dialog first: never both.** An action is one of two kinds, and the kind decides:
+ *
+ * - **Reversible and internal** (a decision recorded, a line moved to another state, a setting,
+ *   a draft removed, a message filed): it happens at once and the snackbar offers Undo. No "are
+ *   you sure?". HIG Alerts: "Avoid displaying alerts for common, undoable actions, even when
+ *   they're destructive"; M3 Snackbar: "To allow users to amend choices, display an 'Undo'
+ *   action"; M3 content design: "Tell users what will happen if they take an action and how they
+ *   can undo it".
+ * - **Outward or irreversible** (an email, an order or a reminder sent, money paid or recorded as
+ *   paid, a document filed with an authority, something deleted for good): `confirm`, a dialog
+ *   naming the verb, and no undo. HIG Alerts: "when people take an uncommon destructive action
+ *   that they can't undo, it's important to display an alert"; M3 Dialogs: "Basic dialogs can give
+ *   people the ability to provide confirmation of a choice before committing to it".
+ *
+ * So an action that declares `undo` can't also `confirm` (this type), and an endpoint that sends
+ * or pays never answers with one. A dialog that asks for something (`fields`: a reason, an
+ * amount) is a form, not a confirmation; it stays whichever kind the action is, and its endpoint
+ * may still answer with an `undo`.
+ *
+ * (Local copies of the guidelines: material-web/.apple-specs/pages/alerts.md,
+ * material-web/.m3-specs/pages/components/snackbar.md and …/foundations/content-design/style-guide.md.)
+ */
+export type Reversal = { confirm?: ActionBase["confirm"]; undo?: never } | { confirm?: never; undo?: UndoCall };
 
 interface ActionBase {
   label: string;
@@ -152,6 +202,14 @@ interface ActionBase {
    * its `href`, if any, is where the person goes next (e.g. the new record it created).
    */
   reply?: boolean;
+  /**
+   * How to take it back, when the screen already knows (the call with the value it had). An
+   * endpoint that knows better answers with its own: a reply's `undo: { path, body }` wins over
+   * this one, and is honoured with or without `reply`; a reply's `undo: null` withdraws it (the
+   * thing has already moved on). The endpoint behind an undo checks access as the signed-in
+   * user and refuses once what it would take back has been built on. See `Reversal`.
+   */
+  undo?: UndoCall;
   /** AI writing tools (`ui-ai-tools`, e.g. "formal shorter proofread translate") under the field `field`. */
   assist?: { field: string; tools: string };
   /**
@@ -181,6 +239,15 @@ export interface Stat {
   tone?: "success" | "warning" | "error";
   href?: string;
   trend?: { labels: string[]; values: number[]; format?: NumberFormat };
+  /**
+   * How the figure moved against the previous period, as a chip under it: `text` is the change in
+   * words ("+21%", "−0.4 d"), `dir` the way it went (the chip's arrow), and `good` whether that is
+   * good news (the chip's ink: success when true, error when false, neutral when left out: fewer
+   * days is good, fewer orders is not, and the design system can't know which).
+   */
+  delta?: { text: string; dir: "up" | "down" | "flat"; good?: boolean };
+  /** The figure the row is about: drawn tinted. One per `stats` block (the first wins). */
+  main?: boolean;
 }
 
 export interface Column {
@@ -197,6 +264,12 @@ export interface ListItem {
   headline: string;
   supporting?: string;
   overline?: string;
+  /**
+   * The time or date the item is due ("14:00", "17 Nov", "Wed 10:00"), in a leading column: the
+   * list reads as an agenda. Such a row keeps its supporting text to one line and, when it links
+   * somewhere and has nothing else at its end, shows a chevron there.
+   */
+  lead?: string;
   /** Status dot at the start. */
   dot?: Tone;
   icon?: IconName;
@@ -212,15 +285,32 @@ export interface ListItem {
   select?: { param: string; value: string };
 }
 
+/**
+ * A chart over one x axis (`<ui-chart>`): the design system draws the gridlines, round ticks,
+ * thinned x labels, the tooltip, the legend's chips and the colours (series take the chart
+ * palette in the order given, so a series keeps its colour). A screen says only what the data is.
+ */
 export interface ChartSpec {
+  /** `line`: a trend (one series gets a soft area under it). `bars`: amounts per period or category. */
   kind: "bars" | "line";
   labels: string[];
+  /** Up to six, each as long as `labels`. Give the longest history: `ranges` cuts it. */
   series: { name: string; values: number[] }[];
   format?: NumberFormat;
+  /** A reference value (a target, a policy minimum): a dashed line, with `targetLabel` on it. */
   target?: number;
   targetLabel?: string;
+  /** Bars of one series: the latest in colour with its value over it, the history muted. */
   highlightLast?: boolean;
+  /** The series are parts of a whole: stacked bars, or stacked areas for lines. */
   stacked?: boolean;
+  /**
+   * A range switch in the chart's header: each choice shows the last `points` of every series
+   * (`{ label: "4 w", points: 4 }`), cut in the browser. Shortest first; the first is shown at
+   * first unless `range` names another's `points`. Ranges longer than the data are left out.
+   */
+  ranges?: { label: string; points: number }[];
+  range?: number;
 }
 
 /**
@@ -301,6 +391,12 @@ export interface ViewBlocks {
   };
   /** A heading for the blocks after it, inside a card (one level under the card's own heading). */
   heading: { type: "heading"; text: string };
+  /**
+   * Rows of records, one line each (about 44px): a value that doesn't fit its column ends in "…",
+   * and a column's `supporting` key adds a second, quieter line (two lines at most). A person is
+   * a `person` cell (avatar and name), a status a `dot` or `tag` cell, and a row's own action
+   * goes in its last column (`actions`).
+   */
   table: {
     type: "table";
     columns: Column[];

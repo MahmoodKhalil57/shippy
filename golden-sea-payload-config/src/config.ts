@@ -39,21 +39,22 @@ export default defineConfig({
     user: "users",
     // The dashboard's structure: navigation groups in the order work flows (from the first email
     // to the last payment, then insight and setup) and the side panel's counters. Its content
-    // (brand, assistant, guide, tours) is data: ./globals/dashboard.ts.
+    // (brand, assistant, guide, tours) is data: ./globals/dashboard.ts. `section` is the heading
+    // a group sits under in the expanded navigation.
     custom: {
       nav: {
         groups: [
-          { label: "Sourcing desk", icon: "inbox" },
-          { label: "Commercial", icon: "briefcase" },
-          { label: "Fulfilment", icon: "truck" },
-          { label: "Finance", icon: "banknotes" },
-          { label: "Insights", icon: "chart" },
-          { label: "Growth", icon: "trending-up" },
-          { label: "Work", icon: "clipboard" },
-          { label: "Directory", icon: "users" },
-          { label: "Catalogue", icon: "cube" },
-          { label: "Team", icon: "user" },
-          { label: "Configuration", icon: "settings" },
+          { label: "Sourcing desk", icon: "inbox", section: "Operations" },
+          { label: "Commercial", icon: "briefcase", section: "Operations" },
+          { label: "Fulfilment", icon: "truck", section: "Operations" },
+          { label: "Finance", icon: "banknotes", section: "Operations" },
+          { label: "Insights", icon: "chart", section: "Business" },
+          { label: "Growth", icon: "trending-up", section: "Business" },
+          { label: "Work", icon: "clipboard", section: "Business" },
+          { label: "Directory", icon: "users", section: "Records" },
+          { label: "Catalogue", icon: "cube", section: "Records" },
+          { label: "Team", icon: "user", section: "Setup" },
+          { label: "Configuration", icon: "settings", section: "Setup" },
         ],
       },
       aside,

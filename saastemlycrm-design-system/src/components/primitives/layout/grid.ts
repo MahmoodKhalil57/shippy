@@ -27,12 +27,14 @@ export const grid = rcva("grid min-w-0", {
     /**
      * This many cells in even rows, by the grid's own width (a container query, so it works the
      * same in a card or on the page): all in one row when they fit, else halves or thirds, else
-     * one per row. Never one cell left alone on a row (a row of stats).
+     * one per row. Never one cell left alone on a row (a row of stats). Four take one row from
+     * 40rem, the narrowest that leaves each its 7rem (7N + 4(N − 1)): a strip of four key figures
+     * stays one strip on a narrow main panel.
      */
     balance: {
       "2": "grid-cols-1 @sm:grid-cols-2",
       "3": "grid-cols-1 @2xl:grid-cols-3",
-      "4": "grid-cols-1 @sm:grid-cols-2 @3xl:grid-cols-4",
+      "4": "grid-cols-1 @sm:grid-cols-2 @min-[40rem]:grid-cols-4",
       "5": "grid-cols-1 @sm:grid-cols-2 @2xl:grid-cols-3 @4xl:grid-cols-5",
       "6": "grid-cols-1 @sm:grid-cols-2 @2xl:grid-cols-3 @5xl:grid-cols-6",
     },

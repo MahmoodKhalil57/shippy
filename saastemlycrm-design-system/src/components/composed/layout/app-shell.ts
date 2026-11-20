@@ -7,6 +7,7 @@ import {
   closeColumn,
   openColumn,
   refit,
+  wantsNav,
   MAIN_COMFORT,
   type FrameSizes,
   type FrameState,
@@ -19,61 +20,67 @@ import type { IconName } from "../../primitives/media/icon.ts";
 export type { PageTransition } from "../../primitives/layout/frame.ts";
 
 /**
- * App shell: the application frame — a header (brand, centred search, actions), a
- * collapsible navigation column, a rounded main panel that scrolls on its own, and a
- * collapsible side panel. The header and the closed columns share one surface; the
+ * App shell: the application frame — a header (brand, centred search, actions), a collapsible navigation column, a rounded main panel that scrolls on its
+ * own, and a collapsible side panel. The header and the closed columns share one surface; the
  * main panel sits on top of it, fully inside the viewport (Material-style app frame).
  *
  * Purpose: Layout & page structure · Kind: composed (Frame / Frame header / Frame column / Frame main;
  * replaces daisyUI drawer + navbar)
  *
- * Two columns built the same way, one each side of the main panel: a toggle (the same in both
- * states, never moving), then the open list or, closed, its rail — the same menu, icons only.
- * - start (navigation): `slot="nav"` (`<ui-menu layout="nav">`) / `slot="rail"` (`layout="rail"`)
- * - end (side panel): `slot="aside"` / `slot="aside-rail"`, likewise
+ * A column each side of the main panel: a toggle at its top (the same in both states, never
+ * moving), then its open list or, closed, its rail.
+ * - start (navigation, Material 3's navigation rail): `slot="rail"` (`<ui-menu layout="rail">`,
+ *   collapsed: the list's rows with only their icons) / `slot="nav"` (`<ui-menu layout="nav">`,
+ *   expanded: the labelled list), with `slot="nav-footer"` under both (the person signed in).
+ * - end (side panel): `slot="aside"` / `slot="aside-rail"`, likewise.
  * - under the main panel: `slot="footer"`, one centred line (e.g. a credit)
  *
  * Motion is CSS only (`nav-open` / `aside-open` flip) on Material Design 3 expressive springs
- * (src/styles/motion.css), in two back-to-back steps (the second starts as the first settles,
- * `--settle-spatial`, with no pause):
- * - opening: the column widens while the labels slide and fade in and the highlight grows
- *   from the rail's icon pill → open groups expand (the highlight follows to the active page).
- * - closing: open groups collapse (the highlight moves to its group) → the column shrinks while
- *   labels slide and fade out and the highlight folds to the icon pill; the rail then takes
- *   over. With no group open, closing starts with the second step.
- * The groups' own open state is never changed, so they come back as they were.
+ * (src/styles/motion.css): a column resizes while its labels slide in beside icons that stay where
+ * they are, then the list's groups expand; closing, the groups collapse, then the list folds into
+ * the rail's look. The groups' own open state is never changed, so they come
+ * back as they were.
  *
- * Space: the main panel's content is never narrower than `--main-min` (258px, src/styles/theme.css:
- * what a 320px phone leaves it) beside the columns. Opening a
- * column pushes the main panel when there is room; otherwise it first closes the other column if
- * that makes room, and failing that opens as a sheet over the page (its rail keeps its place)
- * with everything else dimmed. When the window shrinks, open columns close (side panel first)
- * until the main panel fits again.
+ * Space (every decision is src/components/base/frame-fit.ts, proved for every window width): the
+ * main panel's content is never narrower than `--main-min` (258px, src/styles/theme.css: what a
+ * 320px phone leaves it). Opening a column pushes the main panel when the page keeps
+ * `--main-comfort` (320px) beside it; otherwise it first closes the other column if that makes
+ * room, and failing that opens as a sheet over the page (its rail keeps its place) with
+ * everything else dimmed. When the window shrinks, open columns close (side panel first) until
+ * the main panel fits again.
+ *
+ * The navigation is expanded from an extra-large window (1600px, M3's window size classes: the
+ * first from which a page's board keeps three lanes beside it and the side panel's rail) unless
+ * the person collapsed it, and stays the rail below that unless they expanded it
+ * (`navExpanded`: their choice, which `ui-change` reports as `expanded` for the app to remember).
+ * It expands again by itself when the room comes back (a wider window, the side panel closing).
  *
  * Compact: when both rails would leave the main panel's content under `--main-comfort` (320px),
  * the frame goes full screen, trading the second rail for the page's room.
- * The side panel's rail joins the navigation's in one rail that shows either at a time: the button
- * at its top (where the navigation's toggle is) switches between them, so neither moves the other's
- * icons. The side panel takes no room and opens only as a sheet, from that rail; the navigation
- * opens from its section icons. The frame's edges and gaps go to 0, and the main panel runs to the
- * screen's end and bottom edges (only its corner by the header and rail stays round).
+ * The side panel's rail joins the navigation's in one rail that shows either at a time: the
+ * button at its top (where the navigation's toggle is) switches between them, so neither moves
+ * the other's icons. The side panel takes no room and opens only as a sheet, from
+ * that rail; the navigation opens from its group icons. The frame's edges and gaps go to 0, and the
+ * main panel runs to the screen's end and bottom edges (only its corner by the header and rail
+ * stays round).
  */
 /**
  * @example
- * <ui-app-shell brand="Acme" brand-icon="grid" brand-href="/" nav-open>
+ * <ui-app-shell brand="Acme" brand-icon="grid" brand-href="/">
  *   <ui-search slot="search" label="Search"></ui-search>
  *   <ui-appearance slot="actions" kind="theme"></ui-appearance>
- *   <ui-menu slot="nav" .items=${items}></ui-menu>
+ *   <ui-menu slot="nav" layout="nav" .items=${items}></ui-menu>
  *   <ui-menu slot="rail" layout="rail" .items=${railItems}></ui-menu>
  *   <ui-menu slot="aside" layout="nav" .items=${sections}></ui-menu>
  *   <ui-menu slot="aside-rail" layout="rail" .items=${sectionRail}></ui-menu>
  *   Page content
  * </ui-app-shell>
  *
- * `nav-open` / `aside-open` reflect the columns' state; the built-in toggles flip them
- * and fire `ui-change` with `{ nav, aside }`. Escape closes a floating column.
+ * `nav-open` / `aside-open` reflect the columns' state; the toggles flip them and fire `ui-change`
+ * with `{ nav, aside, expanded }` (`expanded`: set when the person expanded or collapsed the
+ * navigation beside the page). Escape closes a floating column.
  */
-/** The frame's live fluid sizes (`--frame-*`, registered so they compute to px): a rail, and gaps + edges. */
+/** The frame's live sizes (`--frame-*`, registered so they compute to px): the rails, and gaps + edges. */
 const frame = () => {
   const css = getComputedStyle(document.documentElement);
   const px = (name: string) => parseFloat(css.getPropertyValue(name)) || 0;
@@ -95,6 +102,11 @@ export class UiAppShell extends LightElement {
   @property({ type: Boolean, reflect: true, attribute: "aside-open" }) asideOpen = false;
   @property({ attribute: "nav-label" }) navLabel = "Navigation";
   @property({ attribute: "aside-label" }) asideLabel = "Side panel";
+  /**
+   * What the person chose for the navigation: `true` expanded it, `false` collapsed it, `null`
+   * nothing yet (expanded from an extra-large window). The app remembers it from `ui-change`'s `expanded`.
+   */
+  @property({ attribute: false }) navExpanded: boolean | null = null;
 
   /** Open columns shown as sheets over the page (no room to push the main panel). */
   @state() private _navSheet = false;
@@ -106,9 +118,9 @@ export class UiAppShell extends LightElement {
   /** Full screen with one rail: both rails would leave the main panel's content under `--main-comfort`. */
   @state() private _compact = false;
 
-  /** Before the first render: fit the saved open columns to the window, so nothing shifts after. */
-  protected willUpdate() {
-    if (!this.hasUpdated) this._refit();
+  /** Before the first render, and when the person's choice arrives: fit the columns to the window, so nothing shifts after. */
+  protected willUpdate(changed: Map<string, unknown>) {
+    if (!this.hasUpdated || changed.has("navExpanded")) this._refit();
   }
 
   /** The frame's root, and the parts of it drawn over the background image (header, columns, footer). */
@@ -129,6 +141,8 @@ export class UiAppShell extends LightElement {
       this.#content.observe(el, { childList: true, subtree: true, characterData: true });
     }
     void this._onBackground();
+    // The state the frame starts in, for whoever mirrors it.
+    this._report();
   }
 
   /* ------------------------------------------------------------ legible chrome over a background image */
@@ -264,14 +278,18 @@ export class UiAppShell extends LightElement {
     };
   }
 
-  /** Apply a decision: a column turning into a sheet prepares its width first, then columns open or close. */
-  private async _apply(next: FrameState) {
+  /**
+   * Apply a decision: a column turning into a sheet prepares its width first, then columns open or
+   * close. `expanded` is the person's choice for the navigation, when this is one.
+   */
+  private async _apply(next: FrameState, expanded?: boolean) {
     this._compact = next.compact;
+    if (expanded !== undefined) this.navExpanded = expanded;
     if (next.navSheet && !this._navSheet) await this._toSheet("start");
     else this._navSheet = next.navSheet;
     if (next.asideSheet && !this._asideSheet) await this._toSheet("end");
     else this._asideSheet = next.asideSheet;
-    this._set(next.navOpen, next.asideOpen);
+    this._set(next.navOpen, next.asideOpen, expanded);
   }
 
   /** Plays an M3 transition pattern as a new page enters the main panel (see `<ui-frame-main>`). */
@@ -287,9 +305,22 @@ export class UiAppShell extends LightElement {
     return this._toggle("end", open);
   }
 
+  /**
+   * Expanding the navigation beside the page, or collapsing it from there, is the person's choice
+   * (a sheet is a visit: it changes nothing). A column that closes may give the navigation its
+   * room back.
+   */
   private _toggle(side: Side, open: boolean) {
     const width = document.documentElement.clientWidth;
-    return this._apply(open ? openColumn(side, width, this._state, this._sizes()) : closeColumn(side, this._state));
+    const st = this._state;
+    const sizes = this._sizes();
+    if (open) {
+      const next = openColumn(side, width, st, sizes);
+      return this._apply(next, side === "start" && !next.navSheet && !st.navOpen ? true : undefined);
+    }
+    const expanded = side === "start" && st.navOpen && !st.navSheet ? false : undefined;
+    const want = side === "end" && wantsNav(this.navExpanded, width);
+    return this._apply(refit(width, closeColumn(side, st), sizes, want), expanded);
   }
 
   /**
@@ -307,19 +338,30 @@ export class UiAppShell extends LightElement {
     column?.prepareSheet();
   }
 
-  /** Window resized (or first layout): close pushing columns, side panel first, until the main panel fits. */
+  /**
+   * Window resized (or first layout): close pushing columns, side panel first, until the main panel
+   * fits; expand the navigation beside the page when it's wanted and has the room.
+   */
   private _refit = () => {
-    const next = refit(document.documentElement.clientWidth, this._state, this._sizes());
+    const width = document.documentElement.clientWidth;
+    const next = refit(width, this._state, this._sizes(), wantsNav(this.navExpanded, width));
     this._compact = next.compact;
+    this._navSheet = next.navSheet;
     this._set(next.navOpen, next.asideOpen);
   };
   #resize = new ResizeObserver(() => this._refit());
 
-  private _set(nav: boolean, aside: boolean) {
-    if (nav === this.navOpen && aside === this.asideOpen) return;
+  private _set(nav: boolean, aside: boolean, expanded?: boolean) {
+    if (nav === this.navOpen && aside === this.asideOpen && expanded === undefined) return;
     this.navOpen = nav;
     this.asideOpen = aside;
-    this.dispatchEvent(new CustomEvent("ui-change", { detail: { nav, aside }, bubbles: true }));
+    this._report(expanded);
+  }
+
+  private _report(expanded?: boolean) {
+    this.dispatchEvent(
+      new CustomEvent("ui-change", { detail: { nav: this.navOpen, aside: this.asideOpen, expanded }, bubbles: true }),
+    );
   }
 
   /** Escape closes an open sheet. */
@@ -370,7 +412,7 @@ export class UiAppShell extends LightElement {
     const asideSheet = this.asideOpen && this._asideSheet;
     const compact = this._compact;
     // The side panel's rail moves between columns by property (see `railNodes`): in its own
-    // column normally, above the navigation's in a compact frame.
+    // column normally, in the navigation's in a compact frame.
     const asideRail = this.slottedNodes("aside-rail");
     return html`<ui-frame ?settling=${this._settling} ?compact=${compact} .scrim=${this._scrim}>
       <ui-frame-header

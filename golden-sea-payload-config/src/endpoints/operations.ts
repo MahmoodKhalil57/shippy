@@ -818,13 +818,62 @@ async function poAward(req: PayloadRequest) {
     return fail("Choose to keep the line open or close it.");
   if (outcome === "Closed" && !reason) return fail("Closing an unawarded line needs a reason.");
   const lineNo = num(b.lineNo);
-  const rest = ((po.unawarded as { lineNo: number }[] | undefined) ?? []).filter((u) => u.lineNo !== lineNo);
+  const all = (po.unawarded as Unawarded[] | undefined) ?? [];
+  const was = all.find((u) => u.lineNo === lineNo);
+  const rest = all.filter((u) => u.lineNo !== lineNo);
   const doc = await update(req, "customer-pos", po.id, { unawarded: [...rest, { lineNo, outcome, reason }] });
   await logActivity(req, {
     case: str(idOf(po.case)),
     text: `Line ${lineNo} not awarded: ${outcome}${reason ? ` — ${reason}` : ""}.`,
   });
-  return Response.json({ doc });
+  // `undo`: the call that puts the line back where it was (undecided, or kept open).
+  return Response.json({
+    doc,
+    undo: {
+      path: "/operations/po-award-undo",
+      body: { po: po.id, lineNo, outcome, was: was ? { outcome: was.outcome, reason: was.reason ?? "" } : null },
+    },
+  });
+}
+
+type Unawarded = { lineNo: number; outcome?: string; reason?: string };
+
+/**
+ * POST /api/operations/po-award-undo { po, lineNo, outcome, was } — the Undo of a partial-award
+ * decision: the line goes back to what it was (`was`: undecided, or kept open). Refused once the
+ * line has been decided again, or the sales order is confirmed (the supplier POs were built
+ * without it).
+ */
+async function poAwardUndo(req: PayloadRequest) {
+  if (!req.user) return fail("Sign in first.", 401);
+  const b = await body(req);
+  const po = await byId(req, "customer-pos", str(b.po));
+  if (!po) return fail("Customer PO not found.", 404);
+  const lineNo = num(b.lineNo);
+  const all = (po.unawarded as Unawarded[] | undefined) ?? [];
+  const now = all.find((u) => u.lineNo === lineNo);
+  if (!now || now.outcome !== str(b.outcome))
+    return fail(`Line ${lineNo} has been decided again since — nothing to take back.`, 409);
+  const caseId = str(idOf(po.case));
+  if ((await find(req, "purchase-orders", { case: { equals: caseId } })).length)
+    return fail("The sales order is confirmed and its supplier POs are prepared — the line's decision stands.", 409);
+  const was = b.was && typeof b.was === "object" ? (b.was as Unawarded) : null;
+  if (was && was.outcome !== "Open — revision to follow") return fail("A line goes back to undecided or kept open.");
+  const rest = all.filter((u) => u.lineNo !== lineNo);
+  const doc = (await req.payload.update({
+    collection: "customer-pos" as never,
+    id: po.id,
+    data: {
+      unawarded: was ? [...rest, { lineNo, outcome: was.outcome, reason: str(was.reason) }] : rest,
+    } as never,
+    req,
+    overrideAccess: false,
+  })) as unknown as Doc;
+  await logActivity(req, {
+    case: caseId,
+    text: `Line ${lineNo}: “${str(b.outcome)}” taken back — ${was ? was.outcome : "undecided again"}.`,
+  });
+  return Response.json({ doc, message: `Line ${lineNo} is ${was ? "kept open again" : "undecided again"}` });
 }
 
 /** POST /api/operations/confirm-order { case } — sales order confirmed; supplier POs prepared for approval. */
@@ -1474,6 +1523,7 @@ export const operationsEndpoints: Endpoint[] = [
   { path: "/operations/po-check", method: "post", handler: poCheck as Endpoint["handler"] },
   { path: "/operations/po-amend", method: "post", handler: poAmend as Endpoint["handler"] },
   { path: "/operations/po-award", method: "post", handler: poAward as Endpoint["handler"] },
+  { path: "/operations/po-award-undo", method: "post", handler: poAwardUndo as Endpoint["handler"] },
   { path: "/operations/confirm-order", method: "post", handler: confirmOrder as Endpoint["handler"] },
   { path: "/operations/po-recheck", method: "post", handler: poRecheck as Endpoint["handler"] },
   { path: "/operations/eta-change", method: "post", handler: etaChange as Endpoint["handler"] },

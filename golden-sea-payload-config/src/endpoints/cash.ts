@@ -1,4 +1,5 @@
 import type { Endpoint, PayloadRequest } from "payload";
+import { withdrawal } from "./commercial.ts";
 import { cash, collectionDraftFor } from "./operations.ts";
 import * as link from "../links.ts";
 
@@ -11,7 +12,9 @@ import * as link from "../links.ts";
  *   refused (403) for Sales.
  * - POST /api/cash/reminder | decide | apply-bank | record-payment | request-approval | match — what a
  *   person does on the page. Each re-checks who may do what. The system records payments after
- *   the bank movement — it never pays.
+ *   the bank movement — it never pays. `decide` answers with `undo` (withdrawing the decision,
+ *   POST /api/commercial/approvals/:id/withdraw); sending a reminder, applying bank details and
+ *   recording a payment can't be undone.
  */
 
 export interface Receivable {
@@ -256,7 +259,8 @@ export const cashEndpoints: Endpoint[] = [
     await update(req, "approvals", id, {
       decisions: [...(current.decisions ?? []), { decision, reason }],
     });
-    return Response.json({ ok: true });
+    // `undo`: the approver can take it back until the payment is recorded or the details applied.
+    return Response.json({ ok: true, undo: await withdrawal(req, id) });
   }),
   // Finance applies the new bank details once two people approved.
   action("apply-bank", async (req, d, b) => {

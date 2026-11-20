@@ -214,6 +214,140 @@
   --color-on-error-container: var(--color-error-ink);
 }
 
+/* ---------------------------------------------------------------- emphasis surfaces
+   (<ui-tile emphasis="inverse|tinted">, <ui-stat main>) A surface that stands apart from the ones
+   around it, with every colour role inside it re-derived for it: each utility re-scopes the two
+   colours the roles above are computed from (`base-100`, the surface, and `base-content`, the ink),
+   so `surface`, the `surface-container-*` steps, `on-surface`, `on-surface-variant`, the outlines,
+   the `*-ink` and `*-container` roles all follow, in every component drawn inside, with no
+   override per component. Glass floating out of it (a menu) takes the same pair. A primitive puts
+   an element on one with `data-surface`, the way `data-theme` scopes a theme.
+
+     surface-inverse   M3's inverse surface ("Displays opposite color of the surrounding UI", to make
+                       an element stand out): one per screen (M3: one prominent item). In a light
+                       theme it is the ink, deepened, with the surface as its text (the black panel
+                       of a light dashboard). In a dark theme M3's inverse surface is near-white,
+                       which glares at the size of a tile; there it is the surface raised towards the
+                       ink (the direction of M3's "surface bright", the brightest surface of a dark
+                       theme) with white text.
+     surface-tinted    the primary container, with an ink stronger than `on-surface` (tinted
+                       backgrounds take full-strength text): the headline figure of a row, a
+                       highlighted tile.
+
+   Both are dark-on-light or light-on-dark by a margin that holds in every colour scheme:
+   tests/contrast.test.ts computes, for every scheme, light and dark, that `on-surface` and
+   `on-surface-variant` read at WCAG AA on the emphasised surface and on each `surface-container-*`
+   step inside it, and the ink of each tone a block can name (primary, info, success, warning,
+   error) on the surface, on `surface-container` and on its own container (the percentages are read
+   from this file). Registered as colours so they are computed here, on
+   the root: an unregistered `light-dark()` would be resolved again inside the inverse surface, whose
+   own `color-scheme` is dark. */
+@property --inverse-surface {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #000;
+}
+@property --inverse-on-surface {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #fff;
+}
+@property --tinted-surface {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #fff;
+}
+@property --tinted-on-surface {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #000;
+}
+:root {
+  --inverse-surface: light-dark(
+    color-mix(in oklab, var(--color-base-content), black 40%),
+    color-mix(in oklab, var(--color-base-100), var(--color-base-content) 12%)
+  );
+  --inverse-on-surface: light-dark(var(--color-base-100), white);
+  --tinted-surface: color-mix(in oklab, var(--color-primary) 16%, var(--color-base-100));
+  --tinted-on-surface: color-mix(in oklab, var(--color-base-content), light-dark(black, white) 60%);
+}
+@utility surface-inverse {
+  --color-base-100: var(--inverse-surface);
+  --color-base-200: color-mix(in oklab, var(--inverse-surface), var(--inverse-on-surface) 5%);
+  --color-base-300: color-mix(in oklab, var(--inverse-surface), var(--inverse-on-surface) 12%);
+  --color-base-content: var(--inverse-on-surface);
+  --theme-base-content: var(--inverse-on-surface);
+  /* A dark region in either theme: the surface steps take their dark sizes, native controls and
+     scrollbars are drawn dark. */
+  color-scheme: dark;
+  background-color: var(--color-base-100);
+  color: var(--color-base-content);
+}
+@utility surface-tinted {
+  --color-base-100: var(--tinted-surface);
+  --color-base-200: color-mix(in oklab, var(--tinted-surface), var(--tinted-on-surface) 5%);
+  --color-base-300: color-mix(in oklab, var(--tinted-surface), var(--tinted-on-surface) 12%);
+  --color-base-content: var(--tinted-on-surface);
+  --theme-base-content: var(--tinted-on-surface);
+  /* The theme's own scheme (the selectors schemes.css tells light from dark by), also inside the
+     inverse surface: a light tint keeps the light surface steps there. */
+  color-scheme: light;
+  :root[data-theme="dark"] & {
+    color-scheme: dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) & {
+      color-scheme: dark;
+    }
+  }
+  background-color: var(--color-base-100);
+  color: var(--color-base-content);
+}
+[data-surface="inverse"] {
+  @apply surface-inverse;
+}
+[data-surface="tinted"] {
+  @apply surface-tinted;
+}
+
+/* ---------------------------------------------------------------- charts: series colours and motion
+   (<ui-chart>, src/components/primitives/data/chart.ts)
+   A categorical palette for data series: `chart-1` … `chart-6`, assigned in that fixed order (a
+   series keeps its slot, whatever is hidden), and `chart-muted` for the history behind a
+   highlighted bar. They identify a series and mean nothing else: status colours (success, warning,
+   error) stay reserved for status, and text never wears a series colour.
+   Their values are generated, never hand-set: every colour scheme (and the default one) gets
+   `--chart-1` … `--chart-6` and `--chart-muted` in schemes.css, derived from its own tokens by
+   vite/chart-colors.ts (`vpx vite/schemes.ts`): slot 1 has the scheme's own hue, the others turn
+   from it, and each is moved from the surfaces until it has 3:1 (WCAG 1.4.11) against every surface
+   role above and is apart from its neighbour for red-green colour blindness.
+   Each is `light-dark(for light surfaces, for dark surfaces)`, deliberately not registered: it is
+   resolved by the `color-scheme` of the element that draws with it, so a chart inside
+   `surface-inverse` (a dark region in a light theme too) takes the half made for dark surfaces.
+   tests/chart-colors.test.ts proves the 3:1 for every scheme, light and dark, on every surface
+   role, and on an emphasis surface, a card and a stat's cell inside one; it fails when a surface
+   role or a scheme changes without the colours being generated again. */
+@theme inline {
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+  --color-chart-muted: var(--chart-muted);
+}
+/* Lines and areas enter by being uncovered from the start of the x axis (the chart times it with
+   M3's tokens; nothing moves with Reduce motion). The clip reaches past the plot's edges, so a
+   line's round ends and its hover dots are never cut. */
+@keyframes chart-reveal {
+  from {
+    clip-path: inset(-0.5rem 100% -0.5rem -0.5rem);
+  }
+  to {
+    clip-path: inset(-0.5rem);
+  }
+}
+
 /* ---------------------------------------------------------------- Material Design 3: state layers
    (m3.material.io/foundations/interaction/states) A state layer is a wash of the content's own
    colour between the container and the content: hover 8%, focus 10%, pressed 10%, dragged 16%.
@@ -334,10 +468,10 @@
   /* The page title (<ui-heading variant="page">): a headline that grows from headline-sm to
      headline-lg with the main panel's width (container units), bold and slightly tight like
      Apple's large title. */
-  --text-page-title: clamp(1.5rem, 1.2rem + 1.6cqi, 2rem);
+  --text-page-title: clamp(1.5rem, 1.2rem + 1.2cqi, 1.75rem);
   --text-page-title--line-height: 1.2;
   --text-page-title--letter-spacing: -0.01em;
-  --text-page-title--font-weight: 700;
+  --text-page-title--font-weight: 600;
 
   --text-title-lg: 1.375rem;
   --text-title-lg--line-height: 1.75rem;
@@ -386,12 +520,17 @@
   initial-value: 1;
 }
 
-/* The app frame's fluid sizes (<ui-app-shell>): they scale smoothly with the window instead of
-   jumping at breakpoints, from a 320px phone to a 1280px desktop:
-     --frame-rail  closed column     48px → 96px  (a 44px icon pill plus its inset)
-     --frame-gap   between columns    2px →  8px
-     --frame-edge  to the screen edge 2px → 12px
-   The shell registers them as lengths (CSS.registerProperty) so script reads them resolved. */
+/* The app frame's sizes (<ui-app-shell>). The fluid ones scale smoothly with the window instead
+   of jumping at breakpoints, from a 320px phone to a 1280px desktop:
+     --frame-rail      a closed column       48px → 96px  (a 48px icon pill plus its inset;
+                                             96dp is M3's collapsed navigation rail)
+     --frame-gap       between columns        2px →  8px
+     --frame-edge      to the screen edge     2px → 12px
+   The open widths are fixed:
+     --frame-nav       the navigation expanded    220px (M3 expanded rail: 220dp to 360dp)
+     --frame-aside     the side panel open        320px
+   The shell registers the lengths (CSS.registerProperty) so script reads them resolved;
+   src/components/base/frame-fit.ts proves the room they leave the page at every window width. */
 :root {
   /* The main panel's narrowest content box, the one size the frame is laid out from: what a
      320px phone leaves it (320 − a 48px rail − its 2×2px border − its ~10px scrollbar). The
@@ -403,7 +542,7 @@
   --main-comfort: 320px;
   --frame-rail: clamp(3rem, 5vw + 2rem, 6rem);
   /* The columns' open widths: the navigation and the side panel (frame-fit's NAV_OPEN, ASIDE_OPEN). */
-  --frame-nav: 18rem;
+  --frame-nav: 13.75rem;
   --frame-aside: 20rem;
   --frame-gap: clamp(0.125rem, 0.625vw, 0.5rem);
   --frame-edge: clamp(0.125rem, 1.042vw - 0.083rem, 0.75rem);

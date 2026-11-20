@@ -136,7 +136,12 @@ async function draw(ctx: Ctx, page: WidgetPage, scope: WidgetScope, where: strin
         return eachTiles(w, data as never, scope).map(({ widget: t }): ViewBlock => {
           const r = t.render(data as never, scope);
           const head = t.head?.(data as never, scope);
-          tiles.push({ title: t.title, size: t.size, blocks: r ? (Array.isArray(r) ? r : [r]) : [] });
+          tiles.push({
+            title: t.title,
+            size: t.size,
+            emphasis: t.emphasis,
+            blocks: r ? (Array.isArray(r) ? r : [r]) : [],
+          });
           return {
             type: "card",
             heading: t.title,
@@ -147,7 +152,7 @@ async function draw(ctx: Ctx, page: WidgetPage, scope: WidgetScope, where: strin
         });
       const r = w.render!(data as never, scope);
       const blocks = r ? (Array.isArray(r) ? r : [r]) : [];
-      tiles.push({ title: w.title, size: w.size, blocks });
+      tiles.push({ title: w.title, size: w.size, emphasis: w.emphasis, blocks });
       if (!w.title) return blocks;
       const head = w.head?.(data as never, scope);
       if (w.title.length > 90) problems.push(`${at}: title is ${w.title.length} characters`);

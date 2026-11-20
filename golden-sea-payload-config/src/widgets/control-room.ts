@@ -8,8 +8,9 @@ import * as link from "../links.ts";
 /**
  * The control room (/control-room): "The business, live. Briefed at 07:00." for Karim Balbaa and
  * Mohamed Helmy: the 07:00 AI briefing (GET /api/briefing), "Ask Golden Sea" (an `ask` block on POST /api/ask) and the
- * management dashboards (one tile per chart, ranking and table), with one period choice
- * (`?period=`) above them. Data:
+ * management dashboards (one tile per chart, ranking and table). The key figures cover the last
+ * four weeks (`period`); each trend chart opens on its whole history and its own range switch
+ * cuts its history without asking again, so the screen needs no period control of its own. Data:
  * GET /api/control-room?period= (../endpoints/control-room.ts); profit & cash only reach
  * management and finance.
  */
@@ -75,8 +76,14 @@ const suppliers = (s: CrSuppliers): ViewBlock =>
     })),
   });
 
-const chart = (w: CrChart): ViewBlock =>
-  block("chart", {
+/**
+ * A trend carries its whole history and opens on all of it (a trend reads best long); the chart's
+ * own range switch cuts it ("4 w", "12 w").
+ */
+const chart = (w: CrChart): ViewBlock => {
+  const unit = w.grain === "month" ? "m" : "w";
+  const shown = w.grain && w.ranges?.length ? Math.max(...w.ranges) : undefined;
+  return block("chart", {
     label: w.title,
     chart: {
       kind: w.type,
@@ -86,8 +93,12 @@ const chart = (w: CrChart): ViewBlock =>
       target: w.target === undefined ? undefined : w.target * scale(w.unit),
       targetLabel: w.targetLabel,
       highlightLast: Boolean(w.highlightLast),
+      stacked: Boolean(w.stacked),
+      ranges: w.grain ? w.ranges?.map((points) => ({ label: `${points} ${unit}`, points })) : undefined,
+      range: shown || undefined,
     },
   });
+};
 
 /** One of the dashboards' widgets, found by its title in any section (absent: no tile). */
 const find = (d: ControlRoom, title: string) => d.sections.flatMap((s) => s.widgets).find((w) => w.title === title);
@@ -165,7 +176,8 @@ export const controlRoom = widgets({
       skeleton: "stats",
       render: (d) =>
         block("stats", {
-          items: d.tiles.map((t) => ({
+          items: d.tiles.map((t, i) => ({
+            main: i === 0,
             label: t.label,
             value: t.value,
             note: t.note,
@@ -197,20 +209,6 @@ export const controlRoom = widgets({
           footnote: "The assistant reads and answers; it never sends, prices or pays.",
         }),
     },
-    on({
-      title: "Management dashboards",
-      subhead: "Today's numbers from the live records; trends from the reporting history.",
-      size: "full",
-      skeleton: "text",
-      render: (d) => [
-        block("choice", {
-          param: "period",
-          label: "Period",
-          value: d.period,
-          options: d.periods.map((p) => ({ value: p.value, label: p.label })),
-        }),
-      ],
-    }),
     tile("Inquiries, quotes and wins", "chart"),
     tile("Value won per month", "chart"),
     tile("Conversion funnel", "ranked"),

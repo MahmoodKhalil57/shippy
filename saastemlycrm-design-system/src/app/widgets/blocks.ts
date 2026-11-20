@@ -3,7 +3,8 @@ import type { IconName } from "../../components/primitives/media/icon-names.ts";
 import type { TableColumn, TableSupporting } from "../../components/primitives/data/table.ts";
 import "../../components/index.ts";
 import { defineBlock, inCard, renderBlocks, type ViewContext } from "./registry.ts";
-import { formatNumber, type Action, type Cell, type Tag } from "./schema.ts";
+import { decimalsOf } from "../../components/base/chart.ts";
+import { formatNumber, type Action, type Cell, type NumberFormat, type Tag } from "./schema.ts";
 
 /**
  * The built-in blocks (./schema.ts `ViewBlocks`), drawn with the design system's `ui-*`
@@ -24,6 +25,29 @@ const isLink = (a: Action) => !!a.href && !a.call && !a.print;
 const look = (a: Action, linkLook: "text" | "tonal") => (a.main ? "filled" : isLink(a) ? linkLook : "tonal");
 const actionColor = (a: Action) => (a.tone === "error" ? "error" : a.main ? "primary" : undefined);
 
+/**
+ * The pressed button answers at once: it's busy (a spinner, no second press) from the press until
+ * the screen shows the result, so the same thing can't be sent twice. An action that opens a
+ * dialog first isn't running yet: its dialog's own button is the one that waits.
+ *
+ * When the result is in, the list has usually moved up and the same button now stands for the
+ * next item. So for a double-click's length after that, it ignores presses: the second click of
+ * a double-click never approves whatever took the first one's place.
+ */
+const DOUBLE_CLICK_MS = 500;
+const finished = new WeakMap<Element, number>();
+const press = (a: Action, ctx: ViewContext) => (e: Event) => {
+  const button = e.currentTarget as HTMLElementTagNameMap["ui-button"];
+  if (button.loading || performance.now() - (finished.get(button) ?? -DOUBLE_CLICK_MS) < DOUBLE_CLICK_MS) return;
+  const running = ctx.run(a);
+  if (!running) return;
+  button.loading = true;
+  void running.finally(() => {
+    button.loading = false;
+    finished.set(button, performance.now());
+  });
+};
+
 export const action = (a: Action, ctx: ViewContext, size: "xs" | "sm" = "xs", linkLook: "text" | "tonal" = "text") =>
   html`<ui-button
     size=${size}
@@ -31,7 +55,7 @@ export const action = (a: Action, ctx: ViewContext, size: "xs" | "sm" = "xs", li
     .color=${actionColor(a)}
     .href=${a.href}
     ?disabled=${a.disabled}
-    @click=${a.href ? undefined : () => ctx.run(a)}
+    @click=${a.href ? undefined : press(a, ctx)}
     >${a.icon ? html`<ui-icon .name=${icon(a.icon)} size="sm"></ui-icon>` : nothing}${a.label}</ui-button
   >`;
 
@@ -78,8 +102,22 @@ export function actionBar(items: Action[] | undefined, ctx: ViewContext) {
   </ui-flex>`;
 }
 
-/** A cell value as text, a link, a tag, a dot and text, or text over a gauge. */
-export function cell(c: Cell, ctx?: ViewContext) {
+/** A person's initials for their avatar: the first letters of their first and last names. */
+export const initialsOf = (name: string) => {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  const letters = words.length > 1 ? [words[0]!, words[words.length - 1]!] : words;
+  return letters
+    .map((w) => String.fromCodePoint(w.codePointAt(0)!))
+    .join("")
+    .toUpperCase();
+};
+
+/**
+ * A cell value as text, a link, a tag, a person, a dot and text, or text over a gauge. `inTable`:
+ * the cell is a table's (the table draws a person's avatar itself, and a row's actions are never
+ * filled: AGENTS.md "Prominence").
+ */
+export function cell(c: Cell, ctx?: ViewContext, inTable = false) {
   if (c === null || c === undefined || c === "") return html`<ui-text as="span" color="muted">—</ui-text>`;
   if (typeof c === "string" || typeof c === "number") return html`${c}`;
   if (c.switch) {
@@ -96,19 +134,37 @@ export function cell(c: Cell, ctx?: ViewContext) {
           call: { ...s.call, body: { ...s.call.body, value: (e.target as HTMLInputElement).checked } },
           done: s.done,
           reply: true,
+          // A switch's way back is the value it had.
+          undo: { ...s.call, body: { ...s.call.body, value: s.value } },
         })}
     ></ui-switch>`;
   }
   if (c.tag) return html`<ui-tag .tone=${c.tone ?? "neutral"}>${c.text}</ui-tag>`;
+  // A person outside a table (a fact, a list's trailing value): the table draws its own avatar.
+  if (c.person) {
+    const name = c.href ? html`<ui-link variant="hover" .href=${c.href}>${c.text}</ui-link>` : c.text;
+    return inTable
+      ? html`${name}`
+      : html`<ui-flex inline gap="2" align="center"
+          ><ui-avatar size="xs" .initials=${initialsOf(c.text)}></ui-avatar>${name}</ui-flex
+        >`;
+  }
   const color = c.tone && c.tone !== "neutral" && c.tone !== "primary" ? c.tone : undefined;
-  let body = html`<ui-text as="span" variant="body-md" .color=${color} ?mono=${c.mono} ?emphasized=${c.strong}
+  // In a table the text takes the table's own size, so a row's cells read as one line of text.
+  let body = html`<ui-text
+    as="span"
+    .variant=${inTable ? undefined : "body-md"}
+    .color=${color}
+    ?mono=${c.mono}
+    ?emphasized=${c.strong}
     >${c.text}</ui-text
   >`;
   if (c.href) body = html`<ui-link .href=${c.href}>${body}</ui-link>`;
-  if (c.dot)
-    body = html`<ui-flex inline gap="2" align="center"
-      ><ui-badge dot .tone=${c.dot} .label=${c.text}></ui-badge>${body}</ui-flex
-    >`;
+  // A status is a tag in its tone (one pill, so the dot and its word never part on a narrow column).
+  if (c.dot) {
+    const pill = html`<ui-tag .tone=${c.dot}>${c.text}</ui-tag>`;
+    body = c.href ? html`<ui-link .href=${c.href}>${pill}</ui-link>` : pill;
+  }
   if (c.gauge)
     body = html`<ui-flex direction="col" gap="1"
       >${body}<ui-gauge
@@ -119,8 +175,12 @@ export function cell(c: Cell, ctx?: ViewContext) {
         .label=${c.gauge.label ?? c.text}
       ></ui-gauge
     ></ui-flex>`;
+  // In a table a row is one line: its text, tags and buttons follow each other in the line (a row
+  // of them would wrap under the text), and the cell cuts what doesn't fit.
   if (c.tags?.length)
-    body = html`<ui-flex inline gap="2" align="center" wrap>${c.text ? body : nothing}${c.tags.map(tag)}</ui-flex>`;
+    body = inTable
+      ? inLine([...(c.text ? [body] : []), ...c.tags.map(tag)])
+      : html`<ui-flex inline gap="2" align="center" wrap>${c.text ? body : nothing}${c.tags.map(tag)}</ui-flex>`;
   if (c.marks?.length)
     body = html`<ui-flex direction="col" gap="1"
       >${c.text || c.tags?.length ? body : nothing}${c.marks.map(
@@ -131,12 +191,20 @@ export function cell(c: Cell, ctx?: ViewContext) {
           >`,
       )}</ui-flex
     >`;
-  if (c.actions?.length && ctx)
-    body = html`<ui-flex gap="2" align="center" wrap
-      >${c.text || c.tags?.length || c.marks?.length ? body : nothing}${c.actions.map((a) => action(a, ctx))}</ui-flex
-    >`;
+  if (c.actions?.length && ctx) {
+    const before = c.text || c.tags?.length || c.marks?.length ? [body] : [];
+    body =
+      inTable && !c.marks?.length
+        ? inLine([...before, ...c.actions.map((a) => action({ ...a, main: false } as Action, ctx))])
+        : html`<ui-flex gap="2" align="center" wrap
+            >${before}${c.actions.map((a) => action(inTable ? ({ ...a, main: false } as Action) : a, ctx))}</ui-flex
+          >`;
+  }
   return body;
 }
+
+/** Parts one after another in a line of text, a space apart. */
+const inLine = (parts: unknown[]) => html`${parts.flatMap((part, i) => (i ? [" ", part] : [part]))}`;
 
 const supporting = (c: Cell): TableSupporting => {
   if (c === null || c === undefined) return "";
@@ -194,21 +262,28 @@ defineBlock(
 
 defineBlock(
   "stats",
-  (b) =>
-    // Balanced rows: all in one row when they fit, else in even rows (never one left over).
+  (b, ctx) =>
+    // Balanced rows: all in one row when they fit, else in even rows (never one left over). In a
+    // tile the figures are tonal cells; on the page itself (a bare tile) each is a small card like
+    // the tiles around it. A delta is a chip with its arrow, in the ink of what it means.
     html`<ui-grid
       .balance=${b.items.length >= 2 && b.items.length <= 6 ? (String(b.items.length) as "2") : undefined}
       .fit=${b.items.length >= 2 && b.items.length <= 6 ? undefined : "xs"}
-      gap="4"
+      gap="3"
       >${b.items.map(
-        (s) =>
+        (s, i) =>
           html`<ui-stat
+            ?main=${!!s.main && b.items.findIndex((x) => x.main) === i}
+            ?outlined=${!ctx.inCard}
             .size=${b.size ?? "lg"}
             .href=${s.href}
             .label=${s.label}
             .value=${s.value}
             .note=${s.note ?? ""}
             .tone=${s.tone}
+            .delta=${s.delta?.text ?? ""}
+            .deltaDir=${s.delta?.dir ?? "flat"}
+            .deltaTone=${s.delta?.good === undefined ? "neutral" : s.delta.good ? "success" : "error"}
           >
             ${
               s.trend
@@ -248,12 +323,24 @@ defineBlock("table", (b, ctx) => {
     key: c.key,
     label: c.label,
     align: c.align,
-    render: (row) => cell(row[c.key] as Cell, ctx),
+    render: (row) => cell(row[c.key] as Cell, ctx, true),
     supporting: c.supporting ? (row) => supporting(row[c.supporting!] as Cell) : undefined,
+    avatar: (row) => {
+      const v = row[c.key] as Cell;
+      return v && typeof v === "object" && v.person ? { initials: initialsOf(v.text) } : undefined;
+    },
     fixed: i === 0,
   }));
+  // One line a row (two with a column's `supporting`), so many rows fit and each scans the same way.
   return b.rows.length
-    ? html`<ui-table .size=${b.size ?? "sm"} hover ?footer=${b.totals} .columns=${columns} .rows=${b.rows}></ui-table>`
+    ? html`<ui-table
+        .size=${b.size ?? "sm"}
+        lines="one"
+        hover
+        ?footer=${b.totals}
+        .columns=${columns}
+        .rows=${b.rows}
+      ></ui-table>`
     : html`<ui-empty-state size="sm">${b.empty ?? "Nothing here yet."}</ui-empty-state>`;
 });
 
@@ -266,6 +353,8 @@ defineBlock("list", (b, ctx) =>
               .headline=${i.headline}
               .supporting=${i.supporting ?? ""}
               .overline=${i.overline ?? ""}
+              .leadingText=${i.lead ?? ""}
+              .lines=${i.lead ? "1" : "2"}
               .href=${i.href}
               ?action=${!!i.select}
               ?selected=${i.selected ?? (!!i.select && ctx.params[i.select.param] === i.select.value)}
@@ -288,7 +377,11 @@ defineBlock("list", (b, ctx) =>
                   ? html`<ui-flex slot="trailing" gap="2" align="center" wrap
                       >${i.trailing !== undefined ? cell(i.trailing) : nothing}${i.actions?.map((a) => action(a, ctx))}</ui-flex
                     >`
-                  : nothing
+                  : // An agenda row that opens something says so at its end (HIG Lists and tables: to "let
+                    // people drill into a list or table row's subviews, use a disclosure indicator").
+                    i.lead && i.href
+                    ? html`<ui-icon slot="trailing" name="chevron-right" size="sm" color="muted"></ui-icon>`
+                    : nothing
               }
             </ui-list-item>`,
         )}
@@ -348,6 +441,17 @@ defineBlock(
     ></ui-steps>`,
 );
 
+/**
+ * A y axis tick: the chart's format without its currency (the tooltip and the card say it), in
+ * thousands once the ticks are that far apart, with only the decimals the step needs ("20k", "2.5 d");
+ * zero is "0".
+ */
+const chartTick = (v: number, step: number, f: NumberFormat = {}) => {
+  if (v === 0) return "0";
+  const compact = f.unit === "money" && (f.compact || step >= 1000);
+  return formatNumber(v, { ...f, currency: undefined, compact, decimals: decimalsOf(compact ? step / 1000 : step) });
+};
+
 defineBlock("chart", (b) => {
   const chart = html`<ui-chart
     .kind=${b.chart.kind}
@@ -355,8 +459,11 @@ defineBlock("chart", (b) => {
     .labels=${b.chart.labels}
     .series=${b.chart.series}
     .format=${(v: number) => formatNumber(v, b.chart.format)}
+    .tickFormat=${(v: number, step: number) => chartTick(v, step, b.chart.format)}
     .target=${b.chart.target}
     .targetLabel=${b.chart.targetLabel ?? ""}
+    .ranges=${b.chart.ranges ?? []}
+    .range=${b.chart.range}
     ?highlight-last=${b.chart.highlightLast}
     ?stacked=${b.chart.stacked}
   ></ui-chart>`;

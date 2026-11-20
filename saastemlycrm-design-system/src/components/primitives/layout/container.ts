@@ -30,10 +30,10 @@ export const container = rcva("w-full", {
     centered: { true: "mx-auto" },
     /**
      * Inline padding that limits itself (layout/algebra.ts `inset`): it never leaves the content
-     * less than min(7rem, the container). `fluid` scales with the main panel: 1rem to 2.5rem.
+     * less than min(7rem, the container). `fluid` scales with the main panel: 16px to 24px (M3 window margins).
      */
     paddingX: {
-      fluid: "w-full px-[min(clamp(1rem,5cqi,2.5rem),max(0px,calc((100%_-_7rem)/2)))]",
+      fluid: "w-full px-[min(clamp(1rem,3cqi,1.5rem),max(0px,calc((100%_-_7rem)/2)))]",
       "0": "w-full px-0",
       "1": "w-full px-[min(4px,max(0px,calc((100%_-_7rem)/2)))]",
       "2": "w-full px-[min(8px,max(0px,calc((100%_-_7rem)/2)))]",
@@ -47,8 +47,8 @@ export const container = rcva("w-full", {
       "16": "w-full px-[min(64px,max(0px,calc((100%_-_7rem)/2)))]",
     },
     paddingY: {
-      /** Scales with the space it sits in: 1.5rem → 2.5rem. */
-      fluid: "py-[clamp(1.5rem,4cqi,2.5rem)]",
+      /** Scales with the space it sits in: 1rem → 1.5rem. */
+      fluid: "py-[clamp(1rem,3cqi,1.5rem)]",
       "0": "py-0",
       "1": "py-1",
       "2": "py-2",
