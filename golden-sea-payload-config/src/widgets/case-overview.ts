@@ -45,6 +45,7 @@ const bar = (label: string, value: number, total: number, tone: Tone) =>
 
 const lifecycle = on({
   title: "Lifecycle — first email to last payment",
+  size: "m",
   head: (d) => ({ tags: [{ label: `Step ${d.current + 1} of ${d.steps.length}`, tone: "primary" }] }),
   render: (d) => {
     const step = d.steps[d.current]!;
@@ -69,13 +70,15 @@ const lifecycle = on({
   },
 });
 
+/** Each line on its own: how many are ready, waiting, blocked or without an offer. */
 const lines = on({
   title: "Line progress",
+  size: "s",
   head: ({ lines: l }) => {
     const pct = l.total ? Math.round((l.ready / l.total) * 100) : 0;
     return { tags: [{ label: `${pct}% ready`, tone: l.ready === l.total && l.total ? "success" : "warning" }] };
   },
-  render: ({ lines: l, fulfilment: f }) => {
+  render: ({ lines: l }) => {
     const pct = l.total ? Math.round((l.ready / l.total) * 100) : 0;
     return [
       block("text", {
@@ -90,54 +93,59 @@ const lines = on({
           bar("No offer", l.noOffer, l.total, "neutral"),
         ],
       }),
-      ...(f.started
-        ? [
-            block("divider", {}),
-            block("heading", { text: "After the order" }),
-            block("grid", {
-              blocks: [
-                bar("Ordered", f.ordered, f.total, "info"),
-                bar("Received", f.received, f.total, "info"),
-                bar("Delivered", f.delivered, f.total, "info"),
-                bar("Invoiced", f.invoiced, f.total, "info"),
-              ],
-            }),
-            ...(f.notes.length
-              ? [block("alert", { tone: "warning", text: f.notes.map((n) => `⚑ ${n}`).join("\n") })]
-              : []),
-          ]
-        : []),
-      ...(l.rows.length
-        ? [
-            block("table", {
-              columns: [
-                { key: "lineNo", label: "#" },
-                { key: "description", label: "Line" },
-                { key: "status", label: "Status" },
-                { key: "confidence", label: "AI read" },
-              ],
-              rows: l.rows.map((r): Row => ({
-                lineNo: { text: String(r.lineNo), strong: true },
-                description: r.description,
-                status: { text: r.status, dot: BUCKET_TONE[r.bucket] },
-                confidence:
-                  r.confidence === undefined
-                    ? null
-                    : {
-                        text: `${Math.round(r.confidence * 100)}%`,
-                        tag: true,
-                        tone: r.confidence < 0.85 ? "warning" : "neutral",
-                      },
-              })),
-            }),
-          ]
-        : []),
     ];
   },
 });
 
+/** Once ordered: how far the lines are from order to invoice. */
+const fulfilment = on({
+  title: "After the order",
+  size: "s",
+  hidden: ({ fulfilment: f }) => !f.started,
+  render: ({ fulfilment: f }) => [
+    block("grid", {
+      blocks: [
+        bar("Ordered", f.ordered, f.total, "info"),
+        bar("Received", f.received, f.total, "info"),
+        bar("Delivered", f.delivered, f.total, "info"),
+        bar("Invoiced", f.invoiced, f.total, "info"),
+      ],
+    }),
+    ...(f.notes.length ? [block("alert", { tone: "warning", text: f.notes.map((n) => `⚑ ${n}`).join("\n") })] : []),
+  ],
+});
+
+const lineStatus = on({
+  title: "Line status",
+  size: "l",
+  hidden: ({ lines: l }) => !l.rows.length,
+  render: ({ lines: l }) =>
+    block("table", {
+      columns: [
+        { key: "lineNo", label: "#" },
+        { key: "description", label: "Line" },
+        { key: "status", label: "Status" },
+        { key: "confidence", label: "AI read" },
+      ],
+      rows: l.rows.map((r): Row => ({
+        lineNo: { text: String(r.lineNo), strong: true },
+        description: r.description,
+        status: { text: r.status, dot: BUCKET_TONE[r.bucket] },
+        confidence:
+          r.confidence === undefined
+            ? null
+            : {
+                text: `${Math.round(r.confidence * 100)}%`,
+                tag: true,
+                tone: r.confidence < 0.85 ? "warning" : "neutral",
+              },
+      })),
+    }),
+});
+
 const clarifications = on({
   title: "Clarifications log",
+  size: "l",
   head: (d) => {
     const open = d.clarifications.filter((q) => q.open).length;
     return { tags: [{ label: `${open} open`, tone: open ? "warning" : "success" }] };
@@ -170,6 +178,7 @@ const clarifications = on({
 
 const timeline = on({
   title: "Activity timeline — audit trail",
+  size: "m",
   render: (d, { params }) => {
     const filter = ["auto", "human", "alert"].includes(params.show ?? "") ? params.show! : "all";
     const entries = d.timeline.filter((t) => filter === "all" || t.kind === filter);
@@ -220,6 +229,7 @@ const timeline = on({
 
 const next = on({
   title: "Next action",
+  size: "s",
   render: (d) => [
     block("heading", { text: d.next || "—" }),
     d.blocker
@@ -279,6 +289,7 @@ const reassign = (d: CaseOverview): Action => ({
 
 const owner = on({
   title: "Owner & backup",
+  size: "s",
   render: (d) => {
     const person = (p: CaseOverview["owner"], role: string) =>
       p
@@ -302,6 +313,7 @@ const owner = on({
 
 const contactRule = on({
   title: "Customer contact rule",
+  size: "s",
   render: ({ customer: c }) => [
     block("heading", { text: c.name }),
     block("tags", {
@@ -326,6 +338,7 @@ const contactRule = on({
 /** The case's open tasks: a plain query, no code. */
 const tasks = widget({
   title: "Open tasks",
+  size: "s",
   records: {
     collection: "tasks",
     where: { case: { equals: "$doc.id" }, status: { equals: "Open" } },
@@ -337,5 +350,6 @@ const tasks = widget({
 });
 
 export const caseOverview = widgets({
-  widgets: [lifecycle, { split: { main: [lines, clarifications, timeline], side: [next, owner, contactRule, tasks] } }],
+  // 3 lanes: m + s, then a row of s, then the tables, then m + s.
+  widgets: [lifecycle, next, lines, fulfilment, owner, tasks, lineStatus, clarifications, timeline, contactRule],
 });

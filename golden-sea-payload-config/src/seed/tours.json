@@ -127,7 +127,7 @@
         "as": "ky",
         "go": "/collections/cases/gs-rfq-0142/rfqs",
         "target": {
-          "text": "Supplier RFQs"
+          "text": "Each supplier sees only the lines they can quote"
         },
         "title": "The client stays hidden",
         "body": "Lines are split by category and each supplier sees only its lines — never the customer or the vessel."

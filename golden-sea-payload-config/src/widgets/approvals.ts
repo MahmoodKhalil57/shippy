@@ -126,6 +126,7 @@ const section = (title: string, sub: string, cards: (q: Queue) => ApprovalCard[]
   on({
     title,
     subhead: sub,
+    size: "m",
     skeleton: "entries",
     head: (q) => ({ count: cards(q).length }),
     render: (q, { user }) => block("entries", { items: cards(q).map((c) => entry(c, user.id)), empty }),
@@ -148,6 +149,8 @@ export const approvalsPage = widgets({
   header: { source: queue, render: header },
   widgets: [
     on({
+      title: "At a glance",
+      size: "m",
       skeleton: "stats",
       render: (q) =>
         block("stats", {

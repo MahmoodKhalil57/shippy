@@ -161,6 +161,8 @@ function decideActions(a: { id: string; title: string }, bank: BankChange["reque
 /* ---------------------------------------------------------------- widgets */
 
 const tiles = on({
+  title: "Cash position",
+  size: "m",
   skeleton: "stats",
   render: (d) => {
     const overdue = d.receivables.filter((r) => r.daysOverdue > 0);
@@ -208,9 +210,12 @@ const tiles = on({
 // Three series (the chart's limit): not due, 1–30, and 31+ days overdue.
 const ageing = on({
   title: "Receivables ageing by customer",
+  size: "m",
   skeleton: "chart",
-  render: (d) => [
-    note(`Open balances in USD equivalent (USD/EGP ${d.fx.USD}, EUR/EGP ${d.fx.EUR}), by days past due.`),
+  head: (d) => ({
+    subhead: `Open balances in USD equivalent (USD/EGP ${d.fx.USD}, EUR/EGP ${d.fx.EUR}), by days past due.`,
+  }),
+  render: (d) =>
     block("chart", {
       label: "Receivables ageing by customer",
       chart: {
@@ -224,6 +229,13 @@ const ageing = on({
         format: usdK,
       },
     }),
+});
+
+const ageingTable = on({
+  title: "Ageing buckets by customer",
+  size: "l",
+  skeleton: "table",
+  render: (d) =>
     block("table", {
       columns: [
         { key: "customer", label: "Customer" },
@@ -241,39 +253,36 @@ const ageing = on({
         total: { text: usdKText(a.total), strong: true },
       })),
     }),
-  ],
 });
 
 const forecast = on({
   title: "Cash in vs out — next 8 weeks",
+  size: "m",
   skeleton: "chart",
+  head: (d) => ({
+    subhead: `EGP thousands, by week. Receipts by invoice due date (overdue counted this week, chronic late payers a week later); payments by bill and balance due dates${
+      d.fixedWeeklyEgp ? `, plus EGP ${Math.round(d.fixedWeeklyEgp / 1000)}k a week of fixed costs from the budget` : ""
+    }. Bills on hold are left out until they match.`,
+  }),
   render: (d) => {
     const series = [{ name: "Cash in (expected receipts)", values: d.cashIn.map((v) => v * 1000) }];
     if (d.canSeePayables)
       series.push({ name: "Cash out (payables + fixed costs)", values: d.cashOut.map((v) => v * 1000) });
-    return [
-      note(
-        `EGP thousands, by week. Receipts by invoice due date (overdue counted this week, chronic late payers a week later); payments by bill and balance due dates${
-          d.fixedWeeklyEgp
-            ? `, plus EGP ${Math.round(d.fixedWeeklyEgp / 1000)}k a week of fixed costs from the budget`
-            : ""
-        }. Bills on hold are left out until they match.`,
-      ),
-      block("chart", {
-        label: "Cash in vs out, next 8 weeks",
-        chart: {
-          kind: "line",
-          labels: d.weeks,
-          series,
-          format: { unit: "money", currency: "EGP", compact: true, decimals: 0 },
-        },
-      }),
-    ];
+    return block("chart", {
+      label: "Cash in vs out, next 8 weeks",
+      chart: {
+        kind: "line",
+        labels: d.weeks,
+        series,
+        format: { unit: "money", currency: "EGP", compact: true, decimals: 0 },
+      },
+    });
   },
 });
 
 const collections: Widget<{ cash: Cash; drafts: Record<string, Draft> }> = {
   title: "Collections — open invoices",
+  size: "l",
   skeleton: "table",
   source: { all: { cash: cashData, drafts: { endpoint: "/cash/reminder-drafts" } } },
   head: ({ cash: d }) => ({ count: d.receivables.length }),
@@ -315,6 +324,7 @@ const collections: Widget<{ cash: Cash; drafts: Record<string, Draft> }> = {
 
 const remittance = on({
   title: "Match a remittance",
+  size: "s",
   head: () => ({ tags: [{ label: "On this device" }] }),
   render: (d) => [
     block("text", {
@@ -368,6 +378,7 @@ const remittance = on({
 
 const payables = onPayables({
   title: "Supplier payables",
+  size: "l",
   skeleton: "table",
   denied: "Supplier payables, payment approvals and bank details are not visible to Sales.",
   head: (d) => ({ count: d.payables.length }),
@@ -448,6 +459,7 @@ const payables = onPayables({
 
 const approvals = onPayables({
   title: "Payments needing approval",
+  size: "s",
   head: (d) => ({ count: d.approvals.length }),
   render: (d) => {
     const items = d.approvals.flatMap((a, i): ViewBlock[] => {
@@ -505,7 +517,7 @@ const approvals = onPayables({
   },
 });
 
-function bankChange(d: CashPayables, b: BankChange, me: string): ViewBlock {
+function bankChange(d: CashPayables, b: BankChange, me: string): ViewBlock[] {
   const approved = b.decisions.filter((x) => x.decision === "Approve");
   const callBackDone = approved.length > 0 || b.decisions.some((x) => /call-back/i.test(x.reason ?? ""));
   const current = b.applied ? 5 : b.status === "Approved" ? 4 : approved.length === 1 ? 3 : callBackDone ? 2 : 1;
@@ -529,53 +541,59 @@ function bankChange(d: CashPayables, b: BankChange, me: string): ViewBlock {
         ? "You have decided — a second, different person must approve."
         : "Waiting for an approver."
       : "";
-  return block("card", {
-    heading: "Bank-detail change — two-person check",
-    tags: [{ label: b.applied ? "Applied" : b.status, tone: b.applied ? "success" : statusTone(b.status) }],
-    blocks: [
-      block("heading", { text: b.title }),
-      block("steps", {
-        current: current - 1,
-        items: [
-          { label: "Request received" },
-          { label: "Call-back on number on file" },
-          { label: "First approval" },
-          { label: "Second approval" },
-          { label: "Applied & verified" },
-        ],
-      }),
-      ...(b.request
-        ? [
-            block("details", {
-              items: [
-                { label: "Current account", value: b.request.current },
-                { label: "Requested", value: `${b.request.requested.bankName} · ${b.request.requested.iban}` },
-                { label: "Request came by", value: b.request.requestedVia },
-                {
-                  label: "Call back on",
-                  value: b.request.phoneOnFile,
-                  note: `Never: ${b.request.phoneInRequest}`,
-                  noteTone: "error",
-                },
-              ],
-            }),
-          ]
-        : []),
-      ...(decisions ? [block("text", { text: decisions })] : []),
-      block("alert", {
-        tone: b.applied ? "success" : "warning",
-        text: b.applied
-          ? `New details applied to ${b.supplierName} and verified. Payments can use them.`
-          : `Payments to ${b.supplierName} stay on the old, verified account until two different people — Finance and the CEO — approve after a call-back on the number on file.`,
-      }),
-      ...(actions.length ? [block("actions", { items: actions })] : []),
-      ...(waiting ? [block("text", { text: waiting, muted: true })] : []),
-    ],
-  });
+  return [
+    block("heading", { text: b.title }),
+    block("tags", {
+      items: [{ label: b.applied ? "Applied" : b.status, tone: b.applied ? "success" : statusTone(b.status) }],
+    }),
+    block("steps", {
+      current: current - 1,
+      items: [
+        { label: "Request received" },
+        { label: "Call-back on number on file" },
+        { label: "First approval" },
+        { label: "Second approval" },
+        { label: "Applied & verified" },
+      ],
+    }),
+    ...(b.request
+      ? [
+          block("details", {
+            items: [
+              { label: "Current account", value: b.request.current },
+              { label: "Requested", value: `${b.request.requested.bankName} · ${b.request.requested.iban}` },
+              { label: "Request came by", value: b.request.requestedVia },
+              {
+                label: "Call back on",
+                value: b.request.phoneOnFile,
+                note: `Never: ${b.request.phoneInRequest}`,
+                noteTone: "error",
+              },
+            ],
+          }),
+        ]
+      : []),
+    ...(decisions ? [block("text", { text: decisions })] : []),
+    block("alert", {
+      tone: b.applied ? "success" : "warning",
+      text: b.applied
+        ? `New details applied to ${b.supplierName} and verified. Payments can use them.`
+        : `Payments to ${b.supplierName} stay on the old, verified account until two different people — Finance and the CEO — approve after a call-back on the number on file.`,
+    }),
+    ...(actions.length ? [block("actions", { items: actions })] : []),
+    ...(waiting ? [block("text", { text: waiting, muted: true })] : []),
+  ];
 }
 
-/** One card per bank-detail change in progress (as many as there are). */
-const bankChanges = onPayables({ render: (d, { user }) => d.bankChanges.map((b) => bankChange(d, b, user.id)) });
+/** The bank-detail changes in progress (as many as there are), one after another. */
+const bankChanges = onPayables({
+  title: "Bank-detail change — two-person check",
+  size: "m",
+  hidden: (d) => !d.bankChanges.length,
+  head: (d) => (d.bankChanges.length > 1 ? { count: d.bankChanges.length } : {}),
+  render: (d, { user }) =>
+    d.bankChanges.flatMap((b, i) => [...(i ? [block("divider", {})] : []), ...bankChange(d, b, user.id)]),
+});
 
 export const cashPage = widgets({
   header: {
@@ -588,5 +606,5 @@ export const cashPage = widgets({
       { label: "All invoices", href: link.list("invoices") },
     ],
   },
-  widgets: [tiles, { grid: [ageing, forecast] }, collections, remittance, payables, approvals, bankChanges],
+  widgets: [tiles, remittance, ageing, approvals, forecast, bankChanges, ageingTable, collections, payables],
 });

@@ -1,3 +1,4 @@
+export * from "./board.ts";
 export * from "./box.ts";
 export * from "./container.ts";
 export * from "./divider.ts";

@@ -1,6 +1,6 @@
 import { block, note, type Action, type Tone } from "saastemlycrm-design-system/contracts";
 import { from, widgets, type Source } from "saastemlycrm-design-system/contracts";
-import type { ProjectView } from "../endpoints/platform.ts";
+import { PLAN, type ProjectView } from "../endpoints/platform.ts";
 import { formatDate } from "./format.ts";
 import * as link from "../links.ts";
 
@@ -25,6 +25,7 @@ const passing = (d: ProjectView) => d.acceptance.filter((a) => a.pass).length;
 
 const milestones = on({
   title: "Value from week 7. Everything by week 13.",
+  size: "m",
   render: (d) => [
     block("steps", { current: -1, items: d.milestones.map((m) => ({ label: m.week })) }),
     block("tiles", {
@@ -36,6 +37,7 @@ const milestones = on({
 
 const roadmap = on({
   title: "Roadmap — 13 weeks, phased",
+  size: "l",
   skeleton: "table",
   render: (d) => [
     block("gantt", {
@@ -56,33 +58,40 @@ const roadmap = on({
   ],
 });
 
-/** The phase cards: one per phase, side by side (their number comes from the plan). */
-const phases = on({
-  render: (d) =>
-    block("grid", {
-      blocks: d.phases.map((p) =>
-        block("card", {
-          heading: p.name,
-          tags: [{ label: p.weeks, tone: PHASE_TONE[p.key] ?? "neutral" }],
-          blocks: [
+/** One tile per phase (the plan's phases are fixed): its goal and work packages. */
+const phase = (key: string, name: string) =>
+  on({
+    title: name,
+    size: "s",
+    skeleton: "list",
+    hidden: (d) => !d.phases.some((p) => p.key === key),
+    head: (d) => {
+      const p = d.phases.find((x) => x.key === key);
+      return { tags: p ? [{ label: p.weeks, tone: PHASE_TONE[p.key] ?? "neutral" }] : undefined };
+    },
+    render: (d) => {
+      const p = d.phases.find((x) => x.key === key);
+      return p
+        ? [
             block("text", { text: p.goal, muted: true }),
             block("list", {
               items: p.packages.map((w) => ({ headline: w.name, supporting: w.detail, actions: see(w.href) })),
             }),
-          ],
-        }),
-      ),
-    }),
-});
+          ]
+        : null;
+    },
+  });
 
 const platform = on({
   title: "Running through every phase",
+  size: "m",
   render: (d) =>
     block("tiles", { items: d.platform.map((w) => ({ heading: w.name, text: w.detail, actions: see(w.href) })) }),
 });
 
 const problems = on({
   title: "Nine problems you named. Nine answers.",
+  size: "m",
   render: (d) =>
     block("tiles", {
       look: "card",
@@ -98,6 +107,7 @@ const problems = on({
 
 const brief = on({
   title: "Your brief, line by line",
+  size: "l",
   skeleton: "table",
   head: (d) => ({
     tags: [{ label: `${d.requirements.length} / ${d.requirements.length} covered`, tone: "success" }],
@@ -123,6 +133,7 @@ const brief = on({
 
 const acceptance = on({
   title: "Acceptance tests from your brief",
+  size: "l",
   skeleton: "table",
   head: (d) => {
     const passed = passing(d);
@@ -171,6 +182,7 @@ const acceptance = on({
 
 const trust = on({
   title: "AI never sends, prices or pays without a person.",
+  size: "m",
   render: (d) =>
     block("tiles", {
       items: d.trust.map(([title, text, href], i) => ({
@@ -184,6 +196,7 @@ const trust = on({
 
 const monthly = on({
   title: "Monthly plan — from go-live",
+  size: "s",
   skeleton: "list",
   render: (d) => [
     block("text", { text: "One monthly plan keeps everything running after go-live.", muted: true }),
@@ -194,6 +207,7 @@ const monthly = on({
 
 const payment = on({
   title: "The last 20% is paid after 30 days of real use.",
+  size: "m",
   render: (d) => [
     block("text", {
       text: "Each phase is paid in three steps, so you only pay the last part once it works in your hands.",
@@ -219,5 +233,16 @@ export const projectPage = widgets({
       { label: "Follow one case", href: link.doc("cases", "gs-rfq-0142", "overview") },
     ],
   },
-  widgets: [milestones, roadmap, phases, platform, problems, brief, acceptance, trust, { grid: [monthly, payment] }],
+  widgets: [
+    roadmap,
+    milestones,
+    ...PLAN.phases.map((p) => phase(p.key, p.name)),
+    platform,
+    problems,
+    brief,
+    acceptance,
+    trust,
+    payment,
+    monthly,
+  ],
 });

@@ -50,6 +50,7 @@ const mailboxRows = (d: IntegrationsView) => d.connections.filter((c) => /mailbo
 
 const mailboxes = on({
   title: "Mailboxes",
+  size: "l",
   skeleton: "table",
   head: (d) => ({ count: mailboxRows(d).length }),
   render: (d) => {
@@ -100,6 +101,7 @@ const mailboxes = on({
 /** The acknowledgement preview; `?lang=` picks the language (no new request: both come with the data). */
 const ack = on({
   title: "Branded acknowledgement",
+  size: "l",
   skeleton: "text",
   render: ({ ack: a }, { params }) => {
     const lang = params.lang === "ar" ? "ar" : "en";
@@ -140,6 +142,7 @@ const ack = on({
 
 const odoo = on({
   title: "Odoo",
+  size: "s",
   skeleton: "text",
   head: (d) => ({ tags: status(by(d, "Odoo")) }),
   render: (d) => {
@@ -169,6 +172,7 @@ const channel = (
 ): Widget<IntegrationsView> =>
   on({
     title,
+    size: "s",
     skeleton: "text",
     head: (d) => ({ tags: status(by(d, kind)) }),
     render: (d) => {
@@ -182,39 +186,37 @@ const channel = (
     },
   });
 
-const channels: Widget = {
-  grid: [
-    channel(
-      "Website form",
-      "Website quick-quote form",
-      "“Request a quick quote” creates a draft case and contact; AI reads the items.",
-      (web) => (web ? [note(`${(Number(web.emailsImported) || 0) + web.live} requests received`)] : []),
-    ),
-    channel(
-      "WhatsApp",
-      "WhatsApp",
-      "Captains and agents message on WhatsApp: each message is logged on its case with a screenshot and who logged it.",
-    ),
-    channel(
-      "E-invoicing (tax authority)",
-      "Egyptian e-invoicing (ETA)",
-      "Invoices are signed and submitted to the tax authority; the UUID and status are stored on the invoice.",
-      (eta) => {
-        const cert = expiry(eta);
-        return [
-          ...(cert && typeof cert === "object"
-            ? [block("details", { items: [{ label: "Signing certificate", value: cert }] })]
-            : []),
-          block("actions", {
-            items: [{ label: "Exception queue", href: "/automations" }],
-          }),
-        ];
-      },
-    ),
-    channel("AI extraction", "AI extraction", "Reads PDF, Excel, Word and photos into draft lines. Drafts only."),
-    channel("Document storage", "Documents", "Every file on its case, searchable."),
-  ],
-};
+const channels: Widget[] = [
+  channel(
+    "Website form",
+    "Website quick-quote form",
+    "“Request a quick quote” creates a draft case and contact; AI reads the items.",
+    (web) => (web ? [note(`${(Number(web.emailsImported) || 0) + web.live} requests received`)] : []),
+  ),
+  channel(
+    "WhatsApp",
+    "WhatsApp",
+    "Captains and agents message on WhatsApp: each message is logged on its case with a screenshot and who logged it.",
+  ),
+  channel(
+    "E-invoicing (tax authority)",
+    "Egyptian e-invoicing (ETA)",
+    "Invoices are signed and submitted to the tax authority; the UUID and status are stored on the invoice.",
+    (eta) => {
+      const cert = expiry(eta);
+      return [
+        ...(cert && typeof cert === "object"
+          ? [block("details", { items: [{ label: "Signing certificate", value: cert }] })]
+          : []),
+        block("actions", {
+          items: [{ label: "Exception queue", href: "/automations" }],
+        }),
+      ];
+    },
+  ),
+  channel("AI extraction", "AI extraction", "Reads PDF, Excel, Word and photos into draft lines. Drafts only."),
+  channel("Document storage", "Documents", "Every file on its case, searchable."),
+];
 
 const n = (v: unknown) => Number(v ?? 0).toLocaleString("en-US");
 const item = (label: string, v: unknown, note: string, tone?: Tone) => ({
@@ -223,33 +225,32 @@ const item = (label: string, v: unknown, note: string, tone?: Tone) => ({
   note,
 });
 
-/** Its heading carries the import's window, so it draws its own card. */
+/** The import's window (days) is the card's subhead. */
 const emailImport = on({
+  title: "Email history import",
+  size: "s",
   skeleton: "card",
-  render: ({ emailImport: i }) =>
-    block("card", {
-      heading: `Email history import — ${s(i.days)} days`,
-      tags: [{ label: s(i.status), tone: "info" }],
-      blocks: [
-        block("details", {
-          items: [
-            item("Emails scanned", i.scanned, "sales@, purchasing@, Gmail"),
-            item("RFQ threads", i.rfqThreads, "become historical cases"),
-            item("Likely duplicates", i.duplicates, "linked, not re-created"),
-            item("Exceptions", i.exceptions, "unreadable attachments", "warning"),
-            item("Flagged confidential", i.confidential, "excluded unless approved", "error"),
-          ],
-        }),
-        note(
-          "Dry run first; nothing is imported before approval, and no acknowledgements or reminders are sent for historical mail.",
-        ),
-        block("actions", { items: [{ label: "Open inbox history", href: "/inbox-history" }] }),
+  head: ({ emailImport: i }) => ({ subhead: `${s(i.days)} days`, tags: [{ label: s(i.status), tone: "info" }] }),
+  render: ({ emailImport: i }) => [
+    block("details", {
+      items: [
+        item("Emails scanned", i.scanned, "sales@, purchasing@, Gmail"),
+        item("RFQ threads", i.rfqThreads, "become historical cases"),
+        item("Likely duplicates", i.duplicates, "linked, not re-created"),
+        item("Exceptions", i.exceptions, "unreadable attachments", "warning"),
+        item("Flagged confidential", i.confidential, "excluded unless approved", "error"),
       ],
     }),
+    note(
+      "Dry run first; nothing is imported before approval, and no acknowledgements or reminders are sent for historical mail.",
+    ),
+    block("actions", { items: [{ label: "Open inbox history", href: "/inbox-history" }] }),
+  ],
 });
 
 const backups = on({
   title: "Backups, staging & export",
+  size: "s",
   skeleton: "text",
   render: ({ backups: b }, { user }) => {
     const management = user.role === "management";
@@ -285,6 +286,7 @@ const backups = on({
 
 const language = on({
   title: "Language — English / العربية",
+  size: "l",
   skeleton: "text",
   render: (d) => {
     const call = (body: Record<string, unknown>) => ({ path: "/integrations/language", body });
@@ -329,5 +331,5 @@ export const integrationsPage = widgets({
       { label: "Edit connections", href: link.global("integrations") },
     ],
   },
-  widgets: [mailboxes, { grid: [ack, odoo] }, channels, { grid: [emailImport, backups, language] }],
+  widgets: [mailboxes, ack, odoo, ...channels, language, emailImport, backups],
 });

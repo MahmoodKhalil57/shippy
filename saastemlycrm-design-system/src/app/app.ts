@@ -414,7 +414,12 @@ export class DashboardApp extends LightElement {
         );
       }
       case "global":
-        return html`<dashboard-edit-view .globalSlug=${r.slug} .access=${access}></dashboard-edit-view>`;
+        return html`<dashboard-edit-view
+          .globalSlug=${r.slug}
+          .tab=${r.tab ?? ""}
+          .access=${access}
+          .user=${this.user}
+        ></dashboard-edit-view>`;
       case "account":
         return html`<dashboard-edit-view
           .slug=${userSlug}

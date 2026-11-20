@@ -99,6 +99,7 @@ const channelTone = (s: string): Tone =>
 
 const channels: Widget<InboxPayload> = {
   title: "Connected channels",
+  size: "s",
   skeleton: "text",
   source: inbox,
   render: (d) => [
@@ -142,6 +143,7 @@ const messageItem = (m: InboxMessage, open: string): ListItem => {
 
 const list: Widget<InboxPayload> = {
   title: "Messages",
+  size: "s",
   skeleton: "list",
   source: inbox,
   head: (d) => ({ count: d.messages.length }),
@@ -178,6 +180,7 @@ const list: Widget<InboxPayload> = {
 
 const reviewQueue: Widget<InboxPayload> = {
   title: "Review queue",
+  size: "s",
   skeleton: "list",
   source: inbox,
   head: (d) => ({ count: d.stats.review, countTone: d.stats.review ? "warning" : "success" }),
@@ -280,12 +283,15 @@ const pane = ({ show, ...w }: Omit<DrawingWidget<Detail>, "source"> & { show?: (
 
 const nothingOpen = pane({
   title: "No message selected",
+  size: "s",
   show: (d) => !d.message,
   render: () => block("text", { muted: true, text: "Pick a message in the list." }),
 });
 
 const original = pane({
   title: "Original message",
+  // `m`: beside the message list (`s`) on a 3-lane board, master and detail together.
+  size: "m",
   skeleton: "card",
   show: (d) => d.message,
   head: () => ({ tags: [{ label: "Kept as received" }] }),
@@ -321,6 +327,7 @@ const draft = (d: InboxDetail) => (d.rfq && d.message ? d.extraction : null);
 
 const extractPrompt = pane({
   title: "Read it into a draft case",
+  size: "s",
   show: (d) => d.rfq && d.message && !d.extraction && !d.message.createdCase && d.message.status !== "Ignored",
   render: ({ d }) => {
     const m = d.message!;
@@ -338,6 +345,8 @@ const extractPrompt = pane({
 
 /** An RFQ read before this draft existed, or set aside: what became of it. */
 const rfqOutcome = pane({
+  title: "Outcome",
+  size: "s",
   show: (d) => d.rfq && d.message && !d.extraction && (d.message.createdCase || d.message.status === "Ignored"),
   render: ({ d }) => {
     const m = d.message!;
@@ -353,6 +362,7 @@ const rfqOutcome = pane({
 
 const draftHeader = pane({
   title: "Draft case",
+  size: "m",
   show: draft,
   head: ({ d }) => ({
     tags: [
@@ -380,6 +390,7 @@ const draftHeader = pane({
 
 const draftLines = pane({
   title: "Draft lines",
+  size: "l",
   skeleton: "table",
   show: (d) => draft(d)?.lines.length,
   head: ({ d }) => ({
@@ -435,6 +446,7 @@ const draftLines = pane({
 
 const missing = pane({
   title: "Missing or unclear",
+  size: "l",
   show: (d) => draft(d)?.missing.length,
   render: ({ d }) => {
     const x = d.extraction!;
@@ -456,6 +468,7 @@ const missing = pane({
 
 const assignment = pane({
   title: "Owner, backup and deadline",
+  size: "s",
   show: draft,
   render: ({ d }) => {
     const a = d.extraction!.assignment;
@@ -477,6 +490,7 @@ const assignment = pane({
 
 const acknowledgement = pane({
   title: "Acknowledgement draft",
+  size: "l",
   show: draft,
   head: ({ d }) => {
     const m = d.message!;
@@ -561,36 +575,43 @@ function createAction(m: InboxMessage, x: ExtractionResult, users: Detail["users
 }
 
 const createCase = pane({
-  show: draft,
+  title: "Create the case",
+  size: "s",
+  show: (d) => draft(d) && !d.message!.createdCase,
   render: ({ d, users }) => {
     const m = d.message!;
     const x = d.extraction!;
-    if (m.createdCase)
-      return block("alert", {
-        tone: "success",
-        text: `Case ${m.createdCase.caseId} created from this message and linked to it.`,
-        actions: [
-          { label: "Send supplier RFQs", main: true, href: link.doc("cases", m.createdCase.id, "rfqs") },
-          { label: "Open case", href: link.doc("cases", m.createdCase.id) },
-        ],
-      });
     const flagged = x.lines.filter((l) => l.flag).length;
-    return block("card", {
-      heading: "Create the case",
-      blocks: [
-        block("text", {
-          text: `${x.caseType === "service" ? "Service case" : "RFQ case"} for ${x.customerName} with ${plural(x.lines.length, "line")}${flagged ? ` (${flagged} flagged for clarification)` : ""}, owner ${x.assignment.ownerName}. The original message stays linked to it.`,
-        }),
-        block("actions", {
-          items: [
-            {
-              label: "Not an RFQ",
-              call: { path: path(m.id, "review"), body: { decision: "not-related" } },
-              done: "Marked not related",
-            },
-            createAction(m, x, users),
-          ],
-        }),
+    return [
+      block("text", {
+        text: `${x.caseType === "service" ? "Service case" : "RFQ case"} for ${x.customerName} with ${plural(x.lines.length, "line")}${flagged ? ` (${flagged} flagged for clarification)` : ""}, owner ${x.assignment.ownerName}. The original message stays linked to it.`,
+      }),
+      block("actions", {
+        items: [
+          {
+            label: "Not an RFQ",
+            call: { path: path(m.id, "review"), body: { decision: "not-related" } },
+            done: "Marked not related",
+          },
+          createAction(m, x, users),
+        ],
+      }),
+    ];
+  },
+});
+
+const caseCreated = pane({
+  title: "Case created",
+  size: "s",
+  show: (d) => draft(d) && d.message!.createdCase,
+  render: ({ d }) => {
+    const c = d.message!.createdCase!;
+    return block("alert", {
+      tone: "success",
+      text: `Case ${c.caseId} created from this message and linked to it.`,
+      actions: [
+        { label: "Send supplier RFQs", main: true, href: link.doc("cases", c.id, "rfqs") },
+        { label: "Open case", href: link.doc("cases", c.id) },
       ],
     });
   },
@@ -600,73 +621,103 @@ const createCase = pane({
 
 const basisList = (basis: string[]) => block("list", { items: basis.map((b) => ({ headline: b })) });
 
-const matching = pane({
-  show: (d) => d.message && !d.rfq,
+/** A reply or forward (not an RFQ) in the reading pane. */
+const reply = (d: InboxDetail) => (d.message && !d.rfq ? d.message : null);
+/** Matched or found a duplicate: not new and unmatched, not waiting for a person, not set aside. */
+const settled = (m: InboxMessage) =>
+  !(m.status === "New" && !m.match) && m.status !== "Needs review" && m.status !== "Ignored";
+
+const matchPrompt = pane({
+  title: "Match this message",
+  size: "s",
+  show: (d) => {
+    const m = reply(d);
+    return m && m.status === "New" && !m.match;
+  },
+  render: ({ d }) => [
+    block("text", {
+      muted: true,
+      text: "Replies are matched by their supplier-RFQ reference even when the subject changes; forwards by their files. Below 85% a person decides.",
+    }),
+    block("actions", {
+      items: [
+        {
+          label: "Match reply",
+          icon: "sparkles",
+          main: true,
+          call: { path: path(d.message!.id, "match") },
+          reply: true,
+        },
+      ],
+    }),
+  ],
+});
+
+const needsPerson = pane({
+  title: "Needs a person",
+  size: "s",
+  show: (d) => reply(d)?.status === "Needs review",
+  head: ({ d }) => ({ tags: [conf(d.message?.match?.confidence ?? 0)] }),
   render: ({ d }) => {
     const m = d.message!;
     const match = m.match;
-    const notRelated: Action = {
-      label: "Not related",
-      call: { path: path(m.id, "review"), body: { decision: "not-related" } },
-      done: "Marked not related",
-    };
-    if (m.status === "New" && !match)
-      return block("card", {
-        heading: "Match this message",
-        blocks: [
-          block("text", {
-            muted: true,
-            text: "Replies are matched by their supplier-RFQ reference even when the subject changes; forwards by their files. Below 85% a person decides.",
-          }),
-          block("actions", {
-            items: [
-              {
-                label: "Match reply",
-                icon: "sparkles",
-                main: true,
-                call: { path: path(m.id, "match") },
-                reply: true,
-              },
-            ],
-          }),
+    return [
+      block("alert", { tone: "warning", text: "Uncertain match — not linked automatically." }),
+      basisList(match?.basis ?? []),
+      block("list", {
+        items: (match?.candidates ?? []).map((c) => ({
+          headline: c.caseId,
+          supporting: c.reason,
+          tags: [conf(c.confidence)],
+          actions: [
+            {
+              label: `Link to ${c.caseId}`,
+              call: { path: path(m.id, "review"), body: { decision: "link", case: c.case } },
+              done: "Linked — your decision is in the audit log",
+            },
+          ],
+        })),
+      }),
+      block("actions", {
+        items: [
+          {
+            label: "Not related",
+            call: { path: path(m.id, "review"), body: { decision: "not-related" } },
+            done: "Marked not related",
+          },
         ],
-      });
-    const confidence = match?.confidence ?? 0;
-    if (m.status === "Needs review")
-      return block("card", {
-        heading: "Needs a person",
-        tags: [conf(confidence)],
-        blocks: [
-          block("alert", { tone: "warning", text: "Uncertain match — not linked automatically." }),
-          basisList(match?.basis ?? []),
-          block("list", {
-            items: (match?.candidates ?? []).map((c) => ({
-              headline: c.caseId,
-              supporting: c.reason,
-              tags: [conf(c.confidence)],
-              actions: [
-                {
-                  label: `Link to ${c.caseId}`,
-                  call: { path: path(m.id, "review"), body: { decision: "link", case: c.case } },
-                  done: "Linked — your decision is in the audit log",
-                },
-              ],
-            })),
-          }),
-          block("actions", { items: [notRelated] }),
-        ],
-      });
-    if (m.status === "Ignored")
-      return block("alert", {
-        tone: "info",
-        text: `Marked not related${match?.reviewedBy ? ` by ${match.reviewedBy}` : ""}.`,
-      });
-    const duplicate = m.classification === "Duplicate";
-    const caseRef = match?.case;
-    return block("card", {
-      heading: duplicate ? "Duplicate detected" : "Reply matched",
-      tags: [conf(confidence)],
-      blocks: [
+      }),
+    ];
+  },
+});
+
+const setAside = pane({
+  title: "Outcome",
+  size: "s",
+  show: (d) => reply(d)?.status === "Ignored",
+  render: ({ d }) => {
+    const match = d.message!.match;
+    return block("alert", {
+      tone: "info",
+      text: `Marked not related${match?.reviewedBy ? ` by ${match.reviewedBy}` : ""}.`,
+    });
+  },
+});
+
+/** Linked to a case: as a duplicate copy, or as a matched reply. */
+const linked = (title: string, duplicate: boolean) =>
+  pane({
+    title,
+    size: "s",
+    show: (d) => {
+      const m = reply(d);
+      return m && settled(m) && (m.classification === "Duplicate") === duplicate;
+    },
+    head: ({ d }) => ({ tags: [conf(d.message?.match?.confidence ?? 0)] }),
+    render: ({ d }) => {
+      const match = d.message!.match;
+      const caseRef = match?.case;
+      return [
         duplicate
           ? block("alert", {
               tone: "info",
@@ -687,10 +738,9 @@ const matching = pane({
               }),
             ]
           : []),
-      ],
-    });
-  },
-});
+      ];
+    },
+  });
 
 export const inboxPage = widgets({
   header: {
@@ -703,25 +753,27 @@ export const inboxPage = widgets({
       simulate("reply", "Simulate supplier reply", `New supplier reply: “${SIMULATED_REPLY.subject}”`),
     ],
   },
+  // Master–detail: the message list beside the reading pane, then the side cards, then the open
+  // message's next steps (only the ones that apply to it take a tile).
   widgets: [
+    list,
+    nothingOpen,
+    original,
+    reviewQueue,
     channels,
-    {
-      split: {
-        main: [
-          nothingOpen,
-          original,
-          extractPrompt,
-          rfqOutcome,
-          draftHeader,
-          draftLines,
-          missing,
-          assignment,
-          acknowledgement,
-          createCase,
-          matching,
-        ] as Widget[],
-        side: [list, reviewQueue] as Widget[],
-      },
-    },
-  ],
+    extractPrompt,
+    rfqOutcome,
+    matchPrompt,
+    needsPerson,
+    setAside,
+    linked("Duplicate detected", true),
+    linked("Reply matched", false),
+    draftHeader,
+    assignment,
+    draftLines,
+    missing,
+    acknowledgement,
+    createCase,
+    caseCreated,
+  ] as Widget[],
 });

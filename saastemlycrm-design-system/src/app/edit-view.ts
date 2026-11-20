@@ -392,10 +392,18 @@ export class DashboardEditView extends LightElement {
   #before?: HTMLElement;
   private _summary() {
     const c = this.slug ? collectionOf(this.slug) : undefined;
-    const before = c && collectionSettings(c).edit?.before;
-    if (!before?.length || !this.docId) return nothing;
+    // Widgets about the document above its form: a collection's document, or a global.
+    const g = this.globalSlug ? globalOf(this.globalSlug) : undefined;
+    const owner = g ?? c;
+    const before = owner && collectionSettings(owner).edit?.before;
+    if (!before?.length || (!this.docId && !g)) return nothing;
     this.#before ??= document.createElement("app-widgets");
-    Object.assign(this.#before, { page: { widgets: before }, docId: this.docId, slug: this.slug, user: this.user });
+    Object.assign(this.#before, {
+      page: { widgets: before },
+      docId: this.docId,
+      slug: g ? g.slug : this.slug,
+      user: this.user,
+    });
     return this.#before;
   }
 
@@ -431,8 +439,13 @@ export class DashboardEditView extends LightElement {
           ];
 
     // Custom edit tabs (e.g. the case workspace): "Details" is the form, the rest are views.
-    const tabs = c && this.docId ? editTabs(c) : [];
-    const base = c && this.docId ? dashboardPath("collections", c.slug, this.docId) : "";
+    // A global has them too (Payload's Document views): the same tabs beside its form.
+    const tabs = g ? editTabs(g) : c && this.docId ? editTabs(c) : [];
+    const base = g
+      ? dashboardPath("globals", g.slug)
+      : c && this.docId
+        ? dashboardPath("collections", c.slug, this.docId)
+        : "";
     const tabBar = tabs.length
       ? html`<ui-tabs
           variant="primary"
@@ -447,7 +460,7 @@ export class DashboardEditView extends LightElement {
         ...active.props,
         access: this.access,
         user: this.user,
-        slug: c!.slug,
+        slug: g ? g.slug : c!.slug,
         docId: this.docId,
       });
       return html`<ui-flex direction="col" gap="6">

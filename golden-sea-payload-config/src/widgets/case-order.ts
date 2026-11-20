@@ -21,6 +21,8 @@ const own = "/case-order/$doc.id";
 const plural = (n: number, one: string, many = `${one}es`) => (n === 1 ? one : many);
 
 const tiles = on({
+  title: "Order progress",
+  size: "m",
   skeleton: "stats",
   render: (d) => {
     const po = d.customerPo;
@@ -121,6 +123,7 @@ function amendments(d: CaseOps): ViewBlock[] {
 
 const poCheck = on({
   title: "Customer PO check",
+  size: "l",
   head: (d) =>
     d.customerPo
       ? {
@@ -243,6 +246,7 @@ const unordered = (d: CaseOps) => {
 
 const partialAward = on({
   title: "Partial award",
+  size: "s",
   hidden: (d) => !unordered(d).length,
   render: (d) => {
     const po = d.customerPo!;
@@ -399,6 +403,7 @@ function recheck(d: CaseOps, p: OpsPO): ViewBlock {
 
 const supplierPos = on({
   title: "Supplier purchase orders",
+  size: "l",
   skeleton: "table",
   head: (d) => ({ count: d.purchaseOrders.length }),
   render: (d) => {
@@ -470,6 +475,7 @@ const supplierPos = on({
 
 const bills = on({
   title: "Supplier bills — 3-way match",
+  size: "l",
   skeleton: "table",
   hidden: (d) => !d.canSeeCosts || !d.purchaseOrders.length,
   head: (d) => {
@@ -522,6 +528,7 @@ const bills = on({
 
 const receipts = on({
   title: "Receipts · lots · expiry · quality",
+  size: "l",
   skeleton: "table",
   hidden: (d) => !d.receipts.length,
   render: (d) => [
@@ -565,4 +572,4 @@ const receipts = on({
   ],
 });
 
-export const caseOrder = widgets({ widgets: [tiles, poCheck, partialAward, supplierPos, bills, receipts] });
+export const caseOrder = widgets({ widgets: [tiles, partialAward, poCheck, supplierPos, bills, receipts] });

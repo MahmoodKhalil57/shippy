@@ -1,6 +1,6 @@
 import { block, type IconName, note, type Action, type Entry, type Tone } from "saastemlycrm-design-system/contracts";
 import { from, widgets, type Source } from "saastemlycrm-design-system/contracts";
-import type { Growth, NextStep } from "../endpoints/growth-crm.ts";
+import { BOARD_STAGES, type Growth, type NextStep } from "../endpoints/growth-crm.ts";
 import * as link from "../links.ts";
 
 /**
@@ -26,7 +26,12 @@ const DOC_TONE: Record<string, Tone> = { Submitted: "success", Ready: "info", Mi
 const IN_A_WEEK = "2026-11-24";
 
 const stats = on({
+  title: "Growth pipeline",
+  subhead:
+    "Introduced → registration submitted → approved vendor → first RFQ → active account. Every open opportunity has a next step, or it's flagged.",
+  size: "m",
   skeleton: "stats",
+  head: () => ({ actions: [{ label: "All opportunities", href: link.list("opportunities") }] }),
   render: ({ totals: t }) =>
     block("stats", {
       items: [
@@ -48,44 +53,35 @@ const stats = on({
     }),
 });
 
-const board = on({
-  title: "Prospects by stage",
-  head: () => ({ actions: [{ label: "All opportunities", href: link.list("opportunities") }] }),
-  render: (g) => [
-    note(
-      "Introduced → registration submitted → approved vendor → first RFQ → active account. Every open opportunity has a next step, or it's flagged.",
-    ),
-    block("grid", {
-      blocks: g.columns.map((c) =>
-        block("card", {
-          heading: c.stage,
-          count: c.deals.length,
-          blocks: [
-            block("list", {
-              empty: "—",
-              items: c.deals.map((d) => ({
-                headline: d.name,
-                href: d.href,
-                supporting: [
-                  d.kind,
-                  d.noNext ? "" : d.next ? `Next: ${d.next}${d.due ? ` · ${d.due}` : ""}` : "",
-                  [d.value, d.owner, d.source].filter(Boolean).join(" · "),
-                ]
-                  .filter(Boolean)
-                  .join(" · "),
-                tags: d.noNext
-                  ? [{ label: "No next step — plan one or close", tone: "error" as const }]
-                  : d.overdue
-                    ? [{ label: "Overdue", tone: "error" as const }]
-                    : undefined,
-              })),
-            }),
-          ],
-        }),
-      ),
-    }),
-  ],
-});
+/** One tile per stage of the board, in order: its deals as a list. */
+const stage = (name: string) =>
+  on({
+    title: name,
+    size: "s",
+    skeleton: "list",
+    hidden: (g) => !g.columns.some((c) => c.stage === name),
+    head: (g) => ({ count: g.columns.find((c) => c.stage === name)?.deals.length ?? 0 }),
+    render: (g) =>
+      block("list", {
+        empty: "—",
+        items: (g.columns.find((c) => c.stage === name)?.deals ?? []).map((d) => ({
+          headline: d.name,
+          href: d.href,
+          supporting: [
+            d.kind,
+            d.noNext ? "" : d.next ? `Next: ${d.next}${d.due ? ` · ${d.due}` : ""}` : "",
+            [d.value, d.owner, d.source].filter(Boolean).join(" · "),
+          ]
+            .filter(Boolean)
+            .join(" · "),
+          tags: d.noNext
+            ? [{ label: "No next step — plan one or close", tone: "error" as const }]
+            : d.overdue
+              ? [{ label: "Overdue", tone: "error" as const }]
+              : undefined,
+        })),
+      }),
+  });
 
 /** "Record outcome": the endpoint saves it and says what was planned (`reply`). */
 function outcome(g: Growth, s: NextStep): Action {
@@ -154,6 +150,7 @@ function step(g: Growth, s: NextStep): Entry {
 
 const steps = on({
   title: "Sales next steps",
+  size: "m",
   subhead:
     "Each step has a channel, a date and what to say. Call or message yourself, then record what happened — the next step lands on the owner's follow-ups.",
   skeleton: "entries",
@@ -163,6 +160,7 @@ const steps = on({
 
 const fleets = on({
   title: "Fleets per ship manager",
+  size: "l",
   skeleton: "table",
   render: (g) => [
     note("Vessels with IMO for customers and prospects — the room to grow is every vessel we don't supply yet."),
@@ -197,6 +195,7 @@ const fleets = on({
 
 const registrations = on({
   title: "Vendor registrations",
+  size: "l",
   skeleton: "table",
   head: () => ({
     actions: [{ label: "All registrations", href: link.list("vendor-registrations") }],
@@ -253,6 +252,7 @@ const registrations = on({
 
 const campaigns = on({
   title: "Campaigns",
+  size: "l",
   skeleton: "table",
   render: (g) => [
     note(
@@ -288,5 +288,5 @@ export const growthPage = widgets({
       { label: "Add opportunity", href: link.create("opportunities"), main: true },
     ],
   },
-  widgets: [stats, board, steps, { grid: [fleets, registrations] }, campaigns],
+  widgets: [stats, ...BOARD_STAGES.map(stage), steps, fleets, registrations, campaigns],
 });

@@ -72,6 +72,8 @@ function remind(r: CaseRfqRow, ownerName: string): Action {
 }
 
 const stats = on({
+  title: "RFQs at a glance",
+  size: "m",
   skeleton: "stats",
   render: (d) => {
     const c = d.counts;
@@ -99,6 +101,7 @@ const stats = on({
 
 const table = on({
   title: "Supplier RFQs",
+  size: "l",
   skeleton: "table",
   head: (d) => ({
     count: d.rfqs.length,
@@ -159,6 +162,7 @@ const table = on({
 /** What the last "Simulate replies" brought in, for a while after. */
 const arriving = on({
   title: "Replies arriving",
+  size: "m",
   hidden: (d) => !d.arrivals.length,
   render: (d) =>
     block("timeline", {
@@ -174,6 +178,7 @@ const arriving = on({
 
 const review = on({
   title: "Needs a person",
+  size: "s",
   hidden: (d) => !d.review.length,
   head: (d) => ({ count: d.review.length, countTone: "warning" }),
   render: (d) => {
@@ -212,6 +217,7 @@ const review = on({
 
 const replies = on({
   title: "Replies matched",
+  size: "s",
   skeleton: "list",
   hidden: (d) => !d.replies.length,
   render: (d) => [
@@ -229,6 +235,7 @@ const replies = on({
 
 const newSuppliers = on({
   title: "New suppliers saved",
+  size: "s",
   hidden: (d) => !d.newSuppliers.length,
   render: (d) => [
     note(
@@ -279,6 +286,7 @@ const lineState = (l: CaseLine) =>
 
 const composer = on({
   title: "Draft supplier RFQs",
+  size: "m",
   render: (d, { params }) => {
     const mode = params.send === "full" ? "full" : "split";
     const sendable = d.lines.filter((l) => !l.held);
@@ -355,6 +363,7 @@ const ANONYMISED: Tag[] = ["Client name removed", "Vessel removed", "No customer
 /** The drafted RFQs kept on the server until a person sends (after a confirmation) or discards them. */
 const drafts = on({
   title: "Drafted supplier RFQs",
+  size: "l",
   hidden: (d) => !d.plan?.drafts.length,
   head: (d) => {
     const plan = d.plan!;
@@ -423,6 +432,7 @@ const drafts = on({
 
 const reminders = on({
   title: "Reminders and escalation",
+  size: "m",
   render: (d) => {
     const open = d.rfqs.filter((r) => OPEN.includes(r.status) || r.escalated);
     return [
@@ -449,5 +459,6 @@ const reminders = on({
 
 export const caseRfqs = widgets({
   params: { send: "split" },
-  widgets: [stats, table, arriving, review, { grid: [replies, newSuppliers] }, composer, drafts, reminders],
+  // 3 lanes: m + s, the table, m + s, s + m, the drafts, then m.
+  widgets: [stats, replies, table, arriving, review, newSuppliers, composer, drafts, reminders],
 });

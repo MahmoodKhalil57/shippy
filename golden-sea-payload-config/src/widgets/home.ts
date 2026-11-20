@@ -1,13 +1,12 @@
 import { block, type NumberFormat, type ViewBlock } from "saastemlycrm-design-system/contracts";
-import { widgets, type Source, type Widget } from "saastemlycrm-design-system/contracts";
-import type { Home, HomeCase, HomeUnit, HomeWidget } from "../endpoints/home.ts";
+import { from, widgets, type Source, type Widget } from "saastemlycrm-design-system/contracts";
+import type { Home, HomeCase, HomeChart, HomeUnit, HomeWidget } from "../endpoints/home.ts";
 
 /**
  * The dashboard's home (Payload `admin.components.views.dashboard`): the signed-in user's day,
  * tailored to their role by GET /api/home (../endpoints/home.ts): KPI tiles with trends, decision /
  * briefing / follow-up lists, the case queue and charts. /home decides which of these a role
- * sees and in what order, so the page is a row of slots, each drawing the data's widget at its
- * place. The header's "While you were away" summary reads the user's unread notifications.
+ * sees; the page draws each as its own tile, in one order packed for the board. The header's "While you were away" summary reads the user's unread notifications.
  */
 
 const home: Source = { endpoint: "/home" };
@@ -84,77 +83,112 @@ function queue(q: Extract<HomeWidget, { kind: "queue" }>): ViewBlock {
   });
 }
 
-/** One of /home's widgets, by its kind. */
-function draw(w: HomeWidget): ViewBlock {
-  switch (w.kind) {
-    case "tiles":
-      return block("stats", {
-        items: w.tiles.map((t) => ({
-          label: t.label,
-          value: t.value,
-          note: t.note,
-          tone: t.tone === "success" || t.tone === "warning" || t.tone === "error" ? t.tone : undefined,
-          href: t.href,
-          trend: t.trend && {
-            labels: t.trend.labels,
-            values: scale(t.trend.unit, t.trend.values),
-            format: FORMAT[t.trend.unit],
-          },
-        })),
-      });
-    case "charts":
-      return block("grid", {
-        blocks: w.charts.map((c) =>
-          block("chart", {
-            title: c.title,
-            subhead: c.sub,
-            chart: {
-              kind: c.kind,
-              labels: c.labels,
-              series: c.series.map((s) => ({ ...s, values: scale(c.unit, s.values) })),
-              format: FORMAT[c.unit],
-              target: c.target === undefined ? undefined : scale(c.unit, [c.target])[0],
-              targetLabel: c.targetLabel,
-              highlightLast: c.highlightLast,
-            },
-          }),
-        ),
-      });
-    case "lists":
-      return block("grid", {
-        blocks: w.lists.map((l) =>
-          block("card", {
-            heading: l.title,
-            subhead: l.sub,
-            count: l.items.length,
-            actions: l.href ? [{ label: l.hrefLabel ?? "All", href: l.href }] : undefined,
-            blocks: [
-              block("list", {
-                empty: l.empty,
-                items: l.items.map((i) => ({
-                  headline: i.title,
-                  supporting: i.sub,
-                  href: i.href,
-                  dot: i.tone,
-                  tags: i.badge
-                    ? [{ label: i.badge, tone: i.tone === "error" ? ("error" as const) : ("neutral" as const) }]
-                    : undefined,
-                })),
-              }),
-            ],
-          }),
-        ),
-      });
-    case "queue":
-      return queue(w);
-  }
+function tiles(w: Extract<HomeWidget, { kind: "tiles" }>): ViewBlock {
+  return block("stats", {
+    items: w.tiles.map((t) => ({
+      label: t.label,
+      value: t.value,
+      note: t.note,
+      tone: t.tone === "success" || t.tone === "warning" || t.tone === "error" ? t.tone : undefined,
+      href: t.href,
+      trend: t.trend && {
+        labels: t.trend.labels,
+        values: scale(t.trend.unit, t.trend.values),
+        format: FORMAT[t.trend.unit],
+      },
+    })),
+  });
 }
 
-/** The data's widget at place `i` (every role has four); the last slot also draws any after it. */
-const slot = (i: number, last = false): Widget<Home> => ({
-  source: home,
-  skeleton: "card",
-  render: (h) => (last ? h.widgets.slice(i) : h.widgets.slice(i, i + 1)).map(draw),
+function chart(c: HomeChart): ViewBlock {
+  return block("chart", {
+    title: c.title,
+    subhead: c.sub,
+    chart: {
+      kind: c.kind,
+      labels: c.labels,
+      series: c.series.map((s) => ({ ...s, values: scale(c.unit, s.values) })),
+      format: FORMAT[c.unit],
+      target: c.target === undefined ? undefined : scale(c.unit, [c.target])[0],
+      targetLabel: c.targetLabel,
+      highlightLast: c.highlightLast,
+    },
+  });
+}
+
+function list(l: Extract<HomeWidget, { kind: "lists" }>["lists"][number]): ViewBlock {
+  return block("card", {
+    heading: l.title,
+    subhead: l.sub,
+    count: l.items.length,
+    actions: l.href ? [{ label: l.hrefLabel ?? "All", href: l.href }] : undefined,
+    blocks: [
+      block("list", {
+        empty: l.empty,
+        items: l.items.map((i) => ({
+          headline: i.title,
+          supporting: i.sub,
+          href: i.href,
+          dot: i.tone,
+          tags: i.badge
+            ? [{ label: i.badge, tone: i.tone === "error" ? ("error" as const) : ("neutral" as const) }]
+            : undefined,
+        })),
+      }),
+    ],
+  });
+}
+
+/** /home's widget of a kind (a role has at most one of each). */
+const of = <K extends HomeWidget["kind"]>(h: Home, kind: K) =>
+  h.widgets.find((w): w is Extract<HomeWidget, { kind: K }> => w.kind === kind);
+
+/**
+ * One tile per thing /home sends: its figures, each list, the case queue, each chart. Their
+ * headings come from the data (they differ by role), so each draws its own card. A role without
+ * a part leaves its tile out.
+ */
+const on = from<Home>(home);
+const listTile = (i: number): Widget<Home> =>
+  on({
+    size: "s",
+    skeleton: "list",
+    hidden: (h) => !of(h, "lists")?.lists[i],
+    render: (h) => {
+      const l = of(h, "lists")?.lists[i];
+      return l ? list(l) : null;
+    },
+  });
+const chartTile = (i: number): Widget<Home> =>
+  on({
+    size: "m",
+    skeleton: "chart",
+    hidden: (h) => !of(h, "charts")?.charts[i],
+    render: (h) => {
+      const c = of(h, "charts")?.charts[i];
+      return c ? chart(c) : null;
+    },
+  });
+
+const figures = on({
+  title: "Your numbers today",
+  size: "m",
+  skeleton: "stats",
+  hidden: (h) => !of(h, "tiles"),
+  render: (h) => {
+    const t = of(h, "tiles");
+    return t ? tiles(t) : null;
+  },
+});
+
+const cases = on({
+  size: "l",
+  skeleton: "table",
+  hidden: (h) => !of(h, "queue"),
+  render: (h) => {
+    const q = of(h, "queue");
+    return q ? queue(q) : null;
+  },
 });
 
 export const homePage = widgets({
@@ -175,5 +209,5 @@ export const homePage = widgets({
       };
     },
   },
-  widgets: [slot(0), slot(1), slot(2), slot(3, true)],
+  widgets: [figures, listTile(0), listTile(1), cases, chartTile(0), chartTile(1)],
 });

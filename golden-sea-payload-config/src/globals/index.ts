@@ -1,5 +1,7 @@
 import type { Field, GlobalConfig } from "payload";
 import { CURRENCIES, ROLES, STORES, anyone, loggedIn, management } from "../collections/shared.ts";
+import type { CollectionSettings } from "saastemlycrm-design-system/contracts";
+import { approvalRulesBefore } from "../widgets/approval-rules.ts";
 import { Assistant, Branding } from "./dashboard.ts";
 
 const managementOnly: GlobalConfig["access"] = { read: anyone, update: management };
@@ -287,6 +289,8 @@ export const ApprovalRules: GlobalConfig = {
   slug: "approval-rules",
   admin: { group: "Configuration" },
   access: staffRead,
+  // A Global view with widgets above its form: what these rules govern right now.
+  custom: { edit: { before: approvalRulesBefore } } satisfies CollectionSettings,
   fields: [
     {
       name: "rules",

@@ -1,4 +1,4 @@
-import { html, nothing, type TemplateResult } from "lit";
+import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { api } from "../../api/client.ts";
 import type { Doc, FieldLike } from "../../contracts/config.ts";
@@ -7,8 +7,10 @@ import "../../components/index.ts";
 import { toast } from "../shared.ts";
 import { action as actionButton, tag } from "./blocks.ts";
 import { expand } from "./data.ts";
+import type { BoardItem } from "../../components/primitives/layout/board.ts";
 import { inCard, renderBlocks, type ViewContext } from "./registry.ts";
 import type { Action, ViewBlock, ViewHeader } from "./schema.ts";
+import { loadingSize, tileSizeOf, type TileSize } from "./tile.ts";
 import { fill, type Source, type Widget, type WidgetPage, type WidgetScope } from "./widget.ts";
 // More blocks: the app's own (./blocks/*.ts), each registering itself with `defineBlock`.
 import.meta.glob("./blocks/*.ts", { eager: true });
@@ -75,6 +77,8 @@ export class AppWidgets extends LightElement {
   @property({ attribute: false }) user?: Doc;
   /** Bumped on every reload: each widget refetches when it changes. */
   @state() version = 0;
+  /** Each widget's size once it has drawn (null: hidden), by its key on the board. */
+  @state() private sizes = new Map<string, TileSize | null>();
   @state() private header: ViewHeader | null = null;
   @state() private pending: Action | null = null;
   @state() private draft: Record<string, unknown> = {};
@@ -295,7 +299,9 @@ export class AppWidgets extends LightElement {
 
   // ---------------------------------------------------------------- drawing
 
-  protected willUpdate() {
+  protected willUpdate(changed: Map<PropertyKey, unknown>) {
+    // Another page: the sizes its widgets told the board belong to the old one.
+    if (changed.has("page") && changed.get("page") !== undefined) this.sizes = new Map();
     const h = this.page.header;
     if (!h || !("render" in h)) this.header = h ?? null;
     else if (!h.source) this.header = h.render(null, this.scope);
@@ -308,25 +314,42 @@ export class AppWidgets extends LightElement {
     }
   }
 
-  #widget(w: Widget): TemplateResult | typeof nothing {
-    if (w.visible && !w.visible(this.scope)) return nothing;
-    if (w.grid) return html`<ui-grid fit="md" gap="4">${w.grid.map((x) => this.#widget(x))}</ui-grid>`;
-    if (w.split)
-      return html`<ui-grid
-        sidebar
-        gap="4"
-        .items=${[
-          {
-            role: "main",
-            content: html`<ui-flex direction="col" gap="4">${w.split.main.map((x) => this.#widget(x))}</ui-flex>`,
-          },
-          {
-            role: "side",
-            content: html`<ui-flex direction="col" gap="4">${w.split.side.map((x) => this.#widget(x))}</ui-flex>`,
-          },
-        ]}
-      ></ui-grid>`;
-    return html`<app-widget .widget=${expand(w, this.scope)} .host=${this} .version=${this.version}></app-widget>`;
+  /**
+   * The screen's widgets as the board's tiles, in order. A `grid` or `split` lays out nothing of its
+   * own any more: its widgets are tiles too (a split's main ones `l` and its side ones `s`, unless
+   * they say). A widget that's hidden for this user, or once its data is in, takes no tile.
+   */
+  #tiles(): BoardItem[] {
+    const out: BoardItem[] = [];
+    const add = (w: Widget, key: string, fallback?: TileSize) => {
+      if (w.visible && !w.visible(this.scope)) return;
+      if (w.grid) return w.grid.forEach((x, i) => add(x, `${key}.${i}`, fallback));
+      if (w.split) {
+        w.split.main.forEach((x, i) => add(x, `${key}.m${i}`, "l"));
+        w.split.side.forEach((x, i) => add(x, `${key}.s${i}`, "s"));
+        return;
+      }
+      const reported = this.sizes.get(key);
+      if (reported === null) return;
+      const size = w.size ?? reported ?? fallback ?? loadingSize(w);
+      out.push({
+        key,
+        size,
+        content: html`<app-widget
+          .widget=${expand(w, this.scope)}
+          .host=${this}
+          .version=${this.version}
+          .report=${(s: TileSize | null) => this.#report(key, s)}
+        ></app-widget>`,
+      });
+    };
+    this.page.widgets.forEach((w, i) => add(w, String(i)));
+    return out;
+  }
+
+  #report(key: string, size: TileSize | null) {
+    if (this.sizes.get(key) === size) return;
+    this.sizes = new Map(this.sizes).set(key, size);
   }
 
   #header() {
@@ -353,8 +376,8 @@ export class AppWidgets extends LightElement {
 
   render() {
     return html`<ui-flex direction="col" gap="6"
-        >${this.#header()} ${this.page.widgets.map((w) => this.#widget(w))}</ui-flex
-      >
+        >${this.#header()}<ui-board .items=${this.#tiles()}></ui-board
+      ></ui-flex>
       ${this.#dialog()}`;
   }
 }
@@ -365,7 +388,10 @@ export class AppWidget extends LightElement {
   @property({ attribute: false }) widget!: Widget;
   @property({ attribute: false }) host!: AppWidgets;
   @property({ type: Number }) version = 0;
+  /** Tells the board the size this widget's tile takes, or null when it shows nothing. */
+  @property({ attribute: false }) report?: (size: TileSize | null) => void;
   @state() private state: "loading" | "ready" | "denied" | "error" = "loading";
+  #size: TileSize | null | undefined;
   @state() private data: unknown = null;
   @state() private message = "";
   #loaded = -1;
@@ -397,6 +423,16 @@ export class AppWidget extends LightElement {
     }
   }
 
+  /** Remember the tile's size; it goes to the board after this render (`updated`). */
+  #sized(size: TileSize | null) {
+    this.#size = size;
+    return nothing;
+  }
+
+  protected updated() {
+    if (this.#size !== undefined) this.report?.(this.#size);
+  }
+
   #skeleton() {
     switch (this.widget.skeleton) {
       case "stats":
@@ -424,9 +460,10 @@ export class AppWidget extends LightElement {
   render() {
     const w = this.widget;
     const scope = this.host.scope;
-    if (this.state === "denied" && !w.denied) return nothing;
-    if (this.state === "ready" && w.hidden?.(this.data as never, scope)) return nothing;
+    if (this.state === "denied" && !w.denied) return this.#sized(null);
+    if (this.state === "ready" && w.hidden?.(this.data as never, scope)) return this.#sized(null);
     const blocks = this.state === "ready" ? asBlocks(w.render?.(this.data as never, scope)) : [];
+    if (this.state === "ready") this.#sized(w.size ?? tileSizeOf(blocks));
     // A titled widget of entries is a section (a heading over the entries' cards), never a card
     // around cards; any other titled widget is a card, and what it draws knows it's in one.
     const section = !!w.title && (w.skeleton === "entries" || blocks.some((b) => b.type === "entries"));

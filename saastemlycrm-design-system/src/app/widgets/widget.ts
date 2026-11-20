@@ -1,3 +1,4 @@
+import type { TileSize } from "../../components/base/board.ts";
 import type { Action, Tag, Tone, ViewBlock, ViewHeader } from "./schema.ts";
 
 /**
@@ -112,6 +113,11 @@ interface WidgetBase<T> {
   skeleton?: "card" | "stats" | "table" | "list" | "chart" | "text" | "entries";
   /** Shown instead of hiding the widget when its data is refused (403). */
   denied?: string;
+  /**
+   * How many lanes of the screen's board it takes: `s` 1, `m` 2, `l` 3, `full` all (never more
+   * than the board has). Without it, the widest of what it draws decides (`tileSizeOf`, tile.ts).
+   */
+  size?: TileSize;
 }
 
 /** A layout widget draws nothing of its own: no heading, source or header. */

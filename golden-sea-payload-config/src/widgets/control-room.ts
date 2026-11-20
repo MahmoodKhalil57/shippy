@@ -1,14 +1,15 @@
-import { block, note, formatNumber, type NumberFormat, type ViewBlock } from "saastemlycrm-design-system/contracts";
+import { block, formatNumber, type NumberFormat, type ViewBlock } from "saastemlycrm-design-system/contracts";
 import { from, widgets, type Source, type Widget } from "saastemlycrm-design-system/contracts";
 import type { Briefing } from "../endpoints/assistant.ts";
-import type { ControlRoom, CrRanked, CrSuppliers, CrWidget, Unit } from "../endpoints/control-room.ts";
+import type { ControlRoom, CrChart, CrRanked, CrSuppliers, CrWidget, Unit } from "../endpoints/control-room.ts";
 import { MONEY_ROLES } from "../endpoints/insights-shared.ts";
 import * as link from "../links.ts";
 
 /**
  * The control room (/control-room): "The business, live. Briefed at 07:00." for Karim Balbaa and
  * Mohamed Helmy: the 07:00 AI briefing (GET /api/briefing), "Ask Golden Sea" (an `ask` block on POST /api/ask) and the
- * management dashboards, with one period choice (`?period=`) above the charts. Data:
+ * management dashboards (one tile per chart, ranking and table), with one period choice
+ * (`?period=`) above them. Data:
  * GET /api/control-room?period= (../endpoints/control-room.ts); profit & cash only reach
  * management and finance.
  */
@@ -29,72 +30,54 @@ const scale = (u: Unit) => (u.endsWith("-k") ? 1000 : 1);
 const values = (u: Unit, v: number[]) => v.map((x) => x * scale(u));
 const fmt = (u: Unit, v: number) => formatNumber(v * scale(u), FORMAT[u]);
 
-function ranked(r: CrRanked): ViewBlock {
+const gauges = (r: CrRanked): ViewBlock => {
   const max = Math.max(1, ...r.rows.map((x) => x.value), r.minimum ?? 0);
-  return block("card", {
-    heading: r.title,
-    blocks: [
-      note(r.sub),
-      block("gauges", {
-        items: r.rows.map((row) => ({
-          label: row.label,
-          value: row.value,
-          max,
-          tone: r.minimum !== undefined && row.value < r.minimum ? "error" : "primary",
-          valueText: fmt(r.unit, row.value),
-          href: row.href,
-          a11y: `${row.label}: ${fmt(r.unit, row.value)}`,
-          note: row.note,
-        })),
-      }),
-    ],
+  return block("gauges", {
+    items: r.rows.map((row) => ({
+      label: row.label,
+      value: row.value,
+      max,
+      tone: r.minimum !== undefined && row.value < r.minimum ? "error" : "primary",
+      valueText: fmt(r.unit, row.value),
+      href: row.href,
+      a11y: `${row.label}: ${fmt(r.unit, row.value)}`,
+      note: row.note,
+    })),
   });
-}
+};
 
-function suppliers(s: CrSuppliers): ViewBlock {
-  return block("card", {
-    heading: s.title,
-    blocks: [
-      note(s.sub),
-      block("table", {
-        columns: [
-          { key: "name", label: "Supplier" },
-          { key: "onTime", label: "On time" },
-          { key: "replyHrs", label: "Avg reply" },
-          { key: "open", label: "Open RFQs" },
-        ],
-        rows: s.rows.map((r) => ({
-          name: { text: r.name, href: r.href, strong: true },
-          onTime:
-            r.onTime === undefined
-              ? { text: "No deliveries yet", tone: "neutral" }
-              : {
-                  text: `${r.onTime}%`,
-                  tone: r.onTime < 85 ? "warning" : undefined,
-                  gauge: {
-                    value: r.onTime,
-                    max: 100,
-                    tone: r.onTime < 85 ? "warning" : "success",
-                    label: `${r.name} on time ${r.onTime}%`,
-                  },
-                },
-          replyHrs:
-            r.replyHrs === undefined
-              ? null
-              : { text: `${r.replyHrs} h`, tone: r.replyHrs > 24 ? "warning" : undefined },
-          open: r.open ? String(r.open) : null,
-        })),
-      }),
+const suppliers = (s: CrSuppliers): ViewBlock =>
+  block("table", {
+    columns: [
+      { key: "name", label: "Supplier" },
+      { key: "onTime", label: "On time" },
+      { key: "replyHrs", label: "Avg reply" },
+      { key: "open", label: "Open RFQs" },
     ],
+    rows: s.rows.map((r) => ({
+      name: { text: r.name, href: r.href, strong: true },
+      onTime:
+        r.onTime === undefined
+          ? { text: "No deliveries yet", tone: "neutral" }
+          : {
+              text: `${r.onTime}%`,
+              tone: r.onTime < 85 ? "warning" : undefined,
+              gauge: {
+                value: r.onTime,
+                max: 100,
+                tone: r.onTime < 85 ? "warning" : "success",
+                label: `${r.name} on time ${r.onTime}%`,
+              },
+            },
+      replyHrs:
+        r.replyHrs === undefined ? null : { text: `${r.replyHrs} h`, tone: r.replyHrs > 24 ? "warning" : undefined },
+      open: r.open ? String(r.open) : null,
+    })),
   });
-}
 
-function chart(w: CrWidget): ViewBlock {
-  if (w.kind === "ranked") return ranked(w);
-  if (w.kind === "suppliers") return suppliers(w);
-  return block("chart", {
-    title: w.title,
-    subhead: w.sub,
+const chart = (w: CrChart): ViewBlock =>
+  block("chart", {
+    label: w.title,
     chart: {
       kind: w.type,
       labels: w.labels,
@@ -105,23 +88,35 @@ function chart(w: CrWidget): ViewBlock {
       highlightLast: Boolean(w.highlightLast),
     },
   });
-}
 
-/** One dashboard section, found by its title, as a card of charts. */
-const section = (title: string): Widget<ControlRoom> =>
+/** One of the dashboards' widgets, found by its title in any section (absent: no tile). */
+const find = (d: ControlRoom, title: string) => d.sections.flatMap((s) => s.widgets).find((w) => w.title === title);
+
+/**
+ * One dashboard widget as its own tile, titled as the data titles it: a chart (`m`), a ranking
+ * as gauges (`s`) or the supplier table (`l`). Profit & cash only reach management and finance,
+ * so for everyone else those tiles are left out.
+ */
+const tile = (title: string, kind: CrWidget["kind"]): Widget<ControlRoom> =>
   on({
     title,
-    skeleton: "chart",
-    head: (d) => ({ subhead: d.sections.find((s) => s.title === title)?.sub }),
+    size: kind === "chart" ? "m" : kind === "ranked" ? "s" : "l",
+    skeleton: kind === "chart" ? "chart" : kind === "ranked" ? "list" : "table",
+    hidden: (d) => find(d, title)?.kind !== kind,
+    head: (d) => ({ subhead: find(d, title)?.sub }),
     render: (d) => {
-      const s = d.sections.find((x) => x.title === title);
-      return s ? block("grid", { blocks: s.widgets.map(chart) }) : null;
+      const w = find(d, title);
+      if (w?.kind === "chart") return chart(w);
+      if (w?.kind === "ranked") return gauges(w);
+      if (w?.kind === "suppliers") return suppliers(w);
+      return null;
     },
   });
 
 /** The 07:00 briefing: read aloud, its sources linked; "Summarise" re-reads the live records. */
 const briefing: Widget<Briefing> = {
   title: "07:00 · daily AI briefing",
+  size: "s",
   source: { endpoint: "/briefing" },
   skeleton: "text",
   head: () => ({
@@ -165,6 +160,8 @@ export const controlRoom = widgets({
   },
   widgets: [
     on({
+      title: "Today at a glance",
+      size: "m",
       skeleton: "stats",
       render: (d) =>
         block("stats", {
@@ -182,28 +179,26 @@ export const controlRoom = widgets({
           })),
         }),
     }),
+    briefing,
     {
-      grid: [
-        briefing,
-        {
-          title: "Ask Golden Sea",
-          head: () => ({ tags: [{ label: "Assistant", tone: "primary", icon: "chat" }] }),
-          render: () =>
-            block("ask", {
-              endpoint: "/ask",
-              suggestions: { endpoint: "/ask/suggestions" },
-              question: "What's the status of Aurora Crest?",
-              name: "Golden Sea assistant",
-              placeholder: "Ask Golden Sea…",
-              intro:
-                "Ask about a vessel or case number, approvals, who owes us money, suppliers, deadlines or the growth pipeline. Answers come from the live records and link to them.",
-              reading: "Reading cases, approvals, invoices and suppliers…",
-              footnote: "The assistant reads and answers; it never sends, prices or pays.",
-            }),
-        },
-      ],
+      title: "Ask Golden Sea",
+      size: "m",
+      head: () => ({ tags: [{ label: "Assistant", tone: "primary", icon: "chat" }] }),
+      render: () =>
+        block("ask", {
+          endpoint: "/ask",
+          suggestions: { endpoint: "/ask/suggestions" },
+          question: "What's the status of Aurora Crest?",
+          name: "Golden Sea assistant",
+          placeholder: "Ask Golden Sea…",
+          intro:
+            "Ask about a vessel or case number, approvals, who owes us money, suppliers, deadlines or the growth pipeline. Answers come from the live records and link to them.",
+          reading: "Reading cases, approvals, invoices and suppliers…",
+          footnote: "The assistant reads and answers; it never sends, prices or pays.",
+        }),
     },
     on({
+      size: "full",
       skeleton: "text",
       render: (d) => [
         block("heading", { text: "Management dashboards" }),
@@ -219,22 +214,34 @@ export const controlRoom = widgets({
         }),
       ],
     }),
-    section("Pipeline & conversion"),
-    section("Speed & workload"),
+    tile("Inquiries, quotes and wins", "chart"),
+    tile("Value won per month", "chart"),
+    tile("Conversion funnel", "ranked"),
+    tile("Conversion by value", "chart"),
+    tile("Why we lose", "ranked"),
+    tile("Quote turnaround", "chart"),
+    tile("Acknowledgement time", "chart"),
+    tile("Live cases per owner", "ranked"),
+    tile("Out-of-hours requests", "chart"),
     on({
       title: "Profit & cash",
-      skeleton: "chart",
-      head: (d) => ({ subhead: d.sections.find((s) => s.title === "Profit & cash")?.sub }),
-      render: (d) => {
-        const s = d.sections.find((x) => x.title === "Profit & cash");
-        return s
-          ? block("grid", { blocks: s.widgets.map(chart) })
-          : block("text", {
-              text: "Gross profit, margins, receivables and cash flow are shown to management and finance only.",
-              muted: true,
-            });
-      },
+      size: "s",
+      skeleton: "text",
+      hidden: (d) => d.money,
+      render: () =>
+        block("text", {
+          text: "Gross profit, margins, receivables and cash flow are shown to management and finance only.",
+          muted: true,
+        }),
     }),
-    section("Delivery & suppliers"),
+    tile("Gross profit: expected vs actual", "chart"),
+    tile("Sales by source", "chart"),
+    tile("Margin by store", "ranked"),
+    tile("Receivables ageing", "chart"),
+    tile("Margin by source", "ranked"),
+    tile("Cash in vs cash out", "chart"),
+    tile("Receivables by customer", "ranked"),
+    tile("Supplier on-time vs reply time", "suppliers"),
+    tile("Deliveries by outcome", "chart"),
   ],
 });

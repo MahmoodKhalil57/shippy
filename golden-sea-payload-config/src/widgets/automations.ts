@@ -56,6 +56,8 @@ const retry = (x: Doc, label: string): Action => ({
 });
 
 const stats = on({
+  title: "At a glance",
+  size: "m",
   skeleton: "stats",
   render: ({ stats: st }) =>
     block("stats", {
@@ -87,6 +89,7 @@ const stats = on({
 
 const exceptions = on({
   title: "Exception queue",
+  size: "l",
   skeleton: "table",
   head: (d) => ({ tags: [{ label: `${d.stats.open} open`, tone: d.stats.open ? "error" : "success" }] }),
   render: (d) => [
@@ -122,6 +125,7 @@ const exceptions = on({
 
 const review = on({
   title: "AI review queue",
+  size: "s",
   skeleton: "list",
   head: (d) => ({ count: d.review.length, countTone: d.review.length ? "warning" : "success" }),
   render: (d) => [
@@ -160,6 +164,7 @@ const review = on({
 
 const registry = on({
   title: "Rule registry",
+  size: "l",
   skeleton: "table",
   head: (d) => ({ tags: [{ label: `${d.rules.length} rules` }] }),
   render: (d) => [
@@ -213,26 +218,22 @@ const registry = on({
   ],
 });
 
-/** Fixed text: no data. */
-const boundaries: Widget = {
-  title: "Automation boundaries",
-  render: () =>
-    block("grid", {
-      blocks: [
-        block("card", {
-          heading: "Runs automatically under approved rules",
-          blocks: [block("list", { items: AUTO.map((headline) => ({ headline, icon: "bolt" })) })],
-        }),
-        block("card", {
-          heading: "Prepared for an authorised person",
-          blocks: [block("list", { items: PEOPLE.map((headline) => ({ headline, icon: "user" })) })],
-        }),
-      ],
-    }),
+/** Fixed text: no data. What runs on its own, and what waits for a person. */
+const automatic: Widget = {
+  title: "Runs automatically under approved rules",
+  size: "s",
+  render: () => block("list", { items: AUTO.map((headline) => ({ headline, icon: "bolt" })) }),
+};
+
+const byPeople: Widget = {
+  title: "Prepared for an authorised person",
+  size: "s",
+  render: () => block("list", { items: PEOPLE.map((headline) => ({ headline, icon: "user" })) }),
 };
 
 const audit = on({
   title: "Audit log",
+  size: "l",
   skeleton: "table",
   head: (d) => ({ tags: [{ label: `latest ${d.audit.length}` }] }),
   render: (d) => [
@@ -267,5 +268,5 @@ export const automationsPage = widgets({
       { label: "Full activity log", href: link.list("activities") },
     ],
   },
-  widgets: [stats, { grid: [exceptions, review] }, registry, boundaries, audit],
+  widgets: [stats, review, exceptions, registry, audit, automatic, byPeople],
 });

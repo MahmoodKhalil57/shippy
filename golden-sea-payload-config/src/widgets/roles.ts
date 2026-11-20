@@ -30,6 +30,7 @@ const str = (v: unknown) => (typeof v === "string" || typeof v === "number" ? St
 
 const matrix = on({
   title: "Permissions matrix",
+  size: "l",
   skeleton: "table",
   head: (d) => ({ tags: d.canEditPermissions ? undefined : [{ label: "Read only — management edits" }] }),
   render: (d) => {
@@ -72,8 +73,9 @@ const matrix = on({
 
 const enforced = on({
   title: "Enforced, not just written down",
+  size: "s",
   skeleton: "list",
-  render: (d) => [
+  render: (d) =>
     block("list", {
       items: d.checks.map((c) => ({
         headline: c.label,
@@ -81,7 +83,13 @@ const enforced = on({
         tags: [{ label: c.pass ? "Verified" : "Failing", tone: c.pass ? "success" : "error" }],
       })),
     }),
-    block("divider", {}),
+});
+
+const where = on({
+  title: "Where each permission is enforced",
+  size: "s",
+  skeleton: "card",
+  render: (d) => [
     block("details", { layout: "inline", items: d.permissions.map((p) => ({ label: p.label, value: p.enforced })) }),
     block("alert", {
       tone: "info",
@@ -94,6 +102,7 @@ const enforced = on({
 /** The simulator: its own request, so picking a time asks only who the RFQ goes to then. */
 const simulator: Widget<Routing> = {
   title: "After-hours routing — try it",
+  size: "m",
   skeleton: "text",
   source: { endpoint: "/on-call/route", query: { at: "$param.at" } },
   render: (r) => {
@@ -181,6 +190,7 @@ function save(d: RolesView, people: Doc[]): Action {
 
 const roster: Widget<RosterData> = {
   title: "On-call roster",
+  size: "l",
   skeleton: "table",
   source: { all: { roles, people: { find: "users", sort: "name", limit: 100, depth: 0 } } },
   head: ({ roles: d, people }) =>
@@ -220,5 +230,5 @@ export const rolesPage = widgets({
       { label: "Approval rules", href: link.global("approval-rules") },
     ],
   },
-  widgets: [matrix, { grid: [enforced, simulator] }, roster],
+  widgets: [matrix, simulator, enforced, where, roster],
 });

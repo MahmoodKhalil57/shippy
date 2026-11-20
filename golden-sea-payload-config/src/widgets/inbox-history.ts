@@ -51,6 +51,7 @@ const named = (name: string, known: boolean) => ({
 
 const progress = on({
   title: "Import progress",
+  size: "m",
   skeleton: "text",
   render: (d) => [
     block("steps", { current: step(d), items: STEPS.map((label) => ({ label })) }),
@@ -70,7 +71,8 @@ const progress = on({
 
 const mailboxes = on({
   title: "Mailboxes imported",
-  skeleton: "chart",
+  size: "l",
+  skeleton: "table",
   head: (d) => ({ tags: [{ label: `${n(d.scanned)} messages · 2019–2026` }] }),
   render: (d) => [
     note(
@@ -92,6 +94,14 @@ const mailboxes = on({
         attachments: n(m.attachments),
       })),
     }),
+  ],
+});
+
+const perYear = on({
+  title: "Messages per year",
+  size: "m",
+  skeleton: "chart",
+  render: (d) =>
     block("chart", {
       label: "Messages per year",
       chart: {
@@ -101,11 +111,11 @@ const mailboxes = on({
         format: { unit: "count" },
       },
     }),
-  ],
 });
 
 const dedup = on({
   title: "De-duplication",
+  size: "s",
   render: (d) => [
     block("text", {
       text: "The same email often sits in three mailboxes. Each message is kept once, with all its copies linked.",
@@ -127,184 +137,182 @@ const dedup = on({
 
 /** Before "Organise": the call to action. */
 const scattered = on({
+  title: "Years of emails, RFQs, offers and quotes · scattered",
+  size: "s",
   skeleton: "text",
-  render: (d) =>
-    d.organised
-      ? null
-      : block("card", {
-          heading: "Years of emails, RFQs, offers and quotes · scattered",
-          blocks: [
-            block("text", {
-              muted: true,
-              text: "Press Organise: the AI reads the kept messages and builds your customers, vessels, suppliers and dated prices. Anything it isn't sure of comes to you first.",
-            }),
-            block("actions", { items: [organise] }),
-          ],
-        }),
+  hidden: (d) => d.organised,
+  render: () => [
+    block("text", {
+      muted: true,
+      text: "Press Organise: the AI reads the kept messages and builds your customers, vessels, suppliers and dated prices. Anything it isn't sure of comes to you first.",
+    }),
+    block("actions", { items: [organise] }),
+  ],
 });
 
 /** After "Organise": what was found. */
 const totals = on({
+  title: "What was found",
+  size: "m",
   skeleton: "stats",
+  hidden: (d) => !d.organised,
   render: (d) =>
-    d.organised
-      ? block("stats", {
-          items: [
-            { label: "Customers", value: n(d.totals.customers), note: "ship managers & owners" },
-            { label: "Vessels", value: n(d.totals.vessels), note: "IMO · fleet · ports" },
-            { label: "Suppliers", value: n(d.totals.suppliers), note: "who quoted what" },
-            { label: "Dated prices", value: n(d.totals.prices), note: `${n(d.totals.pricesWithoutPo)} with no PO` },
-          ],
-        })
-      : null,
+    block("stats", {
+      items: [
+        { label: "Customers", value: n(d.totals.customers), note: "ship managers & owners" },
+        { label: "Vessels", value: n(d.totals.vessels), note: "IMO · fleet · ports" },
+        { label: "Suppliers", value: n(d.totals.suppliers), note: "who quoted what" },
+        { label: "Dated prices", value: n(d.totals.prices), note: `${n(d.totals.pricesWithoutPo)} with no PO` },
+      ],
+    }),
 });
 
 /** One card of found records (shown once the history is organised). */
 const entity = (
-  heading: string,
+  title: string,
   intro: (d: HistoryPayload) => string,
   columns: { key: string; label: string; align?: "end" }[],
   rows: (d: HistoryPayload) => Row[],
 ): Widget<HistoryPayload> =>
   on({
+    title,
+    size: "l",
     skeleton: "table",
-    render: (d) =>
-      d.organised
-        ? block("card", { heading, blocks: [note(intro(d)), block("table", { columns, rows: rows(d) })] })
-        : null,
+    hidden: (d) => !d.organised,
+    render: (d) => [note(intro(d)), block("table", { columns, rows: rows(d) })],
   });
 
-const entities: Widget = {
-  grid: [
-    entity(
-      "Customers — ship managers",
-      (d) => `${n(d.totals.customers)} found · top 5 by RFQs`,
-      [
-        { key: "name", label: "Customer" },
-        { key: "country", label: "Country" },
-        { key: "years", label: "Years" },
-        { key: "rfqs", label: "RFQs" },
-        { key: "vessels", label: "Vessels" },
-      ],
-      (d) =>
-        d.customers.map((c) => ({
-          ...named(c.name, c.known),
-          country: c.country,
-          years: c.years,
-          rfqs: c.rfqs,
-          vessels: c.vessels,
-        })),
-    ),
-    entity(
-      "Vessels — IMO, fleet, ports",
-      (d) => `${n(d.totals.vessels)} found · matched by IMO, renames kept`,
-      [
-        { key: "name", label: "Vessel" },
-        { key: "imo", label: "IMO" },
-        { key: "fleet", label: "Fleet" },
-        { key: "ports", label: "Ports" },
-        { key: "calls", label: "Calls" },
-      ],
-      (d) =>
-        d.vessels.map((v) => ({
-          ...named(v.name, v.known),
-          imo: { text: v.imo, mono: true },
-          fleet: v.fleet,
-          ports: v.ports,
-          calls: v.calls,
-        })),
-    ),
-    entity(
-      "Suppliers — who quoted what",
-      (d) => `${n(d.totals.suppliers)} found · incl. ones you never ordered from`,
-      [
-        { key: "name", label: "Supplier" },
-        { key: "categories", label: "What they quote" },
-        { key: "quoted", label: "Lines quoted" },
-        { key: "ordered", label: "Ordered" },
-      ],
-      (d) =>
-        d.suppliers.map((s) => ({
-          ...named(s.name, s.known),
-          categories: s.categories,
-          quoted: n(s.quoted),
-          ordered: n(s.ordered),
-        })),
-    ),
-    entity(
-      "Dated prices — even with no PO",
-      (d) => `${n(d.totals.prices)} prices, each with its date and validity`,
-      [
-        { key: "item", label: "Item" },
-        { key: "supplier", label: "Supplier" },
-        { key: "price", label: "Price" },
-        { key: "quotedAt", label: "Quoted" },
-        { key: "ordered", label: "PO" },
-      ],
-      (d) =>
-        d.prices.map((p) => ({
-          item: { text: p.item, strong: true },
-          supplier: p.supplier,
-          price:
-            d.canSeePrices && typeof p.price === "number"
-              ? `${p.currency} ${n(p.price)} / ${p.per}`
-              : { text: "hidden for your role", tone: "neutral" },
-          quotedAt: day(String(p.quotedAt)),
-          ordered: p.ordered
-            ? { text: "Ordered", tone: "success", tag: true }
-            : { text: "No PO — still remembered", tag: true },
-        })),
-    ),
-  ],
-};
+const entities: Widget[] = [
+  entity(
+    "Customers — ship managers",
+    (d) => `${n(d.totals.customers)} found · top 5 by RFQs`,
+    [
+      { key: "name", label: "Customer" },
+      { key: "country", label: "Country" },
+      { key: "years", label: "Years" },
+      { key: "rfqs", label: "RFQs" },
+      { key: "vessels", label: "Vessels" },
+    ],
+    (d) =>
+      d.customers.map((c) => ({
+        ...named(c.name, c.known),
+        country: c.country,
+        years: c.years,
+        rfqs: c.rfqs,
+        vessels: c.vessels,
+      })),
+  ),
+  entity(
+    "Vessels — IMO, fleet, ports",
+    (d) => `${n(d.totals.vessels)} found · matched by IMO, renames kept`,
+    [
+      { key: "name", label: "Vessel" },
+      { key: "imo", label: "IMO" },
+      { key: "fleet", label: "Fleet" },
+      { key: "ports", label: "Ports" },
+      { key: "calls", label: "Calls" },
+    ],
+    (d) =>
+      d.vessels.map((v) => ({
+        ...named(v.name, v.known),
+        imo: { text: v.imo, mono: true },
+        fleet: v.fleet,
+        ports: v.ports,
+        calls: v.calls,
+      })),
+  ),
+  entity(
+    "Suppliers — who quoted what",
+    (d) => `${n(d.totals.suppliers)} found · incl. ones you never ordered from`,
+    [
+      { key: "name", label: "Supplier" },
+      { key: "categories", label: "What they quote" },
+      { key: "quoted", label: "Lines quoted" },
+      { key: "ordered", label: "Ordered" },
+    ],
+    (d) =>
+      d.suppliers.map((s) => ({
+        ...named(s.name, s.known),
+        categories: s.categories,
+        quoted: n(s.quoted),
+        ordered: n(s.ordered),
+      })),
+  ),
+  entity(
+    "Dated prices — even with no PO",
+    (d) => `${n(d.totals.prices)} prices, each with its date and validity`,
+    [
+      { key: "item", label: "Item" },
+      { key: "supplier", label: "Supplier" },
+      { key: "price", label: "Price" },
+      { key: "quotedAt", label: "Quoted" },
+      { key: "ordered", label: "PO" },
+    ],
+    (d) =>
+      d.prices.map((p) => ({
+        item: { text: p.item, strong: true },
+        supplier: p.supplier,
+        price:
+          d.canSeePrices && typeof p.price === "number"
+            ? `${p.currency} ${n(p.price)} / ${p.per}`
+            : { text: "hidden for your role", tone: "neutral" },
+        quotedAt: day(String(p.quotedAt)),
+        ordered: p.ordered
+          ? { text: "Ordered", tone: "success", tag: true }
+          : { text: "No PO — still remembered", tag: true },
+      })),
+  ),
+];
 
 const review = on({
+  title: "Uncertain items",
+  size: "s",
   skeleton: "list",
-  render: (d): ViewBlock | null => {
-    if (!d.organised) return null;
+  hidden: (d) => !d.organised,
+  head: (d) => ({
+    tags: [
+      d.pending ? { label: `${d.pending} to review`, tone: "warning" } : { label: "all decided", tone: "success" },
+    ],
+  }),
+  render: (d): ViewBlock[] => {
     const decide = (id: string, decision: "confirm" | "reject", label: string): Action => ({
       label,
       call: { path: `/inbox-history/review/${encodeURIComponent(id)}`, body: { decision } },
     });
-    return block("card", {
-      heading: "Uncertain items",
-      tags: [
-        d.pending ? { label: `${d.pending} to review`, tone: "warning" } : { label: "all decided", tone: "success" },
-      ],
-      blocks: [
-        note("Reviewed with you before they are saved — confirm the proposal or reject it."),
-        block("list", {
-          variant: "separated",
-          items: d.review.map((r) => ({
-            overline: `${r.mailbox} · ${day(r.receivedAt)} · “${r.subject}” from ${r.fromName}`,
-            headline: r.question,
-            supporting: `Proposal: ${r.proposal}`,
-            tags: [
-              { label: r.kind, tone: KIND_TONE[r.kind] ?? "neutral" },
-              { label: pct(r.confidence) },
-              ...(r.decision
-                ? [
-                    {
-                      label: `${r.decision}${r.reviewedBy ? ` by ${r.reviewedBy}` : ""}`,
-                      tone: r.decision === "Confirmed" ? ("success" as const) : ("neutral" as const),
-                    },
-                  ]
-                : []),
-            ],
-            actions: r.decision
-              ? d.approved
-                ? undefined
-                : [decide(r.id, r.decision === "Confirmed" ? "reject" : "confirm", "Change")]
-              : [decide(r.id, "confirm", "Confirm"), decide(r.id, "reject", "Reject")],
-          })),
-        }),
-      ],
-    });
+    return [
+      note("Reviewed with you before they are saved — confirm the proposal or reject it."),
+      block("list", {
+        variant: "separated",
+        items: d.review.map((r) => ({
+          overline: `${r.mailbox} · ${day(r.receivedAt)} · “${r.subject}” from ${r.fromName}`,
+          headline: r.question,
+          supporting: `Proposal: ${r.proposal}`,
+          tags: [
+            { label: r.kind, tone: KIND_TONE[r.kind] ?? "neutral" },
+            { label: pct(r.confidence) },
+            ...(r.decision
+              ? [
+                  {
+                    label: `${r.decision}${r.reviewedBy ? ` by ${r.reviewedBy}` : ""}`,
+                    tone: r.decision === "Confirmed" ? ("success" as const) : ("neutral" as const),
+                  },
+                ]
+              : []),
+          ],
+          actions: r.decision
+            ? d.approved
+              ? undefined
+              : [decide(r.id, r.decision === "Confirmed" ? "reject" : "confirm", "Change")]
+            : [decide(r.id, "confirm", "Confirm"), decide(r.id, "reject", "Reject")],
+        })),
+      }),
+    ];
   },
 });
 
 const approval = on({
   title: "Import approval",
+  size: "s",
   skeleton: "text",
   render: (d) => {
     const totals = `${n(d.totals.customers)} customers, ${n(d.totals.vessels)} vessels, ${n(d.totals.suppliers)} suppliers`;
@@ -374,5 +382,5 @@ export const inboxHistoryPage = widgets({
       };
     },
   },
-  widgets: [progress, { grid: [mailboxes, dedup] }, totals, entities, review, scattered, approval],
+  widgets: [progress, dedup, mailboxes, perYear, scattered, totals, review, ...entities, approval],
 });

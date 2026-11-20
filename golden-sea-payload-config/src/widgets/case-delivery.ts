@@ -47,6 +47,7 @@ const AGENT_EMAIL: Record<string, { from: string; subject: string; body: string;
 
 /** The re-plan notice after an ETA change, or the case's blocker. */
 const alerts = on({
+  size: "full",
   skeleton: "text",
   render: (d) => {
     const eta = d.alerts.find((a) => /ETA change/.test(a.text));
@@ -102,6 +103,7 @@ const nextDrop = (d: CaseOps) => d.deliveries.find((x) => !/confirmed|Cancelled/
 
 const plan = on({
   title: "Vessel delivery plan",
+  size: "s",
   head: (d) => {
     const next = nextDrop(d);
     const eta = next ? etaAction(d) : undefined;
@@ -122,15 +124,6 @@ const plan = on({
         text: "No delivery planned yet — the plan is created once supplier POs are confirmed and goods are due.",
       });
     const p = next.plan;
-    const openApprovals = d.purchaseOrders.some((x) => x.status === "Awaiting approval");
-    const goodsReady = d.backorders.every((b) => !next.lines.some((l) => l.lineNo === b.lineNo) || !b.late);
-    const checks: [string, boolean][] = [
-      ["Goods ready & labelled per line", goodsReady],
-      ["Documents: delivery note, packing list, SDS, certificates", true],
-      ["Ship-stores declaration", Boolean(p.clearance)],
-      ["Transport booked (truck, launch)", Boolean(p.vehicle && p.launch && !/to be confirmed/i.test(p.launch))],
-      ["No open approval on the order", !openApprovals],
-    ];
     return [
       block("text", {
         muted: true,
@@ -148,15 +141,35 @@ const plan = on({
           { label: "Clearance", value: p.clearance ?? "—" },
         ],
       }),
-      block("text", { text: `Pre-dispatch check — ${next.number}` }),
-      block("tags", {
-        items: checks.map(([label, ok]) => ({
-          label,
-          tone: ok ? ("success" as const) : ("warning" as const),
-          icon: ok ? "success" : "warning",
-        })),
-      }),
     ];
+  },
+});
+
+/** What must be true before the next drop leaves. */
+const preDispatch = on({
+  title: "Pre-dispatch check",
+  size: "s",
+  hidden: (d) => !nextDrop(d),
+  head: (d) => ({ subhead: nextDrop(d)!.number }),
+  render: (d) => {
+    const next = nextDrop(d)!;
+    const p = next.plan;
+    const openApprovals = d.purchaseOrders.some((x) => x.status === "Awaiting approval");
+    const goodsReady = d.backorders.every((b) => !next.lines.some((l) => l.lineNo === b.lineNo) || !b.late);
+    const checks: [string, boolean][] = [
+      ["Goods ready & labelled per line", goodsReady],
+      ["Documents: delivery note, packing list, SDS, certificates", true],
+      ["Ship-stores declaration", Boolean(p.clearance)],
+      ["Transport booked (truck, launch)", Boolean(p.vehicle && p.launch && !/to be confirmed/i.test(p.launch))],
+      ["No open approval on the order", !openApprovals],
+    ];
+    return block("tags", {
+      items: checks.map(([label, ok]) => ({
+        label,
+        tone: ok ? ("success" as const) : ("warning" as const),
+        icon: ok ? "success" : "warning",
+      })),
+    });
   },
 });
 
@@ -255,6 +268,7 @@ function drop(d: CaseOps, x: OpsDelivery): Entry {
 
 const drops = on({
   title: "Drops & proof of delivery",
+  size: "m",
   subhead:
     "“Delivered” needs evidence: dispatch and confirmed receipt are separate, and a drop is confirmed only with the signed delivery note or photo from the vessel.",
   skeleton: "entries",
@@ -265,6 +279,7 @@ const drops = on({
 
 const backorders = on({
   title: "Backorders & late suppliers",
+  size: "l",
   skeleton: "table",
   hidden: (d) => !d.backorders.length,
   render: (d) => [
@@ -349,8 +364,37 @@ function eAction(d: CaseOps, inv: OpsInvoice): Action | undefined {
   };
 }
 
+/** What has been invoiced and collected on the case. */
+const balance = on({
+  title: "Invoice balance",
+  size: "s",
+  hidden: (d) => !d.invoices.length,
+  render: (d) => {
+    const cur = d.case.currency;
+    const invoiced = d.invoices.reduce((s, i) => s + (i.amount || 0), 0);
+    const received = d.invoices.reduce((s, i) => s + (i.paid || 0), 0);
+    const balance = d.invoices.reduce((s, i) => s + (i.balance || 0), 0);
+    const nextDue = d.invoices
+      .filter((i) => i.balance > 0)
+      .sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? ""))[0];
+    return block("details", {
+      layout: "inline",
+      items: [
+        { label: "Invoiced", value: money(invoiced, cur) },
+        { label: "Received", value: money(received, cur) },
+        { label: "Balance", value: { text: money(balance, cur), tone: balance > 0 ? "warning" : "success" } },
+        {
+          label: "Next due",
+          value: nextDue ? `${day(nextDue.dueDate)} · ${money(nextDue.balance, nextDue.currency)}` : "—",
+        },
+      ],
+    });
+  },
+});
+
 const invoices = on({
   title: "Customer invoices & payments",
+  size: "l",
   skeleton: "table",
   head: (d) => ({ count: d.invoices.length }),
   render: (d) => {
@@ -366,13 +410,6 @@ const invoices = on({
           text: "No invoice yet — the first one is created from a delivery confirmed with a signed note.",
         }),
       ];
-    const cur = d.case.currency;
-    const invoiced = d.invoices.reduce((s, i) => s + (i.amount || 0), 0);
-    const received = d.invoices.reduce((s, i) => s + (i.paid || 0), 0);
-    const balance = d.invoices.reduce((s, i) => s + (i.balance || 0), 0);
-    const nextDue = d.invoices
-      .filter((i) => i.balance > 0)
-      .sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? ""))[0];
     const rows: Row[] = d.invoices.map((i) => {
       const e = eStatus(i);
       return {
@@ -433,18 +470,6 @@ const invoices = on({
     });
     return [
       intro,
-      block("details", {
-        layout: "inline",
-        items: [
-          { label: "Invoiced", value: money(invoiced, cur) },
-          { label: "Received", value: money(received, cur) },
-          { label: "Balance", value: { text: money(balance, cur), tone: balance > 0 ? "warning" : "success" } },
-          {
-            label: "Next due",
-            value: nextDue ? `${day(nextDue.dueDate)} · ${money(nextDue.balance, nextDue.currency)}` : "—",
-          },
-        ],
-      }),
       block("table", {
         columns: [
           { key: "number", label: "Invoice", supporting: "basis" },
@@ -461,4 +486,4 @@ const invoices = on({
   },
 });
 
-export const caseDelivery = widgets({ widgets: [alerts, plan, drops, backorders, invoices] });
+export const caseDelivery = widgets({ widgets: [alerts, plan, drops, preDispatch, balance, backorders, invoices] });

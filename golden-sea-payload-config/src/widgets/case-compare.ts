@@ -346,6 +346,7 @@ function lineCard(c: CompareWithDrafts, line: CmpLine, mode: Mode): ViewBlock {
 
 const how = on({
   title: "How offers are compared",
+  size: "s",
   skeleton: "text",
   denied:
     "Costs and margins are hidden for your role. Supplier offers carry supplier costs, so Sales sees the selling prices on the quotation instead. Supply chain, finance and management compare offers.",
@@ -363,26 +364,37 @@ const how = on({
           { label: `${selected} of ${c.lines.length} lines selected`, tone: selected ? "success" : undefined },
         ],
       }),
-      block("choice", {
-        param: "by",
-        label: "Compare by",
-        value: "unit",
-        options: [
-          { value: "unit", label: "Unit price" },
-          { value: "landed", label: "Landed cost" },
-        ],
-      }),
     ];
   },
 });
 
+/** "Compare by" steers every line's ranking: the screen's control (refused with the offers). */
+const compareBy = on({
+  size: "full",
+  render: () =>
+    block("choice", {
+      param: "by",
+      label: "Compare by",
+      value: "unit",
+      options: [
+        { value: "unit", label: "Unit price" },
+        { value: "landed", label: "Landed cost" },
+      ],
+    }),
+});
+
 /** A card per line: how many depends on the case, so the widget draws the cards itself. */
 const lines = on({
+  title: "Offers by line",
+  size: "l",
+  hidden: (c) => !c.lines.length,
   skeleton: "table",
   render: (c, { params }) => c.lines.map((l) => lineCard(c, l, modeOf(params))),
 });
 
 const next = on({
+  title: "Next step",
+  size: "s",
   skeleton: "text",
   render: (c) =>
     block("actions", {
@@ -390,4 +402,4 @@ const next = on({
     }),
 });
 
-export const caseCompare = widgets({ params: { by: "unit" }, widgets: [how, lines, next] });
+export const caseCompare = widgets({ params: { by: "unit" }, widgets: [compareBy, lines, how, next] });

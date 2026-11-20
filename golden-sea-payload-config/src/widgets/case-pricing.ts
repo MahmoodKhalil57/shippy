@@ -28,6 +28,8 @@ const ALLOCATION = [
 const flagTone = (x: string) => (/negative|expired|misses/i.test(x) ? ("error" as const) : ("warning" as const));
 
 const stats = on({
+  title: "Quotation totals",
+  size: "m",
   skeleton: "stats",
   render: (P) => {
     const t = P.totals;
@@ -66,10 +68,61 @@ const stats = on({
   },
 });
 
+/** The pricing levers: how shared charges are spread, the discount and each line's margin. */
+const settings = on({
+  title: "Margins and discount",
+  size: "l",
+  skeleton: "card",
+  head: () => ({ actions: [{ label: "Pricing policy", href: link.global("pricing-policy") }] }),
+  render: (P) => [
+    block("text", {
+      muted: true,
+      text: `Policy: target ${P.policy.targetPct}%, minimum ${P.policy.minPct}% (per store where set), discounts above ${P.policy.maxDiscountPct}% need approval. ${P.fxLabel}.`,
+    }),
+    block("form", {
+      save: { path: `${base(P)}/pricing` },
+      value: {
+        allocation: P.allocation,
+        discountPct: P.discountPct,
+        margins: Object.fromEntries(P.rows.map((r) => [String(r.lineNo), r.marginPct])),
+      },
+      fields: [
+        {
+          type: "row",
+          name: "settings",
+          fields: [
+            { type: "select", name: "allocation", label: "Shared charges allocated", options: ALLOCATION },
+            { type: "number", name: "discountPct", label: "Customer discount %", min: 0, max: 20 },
+          ],
+        },
+        {
+          type: "group",
+          name: "margins",
+          label: "Margin % per line",
+          fields: [
+            {
+              type: "row",
+              name: "lines",
+              fields: P.rows.map((r) => ({
+                type: "number",
+                name: String(r.lineNo),
+                label: `Margin for line ${r.lineNo}`,
+                min: -50,
+                max: 90,
+                admin: { description: `target ${r.targetPct}% · min ${r.minPct}%` },
+              })),
+            },
+          ],
+        },
+      ],
+    }),
+  ],
+});
+
 const lines = on({
   title: "Line pricing",
+  size: "l",
   skeleton: "table",
-  head: () => ({ actions: [{ label: "Pricing policy", href: link.global("pricing-policy") }] }),
   render: (P) => {
     const cur = P.currency;
     const rows = P.rows.map((r): Row => ({
@@ -97,47 +150,6 @@ const lines = on({
       },
     }));
     const blocks: ViewBlock[] = [
-      block("text", {
-        muted: true,
-        text: `Policy: target ${P.policy.targetPct}%, minimum ${P.policy.minPct}% (per store where set), discounts above ${P.policy.maxDiscountPct}% need approval. ${P.fxLabel}.`,
-      }),
-      block("form", {
-        save: { path: `${base(P)}/pricing` },
-        value: {
-          allocation: P.allocation,
-          discountPct: P.discountPct,
-          margins: Object.fromEntries(P.rows.map((r) => [String(r.lineNo), r.marginPct])),
-        },
-        fields: [
-          {
-            type: "row",
-            name: "settings",
-            fields: [
-              { type: "select", name: "allocation", label: "Shared charges allocated", options: ALLOCATION },
-              { type: "number", name: "discountPct", label: "Customer discount %", min: 0, max: 20 },
-            ],
-          },
-          {
-            type: "group",
-            name: "margins",
-            label: "Margin % per line",
-            fields: [
-              {
-                type: "row",
-                name: "lines",
-                fields: P.rows.map((r) => ({
-                  type: "number",
-                  name: String(r.lineNo),
-                  label: `Margin for line ${r.lineNo}`,
-                  min: -50,
-                  max: 90,
-                  admin: { description: `target ${r.targetPct}% · min ${r.minPct}%` },
-                })),
-              },
-            ],
-          },
-        ],
-      }),
       block("table", {
         columns: [
           { key: "lineNo", label: "#" },
@@ -169,6 +181,7 @@ const lines = on({
 
 const marginVsMarkup = on({
   title: "Margin vs markup",
+  size: "s",
   skeleton: "stats",
   render: (P) => {
     const t = P.totals;
@@ -198,11 +211,13 @@ const marginVsMarkup = on({
 });
 
 const buildUp = on({
+  title: "Price build-up per line",
+  subhead: "Supplier cost + shared charges + gross profit = selling price (EGP)",
+  size: "m",
   skeleton: "chart",
   render: (P) =>
     block("chart", {
-      title: "Price build-up per line",
-      subhead: "Supplier cost + shared charges + gross profit = selling price (EGP)",
+      label: "Price build-up per line",
       chart: {
         kind: "bars",
         stacked: true,
@@ -219,6 +234,7 @@ const buildUp = on({
 
 const charges = on({
   title: "Shared charges",
+  size: "l",
   skeleton: "table",
   render: (P) => [
     block("text", {
@@ -254,6 +270,7 @@ const charges = on({
 
 const policy = on({
   title: "Policy checks",
+  size: "s",
   skeleton: "list",
   render: (P) =>
     P.exceptions.length
@@ -263,6 +280,7 @@ const policy = on({
 
 const approval = on({
   title: "Approval",
+  size: "s",
   skeleton: "text",
   render: (P) => {
     const q = P.quotation;
@@ -331,6 +349,7 @@ const approval = on({
  */
 const forSales = widget<{ docs: Doc[] }>({
   title: "Costs and margins are hidden for your role",
+  size: "s",
   skeleton: "text",
   visible: ({ user }) => user.role === "sales",
   source: { find: "quotations", where: { case: { equals: "$doc.id" } }, sort: "-version", limit: 1, depth: 0 },
@@ -352,9 +371,14 @@ const forSales = widget<{ docs: Doc[] }>({
 export const casePricing = widgets({
   widgets: [
     forSales as Widget,
+    // 3 lanes: m + s, the levers and the lines, m + s, the charges, then the approval.
     stats,
+    marginVsMarkup,
+    settings,
     lines,
-    { grid: [marginVsMarkup, buildUp] },
-    { grid: [charges, policy, approval] },
+    buildUp,
+    policy,
+    charges,
+    approval,
   ],
 });

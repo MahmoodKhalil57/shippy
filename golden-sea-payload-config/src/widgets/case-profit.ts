@@ -112,6 +112,7 @@ function checkAction(k: CloseCheck, p: CaseProfit, a: ReturnType<typeof actions>
 
 /** Closed, or not costed yet: the case's state above everything. */
 const status = on({
+  size: "full",
   skeleton: "text",
   denied: "Profit, costs and margins are not visible to Sales.",
   hidden: (p) => !p.closed && p.costed,
@@ -138,6 +139,8 @@ const status = on({
 });
 
 const stats = on({
+  title: "Gross profit",
+  size: "m",
   skeleton: "stats",
   hidden: (p) => !p.costed,
   render: (p) => {
@@ -179,6 +182,7 @@ const stats = on({
 
 const costs = on({
   title: "Expected vs actual cost",
+  size: "l",
   skeleton: "table",
   hidden: (p) => !p.costed,
   head: (p) => ({
@@ -220,6 +224,7 @@ const costs = on({
 
 const fx = on({
   title: "FX differences",
+  size: "l",
   skeleton: "table",
   hidden: (p) => !p.costed,
   render: (p) => [
@@ -254,6 +259,7 @@ const fx = on({
 
 const claims = on({
   title: "Claims",
+  size: "s",
   skeleton: "list",
   hidden: (p) => !p.costed,
   render: (p) => {
@@ -285,6 +291,7 @@ const claims = on({
 
 const checklist = on({
   title: "Close checklist",
+  size: "s",
   skeleton: "list",
   head: (p) => {
     const done = p.checks.filter((k) => k.ok).length;
@@ -326,6 +333,4 @@ const checklist = on({
   },
 });
 
-export const caseProfit = widgets({
-  widgets: [status, stats, { split: { main: [costs], side: [fx, claims] } }, checklist],
-});
+export const caseProfit = widgets({ widgets: [status, stats, claims, costs, fx, checklist] });

@@ -323,3 +323,20 @@ export const frame = {
   /** The column's toggle, a 40px icon button, keeps its height in the column. */
   toggle: "shrink-0 group/toggle",
 } as const;
+
+/**
+ * The board (layout/board.ts, src/components/base/board.ts): a screen's widgets as tiles in
+ * lanes. Its lanes are N equal columns behind container queries that give each at least 18rem
+ * (n × 18rem + (n − 1) × 1rem: 37, 56, 75rem; the proof checks the arithmetic); a tile's place is
+ * its lane and span (`--lane`, `--span`) and its rows (`--row`, `--rows`, 4px each), from the
+ * board's placement, which never gives a tile more lanes than the board has (`spanOf`).
+ */
+export const board = {
+  box: "@container/board w-full",
+  lanes:
+    "grid grid-cols-[minmax(0,1fr)] gap-x-4 @min-[37rem]/board:grid-cols-2 @min-[56rem]/board:grid-cols-3 @min-[75rem]/board:grid-cols-4",
+  /** Placed: rows of 4px, the tiles' own gaps in their row spans. Not yet: rows by content, 16px apart. */
+  placed: "auto-rows-[4px]",
+  unplaced: "gap-y-4",
+  tile: "min-w-0 self-start [grid-column:var(--lane)/span_var(--span)] [grid-row:var(--row)/span_var(--rows)]",
+} as const;

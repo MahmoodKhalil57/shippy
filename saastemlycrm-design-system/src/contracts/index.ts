@@ -14,4 +14,5 @@ export * from "./config.ts";
 export * from "../app/widgets/widget.ts";
 export * from "../app/widgets/schema.ts";
 export * from "../app/widgets/design-check.ts";
+export * from "../app/widgets/tile.ts";
 export * from "../app/widgets/links.ts";

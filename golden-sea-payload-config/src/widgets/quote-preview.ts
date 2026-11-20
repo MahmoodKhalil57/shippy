@@ -375,6 +375,7 @@ function actions(v: QuoteView, me: string): Action[] {
 
 const status = on({
   title: "Decision state",
+  size: "m",
   head: (v, scope) => ({ actions: actions(v, meOf(scope)) }),
   render: (v) => {
     const q = v.quotation;
@@ -403,6 +404,7 @@ const status = on({
 
 /** Currency and language of the customer's copy (`?currency=`, `?lang=`). */
 const choices = on({
+  size: "full",
   skeleton: "text",
   render: (v, scope) =>
     block("grid", {
@@ -433,13 +435,15 @@ const choices = on({
     }),
 });
 
-/** The customer's copy, in the chosen language and currency. */
+/** The customer's copy, in the chosen language and currency: the printable sheet is its own surface, so no card title. */
 const copy = on({
+  size: "l",
   render: (v, scope) => block("document", paper(v, langOf(scope), inEgp(scope))),
 });
 
 const versions = on({
   title: "Versions",
+  size: "s",
   skeleton: "list",
   render: (v) => {
     const q = v.quotation;
@@ -468,6 +472,7 @@ const versions = on({
 /** Cost and margin: only for roles the data endpoint sends `internal` to (never Sales). */
 const internal = on({
   title: "Internal — never printed",
+  size: "s",
   hidden: (v) => !v.internal,
   head: (v) => ({
     actions: v.case.id ? [{ label: "Pricing", href: link.doc("cases", v.case.id, "pricing") }] : [],
@@ -498,6 +503,7 @@ const portalRows = (v: QuoteView) => (v.quotation.submission?.portalCheck as Por
 
 const portal = on({
   title: "Portal submission check",
+  size: "m",
   hidden: (v) => !v.can.portalCheck && !portalRows(v).length,
   head: () => ({ tags: [{ label: "AI check", tone: "primary", icon: "sparkles" }] }),
   render: (v) => {
@@ -548,5 +554,5 @@ const portal = on({
 
 export const quotePreview = widgets({
   params: { currency: "quote", lang: "en" },
-  widgets: [status, choices, copy, { grid: [versions, internal, portal] }],
+  widgets: [status, versions, choices, copy, internal, portal],
 });

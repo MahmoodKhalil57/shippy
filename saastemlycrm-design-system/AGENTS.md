@@ -115,15 +115,23 @@ This repository is a template. A new project changes only its config package (`g
 - **`src/components` and `src/styles`, the design system.** `src/agent`: the AI runtime.
 - **`mock-runner`, the in-browser backend:** the service worker, the Payload-compatible engine, its Vite plugin (`mock-runner/vite`) and a test harness (`mock-runner/testing`); an app hands it a config and seed. It has its own copy of Payload's query semantics; Golden Sea's `tests/payload-parity.test.ts` checks it agrees with this package's `./payload`. The REST client is this package's `./client`, the config types and helpers are `./contracts`, the screen checks `./testing`.
 
-**Screens are widgets.** A screen is a list of widgets placed in one of Payload's component slots with `widgets({ header, params, widgets })` (`src/app/widgets/widget.ts`), which gives Payload's own `{ path, clientProps }` form. The slots are:
+**Screens are widgets.** A screen is a list of widgets placed in one of Payload's component slots with `widgets({ header, params, widgets })` (`src/app/widgets/widget.ts`), which gives Payload's own `{ path, clientProps }` form. They cover Payload's four kinds of admin view:
 
-- `admin.components.views.dashboard`, the home page;
-- a root view in `admin.components.views`;
-- an edit tab in a collection's `admin.components.views.edit`;
-- a collection's `beforeList` / `afterList`;
-- a collection's `custom.edit.before`.
+- **Root views:** `admin.components.views.dashboard` (the home page) and the other root views in `admin.components.views`;
+- **Collection views:** a collection's `beforeList` / `afterList`;
+- **Document views:** an edit tab in a collection's `admin.components.views.edit`, and a collection's `custom.edit.before` (above the form);
+- **Global views:** the same two on a global: an edit tab in its `admin.components.views.edit` (`/globals/<slug>/<tab>`) and its `custom.edit.before` (Golden Sea's approval rules: what those rules govern right now, `golden-sea-payload-config/src/widgets/approval-rules.ts`).
 
 Each screen's widgets live in `golden-sea-payload-config/src/widgets/<screen>.ts`. `<app-widgets>` (`src/app/widgets/host.ts`) draws them.
+
+**A screen is a board of tiles.** Every widget is one tile on `<ui-board>` (`src/components/primitives/layout/board.ts`), laid out by `src/components/base/board.ts`, proved over finite domains by `tests/board.test.ts`:
+
+- **Lanes** come from the board's own width: 1, then 2 from 37rem, 3 from 56rem, 4 from 75rem (container queries in the algebra's `board.lanes`; n lanes of at least 18rem, about M3's 360dp fixed pane, and n − 1 gaps of 16px, M3's compact spacer). The smallest screen (a 258px main panel) is always one lane, so the phone layout is the tiles stacked in order.
+- **Sizes:** a widget's `size` is `s` (1 lane), `m` (2), `l` (3) or `full`, and a tile never takes more lanes than the board has. Without one, `tileSizeOf` (`src/app/widgets/tile.ts`, in the contracts) takes the widest of what it draws: `l` for a table, gantt, document, form, settings or message; `m` for a chart, entries, a timeline, tiles, steps, an ask box, 3+ stats, a grid or split of cards; `full` for a choice that steers the screen; else `s`. Screens set `size` explicitly.
+- **No lane left empty beside a tile:** a tile takes the lanes beside it that are free at its top when the next tile couldn't use them (it needs more lanes than there are). All-`m` tiles on 3 lanes become whole rows, an `s` before an `l` takes the row, an `s` list beside an `m` reading pane stays as it is, and an `m` after a tall `s` still fills the hole under the tile before it. It reads only the tiles before it, never its own height, so a tile that widens (and gets shorter) never changes whether it widens: measuring again settles.
+- **Placement:** each tile in order goes to the run of lanes whose top is lowest, the first on a tie; heights are the tiles' own, in 4px rows with the 16px gap. So the layout is a pure function of the tiles, their sizes and heights; tiles never overlap; and when the board resizes, they reflow by the same rule and slide there on M3's spatial spring (at once with Reduce motion). The lane count comes from the board's width, never read back from the grid.
+- **One widget, one tile, one card about one thing.** A widget that would draw several cards is several widgets on the same source (`from<T>(source)`: identical requests go out once). Order them so rows fill on a 2- and 3-lane board (`l, s`, `m, s`, `s, s, s`). `grid` and `split` widgets are flattened into tiles (a split's main ones `l`, its side ones `s`, unless they say).
+- A widget hidden for the user, or by `hidden` once its data is in, takes no tile.
 
 **A widget** is a design-system block plus where its data comes from. It loads on its own and shows a skeleton until the data arrives.
 
@@ -147,7 +155,8 @@ Each screen's widgets live in `golden-sea-payload-config/src/widgets/<screen>.ts
 - **Optional parts of a widget:**
   - `title` makes it a card; `head(data)` gives the card's count, tags and actions.
   - `visible(scope)` shows it by role; `hidden(data)` hides it when there's nothing to show.
-  - `grid` and `split` lay out child widgets.
+  - `size` is its tile's size on the board (see "A screen is a board of tiles").
+  - `grid` and `split` group child widgets; the board flattens them into tiles.
 - **No-code data widgets:** `records` (a collection as a table or list: `columns` are field names), `counts` (documents per select value, or per `where`, each linking to the filtered list) and `fields` (the document's own fields). Labels, formats, links and tag tones come from the field config.
 - **`render`, `head`, `visible` and `hidden` are pure.** Widget files import only types, `src/app/widgets/schema.ts`, `src/app/widgets/widget.ts` and pure helpers in `golden-sea-payload-config`.
 - **Actions are data:** `{ label, call: { path, body }, confirm, fields, prefill, extract, done, reply, assist, print }`. `prefill` fills a field from the server when another changes (an AI-drafted handover note for the person picked); `extract` fills the fields from pasted text or a photo on the device; `reply` shows the endpoint's `message` and goes to its `href`. The host asks, calls, shows `done` (or the endpoint's `message` with `reply`) in the snackbar, and reloads every widget. A `choice` block sets a URL parameter that sources read through `$param`.

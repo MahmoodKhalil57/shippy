@@ -145,7 +145,7 @@ export type Route =
   | { name: "create"; slug: string }
   | { name: "edit"; slug: string; id: string; tab?: string }
   | { name: "view"; key: string }
-  | { name: "global"; slug: string }
+  | { name: "global"; slug: string; tab?: string }
   | { name: "account" }
   | { name: "not-found" };
 
@@ -177,7 +177,12 @@ export function parseRoute(pathname: string): Route {
   }
   const view = rootViews().find((v) => v.path === `/${parts.join("/")}`);
   if (view) return { name: "view", key: view.key };
-  if (a === "globals" && b && globalOf(b) && !c) return { name: "global", slug: b };
+  if (a === "globals" && b && globalOf(b)) {
+    if (!c) return { name: "global", slug: b };
+    // A global's own views (Payload `admin.components.views.edit`), like a document's tabs.
+    const tab = editTabs(globalOf(b)!).find((t) => t.path === `/${c}`);
+    if (parts.length === 3 && tab) return { name: "global", slug: b, tab: tab.key };
+  }
   return { name: "not-found" };
 }
 
@@ -202,7 +207,11 @@ export function componentOf(c: unknown): { tag: string; props: Record<string, un
   }
   return null;
 }
-export function editTabs(c: CollectionConfig): EditTab[] {
+/**
+ * A document's custom views (Payload `admin.components.views.edit`), its tabs beside "Details": a
+ * collection's documents, or a global (Payload's Document views, which globals have too).
+ */
+export function editTabs(c: CollectionConfig | GlobalConfig): EditTab[] {
   const edit = (c.admin?.components?.views?.edit ?? {}) as Record<string, unknown>;
   return Object.entries(edit).flatMap(([key, v]) => {
     const view = v as { Component?: unknown; path?: string; tab?: { label?: unknown } } | undefined;
@@ -277,7 +286,8 @@ export const groupIcon = (group: string): IconName =>
 export const groupOf = (c: CollectionConfig) => (typeof c.admin?.group === "string" ? c.admin.group : "Collections");
 
 /** A collection's dashboard settings (its `custom`: board, card fields, steps, summary). */
-export const collectionSettings = (c: CollectionConfig): CollectionSettings => (c.custom ?? {}) as CollectionSettings;
+export const collectionSettings = (c: CollectionConfig | GlobalConfig): CollectionSettings =>
+  (c.custom ?? {}) as CollectionSettings;
 
 /** A select field that has tones per value (`custom.tones`), or reads like a status or stage. */
 export const isToned = (f: FieldLike) =>
