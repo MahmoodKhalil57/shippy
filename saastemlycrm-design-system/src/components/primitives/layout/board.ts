@@ -44,24 +44,30 @@ export class UiBoard extends LightElement {
   @state() private _heights: number[] = [];
 
   #resize = new ResizeObserver(() => this._layout());
+  /** The lane count of the last placement: tiles slide only when it changes (a resize). */
+  #lanes = 0;
   #observed = new Set<Element>();
-  #frame = 0;
+  /** A placement is queued (several observations in one turn place once). */
+  #queued = false;
 
   disconnectedCallback() {
     super.disconnectedCallback();
     this.#resize.disconnect();
     this.#observed.clear();
-    cancelAnimationFrame(this.#frame);
   }
 
   private get _lanesEl() {
-    return this.querySelector<HTMLElement>("[data-board-lanes]");
+    return this.querySelector<HTMLElement>(":scope > div > [data-board-lanes]");
   }
   private get _tiles() {
-    return [...this.querySelectorAll<HTMLElement>(":scope [data-board-tile]")];
+    // Its own tiles only: a tile may hold another board, whose tiles aren't this board's.
+    const lanes = this._lanesEl;
+    return lanes ? [...lanes.children].filter((e): e is HTMLElement => e.hasAttribute("data-board-tile")) : [];
   }
 
-  protected updated() {
+  protected updated(changed: Map<string, unknown>) {
+    // New items (another size, order or tile) are placed again even if no box changed size.
+    if (changed.has("items")) this._layout();
     const lanes = this._lanesEl;
     const watch = [lanes, ...this._tiles].filter((e): e is HTMLElement => !!e);
     for (const el of watch)
@@ -78,8 +84,13 @@ export class UiBoard extends LightElement {
 
   /** Measure the lanes (from the CSS) and the tiles' heights, place them, and slide what moved. */
   private _layout() {
-    cancelAnimationFrame(this.#frame);
-    this.#frame = requestAnimationFrame(() => {
+    // Before the next paint (a microtask, not a frame): the first painted frame is placed, and
+    // it runs where frames are paused (a background tab).
+    if (this.#queued) return;
+    this.#queued = true;
+    queueMicrotask(() => {
+      this.#queued = false;
+      if (!this.isConnected) return;
       const lanesEl = this._lanesEl;
       const tiles = this._tiles;
       if (!lanesEl || tiles.length !== this.items.length) return;
@@ -104,7 +115,10 @@ export class UiBoard extends LightElement {
           return q.lane === p.lane && q.span === p.span && q.top === p.top && this._heights[i] === heights[i];
         });
       if (same) return;
-      const before = this._placed ? tiles.map((t) => t.getBoundingClientRect()) : null;
+      // Slide only when the board changed shape (its lanes); data arriving or a tile opening just
+      // settles in place, so a page never animates as it loads.
+      const before = this._placed && lanes !== this.#lanes ? tiles.map((t) => t.getBoundingClientRect()) : null;
+      this.#lanes = lanes;
       this._heights = heights;
       this._placed = next;
       if (before) void this.updateComplete.then(() => this._slide(tiles, before));

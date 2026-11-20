@@ -268,7 +268,7 @@
       {
         "as": "kb",
         "target": {
-          "text": "Supplier purchase orders"
+          "text": "Re-check before confirming"
         },
         "title": "Karim Balbaa confirms",
         "body": "Signed in as the CEO: a flagged price change on a supplier PO is shown before he commits, and deposits wait for a payment approval."

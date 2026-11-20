@@ -1,6 +1,8 @@
 import { stringify } from "qs-esm";
 import {
   designProblems,
+  type DrawnTile,
+  eachTiles,
   fill,
   linkTarget,
   type MockConfig,
@@ -105,6 +107,8 @@ async function load(ctx: Ctx, s: Source, scope: WidgetScope): Promise<{ status: 
 /** What each widget of a page draws for this user (titled widgets as cards, like the host). */
 async function draw(ctx: Ctx, page: WidgetPage, scope: WidgetScope, where: string) {
   const problems: string[] = [];
+  /** Each widget's tile as drawn, with its size, for the tile rules (`tileProblems`). */
+  const tiles: DrawnTile[] = [];
   const one = async (w: Widget): Promise<ViewBlock[]> => {
     if (w.visible && !w.visible(scope)) return [];
     if (w.grid) return [{ type: "grid", blocks: (await Promise.all(w.grid.map(one))).flat() }];
@@ -117,7 +121,7 @@ async function draw(ctx: Ctx, page: WidgetPage, scope: WidgetScope, where: strin
         },
       ];
     // Data widgets (`records`, `counts`, `fields`) are drawn by the design system from the field config.
-    if (!w.render) return [];
+    if (!w.render && !w.each) return [];
     const at = `${where} › ${w.title ?? "widget"}`;
     const { status, data } = w.source ? await load(ctx, fill(w.source, scope), scope) : { status: 200, data: null };
     if (status === 403) return [];
@@ -127,8 +131,23 @@ async function draw(ctx: Ctx, page: WidgetPage, scope: WidgetScope, where: strin
     }
     try {
       if (w.hidden?.(data as never, scope)) return [];
-      const r = w.render(data as never, scope);
+      // One tile per item: each drawn as a titled widget of its own.
+      if (w.each)
+        return eachTiles(w, data as never, scope).map(({ widget: t }): ViewBlock => {
+          const r = t.render(data as never, scope);
+          const head = t.head?.(data as never, scope);
+          tiles.push({ title: t.title, size: t.size, blocks: r ? (Array.isArray(r) ? r : [r]) : [] });
+          return {
+            type: "card",
+            heading: t.title,
+            count: head?.count,
+            actions: head?.actions,
+            blocks: r ? (Array.isArray(r) ? r : [r]) : [],
+          };
+        });
+      const r = w.render!(data as never, scope);
       const blocks = r ? (Array.isArray(r) ? r : [r]) : [];
+      tiles.push({ title: w.title, size: w.size, blocks });
       if (!w.title) return blocks;
       const head = w.head?.(data as never, scope);
       if (w.title.length > 90) problems.push(`${at}: title is ${w.title.length} characters`);
@@ -139,7 +158,7 @@ async function draw(ctx: Ctx, page: WidgetPage, scope: WidgetScope, where: strin
     }
   };
   const blocks = (await Promise.all(page.widgets.map(one))).flat();
-  return { blocks, problems };
+  return { blocks, problems, tiles };
 }
 
 /** Every `href` in drawn blocks (actions, cells, list items, entries, stats…), however deep. */
@@ -229,8 +248,8 @@ async function* drawn(options: ScreenCheckOptions) {
         doc = { id: String(id), slug: screen.docOf };
       }
       const scope: WidgetScope = { user: me, doc, params: { ...screen.page.params } };
-      const { blocks, problems } = await draw(ctx, screen.page, scope, screen.name);
-      yield { who, screen, blocks, problems, ctx };
+      const { blocks, problems, tiles } = await draw(ctx, screen.page, scope, screen.name);
+      yield { who, screen, blocks, tiles, problems, ctx };
     }
   }
 }
@@ -244,7 +263,7 @@ export async function screenDesignProblems(options: ScreenCheckOptions): Promise
   const out = new Set<string>();
   /** Documents looked up by links, by `<collection>/<id>`: whether they exist. */
   const known = new Map<string, boolean>();
-  for await (const { who, screen, blocks, problems, ctx } of drawn(options)) {
+  for await (const { who, screen, blocks, tiles, problems, ctx } of drawn(options)) {
     if (!screen) {
       problems.forEach((p) => out.add(p));
       continue;
@@ -255,7 +274,7 @@ export async function screenDesignProblems(options: ScreenCheckOptions): Promise
       if (broken) links.push(`${screen.name}: link ${href} leads nowhere (${broken})`);
     }
     // The same problem for several users is one line, named for the first.
-    for (const p of [...problems, ...links, ...designProblems(blocks, screen.name)])
+    for (const p of [...problems, ...links, ...designProblems(blocks, screen.name, tiles)])
       if (![...out].some((x) => x.endsWith(` · ${p}`))) out.add(`${who} · ${p}`);
   }
   return [...out];

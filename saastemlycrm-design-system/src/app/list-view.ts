@@ -616,172 +616,193 @@ export class DashboardListView extends LightElement {
         >
       </ui-page-header>
       ${this._around("beforeList")}
+      <ui-board
+        .items=${[
+          {
+            key: "list",
+            size: "full",
+            // The page's main content: a bare tile, so no rows hide behind a height cap.
+            content: html`<ui-tile size="full" bare>
+              <ui-flex direction="col" gap="5">
+                <ui-flex direction="col" gap="3">
+                  <ui-toolbar .label=${plural}>
+                    <ui-filter-builder
+                      .fields=${this._filterFields()}
+                      .value=${filters}
+                      .match=${match}
+                      @ui-change=${(e: CustomEvent<{ value: FilterCondition[]; match: FilterMatch }>) =>
+                        this._set({ filters: e.detail.value, match: e.detail.match })}
+                    ></ui-filter-builder>
+                    ${
+                      view === "cards"
+                        ? html`<ui-select
+                            slot="end"
+                            size="sm"
+                            width="auto"
+                            leading="Sort"
+                            .options=${this._sortOptions()}
+                            .value=${sort}
+                            @change=${(e: Event) => this._set({ sort: (e.target as HTMLSelectElement).value })}
+                          ></ui-select>`
+                        : nothing
+                    }
+                    <ui-button-group
+                      slot="end"
+                      label="View"
+                      size="xs"
+                      .value=${view}
+                      .options=${[
+                        { value: "table", label: "Table", icon: "table" },
+                        { value: "cards", label: "Cards", icon: "grid" },
+                        ...(this.boardField ? [{ value: "board", label: "Board", icon: "columns" as const }] : []),
+                      ]}
+                      @ui-change=${(e: CustomEvent<{ value: string }>) => this._view(e.detail.value as ListLayout)}
+                    ></ui-button-group>
+                    <ui-column-picker
+                      slot="end"
+                      .columns=${pickerColumns}
+                      .hiddenColumns=${this.hiddenKeys}
+                      .defaults=${this.hiddenDefaults}
+                      ?customized=${arranged}
+                      .density=${view === "table" ? this.#prefs.value.listDensity : undefined}
+                      @ui-density=${(e: CustomEvent<{ density: "0" | "-1" | "-2" }>) =>
+                        preferences.set({ listDensity: e.detail.density })}
+                      @ui-change=${(e: CustomEvent<{ hidden: string[]; order: string[]; reset: boolean }>) => {
+                        const { hidden, order, reset } = e.detail;
+                        const slug = this.slug;
+                        preferences.set((p) => ({
+                          listColumns: { ...p.listColumns, [slug]: hidden },
+                          listColumnOrder: { ...p.listColumnOrder, [slug]: order },
+                          listColumnWidths: reset ? { ...p.listColumnWidths, [slug]: {} } : p.listColumnWidths,
+                        }));
+                        void this._load();
+                      }}
+                    ></ui-column-picker>
+                    <ui-button
+                      slot="end"
+                      size="xs"
+                      variant="text"
+                      ?disabled=${!r?.totalDocs}
+                      @click=${() => void this._export()}
+                      ><ui-icon name="upload" size="sm"></ui-icon> Export CSV</ui-button
+                    >
+                  </ui-toolbar>
+                  <ui-search
+                    label=${`Search by ${titleLabel.toLowerCase()}`}
+                    .value=${this.typed}
+                    @input=${(e: Event) => {
+                      this.typed = (e.target as HTMLInputElement).value;
+                      clearTimeout(this.#typing);
+                      this.#typing = setTimeout(() => this._set({ q: this.typed.trim() }), SEARCH_DELAY);
+                    }}
+                  ></ui-search>
+                </ui-flex>
 
-      <ui-flex direction="col" gap="3">
-        <ui-toolbar .label=${plural}>
-          <ui-filter-builder
-            .fields=${this._filterFields()}
-            .value=${filters}
-            .match=${match}
-            @ui-change=${(e: CustomEvent<{ value: FilterCondition[]; match: FilterMatch }>) =>
-              this._set({ filters: e.detail.value, match: e.detail.match })}
-          ></ui-filter-builder>
-          ${
-            view === "cards"
-              ? html`<ui-select
-                  slot="end"
-                  size="sm"
-                  width="auto"
-                  leading="Sort"
-                  .options=${this._sortOptions()}
-                  .value=${sort}
-                  @change=${(e: Event) => this._set({ sort: (e.target as HTMLSelectElement).value })}
-                ></ui-select>`
-              : nothing
-          }
-          <ui-button-group
-            slot="end"
-            label="View"
-            size="xs"
-            .value=${view}
-            .options=${[
-              { value: "table", label: "Table", icon: "table" },
-              { value: "cards", label: "Cards", icon: "grid" },
-              ...(this.boardField ? [{ value: "board", label: "Board", icon: "columns" as const }] : []),
-            ]}
-            @ui-change=${(e: CustomEvent<{ value: string }>) => this._view(e.detail.value as ListLayout)}
-          ></ui-button-group>
-          <ui-column-picker
-            slot="end"
-            .columns=${pickerColumns}
-            .hiddenColumns=${this.hiddenKeys}
-            .defaults=${this.hiddenDefaults}
-            ?customized=${arranged}
-            .density=${view === "table" ? this.#prefs.value.listDensity : undefined}
-            @ui-density=${(e: CustomEvent<{ density: "0" | "-1" | "-2" }>) =>
-              preferences.set({ listDensity: e.detail.density })}
-            @ui-change=${(e: CustomEvent<{ hidden: string[]; order: string[]; reset: boolean }>) => {
-              const { hidden, order, reset } = e.detail;
-              const slug = this.slug;
-              preferences.set((p) => ({
-                listColumns: { ...p.listColumns, [slug]: hidden },
-                listColumnOrder: { ...p.listColumnOrder, [slug]: order },
-                listColumnWidths: reset ? { ...p.listColumnWidths, [slug]: {} } : p.listColumnWidths,
-              }));
-              void this._load();
-            }}
-          ></ui-column-picker>
-          <ui-button slot="end" size="xs" variant="text" ?disabled=${!r?.totalDocs} @click=${() => void this._export()}
-            ><ui-icon name="upload" size="sm"></ui-icon> Export CSV</ui-button
-          >
-        </ui-toolbar>
-        <ui-search
-          label=${`Search by ${titleLabel.toLowerCase()}`}
-          .value=${this.typed}
-          @input=${(e: Event) => {
-            this.typed = (e.target as HTMLInputElement).value;
-            clearTimeout(this.#typing);
-            this.#typing = setTimeout(() => this._set({ q: this.typed.trim() }), SEARCH_DELAY);
-          }}
-        ></ui-search>
-      </ui-flex>
-
-      ${
-        count
-          ? html`<ui-toolbar label="Selection">
-              <ui-text variant="title-sm">${count} selected</ui-text>
-              ${
-                !this.allMatching && r && this.selected.length === pageRows && r.totalDocs > pageRows
-                  ? html`<ui-button size="xs" variant="text" @click=${() => (this.allMatching = true)}
-                      >Select all ${r.totalDocs} ${filtered ? "matching" : plural.toLowerCase()}</ui-button
-                    >`
-                  : nothing
-              }
-              ${
-                perms?.delete.permission
-                  ? html`<ui-button size="xs" color="error" variant="tonal" @click=${() => (this.confirming = true)}
-                      >Delete ${count}</ui-button
-                    >`
-                  : nothing
-              }
-              <ui-button
-                size="xs"
-                variant="text"
-                @click=${() => {
-                  this.selected = [];
-                  this.allMatching = false;
-                }}
-                >Clear selection</ui-button
-              >
-            </ui-toolbar>`
-          : nothing
-      }
-      ${
-        view === "cards"
-          ? this._cards(empty)
-          : view === "board"
-            ? this._board(empty)
-            : html`<ui-table
-                size="md"
-                density=${this.#prefs.value.listDensity}
-                nowrap="max-lg"
-                bordered
-                hover
-                ?selectable=${perms?.delete.permission}
-                .columns=${this._columns()}
-                .hiddenColumns=${this.hiddenKeys}
-                reorderable
-                resizable
-                .columnOrder=${this.columnOrder}
-                .columnWidths=${this.columnWidths}
-                @ui-columns=${(e: CustomEvent<{ order: string[]; widths: Record<string, number> }>) => {
-                  const slug = this.slug;
-                  preferences.set((p) => ({
-                    listColumnOrder: { ...p.listColumnOrder, [slug]: e.detail.order },
-                    listColumnWidths: { ...p.listColumnWidths, [slug]: e.detail.widths },
-                  }));
-                }}
-                .rows=${r?.docs ?? []}
-                .selected=${this.selected}
-                .sort=${sort}
-                ?loading=${this.loading}
-                .empty=${empty}
-                @ui-sort=${(e: CustomEvent<{ sort: string }>) => this._set({ sort: e.detail.sort })}
-                @ui-select=${(e: CustomEvent<{ selected: number[] }>) => {
-                  this.selected = e.detail.selected;
-                  this.allMatching = false;
-                }}
-              ></ui-table>`
-      }
-      ${
-        r && r.totalDocs > 0
-          ? html`<ui-flex justify="between" align="center" gap="4" wrap>
-              <ui-flex gap="3" align="center" wrap>
-                <ui-text variant="body-md" color="muted"
-                  >${r.pagingCounter}–${r.pagingCounter + r.docs.length - 1} of ${r.totalDocs}</ui-text
-                >
-                <ui-select
-                  size="sm"
-                  leading="Rows"
-                  .options=${["10", "25", "50", "100"]}
-                  .value=${limit}
-                  @change=${(e: Event) => this._set({ limit: (e.target as HTMLSelectElement).value })}
-                ></ui-select>
+                ${
+                  count
+                    ? html`<ui-toolbar label="Selection">
+                        <ui-text variant="title-sm">${count} selected</ui-text>
+                        ${
+                          !this.allMatching && r && this.selected.length === pageRows && r.totalDocs > pageRows
+                            ? html`<ui-button size="xs" variant="text" @click=${() => (this.allMatching = true)}
+                                >Select all ${r.totalDocs} ${filtered ? "matching" : plural.toLowerCase()}</ui-button
+                              >`
+                            : nothing
+                        }
+                        ${
+                          perms?.delete.permission
+                            ? html`<ui-button
+                                size="xs"
+                                color="error"
+                                variant="tonal"
+                                @click=${() => (this.confirming = true)}
+                                >Delete ${count}</ui-button
+                              >`
+                            : nothing
+                        }
+                        <ui-button
+                          size="xs"
+                          variant="text"
+                          @click=${() => {
+                            this.selected = [];
+                            this.allMatching = false;
+                          }}
+                          >Clear selection</ui-button
+                        >
+                      </ui-toolbar>`
+                    : nothing
+                }
+                ${
+                  view === "cards"
+                    ? this._cards(empty)
+                    : view === "board"
+                      ? this._board(empty)
+                      : html`<ui-table
+                          size="md"
+                          density=${this.#prefs.value.listDensity}
+                          nowrap="max-lg"
+                          bordered
+                          hover
+                          ?selectable=${perms?.delete.permission}
+                          .columns=${this._columns()}
+                          .hiddenColumns=${this.hiddenKeys}
+                          reorderable
+                          resizable
+                          .columnOrder=${this.columnOrder}
+                          .columnWidths=${this.columnWidths}
+                          @ui-columns=${(e: CustomEvent<{ order: string[]; widths: Record<string, number> }>) => {
+                            const slug = this.slug;
+                            preferences.set((p) => ({
+                              listColumnOrder: { ...p.listColumnOrder, [slug]: e.detail.order },
+                              listColumnWidths: { ...p.listColumnWidths, [slug]: e.detail.widths },
+                            }));
+                          }}
+                          .rows=${r?.docs ?? []}
+                          .selected=${this.selected}
+                          .sort=${sort}
+                          ?loading=${this.loading}
+                          .empty=${empty}
+                          @ui-sort=${(e: CustomEvent<{ sort: string }>) => this._set({ sort: e.detail.sort })}
+                          @ui-select=${(e: CustomEvent<{ selected: number[] }>) => {
+                            this.selected = e.detail.selected;
+                            this.allMatching = false;
+                          }}
+                        ></ui-table>`
+                }
+                ${
+                  r && r.totalDocs > 0
+                    ? html`<ui-flex justify="between" align="center" gap="4" wrap>
+                        <ui-flex gap="3" align="center" wrap>
+                          <ui-text variant="body-md" color="muted"
+                            >${r.pagingCounter}–${r.pagingCounter + r.docs.length - 1} of ${r.totalDocs}</ui-text
+                          >
+                          <ui-select
+                            size="sm"
+                            leading="Rows"
+                            .options=${["10", "25", "50", "100"]}
+                            .value=${limit}
+                            @change=${(e: Event) => this._set({ limit: (e.target as HTMLSelectElement).value })}
+                          ></ui-select>
+                        </ui-flex>
+                        ${
+                          r.totalPages > 1
+                            ? html`<ui-pagination
+                                size="sm"
+                                prev-next
+                                .page=${r.page}
+                                .total=${r.totalPages}
+                                @ui-change=${(e: CustomEvent<{ page: number }>) => this._set({ page: e.detail.page })}
+                              ></ui-pagination>`
+                            : nothing
+                        }
+                      </ui-flex>`
+                    : nothing
+                }
               </ui-flex>
-              ${
-                r.totalPages > 1
-                  ? html`<ui-pagination
-                      size="sm"
-                      prev-next
-                      .page=${r.page}
-                      .total=${r.totalPages}
-                      @ui-change=${(e: CustomEvent<{ page: number }>) => this._set({ page: e.detail.page })}
-                    ></ui-pagination>`
-                  : nothing
-              }
-            </ui-flex>`
-          : nothing
-      }
+            </ui-tile>`,
+          },
+        ]}
+      ></ui-board>
       ${this._around("afterList")}
 
       <ui-modal

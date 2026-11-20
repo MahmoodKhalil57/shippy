@@ -163,7 +163,7 @@ const odoo = on({
   },
 });
 
-/** One connected channel as a card: its status in the header, its account and notes. */
+/** One connected channel as a card: its status in the header, what it does as the subhead, its account and notes. */
 const channel = (
   kind: string,
   title: string,
@@ -172,6 +172,7 @@ const channel = (
 ): Widget<IntegrationsView> =>
   on({
     title,
+    subhead: text,
     size: "s",
     skeleton: "text",
     head: (d) => ({ tags: status(by(d, kind)) }),
@@ -179,7 +180,6 @@ const channel = (
       const c = by(d, kind);
       return [
         ...(c?.account ? [block("heading", { text: s(c.account) })] : []),
-        note(text),
         ...(c?.notes ? [block("text", { text: s(c.notes) })] : []),
         ...extra(c),
       ];

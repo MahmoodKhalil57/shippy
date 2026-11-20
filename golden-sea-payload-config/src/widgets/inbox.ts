@@ -229,17 +229,24 @@ const OFFER_FIELDS = [
   { id: "validity", label: "Valid until" },
 ];
 
-/** The on-device assists on a message: category, warnings, offer details, short replies. */
-function assists(m: InboxMessage): ViewBlock[] {
+/** The on-device assists on a message, in three groups: what it is, its warnings, what it offers. */
+function kindAssists(m: InboxMessage): ViewBlock[] {
   if (!m.body) return [];
-  const text = `${m.subject}\n\n${m.body}`;
   return [
-    assist("ui-ai-language", "language", { text: `${m.subject}\n${m.body}` }),
+    assist("ui-ai-language", "language", {
+      text: `${m.subject}\n${m.body}`,
+    }),
     assist("ui-ai-classify", "kind", {
-      text,
+      text: `${m.subject}\n\n${m.body}`,
       options: MESSAGE_KINDS,
       what: "incoming emails and messages to a ship chandler",
     }),
+  ];
+}
+
+function flagAssists(m: InboxMessage): ViewBlock[] {
+  if (!m.body) return [];
+  return [
     assist("ui-ai-flag", "bank", {
       text: m.body,
       tone: "error",
@@ -261,14 +268,24 @@ function assists(m: InboxMessage): ViewBlock[] {
       question: "Does the sender say they cannot supply, quote or deliver the requested items?",
       note: "Look for another supplier for these lines before the deadline.",
     }),
-    assist("ui-ai-extract", "offer", {
-      text: m.body,
-      source: "text",
-      label: "Pull out the offer details",
-      what: "supplier offer or reply to a ship chandler",
-      fields: OFFER_FIELDS,
-    }),
-    assist("ui-ai-replies", "replies", { text: m.body }),
+  ];
+}
+
+function offerAssists(m: InboxMessage): ViewBlock[] {
+  return [
+    ...(m.body
+      ? [
+          assist("ui-ai-extract", "offer", {
+            text: m.body,
+            source: "text",
+            label: "Pull out the offer details",
+            what: "supplier offer or reply to a ship chandler",
+            fields: OFFER_FIELDS,
+          }),
+          assist("ui-ai-replies", "replies", { text: m.body }),
+        ]
+      : []),
+    assist("ui-ai-read-file", "read-file", {}),
   ];
 }
 
@@ -294,7 +311,10 @@ const original = pane({
   size: "m",
   skeleton: "card",
   show: (d) => d.message,
-  head: () => ({ tags: [{ label: "Kept as received" }] }),
+  head: ({ d }) => ({
+    tags: [{ label: "Kept as received" }],
+    subhead: `Message id ${d.message!.messageId} · re-processing the same message never creates a second case or acknowledgement.`,
+  }),
   render: ({ d }) => {
     const m = d.message!;
     return [
@@ -311,14 +331,30 @@ const original = pane({
             }),
           ]
         : []),
-      ...assists(m),
-      assist("ui-ai-read-file", "read-file", {}),
-      block("text", {
-        muted: true,
-        text: `Message id ${m.messageId} · re-processing the same message never creates a second case or acknowledgement.`,
-      }),
     ];
   },
+});
+
+/** The on-device reads of the open message, in three tiles under it (a row of `s` tiles). */
+const messageKind = pane({
+  title: "What this message is",
+  size: "s",
+  show: (d) => d.message?.body,
+  render: ({ d }) => kindAssists(d.message!),
+});
+
+const messageFlags = pane({
+  title: "Warnings in this message",
+  size: "s",
+  show: (d) => d.message?.body,
+  render: ({ d }) => flagAssists(d.message!),
+});
+
+const messageOffer = pane({
+  title: "Offer details and replies",
+  size: "s",
+  show: (d) => d.message,
+  render: ({ d }) => offerAssists(d.message!),
 });
 
 /* -------- an RFQ: extract → draft → create */
@@ -759,6 +795,9 @@ export const inboxPage = widgets({
     list,
     nothingOpen,
     original,
+    messageKind,
+    messageFlags,
+    messageOffer,
     reviewQueue,
     channels,
     extractPrompt,

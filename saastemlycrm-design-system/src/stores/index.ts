@@ -28,6 +28,14 @@ export const preferences = createStore(
     listDensity: "0" as "0" | "-1" | "-2",
     /** Collection lists shown as cards instead of a table, by collection. */
     listView: {} as Record<string, "table" | "cards" | "board">,
+    /**
+     * Boards someone arranged, by screen (its path, a document's id as `:id`): their tiles' order
+     * (keys, applied leniently), sizes and hidden tiles. The board's rules still place them.
+     */
+    boards: {} as Record<
+      string,
+      { order?: string[]; sizes?: Record<string, "s" | "m" | "l" | "full">; hidden?: string[] }
+    >,
   },
   { persist: "saastemly:preferences" },
 );

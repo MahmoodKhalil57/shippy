@@ -29,18 +29,17 @@ const BUCKET_TONE = {
   closed: "neutral",
 } as const;
 
-const bar = (label: string, value: number, total: number, tone: Tone) =>
+/** One gauge per count, each out of the case's lines, in one `gauges` block. */
+const bars = (total: number, items: [label: string, value: number, tone: Tone][]) =>
   block("gauges", {
-    items: [
-      {
-        label,
-        value,
-        max: Math.max(total, 1),
-        tone,
-        valueText: `${value} / ${total}`,
-        a11y: `${label}: ${value} of ${total} lines`,
-      },
-    ],
+    items: items.map(([label, value, tone]) => ({
+      label,
+      value,
+      max: Math.max(total, 1),
+      tone,
+      valueText: `${value} / ${total}`,
+      a11y: `${label}: ${value} of ${total} lines`,
+    })),
   });
 
 const lifecycle = on({
@@ -76,25 +75,18 @@ const lines = on({
   size: "s",
   head: ({ lines: l }) => {
     const pct = l.total ? Math.round((l.ready / l.total) * 100) : 0;
-    return { tags: [{ label: `${pct}% ready`, tone: l.ready === l.total && l.total ? "success" : "warning" }] };
+    return {
+      tags: [{ label: `${pct}% ready`, tone: l.ready === l.total && l.total ? "success" : "warning" }],
+      subhead: `Each line moves on its own. A case with some lines ready is ${pct}% — never “done” until every line is.`,
+    };
   },
-  render: ({ lines: l }) => {
-    const pct = l.total ? Math.round((l.ready / l.total) * 100) : 0;
-    return [
-      block("text", {
-        muted: true,
-        text: `Each line moves on its own. A case with some lines ready is ${pct}% — never “done” until every line is.`,
-      }),
-      block("grid", {
-        blocks: [
-          bar("Ready", l.ready, l.total, "success"),
-          bar("Waiting", l.waiting, l.total, "warning"),
-          bar("Blocked", l.blocked, l.total, "error"),
-          bar("No offer", l.noOffer, l.total, "neutral"),
-        ],
-      }),
-    ];
-  },
+  render: ({ lines: l }) =>
+    bars(l.total, [
+      ["Ready", l.ready, "success"],
+      ["Waiting", l.waiting, "warning"],
+      ["Blocked", l.blocked, "error"],
+      ["No offer", l.noOffer, "neutral"],
+    ]),
 });
 
 /** Once ordered: how far the lines are from order to invoice. */
@@ -103,14 +95,12 @@ const fulfilment = on({
   size: "s",
   hidden: ({ fulfilment: f }) => !f.started,
   render: ({ fulfilment: f }) => [
-    block("grid", {
-      blocks: [
-        bar("Ordered", f.ordered, f.total, "info"),
-        bar("Received", f.received, f.total, "info"),
-        bar("Delivered", f.delivered, f.total, "info"),
-        bar("Invoiced", f.invoiced, f.total, "info"),
-      ],
-    }),
+    bars(f.total, [
+      ["Ordered", f.ordered, "info"],
+      ["Received", f.received, "info"],
+      ["Delivered", f.delivered, "info"],
+      ["Invoiced", f.invoiced, "info"],
+    ]),
     ...(f.notes.length ? [block("alert", { tone: "warning", text: f.notes.map((n) => `⚑ ${n}`).join("\n") })] : []),
   ],
 });

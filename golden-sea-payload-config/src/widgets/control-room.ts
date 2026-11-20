@@ -198,14 +198,11 @@ export const controlRoom = widgets({
         }),
     },
     on({
+      title: "Management dashboards",
+      subhead: "Today's numbers from the live records; trends from the reporting history.",
       size: "full",
       skeleton: "text",
       render: (d) => [
-        block("heading", { text: "Management dashboards" }),
-        block("text", {
-          text: "Today's numbers from the live records; trends from the reporting history.",
-          muted: true,
-        }),
         block("choice", {
           param: "period",
           label: "Period",

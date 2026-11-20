@@ -34,7 +34,7 @@ import {
 import { fill, leaves, loadSource } from "./widgets/host.ts";
 import type { ViewBlock } from "./widgets/schema.ts";
 import { blocksText, headerText } from "./widgets/text.ts";
-import type { Source, WidgetPage, WidgetScope } from "./widgets/widget.ts";
+import { eachTiles, type Source, type WidgetPage, type WidgetScope } from "./widgets/widget.ts";
 import { loadGuide, loadTours, site } from "./site.ts";
 
 /**
@@ -190,6 +190,12 @@ async function pageText(
       try {
         const data = w.source ? await load(w.source) : null;
         if (w.hidden?.(data as never, scope)) return [];
+        // One tile per item: each read like a widget of its own.
+        if (w.each)
+          return eachTiles(w, data as never, scope).flatMap(({ widget: t }) => [
+            `${t.title}:`,
+            ...blocksText(asBlocks(t.render(null as never, scope))).slice(0, linesPerWidget),
+          ]);
         const lines = blocksText(asBlocks(w.render?.(data as never, scope)));
         const head = w.title ? w.head?.(data as never, scope) : undefined;
         const title = w.title

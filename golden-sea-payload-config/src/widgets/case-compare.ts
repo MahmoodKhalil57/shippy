@@ -1,5 +1,5 @@
 import { block, type Action, type Cell, type Row, type ViewBlock } from "saastemlycrm-design-system/contracts";
-import { from, widgets, type Source } from "saastemlycrm-design-system/contracts";
+import { from, widget, widgets, type Source } from "saastemlycrm-design-system/contracts";
 import type { CmpLine, CmpOffer, CmpPart, CompareWithDrafts, CorrectionDraft } from "../endpoints/commercial.ts";
 import * as link from "../links.ts";
 
@@ -248,8 +248,8 @@ function correction(base: string, o: CmpOffer, d: CorrectionDraft): ViewBlock {
   });
 }
 
-/** One line's card: its offers ranked, the recommendation, the selection and its actions. */
-function lineCard(c: CompareWithDrafts, line: CmpLine, mode: Mode): ViewBlock {
+/** One line's tile: its offers ranked, the recommendation, the selection and its actions. */
+function lineBlocks(c: CompareWithDrafts, line: CmpLine, mode: Mode): ViewBlock[] {
   const base = `/commercial/cases/${encodeURIComponent(c.id)}`;
   const best = line.offers.find((o) => o.id === line.best);
   const name = (id: string) => line.offers.find((o) => o.id === id)?.supplier ?? id;
@@ -337,11 +337,7 @@ function lineCard(c: CompareWithDrafts, line: CmpLine, mode: Mode): ViewBlock {
         ],
       }),
     );
-  return block("card", {
-    heading: `L${line.lineNo} · ${line.description}`,
-    tags: [{ label: line.status, tone: line.statusTone }],
-    blocks,
-  });
+  return blocks;
 }
 
 const how = on({
@@ -371,6 +367,7 @@ const how = on({
 /** "Compare by" steers every line's ranking: the screen's control (refused with the offers). */
 const compareBy = on({
   size: "full",
+  hidden: (c) => !c.lines.length,
   render: () =>
     block("choice", {
       param: "by",
@@ -383,13 +380,19 @@ const compareBy = on({
     }),
 });
 
-/** A card per line: how many depends on the case, so the widget draws the cards itself. */
-const lines = on({
-  title: "Offers by line",
+/** A tile per requested line (how many depends on the case), titled by the line. */
+const lines = widget<CompareWithDrafts>({
+  source: compareOf,
   size: "l",
   hidden: (c) => !c.lines.length,
   skeleton: "table",
-  render: (c, { params }) => c.lines.map((l) => lineCard(c, l, modeOf(params))),
+  each: {
+    items: (c) => c.lines,
+    key: (l: CmpLine) => `L${l.lineNo}`,
+    title: (l: CmpLine) => `L${l.lineNo} · ${l.description}`,
+    head: (l: CmpLine) => ({ tags: [{ label: l.status, tone: l.statusTone }] }),
+    render: (l: CmpLine, c, { params }) => lineBlocks(c, l, modeOf(params)),
+  },
 });
 
 const next = on({

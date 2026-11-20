@@ -1,5 +1,5 @@
 import { assist, block, type Action, type Cell, type Row, type ViewBlock } from "saastemlycrm-design-system/contracts";
-import { from, widgets, type Source } from "saastemlycrm-design-system/contracts";
+import { from, widget, widgets, type Source } from "saastemlycrm-design-system/contracts";
 import { day, dayTime, money, person, statusTone, type CaseOps, type OpsPO } from "./o2c-shared.ts";
 import * as link from "../links.ts";
 
@@ -328,24 +328,27 @@ function depositCell(p: OpsPO): { main: Cell; note: Cell } {
   };
 }
 
-function recheck(d: CaseOps, p: OpsPO): ViewBlock {
+/** A supplier PO's re-check before it is confirmed: the drawn blocks of its tile. */
+function recheck(d: CaseOps, p: OpsPO): ViewBlock[] {
   if (!p.recheckDone)
-    return block("list", {
-      items: [
-        {
-          headline: `${p.number} · ${p.supplierName}`,
-          supporting: p.status,
-          dot: statusTone(p.status),
-          actions: [
-            {
-              label: "Re-check & confirm",
-              call: { path: "/operations/po-recheck", body: { po: p.id } },
-              done: `Re-checked price, availability, FX and lead time with ${p.supplierName}.`,
-            },
-          ],
-        },
-      ],
-    });
+    return [
+      block("list", {
+        items: [
+          {
+            headline: `${p.number} · ${p.supplierName}`,
+            supporting: p.status,
+            dot: statusTone(p.status),
+            actions: [
+              {
+                label: "Re-check & confirm",
+                call: { path: "/operations/po-recheck", body: { po: p.id } },
+                done: `Re-checked price, availability, FX and lead time with ${p.supplierName}.`,
+              },
+            ],
+          },
+        ],
+      }),
+    ];
   const changed = p.recheck.filter((r) => r.ok === false);
   const decide: Action = d.isManagement
     ? {
@@ -364,42 +367,40 @@ function recheck(d: CaseOps, p: OpsPO): ViewBlock {
         call: { path: `${own}/ask-approval`, body: { po: p.id } },
         done: `Approval requested from Karim Balbaa for ${p.number}.`,
       };
-  return block("card", {
-    heading: `Re-check before confirming ${p.number}`,
-    tags: [{ label: p.status, tone: statusTone(p.status) }],
-    blocks: [
-      block("table", {
-        columns: [
-          { key: "item", label: "Item" },
-          { key: "atQuotation", label: "At quotation" },
-          { key: "now", label: "Now" },
-          { key: "ok", label: "" },
-        ],
-        rows: p.recheck.map((r) => ({
-          item: r.item,
-          atQuotation: r.atQuotation,
-          now: r.now,
-          ok:
-            r.ok === false
-              ? { text: "Changed", tone: "warning", tag: true }
-              : { text: "OK", tone: "success", tag: true },
-        })),
-      }),
-      ...(changed.length
-        ? [
-            block("alert", {
-              tone: "warning",
-              text: `${changed.map((c) => `${c.item}: ${c.now}`).join(" · ")} — the shortfall is scheduled as a backorder (the customer promise stays as agreed).`,
-            }),
-          ]
-        : []),
-      ...(d.isManagement
-        ? []
-        : [block("text", { muted: true, text: "Supplier POs are confirmed by Karim Balbaa (management)." })]),
-      block("actions", { items: [decide] }),
-    ],
-  });
+  return [
+    block("table", {
+      columns: [
+        { key: "item", label: "Item" },
+        { key: "atQuotation", label: "At quotation" },
+        { key: "now", label: "Now" },
+        { key: "ok", label: "" },
+      ],
+      rows: p.recheck.map((r) => ({
+        item: r.item,
+        atQuotation: r.atQuotation,
+        now: r.now,
+        ok:
+          r.ok === false ? { text: "Changed", tone: "warning", tag: true } : { text: "OK", tone: "success", tag: true },
+      })),
+    }),
+    ...(changed.length
+      ? [
+          block("alert", {
+            tone: "warning",
+            text: `${changed.map((c) => `${c.item}: ${c.now}`).join(" · ")} — the shortfall is scheduled as a backorder (the customer promise stays as agreed).`,
+          }),
+        ]
+      : []),
+    ...(d.isManagement
+      ? []
+      : [block("text", { muted: true, text: "Supplier POs are confirmed by Karim Balbaa (management)." })]),
+    block("actions", { items: [decide] }),
+  ];
 }
+
+/** Supplier POs still to confirm (their costs are hidden for Sales, so none for them). */
+const toConfirm = (d: CaseOps) =>
+  d.canSeeCosts ? d.purchaseOrders.filter((p) => ["Draft", "Awaiting approval"].includes(p.status)) : [];
 
 const supplierPos = on({
   title: "Supplier purchase orders",
@@ -439,7 +440,6 @@ const supplierPos = on({
         statusNote: { text: statusNote, tone: p.recheckDone && flagged ? "warning" : undefined },
       };
     });
-    const toConfirm = d.canSeeCosts ? pos.filter((p) => ["Draft", "Awaiting approval"].includes(p.status)) : [];
     return [
       block("text", {
         muted: true,
@@ -468,8 +468,21 @@ const supplierPos = on({
                 ? "Confirm the sales order to prepare the supplier POs."
                 : "Blocked: no supplier PO is prepared until the customer's PO is validated.",
           }),
-      ...toConfirm.map((p) => recheck(d, p)),
     ];
+  },
+});
+
+/** A tile per supplier PO still to confirm: its re-check and the decision. */
+const rechecks = widget<CaseOps>({
+  source: ops,
+  size: "m",
+  skeleton: "table",
+  each: {
+    items: toConfirm,
+    key: (p: OpsPO) => p.id,
+    title: (p: OpsPO) => `Re-check before confirming ${p.number}`,
+    head: (p: OpsPO) => ({ tags: [{ label: p.status, tone: statusTone(p.status) }] }),
+    render: (p: OpsPO, d) => recheck(d, p),
   },
 });
 
@@ -572,4 +585,4 @@ const receipts = on({
   ],
 });
 
-export const caseOrder = widgets({ widgets: [tiles, partialAward, poCheck, supplierPos, bills, receipts] });
+export const caseOrder = widgets({ widgets: [tiles, partialAward, poCheck, supplierPos, rechecks, bills, receipts] });

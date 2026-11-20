@@ -8,7 +8,9 @@ export const Invoices: CollectionConfig = {
   slug: "invoices",
   custom: { edit: { steps: { field: "status", skip: ["Overdue", "Cancelled"] } } } satisfies CollectionSettings,
   admin: {
-    components: { beforeList: [widgets({ widgets: [{ counts: { collection: "invoices", field: "status" } }] })] },
+    components: {
+      beforeList: [widgets({ widgets: [{ size: "s", counts: { collection: "invoices", field: "status" } }] })],
+    },
     useAsTitle: "number",
     defaultColumns: ["number", "case", "amount", "currency", "paid", "dueDate", "status"],
     group: "Finance",

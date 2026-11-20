@@ -82,7 +82,7 @@ export const Cases: CollectionConfig = {
     // edit views, each a screen of widgets in src/cms/widgets).
     // Counts by what each case is waiting for, above the list, each opening the filtered list.
     components: {
-      beforeList: [widgets({ widgets: [{ counts: { collection: "cases", field: "wait" } }] })],
+      beforeList: [widgets({ widgets: [{ size: "s", counts: { collection: "cases", field: "wait" } }] })],
       views: {
         edit: {
           overview: {

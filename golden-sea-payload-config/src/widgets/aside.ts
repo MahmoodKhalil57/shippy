@@ -51,6 +51,7 @@ const forRole =
     roles.includes(user.role ?? "");
 const counters = (visible: Widget["visible"], items: Item[]): Widget => ({
   visible,
+  size: "s",
   counts: { collection: items[0]!.collection, items },
 });
 

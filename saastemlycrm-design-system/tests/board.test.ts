@@ -136,3 +136,90 @@ describe("the board's placement", () => {
     ]);
   });
 });
+
+describe("the board's measuring", () => {
+  /**
+   * `<ui-board>` measures its tiles, places them, measures again (a tile that widened is shorter
+   * now) and places again. Proved here, for every sequence of up to 5 tiles of every size, on 1 to
+   * 4 lanes, with every base height 1 to 3 rows per tile and heights that shrink as a tile widens
+   * (h = ⌈base × k / span⌉, k = 1, 2, 3): the passes reach a fixpoint (two equal placements in a
+   * row) within n + 1 passes for n tiles, and the same one whether the first heights were measured
+   * at each tile's own span, at one lane or at the whole board. Why: `place` decides tile i from
+   * the tiles before it only, so after pass i + 1 tile i never moves again.
+   *
+   * A size reaches `place` only through `spanOf` (its span on that board), so sizes with the same
+   * span on a board (`m`, `l` and `full` on 2 lanes) give the same placements: each board runs one
+   * size per span, and every sequence of sizes is one of those.
+   */
+  function* sequences<T>(alphabet: readonly T[], len: number): Generator<T[]> {
+    if (len === 0) return yield [];
+    for (const head of sequences(alphabet, len - 1)) for (const x of alphabet) yield [...head, x];
+  }
+  type Tile = { size: TileSize; base: number };
+  const same = (a: { lane: number; span: number; top: number }[], b: typeof a) =>
+    a.every((p, i) => p.lane === b[i]!.lane && p.span === b[i]!.span && p.top === b[i]!.top);
+
+  /** The passes from `heights`: the placement they settle on and how many passes that took. */
+  function settle(seq: Tile[], lanes: number, height: (t: Tile, span: number) => number, heights: number[]) {
+    let placed = place(
+      seq.map((t, i) => ({ size: t.size, height: heights[i]! })),
+      lanes,
+      0,
+    );
+    for (let pass = 2; pass <= seq.length + 2; pass++) {
+      const next = place(
+        seq.map((t, i) => ({ size: t.size, height: height(t, placed[i]!.span) })),
+        lanes,
+        0,
+      );
+      if (same(placed, next)) return { placed, passes: pass - 1 };
+      placed = next;
+    }
+    return { placed, passes: Infinity };
+  }
+
+  it("settles within n + 1 passes, on the same placement from any first heights", () => {
+    const problems: string[] = [];
+    let cases = 0;
+    let most = 0;
+    for (let lanes = 1; lanes <= MAX_LANES; lanes++) {
+      const sizes = TILE_SIZES.filter(
+        (s, i) => TILE_SIZES.findIndex((x) => spanOf(x, lanes) === spanOf(s, lanes)) === i,
+      );
+      const covers = (seq: Tile[]) =>
+        seq.reduce((n, t) => n * TILE_SIZES.filter((x) => spanOf(x, lanes) === spanOf(t.size, lanes)).length, 1);
+      const alphabet = sizes.flatMap((size) => [1, 2, 3].map((base) => ({ size, base })));
+      for (const k of [1, 2, 3]) {
+        const height = (t: Tile, span: number) => Math.ceil((t.base * k) / span);
+        for (let len = 1; len <= 5; len++)
+          for (const seq of sequences(alphabet, len)) {
+            cases += covers(seq);
+            const at = () => `${lanes} lanes, k ${k}, ${seq.map((t) => `${t.size}${t.base}`).join(" ")}`;
+            const own = settle(
+              seq,
+              lanes,
+              height,
+              seq.map((t) => height(t, spanOf(t.size, lanes))),
+            );
+            most = Math.max(most, own.passes);
+            if (own.passes > len + 1) problems.push(`${at()}: ${own.passes} passes`);
+            for (const span of [1, lanes]) {
+              const other = settle(
+                seq,
+                lanes,
+                height,
+                seq.map((t) => height(t, span)),
+              );
+              if (other.passes > len + 1) problems.push(`${at()}, first at span ${span}: ${other.passes} passes`);
+              if (!same(own.placed, other.placed)) problems.push(`${at()}, first at span ${span}: another fixpoint`);
+            }
+          }
+      }
+    }
+    // Every sequence of up to 5 sizes × base heights, on 1–4 lanes, for each k.
+    expect(cases).toBe(3 * MAX_LANES * [1, 2, 3, 4, 5].reduce((n, len) => n + 12 ** len, 0));
+    expect(problems.slice(0, 5)).toEqual([]);
+    // The slowest settles on its 4th placement (confirmed by the 5th), inside n + 1 = 6.
+    expect(most).toBeLessThanOrEqual(4);
+  }, 30_000);
+});

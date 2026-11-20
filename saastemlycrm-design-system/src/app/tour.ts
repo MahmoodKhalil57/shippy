@@ -23,9 +23,9 @@ const visible = (el: Element) => {
   return !!r && r.width > 0 && r.height > 0;
 };
 
-/** The smallest visible element matching the target (so a card wins over the page around it). */
+/** The smallest visible tile or card matching the target (so a card wins over the page around it). */
 function find(t: TourTarget): Element | null {
-  const matches = [...document.querySelectorAll(t.sel ?? "ui-card")].filter(
+  const matches = [...document.querySelectorAll(t.sel ?? "ui-tile, ui-card")].filter(
     (e) => !e.closest("ui-coachmark") && (e.textContent ?? "").includes(t.text) && visible(e),
   );
   return matches.sort((a, b) => (a.textContent ?? "").length - (b.textContent ?? "").length)[0] ?? null;

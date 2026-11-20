@@ -404,35 +404,30 @@ const status = on({
 
 /** Currency and language of the customer's copy (`?currency=`, `?lang=`). */
 const choices = on({
+  title: "Customer copy",
+  subhead: "Customer-facing: supplier names, costs and margins are never printed.",
   size: "full",
   skeleton: "text",
-  render: (v, scope) =>
-    block("grid", {
-      blocks: [
-        block("choice", {
-          param: "currency",
-          label: "Currency",
-          value: inEgp(scope) ? "EGP" : "quote",
-          options: [
-            { value: "quote", label: String(v.quotation.currency) },
-            { value: "EGP", label: "EGP" },
-          ],
-        }),
-        block("choice", {
-          param: "lang",
-          label: "Language",
-          value: langOf(scope),
-          options: [
-            { value: "en", label: "English" },
-            { value: "ar", label: "العربية" },
-          ],
-        }),
-        block("text", {
-          muted: true,
-          text: "Customer-facing: supplier names, costs and margins are never printed.",
-        }),
+  render: (v, scope) => [
+    block("choice", {
+      param: "currency",
+      label: "Currency",
+      value: inEgp(scope) ? "EGP" : "quote",
+      options: [
+        { value: "quote", label: String(v.quotation.currency) },
+        { value: "EGP", label: "EGP" },
       ],
     }),
+    block("choice", {
+      param: "lang",
+      label: "Language",
+      value: langOf(scope),
+      options: [
+        { value: "en", label: "English" },
+        { value: "ar", label: "العربية" },
+      ],
+    }),
+  ],
 });
 
 /** The customer's copy, in the chosen language and currency: the printable sheet is its own surface, so no card title. */

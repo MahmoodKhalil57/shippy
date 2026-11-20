@@ -7,11 +7,13 @@ import "../../components/index.ts";
 import { toast } from "../shared.ts";
 import { action as actionButton, tag } from "./blocks.ts";
 import { expand } from "./data.ts";
+import { orderColumns } from "../../components/base/columns.ts";
 import type { BoardItem } from "../../components/primitives/layout/board.ts";
+import { preferences, StoreController } from "../../stores/index.ts";
 import { inCard, renderBlocks, type ViewContext } from "./registry.ts";
 import type { Action, ViewBlock, ViewHeader } from "./schema.ts";
-import { loadingSize, tileSizeOf, type TileSize } from "./tile.ts";
-import { fill, type Source, type Widget, type WidgetPage, type WidgetScope } from "./widget.ts";
+import type { TileSize } from "./tile.ts";
+import { eachTiles, fill, type Source, type Widget, type WidgetPage, type WidgetScope } from "./widget.ts";
 // More blocks: the app's own (./blocks/*.ts), each registering itself with `defineBlock`.
 import.meta.glob("./blocks/*.ts", { eager: true });
 
@@ -68,8 +70,27 @@ export function leaves(list: Widget[], scope: WidgetScope): Widget[] {
 const asBlocks = (b: ViewBlock | ViewBlock[] | null | undefined): ViewBlock[] =>
   b ? (Array.isArray(b) ? b : [b]) : [];
 
+/** What a tile's layout menu does (personal arrangement of a board). */
+export interface TileArrange {
+  size: TileSize;
+  first: boolean;
+  last: boolean;
+  /** Something on this board was arranged by hand (offer Reset). */
+  arranged: boolean;
+  hidden: number;
+  act(what: "start" | "earlier" | "later" | "hide" | "unhide" | "reset" | TileSize): void;
+}
+
+const SIZE_LABEL: Record<TileSize, string> = {
+  s: "Small · 1 lane",
+  m: "Medium · 2 lanes",
+  l: "Large · 3 lanes",
+  full: "Full width",
+};
+
 @customElement("app-widgets")
 export class AppWidgets extends LightElement {
+  #prefs = new StoreController(this, preferences);
   @property({ attribute: false }) page: WidgetPage = { widgets: [] };
   /** In an edit tab: the document's id and collection. */
   @property() docId = "";
@@ -321,17 +342,7 @@ export class AppWidgets extends LightElement {
    */
   #tiles(): BoardItem[] {
     const out: BoardItem[] = [];
-    const add = (w: Widget, key: string, fallback?: TileSize) => {
-      if (w.visible && !w.visible(this.scope)) return;
-      if (w.grid) return w.grid.forEach((x, i) => add(x, `${key}.${i}`, fallback));
-      if (w.split) {
-        w.split.main.forEach((x, i) => add(x, `${key}.m${i}`, "l"));
-        w.split.side.forEach((x, i) => add(x, `${key}.s${i}`, "s"));
-        return;
-      }
-      const reported = this.sizes.get(key);
-      if (reported === null) return;
-      const size = w.size ?? reported ?? fallback ?? loadingSize(w);
+    const tile = (key: string, size: TileSize, w: Widget) =>
       out.push({
         key,
         size,
@@ -342,9 +353,102 @@ export class AppWidgets extends LightElement {
           .report=${(s: TileSize | null) => this.#report(key, s)}
         ></app-widget>`,
       });
+    const add = (w: Widget, key: string, fallback?: TileSize) => {
+      if (w.visible && !w.visible(this.scope)) return;
+      if (w.grid) return w.grid.forEach((x, i) => add(x, `${key}.${i}`, fallback));
+      if (w.split) {
+        w.split.main.forEach((x, i) => add(x, `${key}.m${i}`, "l"));
+        w.split.side.forEach((x, i) => add(x, `${key}.s${i}`, "s"));
+        return;
+      }
+      if (this.sizes.get(key) === null) return;
+      const size = w.size ?? fallback ?? "s";
+      // One tile per item, once the data is in; a loading tile until then.
+      if (w.each) {
+        const got = this.#eachData(key, w);
+        if (!got) return out.push({ key, size, content: html`<ui-tile .size=${size} loading></ui-tile>` });
+        if (got.refused || w.hidden?.(got.data as never, this.scope)) return;
+        for (const t of eachTiles(w, got.data as never, this.scope)) tile(`${key}:${t.key}`, size, t.widget as Widget);
+        return;
+      }
+      tile(key, size, w);
     };
     this.page.widgets.forEach((w, i) => add(w, String(i)));
-    return out;
+    return this.#arranged(out);
+  }
+
+  /** This screen's board in the preferences: its path, a document's id as `:id`. */
+  get #boardKey() {
+    const path = location.pathname;
+    return this.docId ? path.replace(`/${encodeURIComponent(this.docId)}`, "/:id") : path;
+  }
+
+  /**
+   * The tiles as someone arranged them: hidden ones left out, their sizes, their order (lenient:
+   * a tile added later keeps its place after the one it followed). Then each titled tile gets
+   * its layout menu. The board's rules place the result like any other.
+   */
+  #arranged(items: BoardItem[]): BoardItem[] {
+    const mine = this.#prefs.value.boards[this.#boardKey] ?? {};
+    const hidden = new Set(mine.hidden ?? []);
+    const shown = orderColumns(
+      items.filter((it) => !hidden.has(it.key)).map((it) => ({ ...it, size: mine.sizes?.[it.key] ?? it.size })),
+      mine.order ?? [],
+    );
+    const keys = shown.map((it) => it.key);
+    const arranged = !!(mine.order?.length || mine.hidden?.length || Object.keys(mine.sizes ?? {}).length);
+    return shown.map((it, i) => ({
+      ...it,
+      content: html`<app-arrange
+        .arrange=${
+          {
+            size: it.size,
+            first: i === 0,
+            last: i === shown.length - 1,
+            arranged,
+            hidden: hidden.size,
+            act: (what: Parameters<TileArrange["act"]>[0]) => this.#arrange(it.key, keys, what),
+          } satisfies TileArrange
+        }
+        >${it.content}</app-arrange
+      >`,
+    }));
+  }
+
+  #arrange(key: string, keys: string[], what: Parameters<TileArrange["act"]>[0]) {
+    const board = this.#boardKey;
+    preferences.set((p) => {
+      const mine = { ...p.boards[board] };
+      const order = [...keys];
+      const at = order.indexOf(key);
+      if (what === "start" || what === "earlier" || what === "later") {
+        order.splice(at, 1);
+        order.splice(what === "start" ? 0 : what === "earlier" ? Math.max(0, at - 1) : at + 1, 0, key);
+        mine.order = order;
+      } else if (what === "hide") mine.hidden = [...(mine.hidden ?? []), key];
+      else if (what === "unhide") mine.hidden = [];
+      else if (what === "reset")
+        return { boards: Object.fromEntries(Object.entries(p.boards).filter(([k]) => k !== board)) };
+      else mine.sizes = { ...mine.sizes, [key]: what };
+      return { boards: { ...p.boards, [board]: mine } };
+    });
+  }
+
+  /** An `each` widget's data, loaded once per version (null while it loads). */
+  @state() private each = new Map<string, { version: number; data?: unknown; refused?: boolean }>();
+  #eachData(key: string, w: Widget) {
+    const got = this.each.get(key);
+    if (got?.version === this.version) return "data" in got || got.refused ? got : null;
+    const version = this.version;
+    this.each.set(key, { version });
+    if (!w.source) {
+      this.each.set(key, { version, data: null });
+      return this.each.get(key)!;
+    }
+    this.fetch(w.source)
+      .then((data) => version === this.version && (this.each = new Map(this.each).set(key, { version, data })))
+      .catch(() => version === this.version && (this.each = new Map(this.each).set(key, { version, refused: true })));
+    return null;
   }
 
   #report(key: string, size: TileSize | null) {
@@ -382,6 +486,61 @@ export class AppWidgets extends LightElement {
   }
 }
 
+/**
+ * A tile's layout menu (personal arrangement), handed to the widget inside: Move to start /
+ * earlier / later, its size, Hide, and Show hidden / Reset layout for the board.
+ */
+@customElement("app-arrange")
+export class AppArrange extends LightElement {
+  @property({ attribute: false }) arrange?: TileArrange;
+
+  protected updated() {
+    for (const w of this.querySelectorAll("app-widget")) (w as AppWidget).arrange = this.arrange;
+  }
+
+  render() {
+    return html`${this.content}`;
+  }
+}
+
+/** The layout menu in a tile's header. */
+export function arrangeMenu(a: TileArrange | undefined, title: string) {
+  if (!a) return nothing;
+  const items = [
+    ...(a.first
+      ? []
+      : [
+          { label: "Move to start", value: "start" },
+          { label: "Move earlier", value: "earlier" },
+        ]),
+    ...(a.last ? [] : [{ label: "Move later", value: "later" }]),
+    ...(["s", "m", "l", "full"] as TileSize[]).map((s, i) => ({
+      label: SIZE_LABEL[s],
+      value: s,
+      checked: a.size === s,
+      separator: i === 0,
+    })),
+    { label: "Hide this tile", value: "hide", separator: true },
+    ...(a.hidden ? [{ label: `Show hidden tiles (${a.hidden})`, value: "unhide" }] : []),
+    ...(a.arranged ? [{ label: "Reset layout", value: "reset", destructive: true }] : []),
+  ];
+  return html`<ui-dropdown
+    slot="trailing"
+    mode="popover"
+    align="end"
+    trigger-variant="text"
+    trigger-size="xs"
+    trigger-shape="round"
+    .triggerLabel=${`${title}: layout`}
+    .items=${items}
+    @ui-select=${(e: CustomEvent<{ item: { value: Parameters<TileArrange["act"]>[0] } }>) => {
+      e.stopPropagation();
+      a.act(e.detail.item.value);
+    }}
+    ><span slot="trigger">⋯</span></ui-dropdown
+  >`;
+}
+
 /** One widget: loads its data, shows a skeleton meanwhile, then its blocks (in a card when it has a title). */
 @customElement("app-widget")
 export class AppWidget extends LightElement {
@@ -390,6 +549,8 @@ export class AppWidget extends LightElement {
   @property({ type: Number }) version = 0;
   /** Tells the board the size this widget's tile takes, or null when it shows nothing. */
   @property({ attribute: false }) report?: (size: TileSize | null) => void;
+  /** Its tile's layout menu (set by `<app-arrange>`). */
+  @property({ attribute: false }) arrange?: TileArrange;
   @state() private state: "loading" | "ready" | "denied" | "error" = "loading";
   #size: TileSize | null | undefined;
   @state() private data: unknown = null;
@@ -433,80 +594,42 @@ export class AppWidget extends LightElement {
     if (this.#size !== undefined) this.report?.(this.#size);
   }
 
-  #skeleton() {
-    switch (this.widget.skeleton) {
-      case "stats":
-        return html`<ui-grid fit="xs" gap="4"
-          >${[0, 1, 2].map(() => html`<ui-skeleton shape="block"></ui-skeleton>`)}</ui-grid
-        >`;
-      case "table":
-      case "list":
-        return html`<ui-flex direction="col" gap="3"
-          >${[0, 1, 2, 3].map(() => html`<ui-skeleton shape="line"></ui-skeleton>`)}</ui-flex
-        >`;
-      case "entries":
-        return html`<ui-grid fit="md" gap="4"
-          >${[0, 1].map(() => html`<ui-skeleton shape="block"></ui-skeleton>`)}</ui-grid
-        >`;
-      case "text":
-        return html`<ui-flex direction="col" gap="2"
-          ><ui-skeleton shape="line"></ui-skeleton><ui-skeleton shape="line" width="52"></ui-skeleton
-        ></ui-flex>`;
-      default:
-        return html`<ui-skeleton shape="block"></ui-skeleton>`;
-    }
-  }
-
   render() {
     const w = this.widget;
     const scope = this.host.scope;
     if (this.state === "denied" && !w.denied) return this.#sized(null);
     if (this.state === "ready" && w.hidden?.(this.data as never, scope)) return this.#sized(null);
+    if (this.state === "ready") this.#sized(w.size ?? "s");
     const blocks = this.state === "ready" ? asBlocks(w.render?.(this.data as never, scope)) : [];
-    if (this.state === "ready") this.#sized(w.size ?? tileSizeOf(blocks));
-    // A titled widget of entries is a section (a heading over the entries' cards), never a card
-    // around cards; any other titled widget is a card, and what it draws knows it's in one.
-    const section = !!w.title && (w.skeleton === "entries" || blocks.some((b) => b.type === "entries"));
-    const ctx = w.title && !section ? inCard(this.host.ctx) : this.host.ctx;
+    // Every widget is a tile; a titled one is a surface its content knows it's in (cards become
+    // panels, entries become rows). An untitled one steers the screen: a bare tile.
+    const ctx = w.title ? inCard(this.host.ctx) : this.host.ctx;
     const body =
       this.state === "loading"
-        ? this.#skeleton()
+        ? nothing
         : this.state === "denied"
           ? html`<ui-alert tone="info">${w.denied}</ui-alert>`
           : this.state === "error"
             ? html`<ui-alert tone="error" heading="This couldn't load">${this.message}</ui-alert>`
             : renderBlocks(blocks, ctx);
-    if (!w.title) return body;
     const head = this.state === "ready" ? w.head?.(this.data as never, scope) : undefined;
     const subhead = head?.subhead ?? w.subhead ?? "";
-    const trailing = (slot?: string) =>
+    const trailing =
       head?.tags?.length || head?.actions?.length
-        ? html`<ui-flex slot=${slot ?? nothing} gap="2" align="center" wrap
+        ? html`<ui-flex slot="trailing" gap="2" align="center" wrap
             >${head.tags?.map(tag)}${head.actions?.map((a) => actionButton(a, this.host.ctx))}</ui-flex
           >`
         : nothing;
-    if (section)
-      return html`<ui-flex direction="col" gap="3">
-        <ui-flex direction="col" gap="1">
-          <ui-flex gap="2" align="center" justify="between" wrap>
-            <ui-flex gap="2" align="center">
-              <ui-heading level="2" variant="title-lg">${w.title}</ui-heading>
-              ${
-                head?.count !== undefined
-                  ? html`<ui-badge show-zero .count=${head.count} .tone=${head.countTone}></ui-badge>`
-                  : nothing
-              }
-            </ui-flex>
-            ${trailing()}
-          </ui-flex>
-          ${subhead ? html`<ui-text variant="body-md" color="muted">${subhead}</ui-text>` : nothing}
-        </ui-flex>
-        ${body}
-      </ui-flex>`;
-    return html`<ui-card .subhead=${subhead} .count=${head?.count} .countTone=${head?.countTone}>
-      <span slot="heading">${w.title}</span>
-      ${trailing("trailing")} ${body}
-    </ui-card>`;
+    return html`<ui-tile
+      .size=${w.size}
+      .heading=${w.title ?? ""}
+      .subhead=${subhead}
+      .count=${head?.count}
+      .countTone=${head?.countTone}
+      ?loading=${this.state === "loading"}
+      ?bare=${!w.title}
+      >${trailing} ${w.title ? arrangeMenu(this.arrange, w.title) : nothing} ${body}</ui-tile
+    >`;
   }
 }
 
@@ -514,5 +637,6 @@ declare global {
   interface HTMLElementTagNameMap {
     "app-widgets": AppWidgets;
     "app-widget": AppWidget;
+    "app-arrange": AppArrange;
   }
 }

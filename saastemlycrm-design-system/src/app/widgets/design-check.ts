@@ -1,3 +1,4 @@
+import type { TileSize } from "../../components/base/board.ts";
 import type { Action, Cell, Entry, ViewBlock } from "./schema.ts";
 
 /** The buttons a block shows itself (not its children's). */
@@ -56,9 +57,105 @@ function entryProblems(e: Entry, where: string): string[] {
   return out;
 }
 
-/** What breaks the design in these blocks; `where` names the screen and widget in messages. */
-export function designProblems(blocks: ViewBlock[], where: string): string[] {
+/**
+ * The most top-level blocks a tile of each size holds: keep a tile about one thing. M3 Cards: "Use
+ * cards to display related information on a single subject"; HIG Layout: "An interface with too
+ * much content and too many choices makes it harder to find information quickly" (disclose the
+ * rest progressively: `details`, or another widget on the same source).
+ */
+export const MAX_TILE_BLOCKS: Record<TileSize, number> = { s: 4, m: 6, l: 8, full: 8 };
+
+/** One tile of the board as a screen drew it: its widget's title, size and blocks. */
+export interface DrawnTile {
+  title?: string;
+  /** Unknown when only the drawn blocks are at hand: then the rules that need it don't run. */
+  size?: TileSize;
+  blocks: ViewBlock[];
+}
+
+/** Blocks that may stand bare (an untitled tile): what steers the screen, or an alert. */
+const BARE: ReadonlySet<ViewBlock["type"]> = new Set<ViewBlock["type"]>(["choice", "actions", "alert", "document"]);
+
+/** Whether a table is anywhere in these blocks. */
+const hasTable = (list: ViewBlock[]): boolean =>
+  list.some((b) => {
+    switch (b.type) {
+      case "table":
+        return true;
+      case "card":
+      case "grid":
+        return hasTable(b.blocks);
+      case "split":
+        return hasTable(b.main) || hasTable(b.side);
+      default:
+        return false;
+    }
+  });
+
+/** What breaks one tile's content for its size (sizes: src/components/base/board.ts). */
+function tileRules(t: DrawnTile, where: string): string[] {
   const out: string[] = [];
+  const at = `${where} › ${t.title?.trim() || "untitled tile"}`;
+  // HIG Lists and tables: a multicolumn table shows "characteristics or attributes of the data in
+  // separate, sortable columns", and wide tables need help to track rows; M3 Layout
+  // (grids-spacing) keeps data tables for dense layouts that "scan, view, or compare a lot of
+  // information". One 18rem lane leaves no room for columns.
+  if (t.size === "s" && hasTable(t.blocks)) out.push(`${at}: a table in an \`s\` tile; make it \`m\` or wider`);
+  // The board already lays the tiles out in lanes (M3 Cards: "Cards can be displayed together in a
+  // grid"); a grid or split at a tile's top is a board inside a tile. Make its parts widgets
+  // (`grid`/`split` widgets are flattened into tiles). Deeper, inside a card, is fine.
+  for (const b of t.blocks)
+    if (b.type === "grid" || b.type === "split")
+      out.push(`${at}: a ${b.type} at the top of a tile; make its parts widgets of their own`);
+  const max = MAX_TILE_BLOCKS[t.size ?? "full"];
+  if (t.blocks.length > max)
+    out.push(
+      `${at}: ${t.blocks.length} blocks in ${t.size ? `an \`${t.size}\`` : "a"} tile (at most ${max}); keep it about one thing`,
+    );
+  // HIG Lists and tables: "use a label or a header to help people understand the context". Only
+  // what steers the screen (a choice, actions) or an alert stands without a title.
+  if (!t.title?.trim()) {
+    const bare = [...new Set(t.blocks.filter((b) => !BARE.has(b.type)).map((b) => b.type))];
+    if (bare.length) out.push(`${at}: ${bare.join(", ")} without a title; give the widget a \`title\``);
+  }
+  return out;
+}
+
+/**
+ * The board's tiles when only the drawn blocks are at hand (`screenDesignProblems` draws a titled
+ * widget as a `card` with its heading, a `grid`/`split` widget as a grid or split of its
+ * children's, and an untitled widget as its blocks): each headed card is a tile, grids and splits
+ * hold tiles, and any other top-level block is (part of) an untitled tile. Sizes are unknown.
+ */
+function tilesOf(blocks: ViewBlock[]): DrawnTile[] {
+  return blocks.flatMap((b): DrawnTile[] => {
+    switch (b.type) {
+      case "card":
+        return b.heading ? [{ title: b.heading, blocks: b.blocks }] : [{ blocks: [b] }];
+      case "grid":
+        return tilesOf(b.blocks);
+      case "split":
+        return [...tilesOf(b.main), ...tilesOf(b.side)];
+      default:
+        return [{ blocks: [b] }];
+    }
+  });
+}
+
+/**
+ * What breaks the tiles' content: a table in an `s` tile, a grid or split at a tile's top, more
+ * top-level blocks than its size holds (`MAX_TILE_BLOCKS`), an untitled tile that isn't a choice,
+ * actions or an alert. Each tile is a widget's title, size and drawn blocks.
+ */
+export const tileProblems = (tiles: DrawnTile[], where: string): string[] => tiles.flatMap((t) => tileRules(t, where));
+
+/**
+ * What breaks the design in these blocks; `where` names the screen and widget in messages. The
+ * tile rules (`tileProblems`) run on `tiles` when given (each widget's title, size and blocks);
+ * otherwise on the tiles read from the blocks' top level, without the rule that needs a size.
+ */
+export function designProblems(blocks: ViewBlock[], where: string, tiles?: DrawnTile[]): string[] {
+  const out: string[] = tileProblems(tiles ?? tilesOf(blocks), where);
   const label = (a: Action, at: string) => {
     const n = a.label.trim().split(/\s+/).length;
     if (n > MAX_ACTION_WORDS) out.push(`${at}: button "${a.label}" is ${n} words; say the verb in 1–3 (M3 Buttons)`);

@@ -1,6 +1,12 @@
 import { stringify } from "qs-esm";
 import { beforeEach, describe, expect, it } from "vite-plus/test";
-import type { Source, Widget, WidgetPage, WidgetScope } from "saastemlycrm-design-system/contracts";
+import {
+  eachTiles,
+  type Source,
+  type Widget,
+  type WidgetPage,
+  type WidgetScope,
+} from "saastemlycrm-design-system/contracts";
 import { caseCompare } from "../src/widgets/case-compare.ts";
 import { caseOverview } from "../src/widgets/case-overview.ts";
 import { casePricing } from "../src/widgets/case-pricing.ts";
@@ -58,7 +64,8 @@ async function load(source: Source): Promise<{ status: number; data: unknown }> 
 /**
  * A widget page drawn as blocks, as `<app-widgets>` would for the signed-in user: a titled widget
  * is a card (its head's count, tags and actions on it), a refused one shows its `denied` text or
- * nothing, a `hidden` one nothing. Data widgets (`records`…) show as their card only.
+ * nothing, a `hidden` one nothing. An `each` widget is a card per item. Data widgets (`records`…)
+ * show as their card only.
  */
 async function draw(page: WidgetPage, id: string, params: Record<string, string> = {}): Promise<Json> {
   const me = (await call("GET", "/api/users/me")).body.user;
@@ -77,6 +84,7 @@ async function draw(page: WidgetPage, id: string, params: Record<string, string>
     } else {
       expect(status, `${w.title ?? "widget"}: ${JSON.stringify(data)}`).toBe(200);
       if (w.hidden?.(data, scope)) return [];
+      if (w.each) return (await all(eachTiles(w, data, scope).map((t) => t.widget as Widget))).flat();
       const r = w.render?.(data, scope);
       out = r ? (Array.isArray(r) ? r : [r]) : [];
     }

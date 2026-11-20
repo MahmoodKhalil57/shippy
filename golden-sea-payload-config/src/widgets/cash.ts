@@ -1,5 +1,5 @@
 import { block, note, type Action, type Row, type Tone, type ViewBlock } from "saastemlycrm-design-system/contracts";
-import { from, widgets, type Source, type Widget } from "saastemlycrm-design-system/contracts";
+import { from, widget, widgets, type Source, type Widget } from "saastemlycrm-design-system/contracts";
 import type { BankChange, Cash, CashPayables, Decision, Draft, Receivable } from "../endpoints/cash.ts";
 import * as link from "../links.ts";
 
@@ -460,61 +460,57 @@ const payables = onPayables({
 const approvals = onPayables({
   title: "Payments needing approval",
   size: "s",
+  subhead:
+    "Every supplier payment needs the Financial Director or the CEO. Once approved, finance pays in the bank and records it here with the bank reference.",
   head: (d) => ({ count: d.approvals.length }),
-  render: (d) => {
-    const items = d.approvals.flatMap((a, i): ViewBlock[] => {
-      const decisions = decisionLines(a.decisions);
-      const actions: Action[] = [
-        ...(a.canDecide ? decideActions(a, false).map((x): Action => ({ ...x, main: false as const })) : []),
-        ...(a.status === "Approved" && d.canFinance && a.po
-          ? [
-              {
-                label: "Record payment",
-                call: { path: "/cash/record-payment", body: { approval: a.id } },
-                confirm: {
-                  heading: `Record supplier payment — ${a.po.number}`,
-                  text: `${money(a.amount, a.po.currency)} to ${a.po.supplier} (${a.kind}) — approved. Pay it in the bank first, then record the bank reference here.`,
+  render: (d) =>
+    block("entries", {
+      empty: "Nothing waiting.",
+      items: d.approvals.map((a) => {
+        const decisions = decisionLines(a.decisions);
+        const actions: Action[] = [
+          ...(a.canDecide ? decideActions(a, false).map((x): Action => ({ ...x, main: false as const })) : []),
+          ...(a.status === "Approved" && d.canFinance && a.po
+            ? [
+                {
                   label: "Record payment",
-                },
-                fields: [
-                  {
-                    type: "text",
-                    name: "reference",
-                    label: "Bank reference",
-                    required: true,
-                    // A sample reference, fixed so the config stays pure.
-                    defaultValue: `TRX-88${a.id.slice(-3)}`,
+                  call: { path: "/cash/record-payment", body: { approval: a.id } },
+                  confirm: {
+                    heading: `Record supplier payment — ${a.po.number}`,
+                    text: `${money(a.amount, a.po.currency)} to ${a.po.supplier} (${a.kind}) — approved. Pay it in the bank first, then record the bank reference here.`,
+                    label: "Record payment",
                   },
-                ],
-                done: `Payment ${money(a.amount, a.po.currency)} to ${a.po.supplier} recorded against ${a.po.number}.`,
-              },
-            ]
-          : []),
-      ];
-      return [
-        ...(i ? [block("divider", {})] : []),
-        block("heading", { text: a.title }),
-        block("text", {
-          muted: true,
-          text: [
-            `${a.type}${a.caseId ? ` · ${a.caseId}` : ""}${a.po ? ` · ${money(a.amount, a.po.currency)}` : ""} · approvers ${a.approvers.map((p) => p.name).join(" or ")}`,
-            a.detail ?? "",
-            decisions,
-          ]
-            .filter(Boolean)
-            .join("\n"),
-        }),
-        block("tags", { items: [{ label: a.status, tone: statusTone(a.status) }] }),
-        ...(actions.length ? [block("actions", { items: actions })] : []),
-      ];
-    });
-    return [
-      note(
-        "Every supplier payment needs the Financial Director or the CEO. Once approved, finance pays in the bank and records it here with the bank reference.",
-      ),
-      ...(items.length ? items : [block("empty", { heading: "Nothing waiting." })]),
-    ];
-  },
+                  fields: [
+                    {
+                      type: "text",
+                      name: "reference",
+                      label: "Bank reference",
+                      required: true,
+                      // A sample reference, fixed so the config stays pure.
+                      defaultValue: `TRX-88${a.id.slice(-3)}`,
+                    },
+                  ],
+                  done: `Payment ${money(a.amount, a.po.currency)} to ${a.po.supplier} recorded against ${a.po.number}.`,
+                },
+              ]
+            : []),
+        ];
+        return {
+          id: a.id,
+          heading: a.title,
+          meta: [
+            a.type,
+            ...(a.caseId ? [a.caseId] : []),
+            ...(a.po ? [money(a.amount, a.po.currency)] : []),
+            `approvers ${a.approvers.map((p) => p.name).join(" or ")}`,
+          ],
+          status: { label: a.status, tone: statusTone(a.status) },
+          text: a.detail || undefined,
+          notes: decisions ? decisions.split("\n") : undefined,
+          actions: actions.length ? actions : undefined,
+        };
+      }),
+    }),
 });
 
 function bankChange(d: CashPayables, b: BankChange, me: string): ViewBlock[] {
@@ -541,11 +537,8 @@ function bankChange(d: CashPayables, b: BankChange, me: string): ViewBlock[] {
         ? "You have decided — a second, different person must approve."
         : "Waiting for an approver."
       : "";
+  const said = [decisions, waiting].filter(Boolean).join("\n");
   return [
-    block("heading", { text: b.title }),
-    block("tags", {
-      items: [{ label: b.applied ? "Applied" : b.status, tone: b.applied ? "success" : statusTone(b.status) }],
-    }),
     block("steps", {
       current: current - 1,
       items: [
@@ -573,7 +566,7 @@ function bankChange(d: CashPayables, b: BankChange, me: string): ViewBlock[] {
           }),
         ]
       : []),
-    ...(decisions ? [block("text", { text: decisions })] : []),
+    ...(said ? [block("text", { text: said, muted: !decisions })] : []),
     block("alert", {
       tone: b.applied ? "success" : "warning",
       text: b.applied
@@ -581,18 +574,24 @@ function bankChange(d: CashPayables, b: BankChange, me: string): ViewBlock[] {
         : `Payments to ${b.supplierName} stay on the old, verified account until two different people — Finance and the CEO — approve after a call-back on the number on file.`,
     }),
     ...(actions.length ? [block("actions", { items: actions })] : []),
-    ...(waiting ? [block("text", { text: waiting, muted: true })] : []),
   ];
 }
 
-/** The bank-detail changes in progress (as many as there are), one after another. */
-const bankChanges = onPayables({
-  title: "Bank-detail change — two-person check",
+/** The bank-detail changes in progress (as many as there are): one tile each. */
+const bankChanges = widget<CashPayables>({
+  source: payablesData,
   size: "m",
   hidden: (d) => !d.bankChanges.length,
-  head: (d) => (d.bankChanges.length > 1 ? { count: d.bankChanges.length } : {}),
-  render: (d, { user }) =>
-    d.bankChanges.flatMap((b, i) => [...(i ? [block("divider", {})] : []), ...bankChange(d, b, user.id)]),
+  each: {
+    items: (d) => d.bankChanges,
+    key: (b: BankChange) => b.id,
+    title: (b: BankChange) => b.title,
+    subhead: () => "Two-person check: Finance and the CEO, after a call-back on the number on file.",
+    head: (b: BankChange) => ({
+      tags: [{ label: b.applied ? "Applied" : b.status, tone: b.applied ? "success" : statusTone(b.status) }],
+    }),
+    render: (b: BankChange, d, { user }) => bankChange(d, b, user.id),
+  },
 });
 
 export const cashPage = widgets({

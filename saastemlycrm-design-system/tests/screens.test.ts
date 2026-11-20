@@ -18,7 +18,7 @@ const withScreen = (items: { label: string; href: string }[]): MockConfig => ({
       views: {
         board: {
           path: "/board",
-          Component: widgets({ widgets: [{ title: "Board", render: () => block("actions", { items }) }] }),
+          Component: widgets({ widgets: [{ title: "Board", size: "s", render: () => block("actions", { items }) }] }),
         },
       },
     },

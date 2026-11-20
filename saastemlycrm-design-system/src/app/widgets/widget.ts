@@ -99,10 +99,7 @@ interface WidgetBase<T> {
   title?: string;
   subhead?: string;
   /** Tags, count and actions in the card's header, from the data. */
-  head?(
-    data: T,
-    scope: WidgetScope,
-  ): { count?: number; countTone?: Tone; tags?: Tag[]; actions?: Action[]; subhead?: string };
+  head?(data: T, scope: WidgetScope): WidgetHead;
   /** Show it only when this says so (layout by role; the data's own access rules still apply). */
   visible?: (scope: WidgetScope) => boolean;
   /** Hide it once its data is in, when this says so (a section with nothing to show yet). */
@@ -114,22 +111,47 @@ interface WidgetBase<T> {
   /** Shown instead of hiding the widget when its data is refused (403). */
   denied?: string;
   /**
-   * How many lanes of the screen's board it takes: `s` 1, `m` 2, `l` 3, `full` all (never more
-   * than the board has). Without it, the widest of what it draws decides (`tileSizeOf`, tile.ts).
+   * How many lanes of the screen's board its tile takes: `s` 1, `m` 2, `l` 3, `full` all (never
+   * more than the board has). Required: every widget is a sized tile (`tileSizeOf`, tile.ts, says
+   * what its content usually needs).
    */
-  size?: TileSize;
+  size: TileSize;
+}
+
+/** A tile's header from the data: its count, tags and actions (and a subhead). */
+export interface WidgetHead {
+  count?: number;
+  countTone?: Tone;
+  tags?: Tag[];
+  actions?: Action[];
+  subhead?: string;
+}
+
+/**
+ * One tile per item of the data (an offer comparison per requested line, a card per purchase
+ * order): the number of tiles follows the data, each the widget's `size`, titled by its item.
+ */
+export interface EachSpec<T, I = any> {
+  items(data: T, scope: WidgetScope): I[];
+  /** Stays the same for the same item (its tile keeps its place and state). */
+  key(item: I, index: number): string;
+  title(item: I, index: number): string;
+  render(item: I, data: T, scope: WidgetScope): ViewBlock | ViewBlock[] | null | undefined;
+  subhead?(item: I, data: T, scope: WidgetScope): string;
+  head?(item: I, data: T, scope: WidgetScope): WidgetHead;
 }
 
 /** A layout widget draws nothing of its own: no heading, source or header. */
 type NoBase = { [K in Exclude<keyof WidgetBase<unknown>, "visible">]?: never };
 
 type Only<K extends string> = {
-  [P in Exclude<"render" | "records" | "counts" | "fields" | "grid" | "split", K>]?: never;
+  [P in Exclude<"render" | "records" | "counts" | "fields" | "each" | "grid" | "split", K>]?: never;
 };
 
 /**
- * A widget is exactly one kind: it draws its data (`render`), is a no-code data widget
- * (`records`, `counts`, `fields`), or lays out other widgets (`grid`, `split`).
+ * A widget is exactly one kind: it draws its data (`render`), draws one tile per item of it
+ * (`each`), is a no-code data widget (`records`, `counts`, `fields`), or groups other widgets
+ * (`grid`, `split`; the board flattens them into tiles).
  */
 export type Widget<T = unknown> =
   | (WidgetBase<T> &
@@ -140,6 +162,7 @@ export type Widget<T = unknown> =
   | (WidgetBase<T> & Only<"records"> & { records: RecordsSpec })
   | (WidgetBase<T> & Only<"counts"> & { counts: CountsSpec })
   | (WidgetBase<T> & Only<"fields"> & { fields: FieldsSpec })
+  | (WidgetBase<T> & Only<"each"> & { each: EachSpec<T> })
   /** Children side by side, as many columns as fit. */
   | (NoBase & Only<"grid"> & { grid: Widget[]; visible?: (scope: WidgetScope) => boolean })
   /** A main column and a side column. */
@@ -199,3 +222,24 @@ export const widgets = (page: WidgetPage) => ({ path: "app-widgets", clientProps
 
 /** A widget, typed by its data: `widget<CaseProfit>({ source, render: (p) => … })`. */
 export const widget = <T>(w: Widget<T>): Widget<T> => w;
+
+/**
+ * An `each` widget's tiles once its data is in: one drawing widget per item, the widget's size,
+ * titled by the item, with a key that stays the same for the same item. Pure, so the host, the
+ * agent tools and the design check expand it alike.
+ */
+export function eachTiles<T>(w: Widget<T>, data: T, scope: WidgetScope): { key: string; widget: DrawingWidget<T> }[] {
+  const e = w.each;
+  if (!e) return [];
+  return e.items(data, scope).map((item, i) => ({
+    key: e.key(item, i),
+    widget: {
+      title: e.title(item, i),
+      size: w.size,
+      skeleton: w.skeleton,
+      subhead: e.subhead?.(item, data, scope),
+      head: e.head ? () => e.head!(item, data, scope) : undefined,
+      render: () => e.render(item, data, scope),
+    } as DrawingWidget<T>,
+  }));
+}

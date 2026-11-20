@@ -14,7 +14,7 @@ import {
   useAsTitle,
 } from "../shared.ts";
 import { block, type Cell, type Row, type Tone } from "./schema.ts";
-import type { Source, Widget, WidgetScope } from "./widget.ts";
+import type { DrawingWidget, Source, Widget, WidgetScope } from "./widget.ts";
 
 /**
  * The built-in data widgets (`records`, `counts`, `fields`), turned into a source and a render
@@ -52,7 +52,7 @@ function cellOf(f: FieldLike, doc: Doc): Cell {
 
 type Kind<K extends string> = Extract<Widget, Record<K, unknown>>;
 
-function records({ records: r, ...w }: Kind<"records">): Widget<{ docs: Doc[]; totalDocs: number }> {
+function records({ records: r, ...w }: Kind<"records">): DrawingWidget<{ docs: Doc[]; totalDocs: number }> {
   const c = collectionOf(r.collection);
   if (!c) return { ...w, render: () => block("alert", { tone: "error", text: `No collection "${r.collection}".` }) };
   const all = dataFields(formFields(c));
@@ -118,7 +118,7 @@ function records({ records: r, ...w }: Kind<"records">): Widget<{ docs: Doc[]; t
   };
 }
 
-function counts({ counts: spec, ...w }: Kind<"counts">): Widget<Record<string, number>> {
+function counts({ counts: spec, ...w }: Kind<"counts">): DrawingWidget<Record<string, number>> {
   const slug = spec.collection;
   const c = collectionOf(slug);
   let items: {
@@ -172,7 +172,7 @@ function counts({ counts: spec, ...w }: Kind<"counts">): Widget<Record<string, n
   };
 }
 
-function fields({ fields: spec, ...w }: Kind<"fields">, scope: WidgetScope): Widget<Doc> {
+function fields({ fields: spec, ...w }: Kind<"fields">, scope: WidgetScope): DrawingWidget<Doc> {
   const c = scope.doc ? collectionOf(scope.doc.slug) : undefined;
   const all = c ? dataFields(fieldsOf(c)) : [];
   return {

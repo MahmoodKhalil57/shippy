@@ -471,6 +471,7 @@ export class DashboardEditView extends LightElement {
       </ui-flex>`;
     }
 
+    const hasSide = !!c?.upload || sidebar.length > 0 || !!c?.auth || !!this.doc;
     const side = html`<ui-flex direction="col" gap="4">
       ${c?.upload ? this._upload() : nothing} ${sidebar.length ? this._form(sidebar, readonly) : nothing}
       ${
@@ -560,14 +561,13 @@ export class DashboardEditView extends LightElement {
               >`
             : nothing
         }
-        <ui-grid
-          sidebar
-          gap="8"
+        <ui-board
           .items=${[
-            { content: this._form(main, readonly), role: "main" },
-            { content: side, role: "side" },
+            // The form's own parts as bare tiles: a form is never height-capped.
+            { key: "main", size: "l", content: html`<ui-tile size="l" bare>${this._form(main, readonly)}</ui-tile>` },
+            ...(hasSide ? [{ key: "side", size: "s", content: html`<ui-tile size="s" bare>${side}</ui-tile>` }] : []),
           ]}
-        ></ui-grid>
+        ></ui-board>
       </ui-flex>
 
       <ui-modal

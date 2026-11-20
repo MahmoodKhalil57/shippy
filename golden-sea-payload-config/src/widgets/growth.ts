@@ -162,34 +162,34 @@ const fleets = on({
   title: "Fleets per ship manager",
   size: "l",
   skeleton: "table",
+  subhead: "Vessels with IMO for customers and prospects — the room to grow is every vessel we don't supply yet.",
   render: (g) => [
-    note("Vessels with IMO for customers and prospects — the room to grow is every vessel we don't supply yet."),
-    ...g.fleets.flatMap((f) => [
-      block("list", {
-        items: [
-          {
-            headline: f.company,
-            href: f.href,
-            supporting: `${f.vessels.length} of ${f.fleetSize} vessels on file · ${f.vessels.filter((v) => v.supplied).length} supplied`,
-            tags: [{ label: f.relation, tone: f.tone }],
-          },
-        ],
-      }),
-      block("table", {
-        columns: [
-          { key: "name", label: "Vessel" },
-          { key: "imo", label: "IMO" },
-          { key: "type", label: "Type" },
-          { key: "supplied", label: "" },
-        ],
-        rows: f.vessels.map((v) => ({
+    block("list", {
+      items: g.fleets.map((f) => ({
+        headline: f.company,
+        href: f.href,
+        supporting: `${f.vessels.length} of ${f.fleetSize} vessels on file · ${f.vessels.filter((v) => v.supplied).length} supplied`,
+        tags: [{ label: f.relation, tone: f.tone }],
+      })),
+    }),
+    block("table", {
+      columns: [
+        { key: "manager", label: "Ship manager" },
+        { key: "name", label: "Vessel" },
+        { key: "imo", label: "IMO" },
+        { key: "type", label: "Type" },
+        { key: "supplied", label: "" },
+      ],
+      rows: g.fleets.flatMap((f) =>
+        f.vessels.map((v) => ({
+          manager: f.href ? { text: f.company, href: f.href } : f.company,
           name: v.href ? { text: v.name, href: v.href } : v.name,
           imo: v.imo ? { text: v.imo, mono: true } : null,
           type: v.type || null,
           supplied: { text: v.supplied ? "Supplied" : "Not yet", tone: v.supplied ? "success" : "neutral", tag: true },
         })),
-      }),
-    ]),
+      ),
+    }),
   ],
 });
 
