@@ -3,7 +3,7 @@ import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
-import { padEnd, row, text } from "../layout/algebra.ts";
+import { cardInset, padEnd, row, text } from "../layout/algebra.ts";
 import { badge, type BadgeVariants } from "../data/badge.ts";
 import { iconSvg } from "../media/icon.ts";
 
@@ -34,8 +34,10 @@ export const card = rcva("card [&_p]:grow-0", {
       filled: "border border-transparent bg-surface-container-highest",
       elevated: "border border-transparent bg-surface-container-low shadow-elevation-1",
     },
-    /** `md` (the default) pads fluidly (see `card`); `sm` is daisyUI's 16px. */
+    /** `md` (the default) pads fluidly (see `card`); `sm` is daisyUI's 16px; `xs` a one-line card's. */
     size: {
+      /** One line in a tile one row high (a dense figure): 6px above and below, 12px a side. */
+      xs: `card-sm ${cardInset.xs}`,
       sm: "card-sm",
       md: "card-md [&>.card-body]:[--card-p:clamp(1rem,4cqi,1.5rem)]",
     },

@@ -3,12 +3,12 @@ import { customElement, property } from "lit/decorators.js";
 import { LightElement } from "../components/base/light-element.ts";
 import "../components/index.ts";
 import type { Access } from "./app.ts";
-import { config, dashboardPath, globalLabel, groupOf, labels, rootViews, settings } from "./shared.ts";
+import { dashboardPath, navOf, rootViews, settings } from "./shared.ts";
 import { site } from "./site.ts";
 
 /**
  * The default home page, for a project that doesn't set `admin.components.views.dashboard`: like
- * Payload's own dashboard, every screen, collection and global the user can read, by group.
+ * Payload's own dashboard, every screen in the navigation, by group.
  */
 @customElement("dashboard-home")
 export class DashboardHome extends LightElement {
@@ -18,25 +18,15 @@ export class DashboardHome extends LightElement {
     const groups = new Map<string, { headline: string; supporting: string; href: string }[]>();
     const add = (group: string, item: { headline: string; supporting: string; href: string }) =>
       groups.set(group, [...(groups.get(group) ?? []), item]);
-    for (const v of rootViews())
-      if (v.nav)
-        add(v.nav.group, {
-          headline: v.nav.label,
+    // Every view in the navigation (collections and globals show only where a view places them).
+    for (const v of rootViews()) {
+      const nav = navOf(v);
+      if (nav && !v.path.includes(":"))
+        add(nav.group, {
+          headline: nav.label,
           supporting: v.meta?.description ?? "",
           href: dashboardPath(v.path.slice(1)),
         });
-    for (const c of config.collections) {
-      if (c.admin?.hidden === true || this.access?.collections[c.slug]?.read.permission === false) continue;
-      const description = typeof c.admin?.description === "string" ? c.admin.description : "";
-      add(groupOf(c), {
-        headline: labels(c).plural,
-        supporting: description,
-        href: dashboardPath("collections", c.slug),
-      });
-    }
-    for (const g of config.globals ?? []) {
-      if (this.access?.globals[g.slug]?.read.permission === false) continue;
-      add("Configuration", { headline: globalLabel(g), supporting: "", href: dashboardPath("globals", g.slug) });
     }
     const order = (settings.nav?.groups ?? []).map((g) => g.label);
     const rank = (g: string) => (order.indexOf(g) + 1 || order.length + 1) - 1;

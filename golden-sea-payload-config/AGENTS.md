@@ -34,7 +34,7 @@ release. Add a tool name to select part of the graph. For example, run
 
 Golden Sea's project and its app. The config (`src/`): collections (`src/collections`), globals
 (`src/globals`, including the dashboard's own content: `branding`, `assistant`), endpoints with the
-business logic (`src/endpoints`, returning data, never UI), screens as widgets (`src/widgets`) and
+business logic (`src/endpoints`, returning data, never UI), screens (`src/pages`, declaring the design system's widgets with queries and formatters) and
 seed data (`src/seed`). Entry points: `.` (the config, `src/config.ts`) and `./seed` (`seedModules`,
 `seedUsers`).
 
@@ -52,8 +52,61 @@ seed data (`src/seed`). Entry points: `.` (the config, `src/config.ts`) and `./s
   a server. It defines no custom elements. `tests/template.test.ts` enforces all of this, and that
   the design system and the backend import neither other package. Only `app/`, `vite.config.ts`
   and `tests/` import the dashboard and the backend (lint `overrides` allow it there).
+- **Business logic lives in the collections**, so every screen reads it the same way:
+  - **Values derived from a document** are fields on its collection. If a query must filter on them, they are stored by a `beforeChange` hook (an invoice's `balance`, `status`). If they depend on the time or on other documents, they are virtual and computed on read (`computed()` in `src/collections/shared.ts`). Examples: an invoice's `balanceUsd`, `daysOverdue`, `ageBucket` and its AI `reminder` draft.
+  - **The demo's clock** is `TODAY` (`src/collections/shared.ts`). The config's `admin.custom.today` is set from it, so `$today-30d` in a widget query counts from the same day as the virtual fields.
+  - **What a value means** is on its field: select tones (`tones()`) and number formats (`formats.money("currency")`).
+  - **What people can do to a document** is on its collection (`custom.actions`, with `when`, `roles` and `$row.<path>`), calling an endpoint that re-checks access. Example: the invoices' reminders, which follow the customer's contact rule.
+  - **Pages declare the design system's data widgets with no code**: `records` (table, list, entries; dotted columns such as `customer.contactRule`), `metrics`, `breakdown` (a chart, or `as: "table"`), `counts`, `fields`. Shared `where`s go in `src/queries/` (`openInvoices`).
+  - **A formatter is only for what the collections can't say**: aggregates across collections, forecasts, AI briefings and multi-step workflows. These read an endpoint, and endpoints return data.
+- **Widgets** are the design system's generic kinds (`chart`, `table`, `list`, `entries`, `steps`,
+  `details`, `gauges`, `timeline`, `text`, `message`, `tiles`, `form`, `figures`, `assists`,
+  `header`…; `kind.each` for one tile per item). They know no business and the config has none of
+  its own (there is no `src/widgets`). The config declares each one on a page and passes it what
+  makes it Golden Sea's:
+  - `src/pages/<page>.ts`: a screen. Each widget is declared inline: a kind, where it goes (title,
+    size, rows, visible, hidden…), a query (`data`) and a formatter (`format`). Near-identical
+    widgets are one declaration (`kind.each` over the data, or one formatter taking a parameter),
+    never copies.
+  - `src/format/<domain>.ts`: the formatters, the business logic. Pure functions from data (an
+    endpoint's answer, documents) to what a kind draws (`KindData<"table">`, `Stat[]`…), plus the
+    slots every kind has: `note`, `tags`, `choice` (one or several), `alerts`, `actions`, `head`.
+    Written by the data they read, not by the page that shows them, so any page reuses them. A
+    formatter doesn't know where its data comes from. `src/format/index.ts`: what they all share
+    (money, dates, people, status tones).
+  - `src/queries/<domain>.ts`: the Payload queries (`query.find`, `query.endpoint`, `query.all`…),
+    typed by what they answer; the endpoints' response types stay with the endpoints.
+  - `src/actions/<domain>.ts`: the POST actions (calls, confirms, fields) formatters offer.
+  - The no-code data widgets (`records`, `counts`, `fields`) take their meaning from the field
+    config and need no formatter: a page declares them as plain objects.
+  - A widget that showed two things at once (a table and a details list) is two widgets.
+  - Each collection's looks (the line over a record's name, its status, its figure, its facts and
+    its calendar date) are in `src/collections/looks.ts`, merged into its `custom.list`. Each
+    list page's widgets and starting layout are in `src/pages/records.ts`: counts, share bars,
+    rings, treemaps and charts of its records (`collectionPage`'s `before`).
+  - The dashboards also place lists in their own layouts:
+    - home: the open tasks as rows and the quote deadlines on a calendar;
+    - control room: the live cases as cards and the deliveries on a calendar;
+    - cash: the open invoices as cards and the supplier bills on a calendar;
+    - growth: the pipeline as a board and the registrations as cards;
+    - approvals: every approval as rows;
+    - delivery plan: a delivery calendar.
+  - The dashboards' shapes (countdown, month, bullets, dials, waffle, share bar, treemap,
+    quadrant, the profit bridge) read one endpoint, `GET /api/visuals` (`src/endpoints/visuals.ts`,
+    per signed-in role), through `src/queries/visuals.ts` and `src/format/visuals.ts`. The cash
+    bridge reads the cash forecast (`format/cash.ts` `bridge`) and the pricing tab's dial, bridge
+    and what-if read the case's pricing, so each figure matches the one beside it. A shape with
+    nothing to draw is hidden (`hidden`: unpriced cases, roles without money).
+  - `tests/widget-files.test.ts` enforces this: no `src/widgets`, pages that never draw (no
+    `render`, `source` or `block(`), formatters that import no queries, and only those imports.
 - **Screens:** see "Screens are widgets" in `saastemlycrm-design-system/AGENTS.md`. Anything the
   widget vocabulary can't draw becomes a generic block or component in the design system.
+- **Where collections, records and globals are:** `src/pages.ts`. Nothing has a page of its own, so
+  the config places them: every collection people work in gets its list (`collectionPage`), every
+  collection its record page (`documentPage`), every global its form (`globalPage`), at the
+  addresses `links()` writes. `sourcingPipeline` shows related collections on one page, each list
+  set up for it (a fixed `where`, its columns, parts hidden, its own URL key). A new collection
+  people should open needs its pages there, or links to it lead nowhere (the screen check says so).
 - **Undo or a dialog** (the rule is `Reversal` in the design system's `schema.ts`): a reversible,
   internal action happens at once and its endpoint answers with `undo: { path, body }`, the call
   that takes it back (the snackbar's Undo). Today: an approval decision

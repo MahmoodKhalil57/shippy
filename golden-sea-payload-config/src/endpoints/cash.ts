@@ -1,56 +1,36 @@
 import type { Endpoint, PayloadRequest } from "payload";
+import { payableOf } from "../collections/fulfilment.ts";
+import { idOf, related } from "../collections/shared.ts";
 import { withdrawal } from "./commercial.ts";
-import { cash, collectionDraftFor } from "./operations.ts";
+import { forward } from "./forward.ts";
+import { cash, collectionDraftFor, operationsEndpoints } from "./operations.ts";
 import * as link from "../links.ts";
 
 /**
- * Receivables & payables (/cash, src/cms/widgets/cash.ts) beyond GET /api/operations/cash:
+ * Receivables & payables (/cash, src/pages/cash.ts) beyond GET /api/operations/cash:
  *
- * - GET  /api/cash/reminder-drafts — the AI's collection reminder per invoice due within 5 days
- *   or overdue, by invoice id (respecting each customer's contact rule).
- * - GET  /api/cash/payables — supplier payables, payment approvals and bank-detail changes;
- *   refused (403) for Sales.
- * - POST /api/cash/reminder | decide | apply-bank | record-payment | request-approval | match — what a
- *   person does on the page. Each re-checks who may do what. The system records payments after
- *   the bank movement — it never pays. `decide` answers with `undo` (withdrawing the decision,
+ * - GET  /api/cash/payables — payment approvals and bank-detail changes; refused (403) for Sales.
+ *   What we owe on each supplier PO is the PO's own `payable` field (../collections/fulfilment.ts).
+ * - POST /api/cash/decide | apply-bank | record-payment | request-approval | match — what a person
+ *   does on the page; reminder | einvoice | payment — an invoice's own actions, wherever invoices
+ *   show (../collections/finance.ts, which drafts the reminder). Each re-checks who may do what.
+ *   The system records payments after the bank movement — it never pays. `decide` answers with
+ *   `undo` (withdrawing the decision,
  *   POST /api/commercial/approvals/:id/withdraw); sending a reminder, applying bank details and
  *   recording a payment can't be undone.
  */
 
+/** An open invoice, as the forecast, a remittance match and a reminder read it. */
 export interface Receivable {
   id: string;
   number: string;
-  caseId: string | null;
   case: string | null;
   customer: string;
   customerName: string;
-  contactRule: string;
   currency: string;
-  amount: number;
-  paid: number;
   balance: number;
   dueDate: string;
   daysOverdue: number;
-  eInvoice: string;
-  lastReminder: string | null;
-}
-export interface Payable {
-  id: string;
-  po: string;
-  case: string;
-  caseId: string | null;
-  supplier: string;
-  supplierName: string;
-  currency: string;
-  total: number;
-  paid: number;
-  balance: number;
-  deposit: number;
-  depositPct: number;
-  depositApproval: { id: string; status: string } | null;
-  bill: { id: string; number: string; status: string; holdReason?: string | null } | null;
-  due: string;
-  stage: string;
 }
 export interface Decision {
   user: string;
@@ -93,16 +73,10 @@ export interface BankChange {
 }
 /** GET /api/operations/cash. */
 export interface Cash {
-  fx: { USD: number; EUR: number };
   receivables: Receivable[];
-  ageing: { customer: string; values: number[]; total: number }[];
-  buckets: string[];
-  totals: { receivableUsd: number; overdueUsd: number };
   weeks: string[];
   canSeePayables: boolean;
   canFinance: boolean;
-  payables: Payable[];
-  payablesTotalEgp?: number;
   approvals: PaymentApproval[];
   bankChanges: BankChange[];
   cashIn: number[];
@@ -121,7 +95,7 @@ export interface Draft {
   note?: string;
 }
 /** GET /api/cash/payables. */
-export type CashPayables = Pick<Cash, "canFinance" | "payables" | "approvals" | "bankChanges">;
+export type CashPayables = Pick<Cash, "canFinance" | "approvals" | "bankChanges">;
 
 const money = (n: number, cur = "USD") => {
   const whole = cur === "EGP" || Math.abs(n) >= 100000;
@@ -184,27 +158,20 @@ const action = (
   },
 });
 
+const all = async (req: PayloadRequest, collection: string, where?: Record<string, unknown>) =>
+  (await req.payload.find({ collection: collection as never, where: where as never, depth: 0, limit: 0, req }))
+    .docs as unknown as Record<string, unknown>[];
 const create = (req: PayloadRequest, collection: string, data: Record<string, unknown>) =>
   req.payload.create({ collection: collection as never, data: data as never, req });
 const update = (req: PayloadRequest, collection: string, id: string, data: Record<string, unknown>) =>
   req.payload.update({ collection: collection as never, id, data: data as never, req });
 
 export const cashEndpoints: Endpoint[] = [
-  // The reminder drafts, for invoices due within 5 days or overdue.
-  read("reminder-drafts", async (req, d) => {
-    const drafts: Record<string, Draft> = {};
-    for (const r of d.receivables.filter((x) => x.daysOverdue > -5)) {
-      const x = await draft(req, r.id);
-      if (x) drafts[r.id] = x;
-    }
-    return Response.json(drafts);
-  }),
   // Payables, approvals and bank changes: never for Sales.
   read("payables", async (_req, d) =>
     d.canSeePayables
       ? Response.json({
           canFinance: d.canFinance,
-          payables: d.payables,
           approvals: d.approvals,
           bankChanges: d.bankChanges,
         } satisfies CashPayables)
@@ -303,25 +270,37 @@ export const cashEndpoints: Endpoint[] = [
     return Response.json({ ok: true });
   }),
   // Finance asks the Financial Director or the CEO to approve a supplier payment.
+  // What's owed on a PO is the PO's own `payable` (../collections/fulfilment.ts).
   action("request-approval", async (req, d, b) => {
-    const p = d.payables.find((x) => x.id === s(b.payable));
-    if (!p) return fail("Payable not found.", 404);
     if (!d.canFinance) return fail("Management and finance request payment approvals.", 403);
-    if (p.stage === "Bill on hold" || p.depositApproval || d.approvals.some((a) => a.po?.id === p.id))
+    const po = (await req.payload
+      .findByID({ collection: "purchase-orders" as never, id: s(b.payable), depth: 0, req } as never)
+      .catch(() => null)) as Record<string, unknown> | null;
+    const docs = {
+      bills: await all(req, "supplier-bills"),
+      payments: await all(req, "payments", { direction: { equals: "out" } }),
+      approvals: await all(req, "approvals"),
+    };
+    const p = po ? payableOf(po, docs) : null;
+    if (!po || !p) return fail("Payable not found.", 404);
+    if (p.stage === "Bill on hold" || p.depositApproval || p.paymentApproval)
       return fail("An approval is already in progress for this payable.");
+    const supplier = await related(req, "suppliers", po.supplier);
+    const supplierName = s(supplier?.name);
+    const number = s(po.number);
     await create(req, "approvals", {
-      title: `Pay ${p.supplierName} ${money(p.balance, p.currency)} — ${p.po}`,
+      title: `Pay ${supplierName} ${money(p.balance, p.currency)} — ${number}`,
       type: "Supplier payment",
-      case: p.case,
-      detail: `PO ${p.po}${p.bill ? ` · bill ${p.bill.number} matched (PO = receipt = bill)` : ""} · due ${day(p.due)} · bank details unchanged.`,
+      case: idOf(po.case),
+      detail: `PO ${number}${p.bill ? ` · bill ${p.bill.number} matched (PO = receipt = bill)` : ""} · due ${day(p.due)} · bank details unchanged.`,
       approvers: ["kb", "mh"],
-      subject: { relationTo: "purchase-orders", value: p.id },
+      subject: { relationTo: "purchase-orders", value: s(po.id) },
     });
     for (const user of ["kb", "mh"])
       await create(req, "notifications", {
         user,
-        title: `Approve payment to ${p.supplierName}`,
-        detail: `${money(p.balance, p.currency)} · ${p.po}`,
+        title: `Approve payment to ${supplierName}`,
+        detail: `${money(p.balance, p.currency)} · ${number}`,
         kind: "Payment",
         href: "/cash",
       }).catch(() => null);
@@ -340,6 +319,64 @@ export const cashEndpoints: Endpoint[] = [
       ...(found.length === 1 ? { href: link.doc("invoices", found[0]!.id) } : {}),
     });
   }),
+  // An invoice's own actions (../collections/finance.ts), wherever invoices show.
+  // Sign & submit (or refresh) its e-invoice: a submission the tax authority accepts is checked
+  // again at once, so the person sees the final status.
+  {
+    path: "/cash/einvoice",
+    method: "post",
+    handler: async (req: PayloadRequest) => {
+      const b = await input(req);
+      const run = () =>
+        forward<{ result: string; message: string }>(req, operationsEndpoints, "/operations/einvoice", {
+          body: { invoice: b.invoice, taxId: b.taxId || undefined },
+        });
+      const r = await run();
+      if (r instanceof Response || r.result !== "submitted") return r instanceof Response ? r : Response.json(r);
+      const v = await forward<{ message: string }>(req, operationsEndpoints, "/operations/einvoice", {
+        body: { invoice: b.invoice },
+      });
+      return v instanceof Response ? v : Response.json({ message: v.message });
+    },
+  },
+  // A customer payment, recorded after the money is in the bank (the system never moves money).
+  {
+    path: "/cash/payment",
+    method: "post",
+    handler: async (req: PayloadRequest) => {
+      if (!req.user) return fail("You are not allowed to perform this action.", 401);
+      const b = await input(req);
+      const inv = (await req.payload
+        .findByID({ collection: "invoices" as never, id: s(b.invoice), depth: 0, req, overrideAccess: false } as never)
+        .catch(() => null)) as { id: string; number: string; currency: string; balance: number } | null;
+      if (!inv) return fail("Invoice not found.", 404);
+      const amount = Number(b.amount);
+      if (!(amount > 0)) return fail("Enter the amount received.");
+      try {
+        await req.payload.create({
+          req,
+          overrideAccess: false,
+          collection: "payments" as never,
+          data: {
+            direction: "in",
+            reference: s(b.reference) || "TRX-",
+            paidAt: new Date().toISOString(),
+            amount,
+            currency: inv.currency,
+            invoice: inv.id,
+            kind: amount < inv.balance ? "Installment" : "Balance",
+            status: "Recorded",
+          } as never,
+        });
+      } catch (e) {
+        return fail((e as Error).message, (e as { status?: number }).status === 403 ? 403 : 400);
+      }
+      const left = Math.max(0, inv.balance - amount);
+      return Response.json({
+        message: `${money(amount, inv.currency)} allocated to ${inv.number}${left ? ` — balance ${money(left, inv.currency)}` : " — paid in full"}.`,
+      });
+    },
+  },
 ];
 
 /** Open invoices a remittance pays: by number (also just its digits), or by an equal balance. */

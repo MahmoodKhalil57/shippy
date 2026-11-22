@@ -4,7 +4,7 @@ import { keyed } from "lit/directives/keyed.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { iconButton } from "../actions/icon-button.ts";
-import { fixed, inset, padEnd, padStart, row, rowFill, text } from "../layout/algebra.ts";
+import { fixed, floatingFit, floatingHeight, inset, padEnd, padStart, row, rowFill, text } from "../layout/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
 
 /**
@@ -48,7 +48,7 @@ export const snackbar = rcva(
   `${row} ${inset["4"]} pointer-events-none fixed inset-x-0 top-auto bottom-[calc(var(--space-900)+var(--space-100))] z-[65] m-0 justify-center overflow-visible border-0 bg-transparent py-0 md:bottom-10`,
 );
 export const snackbarBody = rcva(
-  `${row} ${padStart["4"]} ${text.label} liquid-glass shadow-elevation-3 min-h-12 w-fit max-w-[min(36rem,100%)] items-center gap-2 rounded-xl py-1.5 pe-1.5 text-body-md text-on-surface`,
+  `${row} ${padStart["4"]} ${text.label} liquid-glass shadow-elevation-3 min-h-(--tile-h) ${floatingFit["11In"]} ${floatingHeight.fit} items-center gap-2 rounded-xl py-1.5 pe-1.5 text-body-md text-on-surface`,
   {
     variants: {
       /** On screen, or on its way out (kept only until its exit has played). */

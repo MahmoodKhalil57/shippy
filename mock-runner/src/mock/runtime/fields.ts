@@ -326,3 +326,16 @@ export async function runFieldHooks(
     }
   }
 }
+
+/** Leaves out what's never stored: virtual fields (Payload's `virtual: true`), in groups, arrays and blocks too. */
+export function dropVirtual(fields: FieldLike[], data: Record<string, unknown>): void {
+  for (const f of dataFields(fields)) {
+    const name = f.name!;
+    const v = data[name];
+    if (f.virtual) delete data[name];
+    else if (f.type === "group" && isObject(v)) dropVirtual(childFields(f), v);
+    else if ((f.type === "array" || f.type === "blocks") && Array.isArray(v))
+      for (const row of v)
+        if (isObject(row)) dropVirtual(f.type === "array" ? childFields(f) : blockFields(f, row.blockType), row);
+  }
+}

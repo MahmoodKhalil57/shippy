@@ -6,10 +6,10 @@ import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { auditContrast } from "../../base/contrast.ts";
 import {
   closeColumn,
+  frameSizesAt,
   openColumn,
   refit,
   wantsNav,
-  MAIN_COMFORT,
   type FrameSizes,
   type FrameState,
   type Side,
@@ -43,9 +43,9 @@ export type { PageTransition } from "../../primitives/layout/frame.ts";
  * back as they were.
  *
  * Space (every decision is src/components/base/frame-fit.ts, proved for every window width): the
- * main panel's content is never narrower than `--main-min` (258px, src/styles/theme.css: what a
+ * main panel's content is never narrower than `--main-min` (5 tiles, 265px, src/styles/theme.css: what a
  * 320px phone leaves it). Opening a column pushes the main panel when the page keeps
- * `--main-comfort` (320px) beside it; otherwise it first closes the other column if that makes
+ * `--main-comfort` (6 tiles) beside it; otherwise it first closes the other column if that makes
  * room, and failing that opens as a sheet over the page (its rail keeps its place) with
  * everything else dimmed. When the window shrinks, open columns close (side panel first) until
  * the main panel fits again.
@@ -81,17 +81,11 @@ export type { PageTransition } from "../../primitives/layout/frame.ts";
  * with `{ nav, aside, expanded }` (`expanded`: set when the person expanded or collapsed the
  * navigation beside the page). Escape closes a floating column.
  */
-/** The frame's live sizes (`--frame-*`, registered so they compute to px): the rails, and gaps + edges. */
-const frame = () => {
-  const css = getComputedStyle(document.documentElement);
-  const px = (name: string) => parseFloat(css.getPropertyValue(name)) || 0;
-  return {
-    rail: px("--frame-rail"),
-    chrome: 2 * px("--frame-gap") + 2 * px("--frame-edge"),
-    /** The content width under which a frame with both rails goes compact (`--main-comfort`). */
-    mainComfort: px("--main-comfort") || MAIN_COMFORT,
-  };
-};
+/** Whether the browser anchors the scrim around the main window (`frame-matte`, src/styles/theme.css). */
+const ANCHORS = typeof CSS !== "undefined" && CSS.supports("anchor-name: --a");
+
+/** The text size, as a scale of 16px (tiles grow with it). */
+const textScale = () => parseFloat(getComputedStyle(document.documentElement).fontSize) / 16 || 1;
 
 @customElement("ui-app-shell")
 export class UiAppShell extends LightElement {
@@ -157,6 +151,8 @@ export class UiAppShell extends LightElement {
    */
   /** The scrim over the background image (`<ui-frame scrim>`). */
   @state() private _scrim = "";
+  /** The scrim inside the main window, under the page plane (`<ui-frame window-scrim>`). */
+  @state() private _windowScrim = "";
   #luma: { src: string; luma: Luma } | null = null;
   #regions = new ResizeObserver(() => this._measureSoon());
   #content = new MutationObserver(() => this._measureSoon());
@@ -167,6 +163,7 @@ export class UiAppShell extends LightElement {
     if (!src) {
       this.#luma = null;
       this._scrim = "";
+      this._windowScrim = "";
       return;
     }
     if (this.#luma?.src !== src) {
@@ -229,12 +226,34 @@ export class UiAppShell extends LightElement {
     this.#measured = seen;
     // The frame's own colour and background are the theme's base-content and base-200.
     const css = getComputedStyle(shell);
-    this.#scrim = { ink: cssLuminance(css.color), surface: cssLuminance(css.backgroundColor) };
-    const regions = this._regions;
-    const fails = (alpha: number) => {
-      this.#scrim.alpha = alpha;
-      return regions.some((r) => auditContrast(r).some((i) => i.overImage));
+    this.#scrim = { ink: cssLuminance(css.color), surface: cssLuminance(css.backgroundColor), alpha: 0, window: 0 };
+    const mix = (a: number) =>
+      a > 0.05 ? `color-mix(in oklab, var(--color-base-200) ${(a * 100).toFixed(1)}%, transparent)` : "";
+    // The audit judges each text over the frame's own layers too (the matte backdrop's tint and blur,
+    // the shell's tint, the window's: `data-frame-layer` and the elements' own backgrounds,
+    // src/components/base/contrast.ts), so a scrim is only what they don't already give.
+    // The shell first (header, columns, footer), then the window: text on the page plane itself
+    // (the page header), cards being solid. Where anchors are missing, one scrim covers both.
+    this.#scrim.alpha = this._leastScrim(this._regions, (a) => (this.#scrim.alpha = a));
+    this._scrim = mix(this.#scrim.alpha);
+    const main = this.querySelector("main");
+    this.#scrim.window = main && ANCHORS ? this._leastScrim([main], (a) => (this.#scrim.window = a)) : 0;
+    this._windowScrim = mix(this.#scrim.window);
+  }
+
+  /**
+   * The least scrim (as much of the photo as possible, `set` applies it to the model) at which no
+   * text in `regions` drawn over the image fails WCAG AA, by bisection. Text that fails with the
+   * photo fully covered fails on the theme's own surface: no scrim can fix it (it is the scheme's
+   * contrast, tests/contrast.test.ts), so it must not bury the photo.
+   */
+  private _leastScrim(regions: Element[], set: (alpha: number) => void) {
+    const issues = (alpha: number) => {
+      set(alpha);
+      return regions.flatMap((r) => auditContrast(r).filter((i) => i.overImage));
     };
+    const unfixable = new Set(issues(1).map((i) => i.element));
+    const fails = (alpha: number) => issues(alpha).some((i) => !unfixable.has(i.element));
     let [lo, hi] = [0.05, 0.94];
     if (!fails(lo)) hi = lo;
     else if (!fails(hi))
@@ -243,11 +262,11 @@ export class UiAppShell extends LightElement {
         if (fails(mid)) lo = mid;
         else hi = mid;
       }
-    this.#scrim.alpha = hi;
-    this._scrim = `color-mix(in oklab, var(--color-base-200) ${(hi * 100).toFixed(1)}%, transparent)`;
+    set(hi);
+    return hi;
   }
 
-  #scrim: { ink: number; surface: number; alpha?: number } = { ink: 0, surface: 0 };
+  #scrim: { ink: number; surface: number; alpha?: number; window: number } = { ink: 0, surface: 0, window: 0 };
 
   /**
    * Luminances of what the frame shows behind `rect` (the background image under its scrim), or
@@ -258,7 +277,15 @@ export class UiAppShell extends LightElement {
   backdropAt(rect: Rect, blur = 0): number[] | null {
     const shell = this._root;
     if (!this.#luma || !shell || this.#scrim.alpha == null) return null;
-    const a = this.#scrim.alpha;
+    // The scrim is on the shell around the window, not in it (`frame-matte`), where anchors work.
+    const window = ANCHORS ? this.querySelector("main")?.getBoundingClientRect() : undefined;
+    const inWindow =
+      !!window &&
+      rect.x >= window.left &&
+      rect.y >= window.top &&
+      rect.x + rect.width <= window.right &&
+      rect.y + rect.height <= window.bottom;
+    const a = inWindow ? this.#scrim.window : this.#scrim.alpha;
     const frame = shell.getBoundingClientRect();
     const luma = this.#luma.luma;
     const h = blur * 1.7;
@@ -288,10 +315,13 @@ export class UiAppShell extends LightElement {
     return main ? main.offsetWidth - main.clientWidth : 4;
   }
 
-  /** The live sizes the room decisions read (the decisions are src/components/base/frame-fit.ts). */
+  /** The live sizes the room decisions read: the window's tiles (src/components/base/frame-fit.ts). */
   private _sizes(): FrameSizes {
-    return { ...frame(), mainChrome: this._mainChrome() };
+    return frameSizesAt(document.documentElement.clientWidth, textScale(), this._mainChrome());
   }
+
+  /** The screen's tiles across, for the frame's grid (`<ui-frame cols>`). */
+  @state() private _cols = 6;
 
   private get _state(): FrameState {
     return {
@@ -336,16 +366,15 @@ export class UiAppShell extends LightElement {
    * room back.
    */
   private _toggle(side: Side, open: boolean) {
-    const width = document.documentElement.clientWidth;
     const st = this._state;
     const sizes = this._sizes();
     if (open) {
-      const next = openColumn(side, width, st, sizes);
+      const next = openColumn(side, st, sizes);
       return this._apply(next, side === "start" && !next.navSheet && !st.navOpen ? true : undefined);
     }
     const expanded = side === "start" && st.navOpen && !st.navSheet ? false : undefined;
-    const want = side === "end" && wantsNav(this.navExpanded, width);
-    return this._apply(refit(width, closeColumn(side, st), sizes, want), expanded);
+    const want = side === "end" && wantsNav(this.navExpanded, sizes);
+    return this._apply(refit(closeColumn(side, st), sizes, want), expanded);
   }
 
   /**
@@ -368,8 +397,9 @@ export class UiAppShell extends LightElement {
    * fits; expand the navigation beside the page when it's wanted and has the room.
    */
   private _refit = () => {
-    const width = document.documentElement.clientWidth;
-    const next = refit(width, this._state, this._sizes(), wantsNav(this.navExpanded, width));
+    const sizes = this._sizes();
+    const next = refit(this._state, sizes, wantsNav(this.navExpanded, sizes));
+    this._cols = sizes.cols;
     this._compact = next.compact;
     this._navSheet = next.navSheet;
     this._set(next.navOpen, next.asideOpen);
@@ -438,7 +468,13 @@ export class UiAppShell extends LightElement {
     // The side panel's rail moves between columns by property (see `railNodes`): in its own
     // column normally, in the navigation's in a compact frame.
     const asideRail = this.slottedNodes("aside-rail");
-    return html`<ui-frame ?settling=${this._settling} ?compact=${compact} .scrim=${this._scrim}>
+    return html`<ui-frame
+      ?settling=${this._settling}
+      ?compact=${compact}
+      .cols=${this._cols}
+      .scrim=${this._scrim}
+      .windowScrim=${this._windowScrim}
+    >
       <ui-frame-header
         .brand=${this.brand}
         .brandHref=${this.brandHref}
@@ -447,37 +483,44 @@ export class UiAppShell extends LightElement {
         ?lift-end=${!compact && asideSheet}
         >${this.slotted("start")}${this.slotted("search")}${this.slotted("actions")}</ui-frame-header
       >
-      <ui-frame-body>
-        <ui-frame-column
-          side="start"
-          .label=${this.navLabel}
-          .open=${this.navOpen}
-          .sheet=${this._navSheet}
-          list-slot="nav"
-          rail-slot="rail"
-          footer-slot="nav-footer"
-          .extraRailNodes=${compact ? asideRail : undefined}
-          rail-view=${this._railView}
-          extra-label=${this.asideLabel}
-          @ui-rail-switch=${(e: CustomEvent<{ view: "own" | "extra" }>) => (this._railView = e.detail.view)}
-          @ui-column-toggle=${(e: CustomEvent<{ open: boolean }>) => void this.toggleNav(e.detail.open)}
-          >${this.slotted("nav")}${this.slotted("rail")}${this.slotted("nav-footer")}</ui-frame-column
-        >
-        <ui-frame-main ?compact=${compact}>${this.slotted()}${this.slotted("footer")}</ui-frame-main>
-        <ui-frame-column
-          side="end"
-          .label=${this.asideLabel}
-          .open=${this.asideOpen}
-          .sheet=${this._asideSheet}
-          list-slot="aside"
-          rail-slot="aside-rail"
-          footer-slot="aside-footer"
-          ?merged=${compact}
-          .railNodes=${compact ? [] : asideRail}
-          @ui-column-toggle=${(e: CustomEvent<{ open: boolean }>) => void this.toggleAside(e.detail.open)}
-          >${this.slotted("aside")}${this.slotted("aside-footer")}</ui-frame-column
-        >
-      </ui-frame-body>
+      <ui-frame-column
+        side="start"
+        .label=${this.navLabel}
+        .open=${this.navOpen}
+        .sheet=${this._navSheet}
+        list-slot="nav"
+        rail-slot="rail"
+        footer-slot="nav-footer"
+        .extraRailNodes=${compact ? asideRail : undefined}
+        rail-view=${this._railView}
+        extra-label=${this.asideLabel}
+        @ui-rail-switch=${(e: CustomEvent<{ view: "own" | "extra" }>) => (this._railView = e.detail.view)}
+        @ui-column-toggle=${(e: CustomEvent<{ open: boolean }>) => void this.toggleNav(e.detail.open)}
+        >${this.slotted("nav")}${this.slotted("rail")}${this.slotted("nav-footer")}</ui-frame-column
+      >
+      <ui-frame-main
+        ?compact=${compact}
+        start-label=${this.navLabel}
+        end-label=${this.asideLabel}
+        @ui-frame-drag=${(e: CustomEvent<{ side: "start" | "end"; open: boolean }>) =>
+          void (e.detail.side === "start" ? this.toggleNav(e.detail.open) : this.toggleAside(e.detail.open))}
+        ?push-start=${this.navOpen && !this._navSheet}
+        ?push-end=${!compact && this.asideOpen && !this._asideSheet}
+        >${this.slotted()}${this.slotted("footer")}</ui-frame-main
+      >
+      <ui-frame-column
+        side="end"
+        .label=${this.asideLabel}
+        .open=${this.asideOpen}
+        .sheet=${this._asideSheet}
+        list-slot="aside"
+        rail-slot="aside-rail"
+        footer-slot="aside-footer"
+        ?merged=${compact}
+        .railNodes=${compact ? [] : asideRail}
+        @ui-column-toggle=${(e: CustomEvent<{ open: boolean }>) => void this.toggleAside(e.detail.open)}
+        >${this.slotted("aside")}${this.slotted("aside-footer")}</ui-frame-column
+      >
     </ui-frame>`;
   }
 }

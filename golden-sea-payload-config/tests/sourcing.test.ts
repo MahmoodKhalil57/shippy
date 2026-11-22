@@ -1,6 +1,31 @@
+import { stringify } from "qs-esm";
 import { beforeEach, describe, expect, it } from "vite-plus/test";
+import type { CollectionSettings } from "saastemlycrm-design-system/contracts";
+import { matches } from "saastemlycrm-design-system/payload";
+import { IntakeMessages, SupplierRfqs } from "../src/collections/sourcing.ts";
 import { lineCategory } from "../src/endpoints/sourcing.ts";
+import { ORDERS, SHOWS } from "../src/format/inbox.ts";
+import { liveMessages, messagesToReview } from "../src/queries/inbox.ts";
+import { repliesOnCase, repliesToReview } from "../src/queries/sourcing.ts";
 import { backend, call, login } from "./backend.ts";
+import { actionsOn } from "./collection-actions.ts";
+
+// oxlint-disable-next-line typescript/no-explicit-any
+type Json = any;
+
+/** Intake messages as a widget's query reads them (depth 1: relationships populated), `$doc.id` filled. */
+async function messages(where: Json, sort = "-receivedAt", doc = ""): Promise<Json[]> {
+  const filled = JSON.parse(JSON.stringify(where).replaceAll("$doc.id", doc));
+  const query = stringify({ where: filled, sort, limit: 0, depth: 1 }, { addQueryPrefix: true });
+  const r = await call("GET", `/api/intake-messages${query}`);
+  expect(r.status).toBe(200);
+  return r.body.docs;
+}
+/** What the signed-in person can do to a message (the collection's actions), by label. */
+const labels = async (m: Json) => {
+  const me = (await call("GET", "/api/users/me")).body.user;
+  return actionsOn(IntakeMessages, m, me.role).map((a) => a.label);
+};
 
 /** The sourcing desk's endpoints: inbox (extraction, matching, case creation), inbox history, supplier RFQs. */
 
@@ -13,17 +38,54 @@ describe("inbox", () => {
     expect((await call("GET", "/api/inbox")).status).toBe(401);
   });
 
-  it("lists live messages with their channels and the review queue", async () => {
+  it("lists live messages with their channels and the review queue, from the collection", async () => {
     await login();
     const { status, body } = await call("GET", "/api/inbox");
     expect(status).toBe(200);
-    expect(body.messages.length).toBeGreaterThanOrEqual(8);
-    expect(body.messages.map((m: { channel: string }) => m.channel)).toEqual(
-      expect.arrayContaining(["Email", "WhatsApp", "Website form"]),
-    );
-    const review = body.messages.find((m: { id: string }) => m.id === "msg-delta-uncertain");
-    expect(review.status).toBe("Needs review");
-    expect(review.match.candidates.map((c: { caseId: string }) => c.caseId)).toEqual(["GS-RFQ-0142", "GS-RFQ-0140"]);
+    expect(body.stats.review).toBe(1);
+    // The list: every live message, filtered by status (`show`) and ordered (`order`).
+    const all = await messages({ ...liveMessages, status: { in: SHOWS.all } }, ORDERS.time);
+    expect(all.length).toBeGreaterThanOrEqual(8);
+    expect(all.map((m) => m.channel)).toEqual(expect.arrayContaining(["Email", "WhatsApp", "Website form"]));
+    expect(all.find((m) => m.id === "msg-nordvik-fw")).toMatchObject({ status: "Linked", via: "Outlook · sales@" });
+    expect(all.find((m) => m.id === "msg-web-petro").via).toBe("Website quick-quote form");
+    const fresh = await messages({ ...liveMessages, status: { in: SHOWS.new } });
+    expect(fresh.length).toBeGreaterThan(0);
+    expect(fresh.every((m) => m.status === "New")).toBe(true);
+    // Most urgent first: the stored urgency, newest first within it.
+    const urgent = await messages({ ...liveMessages, status: { in: SHOWS.all } }, ORDERS.urgency);
+    expect(urgent.map((m) => m.urgency)).toEqual(urgent.map((m) => m.urgency).sort((a, b) => b - a));
+    expect(urgent[0].urgency).toBeGreaterThanOrEqual(4);
+    expect(urgent[0].urgencyTag).toBe(`Urgency ${urgent[0].urgency}/5`);
+
+    // The review queue: below 85%, a person picks the case — one "Link to…" per candidate.
+    const [review, ...more] = await messages(messagesToReview);
+    expect(more).toEqual([]);
+    expect(review).toMatchObject({ id: "msg-delta-uncertain", match: { confidencePct: 62 } });
+    expect(review.candidates.map((c: Json) => [c.case.caseId, c.confidencePct])).toEqual([
+      ["GS-RFQ-0142", 62],
+      ["GS-RFQ-0140", 38],
+    ]);
+    expect(await labels(review)).toEqual(["Link to GS-RFQ-0142 (62%)", "Link to GS-RFQ-0140 (38%)", "Not related"]);
+    expect(actionsOn(IntakeMessages, review, "supply-chain").map((a) => a.call)).toEqual([
+      { path: "/inbox/msg-delta-uncertain/review", body: { decision: "link", case: "gs-rfq-0142" } },
+      { path: "/inbox/msg-delta-uncertain/review", body: { decision: "link", case: "gs-rfq-0140" } },
+      { path: "/inbox/msg-delta-uncertain/review", body: { decision: "not-related" } },
+    ]);
+    // A linked reply: its case, and a supplier reply's RFQs there; a duplicate: its case only.
+    const [reply] = await messages({ id: { equals: "msg-horizon-reply" } });
+    expect(actionsOn(IntakeMessages, reply, "supply-chain").map((a) => [a.label, a.href])).toEqual([
+      ["Supplier RFQs", "/collections/cases/gs-rfq-0142/rfqs"],
+      ["Open GS-RFQ-0142", "/collections/cases/gs-rfq-0142"],
+    ]);
+    const [copy] = await messages({ id: { equals: "msg-nordvik-fw" } });
+    expect(await labels(copy)).toEqual(["Open GS-RFQ-0142"]);
+    // Once decided, nothing is left to decide.
+    await call("POST", "/api/inbox/msg-delta-uncertain/review", { decision: "not-related" });
+    const [decided] = await messages({ id: { equals: "msg-delta-uncertain" } });
+    expect(decided.status).toBe("Ignored");
+    expect(await labels(decided)).toEqual([]);
+    expect(await messages(messagesToReview)).toEqual([]);
   });
 
   it("simulates the Aurora Crest RFQ, extracts a draft with confidence and creates the case once", async () => {
@@ -97,8 +159,8 @@ describe("inbox", () => {
   it("gives the reading pane one message with its saved draft, the newest by default", async () => {
     await login();
     const first = await call("GET", "/api/inbox/message");
-    const list = await call("GET", "/api/inbox");
-    expect(first.body.message.id).toBe(list.body.messages[0].id);
+    const [newest] = await messages(liveMessages);
+    expect(first.body.message.id).toBe(newest.id);
     const sim = await call("POST", "/api/inbox/simulate", { kind: "rfq" });
     expect(sim.body.href).toBe(`?message=${sim.body.doc.id}`);
     const before = await call("GET", `/api/inbox/message?id=${sim.body.doc.id}`);
@@ -146,13 +208,40 @@ describe("supplier RFQs", () => {
       plan.body.drafts.map((d: { reference: string }) => d.reference),
     );
     const view = await call("GET", `/api/sourcing/cases/${caseId}`);
-    expect(view.body.counts.waiting).toBe(plan.body.drafts.length);
+    const waiting = await call(
+      "GET",
+      `/api/supplier-rfqs?where[case][equals]=${caseId}&where[status][in]=Sent,Awaiting reply,Partial reply,Clarification needed&limit=0`,
+    );
+    expect(waiting.body.totalDocs).toBe(plan.body.drafts.length);
     expect(view.body.rfqs[0].schedule.map((s: { label: string }) => s.label)).toEqual([
       "Sent",
       "Reminder 1",
       "Reminder 2",
       "Escalate to case owner",
     ]);
+  });
+
+  it("offers Remind now on an RFQ still waiting, from the collection, and says where its reminders stand", async () => {
+    await login();
+    const remind = async (id: string) => {
+      const doc = (await call("GET", `/api/supplier-rfqs/${id}?depth=0`)).body;
+      const actions = ((SupplierRfqs.custom as CollectionSettings).actions ?? []).filter(
+        (a) => !a.when || matches(doc, a.when as never),
+      );
+      return { doc, actions };
+    };
+    const waiting = await remind("srfq-0142-e");
+    expect(waiting.doc.reminderState).toBe("1 of 2 · next 17 Nov, 15:00");
+    // The second reminder also alerts the owner: internal, so no dialog.
+    expect(waiting.actions.map((a) => [a.label, Boolean(a.confirm)])).toEqual([["Remind now", false]]);
+    expect(waiting.actions[0]!.call!.path).toBe("/sourcing/rfqs/$row.id/remind");
+    const replied = await remind("srfq-0142-a");
+    expect(replied.doc.reminderState).toBe("0 of 2 · stopped");
+    expect(replied.actions).toEqual([]);
+    await call("POST", "/api/sourcing/rfqs/srfq-0142-e/remind");
+    const escalated = await remind("srfq-0142-e");
+    expect(escalated.doc.reminderState).toBe("2 of 2 · escalated");
+    expect(escalated.actions).toEqual([]);
   });
 
   it("escalates after two reminders and stops reminding once answered", async () => {
@@ -176,16 +265,27 @@ describe("supplier RFQs", () => {
     expect(offers.body.docs.map((o: { supplier: string }) => o.supplier)).toEqual(
       expect.arrayContaining(["S3", sup.body.docs[0].id]),
     );
-    // The new supplier's unclear unit, plus the seeded Delta Marine reply that may belong here.
-    expect(body.review.map((r: { kind: string }) => r.kind).sort()).toEqual(["match", "new-supplier"]);
-    const unit = body.review.find((r: { kind: string }) => r.kind === "new-supplier");
-    expect(unit.uncertain[0]).toContain("Confirm the unit");
+    // The new supplier's unclear unit, plus the seeded Delta Marine reply that may belong here: the
+    // case tab's "Needs a person", each with the collection's decisions.
+    const review = await messages(repliesToReview, "-receivedAt", "gs-rfq-0142");
+    expect(review).toHaveLength(2);
+    const unit = review.find((m) => m.match.case?.id === "gs-rfq-0142");
+    expect(unit.uncertain).toContain("Confirm the unit");
+    expect(await labels(unit)).toEqual(["Confirm offer", "Not related"]);
+    expect(actionsOn(IntakeMessages, unit, "supply-chain")[0]!.call!.body).toEqual({
+      decision: "link",
+      case: "gs-rfq-0142",
+    });
+    expect(await labels(review.find((m) => m.id === "msg-delta-uncertain"))).toContain("Link to GS-RFQ-0142 (62%)");
     expect(body.newSuppliers.map((s: { name: string }) => s.name)).toContain("Alex Weld Trading");
+    // The replies matched to the case, by reference.
+    const matched = await messages(repliesOnCase, "-receivedAt", "gs-rfq-0142");
+    expect(matched.map((m) => m.match.reference)).toEqual(expect.arrayContaining(["GS-SRFQ-0142-C"]));
 
     // A person confirms the uncertain unit: the AI deviation goes, the message is linked.
     await call("POST", `/api/inbox/${unit.id}/review`, { decision: "link", case: "gs-rfq-0142" });
-    const after = await call("GET", "/api/sourcing/cases/gs-rfq-0142");
-    expect(after.body.review.map((r: { kind: string }) => r.kind)).toEqual(["match"]);
+    const after = await messages(repliesToReview, "-receivedAt", "gs-rfq-0142");
+    expect(after.map((m) => m.id)).toEqual(["msg-delta-uncertain"]);
     const fixed = await call("GET", "/api/offers?where[case][equals]=gs-rfq-0142&where[lineNo][equals]=4&depth=0");
     expect(
       fixed.body.docs.every((o: { deviations?: { type: string }[] }) => !o.deviations?.some((x) => x.type === "Unit")),
@@ -223,8 +323,16 @@ describe("inbox history", () => {
     expect(org.body.organised).toBe(true);
     expect(org.body.pending).toBe(6);
     // Live inbox stays clean.
-    const inbox = await call("GET", "/api/inbox");
-    expect(inbox.body.messages.some((m: { messageId: string }) => m.messageId.startsWith("history-"))).toBe(false);
+    expect((await messages(liveMessages)).some((m) => m.messageId.startsWith("history-"))).toBe(false);
+    // Each uncertain item reads its confidence as a percentage, and is confirmed or rejected.
+    const history = await messages({ source: { equals: "History import" } }, "receivedAt");
+    expect(history).toHaveLength(6);
+    for (const m of history) expect(m.history.confidencePct).toBe(Math.round(m.history.confidence * 100));
+    expect(await labels(history[0])).toEqual(["Confirm", "Reject"]);
+    expect(actionsOn(IntakeMessages, history[0], "supply-chain")[1]!.call).toEqual({
+      path: `/inbox-history/review/${history[0].id}`,
+      body: { decision: "reject" },
+    });
 
     expect((await call("POST", "/api/inbox-history/approve")).status).toBe(403);
 
@@ -238,6 +346,13 @@ describe("inbox history", () => {
         })
       ).body;
     expect(p.pending).toBe(0);
+    // Decided: changeable (to the other decision) until the import is approved.
+    const decided = await messages({ source: { equals: "History import" } }, "receivedAt");
+    for (const m of decided) {
+      expect(await labels(m)).toEqual(["Change"]);
+      const [change] = actionsOn(IntakeMessages, m, "management");
+      expect(change!.call!.body).toEqual({ decision: m.history.decision === "Confirmed" ? "reject" : "confirm" });
+    }
 
     const ok = await call("POST", "/api/inbox-history/approve");
     expect(ok.status).toBe(200);
@@ -252,5 +367,8 @@ describe("inbox history", () => {
     );
     const prices = await call("GET", "/api/supplier-prices?where[source][equals]=Email reply&limit=0&depth=0");
     expect(prices.body.docs.some((d: { price: number }) => d.price === 1_950)).toBe(true);
+    // Approved: its decisions are final.
+    for (const m of await messages({ source: { equals: "History import" } }))
+      expect([m.history.locked, await labels(m)]).toEqual([true, []]);
   });
 });

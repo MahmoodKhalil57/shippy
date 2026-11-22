@@ -190,8 +190,9 @@ export function unsafe(p: ParsedClass, all: ParsedClass[], context: string[] = [
             (x.kind === "width" && (x.size.kind === "fit" || x.size.kind === "max")) ||
             (x.kind === "daisy" && /^(?:btn|badge|kbd|tab|join-item|link)(?:-|$)/.test(x.name)),
         );
-      // So may a floating panel of a definite width, at least 18rem (`floating.*`, on a 320px window).
-      const floatingPanel = all.some((x) => /^w-\[min\(\d+rem,calc\(100vw/.test(x.token));
+      // So may a floating panel of a definite width in whole tiles (`floating.*`): at least 4 tiles
+      // (212px), so 24px a side leaves it more than 7rem.
+      const floatingPanel = all.some((x) => /^w-\[min\(calc\(\d+_\*_var\(--tile-w\)\),round\(down/.test(x.token));
       if ((contentSized || floatingPanel) && e.size.kind === "len" && px(e.size.len) <= 24 && e.size.len.rem === 0)
         return null;
       return "padding: `inset` on a full-width box, or `pad` (≤ 24px) on one sized to its content";
@@ -406,12 +407,21 @@ export function widthViolations(source: string, filename: string): Violation[] {
         context = [];
       } else if (name === "classMap" && isNode(args[0]) && args[0].type === "ObjectExpression") {
         for (const p of args[0].properties as AstNode[]) {
+          if (p.type !== "Property") {
+            out.push({ line: lineOf(p.start), token: "...", why: "a spread in classMap: write each class out" });
+            continue;
+          }
           const k = p.key as AstNode;
           if (k.type === "Literal" || k.type === "StringLiteral") checkString(String(k.value), k.start);
           else if (k.type === "Identifier") checkString(k.name as string, k.start);
         }
       } else if (name === "styleMap" && isNode(args[0]) && args[0].type === "ObjectExpression") {
         for (const p of args[0].properties as AstNode[]) {
+          // A spread hides which properties it sets: refused, since the check can't read them.
+          if (p.type !== "Property") {
+            out.push({ line: lineOf(p.start), token: "...", why: "a spread in styleMap: write each property out" });
+            continue;
+          }
           const k = p.key as AstNode;
           const prop = String(k.name ?? k.value);
           const kebab = prop.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);

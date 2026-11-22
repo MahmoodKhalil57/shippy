@@ -7,9 +7,12 @@ describe("links", () => {
   it("name every collection, global and root view of the config", () => {
     expect([...COLLECTIONS].sort()).toEqual(config.collections.map((c) => c.slug).sort());
     expect([...GLOBALS].sort()).toEqual((config.globals ?? []).map((g) => g.slug).sort());
+    // The screens: every view but a collection's, a record's or a global's page (`list`, `doc`,
+    // `global` link those, by their addresses).
     expect([...VIEWS].sort()).toEqual(
       Object.values(config.admin?.components?.views ?? {})
         .map((v) => v.path)
+        .filter((p) => !/^\/(?:collections|globals)\//.test(p))
         .sort(),
     );
   });

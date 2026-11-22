@@ -82,7 +82,9 @@ Every piece of state the static demo (`docs/`) holds, classified by where it bel
 - Line status, best-fit offer, normalised price per base unit, landed cost, margin / markup, pricing checks: from `cases` + `offers` + globals (`docs/core.js` → `m.*`).
 - Waiting-state counts, queue sorting, daily briefing, management KPIs and charts (`D.analytics`): aggregate endpoints over `cases`, `quotations`, `invoices`, etc.
 - Supplier performance roll-ups and customer stats: from `purchase-orders`, `deliveries`, `quotations`.
-- Permissions matrix: from `users.role` + `approval-rules`.
+- Permissions matrix: the `settings` global's `permissions` rows, each role's people (`users.role`) worked out on read; its live checks from field access on `offers` + `approval-rules`.
+- Integrations: each connection's days to expiry and messages received (imported + the `intake-messages` that came in through it), and the `mailboxes` / `channels` (the connections by kind), worked out on read of the `integrations` global.
+- Automation rules' on/off state and AI review threshold, and the on-call shift in Cairo time (and whether it's on now): worked out on read of their globals.
 
 ## 5. Static content (stays in page code)
 

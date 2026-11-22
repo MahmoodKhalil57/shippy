@@ -6,6 +6,7 @@ import { live } from "lit/directives/live.js";
 import { LightElement, uid, type Renderable } from "../../base/light-element.ts";
 import { iconSvg, type IconName } from "../media/icon.ts";
 import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
+import { tiles } from "../layout/algebra.ts";
 import { fieldsetField, type FieldsetVariants } from "./fieldset.ts";
 import { label as labelRecipe } from "./label.ts";
 
@@ -46,11 +47,12 @@ export const textInput = rcva("input min-w-0", {
       /** Grows to fill a wrapping row, never narrower than 16rem (or the row). */
       fill: "min-w-[min(100%,16rem)] flex-1",
       auto: "w-auto",
-      "64": "w-64 max-w-full",
-      xs: "w-xs max-w-full",
-      sm: "w-sm max-w-full",
-      md: "w-md max-w-full",
-      lg: "w-lg max-w-full",
+      // Whole tiles (`tiles.*`): 5, 6, 7, 8, 10 (the old 16, 20, 24, 28, 32rem, to the nearest tile).
+      "64": tiles["5"],
+      xs: tiles["6"],
+      sm: tiles["7"],
+      md: tiles["8"],
+      lg: tiles["10"],
       full: "w-full",
     },
     /** Monospaced digits (the docs' telephone example). */

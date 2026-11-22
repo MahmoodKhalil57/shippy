@@ -31,6 +31,11 @@ function blockSize(b: ViewBlock): TileSize {
     case "message":
       return "l";
     case "chart":
+    case "heatmap":
+    case "treemap":
+    case "waterfall":
+    case "quadrant":
+    case "whatif":
     case "entries":
     case "timeline":
     case "tiles":

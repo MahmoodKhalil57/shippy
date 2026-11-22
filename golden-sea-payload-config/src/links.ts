@@ -68,6 +68,7 @@ export const VIEWS = [
   "/roles",
   "/integrations",
   "/project",
+  "/sourcing-pipeline",
 ] as const;
 
 export type CollectionSlug = (typeof COLLECTIONS)[number];

@@ -1,9 +1,10 @@
 import { text } from "../payload/util.ts";
+import { yieldToMain } from "../components/base/work-queue.ts";
 import { LightElement } from "../components/base/light-element.ts";
 import { html, nothing } from "lit";
 import { customElement, query, state } from "lit/decorators.js";
 import { keyed } from "lit/directives/keyed.js";
-import { api, backendReady, withBase } from "../api/client.ts";
+import { DASHBOARD_ROUTE, api, backendReady, withBase } from "../api/client.ts";
 import type { Doc } from "../contracts/config.ts";
 import type { MenuItem } from "../components/primitives/navigation/menu.ts";
 import type { IconName } from "../components/primitives/media/icon.ts";
@@ -15,6 +16,7 @@ import "./home.ts";
 import "./tour.ts";
 import "./agent.ts";
 import { viewElement } from "./views.ts";
+import { viewWidgets } from "./widgets/places.ts";
 import "./edit-view.ts";
 import "./list-view.ts";
 import "./command.ts";
@@ -25,14 +27,12 @@ import { asideRail, expandAsideSection, type AsideSection, type Attention } from
 import { roleLabel, roleLogins, seedUsers, type SeedUser } from "./demo-users.ts";
 import {
   dashboardPath,
-  collectionOf,
   config,
-  editTabs,
-  globalLabel,
   humanize,
-  labels,
   navigate,
+  navOf,
   rootViews,
+  titleOfView,
   groupIcon,
   settings,
   isDashboardPath,
@@ -54,15 +54,12 @@ import { loadSite, resetSite, site } from "./site.ts";
 function pageTransitionOf(from: Route, to: Route): PageTransition | undefined {
   const same = (a: Route, b: Route) => JSON.stringify(a) === JSON.stringify(b);
   if (same(from, to)) return undefined;
-  const record = (r: Route) => (r.name === "edit" || r.name === "create" ? r : undefined);
-  const a = record(from);
-  const b = record(to);
-  if (a?.name === "edit" && b?.name === "edit" && a.slug === b.slug && a.id === b.id) {
-    const tabs = editTabs(collectionOf(a.slug)!).map((t) => t.key);
-    return tabs.indexOf(b.tab ?? "") >= tabs.indexOf(a.tab ?? "") ? "lateral-forward" : "lateral-backward";
-  }
-  if (b) return "forward";
-  if (a && to.name === "list" && to.slug === a.slug) return "backward";
+  // Another record on the same page (`/cases/:id`): lateral; into a page with a parameter (a
+  // record's page) from anywhere: forward; out of one to a page without: backward.
+  const params = (r: Route) => (r.name === "view" ? Object.keys(r.params).length : 0);
+  if (from.name === "view" && to.name === "view" && from.key === to.key) return "lateral-forward";
+  if (params(to) > params(from)) return "forward";
+  if (params(from) > params(to)) return "backward";
   return "top-level";
 }
 
@@ -86,7 +83,7 @@ const backgrounds = () =>
 
 @customElement("dashboard-app")
 export class DashboardApp extends LightElement {
-  @state() private route: Route = parseRoute(location.pathname);
+  @state() private route: Route = parseRoute(location.pathname, location.search);
   @state() private user: (Doc & { collection: string }) | null = null;
   @state() private access: Access | null = null;
   @state() private ready = false;
@@ -113,11 +110,31 @@ export class DashboardApp extends LightElement {
     super.disconnectedCallback();
   }
 
-  private _onRoute = () => {
+  /**
+   * Another page: the old one is taken down in one task and the new one built in the next, with the
+   * main thread given back in between (`yieldToMain`), so neither half makes one long frame; the
+   * panel shows nothing for that moment, as the page transition already has it (M3: only the
+   * entering half plays). A newer navigation in between takes over; the same page (a query only)
+   * changes at once.
+   */
+  @state() private _leaving = false;
+  #turn = 0;
+  private _onRoute = async () => {
     const from = this.route;
-    this.route = parseRoute(location.pathname);
+    const next = parseRoute(location.pathname, location.search);
+    // A collection's, document's or global's address: open it where it's placed.
+    if (next.name === "address" && next.to && this.user) return navigate(`${DASHBOARD_ROUTE}${next.to}`, true);
+    const kind = pageTransitionOf(from, next);
+    if (JSON.stringify(from) !== JSON.stringify(next)) {
+      const turn = ++this.#turn;
+      this._leaving = true;
+      await this.updateComplete;
+      await yieldToMain();
+      if (turn !== this.#turn) return;
+    }
+    this._leaving = false;
+    this.route = next;
     void this._guard();
-    const kind = pageTransitionOf(from, this.route);
     if (kind) void this.updateComplete.then(() => this._shell?.pageTransition(kind));
   };
 
@@ -207,17 +224,18 @@ export class DashboardApp extends LightElement {
       const { initialized } = await api.init(userSlug);
       navigate(dashboardPath(initialized ? "login" : "create-first-user"), true);
     } else if (this.user && open) navigate(dashboardPath(), true);
+    else if (this.user && this.route.name === "address" && this.route.to)
+      navigate(`${DASHBOARD_ROUTE}${this.route.to}`, true);
     document.title = `${this._title()} ${config.admin?.meta?.titleSuffix ?? "· Dashboard"}`;
   }
 
   private _title() {
     const r = this.route;
-    if (r.name === "list" || r.name === "create" || r.name === "edit") {
-      const c = config.collections.find((x) => x.slug === r.slug)!;
-      return r.name === "list" ? labels(c).plural : `${r.name === "create" ? "Create" : "Edit"} ${labels(c).singular}`;
+    if (r.name === "view") {
+      const v = rootViews().find((x) => x.key === r.key);
+      return v ? titleOfView(v) : humanize(r.key);
     }
-    if (r.name === "global") return humanize(r.slug);
-    if (r.name === "view") return rootViews().find((v) => v.key === r.key)?.meta?.title ?? humanize(r.key);
+    if (r.name === "address") return "Not found";
     return humanize(r.name);
   }
 
@@ -278,7 +296,7 @@ export class DashboardApp extends LightElement {
         side="top"
         align="start"
         panel="card"
-        panel-width="72"
+        panel-width="6"
         panel-elevation="2"
         trigger-variant="text"
         trigger-shape="round"
@@ -320,34 +338,33 @@ export class DashboardApp extends LightElement {
     await this._refresh();
   }
 
-  /** Navigation: collection groups (`admin.group`) and globals, as collapsible groups with icons. */
+  /**
+   * Navigation: the root views with a `nav` (a collection's or global's page says `auto`: its group
+   * and label), in config order, as collapsible groups with icons. Nothing else has a page: a
+   * collection, document or global shows only where a view places it. A view whose collections and
+   * globals this person may not read at all is left out.
+   */
   private _groups() {
     const here = (path: string) => location.pathname === path || location.pathname.startsWith(`${path}/`);
     const groups = new Map<string, MenuItem[]>();
-    for (const c of config.collections) {
-      if (c.admin?.hidden === true || this.access?.collections[c.slug]?.read.permission === false) continue;
-      const group = typeof c.admin?.group === "string" ? c.admin.group : "Collections";
-      const href = dashboardPath("collections", c.slug);
-      // What needs attention there (the side panel's warning counters), as a count badge.
-      const count = this.attention[c.slug];
-      const badge = count ? { badge: String(count), badgeColor: "warning" as const } : {};
-      groups.set(group, [
-        ...(groups.get(group) ?? []),
-        { label: labels(c).plural, href, active: here(href), ...badge },
-      ]);
-    }
-    const globals = (config.globals ?? [])
-      .filter((g) => this.access?.globals[g.slug]?.read.permission !== false)
-      .map((g) => {
-        const href = dashboardPath("globals", g.slug);
-        return { label: globalLabel(g), href, active: here(href) };
-      });
-    if (globals.length) groups.set("Configuration", [...(groups.get("Configuration") ?? []), ...globals]);
-    // Custom views go first in their group (they're the purpose-built screens).
-    for (const v of [...rootViews()].reverse()) {
-      if (!v.nav) continue;
+    for (const v of rootViews()) {
+      const nav = navOf(v);
+      if (!nav || v.path.includes(":")) continue;
+      const shown = viewWidgets(v);
+      const slugs = shown.flatMap((w) => (w.collection ? [w.collection.collection] : []));
+      const globals = shown.flatMap((w) => (w.global ? [w.global.global] : []));
+      const readable =
+        slugs.some((c) => this.access?.collections[c]?.read.permission !== false) ||
+        globals.some((g) => this.access?.globals[g]?.read.permission !== false);
+      if ((slugs.length || globals.length) && !readable) continue;
       const href = dashboardPath(v.path.slice(1));
-      groups.set(v.nav.group, [{ label: v.nav.label, href, active: here(href) }, ...(groups.get(v.nav.group) ?? [])]);
+      // What needs attention there (the side panel's warning counters), as a count badge.
+      const count = slugs.reduce((n, c) => n + (this.attention[c] ?? 0), 0);
+      const badge = count ? { badge: String(count), badgeColor: "warning" as const } : {};
+      groups.set(nav.group, [
+        ...(groups.get(nav.group) ?? []),
+        { label: nav.label, href, active: here(href), ...badge },
+      ]);
     }
     // Groups in the project's order (`admin.custom.nav.groups`), others after.
     const ORDER = (settings.nav?.groups ?? []).map((g) => g.label);
@@ -440,33 +457,14 @@ export class DashboardApp extends LightElement {
           html`<dashboard-home .access=${access}></dashboard-home>`
         );
       }
-      case "list":
-        return html`<dashboard-list-view .slug=${r.slug} .access=${access} .user=${this.user}></dashboard-list-view>`;
-      case "create":
-        return html`<dashboard-edit-view .slug=${r.slug} .access=${access}></dashboard-edit-view>`;
-      case "edit":
-        return html`<dashboard-edit-view
-          .slug=${r.slug}
-          .docId=${r.id}
-          .tab=${r.tab ?? ""}
-          .access=${access}
-          .user=${this.user}
-        ></dashboard-edit-view>`;
       case "view": {
         const view = rootViews().find((v) => v.key === r.key)!;
         const comp = componentOf(view.Component);
         return (
-          (comp && viewElement(comp.tag, { ...comp.props, access, user: this.user! })) ??
-          html`<ui-alert tone="info" heading=${view.meta?.title ?? view.key}>This screen is loading.</ui-alert>`
+          (comp && viewElement(comp.tag, { ...comp.props, params: r.params, access, user: this.user! })) ??
+          html`<ui-alert tone="info" heading=${titleOfView(view)}>This screen is loading.</ui-alert>`
         );
       }
-      case "global":
-        return html`<dashboard-edit-view
-          .globalSlug=${r.slug}
-          .tab=${r.tab ?? ""}
-          .access=${access}
-          .user=${this.user}
-        ></dashboard-edit-view>`;
       case "account":
         return html`<dashboard-edit-view
           .slug=${userSlug}
@@ -539,34 +537,34 @@ export class DashboardApp extends LightElement {
           .pageTitle=${this._title()}
           .onLogout=${() => void this._logout()}
         ></dashboard-command>
-        <ui-flex slot="actions" align="center" gap="1">
-          <ui-appearance
-            kind="background"
-            persist
-            .credit=${site().branding.backgroundCredit ?? ""}
-            .backgrounds=${backgrounds()}
-          ></ui-appearance>
-          <ui-appearance kind="scheme" persist></ui-appearance>
-          <ui-appearance kind="theme" persist></ui-appearance>
-          <ui-dropdown
-            align="end"
-            panel="card"
-            panel-elevation="2"
-            trigger-variant="text"
-            trigger-shape="round"
-            trigger-spaced="false"
-            .heading=${text(user.name ?? user.email)}
-          >
-            <ui-avatar slot="trigger" .initials=${initials} size="xs"></ui-avatar>
-            <ui-text variant="body-sm" color="muted">${text(user.email)}</ui-text>
-            <ui-menu
-              width="full"
-              surface="false"
-              .items=${profile}
-              @ui-select=${(e: CustomEvent<{ item: MenuItem }>) => e.detail.item.value === "logout" && this._logout()}
-            ></ui-menu>
-          </ui-dropdown>
-        </ui-flex>
+        <ui-appearance
+          slot="actions"
+          kind="background"
+          persist
+          .credit=${site().branding.backgroundCredit ?? ""}
+          .backgrounds=${backgrounds()}
+        ></ui-appearance>
+        <ui-appearance slot="actions" kind="scheme" persist></ui-appearance>
+        <ui-appearance slot="actions" kind="theme" persist></ui-appearance>
+        <ui-dropdown
+          slot="actions"
+          align="end"
+          panel="card"
+          panel-elevation="2"
+          trigger-variant="text"
+          trigger-shape="round"
+          trigger-spaced="false"
+          .heading=${text(user.name ?? user.email)}
+        >
+          <ui-avatar slot="trigger" .initials=${initials} size="xs"></ui-avatar>
+          <ui-text variant="body-sm" color="muted">${text(user.email)}</ui-text>
+          <ui-menu
+            width="full"
+            surface="false"
+            .items=${profile}
+            @ui-select=${(e: CustomEvent<{ item: MenuItem }>) => e.detail.item.value === "logout" && this._logout()}
+          ></ui-menu>
+        </ui-dropdown>
         <ui-menu slot="nav" layout="nav" width="full" surface="false" .items=${nav.menu}></ui-menu>
         <ui-menu
           slot="rail"
@@ -603,10 +601,10 @@ export class DashboardApp extends LightElement {
           .path=${location.pathname}
           .pageTitle=${this._title()}
         ></dashboard-aside>
-        <ui-container width="7xl" padding-x="fluid" padding-y="fluid"
+        <ui-container width="full" padding-x="slack" padding-y="half"
           >${
             // Keyed by user: switching users mounts the page afresh, so it loads their data.
-            keyed(user.id, this._view())
+            keyed(user.id, this._leaving ? nothing : this._view())
           }</ui-container
         >
       </ui-app-shell>

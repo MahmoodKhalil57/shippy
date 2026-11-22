@@ -3,6 +3,8 @@ import { LightElement } from "../components/base/light-element.ts";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { api, ApiError } from "../api/client.ts";
+import { parse, stringify } from "qs-esm";
+import type { DocumentViewSpec, GlobalViewSpec } from "./widgets/widget.ts";
 import type { Doc, FieldLike } from "../contracts/config.ts";
 import {
   setIn,
@@ -16,6 +18,7 @@ import { viewElement } from "./views.ts";
 import {
   cellText,
   columnsOf,
+  addressOf,
   dashboardPath,
   collectionOf,
   dataFields,
@@ -34,7 +37,10 @@ import {
   userSlug,
   collectionSettings,
   toneOf,
+  isToned,
 } from "./shared.ts";
+import type { RecordFact, RecordLink } from "../components/primitives/data/record.ts";
+import type { Tone } from "../components/primitives/data/tag.ts";
 
 type Data = Record<string, unknown>;
 
@@ -134,6 +140,41 @@ export class DashboardEditView extends LightElement {
   @property() tab = "";
   /** In a sheet over the list: the form only; the owner draws the title and Save. */
   @property({ type: Boolean }) embedded = false;
+  /**
+   * In a `document` or `global` widget's tile (./widgets/host.ts): the record's own parts as the
+   * tile's body (its steps, tabs, problems, the form and its sidebar fields, Save and Delete), its
+   * title going to the tile's heading (`dashboard-doc-state`); an active tab's view inside the tile.
+   * The widgets about it are tiles of the board beside it.
+   */
+  @property({ type: Boolean }) tile = false;
+  /**
+   * As a widget (`document` / `global`, ./widgets/widget.ts): its name in the URL, where its tab
+   * lives (`?cases[tab]=pricing`), so a link to one of its tabs opens it in place.
+   */
+  @property() stateKey = "";
+  /** What its widget says: the tab it shows, the parts it leaves out. */
+  @property({ attribute: false }) spec: DocumentViewSpec | GlobalViewSpec | null = null;
+  /** The tab the URL says (under its key). */
+  @state() private urlTab = "";
+
+  #readTab = () => {
+    if (!this.stateKey) return;
+    const own = (parse(location.search, { ignoreQueryPrefix: true, depth: 3 }) as Record<string, unknown>)[
+      this.stateKey
+    ];
+    const tab = own && typeof own === "object" ? (own as { tab?: unknown }).tab : undefined;
+    this.urlTab = typeof tab === "string" ? tab : "";
+  };
+
+  /** The tab it shows: its own (`tab`), else its widget's, else the URL's. */
+  private get _tab() {
+    return this.tab || this.urlTab || this.spec?.tab || "";
+  }
+
+  /** Whether its widget shows a part (`hide`). */
+  private _shows(part: string) {
+    return !(this.spec?.hide as string[] | undefined)?.includes(part);
+  }
 
   @state() private doc: Doc | null = null;
   @state() private value: Data = {};
@@ -155,10 +196,10 @@ export class DashboardEditView extends LightElement {
   #reported = "";
   /** Embedded: tells the owner what to draw around the form, whenever that changes. */
   private _report() {
-    if (!this.embedded) return;
+    if (!this.embedded && !this.tile) return;
     const c = collectionOf(this.slug);
     const detail: DocState = {
-      title: c && this.doc ? titleOf(c, this.doc) : "",
+      title: c && this.doc ? titleOf(c, this.doc) : c && !this.docId ? `New ${labels(c).singular.toLowerCase()}` : "",
       loading: this.loading,
       saving: this.saving,
       dirty: this.dirty,
@@ -295,7 +336,7 @@ export class DashboardEditView extends LightElement {
 
   /** Ctrl/⌘ + S saves, as in Payload. */
   private _keydown = (e: KeyboardEvent) => {
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s" && !this.tab) {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s" && !this._tab) {
       e.preventDefault();
       if (!this.saving && !this.loading) void this._save();
     }
@@ -308,11 +349,14 @@ export class DashboardEditView extends LightElement {
 
   connectedCallback() {
     super.connectedCallback();
+    window.addEventListener("popstate", this.#readTab);
+    this.#readTab();
     window.addEventListener("keydown", this._keydown);
     window.addEventListener("beforeunload", this._beforeUnload);
   }
 
   disconnectedCallback() {
+    window.removeEventListener("popstate", this.#readTab);
     window.removeEventListener("keydown", this._keydown);
     window.removeEventListener("beforeunload", this._beforeUnload);
     super.disconnectedCallback();
@@ -434,6 +478,76 @@ export class DashboardEditView extends LightElement {
     </ui-flex>`;
   }
 
+  /**
+   * The record's summary above its form (`<ui-record-hero>`), from its fields alone: its monogram
+   * and name, its status (the collection's `list.status`, else its steps' field, else the first
+   * toned select) and its other toned selects as tags, its formatted numbers (money, shares, days)
+   * as figures, and links to what it points at (its customer) and what points at it (its orders,
+   * with how many, each opening the list filtered to this record). A global's: its name, figures
+   * and when it last changed (its numbers, formatted or not). Left out with `hide: ["summary"]`.
+   */
+  private _hero() {
+    if (!this._shows("summary") || !this.doc) return nothing;
+    const g = this.globalSlug ? globalOf(this.globalSlug) : undefined;
+    const c = g ? undefined : collectionOf(this.slug);
+    if (!g && (!c || !this.docId)) return nothing;
+    const doc = this.doc;
+    const fields = dataFields(this._fields);
+    const labelOf = (f: FieldLike) => (typeof f.label === "string" ? f.label : humanize(f.name ?? ""));
+    const has = (f: FieldLike) => doc[f.name!] != null && doc[f.name!] !== "";
+    const settings = c ? collectionSettings(c) : undefined;
+    const statusName = settings?.list?.status ?? settings?.edit?.steps?.field;
+    const toned = fields.filter((f) => isToned(f) && has(f));
+    const status = (statusName ? toned.find((f) => f.name === statusName) : undefined) ?? toned[0];
+    const tagOf = (f: FieldLike): { label: string; tone: Tone } => {
+      const label = cellText(f, doc[f.name!]);
+      return { label, tone: toneOf(f, doc[f.name!], label) };
+    };
+    const figures: RecordFact[] = fields
+      // A record's formatted numbers (money, shares, days); a setting's numbers, all of them.
+      .filter((f) => f.type === "number" && (g || (f.custom as { number?: unknown } | undefined)?.number) && has(f))
+      .slice(0, 4)
+      .map((f) => ({ label: labelOf(f), value: cellText(f, doc[f.name!], doc) }));
+    const links: RecordLink[] = [];
+    for (const f of fields) {
+      if (f.type !== "relationship" || f.hasMany || typeof f.relationTo !== "string" || !has(f)) continue;
+      const id = String(doc[f.name!]);
+      const name = this.relations[f.relationTo]?.find((o) => String(o.value) === id)?.label;
+      if (name) links.push({ label: `${labelOf(f)}: ${name}`, href: dashboardPath("collections", f.relationTo, id) });
+    }
+    for (const f of joinFieldsOf(this._fields)) {
+      const view = this.joins[f.name!];
+      const related = collectionOf(f.collection);
+      const on = (f as { on?: string }).on;
+      if (!view || !related) continue;
+      const href = on
+        ? `${dashboardPath("collections", related.slug)}${stringify(
+            { filters: [{ field: on, operator: "equals", value: String(doc.id) }] },
+            { addQueryPrefix: true, encodeValuesOnly: true },
+          )}`
+        : undefined;
+      links.push({ label: labelOf(f), count: view.total, href });
+    }
+    const updated = doc.updatedAt ? `Updated ${formatDate(doc.updatedAt)}` : "";
+    const name = g ? globalLabel(g) : titleOf(c!, doc);
+    return html`<ui-record-hero
+      .record=${{
+        key: String(doc.id ?? g?.slug),
+        title: name,
+        eyebrow: g ? "Setting" : labels(c!).singular,
+        supporting: g && typeof g.admin?.description === "string" ? g.admin.description : undefined,
+        status: status ? tagOf(status) : undefined,
+      }}
+      .tags=${toned
+        .filter((f) => f !== status)
+        .slice(0, 3)
+        .map(tagOf)}
+      .figures=${figures}
+      .links=${links.slice(0, 8)}
+      .meta=${updated}
+    ></ui-record-hero>`;
+  }
+
   /** The collection's `custom.edit.before`: widgets about this document, above the form. */
   #before?: HTMLElement;
   private _summary() {
@@ -480,7 +594,13 @@ export class DashboardEditView extends LightElement {
         ? [{ label: "Dashboard", href: dashboardPath() }, { label: "Account" }]
         : [
             { label: "Dashboard", href: dashboardPath() },
-            { label: labels(c!).plural, href: dashboardPath("collections", this.slug) },
+            {
+              label: labels(c!).plural,
+              // Its list, when a view holds it.
+              href: addressOf(`/collections/${encodeURIComponent(this.slug)}`)
+                ? dashboardPath("collections", this.slug)
+                : undefined,
+            },
             { label: heading },
           ];
 
@@ -492,15 +612,27 @@ export class DashboardEditView extends LightElement {
       : c && this.docId
         ? dashboardPath("collections", c.slug, this.docId)
         : "";
-    const tabBar = tabs.length
-      ? html`<ui-tabs
-          variant="primary"
-          label=${`${heading} sections`}
-          .active=${this.tab ? tabs.findIndex((t) => t.key === this.tab) + 1 : 0}
-          .items=${[{ label: "Details", href: base }, ...tabs.map((t) => ({ label: t.label, href: `${base}${t.path}` }))]}
-        ></ui-tabs>`
-      : nothing;
-    const active = tabs.find((t) => t.key === this.tab);
+    const tabBar =
+      tabs.length && this._shows("tabs")
+        ? html`<ui-tabs
+            variant="primary"
+            label=${`${heading} sections`}
+            .active=${this._tab ? tabs.findIndex((t) => t.key === this._tab) + 1 : 0}
+            .items=${[{ label: "Details", href: base }, ...tabs.map((t) => ({ label: t.label, href: `${base}${t.path}` }))]}
+          ></ui-tabs>`
+        : nothing;
+    const active = tabs.find((t) => t.key === this._tab);
+    // In a widget's tile: an active tab's view (a board of its own) under the tabs.
+    if (this.tile && active && this.user) {
+      const el = viewElement(active.Component, {
+        ...active.props,
+        access: this.access,
+        user: this.user,
+        slug: g ? g.slug : c!.slug,
+        docId: this.docId,
+      });
+      return html`<ui-flex direction="col" gap="4">${tabBar}${el ?? nothing}</ui-flex>`;
+    }
     if (active && this.user) {
       const el = viewElement(active.Component, {
         ...active.props,
@@ -509,12 +641,32 @@ export class DashboardEditView extends LightElement {
         slug: g ? g.slug : c!.slug,
         docId: this.docId,
       });
-      return html`<ui-flex direction="col" gap="6">
-        <ui-page-header .heading=${heading}>
-          <ui-breadcrumbs slot="breadcrumbs" .items=${crumbs}></ui-breadcrumbs>
-        </ui-page-header>
-        ${tabBar} ${el ?? html`<ui-alert tone="info" heading=${active.label}>This screen is loading.</ui-alert>`}
-      </ui-flex>`;
+      // One board: the header and tabs, then the view (a board of its own, flush so its tiles lie
+      // on this one's), each the whole tiles that hold it.
+      return html`<ui-board
+        .items=${[
+          {
+            key: "header",
+            size: "full",
+            rows: "fit",
+            remember: `edit|${this.globalSlug || this.slug}|${this._tab}|header`,
+            content: html`<ui-flex direction="col" gap="4">
+              <ui-page-header .heading=${heading}>
+                <ui-breadcrumbs slot="breadcrumbs" .items=${crumbs}></ui-breadcrumbs>
+              </ui-page-header>
+              ${tabBar}
+            </ui-flex>`,
+          },
+          {
+            key: "view",
+            size: "full",
+            rows: "fit",
+            remember: `edit|${this.globalSlug || this.slug}|${this._tab}|view`,
+            flush: !!el,
+            content: el ?? html`<ui-alert tone="info" heading=${active.label}>This screen is loading.</ui-alert>`,
+          },
+        ]}
+      ></ui-board>`;
     }
 
     const hasSide = !!c?.upload || sidebar.length > 0 || !!c?.auth || !!this.doc;
@@ -570,58 +722,145 @@ export class DashboardEditView extends LightElement {
         >`
       : nothing;
 
+    // In a widget's tile: one column under its actions (the tile has the title).
+    if (this.tile) {
+      const canDelete = this.docId && !isAccount && collectionPerms?.delete.permission && this._shows("delete");
+      return html`<ui-form label=${heading} @ui-submit=${() => this._save()}>
+          <ui-flex direction="col" gap="5">
+            <ui-flex justify="end" align="center" gap="2" wrap>
+              ${this.dirty ? html`<ui-tag tone="warning">Unsaved changes</ui-tag>` : nothing}
+              ${
+                canDelete
+                  ? html`<ui-button variant="text" color="error" size="xs" @click=${() => (this.confirmDelete = true)}
+                      >Delete</ui-button
+                    >`
+                  : nothing
+              }
+              ${
+                canSave
+                  ? html`<ui-button
+                      type="submit"
+                      size="sm"
+                      color="primary"
+                      .disabled=${this.saving || (!this.dirty && !!(this.docId || g))}
+                      title="Ctrl + S"
+                    >
+                      ${this.saving ? "Saving…" : this.docId || g ? (this.dirty ? "Save" : "Saved") : "Create"}
+                    </ui-button>`
+                  : html`<ui-tag variant="outline">Read only</ui-tag>`
+              }
+            </ui-flex>
+            ${this._hero()} ${this._stage()} ${tabBar} ${problems} ${this._form(main, readonly)}
+            ${hasSide && this._shows("sidebar") ? side : nothing}
+          </ui-flex>
+        </ui-form>
+        <ui-modal
+          heading=${`Delete ${heading}?`}
+          .open=${this.confirmDelete}
+          confirm-label="Delete"
+          confirm-tone="error"
+          @ui-confirm=${() => this._delete()}
+          @ui-close=${() => (this.confirmDelete = false)}
+        >
+          <ui-text>This can't be undone.</ui-text>
+        </ui-modal>`;
+    }
     // In a sheet: one column, and no page header (the sheet has the title and Save).
     if (this.embedded) {
       return html`<ui-form label=${heading} @ui-submit=${() => this._save()}>
         <ui-flex direction="col" gap="5">
-          ${this._stage()} ${problems} ${this._form(main, readonly)} ${hasSide ? side : nothing}
+          ${this._hero()} ${this._stage()} ${problems} ${this._form(main, readonly)} ${hasSide ? side : nothing}
         </ui-flex>
       </ui-form>`;
     }
 
+    const summary = this._summary();
     return html`<ui-form label=${heading} @ui-submit=${() => this._save()}>
-      <ui-flex direction="col" gap="6">
-        <ui-page-header>
-          <ui-breadcrumbs slot="breadcrumbs" .items=${crumbs}></ui-breadcrumbs>
-          <span slot="heading">${heading}</span>
-          <span slot="status">${this.dirty ? html`<ui-tag tone="warning">Unsaved changes</ui-tag>` : nothing}</span>
-          <ui-flex slot="actions" gap="2" wrap>
-            ${
-              this.docId && !isAccount && collectionPerms?.delete.permission
-                ? html`<ui-button variant="text" color="error" size="xs" @click=${() => (this.confirmDelete = true)}
-                    >Delete</ui-button
-                  >`
-                : nothing
-            }
-            ${
-              canSave
-                ? html`<ui-button
-                    type="submit"
-                    color="primary"
-                    .disabled=${this.saving || (!this.dirty && !!(this.docId || g))}
-                    title="Ctrl + S"
-                  >
-                    ${this.saving ? "Saving…" : this.docId || g ? (this.dirty ? "Save" : "Saved") : "Create"}
-                  </ui-button>`
-                : html`<ui-tag variant="outline">Read only</ui-tag>`
-            }
-          </ui-flex>
-        </ui-page-header>
-
-        ${
-          c?.admin?.description && typeof c.admin.description === "string"
-            ? html`<ui-text color="muted">${c.admin.description}</ui-text>`
-            : nothing
-        }
-        ${this._stage()} ${tabBar} ${this._summary()} ${problems}
-        <ui-board
-          .items=${[
-            // The form's own parts as bare tiles: a form is never height-capped.
-            { key: "main", size: "l", content: html`<ui-tile size="l" bare>${this._form(main, readonly)}</ui-tile>` },
-            ...(hasSide ? [{ key: "side", size: "s", content: html`<ui-tile size="s" bare>${side}</ui-tile>` }] : []),
-          ]}
-        ></ui-board>
-      </ui-flex>
+      <ui-board
+        .items=${[
+          {
+            key: "header",
+            size: "full",
+            rows: "fit",
+            remember: `edit|${this.globalSlug || this.slug}|${this._tab}|header`,
+            content: html`<ui-flex direction="col" gap="4">
+              <ui-page-header>
+                ${
+                  this._shows("header")
+                    ? html`<ui-breadcrumbs slot="breadcrumbs" .items=${crumbs}></ui-breadcrumbs>
+                        <span slot="heading">${heading}</span>`
+                    : nothing
+                }
+                <span slot="status"
+                  >${this.dirty ? html`<ui-tag tone="warning">Unsaved changes</ui-tag>` : nothing}</span
+                >
+                <ui-flex slot="actions" gap="2" wrap>
+                  ${
+                    this.docId && !isAccount && collectionPerms?.delete.permission && this._shows("delete")
+                      ? html`<ui-button
+                          variant="text"
+                          color="error"
+                          size="xs"
+                          @click=${() => (this.confirmDelete = true)}
+                          >Delete</ui-button
+                        >`
+                      : nothing
+                  }
+                  ${
+                    canSave
+                      ? html`<ui-button
+                          type="submit"
+                          color="primary"
+                          .disabled=${this.saving || (!this.dirty && !!(this.docId || g))}
+                          title="Ctrl + S"
+                        >
+                          ${this.saving ? "Saving…" : this.docId || g ? (this.dirty ? "Save" : "Saved") : "Create"}
+                        </ui-button>`
+                      : html`<ui-tag variant="outline">Read only</ui-tag>`
+                  }
+                </ui-flex>
+              </ui-page-header>
+              ${
+                c?.admin?.description && typeof c.admin.description === "string"
+                  ? html`<ui-text color="muted">${c.admin.description}</ui-text>`
+                  : nothing
+              }
+              ${this._stage()} ${tabBar} ${problems}
+            </ui-flex>`,
+          },
+          // Widgets about the document: a board of its own, flush so its tiles lie on this one's.
+          ...(summary === nothing || !this._shows("around")
+            ? []
+            : [
+                {
+                  key: "summary",
+                  size: "full",
+                  rows: "fit",
+                  flush: true,
+                  remember: `edit|${this.globalSlug || this.slug}|summary`,
+                  content: summary,
+                },
+              ]),
+          // The form's own parts as bare tiles, each the whole tiles that hold it: a form is never capped.
+          {
+            key: "main",
+            size: "l",
+            rows: "fit",
+            content: html`<ui-tile size="l" bare>${this._form(main, readonly)}</ui-tile>`,
+          },
+          ...(hasSide && this._shows("sidebar")
+            ? [
+                {
+                  key: "side",
+                  size: "s",
+                  rows: "fit",
+                  remember: `edit|${this.globalSlug || this.slug}|side`,
+                  content: html`<ui-tile size="s" bare>${side}</ui-tile>`,
+                },
+              ]
+            : []),
+        ]}
+      ></ui-board>
 
       <ui-modal
         heading=${`Delete ${heading}?`}

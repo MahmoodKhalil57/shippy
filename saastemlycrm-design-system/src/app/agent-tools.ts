@@ -31,6 +31,9 @@ import {
   useAsTitle,
   type Route,
 } from "./shared.ts";
+import { addressOf, navOf } from "./shared.ts";
+import { viewWidgets } from "./widgets/places.ts";
+import { parse } from "qs-esm";
 import { fill, leaves, loadSource } from "./widgets/host.ts";
 import type { ViewBlock } from "./widgets/schema.ts";
 import { blocksText, headerText } from "./widgets/text.ts";
@@ -188,6 +191,13 @@ async function pageText(
   const parts = await Promise.all(
     leaves(page.widgets, scope).map(async (w) => {
       try {
+        // A header widget placed among the widgets: read like the screen's header.
+        if (w.header) {
+          const hw = w.header;
+          return "render" in hw
+            ? headerText(hw.render(hw.source ? await load(hw.source) : null, scope))
+            : headerText(hw);
+        }
         const data = w.source ? await load(w.source) : null;
         if (w.hidden?.(data as never, scope)) return [];
         // One tile per item: each read like a widget of its own.
@@ -254,7 +264,7 @@ function row(slug: string, doc: Doc) {
 
 /** What the current screen shows, as data: the route, who's looking, and the data it's drawn from. */
 async function screen(host: AgentHost) {
-  const route = parseRoute(location.pathname);
+  const route = pageOf(parseRoute(location.pathname, location.search));
   const user = host.user();
   return trim({
     url: location.pathname + location.search,
@@ -272,7 +282,41 @@ async function screen(host: AgentHost) {
   });
 }
 
-async function screenContent(route: Route, host: AgentHost): Promise<Record<string, unknown>> {
+/** What a page is about, as the agent describes it: a view of one collection, document or global reads as that. */
+type Page =
+  | Route
+  | { name: "list"; slug: string }
+  | { name: "create"; slug: string }
+  | { name: "edit"; slug: string; id: string; tab?: string }
+  | { name: "global"; slug: string; tab?: string };
+
+/**
+ * A view that holds one collection's list, one document's form or one global's is described as
+ * that page (its records, its fields); a view of several widgets is a screen.
+ */
+function pageOf(route: Route): Page {
+  if (route.name !== "view") return route;
+  const view = rootViews().find((v) => v.key === route.key);
+  const shown = view ? viewWidgets(view) : [];
+  if (shown.length !== 1) return route;
+  const w = shown[0]!;
+  const own = (key: string) => {
+    const q = (parse(location.search, { ignoreQueryPrefix: true, depth: 3 }) as Record<string, unknown>)[key];
+    return q && typeof q === "object" ? (q as { tab?: string }) : {};
+  };
+  if (w.collection) return { name: "list", slug: w.collection.collection };
+  if (w.document) {
+    const d = w.document;
+    const param = /^\$param\.(\w+)$/.exec(d.id)?.[1];
+    const id = param ? (route.params[param] ?? "") : d.id;
+    if (!id || id === "create") return { name: "create", slug: d.collection };
+    return { name: "edit", slug: d.collection, id, tab: own(d.key ?? d.collection).tab ?? d.tab };
+  }
+  if (w.global) return { name: "global", slug: w.global.global, tab: own(w.global.key ?? w.global.global).tab };
+  return route;
+}
+
+async function screenContent(route: Page, host: AgentHost): Promise<Record<string, unknown>> {
   const safe = <T>(p: Promise<T>) => p.catch((e: Error) => ({ error: e.message }));
   switch (route.name) {
     case "dashboard":
@@ -433,18 +477,19 @@ function pageIndex(host: AgentHost): PageEntry[] {
     pages.push({
       label: str(v.meta?.title) || v.key,
       path: dashboardPath(v.path.slice(1)),
-      names: [v.key, v.path, str(v.meta?.title), v.nav?.label ?? ""],
+      names: [v.key, v.path, str(v.meta?.title), navOf(v)?.label ?? ""],
       screen: true,
     });
+  // Collections and globals by their addresses, where a view holds them.
   for (const c of config.collections)
-    if (host.access()?.collections[c.slug]?.read.permission)
+    if (host.access()?.collections[c.slug]?.read.permission && addressOf(`/collections/${c.slug}`))
       pages.push({
         label: labels(c).plural,
         path: dashboardPath("collections", c.slug),
         names: [c.slug, labels(c).plural, labels(c).singular],
       });
   for (const g of config.globals ?? [])
-    if (host.access()?.globals[g.slug]?.read.permission)
+    if (host.access()?.globals[g.slug]?.read.permission && addressOf(`/globals/${g.slug}`))
       pages.push({ label: globalLabel(g), path: dashboardPath("globals", g.slug), names: [g.slug, globalLabel(g)] });
   return pages;
 }
@@ -483,7 +528,8 @@ async function resolvePage(query: string, host: AgentHost): Promise<string> {
   const q = query.trim() || "/";
   if (q.startsWith("/")) {
     const to = withBase(q);
-    if (parseRoute(to.split("?")[0]!).name !== "not-found") return to;
+    const r = parseRoute(to.split("?")[0]!, to.includes("?") ? `?${to.split("?")[1]}` : "");
+    if (r.name !== "not-found" && !(r.name === "address" && !r.to)) return to;
   }
   if (/\d/.test(q)) {
     const record = await findRecordPage(q, host);
@@ -959,7 +1005,7 @@ const line = (...parts: unknown[]) =>
 
 /** The current screen in a few lines: what it is, who's looking, and the first things on it. */
 async function screenText(host: AgentHost): Promise<string> {
-  const route = parseRoute(location.pathname);
+  const route = pageOf(parseRoute(location.pathname, location.search));
   const user = host.user();
   const out = [
     `Page: ${host.title()} (${location.pathname})`,

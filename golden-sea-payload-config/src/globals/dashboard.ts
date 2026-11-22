@@ -4,7 +4,7 @@ import { ROLES, anyone, loggedIn, management } from "../collections/shared.ts";
 /**
  * The dashboard's own content, as data people edit in the dashboard: the brand (read before
  * anyone signs in), the in-app helper, its platform guide, and the guided tours. Seeded from
- * src/cms/seed, so a new project changes records, not code.
+ * src/seed, so a new project changes records, not code.
  */
 
 export const Branding: GlobalConfig = {

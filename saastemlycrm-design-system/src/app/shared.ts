@@ -5,12 +5,18 @@ import type { CollectionConfig, GlobalConfig } from "payload";
 import { API_ROUTE, DASHBOARD_ROUTE, api, withBase } from "../api/client.ts";
 import { bookmarks, type Bookmark } from "../stores/index.ts";
 import { projectOf } from "./config.ts";
-import type { CollectionSettings, DashboardSettings, Doc, FieldLike } from "../contracts/config.ts";
+import type { CollectionSettings, DashboardSettings, Doc, FieldLike, RootView } from "../contracts/config.ts";
+import { parse } from "qs-esm";
+import { matchPath, pathParams, placeOf, placesOf, viewWidgets, type Places } from "./widgets/places.ts";
+import { formatNumber } from "./widgets/schema.ts";
+import { setToday } from "./widgets/widget.ts";
 
 /** Shared helpers for the dashboard (src/app). */
 
 /** The project's Payload config (handed to `startDashboard`). */
 export const config = projectOf().config;
+// Relative dates in widget queries count from the project's day, if it sets one.
+setToday((config.admin?.custom as DashboardSettings | undefined)?.today);
 
 export const userSlug = config.admin?.user ?? config.collections.find((c) => c.auth)?.slug ?? "users";
 
@@ -96,15 +102,35 @@ const dateFmt = new Intl.DateTimeFormat("en-GB", {
   minute: "2-digit",
 });
 const dayFmt = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+const dayUtcFmt = new Intl.DateTimeFormat("en-GB", {
+  day: "2-digit",
+  month: "short",
+  year: "numeric",
+  timeZone: "UTC",
+});
 /** A date for display; a date with no time of day (midnight) shows as just the day. */
 export const formatDate = (v: unknown) => {
   if (typeof v !== "string" || !v) return "";
   const d = new Date(v);
+  // A date with no time of day (stored as midnight UTC, as a day-only picker saves it): the day.
+  if (d.getUTCHours() === 0 && d.getUTCMinutes() === 0) return dayUtcFmt.format(d);
   return d.getHours() === 0 && d.getMinutes() === 0 ? dayFmt.format(d) : dateFmt.format(d);
 };
 
 /** Plain-text cell value for a field. */
-export function cellText(f: FieldLike, v: unknown): string {
+/**
+ * A number as its field reads it (`custom.number`): money in the currency its document holds in
+ * `currencyField` (or a fixed one), a share, days. Plain otherwise.
+ */
+export function numberText(f: FieldLike, v: number, doc?: Record<string, unknown>): string {
+  const n = f.custom?.number;
+  if (!n) return v.toLocaleString("en-US");
+  const currency = n.currencyField ? text(doc?.[n.currencyField]) || undefined : n.currency;
+  return formatNumber(v, { ...n, currency });
+}
+
+/** A value as text, the way its field reads (`doc`: the document it's from, for a money field's currency). */
+export function cellText(f: FieldLike, v: unknown, doc?: Record<string, unknown>): string {
   if (v == null || v === "") return "—";
   const one = (x: unknown): string => {
     if (typeof x === "object" && x !== null) {
@@ -123,7 +149,7 @@ export function cellText(f: FieldLike, v: unknown): string {
     case "checkbox":
       return v ? "Yes" : "No";
     case "number":
-      return typeof v === "number" ? v.toLocaleString("en-US") : text(v);
+      return typeof v === "number" ? numberText(f, v, doc) : text(v);
     case "array":
     case "blocks":
       return Array.isArray(v) ? `${v.length} ${v.length === 1 ? "row" : "rows"}` : "—";
@@ -141,11 +167,13 @@ export type Route =
   | { name: "dashboard" }
   | { name: "login" }
   | { name: "create-first-user" }
-  | { name: "list"; slug: string }
-  | { name: "create"; slug: string }
-  | { name: "edit"; slug: string; id: string; tab?: string }
-  | { name: "view"; key: string }
-  | { name: "global"; slug: string; tab?: string }
+  /** A root view; its path's parameters (`/cases/:id`). */
+  | { name: "view"; key: string; params: Record<string, string> }
+  /**
+   * A canonical address (`links()`: a collection, a document, a global) and where it's placed: the
+   * app opens `to` in its place (./widgets/places.ts). Nothing at `to`: not found.
+   */
+  | { name: "address"; href: string; to: string | null }
   | { name: "account" }
   | { name: "not-found" };
 
@@ -160,29 +188,34 @@ export const isDashboardPath = (pathname: string) =>
   pathname !== API_ROUTE &&
   !/\.\w+$/.test(pathname);
 
-export function parseRoute(pathname: string): Route {
+/** What a list keeps in the URL (./list-view.ts), unkeyed in an address `links()` wrote. */
+const LIST_STATE = new Set(["q", "sort", "page", "limit", "filters", "match", "view", "open"]);
+
+export function parseRoute(pathname: string, search = ""): Route {
   if (!isDashboardPath(pathname)) return { name: "not-found" };
   const parts = pathname.slice(DASHBOARD_ROUTE.length).split("/").filter(Boolean).map(decodeURIComponent);
-  const [a, b, c] = parts;
+  const [a, b] = parts;
   if (!a) return { name: "dashboard" };
   if (a === "login" && !b) return { name: "login" };
   if (a === "create-first-user" && !b) return { name: "create-first-user" };
   if (a === "account" && !b) return { name: "account" };
-  if (a === "collections" && b && collectionOf(b)) {
-    if (!c) return { name: "list", slug: b };
-    if (c === "create" && parts.length === 3) return { name: "create", slug: b };
-    if (parts.length === 3) return { name: "edit", slug: b, id: c };
-    const tab = editTabs(collectionOf(b)!).find((t) => t.path === `/${parts[3]}`);
-    if (parts.length === 4 && tab) return { name: "edit", slug: b, id: c, tab: tab.key };
+  const path = `/${parts.join("/")}`;
+  // A collection's, document's or global's address (what `links()` writes).
+  const address = (a === "collections" && b && collectionOf(b)) || (a === "globals" && b && globalOf(b));
+  const href = `/${parts.map(encodeURIComponent).join("/")}${search}`;
+  // A view at this path (fixed paths before ones with parameters: `/cases/board` before `/cases/:id`).
+  const views = rootViews().sort((x, y) => pathParams(x.path).length - pathParams(y.path).length);
+  for (const v of views) {
+    const params = matchPath(v.path, path);
+    if (!params) continue;
+    // A collection's page at its own address, reached by a link with its state unkeyed
+    // (`?filters[0]…`): once, the state goes under the widget's key (`?cases[filters][0]…`).
+    const unkeyed = Object.keys(parse(search, { ignoreQueryPrefix: true })).some((k) => LIST_STATE.has(k));
+    if (address && unkeyed) return { name: "address", href, to: placeOf(href, places()) };
+    return { name: "view", key: v.key, params };
   }
-  const view = rootViews().find((v) => v.path === `/${parts.join("/")}`);
-  if (view) return { name: "view", key: view.key };
-  if (a === "globals" && b && globalOf(b)) {
-    if (!c) return { name: "global", slug: b };
-    // A global's own views (Payload `admin.components.views.edit`), like a document's tabs.
-    const tab = editTabs(globalOf(b)!).find((t) => t.path === `/${c}`);
-    if (parts.length === 3 && tab) return { name: "global", slug: b, tab: tab.key };
-  }
+  // Otherwise it opens where it's placed.
+  if (address) return { name: "address", href, to: placeOf(href, places()) };
   return { name: "not-found" };
 }
 
@@ -227,6 +260,47 @@ export const rootViews = () =>
   Object.entries(config.admin?.components?.views ?? {})
     .filter(([key]) => key !== "dashboard")
     .map(([key, v]) => ({ key, ...v }));
+
+let placed: Places | undefined;
+/** Where each collection, document and global is placed (./widgets/places.ts), read once. */
+export const places = () => (placed ??= placesOf(config.admin?.components?.views ?? {}));
+
+/** The dashboard URL a canonical address opens (`/collections/cases?…` → `/cases?cases[…]`), or null. */
+export const addressOf = (href: string) => placeOf(href, places());
+
+/**
+ * A view's navigation link: what it says, or for `auto` its collection's group and plural label
+ * (a global's: Configuration and its label), from the first collection or global widget on it.
+ */
+export function navOf(v: { nav?: RootView["nav"]; Component?: unknown; path: string }) {
+  if (v.nav !== "auto") return v.nav;
+  for (const w of viewWidgets(v)) {
+    const c = w.collection ? collectionOf(w.collection.collection) : undefined;
+    if (c) return { group: groupOf(c), label: labels(c).plural };
+    const g = w.global ? globalOf(w.global.global) : undefined;
+    if (g) return { group: "Configuration", label: globalLabel(g) };
+  }
+  return undefined;
+}
+
+/** A view's title: its `meta.title`, else its navigation label (a list's, a global's), else a document page's collection's singular name. */
+export function titleOfView(v: {
+  key: string;
+  meta?: { title: string };
+  nav?: RootView["nav"];
+  Component?: unknown;
+  path: string;
+}) {
+  if (v.meta?.title) return v.meta.title;
+  const nav = navOf(v);
+  if (nav) return nav.label;
+  // A document's page (`documentPage`): its collection's name for one record ("Customer").
+  for (const w of viewWidgets(v)) {
+    const c = w.document ? collectionOf(w.document.collection) : undefined;
+    if (c) return labels(c).singular;
+  }
+  return humanize(v.key);
+}
 
 /** The project's dashboard settings (`admin.custom`: brand, navigation, widgets, tours, assistant). */
 export const settings: DashboardSettings = config.admin?.custom ?? {};

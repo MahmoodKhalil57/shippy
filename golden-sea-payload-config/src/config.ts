@@ -1,16 +1,17 @@
 import { defineConfig } from "saastemlycrm-design-system/contracts";
-import { aside } from "./widgets/aside.ts";
-import { cashPage } from "./widgets/cash.ts";
-import { controlRoom } from "./widgets/control-room.ts";
-import { homePage } from "./widgets/home.ts";
-import { inboxHistoryPage } from "./widgets/inbox-history.ts";
-import { inboxPage } from "./widgets/inbox.ts";
-import { approvalsPage } from "./widgets/approvals.ts";
-import { automationsPage } from "./widgets/automations.ts";
-import { growthPage } from "./widgets/growth.ts";
-import { integrationsPage } from "./widgets/integrations.ts";
-import { projectPage } from "./widgets/project.ts";
-import { rolesPage } from "./widgets/roles.ts";
+import { aside } from "./pages/aside.ts";
+import { TODAY } from "./collections/shared.ts";
+import { cashPage } from "./pages/cash.ts";
+import { controlRoom } from "./pages/control-room.ts";
+import { homePage } from "./pages/home.ts";
+import { inboxHistoryPage } from "./pages/inbox-history.ts";
+import { inboxPage } from "./pages/inbox.ts";
+import { approvalsPage } from "./pages/approvals.ts";
+import { automationsPage } from "./pages/automations.ts";
+import { growthPage } from "./pages/growth.ts";
+import { integrationsPage } from "./pages/integrations.ts";
+import { projectPage } from "./pages/project.ts";
+import { rolesPage } from "./pages/roles.ts";
 import { Cases } from "./collections/cases.ts";
 import { Pricelists, Products, Stock, SupplierPrices } from "./collections/catalog.ts";
 import { Approvals, CustomerPOs, Quotations } from "./collections/commercial.ts";
@@ -22,18 +23,65 @@ import { IntakeMessages, Offers, SupplierRfqs } from "./collections/sourcing.ts"
 import { Users } from "./collections/users.ts";
 import { Activities, Bookmarks, IntegrationExceptions, Notifications, Tasks } from "./collections/work.ts";
 import { globals } from "./globals/index.ts";
+import { withLooks } from "./collections/looks.ts";
 import { GuideTopics, Tours } from "./globals/dashboard.ts";
 import { endpoints } from "./endpoints/index.ts";
+import { pages, sourcingPipeline } from "./pages.ts";
 
 /**
  * The mock backend's data model: real Payload collection / global / endpoint
  * configs (copy them into a real `payload.config.ts` later). Served in the
  * browser by src/mock/sw.ts; managed in the dashboard (site root); seeded
- * from src/cms/seed. (`admin` keys are Payload's config API: they configure the
+ * from src/seed. (`admin` keys are Payload's config API: they configure the
  * dashboard's views, as they would Payload's admin panel.)
  *
  * The state behind every screen of the sourcing-desk demo is mapped in STATE-AUDIT.md.
  */
+/** The data model, in the order the dashboard lists it (each with its looks: ./collections/looks.ts). */
+const collections = withLooks([
+  // The original five first (tests and existing pages rely on this order).
+  Cases,
+  Customers,
+  Suppliers,
+  Users,
+  Media,
+  // Sourcing desk
+  IntakeMessages,
+  SupplierRfqs,
+  Offers,
+  // Commercial
+  Quotations,
+  Approvals,
+  CustomerPOs,
+  // Fulfilment
+  PurchaseOrders,
+  SupplierBills,
+  Receipts,
+  Deliveries,
+  // Finance
+  Invoices,
+  Payments,
+  // Catalogue & directory
+  Vessels,
+  Products,
+  SupplierPrices,
+  Pricelists,
+  Stock,
+  // Work
+  Tasks,
+  Activities,
+  IntegrationExceptions,
+  Notifications,
+  Bookmarks,
+  // Growth
+  Opportunities,
+  VendorRegistrations,
+  Campaigns,
+  // The dashboard's own content (./globals/dashboard.ts)
+  GuideTopics,
+  Tours,
+]);
+
 export default defineConfig({
   admin: {
     user: "users",
@@ -42,6 +90,8 @@ export default defineConfig({
     // (brand, assistant, guide, tours) is data: ./globals/dashboard.ts. `section` is the heading
     // a group sits under in the expanded navigation.
     custom: {
+      // The day the demo's records are set on: relative dates in widget queries ($today-30d) count from it.
+      today: TODAY.toISOString(),
       nav: {
         groups: [
           { label: "Sourcing desk", icon: "inbox", section: "Operations" },
@@ -93,11 +143,11 @@ export default defineConfig({
     },
     meta: { titleSuffix: "· Golden Sea" },
     // The demo's purpose-built screens (Payload custom views). Each `Component` is a screen of
-    // widgets in src/cms/widgets; collection tabs (case workspace, quotation preview) are
+    // screens in src/pages; collection tabs (case workspace, quotation preview) are
     // registered on their collections (`admin.components.views.edit`).
     components: {
       views: {
-        // The home page: the signed-in user's day (src/cms/widgets/home.ts).
+        // The home page: the signed-in user's day (src/pages/home.ts).
         dashboard: { Component: homePage, path: "/" },
         inbox: {
           Component: inboxPage,
@@ -165,53 +215,15 @@ export default defineConfig({
           meta: { title: "Delivery plan", description: "Phases, requirements coverage and acceptance tests." },
           nav: { group: "Insights", label: "Delivery plan" },
         },
+        // Related collections on one page (./pages.ts).
+        pipeline: sourcingPipeline,
+        // Where each collection's list, each record and each global is (nothing else has a page).
+        ...pages(collections, globals),
       },
     },
   },
-  collections: [
-    // The original five first (tests and existing pages rely on this order).
-    Cases,
-    Customers,
-    Suppliers,
-    Users,
-    Media,
-    // Sourcing desk
-    IntakeMessages,
-    SupplierRfqs,
-    Offers,
-    // Commercial
-    Quotations,
-    Approvals,
-    CustomerPOs,
-    // Fulfilment
-    PurchaseOrders,
-    SupplierBills,
-    Receipts,
-    Deliveries,
-    // Finance
-    Invoices,
-    Payments,
-    // Catalogue & directory
-    Vessels,
-    Products,
-    SupplierPrices,
-    Pricelists,
-    Stock,
-    // Work
-    Tasks,
-    Activities,
-    IntegrationExceptions,
-    Notifications,
-    Bookmarks,
-    // Growth
-    Opportunities,
-    VendorRegistrations,
-    Campaigns,
-    // The dashboard's own content (./globals/dashboard.ts)
-    GuideTopics,
-    Tours,
-  ],
+  collections,
   globals,
-  // Root endpoints (/api/home, /api/ask, …), by area: src/cms/endpoints.
+  // Root endpoints (/api/home, /api/ask, …), by area: src/endpoints.
   endpoints,
 });

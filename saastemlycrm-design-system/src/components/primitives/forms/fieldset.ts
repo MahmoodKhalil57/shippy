@@ -3,6 +3,7 @@ import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
+import { tiles } from "../layout/algebra.ts";
 
 /**
  * Fieldset: Container for grouping related form elements.
@@ -24,11 +25,12 @@ export const fieldset = rcva("fieldset min-w-0 grid-cols-[minmax(0,1fr)]", {
     /** Docs examples use `w-xs` (fieldset) and `w-64` (checkbox / toggle). */
     width: {
       auto: "w-auto",
-      "64": "w-64 max-w-full",
-      xs: "w-xs max-w-full",
-      sm: "w-sm max-w-full",
-      md: "w-md max-w-full",
-      lg: "w-lg max-w-full",
+      // Whole tiles (`tiles.*`): 5, 6, 7, 8, 10 (the old 16, 20, 24, 28, 32rem, to the nearest tile).
+      "64": tiles["5"],
+      xs: tiles["6"],
+      sm: tiles["7"],
+      md: tiles["8"],
+      lg: tiles["10"],
       full: "w-full",
     },
   },

@@ -1,23 +1,25 @@
 import type { Endpoint } from "payload";
 import type { Doc } from "saastemlycrm-design-system/contracts";
-import { history as H } from "./history.ts";
-import { MONEY_ROLES, NOW, all, docHref, idOf, meOf, num, str, unauthorized } from "./insights-shared.ts";
+import { history as H, inquiriesDaily } from "./history.ts";
+import { MONEY_ROLES, NOW, all, meOf, num, str, unauthorized } from "./insights-shared.ts";
 import * as link from "../links.ts";
 
 /**
  * GET /api/control-room?period=4w|12w|6m — the management dashboards: pipeline & conversion,
- * speed & workload, profit & cash, delivery & suppliers. Today's numbers (live cases, owners,
- * receivables, suppliers) come from the collections; trends from ./history.ts. Profit & cash is
- * only sent to management and finance roles.
+ * speed & workload, profit & cash, delivery. The key figures put today's numbers (live cases,
+ * supplier RFQs, receivables) beside their trends from ./history.ts; the charts and rankings are
+ * that history. Profit & cash is only sent to management and finance roles. What one collection
+ * says on its own (live cases per owner, each supplier's on-time and reply time and open RFQs) is
+ * a data widget on the page (../pages/control-room.ts), not here.
  *
- * The period sets the key figures' window and how much of each trend shows at first (`show`).
+ * The period sets the key figures' window.
  * The trend charts always carry their whole history (`grain`, `ranges`), so each can be cut to
  * another range on the screen without asking again.
  */
 
 export type Unit = "count" | "days" | "minutes" | "usd-k" | "egp-k" | "pct";
 export type Period = "4w" | "12w" | "6m";
-export const PERIODS: { value: Period; label: string }[] = [
+const PERIODS: { value: Period; label: string }[] = [
   { value: "4w", label: "Last 4 weeks" },
   { value: "12w", label: "Last 12 weeks" },
   { value: "6m", label: "Last 6 months" },
@@ -57,21 +59,7 @@ export interface CrRanked {
   /** A policy minimum: rows below it are flagged. */
   minimum?: number;
 }
-export interface CrSuppliers {
-  kind: "suppliers";
-  title: string;
-  sub: string;
-  rows: {
-    id: string;
-    name: string;
-    href: string;
-    replyHrs?: number;
-    onTime?: number;
-    open: number;
-    trend?: number[];
-  }[];
-}
-export type CrWidget = CrChart | CrRanked | CrSuppliers;
+export type CrWidget = CrChart | CrRanked;
 export interface CrSection {
   id: "pipeline" | "speed" | "money" | "delivery";
   title: string;
@@ -80,13 +68,21 @@ export interface CrSection {
 }
 export interface ControlRoom {
   period: Period;
-  periods: typeof PERIODS;
-  /** How many weeks and months of each trend the period shows at first. */
-  show: { week: number; month: number };
   /** Whether profit & cash were included (management and finance only). */
   money: boolean;
   tiles: CrTile[];
   sections: CrSection[];
+  /**
+   * The quote funnel over the period (inquiries, quoted, won), why quotes were lost, receivables
+   * by age (USD thousands; management and finance only, else empty), and inquiries per day for
+   * the last 12 weeks.
+   */
+  visuals: {
+    funnel: { label: string; value: number }[];
+    lost: { label: string; value: number }[];
+    ageing: { label: string; value: number }[];
+    days: { date: string; value: number }[];
+  };
 }
 
 const LIVE_END = ["Closed — settled", "Lost", "Expired"];
@@ -96,7 +92,7 @@ const balance = (i: Doc) => Math.max(0, num(i.balance ?? num(i.amount) - num(i.p
 export function controlRoom(
   period: Period,
   role: string,
-  data: { cases: Doc[]; invoices: Doc[]; suppliers: Doc[]; rfqs: Doc[]; users: Doc[] },
+  data: { cases: Doc[]; invoices: Doc[]; rfqs: Doc[] },
 ): ControlRoom {
   const money = MONEY_ROLES.includes(role);
   const nw = period === "4w" ? 4 : 12;
@@ -165,10 +161,6 @@ export function controlRoom(
         href: link.list("invoices"),
       },
     );
-
-  const owners = new Map<string, number>();
-  for (const c of live) owners.set(str(idOf(c.owner)), (owners.get(str(idOf(c.owner))) ?? 0) + 1);
-  const userName = (id: string) => str(data.users.find((u) => u.id === id)?.name ?? id);
 
   const sections: CrSection[] = [
     {
@@ -274,15 +266,6 @@ export function controlRoom(
           series: [{ name: "Out-of-hours RFQs", values: H.afterHours }],
           highlightLast: true,
         },
-        {
-          kind: "ranked",
-          title: "Live cases per owner",
-          sub: "Every live case has an owner, a deadline and a next action",
-          unit: "count",
-          rows: [...owners]
-            .sort((a, b) => b[1] - a[1])
-            .map(([id, n]) => ({ label: userName(id), value: n, href: link.list("cases") })),
-        },
       ],
     },
   ];
@@ -375,30 +358,12 @@ export function controlRoom(
     });
   }
 
-  const supplierRows = data.suppliers
-    .filter((s) => s.kind !== "own-stock")
-    .map((s) => ({
-      id: s.id,
-      name: str(s.name),
-      href: docHref("suppliers", s.id),
-      replyHrs: typeof s.replyHrs === "number" ? s.replyHrs : undefined,
-      onTime: typeof s.onTime === "number" ? s.onTime : undefined,
-      open: rfqsOpen.filter((r) => idOf(r.supplier) === s.id).length,
-      trend: H.supplierOnTime[s.id] ? mo(H.supplierOnTime[s.id]!) : undefined,
-    }))
-    .sort((a, b) => (b.onTime ?? -1) - (a.onTime ?? -1));
   const deliveryWeeks = H.weeks.slice(-6);
   sections.push({
     id: "delivery",
     title: "Delivery & suppliers",
     sub: "Who delivers on time, and how fast they answer",
     widgets: [
-      {
-        kind: "suppliers",
-        title: "Supplier on-time vs reply time",
-        sub: "On-time delivery and average reply time per supplier — open RFQs from the live records",
-        rows: supplierRows,
-      },
       {
         kind: "chart",
         title: "Deliveries by outcome",
@@ -417,7 +382,17 @@ export function controlRoom(
     ],
   });
 
-  return { period, periods: PERIODS, show: { week: nw, month: nm === 2 ? 3 : nm }, money, tiles, sections };
+  const visuals: ControlRoom["visuals"] = {
+    funnel: [
+      { label: "Inquiries", value: sum(wk(H.inquiries)) },
+      { label: "Quoted", value: sum(wk(H.quoted)) },
+      { label: "Won", value: sum(wk(H.won)) },
+    ],
+    lost: H.lostReasons.map(([label, value]) => ({ label, value })),
+    ageing: money ? H.ageingKeys.map((label, i) => ({ label, value: H.ageing[i]! })) : [],
+    days: inquiriesDaily(NOW),
+  };
+  return { period, money, tiles, sections, visuals };
 }
 
 export const controlRoomEndpoints: Endpoint[] = [
@@ -429,10 +404,10 @@ export const controlRoomEndpoints: Endpoint[] = [
       if (!me) return unauthorized();
       const q = (req.query ?? {}) as Record<string, unknown>;
       const period = (PERIODS.some((p) => p.value === q.period) ? q.period : "12w") as Period;
-      const [cases, invoices, suppliers, rfqs, users] = await Promise.all(
-        ["cases", "invoices", "suppliers", "supplier-rfqs", "users"].map((c) => all(req, c, 0)),
+      const [cases, invoices, rfqs] = await Promise.all(
+        ["cases", "invoices", "supplier-rfqs"].map((c) => all(req, c, 0)),
       );
-      return Response.json(controlRoom(period, str(me.role), { cases, invoices, suppliers, rfqs, users }));
+      return Response.json(controlRoom(period, str(me.role), { cases, invoices, rfqs }));
     },
   },
 ];

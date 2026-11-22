@@ -5,7 +5,7 @@ import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { booleanAttribute, rcva } from "../../base/variants.ts";
 import { button } from "../actions/button.ts";
 import { iconButton } from "../actions/icon-button.ts";
-import { inset, row, text } from "../layout/algebra.ts";
+import { floating, floatingHeight, inset, row, text } from "../layout/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
 
 /**
@@ -35,20 +35,28 @@ export const modal = rcva("modal", {
  * expressive fast spatial spring (a little bounce), fading on the effects spring.
  */
 /** A dialog: M3 elevation +3, over a 32% scrim (src/styles/daisy-m3.css). */
-export const modalBox = rcva("modal-box liquid-glass shadow-elevation-3 motion-reduce:transition-none", {
-  variants: {
-    /** Box width ("dialog modal with custom width"). Default: daisyUI's. */
-    width: {
-      wide: "w-11/12 max-w-5xl",
-      /** Command palette. */
-      palette: "w-full max-w-[min(42rem,calc(100%_-_1rem))]",
+export const modalBox = rcva(
+  `modal-box liquid-glass shadow-elevation-3 max-w-none ${floatingHeight.fit} motion-reduce:transition-none`,
+  {
+    variants: {
+      /**
+       * Whole tiles across (`floating.*`): 10 (530px, M3's dialogs are 280–560dp), `wide` 18 (a
+       * board's `l`), the command palette 12. daisyUI's own `max-width` is lifted (`max-w-none`).
+       */
+      width: {
+        default: floating["10"],
+        wide: floating["18"],
+        /** Command palette. */
+        palette: floating["12"],
+      },
+      /** `header` / body / `footer` sections; only the body scrolls. At most quarter tiles down. */
+      sections: {
+        true: `flex ${floatingHeight.dialog} flex-col overflow-hidden p-0`,
+      },
     },
-    /** `header` / body / `footer` sections; only the body scrolls. */
-    sections: {
-      true: "flex max-h-[min(36rem,calc(100dvh_-_1rem),76dvh_+_4rem)] flex-col overflow-hidden p-0",
-    },
+    defaultVariants: { width: "default" },
   },
-});
+);
 export const modalHeader = rcva("border-b border-outline-variant");
 export const modalBody = rcva(`${inset["2"]} min-h-0 flex-1 overflow-y-auto overscroll-contain py-2`);
 export const modalFooter = rcva(`${inset["4"]} border-t border-outline-variant py-2.5`);

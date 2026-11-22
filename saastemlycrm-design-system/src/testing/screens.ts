@@ -5,6 +5,8 @@ import {
   eachTiles,
   fill,
   linkTarget,
+  placeOf,
+  placesOf,
   type MockConfig,
   type Source,
   type ViewBlock,
@@ -12,6 +14,7 @@ import {
   type WidgetPage,
   type WidgetScope,
 } from "../contracts/index.ts";
+import { defaultRows, type TileSize } from "../components/base/board.ts";
 
 /**
  * Every screen of a project, drawn as each user sees it, and checked against the design rules
@@ -109,6 +112,8 @@ async function draw(ctx: Ctx, page: WidgetPage, scope: WidgetScope, where: strin
   const problems: string[] = [];
   /** Each widget's tile as drawn, with its size, for the tile rules (`tileProblems`). */
   const tiles: DrawnTile[] = [];
+  /** Widgets that took no tile (hidden by their data, or refused with nothing to say). */
+  const gone = new WeakSet<Widget>();
   const one = async (w: Widget): Promise<ViewBlock[]> => {
     if (w.visible && !w.visible(scope)) return [];
     if (w.grid) return [{ type: "grid", blocks: (await Promise.all(w.grid.map(one))).flat() }];
@@ -124,13 +129,20 @@ async function draw(ctx: Ctx, page: WidgetPage, scope: WidgetScope, where: strin
     if (!w.render && !w.each) return [];
     const at = `${where} › ${w.title ?? "widget"}`;
     const { status, data } = w.source ? await load(ctx, fill(w.source, scope), scope) : { status: 200, data: null };
+    if (status === 403 && !w.denied) {
+      gone.add(w);
+      return [];
+    }
     if (status === 403) return [];
     if (status !== 200) {
       problems.push(`${at}: its source answered ${status}`);
       return [];
     }
     try {
-      if (w.hidden?.(data as never, scope)) return [];
+      if (w.hidden?.(data as never, scope)) {
+        gone.add(w);
+        return [];
+      }
       // One tile per item: each drawn as a titled widget of its own.
       if (w.each)
         return eachTiles(w, data as never, scope).map(({ widget: t }): ViewBlock => {
@@ -162,7 +174,26 @@ async function draw(ctx: Ctx, page: WidgetPage, scope: WidgetScope, where: strin
       return [];
     }
   };
-  const blocks = (await Promise.all(page.widgets.map(one))).flat();
+  // The board this user gets: each tile's size and rows, in order.
+  const items: { size: TileSize; rows: number; span?: number }[] = [];
+  const rowsOf = (w: Widget) => w.rows ?? defaultRows(w.skeleton, w.size ?? "s");
+  const top = async (w: Widget, fallback?: TileSize): Promise<ViewBlock[]> => {
+    if (w.visible && !w.visible(scope)) return [];
+    if (w.grid) return (await Promise.all(w.grid.map((x) => top(x, fallback)))).flat();
+    if (w.split)
+      return [
+        ...(await Promise.all(w.split.main.map((x) => top(x, "l")))).flat(),
+        ...(await Promise.all(w.split.side.map((x) => top(x, "s")))).flat(),
+      ];
+    const sized = { ...w, size: w.size ?? fallback ?? "s" } as Widget;
+    const b = await one(sized);
+    if (gone.has(sized)) return b;
+    const n = w.each ? b.length : 1;
+    for (let i = 0; i < n; i++) items.push({ size: sized.size!, rows: rowsOf(sized), span: sized.width });
+    return b;
+  };
+  const blocks: ViewBlock[] = [];
+  for (const w of page.widgets) blocks.push(...(await top(w)));
   return { blocks, problems, tiles };
 }
 
@@ -178,23 +209,34 @@ function hrefsIn(value: unknown, out = new Set<string>()): Set<string> {
 }
 
 /**
- * Where a link fails to lead: a collection, global, edit tab or view the config doesn't have, or a
- * document that doesn't exist (404; one this user may not open still exists). `undefined` when
- * it leads somewhere.
+ * Where a link fails to lead: a collection, global, edit tab or view the config doesn't have, a
+ * collection, document or global no view holds (nothing has a page of its own:
+ * src/app/widgets/places.ts), or a document that doesn't exist (404; one this user may not open
+ * still exists). `undefined` when it leads somewhere.
  */
 async function brokenLink(ctx: Ctx, href: string, known: Map<string, boolean>) {
   const config = ctx.config;
   const t = linkTarget(href);
   if (t.kind === "outside") return undefined;
+
+  // Nothing has a page of its own: a collection, document or global leads somewhere only where a view holds it.
+  const unplaced = () =>
+    placeOf(href, placesOf(config.admin?.components?.views ?? {}))
+      ? undefined
+      : t.kind === "global"
+        ? `no view holds the global "${t.slug}"`
+        : t.kind === "list"
+          ? `no view holds the ${t.collection} list`
+          : `no view holds ${t.kind === "doc" || t.kind === "create" ? t.collection : ""} documents`;
   if (t.kind === "global")
-    return (config.globals ?? []).some((g) => g.slug === t.slug) ? undefined : `no global "${t.slug}"`;
+    return (config.globals ?? []).some((g) => g.slug === t.slug) ? unplaced() : `no global "${t.slug}"`;
   if (t.kind === "view") {
     const views = Object.values(config.admin?.components?.views ?? {}).map((v) => (v as { path?: string }).path);
     return views.includes(t.path) ? undefined : `no view at "${t.path}"`;
   }
   const c = config.collections.find((x) => x.slug === t.collection);
   if (!c) return `no collection "${t.collection}"`;
-  if (t.kind !== "doc") return undefined;
+  if (t.kind !== "doc") return unplaced();
   if (t.tab) {
     const edit = (c.admin?.components as { views?: { edit?: Record<string, { path?: string }> } } | undefined)?.views
       ?.edit;
@@ -205,7 +247,7 @@ async function brokenLink(ctx: Ctx, href: string, known: Map<string, boolean>) {
     const r = await ctx.backend.call("GET", `${ctx.api}/${t.collection}/${encodeURIComponent(t.id)}?depth=0`);
     known.set(key, r.status !== 404);
   }
-  return known.get(key) ? undefined : `no ${t.collection} document "${t.id}"`;
+  return known.get(key) ? unplaced() : `no ${t.collection} document "${t.id}"`;
 }
 
 export interface ScreenCheckOptions {

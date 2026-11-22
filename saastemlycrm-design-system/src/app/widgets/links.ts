@@ -28,7 +28,12 @@ export interface Links<C extends string, G extends string, V extends string> {
   view: (path: V, query?: Record<string, string>) => string;
 }
 
-const part = (s: string | number) => encodeURIComponent(String(s));
+/**
+ * A path segment, encoded. A placeholder filled in later (`$row.case`, `$item.id`, `$doc.id`) stays
+ * as it is, so a link can be built for any document: `link.doc("cases", "$row.case")`.
+ */
+const part = (s: string | number) =>
+  typeof s === "string" && /^\$\w+(?:\.\w+)*$/.test(s) ? s : encodeURIComponent(String(s));
 const query = (q?: Record<string, unknown>) =>
   q && Object.keys(q).length ? stringify(q, { addQueryPrefix: true, encodeValuesOnly: true }) : "";
 

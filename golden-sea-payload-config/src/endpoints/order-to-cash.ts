@@ -1,14 +1,97 @@
 import type { Endpoint, PayloadRequest } from "payload";
-import { money, type CaseOps } from "../widgets/o2c-shared.ts";
 import { bodyOf, failWith, forward } from "./forward.ts";
-import { operationsEndpoints } from "./operations.ts";
+import { operationsEndpoints, type BookLine, type Check } from "./operations.ts";
 
 /**
  * The actions of the case tabs "Order & purchasing" and "Delivery & billing"
- * (../widgets/case-order.ts, ../widgets/case-delivery.ts) that answer in words: each runs the
+ * (../pages/case-order.ts, ../pages/case-delivery.ts) that answer in words: each runs the
  * order-to-cash data endpoint (./operations.ts) as the same request and says what happened
  * (`{ message }`, shown as the snackbar). Registered next to the operations endpoints in ./index.ts.
  */
+
+/**
+ * A case's order to cash: what GET /api/operations/case/:id (./operations.ts) answers, its purchase
+ * orders, deliveries and checks, for the order and delivery tabs' formatters
+ * (../format/order-to-cash.ts) and the actions here.
+ */
+
+/** A supplier PO as the re-check and confirmation read it (its table reads the collection). */
+export interface OpsPO {
+  id: string;
+  number: string;
+  supplier: string;
+  supplierName: string;
+  status: string;
+  recheck: { item: string; atQuotation?: string; now?: string; ok?: boolean }[];
+  recheckDone?: boolean;
+}
+
+export interface OpsDelivery {
+  id: string;
+  number: string;
+  drop: number;
+  plannedAt: string;
+  place: string;
+  status: string;
+  plan: { vehicle?: string; boardingStaff?: string; launch?: string; readyAt?: string; clearance?: string };
+  lines: { lineNo: number; qty: number; lot?: string; description: string }[];
+  dispatchedAt?: string;
+  confirmedAt?: string;
+  confirmedBy?: string;
+  proof: boolean;
+  shortages?: string;
+  invoice: string | null;
+}
+
+export interface CaseOps {
+  case: {
+    id: string;
+    caseId: string;
+    vessel: string;
+    port?: string;
+    eta?: string;
+    agent: string;
+    stage: string;
+    owner: string;
+    nextAction?: string;
+    blocker?: string;
+    currency: string;
+  };
+  canSeeCosts: boolean;
+  canFinance: boolean;
+  isManagement: boolean;
+  lines: BookLine[];
+  customerPo: {
+    id: string;
+    number: string;
+    receivedAt?: string;
+    billingEntity?: string;
+    quotation: string;
+    status: string;
+    openMismatches: number;
+    checks: Check[];
+    unawarded: { lineNo: number; outcome: string; reason?: string }[];
+  } | null;
+  poExpected: boolean;
+  orderConfirmed: boolean;
+  purchaseOrders: OpsPO[];
+  /** Its supplier bills (none for Sales), for the order's figures. */
+  bills: { id: string; billNumber: string; status: string }[];
+  /** Its receipts' quantities, for the order's figures. */
+  receipts: { lineNo: number; ordered: number; received: number }[];
+  deliveries: OpsDelivery[];
+  backorders: {
+    lineNo: number;
+    description: string;
+    qty: number;
+    supplierName: string;
+    date?: string;
+    owner: string;
+    followsIn: string | null;
+    late: boolean;
+  }[];
+  alerts: { at: string; text: string }[];
+}
 
 /** The case's order-to-cash data as the signed-in user may see it, or the error response. */
 const loadOps = (req: PayloadRequest) =>
@@ -100,31 +183,35 @@ export const orderToCashEndpoints: Endpoint[] = [
       }),
   },
   {
-    // The supplier emails the same bill again: booking it is refused (same supplier + bill number).
-    path: "/case-order/:id/book-bill",
+    // A supplier bill's own action (../collections/fulfilment.ts): the supplier emails the same bill
+    // again, and booking it is refused (same supplier + bill number).
+    path: "/case-order/book-bill",
     method: "post",
-    handler: (req) =>
-      withOps(req, async (d) => {
-        const bill = d.bills[0];
-        if (!bill) return failWith("No supplier bill to book.");
-        try {
-          await req.payload.create({
-            req,
-            overrideAccess: false,
-            collection: "supplier-bills" as never,
-            data: {
-              billNumber: bill.billNumber,
-              supplier: bill.supplier,
-              purchaseOrder: bill.purchaseOrder,
-              amount: bill.amount,
-              currency: bill.currency,
-            } as never,
-          });
-        } catch (e) {
-          return failWith(`Duplicate bill blocked — ${errorText(e)}`);
-        }
-        return Response.json({ ok: true });
-      }),
+    handler: async (req) => {
+      if (!req.user) return failWith("You are not allowed to perform this action.", 401);
+      const { bill: id } = await bodyOf(req);
+      const bill = (await req.payload
+        .findByID({ collection: "supplier-bills" as never, id: String(id), depth: 0, req, overrideAccess: false })
+        .catch(() => null)) as Record<string, unknown> | null;
+      if (!bill) return failWith("No supplier bill to book.", 404);
+      try {
+        await req.payload.create({
+          req,
+          overrideAccess: false,
+          collection: "supplier-bills" as never,
+          data: {
+            billNumber: bill.billNumber,
+            supplier: bill.supplier,
+            purchaseOrder: bill.purchaseOrder,
+            amount: bill.amount,
+            currency: bill.currency,
+          } as never,
+        });
+      } catch (e) {
+        return failWith(`Duplicate bill blocked — ${errorText(e)}`);
+      }
+      return Response.json({ ok: true });
+    },
   },
 
   /* ---------------------------------------------------------------- Delivery & billing */
@@ -154,59 +241,6 @@ export const orderToCashEndpoints: Endpoint[] = [
       if (r instanceof Response) return r;
       return Response.json({
         message: `${r.doc.number} created from ${x?.number ?? "the delivery"} — delivered quantities only.`,
-      });
-    },
-  },
-  {
-    // Sign & submit (or refresh): a submission the tax authority accepts is checked again at once,
-    // so the person sees the final status.
-    path: "/case-delivery/:id/einvoice",
-    method: "post",
-    handler: async (req) => {
-      const b = await bodyOf(req);
-      const r = await operation<{ result: string; message: string }>(req, "einvoice", {
-        invoice: b.invoice,
-        taxId: b.taxId || undefined,
-      });
-      if (r instanceof Response || r.result !== "submitted") return r instanceof Response ? r : Response.json(r);
-      const v = await operation<{ message: string }>(req, "einvoice", { invoice: b.invoice });
-      return v instanceof Response ? v : Response.json({ message: v.message });
-    },
-  },
-  {
-    // A customer payment, recorded after the money is in the bank.
-    path: "/case-delivery/:id/payment",
-    method: "post",
-    handler: async (req) => {
-      const b = await bodyOf(req);
-      const d = await loadOps(req);
-      if (d instanceof Response) return d;
-      const inv = d.invoices.find((i) => i.id === String(b.invoice));
-      if (!inv) return failWith("Invoice not found.", 404);
-      const amount = Number(b.amount);
-      if (!(amount > 0)) return failWith("Enter the amount received.");
-      try {
-        await req.payload.create({
-          req,
-          overrideAccess: false,
-          collection: "payments" as never,
-          data: {
-            direction: "in",
-            reference: typeof b.reference === "string" && b.reference ? b.reference : "TRX-",
-            paidAt: new Date().toISOString(),
-            amount,
-            currency: inv.currency,
-            invoice: inv.id,
-            kind: amount < inv.balance ? "Installment" : "Balance",
-            status: "Recorded",
-          } as never,
-        });
-      } catch (e) {
-        return failWith((e as Error).message);
-      }
-      const left = Math.max(0, inv.balance - amount);
-      return Response.json({
-        message: `${money(amount, inv.currency)} allocated to ${inv.number}${left ? ` — balance ${money(left, inv.currency)}` : " — paid in full"}.`,
       });
     },
   },

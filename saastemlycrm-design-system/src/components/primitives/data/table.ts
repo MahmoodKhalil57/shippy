@@ -5,7 +5,7 @@ import { clampColumnWidth, COLUMN_MAX_WIDTH, COLUMN_MIN_WIDTH, moveColumn, order
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
 import { button } from "../actions/button.ts";
-import { fixed, inlineRow, row, rowLine, scrolled, scrollX, stack, text } from "../layout/algebra.ts";
+import { fixed, fixedWidth, inlineRow, row, rowLine, scrolled, scrollX, stack, text } from "../layout/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
 import { tag } from "./tag.ts";
 
@@ -80,7 +80,7 @@ export const table = rcva(
       lines: {
         wrap: scrolled.tableColumns,
         // `text-nowrap` on what's inside a cell: a tag balances its own lines (`text-wrap`), which would wrap it again.
-        one: "[&_tbody_tr]:h-11 [&_tbody_:is(td,th)]:max-w-80 [&_tbody_:is(td,th)]:py-1.5 [&_tbody_td]:truncate [&_tbody_td_*]:text-nowrap [&_thead_th]:py-2 [&_thead_th]:whitespace-nowrap [&_thead_th]:bg-transparent! [&_thead_th]:text-label-sm!",
+        one: "[&_thead_th_button]:min-w-max [&_tbody_tr]:h-11 [&_tbody_:is(td,th)]:max-w-80 [&_tbody_:is(td,th)]:py-1.5 [&_tbody_td]:truncate [&_tbody_td_*]:text-nowrap [&_thead_th]:py-2 [&_thead_th]:whitespace-nowrap [&_thead_th]:bg-transparent! [&_thead_th]:text-label-sm!",
       },
       /** Table background ("Table with pinned-rows" uses base-200). */
       surface: { true: "bg-surface-container" },
@@ -193,6 +193,11 @@ export const tableSort = rcva(
   // `end`: the arrows before the label (layout/algebra.ts `rowReverse`, kept inline: `inlineFlex`).
   { variants: { align: { start: "", center: "", end: "flex flex-row-reverse flex-wrap max-w-full inline-flex!" } } },
 );
+/**
+ * The sort button's label: takes the room the arrow leaves and cuts with "…" (`rowLine`), so the
+ * arrow never drops under it: a header is one line, whatever its column's width rounds to.
+ */
+export const tableSortLabel = rcva(rowLine);
 export const tableSortIcon = rcva(
   "[transition:opacity_var(--duration-effects-fast)_var(--ease-effects-fast),rotate_var(--duration-spatial-fast)_var(--ease-spatial-fast)]",
   {
@@ -213,7 +218,9 @@ export const tableBody = rcva("[transition:opacity_var(--duration-effects)_var(-
   variants: { busy: { true: "opacity-50" } },
 });
 /** A loading placeholder cell (M3's skeleton loader). */
-export const tableSkeleton = rcva("skeleton h-4 w-full max-w-40 rounded-field");
+// A fixed width (not the cell's): a loading table is then about as wide as a loaded one, so its
+// columns aren't squeezed into the panel and its header keeps one line, the height it has loaded.
+export const tableSkeleton = rcva(`skeleton h-4 ${fixedWidth["16"]} rounded-field`);
 /** The one row shown when there are no rows. */
 export const tableEmpty = rcva("py-10 text-center text-on-surface-variant");
 
@@ -359,6 +366,13 @@ export class UiTable extends LightElement {
   @property({ attribute: false }) hiddenColumns: string[] = [];
   /** New rows are on their way. */
   @property({ type: Boolean }) loading = false;
+  /** How many skeleton rows show while the first rows load: as many as a page holds, so it doesn't grow. */
+  @property({ type: Number, attribute: "skeleton-rows" }) skeletonRows = 5;
+  /**
+   * The fewest rows it is tall: a short page (or an empty one) is filled with blank rows, so a table
+   * that holds a page of rows is the same height loading, loaded, short or empty.
+   */
+  @property({ type: Number, attribute: "min-rows" }) minRows = 0;
   /** Shown in place of rows when there are none (and nothing is loading). */
   @property({ attribute: false }) empty: Renderable = "";
   /** Columns move by dragging their header. */
@@ -748,7 +762,7 @@ export class UiTable extends LightElement {
         @click=${(e: MouseEvent) => this._sortBy(path, e.shiftKey)}
         @keydown=${(e: KeyboardEvent) => live && this._moveKey(e, c)}
       >
-        ${text}
+        <span class=${tableSortLabel()}>${text}</span>
         <span class=${tableSortIcon({ state })} aria-hidden="true"
           >${iconSvg(state === "none" ? "unfold" : "arrow-up", { size: "sm" })}</span
         >
@@ -907,7 +921,7 @@ export class UiTable extends LightElement {
             ? this.rows.map((r, i) => this._row(r, i))
             : this.loading
               ? Array.from(
-                  { length: 5 },
+                  { length: this.skeletonRows },
                   () =>
                     html`<tr>
                       ${this.selectable ? html`<th></th>` : nothing} ${this.indexColumn ? html`<th></th>` : nothing}
@@ -920,6 +934,7 @@ export class UiTable extends LightElement {
                   </tr>`
                 : nothing
         }
+        ${this._filler()}
       </tbody>`;
   }
 
@@ -932,6 +947,19 @@ export class UiTable extends LightElement {
     if (cut) cell.title = cell.innerText.trim();
     else cell.removeAttribute("title");
   };
+
+  /** Blank rows up to `minRows` (none past it): the rows' own height, hidden from assistive tech. */
+  private _filler() {
+    const shown = this.rows.length || (this.loading ? this.skeletonRows : this.empty ? 1 : 0);
+    const n = Math.max(0, this.minRows - shown);
+    return Array.from(
+      { length: n },
+      () =>
+        html`<tr aria-hidden="true">
+          <td colspan=${this._span} class=${tableCell({}) || nothing}>&nbsp;</td>
+        </tr>`,
+    );
+  }
 
   private get _span() {
     return this._columns.length + (this.indexColumn ? 1 : 0) + (this.selectable ? 1 : 0);

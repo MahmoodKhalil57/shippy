@@ -1,6 +1,23 @@
 import type { Access, CollectionConfig } from "payload";
-import { deskAccess, idOf, loggedIn, management, ruleError } from "./shared.ts";
-import { tones, type CollectionSettings } from "saastemlycrm-design-system/contracts";
+import { DAY, TODAY, computed, deskAccess, idOf, loggedIn, management, related, ruleError, scalar } from "./shared.ts";
+import { tones, type CollectionAction, type CollectionSettings } from "saastemlycrm-design-system/contracts";
+
+const clock = (d: Date) => d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
+/**
+ * When something is due, against the demo's clock: "Overdue" once passed, its time today ("11:00"),
+ * else its day ("Wed 18 Nov", with the time when it has one). Pure: the date in.
+ */
+export function dueLabel(iso: unknown): string | null {
+  if (typeof iso !== "string" || !iso) return null;
+  const d = new Date(iso);
+  if (d < TODAY) return "Overdue";
+  const timed = d.getTime() % DAY !== 0;
+  if (Math.floor(d.getTime() / DAY) === Math.floor(TODAY.getTime() / DAY)) return timed ? clock(d) : "Today";
+  const day = d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
+  return timed ? `${day} ${clock(d)}` : day;
+}
+
+const KIND_LABEL: Record<string, string> = { auto: "Automatic", human: "Human", alert: "Alert" };
 
 /** Case timeline + audit log: every automatic step and human decision. Append-only. */
 export const Activities: CollectionConfig = {
@@ -29,6 +46,7 @@ export const Activities: CollectionConfig = {
             { label: "Human", value: "human" },
             { label: "Alert", value: "alert" },
           ],
+          custom: tones({ auto: "info", human: "success", alert: "warning" }),
           defaultValue: "auto",
         },
       ],
@@ -48,6 +66,15 @@ export const Activities: CollectionConfig = {
       ],
     },
     { name: "undoOf", type: "relationship", relationTo: "activities", label: "Undoes" },
+    // Who or what did it, in a line (never stored): "Automatic · System · rule: RFQ reminder",
+    // "Human · Karim Youssef". Every automatic step names its rule, every human one the person.
+    computed({ name: "byline", type: "text", label: "By", admin: { condition: () => false } }, async (a, req) => {
+      const kind = KIND_LABEL[scalar(a.kind)] ?? "Automatic";
+      const actor = a.actor ? scalar((await related(req, "users", a.actor))?.name) : "";
+      return [kind, actor || (a.kind === "human" ? "" : "System"), a.rule ? `rule: ${scalar(a.rule)}` : ""]
+        .filter(Boolean)
+        .join(" · ");
+    }),
   ],
 };
 
@@ -102,6 +129,17 @@ export const Tasks: CollectionConfig = {
         { name: "due", type: "date", required: true, admin: { date: { pickerAppearance: "dayAndTime" } } },
       ],
     },
+    // "Overdue" (in red), "11:00" or its day: how every list of follow-ups says when (never stored).
+    computed(
+      {
+        name: "when",
+        type: "text",
+        label: "When",
+        custom: { toneWhen: [{ when: { when: { equals: "Overdue" } }, tone: "error" }] },
+        admin: { position: "sidebar" },
+      },
+      (t) => (t.status === "Open" || !t.status ? dueLabel(t.due) : null),
+    ),
     {
       type: "row",
       fields: [
@@ -152,6 +190,14 @@ export const Tasks: CollectionConfig = {
   ],
 };
 
+/** The safe retry of an exception: the endpoint answers with what it did (the snackbar). */
+const retry = (label: string, when: Record<string, unknown>): CollectionAction => ({
+  label,
+  when,
+  call: { path: "/automations/retry/$row.id" },
+  reply: true,
+});
+
 /** Failed integrations and uncertain automation results — nothing fails silently; retries are idempotent. */
 export const IntegrationExceptions: CollectionConfig = {
   slug: "integration-exceptions",
@@ -162,6 +208,28 @@ export const IntegrationExceptions: CollectionConfig = {
     group: "Work",
   },
   defaultSort: "-occurredAt",
+  // Wherever exceptions show: a safe retry (it checks the idempotency key first, so nothing is
+  // created, imported or sent twice; on a done one it changes nothing), and for an uncertain AI
+  // result, marking it reviewed under the person's name (POST /api/automations/…,
+  // ../endpoints/platform.ts, which re-checks).
+  custom: {
+    actions: [
+      retry("Safe retry", { status: { equals: "Open" } }),
+      retry("Retry again", { status: { in: ["Resolved", "Auto-resolved", "Ignored"] } }),
+      {
+        label: "Mark reviewed",
+        when: { status: { equals: "Waiting for review" } },
+        call: { path: "/automations/review/$row.id", body: {} },
+        confirm: {
+          heading: "Mark as reviewed?",
+          text: "$row.source: $row.summary\nConfirm you checked the flagged fields at the source. Your name goes on the audit log; the AI's values are never applied without this.",
+          label: "Confirm reviewed",
+        },
+        done: "Reviewed — your name is on the audit log",
+        reply: true,
+      },
+    ],
+  } satisfies CollectionSettings,
   access: { read: loggedIn, create: loggedIn, update: loggedIn, delete: management },
   fields: [
     {
@@ -196,6 +264,13 @@ export const IntegrationExceptions: CollectionConfig = {
       type: "select",
       defaultValue: "Open",
       options: ["Open", "Waiting for review", "Resolved", "Auto-resolved", "Ignored"],
+      custom: tones({
+        Open: "error",
+        "Waiting for review": "warning",
+        Resolved: "success",
+        "Auto-resolved": "success",
+        Ignored: "neutral",
+      }),
       admin: { position: "sidebar" },
     },
     { name: "resolvedBy", type: "relationship", relationTo: "users", admin: { position: "sidebar" } },

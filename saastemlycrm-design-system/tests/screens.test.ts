@@ -1,12 +1,23 @@
 import { describe, expect, it } from "vite-plus/test";
-import { block, links, widgets, type MockConfig } from "../src/contracts/index.ts";
+import {
+  block,
+  collectionPage,
+  documentPage,
+  globalPage,
+  links,
+  widgets,
+  type MockConfig,
+} from "../src/contracts/index.ts";
 import { screenDesignProblems, screensOf, type ScreenBackend } from "../src/testing/index.ts";
 
 /** The screen check (src/testing/screens.ts) against a tiny fake of Payload's REST API. */
 
 const link = links();
 
-/** A config with users, posts and a settings global, and one root view drawing `items`. */
+/**
+ * A config with users, posts and a settings global, one root view drawing `items`, and where the
+ * posts' list, users' and posts' records and the settings are (nothing has a page of its own).
+ */
 const withScreen = (items: { label: string; href: string }[]): MockConfig => ({
   collections: [
     { slug: "users", auth: true, fields: [] },
@@ -20,6 +31,10 @@ const withScreen = (items: { label: string; href: string }[]): MockConfig => ({
           path: "/board",
           Component: widgets({ widgets: [{ title: "Board", size: "s", render: () => block("actions", { items }) }] }),
         },
+        posts: collectionPage("posts"),
+        post: documentPage("posts"),
+        user: documentPage("users"),
+        settings: globalPage("settings"),
       },
     },
   },
@@ -41,7 +56,7 @@ const check = (items: { label: string; href: string }[], users = ["ada@test"]) =
 
 describe("screenDesignProblems", () => {
   it("finds the config's screens", () => {
-    expect(screensOf(withScreen([])).map((s) => s.name)).toEqual(["/board"]);
+    expect(screensOf(withScreen([])).map((s) => s.name)).toContain("/board");
   });
 
   it("passes links that lead somewhere", async () => {
@@ -70,6 +85,12 @@ describe("screenDesignProblems", () => {
     expect(problems).toMatch(/no "billing" tab on users/);
     expect(problems).toMatch(/no global "theme"/);
     expect(problems).toMatch(/no view at "\/nowhere"/);
+  });
+
+  it("reports links to a collection no view holds", async () => {
+    // Users have record pages but no list.
+    const problems = await check([{ label: "People", href: link.list("users") }]);
+    expect(problems.join(" ")).toMatch(/no view holds the users list/);
   });
 
   it("says who can't sign in", async () => {

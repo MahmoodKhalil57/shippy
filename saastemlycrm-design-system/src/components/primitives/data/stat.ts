@@ -1,10 +1,13 @@
 import type { VariantProps } from "class-variance-authority";
 import { html, nothing } from "lit";
-import { customElement, property } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
+import { cssTime } from "../../base/css-time.ts";
+import { figureAt, readFigure, settle } from "../../base/count-up.ts";
+import { motion } from "../../base/motion-queue.ts";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { card, cardBody, cardLinkIcon } from "../containers/card.ts";
-import { fixedWidth, padEnd, row, rowFill, text } from "../layout/algebra.ts";
+import { fixedWidth, padEnd, row, rowFill, rowLine, stack, text } from "../layout/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
 import { tag } from "./tag.ts";
 
@@ -36,6 +39,10 @@ import { tag } from "./tag.ts";
  */
 export const statSurface = rcva("border", {
   variants: {
+    /** The whole of its tile (a figure that is a widget of its own): its tile's box, clipping the rest. */
+    fill: { true: "grow basis-0 min-h-0 overflow-hidden", false: "" },
+    /** A filling figure that links: its tile lifts it on hover with its handles (`tileArrange`), not it alone. */
+    lift: { true: "hover:translate-y-0!", false: "" },
     surface: {
       tonal: "border-transparent bg-surface-container",
       outlined: "border-outline-variant bg-surface",
@@ -55,7 +62,7 @@ export const statLabel = rcva(`${text.label} line-clamp-2 text-label-md text-on-
 export const statFigure = rcva(`${row} items-end gap-x-3 gap-y-1`);
 export const statValue = rcva(`${text.label} grow tabular-nums`, {
   variants: {
-    size: { md: "text-headline-sm", lg: "text-headline-md" },
+    size: { sm: "grow-0 text-title-lg", md: "text-headline-sm", lg: "text-headline-md" },
     tone: {
       neutral: "text-on-surface",
       success: "text-success-ink",
@@ -79,6 +86,18 @@ export const statDelta = rcva("tabular-nums");
 const WORD_JOINER = String.fromCharCode(0x2060);
 export const statDeltaText = rcva(`${text.label} [&>svg]:inline [&>svg]:me-1 [&>svg]:align-[-0.125em]`);
 export const statNote = rcva(`${text.label} ${rowFill} line-clamp-2 text-body-sm text-on-surface-variant`);
+/**
+ * `sm`: the figure on one line, for a tile one row high (a side panel's counters): the label and
+ * the note stacked at the start, a line each (cut with "…"), and the figure at the end. No
+ * sparkline, no delta chip, no link arrow (the whole cell still links).
+ */
+export const statDense = rcva(`${row} items-center gap-3`);
+/** The label and note: they take what the figure leaves (basis 0, so the row never wraps) and cut the rest. */
+export const statDenseText = rcva(`${stack} ${rowLine} gap-0`);
+export const statDenseLine = rcva(`${text.label} truncate`, {
+  variants: { kind: { label: "text-label-md text-on-surface-variant", note: "text-body-sm text-on-surface-variant" } },
+});
+
 /** The sparkline's column (the trend slot), at the end of the figure's line. */
 export const statTrend = rcva(`${fixedWidth["16"]} ms-auto`);
 
@@ -104,7 +123,7 @@ export class UiStat extends LightElement {
   @property() value: Renderable = "";
   @property() note: Renderable = "";
   @property() tone: StatVariants["tone"];
-  /** `lg` for a page's headline figures. */
+  /** `lg` for a page's headline figures; `sm` the figure on one line (a tile one row high). */
   @property() size: StatVariants["size"];
   /** The whole stat links to the records behind the figure. */
   @property() href?: string;
@@ -112,14 +131,57 @@ export class UiStat extends LightElement {
   @property({ type: Boolean }) main = false;
   /** On the page itself rather than in a tile: a small outlined card. */
   @property({ type: Boolean }) outlined = false;
+  /** Fills its tile, whatever it holds (a figure that is a widget of its own). */
+  @property({ type: Boolean }) fill = false;
   /** The change against the previous period, in words ("+21%", "−0.4 d"). */
   @property() delta = "";
   /** Which way it moved: the chip's arrow. */
   @property({ attribute: "delta-dir" }) deltaDir: StatDeltaDir = "up";
   /** What the movement means: the chip's ink. */
   @property({ attribute: "delta-tone" }) deltaTone: StatDeltaTone = "neutral";
+  /** The figure part of the way to `value` while it counts (`count-up.ts`); undefined once there. */
+  @state() private _counting?: string;
+  /** The number it last showed: a new value counts from it (the first from 0). */
+  #shown?: number;
+  #frame = 0;
+
+  /**
+   * A figure counts to its value as it comes in, and from its old value to a new one: ambient motion
+   * (src/components/base/motion-queue.ts), a carrier animation of M3's long duration whose progress
+   * each animation frame reads, so the queue can hold it or skip it to the end like any other. None
+   * with Reduce motion, and none for a value that isn't a figure.
+   */
+  protected willUpdate(changed: Map<string, unknown>) {
+    if (!changed.has("value") || typeof this.value !== "string") return;
+    const to = readFigure(this.value);
+    if (!to) return;
+    const from = this.#shown ?? 0;
+    this.#shown = to.value;
+    if (from === to.value || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const duration = cssTime(getComputedStyle(document.documentElement).getPropertyValue("--duration-long2"), 500);
+    const carrier = this.animate([{ opacity: 1 }, { opacity: 1 }], { duration });
+    void motion.add([carrier], "ambient", this);
+    cancelAnimationFrame(this.#frame);
+    this._counting = figureAt(from, to, 0);
+    const tick = () => {
+      const t = Number(carrier.currentTime ?? 0) / duration;
+      if (carrier.playState === "finished" || t >= 1) {
+        this._counting = undefined;
+        return;
+      }
+      this._counting = figureAt(from, to, settle(t));
+      this.#frame = requestAnimationFrame(tick);
+    };
+    this.#frame = requestAnimationFrame(tick);
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    cancelAnimationFrame(this.#frame);
+  }
 
   render() {
+    if (this.size === "sm") return this.#dense();
     const chip = this.delta
       ? html`<span class=${tag({ tone: this.deltaTone, class: statDelta() })}
           ><span class=${statDeltaText()}
@@ -130,7 +192,7 @@ export class UiStat extends LightElement {
     const body = html`<div class=${cardBody({ class: statBody() })}>
       <p class=${statLabel({ link: !!this.href })}>${this.label}</p>
       <div class=${statFigure()}>
-        <p class=${statValue({ size: this.size, tone: this.tone })}>${this.value}</p>
+        <p class=${statValue({ size: this.size, tone: this.tone })}>${this._counting ?? this.value}</p>
         ${this.hasSlotted("trend") ? html`<div class=${statTrend()}>${this.slotted("trend")}</div>` : nothing}
       </div>
       ${
@@ -145,13 +207,43 @@ export class UiStat extends LightElement {
       variant: null,
       size: "sm",
       link: !!this.href,
-      class: statSurface({ surface: this.main ? "main" : this.outlined ? "outlined" : "tonal" }),
+      class: statSurface({
+        surface: this.main ? "main" : this.outlined ? "outlined" : "tonal",
+        fill: this.fill,
+        lift: this.fill && !!this.href,
+      }),
     });
     const surface = this.main ? "tinted" : nothing;
     return this.href
-      ? html`<a href=${this.href} class=${cls} data-surface=${surface}
+      ? html`<a href=${this.href} class=${cls} data-surface=${surface} ?data-tile-lift=${this.fill}
           >${body}<span class=${cardLinkIcon()} aria-hidden="true">${iconSvg("arrow-right", { size: "sm" })}</span></a
         >`
+      : html`<div class=${cls} data-surface=${surface}>${body}</div>`;
+  }
+
+  /** One line: the label and note at the start, the figure at the end (`size="sm"`). */
+  #dense() {
+    const body = html`<div class=${cardBody({ class: statDense() })}>
+      <div class=${statDenseText()}>
+        <p class=${statDenseLine({ kind: "label" })}>${this.label}</p>
+        ${this.note ? html`<p class=${statDenseLine({ kind: "note" })}>${this.note}</p>` : nothing}
+      </div>
+      ${this.hasSlotted("trend") ? html`<div class=${statTrend()}>${this.slotted("trend")}</div>` : nothing}
+      <p class=${statValue({ size: "sm", tone: this.tone })}>${this._counting ?? this.value}</p>
+    </div>`;
+    const cls = card({
+      variant: null,
+      size: "xs",
+      link: !!this.href,
+      class: statSurface({
+        surface: this.main ? "main" : this.outlined ? "outlined" : "tonal",
+        fill: this.fill,
+        lift: this.fill && !!this.href,
+      }),
+    });
+    const surface = this.main ? "tinted" : nothing;
+    return this.href
+      ? html`<a href=${this.href} class=${cls} data-surface=${surface} ?data-tile-lift=${this.fill}>${body}</a>`
       : html`<div class=${cls} data-surface=${surface}>${body}</div>`;
   }
 }

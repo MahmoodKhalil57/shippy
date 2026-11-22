@@ -4,7 +4,7 @@ import { customElement, property, query } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { iconButton } from "../actions/icon-button.ts";
-import { floating, inset, row, rowFill, stack, text } from "../layout/algebra.ts";
+import { floating, floatingHeight, inset, row, rowFill, stack, text } from "../layout/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
 
 /**
@@ -16,7 +16,8 @@ import { iconSvg } from "../media/icon.ts";
  * - **Anatomy** (M3 side sheets): a headline with a close button, a `trailing` slot beside it for
  *   a link or a tag, the content, which scrolls, and `actions` pinned at the bottom, at the start
  *   (M3: "bottom actions alignment: left"). 24dp at the start and end of each part.
- * - **Size:** `md` is M3's 400dp side sheet (26rem); `lg` (32rem) is for a form. Never wider than
+ * - **Size:** in tiles (src/components/base/tiles.ts): `md` is 8 (424px, about M3's 400dp side
+ *   sheet); `lg` 12 (636px) is for a form. Never wider than
  *   the window less 1rem a side (layout/algebra.ts `floating`). It is detached: 16dp from the
  *   window's edges with a 16dp corner (M3). On a compact window (under 640px) it is the whole
  *   screen, square (M3: full-screen on compact).
@@ -31,12 +32,12 @@ import { iconSvg } from "../media/icon.ts";
  */
 export const sheet = rcva(`modal modal-end ${inset["4"]} py-4 max-sm:px-0 max-sm:py-0`);
 export const sheetBox = rcva(
-  `modal-box liquid-glass-surface shadow-elevation-1 ${stack} h-full max-h-full overflow-hidden rounded-lg p-0 max-sm:w-full max-sm:rounded-none motion-reduce:transition-none`,
+  `modal-box liquid-glass-surface shadow-elevation-1 ${stack} ${floatingHeight.sheet} max-h-full max-w-none overflow-hidden rounded-lg p-0 max-sm:h-full max-sm:w-full max-sm:rounded-none motion-reduce:transition-none`,
   {
     variants: {
       size: {
-        md: floating.md,
-        lg: floating.lg,
+        md: floating.sheet,
+        lg: floating.sheetWide,
       },
     },
     defaultVariants: { size: "md" },

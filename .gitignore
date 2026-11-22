@@ -6,3 +6,6 @@ Golden_Sea_Odoo_Demo_Requirements.docx
 Messages.md
 node_modules/
 codeandchilldemos/
+
+# Audit output (audit/*.ts)
+audit-out/

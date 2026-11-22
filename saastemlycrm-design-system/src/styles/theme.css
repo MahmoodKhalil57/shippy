@@ -1,7 +1,14 @@
 /* Shared design-system setup: the daisyUI plugin plus any @theme / daisyUI
    theme customisation. Imported by index.css (emitted) and by reference.css
    (reference only), so app code and component CSS always agree. */
-@plugin "daisyui";
+/* Without daisyUI's rules on the root that look into the whole document (`:root:has(...)`: a theme
+   checkbox, a scroll lock while a modal is open). The theme is set with `data-theme`, dialogs are
+   native modal <dialog>s and the document never scrolls (the frame does), so they did nothing here,
+   but a :has() on the root marks every element in the page "affected by :has()": any change
+   anywhere then made the browser re-check it, and a page coming in restyled the whole frame. */
+@plugin "daisyui" {
+  exclude: themecontroller, rootscrolllock, rootscrollgutter;
+}
 @import "./motion.css";
 
 /* ---------------------------------------------------------------- Material Design 3: spacing, shape, elevation
@@ -348,6 +355,27 @@
   }
 }
 
+/* A ring (`<ui-ring>`) sweeps round from 12 o'clock as it enters: its drawn arc is masked to
+   `--ring-sweep`, an angle registered so it animates. */
+@property --ring-sweep {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 360deg;
+}
+@keyframes ring-sweep {
+  from {
+    --ring-sweep: 0deg;
+  }
+}
+
+/* A heatmap's cells (`<ui-heatmap>`) come in column by column, each from a little smaller. */
+@keyframes cell-in {
+  from {
+    opacity: 0;
+    scale: 0.6;
+  }
+}
+
 /* ---------------------------------------------------------------- Material Design 3: state layers
    (m3.material.io/foundations/interaction/states) A state layer is a wash of the content's own
    colour between the container and the content: hover 8%, focus 10%, pressed 10%, dragged 16%.
@@ -520,32 +548,37 @@
   initial-value: 1;
 }
 
-/* The app frame's sizes (<ui-app-shell>). The fluid ones scale smoothly with the window instead
-   of jumping at breakpoints, from a 320px phone to a 1280px desktop:
-     --frame-rail      a closed column       48px → 96px  (a 48px icon pill plus its inset;
-                                             96dp is M3's collapsed navigation rail)
-     --frame-gap       between columns        2px →  8px
-     --frame-edge      to the screen edge     2px → 12px
-   The open widths are fixed:
-     --frame-nav       the navigation expanded    220px (M3 expanded rail: 220dp to 360dp)
-     --frame-aside     the side panel open        320px
-   The shell registers the lengths (CSS.registerProperty) so script reads them resolved;
-   src/components/base/frame-fit.ts proves the room they leave the page at every window width. */
+/* The tile: the unit everything is laid out in (src/components/base/tiles.ts), 53 x 56px at the
+   default text size, gap included (surfaces inset themselves inside their tiles). The screen is an
+   even number of tiles across, 6 at 320px and two more at a time: the shell sets `--frame-cols`.
+   What the tiles leave over (less than two tiles) goes to the main panel, half either side of the
+   page, and the height past whole tiles is left under the footer. The
+   frame in tiles (src/components/base/frame-fit.ts proves the room they leave the page at every
+   window width):
+     --frame-header     the header, 1 tile high
+     --frame-rail       a closed column, 1 tile wide
+     --frame-nav        the navigation open, 4 tiles
+     --frame-aside      the side panel open, 4 tiles
+     --frame-gap        between columns: none (the tiles are gapless)
+     --frame-edge       to the screen's side: none (the rails meet the screen's edges)
+     --frame-slack      half of what the tiles leave over: the main panel's, either side of the
+                        page (set by <ui-frame>) */
 :root {
-  /* The main panel's narrowest content box, the one size the frame is laid out from: what a
-     320px phone leaves it (320 − a 48px rail − its 2×2px border − its ~10px scrollbar). The
-     shell keeps the panel at least this wide, going compact (one rail, no edges) to do so. In px:
-     the shell reads it as written. */
-  --main-min: 258px;
-  /* Under this much content beside both rails, the frame goes compact (one rail, no edges): the
-     page gets the second rail's room back. Compact keeps `--main-min` down to a 320px phone. */
-  --main-comfort: 320px;
-  --frame-rail: clamp(3rem, 5vw + 2rem, 6rem);
-  /* The columns' open widths: the navigation and the side panel (frame-fit's NAV_OPEN, ASIDE_OPEN). */
-  --frame-nav: 13.75rem;
-  --frame-aside: 20rem;
-  --frame-gap: clamp(0.125rem, 0.625vw, 0.5rem);
-  --frame-edge: clamp(0.125rem, 1.042vw - 0.083rem, 0.75rem);
+  --tile-w: 3.3125rem;
+  --tile-h: 3.5rem;
+  --frame-cols: 6;
+  /* The main panel's narrowest content box: 5 tiles (it has no border, and its scrollbar isn't
+     drawn). In px: the shell reads it as written. */
+  --main-min: 265px;
+  /* 6 tiles: the page's room beside both rails outside compact. */
+  --main-comfort: 318px;
+  --frame-header: var(--tile-h);
+  --frame-rail: calc(1 * var(--tile-w));
+  --frame-nav: calc(4 * var(--tile-w));
+  --frame-aside: calc(4 * var(--tile-w));
+  --frame-gap: 0px;
+  --frame-edge: 0px;
+  --frame-slack: max(0px, calc((100vw - var(--frame-cols) * var(--tile-w)) / 2));
 }
 
 /* ---------------------------------------------------------------- glass
@@ -574,6 +607,8 @@
   --glass-edge: light-dark(rgb(0 0 0 / 0.06), rgb(255 255 255 / 0.06));
   --glass-sheen: light-dark(rgb(255 255 255 / 0.35), rgb(255 255 255 / 0.05));
   --glass-refraction: url(#liquid-glass-refraction);
+  /* The shell's own, stronger refraction (index.html); the floating glass's where it's missing. */
+  --frame-refraction: url(#frame-glass-refraction);
   /* The theme's own text colour, kept aside: the app shell may re-ink a region for contrast over
      a background image (--color-base-content), and glass floating above it restores this. */
   --theme-base-content: var(--color-base-content);
@@ -621,6 +656,111 @@
 /* The main content panel as glass: see-through and heavily frosted (the blur evens the photo out
    behind the text), with the rim shine, no refraction (text sits on it). Restores the theme's ink
    inside a re-inked frame. */
+/* The app's layers, back to front: the background (a photo, else the theme's washes); the chrome's
+   glass (`frame-liquid`: the floating glass's tint, blur and sheen, no refraction, under the
+   header, the rails, the columns and the footer: everything but the main window); the main
+   window's slab (`frame-matte`: a raised pane of liquid glass, the only layer that refracts, only
+   where the main window is); then the regions. The slab's edge is `frame-lip`. */
+@utility frame-liquid {
+  background-color: color-mix(in oklab, var(--color-base-100) 45%, transparent);
+  background-image: radial-gradient(140% 70% at 30% -10%, var(--glass-sheen), transparent 60%);
+  -webkit-backdrop-filter: blur(8px) saturate(170%);
+  backdrop-filter: blur(8px) saturate(170%);
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    background-color: color-mix(in oklab, var(--color-base-100) 85%, transparent);
+  }
+  /* Reduced transparency: no glass, but the background someone chose still shows (hiding the
+     photo outright made picking one do nothing); the shell over it turns solid. */
+  @media (prefers-reduced-transparency: reduce) {
+    background-color: transparent;
+    background-image: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none !important;
+  }
+  @media (prefers-contrast: more) {
+    background-color: var(--color-base-100);
+    background-image: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none !important;
+  }
+}
+
+/* The main window's slab: a pane of liquid glass the page sits on, raised above the chrome around
+   it, the only layer that refracts; `<ui-frame>` clips it to the main window (its box and
+   corners), and the chrome's glass to everything else, so the slab bends the photo itself while
+   the chrome shows it evenly. A wash of light across it from the top start corner, like the
+   floating glass's sheen; the page plane's own tint (`liquid-glass-well`) is over it. */
+@utility frame-matte {
+  background-color: color-mix(in oklab, var(--color-base-100) 22%, transparent);
+  background-image: linear-gradient(135deg, var(--glass-sheen), transparent 45%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  backdrop-filter: blur(14px) saturate(160%);
+
+  /* Bent first, then frosted: the photo's shapes visibly wave, softened by the blur after. */
+  :root[data-glass="refract"] & {
+    backdrop-filter: var(--frame-refraction) blur(6px) saturate(160%);
+  }
+
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    background-color: color-mix(in oklab, var(--color-base-100) 85%, transparent);
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    background-color: var(--color-base-100);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  @media (prefers-contrast: more) {
+    background-color: var(--color-base-100);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+/* The page plane on the main window's slab: a light tint over the slab's glass, flat (the slab's
+   edge, `frame-lip`, draws its rim and shadow). */
+@utility liquid-glass-well {
+  --color-base-content: var(--theme-base-content);
+  color: var(--color-base-content);
+  background-color: color-mix(in oklab, var(--color-base-100) 30%, transparent);
+
+  @media (prefers-reduced-transparency: reduce) {
+    background-color: var(--color-base-100);
+  }
+  @media (prefers-contrast: more) {
+    background-color: var(--color-base-100);
+  }
+}
+/* The main window's slab (`frame-matte`) as a thick piece of glass laid over the page, its edge
+   a demi bullnose like a polished glass table top: the flat face rounds over at every edge to a
+   short straight side. Light comes from the top start, as on all the glass.
+   - Where refraction is drawn (`data-glass="refract"`), the glass itself (`#frame-slab-lens` in
+     index.html, over the whole window): its height is its own box rounded over at the edges, so
+     what's under the rounded edge (the page, the photo) is bent inwards like through a lens, and a
+     lamp above the top start corner leaves a faint, uneven glint that fades along the edges; the
+     flat middle is left clear.
+   - Everywhere: the rim catches a faint line of light, the slope turning away is shaded, and under the slab, on the chrome, its
+     straight side shows as a thin dark line, with a tight contact shadow and a soft, deeper one
+     falling to the bottom. */
+@utility frame-lip {
+  box-shadow:
+    inset 1px 1px 0 0 var(--glass-shine-soft),
+    inset 0 0 0 1px var(--glass-edge),
+    inset -12px -12px 18px -12px color-mix(in oklab, var(--color-scrim) 45%, transparent),
+    1px 1.5px 0 0 color-mix(in oklab, var(--color-scrim) 35%, transparent),
+    0 2px 3px 0 color-mix(in oklab, var(--color-scrim) 25%, transparent),
+    0 18px 40px -10px color-mix(in oklab, var(--color-scrim) 55%, transparent);
+
+  :root[data-glass="refract"] & {
+    backdrop-filter: url(#frame-slab-lens);
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    backdrop-filter: none !important;
+  }
+  @media (prefers-contrast: more) {
+    box-shadow: inset 0 0 0 1px var(--color-outline);
+    backdrop-filter: none !important;
+  }
+}
+
 @utility liquid-glass-surface {
   --color-base-content: var(--theme-base-content);
   color: var(--color-base-content);
@@ -718,5 +858,27 @@
   }
   to {
     background-position: -150% 0;
+  }
+}
+
+/* A dial (`<ui-dial>`) sweeps its needle (and its filled arc) from the start of its range to the
+   reading as it enters: both read `--dial-angle`, an angle registered so it animates and
+   inherited so the needle and the arc follow the dial's one value. */
+@property --dial-angle {
+  syntax: "<angle>";
+  inherits: true;
+  initial-value: 0deg;
+}
+@keyframes dial-sweep {
+  from {
+    --dial-angle: 0deg;
+  }
+}
+
+/* A share bar's segments (`<ui-share-bar>`) grow in from their middles, one after the other. */
+@keyframes share-in {
+  from {
+    opacity: 0;
+    scale: 0 1;
   }
 }

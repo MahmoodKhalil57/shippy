@@ -3,7 +3,7 @@ import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva, type Breakpoint } from "../../base/variants.ts";
-import { text } from "../layout/algebra.ts";
+import { text, tip } from "../layout/algebra.ts";
 
 /**
  * Tooltip: a short description of what something is or does, on hover and keyboard focus
@@ -22,7 +22,7 @@ import { text } from "../layout/algebra.ts";
 export const TOOLTIP_GLASS =
   "[&::before]:liquid-glass-clear [&::before]:text-on-surface [&>.tooltip-content]:liquid-glass-clear [&>.tooltip-content]:text-on-surface [&::after]:invisible";
 
-export const tooltip = rcva(TOOLTIP_GLASS, {
+export const tooltip = rcva(`${TOOLTIP_GLASS} ${tip}`, {
   variants: {
     enabled: { true: "tooltip" },
     placement: {
@@ -44,7 +44,7 @@ export const tooltipContent = rcva(`tooltip-content ${text.label}`, {
   variants: {
     variant: {
       plain: "text-body-sm",
-      rich: "flex flex-col max-w-80 items-start gap-1 rounded-md py-3 text-start text-body-md text-on-surface-variant",
+      rich: "flex flex-col items-start gap-1 rounded-md py-3 text-start text-body-md text-on-surface-variant",
     },
   },
   defaultVariants: { variant: "plain" },

@@ -7,12 +7,30 @@ import {
   type WidgetPage,
   type WidgetScope,
 } from "saastemlycrm-design-system/contracts";
-import { caseCompare } from "../src/widgets/case-compare.ts";
-import { caseOverview } from "../src/widgets/case-overview.ts";
-import { casePricing } from "../src/widgets/case-pricing.ts";
-import { caseProfit } from "../src/widgets/case-profit.ts";
-import { caseRfqs } from "../src/widgets/case-rfqs.ts";
+import { caseCompare } from "../src/pages/case-compare.ts";
+import { caseOverview } from "../src/pages/case-overview.ts";
+import { casePricing } from "../src/pages/case-pricing.ts";
+import { caseProfit } from "../src/pages/case-profit.ts";
+import { caseRfqs } from "../src/pages/case-rfqs.ts";
+import { matches } from "saastemlycrm-design-system/payload";
+import { Activities } from "../src/collections/work.ts";
+import { Cases } from "../src/collections/cases.ts";
 import { backend, call, login } from "./backend.ts";
+
+type Field = { name?: string; type?: string; fields?: Field[]; tabs?: { fields: Field[] }[]; custom?: Json };
+/** A field by name or dotted path, through tabs, rows, groups and arrays. */
+function fieldAt(fields: Field[], path: string): Field | undefined {
+  const [head, ...rest] = path.split(".");
+  const flat = (fs: Field[]): Field[] =>
+    fs.flatMap((f) => (f.tabs ? f.tabs.flatMap((t) => flat(t.fields)) : !f.name && f.fields ? flat(f.fields) : [f]));
+  const f = flat(fields).find((x) => x.name === head);
+  return rest.length ? fieldAt(f?.fields ?? [], rest.join(".")) : f;
+}
+/** A value's tone as the dashboard reads it: its field's first `toneWhen` that holds, else its select's tone. */
+const toneOf = (f: Field, doc: Json): string | undefined =>
+  f.custom?.toneWhen?.find((r: { when: never }) => matches(doc, r.when))?.tone ?? f.custom?.tones?.[doc[f.name!]];
+/** The data widget of a page with this title. */
+const titled = (page: WidgetPage, title: string) => page.widgets.find((w) => w.title?.startsWith(title))!;
 
 /** The case workspace tabs as widgets (src/cms/widgets/case-*.ts): what they show, per role, and their actions. */
 
@@ -64,8 +82,8 @@ async function load(source: Source): Promise<{ status: number; data: unknown }> 
 /**
  * A widget page drawn as blocks, as `<app-widgets>` would for the signed-in user: a titled widget
  * is a card (its head's count, tags and actions on it), a refused one shows its `denied` text or
- * nothing, a `hidden` one nothing. An `each` widget is a card per item. Data widgets (`records`…)
- * show as their card only.
+ * nothing, a `hidden` one nothing. An `each` widget is a card per item. Data widgets (`records`…) show as
+ * their card only.
  */
 async function draw(page: WidgetPage, id: string, params: Record<string, string> = {}): Promise<Json> {
   const me = (await call("GET", "/api/users/me")).body.user;
@@ -75,7 +93,11 @@ async function draw(page: WidgetPage, id: string, params: Record<string, string>
     if (w.visible && !w.visible(scope)) return [];
     if (w.grid) return [{ type: "grid", blocks: await all(w.grid) }];
     if (w.split) return [{ type: "split", main: await all(w.split.main), side: await all(w.split.side) }];
-    if (w.records || w.counts || w.fields) return w.title ? [{ type: "card", heading: w.title, blocks: [] }] : [];
+    // A data widget shows as its card (with what its head adds, e.g. an action): its records are the collection's.
+    if (w.records || w.counts || w.fields || w.metrics)
+      return w.title
+        ? [fill({ type: "card", heading: w.title, ...w.head?.(undefined as never, scope), blocks: [] }, scope)]
+        : [];
     const { status, data } = w.source ? await load(fill(w.source, scope)) : { status: 200, data: null };
     let out: Json[];
     if (status === 403) {
@@ -105,7 +127,7 @@ const card = (v: Json, heading: string) => blocks(v).find((b) => b.type === "car
 const text = (v: unknown) => JSON.stringify(v);
 
 describe("case tabs", () => {
-  it("overview: lifecycle, line progress, owner & backup with the handover, timeline filter", async () => {
+  it("overview: lifecycle, line progress, owner & backup with the handover, lines, clarifications, timeline", async () => {
     const page = caseOverview.clientProps.page;
     const body = await draw(page, "gs-rfq-0142");
     for (const h of [
@@ -117,13 +139,56 @@ describe("case tabs", () => {
       "Next action",
     ])
       expect(card(body, h), h).toBeTruthy();
-    expect(text(card(body, "Owner & backup"))).toMatch(/"label":"Reassign".*\/handover/);
-    expect(text(body)).toMatch(/USD 7,480/);
-    const human = await draw(page, "gs-rfq-0142", { show: "human" });
-    const items = blocks(human).find((b) => b.type === "timeline").items;
-    expect(items.every((i: Json) => i.heading.startsWith("Human"))).toBe(true);
-    await login("soaad.amer");
-    expect(text(await draw(page, "gs-rfq-0142"))).not.toMatch(/USD 7,480/);
+    // The case's own fields, read from the cases collection (data widgets).
+    const c = (await call("GET", "/api/cases/gs-rfq-0142?depth=1")).body;
+    const fields = Cases.fields as Field[];
+    // Line progress: each count a bar of all six lines, ready amber while one is blocked.
+    expect(titled(page, "Line progress").fields!.fields).toEqual([
+      "lineCount.readyPct",
+      "lineCount.ready",
+      "lineCount.waiting",
+      "lineCount.blocked",
+      "lineCount.noOffer",
+    ]);
+    expect(c.lineCount).toMatchObject({ total: 6, ready: 3, blocked: 1, readyPct: 50 });
+    const ready = fieldAt(fields, "lineCount.ready")!;
+    expect(ready.custom.gauge.max).toBe("lineCount.total");
+    expect(toneOf(ready, c)).toBe("warning");
+    expect(toneOf(fieldAt(fields, "lineCount.blocked")!, c)).toBe("error");
+    // Owner & backup with the collection's "Reassign"; the facts around it without it.
+    expect(titled(page, "Owner & backup").fields).toEqual({ fields: ["owner", "backup"] });
+    for (const t of ["Next action", "Line progress", "Last handover note", "Customer contact rule"])
+      expect(titled(page, t).fields!.actions, t).toBe(false);
+    // The contact rule through the customer, with what it means.
+    expect(titled(page, "Customer contact rule").fields!.fields).toContain("customer.contactNote");
+    expect(c.customer.contactNote).toMatch(/One customer follow-up per quotation/);
+    // Every line with its status in its bucket's tone, and how sure the AI was (amber under 85%).
+    expect(titled(page, "Line status").records).toMatchObject({ doc: true, field: "items" });
+    const status = fieldAt(fields, "items.status")!;
+    const tones = c.items.map((l: Json) => toneOf(status, l));
+    expect(tones.filter((t: string) => t === "success")).toHaveLength(3);
+    expect(tones.filter((t: string) => t === "error")).toHaveLength(1);
+    const aiRead = fieldAt(fields, "items.aiRead")!;
+    for (const l of c.items)
+      if (l.aiRead !== undefined && l.aiRead !== null)
+        expect(toneOf(aiRead, l), String(l.lineNo)).toBe(l.aiRead < 85 ? "warning" : undefined);
+    // The clarifications: the open one "Waiting", in amber.
+    expect(titled(page, "Clarifications log").records).toMatchObject({ doc: true, field: "clarifications" });
+    const waiting = c.clarifications.filter((q: Json) => q.reply === "Waiting");
+    expect(waiting).toHaveLength(1);
+    expect(toneOf(fieldAt(fields, "clarifications.reply")!, waiting[0])).toBe("warning");
+    // The audit trail, newest first: each entry names the rule that fired or the person.
+    const log = titled(page, "Activity timeline").records!;
+    expect(log).toMatchObject({ collection: "activities", layout: "timeline", sort: "-at", dot: "kind" });
+    const q = stringify({ where: { case: { equals: "gs-rfq-0142" } }, sort: log.sort, limit: 0, depth: 1 });
+    const entries = (await call("GET", `/api/activities?${q}`)).body.docs as Json[];
+    expect(entries.length).toBeGreaterThan(1);
+    expect(entries.every((a) => /^(Automatic|Human|Alert)/.test(a.byline))).toBe(true);
+    expect(entries.filter((a) => a.rule).every((a) => a.byline.endsWith(`rule: ${a.rule}`))).toBe(true);
+    expect(entries.filter((a) => a.kind === "human" && a.actor).every((a) => a.byline.includes(a.actor.name))).toBe(
+      true,
+    );
+    expect(fieldAt(Activities.fields as Field[], "kind")!.custom.tones).toMatchObject({ alert: "warning" });
   });
 
   it("rfqs: table with reminders, simulate replies shows what arrived", async () => {
@@ -136,7 +201,8 @@ describe("case tabs", () => {
     expect(sim.status).toBe(200);
     const after = await draw(page, "gs-rfq-0142");
     expect(card(after, "Replies arriving")).toBeTruthy();
-    expect(card(after, "New suppliers saved")).toBeTruthy();
+    // Each new supplier saved from a reply is a card of its own.
+    expect(text(after)).toMatch(/New · quoted, never ordered/);
     expect(card(after, "Needs a person")).toBeTruthy();
     // Nothing left waiting: the presenter is told to send RFQs first.
     expect((await call("POST", `/api${simulate.call.path}`)).status).toBe(400);
@@ -159,9 +225,11 @@ describe("case tabs", () => {
     const n = planned.body.drafts.length;
     expect(n).toBeGreaterThan(1);
 
-    const drafted = card(await draw(page, "gs-rfq-0142"), "Drafted supplier RFQs");
+    const withDrafts = await draw(page, "gs-rfq-0142");
+    const drafted = card(withDrafts, "Drafted supplier RFQs");
     expect(drafted.count).toBe(n);
-    expect(blocks({ blocks: [drafted] }).filter((b) => b.type === "message")).toHaveLength(n);
+    // Each draft's email is a tile of its own, after the list of drafts.
+    expect(blocks(withDrafts).filter((b) => b.type === "message")).toHaveLength(n);
     const remove = blocks({ blocks: [drafted] }).find((b) => b.type === "list").items[0].actions[0];
     expect(remove.label).toBe("Remove");
     expect((await call("POST", `/api${remove.call.path}`, remove.call.body)).status).toBe(200);

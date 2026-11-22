@@ -1,14 +1,114 @@
-import type { CollectionConfig } from "payload";
+import type { CollectionConfig, Field, PayloadRequest } from "payload";
 import {
   CURRENCIES,
   SUPPLIER_RFQ_STATUSES,
   caseRef,
+  computed,
   costVisible,
   deskAccess,
   evidence,
   idOf,
   logActivity,
+  scalar,
 } from "./shared.ts";
+import { formats, tones, type CollectionSettings } from "saastemlycrm-design-system/contracts";
+import * as link from "../links.ts";
+
+/** Supplier RFQ statuses still waiting on the supplier: reminders apply. */
+export const OPEN_RFQ_STATUSES = ["Sent", "Awaiting reply", "Partial reply", "Clarification needed"];
+/** How many reminders go out before the case owner is alerted. */
+const REMINDERS = 2;
+
+const AT = new Intl.DateTimeFormat("en-GB", {
+  day: "2-digit",
+  month: "short",
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "UTC",
+});
+
+/** Where an RFQ's reminders stand: how many of the two went out, and the next one, the escalation, or none. */
+export function reminderState(r: Record<string, unknown>): string {
+  const sent = `${Number(r.reminders) || 0} of ${REMINDERS}`;
+  if (r.escalated) return `${sent} · escalated`;
+  if (!OPEN_RFQ_STATUSES.includes(String(r.status))) return `${sent} · stopped`;
+  return typeof r.nextReminderAt === "string" && r.nextReminderAt
+    ? `${sent} · next ${AT.format(new Date(r.nextReminderAt))}`
+    : sent;
+}
+
+/** How urgent a message reads (1–5): a deadline today, "asap", a complaint or a cancellation, still waiting. */
+export function urgencyOf(m: Record<string, unknown>): number {
+  const text = `${scalar(m.subject)}\n${scalar(m.body)}`;
+  const status = scalar(m.status);
+  let n = status === "Needs review" ? 3 : status === "New" ? 2 : 1;
+  if (/\burgent|\basap\b|immediately|within 24\s*h|\btoday\b|tonight/i.test(text)) n += 2;
+  if (/complain|cancel|\bstop\b|damaged|wrong (item|delivery)/i.test(text)) n += 2;
+  return Math.min(5, n);
+}
+
+/** Below this a match waits for a person (the review queue). */
+const SURE = 85;
+
+/**
+ * A confidence (stored 0–1, as the AI gives it) read as a whole percentage, worked out on read
+ * from its sibling `confidence`, in a row of an array or a group too. `tonePath`, the field's path
+ * in the document, gives it the confidence tones: green from 85%, amber from 60%, red under.
+ */
+const percentOf = (tonePath?: string, label = "Confidence"): Field => ({
+  name: "confidencePct",
+  type: "number",
+  label,
+  virtual: true,
+  admin: { readOnly: true },
+  custom: {
+    ...formats.percent(0),
+    ...(tonePath
+      ? {
+          toneWhen: [
+            { when: { [tonePath]: { greater_than_equal: SURE } }, tone: "success" },
+            { when: { [tonePath]: { greater_than_equal: 60 } }, tone: "warning" },
+            { when: { [tonePath]: { exists: true } }, tone: "error" },
+          ],
+        }
+      : {}),
+  },
+  hooks: {
+    afterRead: [
+      ({ siblingData }: { siblingData?: Record<string, unknown> }) =>
+        typeof siblingData?.confidence === "number" ? Math.round(siblingData.confidence * 100) : undefined,
+    ],
+  },
+});
+
+/** Whether the inbox-history import is approved (its decisions are then final), read once per request. */
+async function historyApproved(req: PayloadRequest): Promise<boolean> {
+  const ctx = (req.context ??= {}) as { historyApproved?: Promise<boolean> };
+  ctx.historyApproved ??= req.payload
+    .findGlobal({ slug: "integrations" as never, depth: 0 } as never)
+    .then((g) => {
+      const imp = ((g as Record<string, unknown>).emailImport ?? {}) as Record<string, unknown>;
+      return ["Approved", "Running", "Done"].includes(scalar(imp.status)) && Boolean(idOf(imp.approvedBy));
+    })
+    .catch(() => false);
+  return ctx.historyApproved;
+}
+
+/** Live messages (the inbox), not the past ones the inbox-history import organised. */
+const LIVE = { source: { not_equals: "History import" } };
+const NEEDS_REVIEW = { ...LIVE, status: { equals: "Needs review" } };
+const LINKED = { ...LIVE, status: { equals: "Linked" }, "match.case": { exists: true } };
+/** A review decision (`case`: the case's id, as the records read it, populated). */
+const review = (decision: "link" | "not-related", caseId?: string) => ({
+  path: "/inbox/$row.id/review",
+  body: caseId ? { decision, case: caseId } : { decision },
+});
+const HISTORY = (decision: "confirm" | "reject") => ({
+  call: { path: "/inbox-history/review/$row.id", body: { decision } },
+  done: decision === "confirm" ? "Proposal confirmed" : "Proposal rejected — left out of the import",
+});
+/** A history item a person may still decide again: until the import is approved. */
+const CHANGEABLE = { source: { equals: "History import" }, "history.locked": { not_equals: true } };
 
 /**
  * Everything that arrives: emails (Outlook / Gmail), the website quick-quote form, WhatsApp photos,
@@ -18,6 +118,41 @@ import {
 export const IntakeMessages: CollectionConfig = {
   slug: "intake-messages",
   labels: { singular: "Intake message", plural: "Intake messages" },
+  custom: {
+    // What a person decides on a message, wherever it shows (the inbox, a case's supplier RFQs, the
+    // history import). Below 85% nothing is linked by itself: a person picks the case, confirms the
+    // reply's own guess (a new supplier's, matched by reference), or sets it aside. The endpoints
+    // re-check and answer with how to take it back.
+    actions: [
+      {
+        label: "Confirm offer",
+        main: true,
+        when: { ...NEEDS_REVIEW, "match.case": { exists: true } },
+        call: review("link", "$row.match.case.id"),
+        done: "Confirmed — your decision is in the audit log",
+      },
+      {
+        label: "Link to $item.case.caseId ($item.confidencePct%)",
+        when: NEEDS_REVIEW,
+        each: "candidates",
+        call: review("link", "$item.case.id"),
+        done: "Linked — your decision is in the audit log",
+      },
+      { label: "Not related", when: NEEDS_REVIEW, call: review("not-related"), done: "Marked not related" },
+      // A message linked to its case: the case, and a supplier's reply's RFQs there.
+      {
+        label: "Supplier RFQs",
+        when: { ...LINKED, classification: { equals: "Supplier reply" } },
+        href: link.doc("cases", "$row.match.case", "rfqs"),
+      },
+      { label: "Open $row.match.case.caseId", main: true, when: LINKED, href: link.doc("cases", "$row.match.case") },
+      // The history import's uncertain items: confirmed or rejected, changeable until approved.
+      { label: "Confirm", when: { ...CHANGEABLE, "history.decision": { exists: false } }, ...HISTORY("confirm") },
+      { label: "Reject", when: { ...CHANGEABLE, "history.decision": { exists: false } }, ...HISTORY("reject") },
+      { label: "Change", when: { ...CHANGEABLE, "history.decision": { equals: "Confirmed" } }, ...HISTORY("reject") },
+      { label: "Change", when: { ...CHANGEABLE, "history.decision": { equals: "Rejected" } }, ...HISTORY("confirm") },
+    ],
+  } satisfies CollectionSettings,
   admin: {
     useAsTitle: "subject",
     defaultColumns: ["subject", "fromName", "channel", "classification", "status", "receivedAt"],
@@ -25,6 +160,15 @@ export const IntakeMessages: CollectionConfig = {
   },
   defaultSort: "-receivedAt",
   access: { ...deskAccess, read: ({ req }) => Boolean(req.user) },
+  hooks: {
+    beforeChange: [
+      // Stored, so the inbox can sort by it ("Most urgent first").
+      ({ data, originalDoc }) => {
+        data.urgency = urgencyOf({ ...originalDoc, ...data });
+        return data;
+      },
+    ],
+  },
   fields: [
     {
       type: "tabs",
@@ -193,7 +337,20 @@ export const IntakeMessages: CollectionConfig = {
       type: "select",
       required: true,
       defaultValue: "New",
-      options: ["New", "Needs review", "Linked", "Case created", "Ignored"],
+      options: [
+        "New",
+        "Needs review",
+        "Linked",
+        { label: "Linked · case created", value: "Case created" },
+        { label: "Not related", value: "Ignored" },
+      ],
+      custom: tones({
+        New: "info",
+        "Needs review": "warning",
+        Linked: "success",
+        "Case created": "success",
+        Ignored: "neutral",
+      }),
       admin: { position: "sidebar" },
     },
     {
@@ -205,7 +362,8 @@ export const IntakeMessages: CollectionConfig = {
         { name: "supplierRfq", type: "relationship", relationTo: "supplier-rfqs" },
         { name: "reference", type: "text", label: "Reference found" },
         { name: "confidence", type: "number", min: 0, max: 1 },
-        { name: "basis", type: "textarea" },
+        percentOf("match.confidencePct", "Match confidence"),
+        { name: "basis", type: "textarea", label: "Why it matched" },
         {
           name: "candidates",
           type: "array",
@@ -220,6 +378,44 @@ export const IntakeMessages: CollectionConfig = {
         { name: "reviewedAt", type: "date" },
       ],
     },
+    // The cases a person may link an uncertain match to, each with its confidence: its "Link to…"
+    // actions (`each`), read from `match.candidates` (an action repeats over a top-level array).
+    computed(
+      {
+        name: "candidates",
+        type: "array",
+        label: "Candidate cases",
+        admin: { position: "sidebar", condition: (data) => Boolean(data?.match?.candidates?.length) },
+        fields: [
+          { name: "case", type: "relationship", relationTo: "cases" },
+          { name: "confidence", type: "number" },
+          { name: "confidencePct", type: "number", label: "Confidence", custom: formats.percent(0) },
+          { name: "reason", type: "text" },
+        ],
+      },
+      (m) =>
+        (
+          ((m.match as Record<string, unknown> | undefined)?.candidates as Record<string, unknown>[] | undefined) ?? []
+        ).map((c) => ({
+          ...c,
+          confidencePct: typeof c.confidence === "number" ? Math.round(c.confidence * 100) : undefined,
+        })),
+    ),
+    // What a person should confirm in the offer read from a reply, a line each.
+    computed(
+      {
+        name: "uncertain",
+        type: "textarea",
+        label: "To confirm",
+        admin: { position: "sidebar" },
+        custom: { toneWhen: [{ when: {}, tone: "warning" }] },
+      },
+      (m) =>
+        ((m.offerDraft as { uncertain?: unknown }[] | undefined) ?? [])
+          .map((d) => scalar(d.uncertain))
+          .filter(Boolean)
+          .join("\n"),
+    ),
     {
       name: "offerDraft",
       type: "array",
@@ -268,13 +464,66 @@ export const IntakeMessages: CollectionConfig = {
       label: "History import review",
       admin: { position: "sidebar", condition: (data) => data?.source === "History import" },
       fields: [
-        { name: "kind", type: "select", options: ["Customer", "Vessel", "Supplier", "Price", "Confidential"] },
+        {
+          name: "kind",
+          type: "select",
+          options: ["Customer", "Vessel", "Supplier", "Price", "Confidential"],
+          custom: tones({
+            Customer: "neutral",
+            Vessel: "info",
+            Supplier: "info",
+            Price: "warning",
+            Confidential: "error",
+          }),
+        },
         { name: "question", type: "text" },
         { name: "proposal", type: "text" },
         { name: "confidence", type: "number", min: 0, max: 1 },
-        { name: "decision", type: "select", options: ["Confirmed", "Rejected"] },
+        percentOf(),
+        {
+          name: "decision",
+          type: "select",
+          options: ["Confirmed", "Rejected"],
+          custom: tones({ Confirmed: "success", Rejected: "neutral" }),
+        },
+        // Once management approves the import its decisions are final (no more Change).
+        {
+          name: "locked",
+          type: "checkbox",
+          label: "Import approved",
+          virtual: true,
+          admin: { readOnly: true },
+          hooks: { afterRead: [({ req }: { req: PayloadRequest }) => historyApproved(req)] },
+        },
       ],
     },
+    // How the inbox lists it: where it came from, its files, how urgent it reads.
+    computed({ name: "via", type: "text", label: "Channel", admin: { position: "sidebar" } }, (m) => {
+      const mailbox = scalar(m.mailbox);
+      if (m.channel === "Email") return mailbox.startsWith("Gmail") ? mailbox : `Outlook · ${mailbox || "sales@"}`;
+      return m.channel === "Website form" ? "Website quick-quote form" : scalar(m.channel);
+    }),
+    computed({ name: "fileCount", type: "text", label: "Files", admin: { position: "sidebar" } }, (m) => {
+      const n = ((m.files as unknown[] | undefined) ?? []).length;
+      return n ? `${n} file${n === 1 ? "" : "s"}` : "";
+    }),
+    {
+      name: "urgency",
+      type: "number",
+      min: 1,
+      max: 5,
+      admin: { position: "sidebar", readOnly: true, description: "From its words and status (1–5)." },
+    },
+    computed(
+      {
+        name: "urgencyTag",
+        type: "text",
+        label: "Urgency",
+        admin: { hidden: true },
+        custom: { toneWhen: [{ when: { urgency: { greater_than_equal: 4 } }, tone: "warning" }] },
+      },
+      (m) => (Number(m.urgency) >= 3 ? `Urgency ${Number(m.urgency)}/5` : ""),
+    ),
     { name: "createdCase", type: "relationship", relationTo: "cases", admin: { position: "sidebar", readOnly: true } },
     {
       name: "acknowledgedAt",
@@ -288,6 +537,37 @@ export const IntakeMessages: CollectionConfig = {
 export const SupplierRfqs: CollectionConfig = {
   slug: "supplier-rfqs",
   labels: { singular: "Supplier RFQ", plural: "Supplier RFQs" },
+  custom: {
+    // "Remind now" while the supplier hasn't answered (POST /api/sourcing/rfqs/:id/remind). The
+    // first reminder goes to the supplier: outward, so it asks first and can't be undone. The
+    // second also alerts the case owner (internal), at once. Nothing once escalated twice.
+    actions: [
+      {
+        label: "Remind now",
+        when: {
+          status: { in: OPEN_RFQ_STATUSES },
+          or: [{ reminders: { less_than: 1 } }, { reminders: { exists: false } }],
+        },
+        call: { path: "/sourcing/rfqs/$row.id/remind" },
+        confirm: {
+          heading: "Send a reminder to $row.supplier.name?",
+          text: "Reminder 1 for $row.reference goes to the supplier now, from the approved template (client hidden).",
+          label: "Send reminder",
+        },
+        done: "$row.reference: Reminder 1 sent",
+      },
+      {
+        label: "Remind now",
+        when: {
+          status: { in: OPEN_RFQ_STATUSES },
+          reminders: { greater_than_equal: 1 },
+          or: [{ escalated: { not_equals: true } }, { reminders: { less_than: REMINDERS } }],
+        },
+        call: { path: "/sourcing/rfqs/$row.id/remind" },
+        done: "$row.reference: escalated to the case owner",
+      },
+    ],
+  } satisfies CollectionSettings,
   admin: {
     useAsTitle: "reference",
     defaultColumns: ["reference", "case", "supplier", "status", "dueAt", "reminders"],
@@ -352,9 +632,11 @@ export const SupplierRfqs: CollectionConfig = {
         { name: "reminders", type: "number", min: 0, defaultValue: 0 },
         { name: "nextReminderAt", type: "date" },
         { name: "escalated", type: "checkbox", defaultValue: false },
+        // Worked out on read: how many reminders went out and what comes next (never stored).
+        computed({ name: "reminderState", type: "text", label: "Reminders" }, reminderState),
       ],
     },
-    { name: "lastEvent", type: "text" },
+    { name: "lastEvent", type: "text", label: "Latest" },
     {
       type: "row",
       fields: [
@@ -385,6 +667,17 @@ export const SupplierRfqs: CollectionConfig = {
       required: true,
       defaultValue: "Draft",
       options: SUPPLIER_RFQ_STATUSES,
+      custom: tones({
+        Draft: "neutral",
+        Sent: "info",
+        "Awaiting reply": "warning",
+        "Partial reply": "warning",
+        "Clarification needed": "warning",
+        Replied: "success",
+        "Revised offer received": "success",
+        Declined: "neutral",
+        "No response": "error",
+      }),
       admin: { position: "sidebar" },
     },
     { name: "sentBy", type: "relationship", relationTo: "users", admin: { position: "sidebar" } },

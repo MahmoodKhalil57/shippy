@@ -18,16 +18,7 @@ import {
 } from "../stores/index.ts";
 import type { Access } from "./app.ts";
 import { text } from "../payload/util.ts";
-import {
-  collectionOf,
-  dashboardPath,
-  dataFields,
-  fieldsOf,
-  formatDate,
-  loadBookmarks,
-  settings,
-  toggleBookmark,
-} from "./shared.ts";
+import { collectionOf, dataFields, fieldsOf, formatDate, loadBookmarks, settings, toggleBookmark } from "./shared.ts";
 import { loadTours } from "./site.ts";
 import { fill } from "./widgets/host.ts";
 import type { Widget, WidgetScope } from "./widgets/widget.ts";
@@ -83,11 +74,10 @@ const kindColor = (kind: string): MenuItem["badgeColor"] => {
 };
 
 /**
- * The side panel's counters for this user: the `counts` items of `admin.custom.aside` they see.
- * Read from the widgets as the config wrote them (the host's `leaves` turns a `counts` widget into
- * a source and a render, which has no items left to read).
+ * What the navigation's attention badges count: the `counts` items marked `tone: "warning"` among
+ * the side panel's widgets (`admin.custom.aside`) this user sees, read from the definitions.
  */
-function counters(user: Doc) {
+function attentionCounters(user: Doc) {
   const scope: WidgetScope = { user: user as WidgetScope["user"], params: {} };
   const visible = (list: Widget[]): Widget[] =>
     list.flatMap((w) => {
@@ -99,7 +89,9 @@ function counters(user: Doc) {
   return visible(settings.aside ?? []).flatMap((w) => {
     const spec = w.counts;
     if (!spec || !("items" in spec)) return [];
-    return spec.items.map((x) => ({ ...x, collection: x.collection ?? spec.collection, where: fill(x.where, scope) }));
+    return spec.items
+      .filter((x) => x.tone === "warning")
+      .map((x) => ({ ...x, collection: x.collection ?? spec.collection, where: fill(x.where, scope) }));
   });
 }
 
@@ -119,7 +111,9 @@ const loading: MenuItem[] = [{ label: "Loading…", disabled: true }];
 
 /**
  * The dashboard's side panel, built like the navigation: a `<ui-menu layout="nav">` whose groups
- * are the sections (notifications, bookmarks, widgets). Its rail is `asideRail()`.
+ * are the sections (notifications, bookmarks, widgets, tours). Its widgets are widgets like any
+ * screen's (`admin.custom.aside`, drawn by `<app-widgets>` on a board of its own). Its rail is
+ * `asideRail()`.
  */
 @customElement("dashboard-aside")
 export class DashboardAside extends LightElement {
@@ -130,7 +124,6 @@ export class DashboardAside extends LightElement {
   @property() pageTitle = "";
   @state() private tours: Tour[] = [];
   @state() private notifications: MenuItem[] = [];
-  @state() private widgets: MenuItem[] = [];
   @state() private loaded = false;
   @state() private unread = 0;
   /** Whose bookmarks are in the store. */
@@ -171,20 +164,12 @@ export class DashboardAside extends LightElement {
     });
     this.unread = unread.length;
 
-    // Widgets: the counters this role steers by.
-    const widgets = counters(user);
-    const counts = await Promise.all(widgets.map((w) => count(w.collection, w.where as Where)));
-    this.widgets = widgets.map((w, i) => ({
-      card: true,
-      label: w.label,
-      description: w.note,
-      badge: String(counts[i]),
-      badgeColor: counts[i] && w.tone === "warning" ? "warning" : undefined,
-      href: dashboardPath("collections", w.collection),
-    }));
+    // What needs attention, for the navigation's badges (the widgets themselves draw in their section).
+    const flagged = attentionCounters(user);
+    const counts = await Promise.all(flagged.map((w) => count(w.collection, w.where as Where)));
     const attention: Attention = {};
-    widgets.forEach((w, i) => {
-      if (w.tone === "warning" && counts[i]) attention[w.collection] = (attention[w.collection] ?? 0) + counts[i];
+    flagged.forEach((w, i) => {
+      if (counts[i]) attention[w.collection] = (attention[w.collection] ?? 0) + counts[i];
     });
     this.dispatchEvent(new CustomEvent("dashboard-attention", { detail: attention, bubbles: true }));
     this.tours = await loadTours();
@@ -242,7 +227,19 @@ export class DashboardAside extends LightElement {
           active: b.href === this.path,
         })),
       ],
-      widgets: this.loaded ? this.widgets : loading,
+      // The side panel's widgets (`admin.custom.aside`): the same widgets a screen has, on a board of
+      // their own, arranged and remembered on their own ("aside").
+      widgets: [
+        {
+          content: html`<app-widgets
+            board="aside"
+            fit
+            .page=${{ widgets: settings.aside ?? [] }}
+            .user=${this.user}
+            .access=${this.access}
+          ></app-widgets>`,
+        },
+      ],
       // Guided tours, with a tick once shown.
       tours: this.tours.map((t) => {
         const done = this.#tour.value.completed.includes(t.id);

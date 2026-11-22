@@ -4,7 +4,7 @@ import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
-import { inset, row, text } from "../layout/algebra.ts";
+import { inset, row, text, tileCap } from "../layout/algebra.ts";
 
 /**
  * Range slider: Selects a value by sliding a handle.
@@ -42,7 +42,7 @@ export const range = rcva("range", {
     /** Turn off the filled part of the track. */
     unfilled: { true: "[--range-fill:0]" },
     /** Width (the docs' "steps and measure" uses `w-full max-w-xs`). */
-    width: { xs: "w-full max-w-xs", sm: "w-full max-w-sm", md: "w-full max-w-md", full: "w-full" },
+    width: { xs: tileCap["6"], sm: tileCap["7"], md: tileCap["8"], full: "w-full" },
     /** Filled part of the track (and the thumb, unless `thumbColor`). */
     fillColor: {
       neutral: "text-neutral",
@@ -94,7 +94,7 @@ export const range = rcva("range", {
 /** Wrapper around the slider + measure rows. */
 export const rangeWrapper = rcva("", {
   variants: {
-    width: { xs: "w-full max-w-xs", sm: "w-full max-w-sm", md: "w-full max-w-md", full: "w-full" },
+    width: { xs: tileCap["6"], sm: tileCap["7"], md: tileCap["8"], full: "w-full" },
   },
 });
 

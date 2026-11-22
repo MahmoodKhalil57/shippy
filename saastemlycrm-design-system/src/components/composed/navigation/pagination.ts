@@ -5,6 +5,8 @@ import type { ButtonVariants } from "../../primitives/actions/button.ts";
 import type { JoinVariants } from "../../primitives/layout/join.ts";
 import "../../primitives/actions/button.ts";
 import "../../primitives/layout/join.ts";
+import "../../primitives/media/icon.ts";
+import { pageSlots, type PageSlot } from "../../base/page-slots.ts";
 
 /**
  * Pagination: Group of buttons for moving between related content.
@@ -19,8 +21,6 @@ import "../../primitives/layout/join.ts";
 /** `numbers`: page buttons with ellipses; `radio`: radio inputs (form value); `prev-next`: only previous/next. */
 export type PaginationMode = "numbers" | "radio" | "prev-next";
 
-type Slot = number | "gap";
-
 interface PageButton {
   active?: boolean;
   disabled?: boolean;
@@ -34,8 +34,11 @@ interface PageButton {
  * @example <ui-pagination mode="prev-next" variant="outline" page="3" total="10"></ui-pagination>
  * @example <ui-pagination mode="radio" name="page" total="4"></ui-pagination>
  *
- * Pages are 1-based. Long ranges collapse to `1 … 4 5 6 … 99` (the gap is a
- * disabled button, as in the docs). Fires `ui-change` with `{ page }`.
+ * Pages are 1-based. Long ranges collapse to `1 … 4 5 6 … 99`: always `siblings × 2 + 5` buttons
+ * once there are more pages than that (`pageSlots`, proved by tests/page-slots.test.ts), so hundreds of pages take the same room as seven. Each "…" is a
+ * button too: it jumps to the middle of the pages it leaves out ("Pages 7 to 93"). The previous and
+ * next buttons are chevrons (mirrored right to left) with their names for assistive tech, unless
+ * `prev-label` / `next-label` say otherwise. Fires `ui-change` with `{ page }`.
  *
  * Fluid: when the page numbers don't fit the row it's in (a phone-width card), it shows
  * « 3 / 12 » instead, and the numbers again once the row is wide enough.
@@ -53,8 +56,9 @@ export class UiPagination extends LightElement {
   @property() variant: ButtonVariants["variant"];
   /** Show « / » buttons around the numbers. */
   @property({ type: Boolean, attribute: "prev-next" }) prevNext = false;
-  @property({ attribute: "prev-label" }) prevLabel = "«";
-  @property({ attribute: "next-label" }) nextLabel = "»";
+  /** Text for the previous / next buttons instead of their chevrons. */
+  @property({ attribute: "prev-label" }) prevLabel = "";
+  @property({ attribute: "next-label" }) nextLabel = "";
   /** Radio group name (radio mode). */
   @property() name = uid("page");
   @property() label = "Pagination";
@@ -97,22 +101,12 @@ export class UiPagination extends LightElement {
     this.dispatchEvent(new CustomEvent("ui-change", { detail: { page: p }, bubbles: true }));
   }
 
-  /** Page numbers to show, with "gap" for collapsed ranges. */
-  protected pages(): Slot[] {
-    const total = Math.max(1, this.total);
-    const width = this.siblings * 2 + 5;
-    if (total <= width) return Array.from({ length: total }, (_, i) => i + 1);
-    const start = Math.max(2, this.page - this.siblings);
-    const end = Math.min(total - 1, this.page + this.siblings);
-    const out: Slot[] = [1];
-    if (start > 2) out.push("gap");
-    for (let p = start; p <= end; p++) out.push(p);
-    if (end < total - 1) out.push("gap");
-    out.push(total);
-    return out;
+  /** Page numbers to show, with runs of pages left out (src/components/base/page-slots.ts). */
+  protected pages(): PageSlot[] {
+    return pageSlots(this.page, this.total, this.siblings);
   }
 
-  private _button(content: string | number, o: PageButton = {}): TemplateResult {
+  private _button(content: string | number | TemplateResult, o: PageButton = {}): TemplateResult {
     return html`<ui-button
       .size=${this.size}
       .color=${o.active ? this.color : undefined}
@@ -127,8 +121,12 @@ export class UiPagination extends LightElement {
     >`;
   }
 
-  private _arrow(dir: -1 | 1, label: string) {
-    return this._button(label, {
+  private _arrow(dir: -1 | 1) {
+    const text = dir < 0 ? this.prevLabel : this.nextLabel;
+    // Right to left, previous points right.
+    const back = dir < 0 !== (this.closest("[dir]")?.getAttribute("dir") === "rtl");
+    const icon = html`<ui-icon name=${back ? "chevron-left" : "chevron-right"} size="sm"></ui-icon>`;
+    return this._button(text || icon, {
       disabled: dir < 0 ? this.page <= 1 : this.page >= this.total,
       label: dir < 0 ? "Previous page" : "Next page",
       onClick: () => this.go(this.page + dir),
@@ -137,10 +135,7 @@ export class UiPagination extends LightElement {
 
   render() {
     if (this.mode === "prev-next") {
-      return html`<ui-join as="nav" .label=${this.label} equal>
-        ${this._arrow(-1, this.prevLabel === "«" ? "Previous page" : this.prevLabel)}
-        ${this._arrow(1, this.nextLabel === "»" ? "Next page" : this.nextLabel)}
-      </ui-join>`;
+      return html`<ui-join as="nav" .label=${this.label} equal> ${this._arrow(-1)} ${this._arrow(1)} </ui-join>`;
     }
 
     if (this.mode === "radio") {
@@ -163,27 +158,30 @@ export class UiPagination extends LightElement {
 
     if (this._narrow)
       return html`<ui-join as="nav" .label=${this.label}>
-        ${this._arrow(-1, this.prevLabel)}
+        ${this._arrow(-1)}
         ${this._button(`${this.page} / ${Math.max(1, this.total)}`, {
           active: true,
           current: "page",
           label: `Page ${this.page} of ${Math.max(1, this.total)}`,
         })}
-        ${this._arrow(1, this.nextLabel)}
+        ${this._arrow(1)}
       </ui-join>`;
 
     return html`<ui-join as="nav" .label=${this.label} .direction=${this.direction}>
-      ${this.prevNext ? this._arrow(-1, this.prevLabel) : ""}
+      ${this.prevNext ? this._arrow(-1) : ""}
       ${this.pages().map((p) =>
-        p === "gap"
-          ? this._button("...", { disabled: true })
+        typeof p === "object"
+          ? this._button("…", {
+              label: `Pages ${p.from} to ${p.to}`,
+              onClick: () => this.go(Math.round((p.from + p.to) / 2)),
+            })
           : this._button(p, {
               active: p === this.page,
               current: p === this.page ? "page" : undefined,
               onClick: () => this.go(p),
             }),
       )}
-      ${this.prevNext ? this._arrow(1, this.nextLabel) : ""}
+      ${this.prevNext ? this._arrow(1) : ""}
     </ui-join>`;
   }
 }

@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it } from "vite-plus/test";
+import type { CollectionSettings } from "saastemlycrm-design-system/contracts";
+import { matches } from "saastemlycrm-design-system/payload";
+import { Approvals, Quotations } from "../src/collections/commercial.ts";
 import { backend, call, login } from "./backend.ts";
+import { actionsOn } from "./collection-actions.ts";
 
 /** Offer comparison, pricing, quotations and approvals (src/cms/endpoints/commercial.ts). */
 
@@ -171,25 +175,130 @@ describe("quotation → approval → send → decision", () => {
   });
 });
 
+describe("a quotation's own fields", () => {
+  // What its preview tab reads with no code: its versions, and its cost and margin (never printed).
+  const read = async (id: string) => (await call("GET", `/api/quotations/${id}?depth=0`)).body;
+
+  it("lists every version of it, oldest first, each linking to its preview", async () => {
+    const q = await read("q-0137-v2");
+    expect(q.versions.map((v: { number: string; status: string }) => v.number)).toEqual([
+      "GS-Q-0137 v1",
+      "GS-Q-0137 v2",
+    ]);
+    expect(q.versions[1]).toMatchObject({ id: "q-0137-v2", version: 2 });
+  });
+
+  it("reads the margin against the pricing policy's minimum, hidden from Sales, with the pricing link", async () => {
+    await login("karim.balbaa");
+    const q = await read("q-0137-v2");
+    expect(q.internal).toMatchObject({ marginPct: 12.4, minMarginPct: 15, belowMinimum: true });
+    expect(actionsOn(Quotations, q, "management").map((a) => a.href)).toEqual([
+      "/collections/cases/gs-rfq-0137/pricing",
+    ]);
+    await login("soaad.amer");
+    expect((await read("q-0137-v2")).internal).toBeUndefined();
+    expect(actionsOn(Quotations, q, "sales")).toEqual([]);
+  });
+});
+
 describe("approvals queue", () => {
+  // Who may decide, how far a request has got and why you can't: the approvals' own virtual
+  // fields, worked out for whoever reads them.
+  const read = async (id: string) => (await call("GET", `/api/approvals/${id}?depth=0`)).body;
+
   it("shows who can decide and the two-person progress", async () => {
     await login("karim.balbaa");
-    const kb = (await call("GET", "/api/commercial/approvals")).body;
-    const bank = kb.pending.find((a: { id: string }) => a.id === "ap-bank-s3");
-    expect(bank).toMatchObject({
+    expect(await read("ap-bank-s3")).toMatchObject({
+      status: "Approved 1 of 2",
       canDecide: true,
       progress: "Mohamed Helmy approved · waiting for you",
       twoPerson: true,
     });
-    expect(kb.decided.some((a: { id: string }) => a.id === "ap-quote-0139")).toBe(true);
+    expect(await read("ap-quote-0139")).toMatchObject({ status: "Approved", canDecide: false });
+    const decided = (await call("GET", "/api/approvals?where[status][in]=Approved,Rejected&depth=0")).body.docs;
+    expect(decided.some((a: { id: string }) => a.id === "ap-quote-0139")).toBe(true);
 
     await login("mohamed.helmy");
-    const mh = (await call("GET", "/api/commercial/approvals")).body;
-    const mine = mh.pending.find((a: { id: string }) => a.id === "ap-bank-s3");
+    const mine = await read("ap-bank-s3");
     expect(mine.canDecide).toBe(false);
     expect(mine.why).toMatch(/^You approved this/);
-    const fx = mh.pending.find((a: { id: string }) => a.id === "ap-fx-usd");
-    expect(fx.why).toMatch(/^Only Karim Balbaa can decide/);
+    expect((await read("ap-fx-usd")).why).toMatch(/^Only Karim Balbaa can decide/);
+  });
+
+  it("shows the evidence behind a request, margins hidden from Sales", async () => {
+    // Where the evidence comes from: the request's link actions, filled from it as a widget reads it.
+    const links = async (id: string) => {
+      const me = (await call("GET", "/api/users/me")).body.user;
+      return Object.fromEntries(
+        actionsOn(Approvals, (await call("GET", `/api/approvals/${id}?depth=1`)).body, me.role)
+          .filter((a) => a.href)
+          .map((a) => [a.label, a.href]),
+      );
+    };
+    await login("karim.balbaa");
+    const margin = await read("ap-margin-0137");
+    expect(margin.evidence).toMatch(/^Quotation: GS-Q-0137 v2/);
+    expect(margin.evidence).toMatch(/Margin: 12\.4% \(policy minimum 15%\)/);
+    expect(margin.links).toBeUndefined();
+    expect(await links("ap-margin-0137")).toEqual({
+      "Open GS-RFQ-0137": "/collections/cases/gs-rfq-0137/overview",
+      "Preview quotation": "/collections/quotations/q-0137-v2/preview",
+      Pricing: "/collections/cases/gs-rfq-0137/pricing",
+    });
+    expect(await links("ap-fx-usd")).toMatchObject({ "Exchange rates": "/globals/fx-rates" });
+    expect(await links("ap-bank-s3")).toEqual({ "Supplier record": "/collections/suppliers/S3" });
+    expect(await links("ap-deposit-0133")).toMatchObject({
+      "PO P0418": expect.stringMatching(/^\/collections\/purchase-orders\/.+/),
+    });
+    // The request's type and its two-person rule read as its tags.
+    expect(await read("ap-bank-s3")).toMatchObject({ type: "Bank detail change", rule: "Two-person rule" });
+    expect((await read("ap-margin-0137")).rule).toBe("");
+    expect((await read("ap-fx-usd")).evidence).toMatch(/Proposed: USD\/EGP 48\.95/);
+    const deposit = await read("ap-deposit-0133");
+    expect(deposit.payment).toMatchObject({ purchaseOrder: "P0418", amount: 48200, recorded: false, open: true });
+    await login("soaad.amer");
+    const sales = await read("ap-margin-0137");
+    expect(sales.evidence).toMatch(/Margin: Hidden for your role/);
+    expect(await links("ap-margin-0137")).not.toHaveProperty("Pricing");
+  });
+
+  it("offers deciding to a listed approver who hasn't decided, and recording an approved payment to finance", async () => {
+    // The collection's actions that apply to the document as this person reads it (as the
+    // dashboard picks them: `when` on the document, `roles` on the user).
+    const labels = async (id: string) => {
+      const me = (await call("GET", "/api/users/me")).body.user;
+      const doc = (await call("GET", `/api/approvals/${id}?depth=0`)).body;
+      return ((Approvals.custom as CollectionSettings).actions ?? [])
+        .filter((a) => (!a.roles || a.roles.includes(me.role)) && (!a.when || matches(doc, a.when as never)))
+        .map((a) => a.label);
+    };
+    await login("karim.balbaa");
+    expect(await labels("ap-deposit-0133")).toEqual([
+      "Open $row.case.caseId",
+      "PO $row.payment.purchaseOrder",
+      "Return",
+      "Approve",
+    ]);
+    expect(await labels("ap-bank-s3")).toEqual(["Supplier record", "Return", "Approve"]);
+    // Deciding goes through the action's endpoint, then finance records the payment.
+    const call1 = (Approvals.custom as CollectionSettings).actions!.find((a) => a.label === "Approve")!.call!;
+    expect(call1.path).toBe("/commercial/approvals/$row.id/decide");
+    expect(
+      (await call("POST", "/api/commercial/approvals/ap-deposit-0133/decide", { decision: "Approve" })).status,
+    ).toBe(200);
+    expect(await labels("ap-deposit-0133")).toEqual([
+      "Open $row.case.caseId",
+      "PO $row.payment.purchaseOrder",
+      "Record payment",
+    ]);
+    await login("soaad.amer");
+    expect(await labels("ap-deposit-0133")).toEqual(["Open $row.case.caseId", "PO $row.payment.purchaseOrder"]);
+    await login("karim.balbaa");
+    expect(
+      (await call("POST", "/api/cash/record-payment", { approval: "ap-deposit-0133", reference: "TRX-1" })).status,
+    ).toBe(200);
+    expect(await labels("ap-deposit-0133")).toEqual(["Open $row.case.caseId", "PO $row.payment.purchaseOrder"]);
+    expect((await read("ap-deposit-0133")).payment).toMatchObject({ recorded: true, open: false });
   });
 
   it("an approved FX rate becomes the active rate", async () => {

@@ -1,9 +1,9 @@
 import type { Endpoint, PayloadRequest } from "payload";
+import type { ApprovalView } from "../collections/commercial.ts";
 import { idOf, logActivity } from "../collections/shared.ts";
 import type { Doc } from "saastemlycrm-design-system/contracts";
 import { DEMO_NOW } from "./home.ts";
 import { BANK_REQUESTS } from "./operations.ts";
-import * as link from "../links.ts";
 
 /**
  * Root endpoints for: Offer comparison, pricing, quotations, approvals. Registered in ./index.ts.
@@ -19,7 +19,6 @@ import * as link from "../links.ts";
  * - POST /api/commercial/cases/:id/request-approval snapshot the quotation and ask Karim Balbaa
  * - GET  /api/commercial/quotations/:id            the quotation as the customer gets it, versions, decisions
  * - POST /api/commercial/quotations/:id/:action    request-approval · send · revise · decision · portal-check
- * - GET  /api/commercial/approvals                 the approvals queue with evidence and who can decide
  * - POST /api/commercial/approvals/:id/decide      approve / return with a reason (collection hooks enforce the rules);
  *                                                  answers with `undo`, the call below, while it can be withdrawn
  * - POST /api/commercial/approvals/:id/withdraw    the approver takes their own decision back (refused once it's built on)
@@ -1091,6 +1090,8 @@ export interface QuoteDoc {
   createdAt?: string;
   lines?: unknown[];
   submission?: { method?: string; submittedAt?: string; followUpAt?: string; portalCheck?: unknown[] };
+  /** Every version of it, oldest first (the collection's virtual `versions`). */
+  versions?: { id: string; number: string; version: number; status: string }[];
 }
 export interface QuoteView {
   quotation: QuoteDoc;
@@ -1107,17 +1108,6 @@ export interface QuoteView {
     eta: string;
     portal: string;
   };
-  versions: {
-    id: string;
-    number: string;
-    version: number;
-    status: string;
-    decision: string;
-    totalExVat: number;
-    at: string;
-  }[];
-  approvals: ApprovalCard[];
-  internal?: { landedCostEGP?: number; grossProfitEGP?: number; marginPct?: number; exceptions?: string };
   fx: number;
   step: number;
   stepLabel: string;
@@ -1133,27 +1123,24 @@ export interface QuoteView {
   why: { approve: string; send: string };
   preparedBy: string;
   approvedBy: string;
-  minMarginPct: number;
 }
 
 async function quoteView(req: PayloadRequest, id: string): Promise<QuoteView | null> {
   const q = await one(req, "quotations", id);
   if (!q) return null;
   const c = await one(req, "cases", str(idOf(q.case)));
-  const [customer, vessels, users, versions, fx, policy] = await Promise.all([
+  const [customer, vessels, users, fx] = await Promise.all([
     c ? one(req, "customers", str(idOf(c.customer))) : null,
     all(req, "vessels"),
     all(req, "users"),
-    all(req, "quotations", { case: { equals: idOf(q.case) } }),
     fxRates(req),
-    policyOf(req),
   ]);
   const vessel = vessels.find((v) => v.id === idOf(c?.vesselRecord) || v.name === c?.vessel);
   const contacts = (customer?.contacts as { name?: string; email?: string }[] | undefined) ?? [];
   const names = byId(users);
-  const role = roleOf(req);
-  const cards = await Promise.all((await approvalsFor(req, q)).map((a) => approvalCard(req, a, names)));
-  const open = cards.find((a) => !["Approved", "Rejected"].includes(a.status));
+  // The open request on it, as the signed-in person reads it (whether they may decide, and why not).
+  const pending = (await approvalsFor(req, q)).find(OPEN_APPROVAL);
+  const open = pending ? await readApproval(req, pending.id) : null;
   const status = str(q.status);
   const decision = str(q.decision);
   const step =
@@ -1171,7 +1158,6 @@ async function quoteView(req: PayloadRequest, id: string): Promise<QuoteView | n
               : 0
             : 0;
   const stepLabel = step === 4 ? decision : "Customer decision";
-  const internal = role === "sales" ? undefined : (q.internal as QuoteView["internal"]);
   return {
     quotation: { ...q, internal: undefined } as unknown as QuoteDoc,
     case: {
@@ -1187,19 +1173,6 @@ async function quoteView(req: PayloadRequest, id: string): Promise<QuoteView | n
       eta: str(c?.eta),
       portal: str((customer?.registration as { portal?: string } | undefined)?.portal),
     },
-    versions: versions
-      .sort((a, b) => num(a.version) - num(b.version))
-      .map((v) => ({
-        id: v.id,
-        number: str(v.number),
-        version: num(v.version, 1),
-        status: str(v.status),
-        decision: str(v.decision),
-        totalExVat: num(v.totalExVat),
-        at: str(v.updatedAt ?? v.createdAt),
-      })),
-    approvals: cards,
-    internal,
     fx: num(q.fxRate) || fx.fx[str(q.currency)] || fx.fx.USD,
     step,
     stepLabel,
@@ -1224,7 +1197,6 @@ async function quoteView(req: PayloadRequest, id: string): Promise<QuoteView | n
     },
     preparedBy: str(names.get(idOf(q.preparedBy) ?? "")?.name),
     approvedBy: str(names.get(idOf(q.approvedBy) ?? "")?.name),
-    minMarginPct: num(policy.minMarginPct, 15),
   };
 }
 
@@ -1232,209 +1204,14 @@ const DECISIONS = ["Won", "Partially won", "Lost", "Revision requested"];
 
 /* ---------------------------------------------------------------- approvals */
 
-export interface ApprovalCard {
-  id: string;
-  title: string;
-  type: string;
-  status: string;
-  tone: Tone;
-  detail: string;
-  case?: { id: string; caseId: string; vessel: string };
-  requestedBy: string;
-  requestedAt: string;
-  approvers: { id: string; name: string; decision?: string; at?: string; reason?: string }[];
-  twoPerson: boolean;
-  needed: number;
-  progress: string;
-  rule: string;
-  evidence: { label: string; value: string; tone?: Tone }[];
-  links: { label: string; href: string }[];
-  canDecide: boolean;
-  why: string;
-}
-
-const ROLE_LABEL: Record<string, string> = {
-  management: "management",
-  "finance-director": "finance",
-  "supply-chain": "supply chain",
-  sales: "sales",
-  operations: "operations",
-  "office-admin": "office admin",
-};
-
-async function approvalCard(req: PayloadRequest, a: Doc, users: Map<string, Doc>): Promise<ApprovalCard> {
-  const me = userOf(req);
-  const name = (id: unknown) => str(users.get(idOf(id) ?? "")?.name) || str(idOf(id));
-  const decisions =
-    (a.decisions as { user?: unknown; decision?: string; at?: string; reason?: string }[] | undefined) ?? [];
-  const approverIds = ((a.approvers as unknown[] | undefined) ?? []).map((x) => idOf(x) ?? "");
-  const ids = approverIds.length
-    ? approverIds
-    : [...users.values()].filter((u) => u.role === "management").map((u) => u.id);
-  const approvers = ids.map((id) => {
-    const d = decisions.find((x) => idOf(x.user) === id);
-    return { id, name: name(id), decision: d?.decision, at: d?.at, reason: d?.reason };
-  });
-  const status = str(a.status) || "Pending";
-  const done = ["Approved", "Rejected"].includes(status);
-  const needed = a.twoPerson ? 2 : 1;
-  const mine = approvers.find((x) => x.id === me?.id);
-  const waiting = approvers.filter((x) => !x.decision);
-  const decidedBy = approvers.filter((x) => x.decision);
-  const waitingText = waiting.map((x) => (x.id === me?.id ? "you" : x.name)).join(" or ");
-  const progress = done
-    ? `${status} by ${decidedBy.map((x) => x.name).join(" + ") || "—"}`
-    : decidedBy.length
-      ? `${decidedBy.map((x) => `${x.name} ${x.decision === "Approve" ? "approved" : "returned"}`).join(" · ")} · waiting for ${waitingText}`
-      : `Waiting for ${waitingText}${needed > 1 ? ` (${needed} people)` : ""}`;
-  const rule = await ruleFor(req, str(a.type));
-  const canDecide = !done && Boolean(mine) && !mine?.decision;
-  const why = canDecide
-    ? ""
-    : done
-      ? `Decided — ${progress}.`
-      : mine?.decision
-        ? `You ${mine.decision === "Approve" ? "approved" : "returned"} this on ${fmtDay(mine.at)} · waiting for ${waiting.map((x) => x.name).join(" or ")}.`
-        : `Only ${approvers.map((x) => x.name).join(" and ")} can decide ${str(a.type).toLowerCase()} approvals${
-            rule.note ? ` (${rule.note.toLowerCase()})` : ""
-          }; you are signed in as ${ROLE_LABEL[str(me?.role)] ?? str(me?.role)}.`;
-
-  // Evidence: what's being decided, from the records behind it.
-  const evidence: ApprovalCard["evidence"] = [];
-  const links: ApprovalCard["links"] = [];
-  const caseId = idOf(a.case);
-  const c = caseId ? await one(req, "cases", caseId) : null;
-  if (c) links.push({ label: `Open ${str(c.caseId)}`, href: link.doc("cases", c.id, "overview") });
-  const type = str(a.type);
-  const sales = str(me?.role) === "sales";
-  if (/quotation|discount/i.test(type)) {
-    const subject = subjectOf(a);
-    const quotes = caseId ? await all(req, "quotations", { case: { equals: caseId } }) : [];
-    const q =
-      quotes.find((x) => x.id === subject) ??
-      quotes.filter((x) => x.status === "Awaiting approval").sort((x, y) => num(y.version) - num(x.version))[0];
-    if (q) {
-      const internal =
-        (q.internal as { marginPct?: number; grossProfitEGP?: number; landedCostEGP?: number; exceptions?: string }) ??
-        {};
-      evidence.push({ label: "Quotation", value: `${str(q.number)} · ${str(q.status)}` });
-      evidence.push({
-        label: "Total (excl. VAT)",
-        value: `${str(q.currency)} ${num(q.totalExVat).toLocaleString("en-US", { maximumFractionDigits: 2 })}`,
-      });
-      evidence.push({
-        label: "Lines",
-        value: `${((q.lines as unknown[]) ?? []).length} priced · valid until ${fmtDay(q.validUntil) || "—"}`,
-      });
-      if (sales) evidence.push({ label: "Margin", value: "Hidden for your role", tone: "neutral" });
-      else if (typeof internal.marginPct === "number") {
-        const policy = await policyOf(req);
-        const min = num(policy.minMarginPct, 15);
-        evidence.push({
-          label: "Margin",
-          value: `${internal.marginPct}% (policy minimum ${min}%) · profit ${egp(num(internal.grossProfitEGP))}`,
-          tone: internal.marginPct < min ? "warning" : "success",
-        });
-      }
-      if (internal.exceptions && !sales)
-        evidence.push({ label: "Exceptions", value: internal.exceptions, tone: "warning" });
-      links.push({ label: "Preview quotation", href: link.doc("quotations", q.id, "preview") });
-      if (!sales && c) links.push({ label: "Pricing", href: link.doc("cases", c.id, "pricing") });
-    }
-  } else if (type === "Exchange rate") {
-    const fx = await fxRates(req);
-    const proposed = fx.rates.find((r) => r.status === "Awaiting approval");
-    const active = fx.rates.find((r) => r.status === "Active" && r.currency === (proposed?.currency ?? "USD"));
-    if (proposed && active) {
-      const change = ((num(proposed.egpPerUnit) - num(active.egpPerUnit)) / num(active.egpPerUnit, 1)) * 100;
-      evidence.push({
-        label: "Current",
-        value: `${active.currency}/EGP ${num(active.egpPerUnit).toFixed(2)} since ${fmtDay(active.date)}`,
-      });
-      evidence.push({
-        label: "Proposed",
-        value: `${proposed.currency}/EGP ${num(proposed.egpPerUnit).toFixed(2)} (${change >= 0 ? "+" : ""}${change.toFixed(2)}%) · ${str(proposed.source)}`,
-        tone: "warning",
-      });
-    }
-    const open = (await all(req, "quotations")).filter((q) =>
-      ["Draft", "Awaiting approval", "Approved", "Submitted"].includes(str(q.status)),
-    );
-    evidence.push({
-      label: "Open quotations re-checked",
-      value: `${open.length} (prices in USD stay as approved; EGP costs move)`,
-    });
-    links.push({ label: "Exchange rates", href: link.global("fx-rates") });
-  } else if (type === "Bank detail change") {
-    evidence.push({ label: "Supplier", value: "Port Said Welding Co. (S3) · approved supplier since 2019" });
-    evidence.push({
-      label: "Request",
-      value: "New beneficiary account received by email, 16 Nov 14:02",
-      tone: "warning",
-    });
-    evidence.push({ label: "Call-back", value: decisions[0]?.reason ?? "Call the number on file before approving" });
-    evidence.push({
-      label: "Rule",
-      value: "Two people: finance + CEO. Payments to S3 on hold until both approve.",
-      tone: "info",
-    });
-    links.push({ label: "Supplier record", href: link.doc("suppliers", "S3") });
-  } else if (/deposit|payment/i.test(type)) {
-    const pos = caseId ? await all(req, "purchase-orders", { case: { equals: caseId } }) : [];
-    const po = pos[0];
-    if (po) {
-      const total = ((po.lines as { qty?: number; unitPrice?: number }[]) ?? []).reduce(
-        (s, l) => s + num(l.qty) * num(l.unitPrice),
-        0,
-      );
-      const side = (po.supplierSide as { proforma?: string; depositPct?: number } | undefined) ?? {};
-      evidence.push({
-        label: "Purchase order",
-        value: `${str(po.number)} · ${str(po.currency)} ${total.toLocaleString("en-US")} · ${str(po.status)}`,
-      });
-      evidence.push({
-        label: "Pro forma",
-        value: `${str(side.proforma) || "attached"} · deposit ${num(side.depositPct, 50)}%`,
-      });
-      links.push({ label: `PO ${str(po.number)}`, href: link.doc("purchase-orders", po.id) });
-    }
-    evidence.push({ label: "Bank details", value: "Unchanged since 2025 — no call-back needed", tone: "success" });
-  } else if (/alternative/i.test(type)) {
-    evidence.push({ label: "Requested", value: "Lincoln Omnia 46 electrodes, 3.2 mm (customer's spec)" });
-    evidence.push({
-      label: "Proposed",
-      value: "ESAB OK 46.00, 3.2 mm — same AWS E6013 class, mill certificate attached",
-      tone: "info",
-    });
-    evidence.push({
-      label: "Customer",
-      value: "Asked for v2 with the ESAB alternative (email 12 Nov)",
-      tone: "success",
-    });
-  }
-  if (a.detail) evidence.push({ label: "Note from requester", value: str(a.detail) });
-
-  return {
-    id: a.id,
-    title: str(a.title),
-    type,
-    status,
-    tone: status === "Approved" ? "success" : status === "Rejected" ? "error" : decidedBy.length ? "info" : "warning",
-    detail: str(a.detail),
-    case: c ? { id: c.id, caseId: str(c.caseId), vessel: str(c.vessel) } : undefined,
-    requestedBy: name(a.requestedBy),
-    requestedAt: str(a.createdAt),
-    approvers,
-    twoPerson: Boolean(a.twoPerson),
-    needed,
-    progress,
-    rule: `${approvers.map((x) => x.name).join(a.twoPerson ? " + " : " or ")} decide${approvers.length === 1 ? "s" : ""}${rule.note ? ` · ${rule.note}` : ""}`,
-    evidence,
-    links,
-    canDecide,
-    why,
-  };
-}
+/**
+ * An approval request as the signed-in person reads it: its stored fields and what the approvals
+ * collection works out on read (`canDecide`, `progress`, `why`, the evidence: ../collections/commercial.ts).
+ */
+const readApproval = (req: PayloadRequest, id: string) =>
+  req.payload.findByID({ collection: "approvals" as never, id, depth: 0, req }) as unknown as Promise<
+    Doc & ApprovalView
+  >;
 
 /** Records the signed-in approver's decision; when it's final, applies it to the record behind it. */
 async function decide(req: PayloadRequest, id: string, decision: "Approve" | "Reject", reason: string) {
@@ -2144,23 +1921,6 @@ export const commercialEndpoints: Endpoint[] = [
     }),
   },
   {
-    path: "/commercial/approvals",
-    method: "get",
-    handler: handle(async (req) => {
-      const [list, users] = await Promise.all([all(req, "approvals"), all(req, "users")]);
-      const names = byId(users);
-      const cards = await Promise.all(
-        list.sort((a, b) => str(b.createdAt).localeCompare(str(a.createdAt))).map((a) => approvalCard(req, a, names)),
-      );
-      const pending = cards.filter((c) => !["Approved", "Rejected"].includes(c.status));
-      return Response.json({
-        pending: pending.sort((a, b) => Number(b.canDecide) - Number(a.canDecide)),
-        decided: cards.filter((c) => ["Approved", "Rejected"].includes(c.status)),
-        mine: pending.filter((c) => c.canDecide).length,
-      });
-    }),
-  },
-  {
     path: "/commercial/approvals/:id/decide",
     method: "post",
     handler: handle(async (req) => {
@@ -2168,14 +1928,13 @@ export const commercialEndpoints: Endpoint[] = [
       const decision = b.decision === "Reject" ? "Reject" : b.decision === "Approve" ? "Approve" : null;
       if (!decision) return fail(400, "Decision must be Approve or Reject.");
       const doc = await decide(req, str(req.routeParams?.id), decision, str(b.reason));
-      const users = byId(await all(req, "users"));
-      const c = await approvalCard(req, doc, users);
+      const c = await readApproval(req, doc.id);
       // `message`: what the approvals screen says once it's recorded (the action's snackbar).
       const message =
         c.status === "Approved"
-          ? `Approved: ${c.title}`
+          ? `Approved: ${str(c.title)}`
           : c.status === "Rejected"
-            ? `Returned: ${c.title}`
+            ? `Returned: ${str(c.title)}`
             : `Your approval is recorded — ${c.progress}.`;
       // `undo`: how to take it back while nothing is built on it (null once it can't be).
       return Response.json({ ...c, message, undo: await withdrawal(req, doc.id) });
@@ -2187,8 +1946,8 @@ export const commercialEndpoints: Endpoint[] = [
     method: "post",
     handler: handle(async (req) => {
       const doc = await withdraw(req, str(req.routeParams?.id));
-      const c = await approvalCard(req, doc, byId(await all(req, "users")));
-      return Response.json({ ...c, message: `Decision withdrawn — ${c.title} is waiting again` });
+      const c = await readApproval(req, doc.id);
+      return Response.json({ ...c, message: `Decision withdrawn — ${str(c.title)} is waiting again` });
     }),
   },
 ];

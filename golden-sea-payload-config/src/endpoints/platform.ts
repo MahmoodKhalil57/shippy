@@ -1,5 +1,6 @@
 import type { Endpoint, PayloadRequest } from "payload";
 import type { Doc } from "saastemlycrm-design-system/contracts";
+import { HANDOVER_ROLES, bucketOf, lineCounts, mayReassign, type LineBucket } from "../collections/cases.ts";
 import { CONTACT_RULES, ROLES } from "../collections/shared.ts";
 import { PERMISSIONS } from "../globals/index.ts";
 import { DEMO_NOW } from "./home.ts";
@@ -8,7 +9,7 @@ import * as link from "../links.ts";
 /**
  * Root endpoints for the platform & trust screens: the case overview (lifecycle, line progress,
  * owner and handover, clarifications, audit trail), automations (rule registry, exception queue
- * with idempotent safe retry, AI review queue, audit log), roles & on-call routing, integrations
+ * with idempotent safe retry, AI review queue), roles & on-call routing, integrations
  * and the client-facing delivery plan. Registered in ./index.ts.
  *
  * AI steps are deterministic stubs: they draft; a person confirms (the screens call the write
@@ -136,36 +137,21 @@ export const STAGE_STEP: Record<string, number> = {
   "Closed — settled": 15,
 };
 
-/** Line status → the progress bucket it counts in before the order. */
-const BUCKET: Record<string, LineBucket> = {
-  "Clarification needed": "blocked",
-  "Not sourced": "noOffer",
-  "Awaiting supplier": "waiting",
-  "Awaiting customer acceptance": "waiting",
-  "Ready to select": "ready",
-  "Offer selected": "ready",
-  "Split offer selected": "ready",
-  Ordered: "ready",
-  Received: "ready",
-  Delivered: "ready",
-  Invoiced: "ready",
-  "Closed — not awarded": "closed",
-};
-export type LineBucket = "ready" | "waiting" | "blocked" | "noOffer" | "closed";
-
+/**
+ * A case at a glance, for the overview's lifecycle, line and fulfilment gauges, line status,
+ * clarifications and timeline, and for the handover draft. What one case says on its own (its
+ * next action, due date, owner and backup, contact rule, "Reassign") is on the cases collection.
+ */
 export interface CaseOverview {
   id: string;
   caseId: string;
   customer: { id: string; name: string; contactRule: string; contactRuleLabel: string; strict: boolean };
-  customerRef: string;
   vessel: string;
   port: string;
   eta?: string;
   deadline?: string;
   deadlineText: string;
   stage: string;
-  tone: string;
-  urgent: boolean;
   steps: { label: string; detail: string; phase: number }[];
   current: number;
   /** Lost / expired / on hold: the stepper stops at the decision. */
@@ -193,7 +179,6 @@ export interface CaseOverview {
   blocker: string;
   owner: Person | null;
   backup: Person | null;
-  handoverNote: string;
   clarifications: {
     lineNo?: number;
     to: string;
@@ -216,8 +201,7 @@ export interface CaseOverview {
     stop: string;
   }[];
   timeline: TimelineEntry[];
-  /** Selling value; never for Sales. */
-  value?: number;
+  /** Whether the signed-in user may hand it over (the cases collection's `mayReassign`). */
   canReassign: boolean;
   team: Person[];
 }
@@ -229,8 +213,6 @@ export interface TimelineEntry {
   actor: string;
   rule: string;
   entity: string;
-  caseId?: string;
-  caseHref?: string;
 }
 
 const lineNos = (v: unknown) =>
@@ -260,37 +242,15 @@ export async function overview(req: Req, id: string): Promise<CaseOverview | nul
 
   /* lines before the order */
   const items = (c.items as Doc[] | undefined) ?? [];
-  const rows = items.map((l) => {
-    const status = str(l.status) || "Not sourced";
-    return {
-      lineNo: Number(l.lineNo),
-      description: str(l.description),
-      status,
-      bucket: BUCKET[status] ?? "noOffer",
-      confidence: typeof l.confidence === "number" ? l.confidence : undefined,
-    };
-  });
-  const summary = (c.lines as Record<string, number> | undefined) ?? {};
-  const count = (b: LineBucket) => rows.filter((r) => r.bucket === b).length;
-  const lines = rows.length
-    ? {
-        total: rows.length,
-        ready: count("ready"),
-        waiting: count("waiting"),
-        blocked: count("blocked"),
-        noOffer: count("noOffer"),
-        closed: count("closed"),
-        rows,
-      }
-    : {
-        total: (summary.ready ?? 0) + (summary.waiting ?? 0) + (summary.blocked ?? 0) + (summary.noOffer ?? 0),
-        ready: summary.ready ?? 0,
-        waiting: summary.waiting ?? 0,
-        blocked: summary.blocked ?? 0,
-        noOffer: summary.noOffer ?? 0,
-        closed: 0,
-        rows,
-      };
+  const rows = items.map((l) => ({
+    lineNo: Number(l.lineNo),
+    description: str(l.description),
+    status: str(l.status) || "Not sourced",
+    bucket: bucketOf(l.status),
+    confidence: typeof l.confidence === "number" ? l.confidence : undefined,
+  }));
+  // Counted as the cases collection counts them (its `lineProgress`), so every screen agrees.
+  const lines = { ...lineCounts(c), rows };
 
   /* lines after the order: a line counts only when its whole quantity has reached the step */
   const orderedQty = new Map<number, number>();
@@ -334,8 +294,6 @@ export async function overview(req: Req, id: string): Promise<CaseOverview | nul
   const stage = str(c.stage);
   const current = STAGE_STEP[stage] ?? 0;
   const deadline = str(c.deadline) ? new Date(str(c.deadline)) : undefined;
-  const ownerId = idOf(c.owner);
-  const role = str(user?.role);
   return {
     id: c.id,
     caseId: str(c.caseId),
@@ -346,7 +304,6 @@ export async function overview(req: Req, id: string): Promise<CaseOverview | nul
       contactRuleLabel: CONTACT_RULES.find((r) => r.value === contactRule)?.label ?? contactRule,
       strict: contactRule === "do-not-chase",
     },
-    customerRef: str(c.customerRef),
     vessel: str(c.vessel),
     port: str(c.port),
     eta: str(c.eta) || undefined,
@@ -355,8 +312,6 @@ export async function overview(req: Req, id: string): Promise<CaseOverview | nul
       ? `${fmtWhen(deadline)}${deadline < DEMO_NOW ? " (passed)" : deadline.getTime() - DEMO_NOW.getTime() < DAY ? " (within 24 h)" : ""}`
       : "—",
     stage,
-    tone: str(c.tone) || "info",
-    urgent: c.urgent === true,
     steps: LIFECYCLE.map(([label, detail, phase]) => ({ label, detail, phase })),
     current,
     halted: stage === "Lost" || stage === "Expired" ? "lost" : stage === "On hold" ? "paused" : "",
@@ -374,7 +329,6 @@ export async function overview(req: Req, id: string): Promise<CaseOverview | nul
     blocker: str(c.blocker),
     owner: person(c.owner),
     backup: person(c.backup),
-    handoverNote: str(c.handoverNote),
     clarifications: ((c.clarifications as Doc[] | undefined) ?? []).map((q) => ({
       lineNo: typeof q.lineNo === "number" ? q.lineNo : undefined,
       to: str(q.to) || "Customer",
@@ -399,29 +353,22 @@ export async function overview(req: Req, id: string): Promise<CaseOverview | nul
         stop: str(t.stopCondition),
       })),
     timeline: activities.map((a) => timelineEntry(a, name)).sort((a, b) => b.at.localeCompare(a.at)),
-    value: role !== "sales" && typeof c.value === "number" ? c.value : undefined,
-    canReassign:
-      !!user && (["management", "supply-chain"].includes(role) || user.id === ownerId || user.id === idOf(c.backup)),
+    canReassign: mayReassign(c, user),
     team: users
-      .filter((u) => ["supply-chain", "sales", "operations", "management"].includes(str(u.role)))
+      .filter((u) => HANDOVER_ROLES.includes(str(u.role)))
       .map((u) => ({ id: u.id, name: str(u.name), initials: str(u.initials), role: str(u.role) })),
   };
 }
 
-const timelineEntry = (a: Doc, name: (v: unknown) => string, cases?: Map<string, Doc>): TimelineEntry => {
-  const caseDoc = cases?.get(str(idOf(a.case)));
-  return {
-    id: a.id,
-    at: str(a.at),
-    kind: (["auto", "human", "alert"].includes(str(a.kind)) ? str(a.kind) : "auto") as TimelineEntry["kind"],
-    text: str(a.text),
-    actor: a.actor ? name(a.actor) : a.kind === "human" ? "—" : "System",
-    rule: str(a.rule),
-    entity: str(a.entity),
-    caseId: caseDoc ? str(caseDoc.caseId) : undefined,
-    caseHref: caseDoc ? link.doc("cases", caseDoc.id, "overview") : undefined,
-  };
-};
+const timelineEntry = (a: Doc, name: (v: unknown) => string): TimelineEntry => ({
+  id: a.id,
+  at: str(a.at),
+  kind: (["auto", "human", "alert"].includes(str(a.kind)) ? str(a.kind) : "auto") as TimelineEntry["kind"],
+  text: str(a.text),
+  actor: a.actor ? name(a.actor) : a.kind === "human" ? "—" : "System",
+  rule: str(a.rule),
+  entity: str(a.entity),
+});
 
 /** The AI-drafted handover summary (deterministic stub): what the next owner must know. */
 export function handoverDraft(o: CaseOverview, to: string) {
@@ -528,9 +475,12 @@ const reassign: Endpoint = {
 
 /* ================================================================ automations */
 
+/**
+ * What spans the rules global and the collections: the AI review queue (exceptions waiting for
+ * review, uncertain messages, low-confidence case lines) and the figures over them. The rule
+ * registry and the exception queue are records of the global and the collection.
+ */
 export interface AutomationsView {
-  rules: (Record<string, unknown> & { index: number })[];
-  exceptions: Doc[];
   review: {
     id: string;
     kind: "exception" | "message" | "line";
@@ -539,9 +489,7 @@ export interface AutomationsView {
     href: string;
     confidence?: number;
   }[];
-  audit: TimelineEntry[];
-  canEdit: boolean;
-  stats: { rules: number; enabled: number; ai: number; open: number; review: number; autoResolved: number };
+  stats: { rules: number; enabled: number; ai: number; review: number };
 }
 
 const automations: Endpoint = {
@@ -549,17 +497,13 @@ const automations: Endpoint = {
   method: "get",
   handler: async (req) => {
     if (!req.user) return deny("Please sign in.", 401);
-    const [rulesGlobal, exceptions, messages, cases, activities, { name }] = await Promise.all([
+    const [rulesGlobal, exceptions, messages, cases] = await Promise.all([
       req.payload.findGlobal({ slug: "automation-rules", depth: 0 } as never),
       all(req, "integration-exceptions"),
       all(req, "intake-messages"),
       all(req, "cases"),
-      all(req, "activities"),
-      people(req),
     ]);
-    const rules = ((rulesGlobal.rules as Record<string, unknown>[] | undefined) ?? []).map(
-      (r, index): AutomationsView["rules"][number] => ({ ...r, index }),
-    );
+    const rules = (rulesGlobal.rules as Record<string, unknown>[] | undefined) ?? [];
     const threshold = Number(rules.find((r) => r.name === "Create case from RFQ email")?.confidenceThreshold) || 0.85;
     const review: AutomationsView["review"] = [
       ...exceptions
@@ -594,23 +538,13 @@ const automations: Endpoint = {
           })),
       ),
     ];
-    const caseMap = new Map(cases.map((c) => [c.id, c]));
     const view: AutomationsView = {
-      rules,
-      exceptions,
       review,
-      audit: activities
-        .map((a) => timelineEntry(a, name, caseMap))
-        .sort((a, b) => b.at.localeCompare(a.at))
-        .slice(0, 40),
-      canEdit: str(me(req)?.role) === "management",
       stats: {
         rules: rules.length,
         enabled: rules.filter((r) => r.enabled !== false).length,
         ai: rules.filter((r) => r.usesAI).length,
-        open: exceptions.filter((x) => x.status === "Open").length,
         review: review.length,
-        autoResolved: exceptions.filter((x) => x.status === "Auto-resolved").length,
       },
     };
     return json(view);
@@ -700,7 +634,8 @@ const retry: Endpoint = {
 };
 
 const ruleSwitch: Endpoint = {
-  // POST /api/automations/rule { index, value }: switch a rule on or off (management), logged.
+  // POST /api/automations/rule { id, value }: switch a rule (the global's row) on or off
+  // (management), logged; the Undo is the same call with the value it had.
   path: "/automations/rule",
   method: "post",
   handler: async (req) => {
@@ -710,16 +645,21 @@ const ruleSwitch: Endpoint = {
     const enabled = b.value === true;
     const g = await req.payload.findGlobal({ slug: "automation-rules", depth: 0 } as never);
     const list = (g.rules as Record<string, unknown>[] | undefined) ?? [];
-    const rule = list[Number(b.index)];
+    const rule = list.find((r) => r.id === str(b.id));
     if (!rule) return deny("Rule not found.", 404);
-    const rules = list.map((r, i) => (i === Number(b.index) ? { ...r, enabled } : r));
+    const was = rule.enabled !== false;
+    const rules = list.map((r) => (r === rule ? { ...r, enabled } : r));
     await req.payload.updateGlobal({ slug: "automation-rules", data: { rules }, req, overrideAccess: false } as never);
     await log(req, {
       kind: "human",
       text: `${enabled ? "Enabled" : "Paused"} automation “${str(rule.name)}”.`,
       entity: "globals/automation-rules",
     });
-    return json({ ok: true, message: `${str(rule.name)} ${enabled ? "enabled" : "paused"} (logged)` });
+    return json({
+      ok: true,
+      message: `${str(rule.name)} ${enabled ? "enabled" : "paused"} (logged)`,
+      undo: { path: "/automations/rule", body: { id: rule.id, value: was } },
+    });
   },
 };
 
@@ -817,26 +757,14 @@ export async function routeUrgent(req: Req, at: Date): Promise<Routing> {
   };
 }
 
+/**
+ * Where each permission of the matrix is enforced, and the live checks that it is (Sales reads no
+ * supplier cost; bank changes need two people). The matrix and the on-call roster are records of
+ * the settings and on-call-roster globals.
+ */
 export interface RolesView {
   permissions: { key: string; label: string; enforced: string }[];
-  roles: (Record<string, unknown> & { role: string; label: string; users: Person[] })[];
   checks: { label: string; pass: boolean; detail: string }[];
-  roster: {
-    shifts: {
-      from: string;
-      to: string;
-      fromText: string;
-      toText: string;
-      user: Person | null;
-      backup: Person | null;
-      now: boolean;
-    }[];
-    senior: Person[];
-    escalateAfterMinutes: number;
-  };
-  now: Routing;
-  canEditPermissions: boolean;
-  canEditRoster: boolean;
 }
 
 const roles: Endpoint = {
@@ -844,9 +772,7 @@ const roles: Endpoint = {
   method: "get",
   handler: async (req) => {
     if (!req.user) return deny("Please sign in.", 401);
-    const [perms, roster, approvalRules, { users, person }] = await Promise.all([
-      req.payload.findGlobal({ slug: "settings", depth: 0 } as never),
-      req.payload.findGlobal({ slug: "on-call-roster", depth: 0 } as never),
+    const [approvalRules, { users, person }] = await Promise.all([
       req.payload.findGlobal({ slug: "approval-rules", depth: 0 } as never),
       people(req),
     ]);
@@ -868,17 +794,8 @@ const roles: Endpoint = {
       /bank/i.test(str(r.type)),
     );
     const bankApprovers = ((bank?.approvers as unknown[] | undefined) ?? []).map((u) => idOf(u));
-    const now = DEMO_NOW;
     const view: RolesView = {
       permissions: PERMISSIONS.map((p) => ({ ...p })),
-      roles: ((perms.permissions as Record<string, unknown>[] | undefined) ?? []).map((r) => ({
-        ...r,
-        role: str(r.role),
-        label: roleLabel(str(r.role)),
-        users: users
-          .filter((u) => u.role === r.role)
-          .map((u) => ({ id: u.id, name: str(u.name), initials: str(u.initials), role: str(u.role) })),
-      })),
       checks: [
         {
           label: "Sales never sees supplier costs",
@@ -891,28 +808,6 @@ const roles: Endpoint = {
           detail: `Approval rule “${str(bank?.type) || "Bank detail change"}”: two-person ${bank?.twoPerson ? "on" : "off"}, approvers ${bankApprovers.map((u) => person(u)?.name ?? u).join(" and ")}.`,
         },
       ],
-      roster: {
-        shifts: ((roster.shifts as Record<string, unknown>[] | undefined) ?? []).map((s) => {
-          const from = new Date(str(s.from));
-          const to = new Date(str(s.to));
-          return {
-            from: from.toISOString(),
-            to: to.toISOString(),
-            fromText: fmtWhen(from),
-            toText: fmtWhen(to),
-            user: person(s.user),
-            backup: person(s.backup),
-            now: from <= now && now < to,
-          };
-        }),
-        senior: ((roster.seniorContacts as { user?: unknown }[] | undefined) ?? [])
-          .map((s) => person(s.user))
-          .filter((p): p is Person => !!p),
-        escalateAfterMinutes: Number(roster.escalateAfterMinutes) || 15,
-      },
-      now: await routeUrgent(req, now),
-      canEditPermissions: str(me(req)?.role) === "management",
-      canEditRoster: ["management", "office-admin"].includes(str(me(req)?.role)),
     };
     return json(view);
   },
@@ -956,27 +851,36 @@ const routeAt: Endpoint = {
 };
 
 const permission: Endpoint = {
-  // POST /api/roles/permission { role, key, value }: switch one permission of a role (management).
+  // POST /api/roles/permission { role, <permission>: boolean… }: a role's permissions (a row of the
+  // settings global's matrix), management only; logged, and the Undo puts back what it had.
   path: "/roles/permission",
   method: "post",
   handler: async (req) => {
     if (!req.user) return deny("Please sign in.", 401);
     if (str(me(req)?.role) !== "management") return deny("Only management edits permissions.");
     const b = await body(req);
-    const key = str(b.key);
-    if (!PERMISSIONS.some((p) => p.key === key)) return deny("Unknown permission.", 400);
+    const role = str(b.role);
     const settings = await req.payload.findGlobal({ slug: "settings", depth: 0 } as never);
-    const permissions = ((settings.permissions as Record<string, unknown>[] | undefined) ?? []).map((r) =>
-      r.role === str(b.role) ? { ...r, [key]: b.value === true } : r,
-    );
+    const list = (settings.permissions as Record<string, unknown>[] | undefined) ?? [];
+    const row = list.find((r) => r.role === role);
+    if (!row) return deny("Role not found.", 404);
+    const keys = PERMISSIONS.map((p) => p.key).filter((k) => typeof b[k] === "boolean");
+    if (!keys.length) return deny("Unknown permission.", 400);
+    const was = Object.fromEntries(keys.map((k) => [k, row[k] === true]));
+    const permissions = list.map((r) => (r === row ? { ...r, ...Object.fromEntries(keys.map((k) => [k, b[k]])) } : r));
     await req.payload.updateGlobal({ slug: "settings", data: { permissions }, req, overrideAccess: false } as never);
-    await log(req, { kind: "human", text: "Updated the roles & permissions matrix.", entity: "globals/settings" });
-    return json({ ok: true });
+    await log(req, {
+      kind: "human",
+      text: `Updated the ${roleLabel(role)} permissions in the roles & permissions matrix.`,
+      entity: "globals/settings",
+    });
+    return json({ ok: true, undo: { path: "/roles/permission", body: { role, ...was } } });
   },
 };
 
 const rosterSave: Endpoint = {
-  // POST /api/roles/roster { user<i>, backup<i> }: who is on duty for each shift (management, office manager).
+  // POST /api/roles/roster { id, user, backup }: who is on duty for a shift (a row of the
+  // on-call-roster global), management and the office manager; logged, and the Undo puts it back.
   path: "/roles/roster",
   method: "post",
   handler: async (req) => {
@@ -985,12 +889,12 @@ const rosterSave: Endpoint = {
       return deny("Management and the office manager edit the roster.");
     const b = await body(req);
     const roster = await req.payload.findGlobal({ slug: "on-call-roster", depth: 0 } as never);
-    const shifts = ((roster.shifts as Record<string, unknown>[] | undefined) ?? []).map((s, i) => ({
-      from: s.from,
-      to: s.to,
-      user: str(b[`user${i}`]) || s.user,
-      backup: str(b[`backup${i}`]) || null,
-    }));
+    const list = (roster.shifts as Record<string, unknown>[] | undefined) ?? [];
+    const shift = list.find((s) => s.id === str(b.id));
+    if (!shift) return deny("Shift not found.", 404);
+    const user = idOf(b.user);
+    if (!user) return deny("Pick who is on duty.", 400);
+    const shifts = list.map((s) => (s === shift ? { ...s, user, backup: idOf(b.backup) || null } : s));
     await req.payload.updateGlobal({
       slug: "on-call-roster",
       data: { ...roster, shifts },
@@ -998,17 +902,24 @@ const rosterSave: Endpoint = {
       overrideAccess: false,
     } as never);
     await log(req, { kind: "human", text: "Updated the on-call roster.", entity: "globals/on-call-roster" });
-    return json({ ok: true });
+    return json({
+      ok: true,
+      undo: {
+        path: "/roles/roster",
+        body: { id: shift.id, user: idOf(shift.user), backup: idOf(shift.backup) || null },
+      },
+    });
   },
 };
 
 /* ================================================================ integrations */
 
+/**
+ * What the integrations page shows beyond the integrations global's own rows: the approved
+ * acknowledgement filled in for an example case (the message-templates global and the case), and
+ * the language settings (the settings global and the signed-in person's own).
+ */
 export interface IntegrationsView {
-  /** `expiresInDays`: days from the demo's "now" until the token or certificate expires. */
-  connections: (Record<string, unknown> & { index: number; live: number; expiresInDays: number | null })[];
-  emailImport: Record<string, unknown>;
-  backups: Record<string, unknown>;
   ack: {
     en: { subject: string; body: string };
     ar: { subject: string; body: string };
@@ -1020,7 +931,6 @@ export interface IntegrationsView {
   };
   language: { default: string; documents: string[] };
   myLanguage: string;
-  canManage: boolean;
   canSettings: boolean;
 }
 
@@ -1032,11 +942,9 @@ const integrations: Endpoint = {
   method: "get",
   handler: async (req) => {
     if (!req.user) return deny("Please sign in.", 401);
-    const [g, templates, settings, messages, { name }] = await Promise.all([
-      req.payload.findGlobal({ slug: "integrations", depth: 0 } as never),
+    const [templates, settings, { name }] = await Promise.all([
       req.payload.findGlobal({ slug: "message-templates", depth: 0 } as never),
       req.payload.findGlobal({ slug: "settings", depth: 0 } as never),
-      all(req, "intake-messages"),
       people(req),
     ]);
     const ack =
@@ -1060,19 +968,6 @@ const integrations: Endpoint = {
     };
     const role = str(me(req)?.role);
     const view: IntegrationsView = {
-      connections: ((g.connections as Record<string, unknown>[] | undefined) ?? []).map((conn, index) => ({
-        ...conn,
-        index,
-        expiresInDays: conn.tokenExpiresAt
-          ? Math.round((new Date(str(conn.tokenExpiresAt)).getTime() - DEMO_NOW.getTime()) / DAY)
-          : null,
-        live: messages.filter(
-          (m) =>
-            (m.mailbox && m.mailbox === conn.account) || (conn.kind === "Website form" && m.channel === "Website form"),
-        ).length,
-      })),
-      emailImport: (g.emailImport as Record<string, unknown>) ?? {},
-      backups: (g.backups as Record<string, unknown>) ?? {},
       ack: {
         en: { subject: fill(str(ack.subject), vars), body: fill(str(ack.body), vars) },
         ar: { subject: fill(str(ack.subjectAr), vars), body: fill(str(ack.bodyAr), vars) },
@@ -1087,7 +982,6 @@ const integrations: Endpoint = {
         documents: ((settings.documentLanguages as string[] | undefined) ?? ["en"]).map(str),
       },
       myLanguage: str(me(req)?.language) || "en",
-      canManage: ["management", "operations", "office-admin"].includes(role),
       canSettings: role === "management",
     };
     return json(view);
@@ -1095,16 +989,17 @@ const integrations: Endpoint = {
 };
 
 const reconnect: Endpoint = {
+  // POST /api/integrations/reconnect { id }: sign a mailbox (a row of the integrations global) back in.
   path: "/integrations/reconnect",
   method: "post",
   handler: async (req) => {
     if (!req.user) return deny("Please sign in.", 401);
     if (!["management", "operations", "office-admin"].includes(str(me(req)?.role)))
       return deny("Management, operations or the office manager reconnect mailboxes.");
-    const { index } = await body(req);
+    const { id } = await body(req);
     const g = await req.payload.findGlobal({ slug: "integrations", depth: 0 } as never);
     const list = (g.connections as Record<string, unknown>[] | undefined) ?? [];
-    const conn = list[Number(index)];
+    const conn = list.find((c) => c.id === str(id));
     if (!conn) return deny("Connection not found.", 404);
     // A mailbox with a failed sync: the safe retry imports what was waiting, once.
     const exceptions = await all(req, "integration-exceptions", {
@@ -1115,8 +1010,8 @@ const reconnect: Endpoint = {
       const r = await safeRetry(req, open.id);
       return json({ ok: true, message: `Reconnected ${str(conn.account)}. ${r.message}` });
     }
-    const connections = list.map((c, i) =>
-      i === Number(index)
+    const connections = list.map((c) =>
+      c === conn
         ? {
             ...c,
             status: "Connected",

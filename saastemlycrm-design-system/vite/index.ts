@@ -5,6 +5,7 @@ import componentCss from "./component-css.ts";
 import dedupeCss from "./dedupe-css.ts";
 import icons from "./icons.ts";
 import layerVariants from "./layer-variants.ts";
+import scopedInvalidation from "./scoped-invalidation.ts";
 
 const pkg = fileURLToPath(new URL("..", import.meta.url));
 
@@ -23,6 +24,8 @@ export function designSystem(options: { scan?: string[] } = {}) {
       scan: [path.join(pkg, "src"), ...(options.scan ?? [])],
     }),
     tailwindcss(),
+    // After tailwindcss(): no rule that makes a class change restyle a whole subtree.
+    scopedInvalidation(),
     // After tailwindcss(): variant rules into ordered cascade layers.
     layerVariants(),
     dedupeCss(),

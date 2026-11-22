@@ -1,12 +1,200 @@
-import type { CollectionConfig } from "payload";
-import { CURRENCIES, autoNumber, caseRef, financeAccess, idOf, logActivity, ruleError } from "./shared.ts";
-import { tones, type CollectionSettings } from "saastemlycrm-design-system/contracts";
+import type { CollectionConfig, PayloadRequest } from "payload";
+import {
+  CURRENCIES,
+  autoNumber,
+  caseRef,
+  computed,
+  daysSince,
+  financeAccess,
+  fxRates,
+  idOf,
+  logActivity,
+  related,
+  ruleError,
+  scalar,
+} from "./shared.ts";
+import { formats, tones, type CollectionAction, type CollectionSettings } from "saastemlycrm-design-system/contracts";
+import { FINANCE_ROLES, dayText, findAll, moneyText, once } from "./fulfilment.ts";
+
+/** Customer receipts (payments in), read once per request. */
+const customerPayments = (req: PayloadRequest) =>
+  once(req, "payments-in", () => findAll(req, "payments", { direction: { equals: "in" } }));
+
+/** How late an open invoice is, in the buckets finance reads receivables by. */
+export const AGE_BUCKETS = ["Not due", "1–30 days", "31–60 days", "60+ days"] as const;
+const bucketOf = (days: number) => AGE_BUCKETS[days <= 0 ? 0 : days <= 30 ? 1 : days <= 60 ? 2 : 3];
+
+/** An invoice with money still to collect (not a draft, not cancelled). */
+const collectible = (inv: Record<string, unknown>) =>
+  Number(inv.balance) > 0 && !["Draft", "Cancelled"].includes(String(inv.status));
+
+const longDay = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
+
+/**
+ * The collection reminder for an invoice, as the AI drafts it, following the customer's contact
+ * rule: a "do not chase" customer gets no message (an internal reminder for the account owner
+ * instead); the others get an email a person reviews and sends. Pure: the invoice and its customer in.
+ */
+export function reminderDraft(inv: Record<string, unknown>, customer: Record<string, unknown> | null) {
+  const rule = scalar(customer?.contactRule) || "allowed";
+  const days = daysSince(inv.dueDate);
+  const cur = scalar(inv.currency);
+  const amount = `${cur} ${Number(inv.balance ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
+  const due = inv.dueDate ? longDay.format(new Date(scalar(inv.dueDate))) : "—";
+  const when = days > 0 ? `${days} days overdue` : `due ${due}`;
+  const name = scalar(customer?.name);
+  if (rule === "do-not-chase")
+    return {
+      mode: "internal",
+      rule,
+      title: `Internal: ${scalar(inv.number)} ${amount} ${when} — ${name}`,
+      body: `${name} must not be chased (account rule). Check the payment run with the account owner at the next scheduled call; escalate to Karim Balbaa if still open after 60 days. No message goes to the customer.`,
+      confidence: 1,
+    };
+  const contact = ((customer?.contacts as { name?: string; email?: string }[] | undefined) ?? [])[0];
+  const greeting = contact?.name ? `Dear ${contact.name.split(" ")[0]},` : "Dear accounts team,";
+  const paid = Number(inv.paid) || 0;
+  return {
+    mode: "customer",
+    rule,
+    to: contact?.email ?? scalar(customer?.contactEmail),
+    title: `Reminder: ${scalar(inv.number)} ${when} — ${name}`,
+    subject: `Golden Sea invoice ${scalar(inv.number)} — ${amount} ${days > 0 ? "overdue" : `due ${due}`}`,
+    body: `${greeting}
+
+Our invoice ${scalar(inv.number)} for ${amount} ${days > 0 ? `fell due on ${due}` : `is due on ${due}`}${paid ? ` (balance after your payment of ${cur} ${paid.toLocaleString("en-US")})` : ""}. Could you let us know when it is scheduled for payment? A copy of the invoice and the signed delivery note are attached.
+
+If it has already been paid, please send us the remittance so we can allocate it.
+
+Kind regards,
+Golden Sea — Accounts`,
+    confidence: 0.92,
+    note:
+      rule === "one-follow-up"
+        ? "Account rule: one follow-up per invoice — this is it; later reminders are internal."
+        : "Account rule: follow-ups allowed.",
+  };
+}
 import { widgets } from "saastemlycrm-design-system/contracts";
 
 /** Customer invoices: from delivered quantities, never billing the same quantity twice. */
 export const Invoices: CollectionConfig = {
   slug: "invoices",
-  custom: { edit: { steps: { field: "status", skip: ["Overdue", "Cancelled"] } } } satisfies CollectionSettings,
+  custom: {
+    edit: { steps: { field: "status", skip: ["Overdue", "Cancelled"] } },
+    // Reminders follow each customer's contact rule (the draft is the `reminder` field): an email a
+    // person reviews and sends, or, for "do not chase", an internal reminder only. Offered on open
+    // invoices due within 5 days or overdue, wherever invoices show.
+    actions: [
+      {
+        label: "Draft reminder",
+        when: {
+          "reminder.mode": { equals: "customer" },
+          daysOverdue: { greater_than: -6 },
+          balance: { greater_than: 0 },
+        },
+        roles: ["management", "finance-director", "operations"],
+        call: { path: "/cash/reminder", body: { invoice: "$row.id" } },
+        confirm: {
+          heading: "Collection reminder — $row.number",
+          text: "AI draft · $row.reminder.note\nTo: $row.reminder.to · Subject: $row.reminder.subject",
+          label: "Send reminder",
+        },
+        fields: [
+          {
+            type: "textarea",
+            name: "body",
+            label: "Email (edit before sending)",
+            required: true,
+            defaultValue: "$row.reminder.body",
+            admin: { rows: 10 },
+          },
+        ],
+        done: "Reminder sent to $row.customer.name by you (logged on the account).",
+      },
+      {
+        label: "Internal reminder",
+        when: {
+          "reminder.mode": { equals: "internal" },
+          daysOverdue: { greater_than: -6 },
+          balance: { greater_than: 0 },
+        },
+        roles: ["management", "finance-director", "operations"],
+        call: { path: "/cash/reminder", body: { invoice: "$row.id" } },
+        confirm: {
+          heading: "Collection reminder — $row.number",
+          text: "$row.customer.name must not be chased: no customer message is drafted — an internal reminder for the account owner instead.",
+          label: "Create internal reminder",
+        },
+        fields: [
+          {
+            type: "textarea",
+            name: "body",
+            label: "Internal reminder",
+            required: true,
+            defaultValue: "$row.reminder.body",
+            admin: { rows: 6 },
+          },
+        ],
+        done: "Internal reminder created — nothing sent to $row.customer.name.",
+      },
+      // The Egyptian e-invoice (`eInvoiceNext`): refresh a submitted one, else sign and submit it
+      // (a local buyer's tax registration number checked first). Safe to retry.
+      {
+        label: "Refresh status · $row.number",
+        when: { "eInvoiceNext.mode": { equals: "refresh" } },
+        roles: FINANCE_ROLES,
+        call: { path: "/cash/einvoice", body: { invoice: "$row.id" } },
+        reply: true,
+      },
+      ...(["foreign", "local"] as const).map((mode): CollectionAction => ({
+        label: "$row.eInvoiceNext.label · $row.number",
+        when: { "eInvoiceNext.mode": { equals: mode } },
+        roles: FINANCE_ROLES,
+        call: { path: "/cash/einvoice", body: { invoice: "$row.id" } },
+        prompt: "Sign & submit $row.number to the tax authority",
+        confirm: {
+          heading: "Sign & submit $row.number to the tax authority",
+          text: "$row.eInvoiceNext.summary",
+          label: "Sign & submit",
+          tone: "primary",
+        },
+        fields:
+          mode === "local"
+            ? [
+                {
+                  type: "text",
+                  name: "taxId",
+                  label: "Buyer tax registration number",
+                  defaultValue: "$row.billing.taxId",
+                  admin: { description: "9 digits — on the customer's tax card on file: 100-200-300" },
+                },
+              ]
+            : undefined,
+        reply: true,
+      })),
+      // A customer payment, recorded once the money is in the bank (the system never moves money).
+      {
+        label: "Record payment · $row.number",
+        when: { balance: { greater_than: 0 }, status: { not_in: ["Draft", "Cancelled"] } },
+        roles: FINANCE_ROLES,
+        call: { path: "/cash/payment", body: { invoice: "$row.id" } },
+        prompt: "Record customer payment — $row.number",
+        fields: [
+          {
+            type: "number",
+            name: "amount",
+            label: "Amount received ($row.currency)",
+            required: true,
+            defaultValue: "$row.balance",
+            admin: { description: "$row.paymentDraft.note" },
+          },
+          { type: "text", name: "reference", label: "Bank reference", defaultValue: "$row.paymentDraft.reference" },
+        ],
+        reply: true,
+      },
+    ],
+  } satisfies CollectionSettings,
   admin: {
     components: {
       beforeList: [widgets({ widgets: [{ size: "s", counts: { collection: "invoices", field: "status" } }] })],
@@ -95,11 +283,149 @@ export const Invoices: CollectionConfig = {
       type: "row",
       fields: [
         { name: "currency", type: "select", options: CURRENCIES, defaultValue: "USD" },
-        { name: "amount", type: "number", min: 0 },
-        { name: "paid", type: "number", min: 0, defaultValue: 0 },
-        { name: "balance", type: "number", min: 0, admin: { readOnly: true } },
+        { name: "amount", type: "number", min: 0, custom: formats.money("currency") },
+        { name: "paid", type: "number", min: 0, defaultValue: 0, custom: formats.money("currency") },
+        {
+          name: "balance",
+          type: "number",
+          min: 0,
+          admin: { readOnly: true },
+          custom: formats.money("currency"),
+        },
       ],
     },
+    // What finance reads an invoice by, worked out on every read (never stored).
+    {
+      type: "row",
+      fields: [
+        computed(
+          { name: "balanceUsd", type: "number", label: "Balance (USD)", custom: formats.money("USD") },
+          async (inv, req) => {
+            const fx = await fxRates(req);
+            const egp = (Number(inv.balance) || 0) * (fx[scalar(inv.currency) || "EGP"] ?? 1);
+            return Math.round((egp / (fx.USD ?? 1)) * 100) / 100;
+          },
+        ),
+        computed({ name: "daysOverdue", type: "number", label: "Days overdue", custom: formats.days() }, (inv) =>
+          collectible(inv) ? daysSince(inv.dueDate) : 0,
+        ),
+        computed(
+          {
+            name: "ageBucket",
+            type: "select",
+            label: "Age",
+            options: [...AGE_BUCKETS],
+            custom: tones({ "Not due": "success", "1–30 days": "warning", "31–60 days": "error", "60+ days": "error" }),
+          },
+          (inv) => (collectible(inv) ? bucketOf(daysSince(inv.dueDate)) : null),
+        ),
+      ],
+    },
+    // The collection reminder the AI drafts for it (`custom.actions` offers it).
+    computed(
+      {
+        name: "reminder",
+        type: "group",
+        admin: { condition: () => false },
+        fields: [
+          { name: "mode", type: "text" },
+          { name: "to", type: "text" },
+          { name: "subject", type: "text" },
+          { name: "body", type: "textarea" },
+          { name: "note", type: "text" },
+        ],
+      },
+      async (inv, req) => (collectible(inv) ? reminderDraft(inv, await related(req, "customers", inv.customer)) : null),
+    ),
+    // What the case's invoice table reads it by, in one line each.
+    {
+      type: "row",
+      fields: [
+        computed({ name: "basisNote", type: "text", label: "Basis" }, async (inv, req) => {
+          const delivery = await related(req, "deliveries", inv.delivery);
+          return `${scalar(inv.basis) || "Delivery"}${delivery ? ` · ${scalar(delivery.number)}` : ""} · ${dayText(inv.issuedAt)}`;
+        }),
+        computed({ name: "linesSummary", type: "text", label: "Invoiced lines" }, (inv) =>
+          ((inv.lines as Record<string, unknown>[] | undefined) ?? [])
+            .map(
+              (l) =>
+                `L${scalar(l.lineNo)} · ${scalar(l.qty)}${l.deliveredQty != null ? ` of ${scalar(l.deliveredQty)} delivered` : ""} × ${moneyText(Number(l.unitPrice) || 0, scalar(inv.currency))}`,
+            )
+            .join("; "),
+        ),
+        // The tax authority's answer: its error, else the UUID it gave.
+        computed({ name: "eInvoiceNote", type: "text", label: "E-invoice note" }, (inv) => {
+          const e = (inv.eInvoice ?? {}) as { error?: string; uuid?: string };
+          return e.error || (e.uuid ? `UUID ${e.uuid}` : "");
+        }),
+        // The balance and when it's due (or settled), then each payment received.
+        computed({ name: "paymentsNote", type: "text", label: "Payments" }, async (inv, req) => {
+          const cur = scalar(inv.currency);
+          const payments = req.context?.seed
+            ? []
+            : (await customerPayments(req)).filter((p) => idOf(p.invoice) === idOf(inv.id));
+          return [
+            Number(inv.balance) > 0
+              ? `Balance ${moneyText(Number(inv.balance), cur)} due ${dayText(inv.dueDate)}`
+              : "Settled",
+            ...payments.map(
+              (p) => `${dayText(p.paidAt)} · ${scalar(p.reference)} · ${moneyText(Number(p.amount) || 0, cur)}`,
+            ),
+          ].join(" · ");
+        }),
+      ],
+    },
+    // The next step with the tax authority (the e-invoice actions read it): nothing once valid.
+    computed(
+      {
+        name: "eInvoiceNext",
+        type: "group",
+        admin: { condition: () => false },
+        fields: [
+          { name: "mode", type: "text" },
+          { name: "label", type: "text" },
+          { name: "summary", type: "textarea" },
+        ],
+      },
+      async (inv, req) => {
+        const e = (inv.eInvoice ?? {}) as { status?: string; error?: string };
+        const status = e.status || "Not submitted";
+        if (status === "Valid") return null;
+        if (status === "Submitted") return { mode: "refresh", label: "Refresh status", summary: "" };
+        const billing = (inv.billing ?? {}) as { legalEntity?: string };
+        const customer = billing.legalEntity ? null : await related(req, "customers", inv.customer);
+        return {
+          mode: inv.vatTreatment === "14% standard" ? "local" : "foreign",
+          label: status === "Rejected" ? "Correct & resubmit" : e.error ? "Retry (safe)" : "Sign & submit",
+          summary: [
+            `${billing.legalEntity || scalar(customer?.name)} · ${moneyText(Number(inv.amount) || 0, scalar(inv.currency))} · ${scalar(inv.vatTreatment)}`,
+            ...(e.error ? ["", e.error] : []),
+            "",
+            "Signed with Golden Sea's e-signature and submitted; the invoice number is the idempotency key, so a retry never creates a second submission.",
+          ].join("\n"),
+        };
+      },
+    ),
+    // What recording a payment against it starts from.
+    computed(
+      {
+        name: "paymentDraft",
+        type: "group",
+        admin: { condition: () => false },
+        fields: [
+          { name: "reference", type: "text" },
+          { name: "note", type: "text" },
+        ],
+      },
+      (inv) =>
+        Number(inv.balance) > 0
+          ? {
+              // A fixed sample reference, so the action is the same on every read.
+              reference: `TRX-77${scalar(inv.number).replace(/\D/g, "").slice(-3).padStart(3, "0")}`,
+              note: `Balance ${moneyText(Number(inv.balance), scalar(inv.currency))} · due ${dayText(inv.dueDate)}. Recorded after the money is in the bank — the system never moves money.`,
+            }
+          : null,
+    ),
     {
       type: "row",
       fields: [
@@ -137,8 +463,17 @@ export const Invoices: CollectionConfig = {
             {
               name: "status",
               type: "select",
+              label: "E-invoice (tax authority)",
               options: ["Not submitted", "Submitted", "Valid", "Invalid", "Rejected", "Cancelled"],
               defaultValue: "Not submitted",
+              custom: tones({
+                "Not submitted": "neutral",
+                Submitted: "info",
+                Valid: "success",
+                Invalid: "error",
+                Rejected: "error",
+                Cancelled: "neutral",
+              }),
             },
             { name: "uuid", type: "text", label: "UUID" },
             { name: "submittedAt", type: "date" },
@@ -241,7 +576,7 @@ export const Payments: CollectionConfig = {
     {
       type: "row",
       fields: [
-        { name: "amount", type: "number", min: 0, required: true },
+        { name: "amount", type: "number", min: 0, required: true, custom: formats.money("currency") },
         { name: "currency", type: "select", options: CURRENCIES, required: true },
         { name: "fxRate", type: "number", min: 0, label: "Actual FX" },
       ],

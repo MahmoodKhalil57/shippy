@@ -3,7 +3,7 @@ import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
-import { row, rowFill, text } from "../layout/algebra.ts";
+import { row, rowFill, text, tiles } from "../layout/algebra.ts";
 
 /**
  * Gauge: how much of something there is, a value within a known range: lines ready, checks
@@ -19,7 +19,7 @@ import { row, rowFill, text } from "../layout/algebra.ts";
  */
 export const gauge = rcva("flex min-w-0 flex-col gap-1", {
   variants: {
-    width: { xs: "w-32 max-w-full", sm: "w-56 max-w-full", full: "w-full" },
+    width: { xs: tiles["2"], sm: tiles["4"], full: "w-full" },
   },
   defaultVariants: { width: "full" },
 });

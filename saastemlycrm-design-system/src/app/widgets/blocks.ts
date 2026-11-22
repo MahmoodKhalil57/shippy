@@ -4,7 +4,7 @@ import type { TableColumn, TableSupporting } from "../../components/primitives/d
 import "../../components/index.ts";
 import { defineBlock, inCard, renderBlocks, type ViewContext } from "./registry.ts";
 import { decimalsOf } from "../../components/base/chart.ts";
-import { formatNumber, type Action, type Cell, type NumberFormat, type Tag } from "./schema.ts";
+import { formatNumber, type Action, type Cell, type NumberFormat, type Tag, type ViewBlock } from "./schema.ts";
 
 /**
  * The built-in blocks (./schema.ts `ViewBlocks`), drawn with the design system's `ui-*`
@@ -260,46 +260,55 @@ defineBlock(
     ></ui-grid>`,
 );
 
-defineBlock(
-  "stats",
-  (b, ctx) =>
-    // Balanced rows: all in one row when they fit, else in even rows (never one left over). In a
-    // tile the figures are tonal cells; on the page itself (a bare tile) each is a small card like
-    // the tiles around it. A delta is a chip with its arrow, in the ink of what it means.
-    html`<ui-grid
-      .balance=${b.items.length >= 2 && b.items.length <= 6 ? (String(b.items.length) as "2") : undefined}
-      .fit=${b.items.length >= 2 && b.items.length <= 6 ? undefined : "xs"}
-      gap="3"
-      >${b.items.map(
-        (s, i) =>
-          html`<ui-stat
-            ?main=${!!s.main && b.items.findIndex((x) => x.main) === i}
-            ?outlined=${!ctx.inCard}
-            .size=${b.size ?? "lg"}
-            .href=${s.href}
-            .label=${s.label}
-            .value=${s.value}
-            .note=${s.note ?? ""}
-            .tone=${s.tone}
-            .delta=${s.delta?.text ?? ""}
-            .deltaDir=${s.delta?.dir ?? "flat"}
-            .deltaTone=${s.delta?.good === undefined ? "neutral" : s.delta.good ? "success" : "error"}
-          >
-            ${
-              s.trend
-                ? html`<ui-chart
-                    slot="trend"
-                    kind="spark"
-                    .label=${`${s.label}, trend`}
-                    .labels=${s.trend.labels}
-                    .series=${[{ name: s.label, values: s.trend.values }]}
-                    .format=${(v: number) => formatNumber(v, s.trend?.format)}
-                  ></ui-chart>`
-                : nothing
-            }
-          </ui-stat>`,
-      )}</ui-grid
-    >`,
+/** One figure: its stat (`ui-stat`), in a tile's or on the page's look. */
+const stat = (
+  s: Extract<ViewBlock, { type: "stats" }>["items"][number],
+  b: Extract<ViewBlock, { type: "stats" }>,
+  ctx: ViewContext,
+  main: boolean,
+  fill = false,
+) =>
+  html`<ui-stat
+    ?main=${main}
+    ?outlined=${!ctx.inCard}
+    ?fill=${fill}
+    .size=${b.size ?? "lg"}
+    .href=${s.href}
+    .label=${s.label}
+    .value=${s.value}
+    .note=${s.note ?? ""}
+    .tone=${s.tone}
+    .delta=${s.delta?.text ?? ""}
+    .deltaDir=${s.delta?.dir ?? "flat"}
+    .deltaTone=${s.delta?.good === undefined ? "neutral" : s.delta.good ? "success" : "error"}
+  >
+    ${
+      s.trend
+        ? html`<ui-chart
+            slot="trend"
+            kind="spark"
+            .label=${`${s.label}, trend`}
+            .labels=${s.trend.labels}
+            .series=${[{ name: s.label, values: s.trend.values }]}
+            .format=${(v: number) => formatNumber(v, s.trend?.format)}
+          ></ui-chart>`
+        : nothing
+    }
+  </ui-stat>`;
+
+defineBlock("stats", (b, ctx) =>
+  // A figure that is a widget of its own (`figures`): the card is the tile, filling its box.
+  b.items.length === 1 && !ctx.inCard
+    ? stat(b.items[0]!, b, ctx, !!b.items[0]!.main, true)
+    : // Balanced rows: all in one row when they fit, else in even rows (never one left over). In a
+      // tile the figures are tonal cells; on the page itself (a bare tile) each is a small card like
+      // the tiles around it. A delta is a chip with its arrow, in the ink of what it means.
+      html`<ui-grid
+        .balance=${b.items.length >= 2 && b.items.length <= 6 ? (String(b.items.length) as "2") : undefined}
+        .fit=${b.items.length >= 2 && b.items.length <= 6 ? undefined : "xs"}
+        gap="3"
+        >${b.items.map((s, i) => stat(s, b, ctx, !!s.main && b.items.findIndex((x) => x.main) === i))}</ui-grid
+      >`,
 );
 
 defineBlock("heading", (b) => html`<ui-heading level="3" variant="title-sm">${b.text}</ui-heading>`);
@@ -354,6 +363,7 @@ defineBlock("list", (b, ctx) =>
               .supporting=${i.supporting ?? ""}
               .overline=${i.overline ?? ""}
               .leadingText=${i.lead ?? ""}
+              .trailingText=${i.value !== undefined ? cell(i.value) : ""}
               .lines=${i.lead ? "1" : "2"}
               .href=${i.href}
               ?action=${!!i.select}
@@ -473,6 +483,142 @@ defineBlock("chart", (b) => {
       </ui-card>`
     : chart;
 });
+
+defineBlock(
+  "ring",
+  (b) =>
+    html`<ui-ring
+      .parts=${b.parts}
+      .max=${b.max}
+      .label=${b.label ?? ""}
+      .centerLabel=${b.center ?? ""}
+      .totalText=${b.total ?? ""}
+    ></ui-ring>`,
+);
+
+defineBlock(
+  "funnel",
+  (b) => html`<ui-funnel .stages=${b.stages} .label=${b.label ?? ""} .step=${b.step ?? "went on"}></ui-funnel>`,
+);
+
+defineBlock(
+  "heatmap",
+  (b) => html`<ui-heatmap .cells=${b.days} .label=${b.label ?? ""} .summary=${b.summary ?? ""}></ui-heatmap>`,
+);
+
+defineBlock(
+  "bullet",
+  (b) =>
+    html`<ui-flex direction="col" gap="3"
+      >${b.items.map(
+        (i) =>
+          html`<ui-bullet
+            .heading=${i.label}
+            .label=${i.label}
+            .value=${i.value}
+            .max=${i.max}
+            .min=${i.min ?? 0}
+            .target=${i.target}
+            .bands=${i.bands}
+            .valueText=${i.valueText ?? ""}
+            .targetText=${i.targetText ?? ""}
+            .lowerIsBetter=${!!i.lowerIsBetter}
+          ></ui-bullet>`,
+      )}</ui-flex
+    >`,
+);
+
+defineBlock(
+  "dial",
+  (b) =>
+    html`<ui-dial
+      .value=${b.value}
+      .min=${b.min ?? 0}
+      .max=${b.max}
+      .valueText=${b.valueText ?? ""}
+      .caption=${b.caption ?? ""}
+      .label=${b.label ?? ""}
+      .zones=${b.zones}
+    ></ui-dial>`,
+);
+
+defineBlock(
+  "waffle",
+  (b) =>
+    html`<ui-waffle
+      .value=${b.value ?? 0}
+      .max=${b.max ?? 100}
+      .valueText=${b.valueText ?? ""}
+      .caption=${b.caption ?? ""}
+      .label=${b.label ?? ""}
+      .parts=${b.parts}
+    ></ui-waffle>`,
+);
+
+defineBlock(
+  "share",
+  (b) => html`<ui-share-bar .parts=${b.parts} .total=${b.total} .label=${b.label ?? ""}></ui-share-bar>`,
+);
+
+defineBlock(
+  "treemap",
+  (b) => html`<ui-treemap .items=${b.items} .total=${b.total} .label=${b.label ?? ""}></ui-treemap>`,
+);
+
+defineBlock(
+  "waterfall",
+  (b) =>
+    html`<ui-waterfall
+      .steps=${b.steps}
+      .fit=${b.fit ?? false}
+      .label=${b.label ?? ""}
+      .format=${(n: number) => formatNumber(n, b.format)}
+    ></ui-waterfall>`,
+);
+
+defineBlock(
+  "quadrant",
+  (b) =>
+    html`<ui-quadrant
+      .points=${b.points}
+      .xLabel=${b.xLabel}
+      .yLabel=${b.yLabel}
+      .xMid=${b.xMid}
+      .yMid=${b.yMid}
+      .xDomain=${b.xDomain}
+      .yDomain=${b.yDomain}
+      .quadrants=${b.quadrants}
+      .invertY=${!!b.invertY}
+      .label=${b.label ?? ""}
+    ></ui-quadrant>`,
+);
+
+defineBlock(
+  "countdown",
+  (b) => html`<ui-countdown .items=${b.items} .now=${b.now} .label=${b.label ?? ""}></ui-countdown>`,
+);
+
+defineBlock(
+  "month",
+  (b) =>
+    html`<ui-month
+      .month=${b.month}
+      .today=${b.today}
+      .events=${b.events}
+      .weekStart=${b.weekStart ?? 0}
+      .label=${b.label ?? ""}
+    ></ui-month>`,
+);
+
+defineBlock(
+  "whatif",
+  (b) =>
+    html`<ui-whatif
+      .inputs=${b.inputs.map((i) => ({ ...i, format: (n: number) => formatNumber(n, i.format) }))}
+      .compute=${b.compute}
+      .label=${b.label ?? ""}
+    ></ui-whatif>`,
+);
 
 defineBlock(
   "alert",

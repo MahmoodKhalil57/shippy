@@ -70,6 +70,16 @@ import iArrowUp from "~icons/material-symbols-light/arrow-upward-rounded";
 import iFilter from "~icons/material-symbols-light/filter-list-rounded";
 import iColumns from "~icons/material-symbols-light/view-column-outline-rounded";
 import iTable from "~icons/material-symbols-light/table-rows-outline-rounded";
+import iCalendar from "~icons/material-symbols-light/calendar-month-outline-rounded";
+import iList from "~icons/material-symbols-light/view-list-outline-rounded";
+import iVCompact from "~icons/material-symbols-light/view-compact-outline-rounded";
+import iVFocus from "~icons/material-symbols-light/view-carousel-outline-rounded";
+import iVStack from "~icons/material-symbols-light/stacks-outline-rounded";
+import iVTimeline from "~icons/material-symbols-light/view-timeline-outline-rounded";
+import iVHeat from "~icons/material-symbols-light/calendar-view-week-outline-rounded";
+import iVMosaic from "~icons/material-symbols-light/auto-awesome-mosaic-outline-rounded";
+import iVScatter from "~icons/material-symbols-light/scatter-plot-outline-rounded";
+import iVRanking from "~icons/material-symbols-light/leaderboard-outline-rounded";
 import iThinking from "~icons/material-symbols-light/neurology-outline";
 import iTool from "~icons/material-symbols-light/build-outline";
 import iBlock from "~icons/material-symbols-light/block";
@@ -88,6 +98,7 @@ import iPhone from "~icons/line-md/phone";
 import iLink from "~icons/line-md/link";
 import iBolt from "~icons/material-symbols-light/bolt-outline";
 import iArchive from "~icons/material-symbols-light/archive-outline";
+import iTrash from "~icons/material-symbols-light/delete-outline";
 import iAnchor from "~icons/material-symbols-light/anchor";
 import iContrast from "~icons/line-md/light-dark";
 import iPalette from "~icons/material-symbols-light/palette-outline";
@@ -212,6 +223,16 @@ export const ICONS = {
   filter: iFilter,
   columns: iColumns,
   table: iTable,
+  calendar: iCalendar,
+  list: iList,
+  compact: iVCompact,
+  focus: iVFocus,
+  stack: iVStack,
+  timeline: iVTimeline,
+  heat: iVHeat,
+  mosaic: iVMosaic,
+  scatter: iVScatter,
+  ranking: iVRanking,
   thinking: iThinking,
   tool: iTool,
   block: iBlock,
@@ -230,6 +251,7 @@ export const ICONS = {
   link: iLink,
   bolt: iBolt,
   archive: iArchive,
+  trash: iTrash,
   anchor: iAnchor,
   /** Half light, half dark: "follow the system". */
   contrast: iContrast,

@@ -1,24 +1,29 @@
-import type { CollectionConfig } from "payload";
-import { tones, type CollectionSettings } from "saastemlycrm-design-system/contracts";
+import type { CollectionConfig, Field, PayloadRequest } from "payload";
+import { formats, tones, type CollectionSettings, type OptionTone } from "saastemlycrm-design-system/contracts";
 import { widgets } from "saastemlycrm-design-system/contracts";
 import {
   CASE_TYPES,
   CURRENCIES,
+  DAY,
   PORTS,
   QUOTE_DECISIONS,
   STORES,
+  TODAY,
   UNITS,
   autoNumber,
+  computed,
   costVisible,
+  idOf,
   logActivity,
+  scalar,
 } from "./shared.ts";
-import { caseDelivery } from "../widgets/case-delivery.ts";
-import { caseOrder } from "../widgets/case-order.ts";
-import { caseOverview } from "../widgets/case-overview.ts";
-import { caseRfqs } from "../widgets/case-rfqs.ts";
-import { caseCompare } from "../widgets/case-compare.ts";
-import { casePricing } from "../widgets/case-pricing.ts";
-import { caseProfit } from "../widgets/case-profit.ts";
+import { caseDelivery } from "../pages/case-delivery.ts";
+import { caseOrder } from "../pages/case-order.ts";
+import { caseOverview } from "../pages/case-overview.ts";
+import { caseRfqs } from "../pages/case-rfqs.ts";
+import { caseCompare } from "../pages/case-compare.ts";
+import { casePricing } from "../pages/case-pricing.ts";
+import { caseProfit } from "../pages/case-profit.ts";
 
 export const STAGES = [
   "New",
@@ -53,6 +58,124 @@ export const WAITS = [
   "Awaiting delivery or payment",
 ];
 
+/** Line status → the progress bucket it counts in before the order. */
+export const LINE_BUCKET: Record<string, LineBucket> = {
+  "Clarification needed": "blocked",
+  "Not sourced": "noOffer",
+  "Awaiting supplier": "waiting",
+  "Awaiting customer acceptance": "waiting",
+  "Ready to select": "ready",
+  "Offer selected": "ready",
+  "Split offer selected": "ready",
+  Ordered: "ready",
+  Received: "ready",
+  Delivered: "ready",
+  Invoiced: "ready",
+  "Closed — not awarded": "closed",
+};
+export type LineBucket = "ready" | "waiting" | "blocked" | "noOffer" | "closed";
+
+/** How each bucket reads: ready lines in green, waiting amber, blocked red, the rest quiet. */
+const BUCKET_TONE: Record<LineBucket, OptionTone> = {
+  ready: "success",
+  waiting: "warning",
+  blocked: "error",
+  noOffer: "neutral",
+  closed: "neutral",
+};
+
+/** A line's bucket by its status (a line with none is not sourced yet). */
+export const bucketOf = (status: unknown): LineBucket => LINE_BUCKET[scalar(status) || "Not sourced"] ?? "noOffer";
+
+/**
+ * How far a case's lines are before the order: each line by its own status (a partly ready case
+ * is never "done"), or the case's line summary when it has no lines yet. Pure: the case in.
+ */
+export function lineCounts(c: Record<string, unknown>) {
+  const items = (c.items as { status?: string }[] | undefined) ?? [];
+  if (items.length) {
+    const count = (b: LineBucket) => items.filter((l) => bucketOf(l.status) === b).length;
+    return {
+      total: items.length,
+      ready: count("ready"),
+      waiting: count("waiting"),
+      blocked: count("blocked"),
+      noOffer: count("noOffer"),
+      closed: count("closed"),
+    };
+  }
+  const s = (c.lines as Record<string, number> | undefined) ?? {};
+  const n = (k: string) => Number(s[k]) || 0;
+  return {
+    total: n("ready") + n("waiting") + n("blocked") + n("noOffer"),
+    ready: n("ready"),
+    waiting: n("waiting"),
+    blocked: n("blocked"),
+    noOffer: n("noOffer"),
+    closed: 0,
+  };
+}
+
+/** The risk a case is at (its `tone`), worst first: what queues sort by. */
+const RISK_RANK: Record<string, number> = { danger: 0, warn: 1, info: 2, ok: 3, neutral: 4 };
+
+const time = (d: Date) => d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
+/** A date against the demo's clock: "today 16:00", "tomorrow 09:00", "in 3 days", "2 days overdue". */
+export function relativeDue(iso: unknown): string {
+  if (typeof iso !== "string" || !iso) return "";
+  const d = new Date(iso);
+  const days = Math.floor(d.getTime() / DAY) - Math.floor(TODAY.getTime() / DAY);
+  if (days === 0) return d < TODAY ? `overdue since ${time(d)}` : `today ${time(d)}`;
+  if (days === 1) return `tomorrow ${time(d)}`;
+  if (days > 1) return `in ${days} days`;
+  return `${-days} day${days === -1 ? "" : "s"} overdue`;
+}
+
+/**
+ * A value of one row of an array field worked out on read (never stored), from the row itself:
+ * Payload's `virtual` with an `afterRead` hook on its `siblingData`.
+ */
+const rowComputed = <F extends Field>(field: F, compute: (row: Record<string, unknown>) => unknown): F =>
+  ({
+    ...field,
+    virtual: true,
+    admin: { readOnly: true, condition: () => false, ...(field as { admin?: object }).admin },
+    hooks: {
+      afterRead: [({ siblingData }: { siblingData?: Record<string, unknown> }) => compute(siblingData ?? {})],
+    },
+  }) as F;
+
+/** The counts besides "Ready", each a bar of all the lines in its own tone. */
+const LINE_GAUGES = [
+  ["waiting", "Waiting", "warning"],
+  ["blocked", "Blocked", "error"],
+  ["noOffer", "No offer", "neutral"],
+] as const;
+
+/** The demo's clock, for what a value's tone says against it (`custom.toneWhen`). */
+const NOW = TODAY.toISOString();
+
+/** Who hands a case over: the supply-chain desk and management, besides its owner and backup. */
+export const REASSIGN_ROLES = ["management", "supply-chain"];
+/** Who a case can be handed to: the people on the desk. */
+export const HANDOVER_ROLES = ["supply-chain", "sales", "operations", "management"];
+type Reader = { id?: unknown; role?: unknown } | null | undefined;
+/** Whether this person may hand the case over. Pure: the case and who is asking in. */
+export const mayReassign = (c: Record<string, unknown>, user: Reader) =>
+  !!user?.id && (REASSIGN_ROLES.includes(scalar(user.role)) || user.id === idOf(c.owner) || user.id === idOf(c.backup));
+
+/** The desk's people (read once per request), for the handover's "Hand over to". */
+async function desk(req: PayloadRequest): Promise<Record<string, unknown>[]> {
+  const ctx = (req.context ??= {}) as { desk?: Promise<Record<string, unknown>[]> };
+  ctx.desk ??= req.payload
+    .find({ collection: "users", limit: 0, depth: 0, pagination: false } as never)
+    .then((r) =>
+      (r.docs as unknown as Record<string, unknown>[]).filter((u) => HANDOVER_ROLES.includes(scalar(u.role))),
+    )
+    .catch(() => []);
+  return ctx.desk;
+}
+
 const LINE_STATUSES = [
   "Clarification needed",
   "Not sourced",
@@ -79,7 +202,7 @@ export const Cases: CollectionConfig = {
     group: "Sourcing desk",
     description: "Client RFQs and everything that follows: supplier RFQs, quotes, POs, delivery and payment.",
     // The case workspace: one tab per step from first email to last payment (Payload custom
-    // edit views, each a screen of widgets in src/cms/widgets).
+    // edit views, each a screen in src/pages).
     // Counts by what each case is waiting for, above the list, each opening the filtered list.
     components: {
       beforeList: [widgets({ widgets: [{ size: "s", counts: { collection: "cases", field: "wait" } }] })],
@@ -143,6 +266,43 @@ export const Cases: CollectionConfig = {
         ],
       },
     },
+    // "Reassign": pick who takes over; AI drafts the handover note from the case (its
+    // clarifications, open tasks and timeline) for the person picked; edit it, confirm. Offered to
+    // whoever may hand the case over (`canReassign`), wherever cases show; the endpoint re-checks.
+    actions: [
+      {
+        label: "Reassign",
+        when: { canReassign: { equals: true } },
+        call: { path: "/case-overview/$row.id/reassign" },
+        confirm: {
+          heading: "Reassign $row.caseId",
+          text: "The new owner gets the case, its open tasks and a notification. The handover note is logged on the timeline. AI drafts the note from the case, its clarifications, open tasks and timeline.",
+          label: "Confirm handover",
+        },
+        fields: [
+          {
+            type: "select",
+            name: "to",
+            label: "Hand over to",
+            required: true,
+            defaultValue: "$row.backup.id",
+            // The desk without the owner (`handoverTeam`), the backup marked.
+            options: "$row.handoverTeam" as never,
+            admin: { placeholder: "Choose a person" },
+          },
+          {
+            type: "textarea",
+            name: "note",
+            label: "Handover note",
+            required: true,
+            admin: { description: "Edit freely — nothing is saved until you confirm.", rows: 10 },
+          },
+        ],
+        prefill: { when: "to", into: "note", from: "draft", call: { path: "/case-overview/$row.id/handover" } },
+        assist: { field: "note", tools: "formal shorter proofread" },
+        reply: true,
+      },
+    ],
   } satisfies CollectionSettings,
   access: {
     read: () => true,
@@ -151,6 +311,13 @@ export const Cases: CollectionConfig = {
     delete: ({ req }) => req.user?.role === "management",
   },
   hooks: {
+    // The risk rank queues sort by (worst first), kept with the risk.
+    beforeChange: [
+      ({ data, originalDoc }) => {
+        if (data) data.riskRank = RISK_RANK[scalar(data.tone ?? originalDoc?.tone) || "info"] ?? 2;
+        return data;
+      },
+    ],
     // Number new cases GS-RFQ-0143, GS-RFQ-0144, … (service and held cases use their own prefixes).
     beforeValidate: [
       async (args) => {
@@ -228,8 +395,13 @@ export const Cases: CollectionConfig = {
               ],
             },
             { name: "agent", type: "text", label: "Port agent / delivery contact" },
-            { name: "nextAction", type: "text", required: true },
-            { name: "blocker", type: "text" },
+            { name: "nextAction", type: "text", label: "Next action", required: true },
+            {
+              name: "blocker",
+              type: "text",
+              // Red on a blocked case.
+              custom: { toneWhen: [{ when: { tone: { equals: "danger" } }, tone: "error" }] },
+            },
             {
               name: "handoverNote",
               type: "textarea",
@@ -286,7 +458,14 @@ export const Cases: CollectionConfig = {
                 {
                   type: "row",
                   fields: [
-                    { name: "status", type: "select", options: LINE_STATUSES, defaultValue: "Not sourced" },
+                    {
+                      name: "status",
+                      type: "select",
+                      options: LINE_STATUSES,
+                      defaultValue: "Not sourced",
+                      // In the tone of the bucket it counts in: ready, waiting, blocked, no offer.
+                      custom: tones(Object.fromEntries(LINE_STATUSES.map((s) => [s, BUCKET_TONE[bucketOf(s)]]))),
+                    },
                     {
                       name: "confidence",
                       type: "number",
@@ -295,6 +474,19 @@ export const Cases: CollectionConfig = {
                       label: "AI extraction confidence",
                       admin: { readOnly: true },
                     },
+                    // How sure the AI was, as a share; amber under 85% (check it at the source).
+                    rowComputed(
+                      {
+                        name: "aiRead",
+                        type: "number",
+                        label: "AI read",
+                        custom: {
+                          ...formats.percent(0),
+                          toneWhen: [{ when: { aiRead: { less_than: 85 } }, tone: "warning" }],
+                        },
+                      },
+                      (l) => (typeof l.confidence === "number" ? Math.round(l.confidence * 100) : null),
+                    ),
                   ],
                 },
                 { name: "missing", type: "text", label: "Missing / unclear" },
@@ -386,6 +578,16 @@ export const Cases: CollectionConfig = {
                 },
                 { name: "answer", type: "textarea" },
                 { name: "answeredAt", type: "date" },
+                // The answer, or "Waiting" (amber) while the question is open.
+                rowComputed(
+                  {
+                    name: "reply",
+                    type: "text",
+                    label: "Answer",
+                    custom: { toneWhen: [{ when: { answer: { exists: false } }, tone: "warning" }] },
+                  },
+                  (q) => scalar(q.answer) || "Waiting",
+                ),
               ],
             },
           ],
@@ -630,11 +832,27 @@ export const Cases: CollectionConfig = {
         { label: "Done", value: "ok" },
         { label: "Paused", value: "neutral" },
       ],
+      custom: tones({ danger: "error", warn: "warning", info: "info", ok: "success", neutral: "neutral" }),
       admin: { position: "sidebar" },
+    },
+    {
+      name: "riskRank",
+      type: "number",
+      label: "Risk rank",
+      admin: { hidden: true, readOnly: true, description: "0 blocked … 4 paused: what queues sort by." },
     },
     { name: "owner", type: "relationship", relationTo: "users", required: true, admin: { position: "sidebar" } },
     { name: "backup", type: "relationship", relationTo: "users", admin: { position: "sidebar" } },
-    { name: "value", type: "number", label: "Value (USD)", min: 0, admin: { position: "sidebar" } },
+    {
+      name: "value",
+      type: "number",
+      label: "Value (USD)",
+      min: 0,
+      custom: formats.money("USD"),
+      // The selling value: never for Sales (as everywhere else).
+      access: { read: costVisible },
+      admin: { position: "sidebar" },
+    },
     { name: "urgent", type: "checkbox", defaultValue: false, admin: { position: "sidebar" } },
     { name: "lostReason", type: "text", admin: { position: "sidebar", condition: (data) => data?.stage === "Lost" } },
     {
@@ -644,5 +862,91 @@ export const Cases: CollectionConfig = {
       admin: { position: "sidebar", readOnly: true },
     },
     { name: "closedAt", type: "date", admin: { position: "sidebar", readOnly: true } },
+    // Worked out on read, the same on every screen that shows a case (never stored).
+    computed(
+      {
+        name: "due",
+        type: "text",
+        label: "Due",
+        // Red once the deadline has passed.
+        custom: { toneWhen: [{ when: { deadline: { less_than: NOW } }, tone: "error" }] },
+        admin: { position: "sidebar" },
+      },
+      (c) => relativeDue(c.deadline),
+    ),
+    computed({ name: "vesselPort", type: "text", label: "Vessel · port", admin: { condition: () => false } }, (c) =>
+      [scalar(c.vessel), scalar(c.port)].filter(Boolean).join(" · "),
+    ),
+    // How far the lines are before the order (`lineCounts`): each count a bar of all of them, ready
+    // in green (amber while any is blocked). Nothing for a case with no lines yet.
+    computed(
+      {
+        name: "lineCount",
+        type: "group",
+        label: "Lines",
+        admin: { condition: () => false },
+        fields: [
+          { name: "total", type: "number", label: "Lines" },
+          {
+            name: "ready",
+            type: "number",
+            label: "Ready",
+            custom: {
+              gauge: { max: "lineCount.total" },
+              toneWhen: [
+                { when: { "lineCount.blocked": { greater_than: 0 } }, tone: "warning" },
+                { when: {}, tone: "success" },
+              ],
+            },
+          },
+          ...LINE_GAUGES.map(([name, label, tone]) => ({
+            name,
+            type: "number" as const,
+            label,
+            custom: { gauge: { max: "lineCount.total" }, toneWhen: [{ when: {}, tone }] },
+          })),
+          { name: "readyPct", type: "number", label: "Ready share", custom: formats.percent(0) },
+        ],
+      },
+      (c) => {
+        const l = lineCounts(c);
+        return l.total
+          ? {
+              total: l.total,
+              ready: l.ready,
+              waiting: l.waiting,
+              blocked: l.blocked,
+              noOffer: l.noOffer,
+              readyPct: Math.round((l.ready / l.total) * 100),
+            }
+          : null;
+      },
+    ),
+    // Under the ready count: of how many, and how many are blocked ("of 6 · 1 blocked").
+    computed({ name: "lineNote", type: "text", label: "Lines", admin: { condition: () => false } }, (c) => {
+      const l = lineCounts(c);
+      return l.total ? [`of ${l.total}`, l.blocked ? `${l.blocked} blocked` : ""].filter(Boolean).join(" · ") : null;
+    }),
+    computed(
+      {
+        name: "flag",
+        type: "select",
+        label: "Urgency",
+        options: ["Urgent"],
+        custom: tones({ Urgent: "error" }),
+        admin: { condition: () => false },
+      },
+      (c) => (c.urgent === true ? "Urgent" : null),
+    ),
+    // Whether the person reading may hand it over (the "Reassign" action).
+    computed({ name: "canReassign", type: "checkbox", admin: { condition: () => false } }, (c, req) =>
+      mayReassign(c, req.user as Reader),
+    ),
+    // Who it can be handed to: the desk without its owner, the backup marked.
+    computed({ name: "handoverTeam", type: "json", admin: { condition: () => false } }, async (c, req) =>
+      (await desk(req))
+        .filter((u) => u.id !== idOf(c.owner))
+        .map((u) => ({ label: `${scalar(u.name)}${u.id === idOf(c.backup) ? " (backup)" : ""}`, value: u.id })),
+    ),
   ],
 };

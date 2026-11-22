@@ -1,0 +1,115 @@
+import type { CollectionConfig } from "payload";
+import type { CollectionSettings } from "saastemlycrm-design-system/contracts";
+
+/**
+ * How each collection's records look as cards, rows and on a calendar (`custom.list`, the design
+ * system's `CollectionSettings`): the line over a record's name (`eyebrow`), its status, the number
+ * it shows large (`figure`), the facts under it (`cardFields`) and the date that puts it on a month
+ * calendar (`calendar`). Merged into each collection's own `custom.list` (its board and its own
+ * card fields win), so a collection's file keeps its data and rules, and this file its looks.
+ */
+type Look = NonNullable<CollectionSettings["list"]>;
+
+const LOOKS: Record<string, Look> = {
+  cases: { calendar: "deadline", status: "stage", figure: "value", eyebrow: "caseType" },
+  customers: { eyebrow: "type", cardFields: ["country", "segment", "paymentTermsDays", "vessels"] },
+  suppliers: {
+    eyebrow: "country",
+    figure: "onTime",
+    cardFields: ["city", "categories", "replyHrs", "openRfqs"],
+  },
+  users: { eyebrow: "role", cardFields: ["office", "phone", "language"] },
+  "intake-messages": {
+    calendar: "receivedAt",
+    eyebrow: "channel",
+    cardFields: ["fromName", "classification", "receivedAt"],
+  },
+  "supplier-rfqs": { calendar: "dueAt", eyebrow: "supplier", cardFields: ["case", "dueAt", "reminders", "mode"] },
+  offers: {
+    calendar: "validUntil",
+    status: "compliance",
+    eyebrow: "supplier",
+    cardFields: ["case", "price", "currency", "leadDays", "validUntil"],
+  },
+  quotations: {
+    calendar: "validUntil",
+    figure: "totalExVat",
+    eyebrow: "case",
+    cardFields: ["version", "currency", "validUntil", "preparedBy"],
+  },
+  approvals: { eyebrow: "type", status: "status", cardFields: ["case", "progress", "whoDecides"] },
+  "purchase-orders": { figure: "total", eyebrow: "supplier", cardFields: ["case", "linesSummary", "deliverTo"] },
+  "supplier-bills": {
+    calendar: "dueDate",
+    figure: "amount",
+    eyebrow: "supplier",
+    cardFields: ["purchaseOrder", "dueDate", "holdReason"],
+  },
+  receipts: {
+    calendar: "receivedAt",
+    status: "qc",
+    eyebrow: "warehouse",
+    cardFields: ["item", "ordered", "received", "shortfall"],
+  },
+  deliveries: {
+    calendar: "plannedAt",
+    status: "status",
+    eyebrow: "place",
+    cardFields: ["case", "plannedAt", "dispatchedAt"],
+  },
+  invoices: {
+    calendar: "dueDate",
+    figure: "balance",
+    status: "status",
+    eyebrow: "customer",
+    cardFields: ["case", "dueDate", "ageBucket", "amount"],
+  },
+  payments: {
+    calendar: "paidAt",
+    figure: "amount",
+    status: "status",
+    eyebrow: "direction",
+    cardFields: ["kind", "invoice", "bill", "paidAt"],
+  },
+  vessels: { eyebrow: "vesselType", cardFields: ["imo", "flag", "customer", "manager"] },
+  products: { eyebrow: "store", cardFields: ["brand", "impa", "unit", "shelfLifeMonths"] },
+  "supplier-prices": {
+    calendar: "validUntil",
+    eyebrow: "supplier",
+    cardFields: ["product", "price", "currency", "per"],
+  },
+  pricelists: { calendar: "validUntil", eyebrow: "principal", cardFields: ["currency", "discountPct", "leadDays"] },
+  stock: { eyebrow: "warehouse", cardFields: ["product", "onHand", "reserved", "available"] },
+  tasks: { calendar: "due" },
+  activities: { calendar: "at", status: "kind", cardFields: ["case", "actor", "at"] },
+  "integration-exceptions": {
+    calendar: "occurredAt",
+    eyebrow: "source",
+    cardFields: ["impact", "retries", "occurredAt"],
+  },
+  opportunities: {
+    calendar: "nextStepDue",
+    eyebrow: "segment",
+    cardFields: ["kind", "nextStep", "nextStepDue", "estimatedValue"],
+  },
+  "vendor-registrations": {
+    calendar: "renewBy",
+    eyebrow: "portal",
+    cardFields: ["customer", "committeeDate", "renewBy", "nextStep"],
+  },
+  campaigns: {
+    calendar: "scheduledAt",
+    status: "contentStatus",
+    cardFields: ["audience", "recipients", "scheduledAt"],
+  },
+};
+
+/** The collections with their looks merged into `custom.list` (what they set themselves wins). */
+export function withLooks(collections: CollectionConfig[]): CollectionConfig[] {
+  return collections.map((c) => {
+    const look = LOOKS[c.slug];
+    if (!look) return c;
+    const own = (c.custom ?? {}) as CollectionSettings;
+    return { ...c, custom: { ...own, list: { ...look, ...own.list } } };
+  });
+}

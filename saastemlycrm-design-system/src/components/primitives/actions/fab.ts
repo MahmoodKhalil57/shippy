@@ -4,7 +4,7 @@ import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
-import { floating, inset, row, stack } from "../layout/algebra.ts";
+import { floating, floatingHeight, inset, row, stack } from "../layout/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
 import { iconButton } from "./icon-button.ts";
 
@@ -48,7 +48,7 @@ export const fabDock = rcva(
  * back into it on the exit curve, quicker. With Reduce motion it only fades.
  */
 export const fabPanel = rcva(
-  `liquid-glass ${stack} ${floating.md} h-[min(38rem,calc(100dvh-7rem))] overflow-hidden rounded-box origin-bottom-right starting:scale-50 starting:opacity-0 motion-reduce:scale-100`,
+  `liquid-glass ${stack} ${floating["8"]} ${floatingHeight.panel} overflow-hidden rounded-box origin-bottom-right starting:scale-50 starting:opacity-0 motion-reduce:scale-100`,
   {
     variants: {
       hidden: {

@@ -1,5 +1,35 @@
-import type { CollectionConfig } from "payload";
-import { CONTACT_RULES, CURRENCIES, PORTS, STORES, deskAccess, isManagement, logActivity } from "./shared.ts";
+import type { CollectionConfig, PayloadRequest } from "payload";
+import { formats, tones } from "saastemlycrm-design-system/contracts";
+import {
+  CONTACT_RULES,
+  CURRENCIES,
+  PORTS,
+  STORES,
+  computed,
+  deskAccess,
+  idOf,
+  isManagement,
+  logActivity,
+} from "./shared.ts";
+
+/** A supplier RFQ that is out and not fully answered yet. */
+export const OPEN_RFQ_STATUSES = ["Sent", "Awaiting reply", "Partial reply", "No response"];
+
+/** The supplier RFQs still open, read once per request (every supplier read counts its own). */
+async function openRfqs(req: PayloadRequest): Promise<Record<string, unknown>[]> {
+  const ctx = (req.context ??= {}) as { openRfqs?: Promise<Record<string, unknown>[]> };
+  ctx.openRfqs ??= req.payload
+    .find({
+      collection: "supplier-rfqs",
+      where: { status: { in: OPEN_RFQ_STATUSES } },
+      limit: 0,
+      depth: 0,
+      pagination: false,
+    } as never)
+    .then((r) => r.docs as unknown as Record<string, unknown>[])
+    .catch(() => []);
+  return ctx.openRfqs;
+}
 
 /** Sourcing categories (older records) + Golden Sea's stores. */
 export const CATEGORIES = [
@@ -41,6 +71,14 @@ const contactsField = {
       ],
     },
   ],
+};
+
+/** What each contact rule means for follow-ups and reminders. */
+const CONTACT_NOTE: Record<string, string> = {
+  allowed: "Follow-ups allowed, drafted for a person to send.",
+  "one-follow-up": "One customer follow-up per quotation; after that, internal reminders only.",
+  "do-not-chase":
+    "Follow-ups for this customer are internal reminders only — the system refuses customer-facing chasers.",
 };
 
 /** Shipowners, ship managers, offshore & industrial customers. */
@@ -152,10 +190,17 @@ export const Customers: CollectionConfig = {
     {
       name: "contactRule",
       type: "select",
+      label: "Contact rule",
       options: CONTACT_RULES,
+      custom: tones({ allowed: "success", "one-follow-up": "warning", "do-not-chase": "error" }),
       defaultValue: "allowed",
       admin: { position: "sidebar", description: "Applied to every follow-up and reminder automation." },
     },
+    // What the rule means for anyone about to contact them (never stored).
+    computed(
+      { name: "contactNote", type: "text", label: "What it means", admin: { position: "sidebar" } },
+      (c) => CONTACT_NOTE[typeof c.contactRule === "string" ? c.contactRule : "allowed"] ?? CONTACT_NOTE.allowed,
+    ),
     {
       name: "doNotChase",
       type: "checkbox",
@@ -297,8 +342,33 @@ export const Suppliers: CollectionConfig = {
             {
               type: "row",
               fields: [
-                { name: "replyHrs", type: "number", label: "Average reply (hours)", min: 0 },
-                { name: "onTime", type: "number", label: "On-time delivery %", min: 0, max: 100 },
+                {
+                  name: "replyHrs",
+                  type: "number",
+                  label: "Average reply (hours)",
+                  min: 0,
+                  // Amber past a day.
+                  custom: {
+                    number: { unit: "hours" as const },
+                    toneWhen: [{ when: { replyHrs: { greater_than: 24 } }, tone: "warning" }],
+                  },
+                },
+                {
+                  name: "onTime",
+                  type: "number",
+                  label: "On-time delivery %",
+                  min: 0,
+                  max: 100,
+                  // A bar of 100%: amber under 85%, green from there.
+                  custom: {
+                    ...formats.percent(0),
+                    gauge: { max: 100 },
+                    toneWhen: [
+                      { when: { onTime: { less_than: 85 } }, tone: "warning" },
+                      { when: {}, tone: "success" },
+                    ],
+                  },
+                },
                 { name: "compliance", type: "number", label: "Compliant offers %", min: 0, max: 100 },
               ],
             },
@@ -307,6 +377,11 @@ export const Suppliers: CollectionConfig = {
               fields: [
                 { name: "rfqCount", type: "number", label: "RFQs received", min: 0, admin: { readOnly: true } },
                 { name: "poCount", type: "number", label: "POs placed", min: 0, admin: { readOnly: true } },
+                // The RFQs sent to it that it hasn't fully answered (never stored).
+                computed(
+                  { name: "openRfqs", type: "number", label: "Open RFQs" },
+                  async (s, req) => (await openRfqs(req)).filter((r) => idOf(r.supplier) === s.id).length,
+                ),
               ],
             },
           ],

@@ -60,7 +60,6 @@ export const pct = (n: number) => `${n.toFixed(1)}%`;
 export const MONEY_ROLES = ["management", "finance-director", "operations"];
 /** Roles that may record receipts, credit notes and close a case. */
 export const FINANCE_ROLES = ["management", "finance-director", "operations"];
-export const seesCosts = (role: string) => role !== "sales";
 
 export async function all(req: PayloadRequest, collection: string, depth = 1) {
   const r = await req.payload.find({ collection: collection as never, pagination: false, depth });

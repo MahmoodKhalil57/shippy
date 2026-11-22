@@ -88,7 +88,12 @@ export class LightElement extends LitElement {
  *   `<ui-join>${items.map(...)}</ui-join>`, are kept.
  * - Rendering into a new part (the host switched templates, e.g. `<button>` to
  *   `<a>`) moves whatever currently sits in the previous part, so those
- *   additions move along too.
+ *   additions move along too. *
+ * An authoring template whose expression is the host's last child (`<x-host>${content}</x-host>`)
+ * gives Lit a part with no end marker: it runs to the end of its parent. Once its nodes are moved
+ * into a box beside what the host renders after them (`<ui-tile-arrange>`'s handles), changing that
+ * expression clears those too. End such an expression with a comment when the content changes:
+ * `<x-host>${content}<!----></x-host>`.
  */
 class SlotDirective extends Directive {
   constructor(info: PartInfo) {

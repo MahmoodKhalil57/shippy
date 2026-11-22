@@ -5,7 +5,11 @@ import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import type { CollectionConfig, Where } from "payload";
 import { parse, stringify } from "qs-esm";
-import { api, withBase, type FindOptions } from "../api/client.ts";
+import { DASHBOARD_ROUTE, api, withBase, type FindOptions } from "../api/client.ts";
+import { todayIso, type CollectionViewSpec } from "./widgets/widget.ts";
+import type { RecordItem } from "../components/primitives/data/record.ts";
+import type { MonthEvent } from "../components/primitives/data/month.ts";
+import { linkTarget } from "./widgets/links.ts";
 import type { Select } from "../payload/select.ts";
 import type { Doc, FieldLike, PaginatedDocs } from "../contracts/config.ts";
 import "../components/index.ts";
@@ -28,6 +32,7 @@ import {
   cellText,
   collectionOf,
   columnsOf,
+  addressOf,
   dashboardPath,
   dataFields,
   formFields,
@@ -101,8 +106,21 @@ const isPerson = (f: FieldLike) => {
   const target = relatedSlug(f);
   return !!target && !f.hasMany && !!collectionOf(target)?.auth;
 };
-/** The record the URL says is open in the sheet (`?open=<id>`). */
-const readOpen = () => new URLSearchParams(location.search).get("open") ?? "";
+/** The URL's query, parsed (nested: `?cases[q]=…`). */
+const urlQuery = () =>
+  parse(location.search, { ignoreQueryPrefix: true, depth: 6, arrayLimit: 200 }) as Record<string, unknown>;
+/** This list's part of the URL: everything under its key (`?cases[q]=…`), or the whole query without one. */
+const ownQuery = (key: string): Record<string, unknown> | undefined => {
+  const raw = urlQuery();
+  if (!key) return raw;
+  const own = raw[key];
+  return own && typeof own === "object" ? (own as Record<string, unknown>) : undefined;
+};
+/** The record the URL says is open in the sheet (`?<key>[open]=<id>`). */
+const readOpen = (key: string) => {
+  const open = ownQuery(key)?.open;
+  return typeof open === "string" ? open : "";
+};
 /** How long the sheet takes to leave (its form stays in it meanwhile). */
 const SHEET_LEAVES = 300;
 
@@ -140,12 +158,59 @@ interface ListQuery {
   match: FilterMatch;
   /** Set only when the URL says (a shared link); otherwise the person's own choice applies. */
   view?: ListLayout;
+  /** The calendar's month (YYYY-MM), when the URL says. */
+  month?: string;
 }
-type ListLayout = "table" | "cards" | "board";
+type ListLayout =
+  | "table"
+  | "cards"
+  | "list"
+  | "compact"
+  | "focus"
+  | "groups"
+  | "board"
+  | "calendar"
+  | "timeline"
+  | "heatmap"
+  | "ranking"
+  | "treemap"
+  | "scatter";
+const LAYOUTS: ListLayout[] = [
+  "table",
+  "cards",
+  "list",
+  "compact",
+  "focus",
+  "groups",
+  "board",
+  "calendar",
+  "timeline",
+  "heatmap",
+  "ranking",
+  "treemap",
+  "scatter",
+];
+/** Layouts that show the whole collection (as filtered) at once: no pages. */
+const WHOLE: ListLayout[] = ["calendar", "timeline", "heatmap", "ranking", "treemap", "scatter"];
+const DAY_MS = 86_400_000;
+const dayLabel = new Intl.DateTimeFormat("en-GB", {
+  weekday: "short",
+  day: "numeric",
+  month: "short",
+  timeZone: "UTC",
+});
+const longDate = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 const DEFAULTS: ListQuery = { q: "", sort: "", page: 1, limit: "10", filters: [], match: "and" };
 
-function readQuery(): ListQuery {
-  const raw = parse(location.search, { ignoreQueryPrefix: true, depth: 5, arrayLimit: 200 }) as Record<string, unknown>;
+/** What the URL says for this list, else what its widget starts with (`CollectionViewSpec`). */
+function readQuery(key: string, spec: CollectionViewSpec | null): ListQuery {
+  const own = ownQuery(key);
+  const raw: Record<string, unknown> = own ?? {
+    sort: spec?.sort,
+    limit: spec?.limit !== undefined ? String(spec.limit) : undefined,
+    filters: spec?.filters,
+    view: spec?.layout,
+  };
   const filters = Array.isArray(raw.filters)
     ? (raw.filters as Record<string, unknown>[]).flatMap((f): FilterCondition[] =>
         typeof f?.field === "string" && typeof f.operator === "string"
@@ -171,13 +236,33 @@ function readQuery(): ListQuery {
     limit: ["10", "25", "50", "100"].includes(String(raw.limit)) ? String(raw.limit) : "10",
     filters,
     match: raw.match === "or" ? "or" : "and",
-    view: raw.view === "cards" || raw.view === "table" || raw.view === "board" ? raw.view : undefined,
+    view: LAYOUTS.includes(raw.view as ListLayout) ? (raw.view as ListLayout) : undefined,
+    month: typeof raw.month === "string" && /^\d{4}-\d{2}$/.test(raw.month) ? raw.month : undefined,
   };
 }
+
+/** Pages already fetched this session, by collection and query (`DashboardListView._load`). */
+const listCache = new Map<string, PaginatedDocs>();
 
 @customElement("dashboard-list-view")
 export class DashboardListView extends LightElement {
   @property() slug = "";
+  /**
+   * Its name in the URL: its state lives under it (`?cases[q]=…&cases[page]=2`), so several lists
+   * share a page. Empty: the whole query.
+   */
+  @property() stateKey = "";
+  /** What its widget says (./widgets/widget.ts `CollectionViewSpec`): presets, a fixed `where`, parts to hide. */
+  @property({ attribute: false }) spec: CollectionViewSpec | null = null;
+  /**
+   * In a `collection` widget's tile (./widgets/host.ts): only the list itself; the tile has the
+   * heading and the count (`dashboard-list-count`, after each load), Create sits in the toolbar,
+   * and the widgets around the list are tiles of the board beside it.
+   */
+  @property({ type: Boolean }) tile = false;
+  /** Its heading and the line under it, when its widget names them (`title`, `subhead`): the collection's otherwise. */
+  @property() heading = "";
+  @property() subhead = "";
   @property({ attribute: false }) access!: Access;
   /** Who is signed in (the open record's form reads it). */
   @property({ attribute: false }) user: (Doc & { collection: string }) | null = null;
@@ -223,14 +308,16 @@ export class DashboardListView extends LightElement {
   }
 
   protected willUpdate(changed: PropertyValues<this>) {
-    if (changed.has("slug")) {
-      this.query = readQuery();
+    if (changed.has("slug") || changed.has("stateKey") || changed.has("spec")) {
+      this.query = readQuery(this.stateKey, this.spec);
       this.typed = this.query.q;
       this.selected = [];
       this.allMatching = false;
-      this.result = null;
+      // Another collection: nothing of this one's rows applies. The same collection set up anew:
+      // its rows stay until the new ones are in (`_load`).
+      if (changed.has("slug")) this.result = null;
       this.relatedOptions = {};
-      this.openId = this.sheetId = readOpen();
+      this.openId = this.sheetId = readOpen(this.stateKey);
       this.doc = null;
       this.leaving = null;
       void this._loadRelatedOptions();
@@ -238,7 +325,8 @@ export class DashboardListView extends LightElement {
   }
 
   protected updated(changed: PropertyValues<this>) {
-    if (changed.has("slug") || (changed as Map<PropertyKey, unknown>).has("query")) void this._load();
+    if (changed.has("slug") || changed.has("spec") || (changed as Map<PropertyKey, unknown>).has("query"))
+      void this._load();
   }
 
   /** Changes the query: back to page 1 unless the page itself changed; mirrored in the URL. */
@@ -249,11 +337,14 @@ export class DashboardListView extends LightElement {
     history.replaceState(history.state, "", this._url());
   }
 
-  /** This list's address for its current state, with `open` as the record in the sheet. */
+  /**
+   * This list's address for its current state, with `open` as the record in the sheet: its own part
+   * of the query (under its key), the rest of the URL as it is (other lists, the screen's parameters).
+   */
   private _url(open = this.openId) {
-    const { q, sort, page, limit, filters, match, view } = this.query;
-    const qs = stringify(
-      {
+    const { q, sort, page, limit, filters, match, view, month } = this.query;
+    const mine = Object.fromEntries(
+      Object.entries({
         q: q || undefined,
         sort: sort || undefined,
         page: page > 1 ? page : undefined,
@@ -261,10 +352,12 @@ export class DashboardListView extends LightElement {
         filters: filters.length ? filters : undefined,
         match: filters.length > 1 && match === "or" ? match : undefined,
         view,
+        month,
         open: open || undefined,
-      },
-      { addQueryPrefix: true, encodeValuesOnly: true },
+      }).filter(([, v]) => v !== undefined),
     );
+    const all = this.stateKey ? { ...urlQuery(), [this.stateKey]: Object.keys(mine).length ? mine : undefined } : mine;
+    const qs = stringify(all, { addQueryPrefix: true, encodeValuesOnly: true });
     return `${location.pathname}${qs}`;
   }
 
@@ -303,16 +396,15 @@ export class DashboardListView extends LightElement {
 
   /** Back and forward: the URL is the state (which record is open, the filters). */
   private _onPop = () => {
-    const route = parseRoute(location.pathname);
-    if (route.name !== "list" || route.slug !== this.slug) return;
-    const open = readOpen();
+    if (!this.isConnected) return;
+    const open = readOpen(this.stateKey);
     if (this.openId && open !== this.openId && this.doc?.dirty) {
       // Back with unsaved changes: stay on the record, and ask.
       history.pushState({ sheet: true }, "", this._url());
       this.leaving = () => (open ? this._open(open) : this._closed());
       return;
     }
-    const query = readQuery();
+    const query = readQuery(this.stateKey, this.spec);
     if (JSON.stringify(query) !== JSON.stringify(this.query)) {
       this.query = query;
       this.typed = query.q;
@@ -336,16 +428,18 @@ export class DashboardListView extends LightElement {
     const a = path.find((n): n is HTMLAnchorElement => n instanceof HTMLAnchorElement);
     if (!a || a.target === "_blank" || a.hasAttribute("download") || a.origin !== location.origin) return;
     const to = withBase(a.pathname);
-    const route = parseRoute(to);
     if (path.some((n) => n instanceof Element && n.localName === "ui-sheet")) {
-      if (route.name === "not-found" || !this.doc?.dirty) return;
+      if (parseRoute(to).name === "not-found" || !this.doc?.dirty) return;
       e.preventDefault();
       this.leaving = () => navigate(to + a.search);
       return;
     }
-    if (route.name !== "edit" || route.slug !== this.slug || route.tab) return;
+    // One of this collection's records (its canonical address) in this list: it opens in the sheet.
+    const target = linkTarget(a.pathname.slice(DASHBOARD_ROUTE.length) || "/");
+    if (target.kind !== "doc" || target.collection !== this.slug || target.tab) return;
+    if (a.closest("dashboard-list-view") !== this) return;
     e.preventDefault();
-    this._open(route.id);
+    this._open(target.id);
   };
 
   /** The open record's form (it saves itself; the sheet's Save asks it to). */
@@ -360,23 +454,31 @@ export class DashboardListView extends LightElement {
 
   // ---------------------------------------------------------------- columns and filters
 
+  /**
+   * Where this person's choices (columns, their order and widths, the layout) are kept: the
+   * collection's, for its home list; for a list placed elsewhere with its own setup, that list's.
+   */
+  private get prefKey() {
+    return this.spec && !this.spec.home ? `${this.slug}@${location.pathname}#${this.stateKey}` : this.slug;
+  }
+
   private get hiddenDefaults() {
-    const shown = new Set(columnsOf(this.collection).map((f) => f.name));
+    const shown = new Set(this.spec?.columns ?? columnsOf(this.collection).map((f) => f.name));
     return allColumns(this.collection)
       .map((f) => f.name!)
       .filter((n) => !shown.has(n));
   }
 
   private get hiddenKeys() {
-    return this.#prefs.value.listColumns[this.slug] ?? this.hiddenDefaults;
+    return this.#prefs.value.listColumns[this.prefKey] ?? this.hiddenDefaults;
   }
 
   private get columnOrder() {
-    return this.#prefs.value.listColumnOrder[this.slug] ?? [];
+    return this.#prefs.value.listColumnOrder[this.prefKey] ?? [];
   }
 
   private get columnWidths() {
-    return this.#prefs.value.listColumnWidths[this.slug] ?? {};
+    return this.#prefs.value.listColumnWidths[this.prefKey] ?? {};
   }
 
   /** The shown columns, in the person's order (the table, the cards and the CSV export agree). */
@@ -450,12 +552,28 @@ export class DashboardListView extends LightElement {
         ? { or: [{ [field]: { like: q } }, { [field]: { like: english } }] }
         : { [field]: { like: q } };
     const filtersWhere = filterWhere(filters, match, this._filterFields()) as Where | undefined;
-    const parts = [search, filtersWhere].filter((w): w is Where => !!w);
+    // The widget's own `where` is always applied, under what people search and filter.
+    const fixed = this.spec?.where as Where | undefined;
+    const parts = [fixed, search, filtersWhere].filter((w): w is Where => !!w);
     // The columns on screen, plus what cards and the board show (their field and card fields).
     const shown =
       this.view === "table"
         ? []
-        : [...this._cardFields(), ...(this.view === "board" && this.boardField ? [this.boardField] : [])];
+        : [
+            ...this._cardFields(),
+            ...(this.view === "board" && this.boardField ? [this.boardField] : []),
+            ...this._recordParts().fields,
+            ...(this.calendarField ? [this.calendarField] : []),
+            ...this._scatterFields(),
+          ];
+    // A calendar holds its month's records, all of them.
+    const cal = this.view === "calendar" ? this.calendarField : undefined;
+    if (cal) {
+      const [y, m] = this._month.split("-").map(Number) as [number, number];
+      const start = new Date(Date.UTC(y, m - 1, 1)).toISOString();
+      const end = new Date(Date.UTC(y, m, 1)).toISOString();
+      parts.push({ [cal.name!]: { greater_than_equal: start, less_than: end } } as Where);
+    }
     const visible = [...new Set([...this.visible, ...shown])];
     const select: Select = Object.fromEntries([field, ...visible.map((f) => f.name!)].map((n) => [n, true]));
     const populate = Object.fromEntries(
@@ -469,8 +587,8 @@ export class DashboardListView extends LightElement {
     return {
       where: parts.length > 1 ? { and: parts } : parts[0],
       sort: sort || undefined,
-      page: all ? 1 : page,
-      limit: all ? 0 : Number(limit),
+      page: all || cal || WHOLE.includes(this.view) ? 1 : page,
+      limit: all || cal || WHOLE.includes(this.view) ? 0 : Number(limit),
       depth: 1,
       select,
       populate,
@@ -478,13 +596,25 @@ export class DashboardListView extends LightElement {
     };
   }
 
+  /**
+   * Loads the page the query asks for, stale while it revalidates: rows already fetched for this
+   * exact query (`listCache`, kept for the session) show at once, the rows on screen stay while the
+   * request runs (the skeleton only when there's nothing to show), and the answer replaces them
+   * only if it differs.
+   */
   private async _load() {
     const id = ++this.#request;
     this.loading = true;
     try {
-      const result = await api.find(this.slug, await this._options());
+      const options = await this._options();
+      const cacheKey = `${this.slug} ${JSON.stringify(options)}`;
+      const cached = listCache.get(cacheKey);
+      if (cached && id === this.#request) this.result = cached;
+      const result = await api.find(this.slug, options);
       if (id !== this.#request) return;
-      this.result = result;
+      listCache.set(cacheKey, result);
+      if (JSON.stringify(result) !== JSON.stringify(this.result)) this.result = result;
+      this.dispatchEvent(new CustomEvent("dashboard-list-count", { detail: { count: result.totalDocs } }));
     } catch (e) {
       if (id === this.#request) toast((e as Error).message, "error");
     } finally {
@@ -532,7 +662,7 @@ export class DashboardListView extends LightElement {
       const { singular, plural } = related ? labels(related) : { singular: "item", plural: "items" };
       return `${count} ${(count === 1 ? singular : plural).toLowerCase()}`;
     }
-    return cellText(f, v);
+    return cellText(f, v, doc);
   }
 
   /**
@@ -556,12 +686,123 @@ export class DashboardListView extends LightElement {
 
   /** Table, cards or board: the URL's `view` if it says, else what this person last chose. */
   private get view(): ListLayout {
-    const v = this.query.view ?? this.#prefs.value.listView[this.slug] ?? "table";
-    return v === "board" && !this.boardField ? "table" : v;
+    const v = (this.query.view ??
+      this.#prefs.value.listView[this.prefKey] ??
+      this.spec?.layout ??
+      "table") as ListLayout;
+    return this._layouts().some((l) => l.value === v) ? v : "table";
+  }
+
+  /** The number fields a scatter plots (`custom.list.scatter`, else the first two number fields). */
+  private _scatterFields(): FieldLike[] {
+    const all = dataFields(formFields(this.collection));
+    const named = collectionSettings(this.collection).list?.scatter;
+    const numbers = all.filter((f) => f.type === "number");
+    const pick = named ? named.flatMap((n) => numbers.filter((f) => f.name === n)) : numbers.slice(0, 2);
+    return pick.length === 2 ? pick : [];
+  }
+
+  /** The date field a calendar lays records out by (the collection's `custom.list.calendar`), if any. */
+  private get calendarField(): FieldLike | undefined {
+    const name = collectionSettings(this.collection).list?.calendar;
+    return name ? dataFields(formFields(this.collection)).find((f) => f.name === name && f.type === "date") : undefined;
+  }
+
+  /** The calendar's month: the URL's, else the month of the dashboard's today. */
+  private get _month() {
+    return this.query.month ?? todayIso().slice(0, 7);
+  }
+
+  /**
+   * What a card or a row shows besides its facts: its status (the `list.status` field, else the
+   * board's, else the first toned select), its figure (`list.figure`, else the first money field),
+   * the person on it and the field over its title (`list.eyebrow`).
+   */
+  private _recordParts() {
+    const settings = collectionSettings(this.collection).list ?? {};
+    const all = dataFields(formFields(this.collection));
+    const named = (n?: string) => (n ? all.find((f) => f.name === n) : undefined);
+    const status = named(settings.status) ?? this.boardField ?? all.find(isToned);
+    const figure =
+      named(settings.figure) ??
+      all.find(
+        (f) =>
+          f.type === "number" && (f.custom as { number?: { unit?: string } } | undefined)?.number?.unit === "money",
+      );
+    const person = all.find(isPerson);
+    const eyebrow = named(settings.eyebrow);
+    return {
+      status,
+      figure,
+      person,
+      eyebrow,
+      fields: [status, figure, person, eyebrow].filter((f): f is FieldLike => !!f),
+    };
+  }
+
+  /** A document as a card or a row: its title, status, figure, person and up to four facts. */
+  private _record(doc: Doc): RecordItem {
+    const c = this.collection;
+    const { status, figure, person, eyebrow } = this._recordParts();
+    const title = useAsTitle(c);
+    const said = (f: FieldLike | undefined) => {
+      const t = f ? this._cellText(f, doc) : "";
+      return t && t !== "—" ? t : "";
+    };
+    const statusLabel = said(status);
+    const used = new Set([title, status?.name, figure?.name, person?.name, eyebrow?.name]);
+    const facts = this._cardFields()
+      .filter((f) => !used.has(f.name))
+      .map((f) => ({ label: labelOf(f), value: said(f) }))
+      .filter((f) => f.value)
+      .slice(0, 4);
+    const figureText = said(figure);
+    return {
+      key: String(doc.id),
+      title: titleOf(c, doc),
+      href: dashboardPath("collections", this.slug, String(doc.id)),
+      eyebrow: said(eyebrow) || undefined,
+      // A record named by a code (an invoice, a case) takes the monogram of whom it's for: the
+      // related record over its title, else the first related record among its facts.
+      monogram:
+        eyebrow && relatedSlug(eyebrow) && said(eyebrow)
+          ? said(eyebrow)
+          : /\d/.test(titleOf(c, doc))
+            ? said(this._cardFields().find((f) => relatedSlug(f) && !isPerson(f) && said(f))) || undefined
+            : undefined,
+      status:
+        status && statusLabel
+          ? { label: statusLabel, tone: toneOf(status, doc[status.name!], statusLabel) }
+          : undefined,
+      figure: figure && figureText ? { label: labelOf(figure), value: figureText } : undefined,
+      person: said(person) || undefined,
+      facts,
+    };
+  }
+
+  /** The layouts this collection can take: a board and a calendar only where it names their fields. */
+  private _layouts() {
+    const { status, figure } = this._recordParts();
+    const when = (ok: unknown, value: ListLayout, label: string) => (ok ? [{ value, label }] : []);
+    return [
+      { value: "table", label: "Table" },
+      { value: "cards", label: "Cards" },
+      { value: "list", label: "List" },
+      { value: "compact", label: "Compact" },
+      { value: "focus", label: "Focus, one at a time" },
+      ...when(status, "groups", `Grouped by ${(status ? labelOf(status) : "").toLowerCase()}`),
+      ...when(this.boardField, "board", "Board"),
+      ...when(this.calendarField, "calendar", "Calendar"),
+      ...when(this.calendarField, "timeline", "Timeline"),
+      ...when(this.calendarField, "heatmap", "Heatmap"),
+      ...when(figure, "ranking", `Ranking by ${(figure ? labelOf(figure) : "").toLowerCase()}`),
+      ...when(figure, "treemap", "Treemap"),
+      ...when(this._scatterFields().length, "scatter", "Scatter"),
+    ] as { value: ListLayout; label: string }[];
   }
 
   private _view(view: ListLayout) {
-    preferences.set((p) => ({ listView: { ...p.listView, [this.slug]: view } }));
+    preferences.set((p) => ({ listView: { ...p.listView, [this.prefKey]: view } }));
     this.selected = [];
     this.allMatching = false;
     this._set({ view, page: this.query.page });
@@ -647,7 +888,7 @@ export class DashboardListView extends LightElement {
     const c = this.collection;
     const f = this.boardField!;
     const r = this.result;
-    if (!r?.docs.length) return this.loading || !r ? html`<ui-empty-state loading></ui-empty-state>` : empty;
+    if (!r?.docs.length) return !r ? html`<ui-empty-state loading></ui-empty-state>` : empty;
     const shown = this._cardFields().filter((x) => x.name !== f.name);
     const person = shown.find(isPerson);
     const fields = shown.filter((x) => x !== person);
@@ -731,27 +972,311 @@ export class DashboardListView extends LightElement {
     const title = useAsTitle(c);
     const r = this.result;
     if (!r?.docs.length) {
-      return this.loading || !r
+      return !r
         ? html`<ui-grid fit="sm" gap="4">
             ${Array.from({ length: 6 }, () => html`<ui-skeleton template="rectangle"></ui-skeleton>`)}
           </ui-grid>`
         : html`<ui-box border rounded="box" padding="8">${empty}</ui-box>`;
     }
-    const fields = this._cardFields().filter((f) => f.name !== title);
-    return html`<ui-grid fit="sm" gap="4">
-      ${r.docs.map(
-        (doc) =>
-          html`<ui-card
-            size="sm"
-            href=${dashboardPath("collections", this.slug, String(doc.id))}
-            .heading=${titleOf(c, doc)}
-          >
-            <ui-description-list
-              .items=${fields.map((f) => ({ label: labelOf(f), value: this._status(f, doc) ?? this._cellText(f, doc) }))}
-            ></ui-description-list>
-          </ui-card>`,
-      )}
-    </ui-grid>`;
+    void title;
+    return html`<ui-record-cards
+      .label=${labels(c).plural}
+      .records=${r.docs.map((d) => this._record(d))}
+    ></ui-record-cards>`;
+  }
+
+  /** Each document as a rich row: its monogram, name, facts, status and figure. */
+  private _rows(empty: unknown) {
+    const r = this.result;
+    if (!r?.docs.length) {
+      return !r
+        ? html`<ui-flex direction="col" gap="2">
+            ${Array.from({ length: 6 }, () => html`<ui-skeleton template="rectangle"></ui-skeleton>`)}
+          </ui-flex>`
+        : html`<ui-box border rounded="box" padding="8">${empty}</ui-box>`;
+    }
+    return html`<ui-record-list
+      .label=${labels(this.collection).plural}
+      .records=${r.docs.map((d) => this._record(d))}
+    ></ui-record-list>`;
+  }
+
+  /** The records, or the loading or empty state, for the layouts drawn from them. */
+  private _visual(view: ListLayout, empty: unknown) {
+    const r = this.result;
+    if (!r?.docs.length)
+      return !r
+        ? html`<ui-skeleton template="rectangle"></ui-skeleton>`
+        : html`<ui-box border rounded="box" padding="8">${empty}</ui-box>`;
+    const plural = labels(this.collection).plural;
+    const records = r.docs.map((d) => this._record(d));
+    switch (view) {
+      case "compact":
+        return html`<ui-record-chips .label=${plural} .records=${records}></ui-record-chips>`;
+      case "focus":
+        return this._focus(records);
+      case "groups":
+        return this._groups(r.docs);
+      case "timeline":
+        return this._timeline(r.docs);
+      case "heatmap":
+        return this._heatmap(r.docs);
+      case "ranking":
+      case "treemap":
+        return this._ranked(view, r.docs);
+      case "scatter":
+        return this._scatter(r.docs);
+      default:
+        return nothing;
+    }
+  }
+
+  /** The record in focus (`focus`), its place among the records on screen. */
+  @state() private focusAt = 0;
+
+  /**
+   * One record at a time, large (its summary), stepped through with the buttons or ← → (Home and
+   * End for the ends; mirrored right to left): for going through a queue one by one.
+   */
+  private _focus(records: RecordItem[]) {
+    const n = records.length;
+    const at = Math.min(this.focusAt, n - 1);
+    const rec = records[at]!;
+    const go = (i: number) => (this.focusAt = Math.min(n - 1, Math.max(0, i)));
+    const key = (e: KeyboardEvent) => {
+      const rtl = getComputedStyle(this).direction === "rtl";
+      const step: Record<string, number> = { ArrowLeft: rtl ? 1 : -1, ArrowRight: rtl ? -1 : 1 };
+      if (e.key in step) go(at + step[e.key]!);
+      else if (e.key === "Home") go(0);
+      else if (e.key === "End") go(n - 1);
+      else return;
+      e.preventDefault();
+    };
+    return html`<ui-flex direction="col" gap="4" @keydown=${key}>
+      <ui-flex align="center" gap="2" wrap>
+        <ui-icon-button
+          icon="chevron-left"
+          label="Previous"
+          size="sm"
+          ?disabled=${at === 0}
+          @click=${() => go(at - 1)}
+        ></ui-icon-button>
+        <ui-text variant="title-sm">${at + 1} of ${n}</ui-text>
+        <ui-icon-button
+          icon="chevron-right"
+          label="Next"
+          size="sm"
+          ?disabled=${at === n - 1}
+          @click=${() => go(at + 1)}
+        ></ui-icon-button>
+        ${rec.href ? html`<ui-button size="xs" variant="tonal" href=${rec.href}>Open</ui-button>` : nothing}
+      </ui-flex>
+      <ui-progress .value=${((at + 1) / n) * 100} max="100" label=${`${at + 1} of ${n}`}></ui-progress>
+      <ui-record-hero
+        .record=${rec}
+        .figures=${[...(rec.figure ? [rec.figure] : []), ...(rec.facts ?? [])]}
+        .meta=${rec.person ? `With ${rec.person}` : ""}
+      ></ui-record-hero>
+    </ui-flex>`;
+  }
+
+  /** The records under their status, in the field's own order, each group with its count. */
+  private _groups(docs: Doc[]) {
+    const f = this._recordParts().status!;
+    const order = (f.options ?? []).map((o) => (typeof o === "string" ? o : o.value));
+    const groups = new Map<string, Doc[]>();
+    for (const d of docs) {
+      const v = d[f.name!];
+      const key = typeof v === "string" ? v : "";
+      groups.set(key, [...(groups.get(key) ?? []), d]);
+    }
+    const keys = [...groups.keys()].sort((a, b) => {
+      const ia = order.indexOf(a);
+      const ib = order.indexOf(b);
+      return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib);
+    });
+    return html`<ui-flex direction="col" gap="5">
+      ${keys.map((k) => {
+        const rows = groups.get(k)!;
+        const label = k ? this._cellText(f, rows[0]!) : `No ${labelOf(f).toLowerCase()}`;
+        return html`<ui-flex direction="col" gap="2">
+          <ui-flex align="center" gap="2">
+            <ui-tag .tone=${toneOf(f, k, label)}>${label}</ui-tag>
+            <ui-text variant="body-sm" color="muted">${rows.length}</ui-text>
+          </ui-flex>
+          <ui-record-list
+            .label=${label}
+            .records=${rows.map((d) => ({ ...this._record(d), status: undefined }))}
+          ></ui-record-list>
+        </ui-flex>`;
+      })}
+    </ui-flex>`;
+  }
+
+  /** The records along their date (the calendar field), newest first, each with its status. */
+  private _timeline(docs: Doc[]) {
+    const f = this.calendarField!;
+    const dated = docs
+      .filter((d) => typeof d[f.name!] === "string")
+      .sort((a, b) => String(b[f.name!]).localeCompare(String(a[f.name!])));
+    return html`<ui-timeline
+      direction="vertical"
+      compact
+      snap-icon
+      .items=${dated.map((d) => {
+        const rec = this._record(d);
+        const when = longDate.format(new Date(String(d[f.name!])));
+        const under = [rec.status?.label, rec.figure?.value, ...(rec.facts ?? []).slice(0, 2).map((x) => x.value)]
+          .filter(Boolean)
+          .join(" · ");
+        return {
+          start: when,
+          end: {
+            heading: rec.href ? html`<ui-link href=${rec.href}>${rec.title}</ui-link>` : rec.title,
+            text: under,
+          },
+          box: "end",
+        };
+      })}
+    ></ui-timeline>`;
+  }
+
+  /** How many records fall on each day (the calendar field), 12 weeks to the later of today and the last. */
+  private _heatmap(docs: Doc[]) {
+    const f = this.calendarField!;
+    const counts = new Map<string, number>();
+    for (const d of docs) {
+      const v = d[f.name!];
+      if (typeof v === "string") counts.set(v.slice(0, 10), (counts.get(v.slice(0, 10)) ?? 0) + 1);
+    }
+    const last = [todayIso(), ...counts.keys()].sort().at(-1)!;
+    const end = Date.parse(`${last}T00:00:00Z`);
+    // Twelve whole weeks, Sunday to Saturday, the last one holding `last`.
+    const start = end - (new Date(end).getUTCDay() + 7 * 11) * DAY_MS;
+    const days = Math.round((end - start) / DAY_MS) + 7 - new Date(end).getUTCDay();
+    const { plural, singular } = labels(this.collection);
+    const cells = Array.from({ length: days }, (_, i) => {
+      const t = start + i * DAY_MS;
+      const n = counts.get(new Date(t).toISOString().slice(0, 10)) ?? 0;
+      return {
+        label: dayLabel.format(new Date(t)).replace(",", ""),
+        value: n,
+        valueText: `${n} ${(n === 1 ? singular : plural).toLowerCase()}`,
+      };
+    });
+    const total = cells.reduce((t, c) => t + c.value, 0);
+    return html`<ui-heatmap
+      .label=${`${plural} per day by ${labelOf(f).toLowerCase()}`}
+      .summary=${`${total} ${plural.toLowerCase()} in 12 weeks by ${labelOf(f).toLowerCase()}`}
+      .cells=${cells}
+    ></ui-heatmap>`;
+  }
+
+  /** The records by their figure: as bars, largest first (`ranking`), or as a treemap. */
+  private _ranked(view: "ranking" | "treemap", docs: Doc[]) {
+    const f = this._recordParts().figure!;
+    const valued = docs
+      .map((d) => ({ d, v: Number(d[f.name!]) }))
+      .filter((x) => Number.isFinite(x.v) && x.v > 0)
+      .sort((a, b) => b.v - a.v);
+    const most = valued[0]?.v ?? 1;
+    const plural = labels(this.collection).plural;
+    if (view === "treemap")
+      return html`<ui-treemap
+        .label=${`${plural} by ${labelOf(f).toLowerCase()}`}
+        .items=${valued.map(({ d, v }) => {
+          const rec = this._record(d);
+          return { label: rec.title, value: v, valueText: rec.figure?.value ?? String(v), href: rec.href };
+        })}
+      ></ui-treemap>`;
+    return html`<ui-record-list
+      .label=${`${plural} by ${labelOf(f).toLowerCase()}`}
+      .records=${valued.map(({ d, v }) => ({ ...this._record(d), progress: v / most }))}
+    ></ui-record-list>`;
+  }
+
+  /** The records on two of their numbers, split at the medians; pointing at one reads it. */
+  private _scatter(docs: Doc[]) {
+    const [x, y] = this._scatterFields() as [FieldLike, FieldLike];
+    const points = docs.flatMap((d) => {
+      const vx = Number(d[x.name!]);
+      const vy = Number(d[y.name!]);
+      if (d[x.name!] == null || d[y.name!] == null || !Number.isFinite(vx) || !Number.isFinite(vy)) return [];
+      const rec = this._record(d);
+      return [
+        {
+          label: rec.title,
+          x: vx,
+          y: vy,
+          valueText: `${labelOf(x)} ${this._cellText(x, d)} · ${labelOf(y)} ${this._cellText(y, d)}`,
+          href: rec.href,
+        },
+      ];
+    });
+    return html`<ui-quadrant
+      .label=${`${labels(this.collection).plural}: ${labelOf(x).toLowerCase()} and ${labelOf(y).toLowerCase()}`}
+      .xLabel=${labelOf(x)}
+      .yLabel=${labelOf(y)}
+      .points=${points}
+    ></ui-quadrant>`;
+  }
+
+  /** A month of the records, each on its day (the calendar field's), its status as its dot. */
+  private _calendar() {
+    const f = this.calendarField!;
+    const month = this._month;
+    const [y, m] = month.split("-").map(Number) as [number, number];
+    const shift = (n: number) => new Date(Date.UTC(y, m - 1 + n, 1)).toISOString().slice(0, 7);
+    const toneFor = (t: string | undefined): MonthEvent["tone"] =>
+      t === "warning" || t === "error" || t === "success" || t === "neutral" ? t : undefined;
+    const events: MonthEvent[] = (this.result?.docs ?? []).flatMap((d) => {
+      const v = d[f.name!];
+      if (typeof v !== "string") return [];
+      const rec = this._record(d);
+      return [
+        {
+          date: v.slice(0, 10),
+          label: rec.status ? `${rec.title} · ${rec.status.label}` : rec.title,
+          href: rec.href,
+          tone: toneFor(rec.status?.tone),
+        },
+      ];
+    });
+    const name = new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric", timeZone: "UTC" }).format(
+      new Date(Date.UTC(y, m - 1, 1)),
+    );
+    const today = todayIso();
+    return html`<ui-flex direction="col" gap="3">
+      <ui-flex align="center" gap="2" wrap>
+        <ui-icon-button
+          icon="chevron-left"
+          label="Previous month"
+          size="xs"
+          @click=${() => this._set({ month: shift(-1) })}
+        ></ui-icon-button>
+        <ui-text variant="title-sm">${name}</ui-text>
+        <ui-icon-button
+          icon="chevron-right"
+          label="Next month"
+          size="xs"
+          @click=${() => this._set({ month: shift(1) })}
+        ></ui-icon-button>
+        ${
+          month !== today.slice(0, 7)
+            ? html`<ui-button size="xs" variant="text" @click=${() => this._set({ month: today.slice(0, 7) })}
+                >This month</ui-button
+              >`
+            : nothing
+        }
+        <ui-text variant="body-sm" color="muted">${events.length} by ${labelOf(f).toLowerCase()}</ui-text>
+      </ui-flex>
+      <ui-month
+        .label=${`${labels(this.collection).plural} by ${labelOf(f).toLowerCase()}, ${name}`}
+        .month=${month}
+        .today=${today}
+        .events=${events}
+      ></ui-month>
+    </ui-flex>`;
   }
 
   /**
@@ -874,6 +1399,14 @@ export class DashboardListView extends LightElement {
   render() {
     const c = this.collection;
     const perms = this.access.collections[this.slug];
+    // What its widget leaves out (`CollectionViewSpec.hide`).
+    const hide = new Set(this.spec?.hide ?? []);
+    const shows = (part: NonNullable<CollectionViewSpec["hide"]>[number]) => !hide.has(part);
+    // Create only where a new record has somewhere to open (a document page holds this collection).
+    const creatable =
+      !!perms?.create.permission &&
+      shows("create") &&
+      !!addressOf(`/collections/${encodeURIComponent(this.slug)}/create`);
     const { singular, plural } = labels(c);
     const title = useAsTitle(c);
     const all = allColumns(c);
@@ -915,215 +1448,271 @@ export class DashboardListView extends LightElement {
           .map((f) => f.name)
           .join();
 
-    return html`<ui-flex direction="col" gap="5">
-      <ui-page-header
-        .heading=${plural}
-        .subtitle=${typeof c.admin?.description === "string" ? c.admin.description : ""}
+    const header = html`<ui-page-header
+      .heading=${this.heading || plural}
+      .subtitle=${this.subhead || (typeof c.admin?.description === "string" ? c.admin.description : "")}
+    >
+      ${
+        // Breadcrumbs on the collection's own page; a list placed among others is a part of its page.
+        !this.spec || this.spec.home
+          ? html`<ui-breadcrumbs
+              slot="breadcrumbs"
+              .items=${[{ label: "Dashboard", href: dashboardPath() }, { label: plural }]}
+            ></ui-breadcrumbs>`
+          : nothing
+      }
+      <ui-flex slot="actions" gap="2" wrap
+        >${
+          creatable
+            ? html`<ui-button color="primary" href=${dashboardPath("collections", this.slug, "create")}
+                >+ Create new ${singular}</ui-button
+              >`
+            : nothing
+        }</ui-flex
       >
-        <ui-breadcrumbs
-          slot="breadcrumbs"
-          .items=${[{ label: "Dashboard", href: dashboardPath() }, { label: plural }]}
-        ></ui-breadcrumbs>
-        <ui-flex slot="actions" gap="2" wrap
-          >${
-            perms?.create.permission
-              ? html`<ui-button color="primary" href=${dashboardPath("collections", this.slug, "create")}
-                  >+ Create new ${singular}</ui-button
-                >`
-              : nothing
-          }</ui-flex
-        >
-      </ui-page-header>
-      ${this._around("beforeList")}
-      <ui-board
-        .items=${[
-          {
-            key: "list",
-            size: "full",
-            // The page's main content: a bare tile, so no rows hide behind a height cap.
-            content: html`<ui-tile size="full" bare>
-              <ui-flex direction="col" gap="5">
-                <ui-flex direction="col" gap="3">
-                  <ui-toolbar .label=${plural}>
-                    <ui-filter-builder
-                      .fields=${this._filterFields()}
-                      .value=${filters}
-                      .match=${match}
-                      @ui-change=${(e: CustomEvent<{ value: FilterCondition[]; match: FilterMatch }>) =>
-                        this._set({ filters: e.detail.value, match: e.detail.match })}
-                    ></ui-filter-builder>
-                    ${
-                      view === "cards"
-                        ? html`<ui-select
-                            slot="end"
-                            size="sm"
-                            width="auto"
-                            leading="Sort"
-                            .options=${this._sortOptions()}
-                            .value=${sort}
-                            @change=${(e: Event) => this._set({ sort: (e.target as HTMLSelectElement).value })}
-                          ></ui-select>`
-                        : nothing
-                    }
-                    <ui-button-group
-                      slot="end"
-                      label="View"
-                      size="xs"
-                      .value=${view}
-                      .options=${[
-                        { value: "table", label: "Table", icon: "table" },
-                        { value: "cards", label: "Cards", icon: "grid" },
-                        ...(this.boardField ? [{ value: "board", label: "Board", icon: "columns" as const }] : []),
-                      ]}
-                      @ui-change=${(e: CustomEvent<{ value: string }>) => this._view(e.detail.value as ListLayout)}
-                    ></ui-button-group>
-                    <ui-column-picker
-                      slot="end"
-                      .columns=${pickerColumns}
+    </ui-page-header>`;
+    // One board, everything on it: the header, the widgets around the list (boards of their own,
+    // flush so their tiles lie on this one's) and the list, each the whole tiles that hold it.
+    const around = (where: "beforeList" | "afterList") =>
+      (shows("around") ? this._around(where) : []).flatMap((el, i) =>
+        el === nothing
+          ? []
+          : [
+              {
+                key: `${where}.${i}`,
+                size: "full" as const,
+                rows: "fit" as const,
+                flush: true,
+                remember: `list|${this.slug}|${where}.${i}`,
+                content: el,
+              },
+            ],
+      );
+    // The list itself: its toolbar, search, the records and the pager (a page draws it in a bare
+    // tile under its header; a `collection` widget's tile holds it as its body: `tile`).
+    const list = html`<ui-flex direction="col" gap="5">
+      <ui-flex direction="col" gap="3">
+        ${
+          ["filters", "layouts", "columns", "export"].every((p) => hide.has(p as never)) &&
+          view !== "cards" &&
+          !(this.tile && creatable)
+            ? nothing
+            : html`<ui-toolbar .label=${plural}>
+                ${
+                  shows("filters")
+                    ? html`<ui-filter-builder
+                        .fields=${this._filterFields()}
+                        .value=${filters}
+                        .match=${match}
+                        @ui-change=${(e: CustomEvent<{ value: FilterCondition[]; match: FilterMatch }>) =>
+                          this._set({ filters: e.detail.value, match: e.detail.match })}
+                      ></ui-filter-builder>`
+                    : nothing
+                }
+                ${
+                  ["cards", "list", "compact", "focus", "groups"].includes(view) && shows("filters")
+                    ? html`<ui-select
+                        slot="end"
+                        size="sm"
+                        width="auto"
+                        leading="Sort"
+                        .options=${this._sortOptions()}
+                        .value=${sort}
+                        @change=${(e: Event) => this._set({ sort: (e.target as HTMLSelectElement).value })}
+                      ></ui-select>`
+                    : nothing
+                }
+                ${
+                  !shows("layouts")
+                    ? nothing
+                    : // The layouts this collection can take, as one menu (up to 13: more than a row of buttons holds).
+                      html`<ui-select
+                        slot="end"
+                        size="sm"
+                        width="auto"
+                        leading="View"
+                        .options=${this._layouts()}
+                        .value=${view}
+                        @change=${(e: Event) => this._view((e.target as HTMLSelectElement).value as ListLayout)}
+                      ></ui-select>`
+                }
+                ${
+                  shows("columns")
+                    ? html`<ui-column-picker
+                        slot="end"
+                        .columns=${pickerColumns}
+                        .hiddenColumns=${this.hiddenKeys}
+                        .defaults=${this.hiddenDefaults}
+                        ?customized=${arranged}
+                        .density=${view === "table" ? this.#prefs.value.listDensity : undefined}
+                        @ui-density=${(e: CustomEvent<{ density: "0" | "-1" | "-2" }>) =>
+                          preferences.set({ listDensity: e.detail.density })}
+                        @ui-change=${(e: CustomEvent<{ hidden: string[]; order: string[]; reset: boolean }>) => {
+                          const { hidden, order, reset } = e.detail;
+                          const slug = this.prefKey;
+                          preferences.set((p) => ({
+                            listColumns: { ...p.listColumns, [slug]: hidden },
+                            listColumnOrder: { ...p.listColumnOrder, [slug]: order },
+                            listColumnWidths: reset ? { ...p.listColumnWidths, [slug]: {} } : p.listColumnWidths,
+                          }));
+                          void this._load();
+                        }}
+                      ></ui-column-picker>`
+                    : nothing
+                }
+                ${
+                  this.tile && creatable
+                    ? html`<ui-button
+                        slot="end"
+                        size="xs"
+                        variant="tonal"
+                        href=${dashboardPath("collections", this.slug, "create")}
+                        >+ New ${singular.toLowerCase()}</ui-button
+                      >`
+                    : nothing
+                }
+                ${
+                  shows("export")
+                    ? html`<ui-button
+                        slot="end"
+                        size="xs"
+                        variant="text"
+                        ?disabled=${!r?.totalDocs}
+                        @click=${() => void this._export()}
+                        ><ui-icon name="upload" size="sm"></ui-icon> Export CSV</ui-button
+                      >`
+                    : nothing
+                }
+              </ui-toolbar>`
+        }
+        ${
+          shows("search")
+            ? html`<ui-search
+                label=${`Search by ${titleLabel.toLowerCase()}`}
+                .value=${this.typed}
+                @input=${(e: Event) => {
+                  this.typed = (e.target as HTMLInputElement).value;
+                  clearTimeout(this.#typing);
+                  this.#typing = setTimeout(() => this._set({ q: this.typed.trim() }), SEARCH_DELAY);
+                }}
+              ></ui-search>`
+            : nothing
+        }
+      </ui-flex>
+
+      ${
+        count
+          ? html`<ui-toolbar label="Selection">
+              <ui-text variant="title-sm">${count} selected</ui-text>
+              ${
+                !this.allMatching && r && this.selected.length === pageRows && r.totalDocs > pageRows
+                  ? html`<ui-button size="xs" variant="text" @click=${() => (this.allMatching = true)}
+                      >Select all ${r.totalDocs} ${filtered ? "matching" : plural.toLowerCase()}</ui-button
+                    >`
+                  : nothing
+              }
+              ${
+                perms?.delete.permission
+                  ? html`<ui-button size="xs" color="error" variant="tonal" @click=${() => (this.confirming = true)}
+                      >Delete ${count}</ui-button
+                    >`
+                  : nothing
+              }
+              <ui-button
+                size="xs"
+                variant="text"
+                @click=${() => {
+                  this.selected = [];
+                  this.allMatching = false;
+                }}
+                >Clear selection</ui-button
+              >
+            </ui-toolbar>`
+          : nothing
+      }
+      ${
+        view === "cards"
+          ? this._cards(empty)
+          : view === "list"
+            ? this._rows(empty)
+            : view === "calendar"
+              ? this._calendar()
+              : view !== "table" && view !== "board"
+                ? this._visual(view, empty)
+                : view === "board"
+                  ? this._board(empty)
+                  : html`<ui-table
+                      size="md"
+                      lines="one"
+                      density=${this.#prefs.value.listDensity}
+                      bordered
+                      hover
+                      ?selectable=${perms?.delete.permission && shows("select")}
+                      .columns=${this._columns()}
                       .hiddenColumns=${this.hiddenKeys}
-                      .defaults=${this.hiddenDefaults}
-                      ?customized=${arranged}
-                      .density=${view === "table" ? this.#prefs.value.listDensity : undefined}
-                      @ui-density=${(e: CustomEvent<{ density: "0" | "-1" | "-2" }>) =>
-                        preferences.set({ listDensity: e.detail.density })}
-                      @ui-change=${(e: CustomEvent<{ hidden: string[]; order: string[]; reset: boolean }>) => {
-                        const { hidden, order, reset } = e.detail;
-                        const slug = this.slug;
+                      reorderable
+                      resizable
+                      .columnOrder=${this.columnOrder}
+                      .columnWidths=${this.columnWidths}
+                      @ui-columns=${(e: CustomEvent<{ order: string[]; widths: Record<string, number> }>) => {
+                        const slug = this.prefKey;
                         preferences.set((p) => ({
-                          listColumns: { ...p.listColumns, [slug]: hidden },
-                          listColumnOrder: { ...p.listColumnOrder, [slug]: order },
-                          listColumnWidths: reset ? { ...p.listColumnWidths, [slug]: {} } : p.listColumnWidths,
+                          listColumnOrder: { ...p.listColumnOrder, [slug]: e.detail.order },
+                          listColumnWidths: { ...p.listColumnWidths, [slug]: e.detail.widths },
                         }));
-                        void this._load();
                       }}
-                    ></ui-column-picker>
-                    <ui-button
-                      slot="end"
-                      size="xs"
-                      variant="text"
-                      ?disabled=${!r?.totalDocs}
-                      @click=${() => void this._export()}
-                      ><ui-icon name="upload" size="sm"></ui-icon> Export CSV</ui-button
-                    >
-                  </ui-toolbar>
-                  <ui-search
-                    label=${`Search by ${titleLabel.toLowerCase()}`}
-                    .value=${this.typed}
-                    @input=${(e: Event) => {
-                      this.typed = (e.target as HTMLInputElement).value;
-                      clearTimeout(this.#typing);
-                      this.#typing = setTimeout(() => this._set({ q: this.typed.trim() }), SEARCH_DELAY);
-                    }}
-                  ></ui-search>
-                </ui-flex>
-
-                ${
-                  count
-                    ? html`<ui-toolbar label="Selection">
-                        <ui-text variant="title-sm">${count} selected</ui-text>
-                        ${
-                          !this.allMatching && r && this.selected.length === pageRows && r.totalDocs > pageRows
-                            ? html`<ui-button size="xs" variant="text" @click=${() => (this.allMatching = true)}
-                                >Select all ${r.totalDocs} ${filtered ? "matching" : plural.toLowerCase()}</ui-button
-                              >`
-                            : nothing
-                        }
-                        ${
-                          perms?.delete.permission
-                            ? html`<ui-button
-                                size="xs"
-                                color="error"
-                                variant="tonal"
-                                @click=${() => (this.confirming = true)}
-                                >Delete ${count}</ui-button
-                              >`
-                            : nothing
-                        }
-                        <ui-button
-                          size="xs"
-                          variant="text"
-                          @click=${() => {
-                            this.selected = [];
-                            this.allMatching = false;
-                          }}
-                          >Clear selection</ui-button
-                        >
-                      </ui-toolbar>`
-                    : nothing
-                }
-                ${
-                  view === "cards"
-                    ? this._cards(empty)
-                    : view === "board"
-                      ? this._board(empty)
-                      : html`<ui-table
-                          size="md"
-                          lines="one"
-                          density=${this.#prefs.value.listDensity}
-                          bordered
-                          hover
-                          ?selectable=${perms?.delete.permission}
-                          .columns=${this._columns()}
-                          .hiddenColumns=${this.hiddenKeys}
-                          reorderable
-                          resizable
-                          .columnOrder=${this.columnOrder}
-                          .columnWidths=${this.columnWidths}
-                          @ui-columns=${(e: CustomEvent<{ order: string[]; widths: Record<string, number> }>) => {
-                            const slug = this.slug;
-                            preferences.set((p) => ({
-                              listColumnOrder: { ...p.listColumnOrder, [slug]: e.detail.order },
-                              listColumnWidths: { ...p.listColumnWidths, [slug]: e.detail.widths },
-                            }));
-                          }}
-                          .rows=${r?.docs ?? []}
-                          .selected=${this.selected}
-                          .sort=${sort}
-                          ?loading=${this.loading}
-                          .empty=${empty}
-                          @ui-sort=${(e: CustomEvent<{ sort: string }>) => this._set({ sort: e.detail.sort })}
-                          @ui-select=${(e: CustomEvent<{ selected: number[] }>) => {
-                            this.selected = e.detail.selected;
-                            this.allMatching = false;
-                          }}
-                        ></ui-table>`
-                }
-                ${
-                  r && r.totalDocs > 0
-                    ? html`<ui-flex justify="between" align="center" gap="4" wrap>
-                        <ui-flex gap="3" align="center" wrap>
-                          <ui-text variant="body-md" color="muted"
-                            >${r.pagingCounter}–${r.pagingCounter + r.docs.length - 1} of ${r.totalDocs}</ui-text
-                          >
-                          <ui-select
-                            size="sm"
-                            leading="Rows"
-                            .options=${["10", "25", "50", "100"]}
-                            .value=${limit}
-                            @change=${(e: Event) => this._set({ limit: (e.target as HTMLSelectElement).value })}
-                          ></ui-select>
-                        </ui-flex>
-                        ${
-                          r.totalPages > 1
-                            ? html`<ui-pagination
-                                size="sm"
-                                prev-next
-                                .page=${r.page}
-                                .total=${r.totalPages}
-                                @ui-change=${(e: CustomEvent<{ page: number }>) => this._set({ page: e.detail.page })}
-                              ></ui-pagination>`
-                            : nothing
-                        }
-                      </ui-flex>`
-                    : nothing
-                }
+                      .rows=${r?.docs ?? []}
+                      .selected=${this.selected}
+                      .sort=${sort}
+                      ?loading=${this.loading && !r}
+                      skeleton-rows=${limit}
+                      min-rows=${limit}
+                      .empty=${empty}
+                      @ui-sort=${(e: CustomEvent<{ sort: string }>) => this._set({ sort: e.detail.sort })}
+                      @ui-select=${(e: CustomEvent<{ selected: number[] }>) => {
+                        this.selected = e.detail.selected;
+                        this.allMatching = false;
+                      }}
+                    ></ui-table>`
+      }
+      ${
+        // The paging row, the same in every state (loading, one page, many, none), so the
+        // list is the same height whatever it holds: the count, the rows per page and the
+        // pages (one page shows as page 1 of 1).
+        // A calendar holds its whole month, and the whole-collection layouts everything: no pages.
+        !shows("pager") || WHOLE.includes(view)
+          ? nothing
+          : html`<ui-flex justify="between" align="center" gap="4" wrap>
+              <ui-flex gap="3" align="center" wrap>
+                <ui-text variant="body-md" color="muted"
+                  >${
+                    !r
+                      ? "Loading…"
+                      : r.totalDocs
+                        ? `${r.pagingCounter}–${r.pagingCounter + r.docs.length - 1} of ${r.totalDocs}`
+                        : "No records"
+                  }</ui-text
+                >
+                <ui-select
+                  size="sm"
+                  leading="Rows"
+                  .options=${["10", "25", "50", "100"]}
+                  .value=${limit}
+                  ?disabled=${!r?.totalDocs}
+                  @change=${(e: Event) => this._set({ limit: (e.target as HTMLSelectElement).value })}
+                ></ui-select>
               </ui-flex>
-            </ui-tile>`,
-          },
-        ]}
-      ></ui-board>
-      ${this._around("afterList")} ${this._sheet()}
-
+              <ui-pagination
+                size="sm"
+                prev-next
+                .page=${r?.page ?? 1}
+                .total=${Math.max(1, r?.totalPages ?? 1)}
+                @ui-change=${(e: CustomEvent<{ page: number }>) => this._set({ page: e.detail.page })}
+              ></ui-pagination>
+            </ui-flex>`
+      }
+    </ui-flex>`;
+    const dialogs = html`${this._sheet()}
       <ui-modal
         heading=${`Delete ${count} ${count === 1 ? singular : plural}?`}
         .open=${this.confirming}
@@ -1133,7 +1722,28 @@ export class DashboardListView extends LightElement {
         @ui-close=${() => (this.confirming = false)}
       >
         <ui-text>This can't be undone.</ui-text>
-      </ui-modal>
+      </ui-modal>`;
+    // In a widget's tile: the tile has the heading and the count; the list is its body.
+    if (this.tile) return html`${list}${dialogs}`;
+    return html`<ui-flex direction="col" gap="0">
+      <ui-board
+        .items=${[
+          ...(shows("header")
+            ? [{ key: "header", size: "full", rows: "fit", remember: `list|${this.slug}|header`, content: header }]
+            : []),
+          ...around("beforeList"),
+          {
+            key: "list",
+            size: "full",
+            rows: "fit",
+            remember: `list|${this.slug}|list|${this.query.limit}|${this.query.view ?? ""}`,
+            // The page's main content: a bare tile, so no rows hide behind a height cap.
+            content: html`<ui-tile size="full" bare>${list}</ui-tile>`,
+          },
+          ...around("afterList"),
+        ]}
+      ></ui-board>
+      ${dialogs}
     </ui-flex>`;
   }
 }

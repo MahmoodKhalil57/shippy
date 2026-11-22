@@ -34,6 +34,15 @@ export const container = rcva("w-full", {
      */
     paddingX: {
       fluid: "w-full px-[min(clamp(1rem,3cqi,1.5rem),max(0px,calc((100%_-_7rem)/2)))]",
+      /**
+       * The page's room in the main panel (`--frame-pad-x`, set by `<ui-frame>`): half of what the
+       * screen's tiles leave over, plus half a tile when that's under half a tile, so it's never
+       * less than half a tile and the board stays on the frame's quarter lines. Past 24 tiles of
+       * content (`PAGE_MAX_TILES`, 1272px at the default text size) the rest is padding too: the
+       * content is at most 24 tiles, centred, which lands on the frame's half-tile lines.
+       */
+      slack:
+        "w-full px-[min(max(var(--frame-pad-x,var(--frame-slack,0px)),calc((100%_-_var(--tile-w)*24)/2)),max(0px,calc((100%_-_7rem)/2)))]",
       "0": "w-full px-0",
       "1": "w-full px-[min(4px,max(0px,calc((100%_-_7rem)/2)))]",
       "2": "w-full px-[min(8px,max(0px,calc((100%_-_7rem)/2)))]",
@@ -49,6 +58,8 @@ export const container = rcva("w-full", {
     paddingY: {
       /** Scales with the space it sits in: 1rem → 1.5rem. */
       fluid: "py-[clamp(1rem,3cqi,1.5rem)]",
+      /** Half a tile above and below: the page's room in the main panel, on the frame's quarter lines. */
+      half: "py-[calc(var(--tile-h)/2)]",
       "0": "py-0",
       "1": "py-1",
       "2": "py-2",

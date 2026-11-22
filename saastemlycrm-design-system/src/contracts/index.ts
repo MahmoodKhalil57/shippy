@@ -5,10 +5,14 @@
  *
  * - The config: `defineConfig`, `MockConfig`, field and document types, `tones`,
  *   `CollectionSettings`, `DashboardSettings`, tours.
- * - Screens: `widgets()`, `widget()`, `Widget`, `Source`, `WidgetScope` (./app/widgets/widget.ts).
+ * - Screens: `widgets()`, `Widget`, `Source`, `WidgetScope`, `figures()` (./app/widgets/widget.ts), and the
+ *   widget kinds a config feeds with a query and a formatter: `chart()`, `table()`, `list()`…,
+ *   `assists()`, `header()`, `query` (./app/widgets/kinds.ts).
  * - What widgets draw: the block vocabulary, `block()`, `note()`, `formatNumber`, `Action`, `Cell`… (schema).
  * - Design rules that need real data: `designProblems` (./app/widgets/design-check.ts).
- * - Links to the dashboard's pages: `links()`, `linkTarget()` (./app/widgets/links.ts).
+ * - Links to the dashboard's pages: `links()`, `linkTarget()` (./app/widgets/links.ts), and where they
+ *   lead: `placesOf()`, `placeOf()` (./app/widgets/places.ts).
+ * - Pages for a collection, a document or a global: `collectionPage()`, `documentPage()`, `globalPage()`.
  */
 export * from "./config.ts";
 export * from "../app/widgets/widget.ts";
@@ -16,3 +20,5 @@ export * from "../app/widgets/schema.ts";
 export * from "../app/widgets/design-check.ts";
 export * from "../app/widgets/tile.ts";
 export * from "../app/widgets/links.ts";
+export * from "../app/widgets/places.ts";
+export * from "../app/widgets/kinds.ts";

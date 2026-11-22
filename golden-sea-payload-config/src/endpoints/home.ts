@@ -1,21 +1,24 @@
 import type { Endpoint, PayloadRequest } from "payload";
 import type { Doc } from "saastemlycrm-design-system/contracts";
-import { WAITS } from "../collections/cases.ts";
+import { WAITS, relativeDue } from "../collections/cases.ts";
+import { TODAY } from "../collections/shared.ts";
 import { history as H } from "./history.ts";
 
 /**
- * GET /api/home — the signed-in user's dashboard, tailored to their role: what needs them
- * today (what's due next, decisions, briefing, follow-ups, their queue), the four numbers they
- * steer by with how each moved, and the trends behind them. Counts, lists and the agenda come from
- * the live collections; trends and the deltas read from them from ./history.ts. Sales never
- * receives cost or profit figures (as everywhere else).
+ * GET /api/home — what the signed-in user's home needs that spans several collections, tailored
+ * to their role: the greeting with the day's live numbers, the figures they steer by that carry a
+ * trend and how it moved (./history.ts), what's due next across tasks, supplier replies, cases,
+ * deliveries, invoices, bills and the pipeline, the 07:00 briefing, and the trend charts. Sales
+ * never receives cost or profit figures (as everywhere else).
  *
- * The response is a list of widgets the dashboard lays out in order (dashboard-home); the
- * selection per role is the only place the roles differ.
+ * What is one collection's documents is not here: the role's case queue, its follow-ups, the
+ * decisions waiting, the inbox to triage, the pipeline's next steps and the plain counts are data
+ * widgets on the home page (../pages/home.ts), reading the collections themselves.
  */
 
 /** The demo's "now": the morning the scenario is set in (seeded dates are relative to it). */
-export const DEMO_NOW = new Date("2026-11-17T09:30:00.000Z");
+/** The demo's clock (../collections/shared.ts): what today and overdue count from. */
+export const DEMO_NOW = TODAY;
 
 export type HomeTone = "error" | "warning" | "info" | "success" | "neutral";
 /** How a number reads: plain count, days, minutes, thousands of a currency, or a percentage. */
@@ -28,6 +31,8 @@ export interface HomeDelta {
   good?: boolean;
 }
 export interface HomeTile {
+  /** The figure the strip leads with (drawn tinted). */
+  main?: boolean;
   label: string;
   value: string;
   note?: string;
@@ -61,50 +66,12 @@ export interface HomeItem {
   title: string;
   sub: string;
   href?: string;
-  badge?: string;
 }
-export interface HomeCase {
-  id: string;
-  caseId: string;
-  href: string;
-  customer: string;
-  vessel: string;
-  port: string;
-  stage: string;
-  wait: string;
-  tone: HomeTone;
-  risk: string;
-  deadline: string;
-  due: string;
-  overdue: boolean;
-  next: string;
-  blocker: string;
-  owner: string;
-  urgent: boolean;
-  lines?: { ready: number; waiting: number; blocked: number; noOffer: number };
-  value?: number;
-}
-
 export type HomeWidget =
   | { kind: "tiles"; id: string; tiles: HomeTile[] }
   | { kind: "charts"; id: string; charts: HomeChart[] }
-  | {
-      kind: "queue";
-      id: string;
-      title: string;
-      sub: string;
-      cases: HomeCase[];
-      /** Show the value column (never for Sales). */
-      value: boolean;
-      /** Show the owner column (off for "my" queues). */
-      owners: boolean;
-      href: string;
-    }
-  | {
-      kind: "lists";
-      id: string;
-      lists: { title: string; sub?: string; items: HomeItem[]; empty: string; href?: string; hrefLabel?: string }[];
-    }
+  /** The 07:00 briefing: what needs this role this morning, across cases, inbox and integrations. */
+  | { kind: "briefing"; id: string; title: string; sub: string; items: HomeItem[]; empty: string }
   /** What's due next for this person, soonest first. */
   | { kind: "agenda"; id: string; title: string; sub: string; items: HomeAgendaItem[]; empty: string };
 
@@ -114,6 +81,11 @@ export interface Home {
   greeting: string;
   subtitle: string;
   actions: { label: string; href: string; primary?: boolean }[];
+  /**
+   * The role's day, only what it sees: its figures that carry a trend (the rest of its strip are
+   * the home page's counts), what's next, its briefing, and its charts in the order the home page
+   * lays them out (the main chart first, then the compact one, then the rest).
+   */
   widgets: HomeWidget[];
 }
 
@@ -125,13 +97,6 @@ const TONE: Record<string, HomeTone> = {
   info: "info",
   ok: "success",
   neutral: "neutral",
-};
-const RISK: Record<string, string> = {
-  danger: "Blocked",
-  warn: "At risk",
-  info: "On track",
-  ok: "Done",
-  neutral: "Paused",
 };
 const RANK: Record<HomeTone, number> = { error: 0, warning: 1, info: 2, success: 3, neutral: 4 };
 
@@ -146,14 +111,8 @@ const first = (name: string) => name.split(" ")[0] ?? name;
 
 const fmtDay = (d: Date) => d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
 const fmtTime = (d: Date) => d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
-/** "today 16:00", "tomorrow", "in 3 days", "2 days overdue". */
-const relative = (d: Date) => {
-  const days = Math.floor(d.getTime() / DAY) - Math.floor(DEMO_NOW.getTime() / DAY);
-  if (days === 0) return d < DEMO_NOW ? `overdue since ${fmtTime(d)}` : `today ${fmtTime(d)}`;
-  if (days === 1) return `tomorrow ${fmtTime(d)}`;
-  if (days > 1) return `in ${days} days`;
-  return `${-days} day${days === -1 ? "" : "s"} overdue`;
-};
+/** "today 16:00", "tomorrow 09:00", "in 3 days", "2 days overdue": as a case's `due` reads. */
+const relative = (d: Date) => relativeDue(d.toISOString());
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
 /** A change with its sign, "+2" or "−0.4" (a real minus sign), and nothing before a zero. */
@@ -184,8 +143,7 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
     if (!me)
       return Response.json({ errors: [{ message: "You are not allowed to perform this action." }] }, { status: 401 });
     const role = str(me.role ?? "");
-    const costs = role !== "sales";
-    const [cases, approvals, tasks, rfqs, messages, exceptions, invoices, bills, deliveries, opportunities, users] =
+    const [cases, approvals, tasks, rfqs, messages, exceptions, invoices, bills, deliveries, opportunities] =
       await Promise.all(
         [
           "cases",
@@ -198,46 +156,22 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
           "supplier-bills",
           "deliveries",
           "opportunities",
-          "users",
         ].map((c) => all(req, c)),
       );
-    const userName = (id: unknown) => str(users.find((u) => u.id === idOf(id))?.name ?? nameOf(id));
 
     /* ---------------------------------------------------------------- cases */
     const live = cases.filter((c) => !LIVE_END.includes(str(c.stage)));
-    const row = (c: Doc): HomeCase => {
-      const deadline = date(c.deadline) ?? DEMO_NOW;
-      const tone = TONE[str(c.tone)] ?? "info";
-      const lines = c.lines as HomeCase["lines"] | undefined;
-      return {
-        id: c.id,
-        caseId: str(c.caseId),
-        href: path("collections", "cases", c.id),
-        customer: nameOf(c.customer),
-        vessel: str(c.vessel ?? ""),
-        port: str(c.port ?? ""),
-        stage: str(c.stage ?? ""),
-        wait: str(c.wait ?? ""),
-        tone,
-        risk: RISK[str(c.tone)] ?? "On track",
-        deadline: fmtDay(deadline),
-        due: relative(deadline),
-        overdue: deadline < DEMO_NOW,
-        next: str(c.nextAction ?? ""),
-        blocker: str(c.blocker ?? ""),
-        owner: userName(c.owner),
-        urgent: c.urgent === true,
-        lines: lines && lines.ready + lines.waiting + lines.blocked + lines.noOffer > 0 ? lines : undefined,
-        value: typeof c.value === "number" ? c.value : undefined,
-      };
-    };
-    const byRisk = (a: HomeCase, b: HomeCase) =>
-      RANK[a.tone] - RANK[b.tone] || Number(b.urgent) - Number(a.urgent) || a.deadline.localeCompare(b.deadline);
+    const toneOf = (c: Doc) => TONE[str(c.tone)] ?? "info";
+    // The user's own live cases in their queue's order (worst risk, urgent, soonest deadline): the
+    // first is the one to continue.
     const mine = live
       .filter((c) => idOf(c.owner) === me.id)
-      .map(row)
-      .sort(byRisk);
-    const everyone = live.map(row).sort(byRisk);
+      .sort(
+        (a, b) =>
+          RANK[toneOf(a)] - RANK[toneOf(b)] ||
+          Number(b.urgent === true) - Number(a.urgent === true) ||
+          str(a.deadline).localeCompare(str(b.deadline)),
+      );
 
     /* ---------------------------------------------------------------- approvals */
     // Still open: neither approved nor rejected (a two-person approval with one signature is
@@ -248,18 +182,6 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
     const forMe = pending.filter(
       (a) => ((a.approvers as unknown[] | undefined) ?? []).some((u) => idOf(u) === me.id) && !decided(a, me.id),
     );
-    const approvalItem = (a: Doc): HomeItem => {
-      const others = ((a.decisions as { user?: unknown; decision?: string }[] | undefined) ?? []).map(
-        (d) => `${first(userName(d.user))} ${str(d.decision ?? "").toLowerCase()}d`,
-      );
-      return {
-        tone: /bank|deposit|payment/i.test(str(a.type)) ? "warning" : "info",
-        title: str(a.title ?? a.type),
-        sub: [a.type, `from ${userName(a.requestedBy)}`, ...others].filter(Boolean).join(" · "),
-        href: path("collections", "approvals", a.id),
-        badge: a.twoPerson ? "Two-person" : undefined,
-      };
-    };
 
     /* ---------------------------------------------------------------- briefing */
     const soon = (d?: Date, days = 1) => !!d && d.getTime() - DEMO_NOW.getTime() < days * DAY;
@@ -349,21 +271,10 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
 
     /* ---------------------------------------------------------------- follow-ups */
     const endOfDay = new Date(Math.floor(DEMO_NOW.getTime() / DAY) * DAY + DAY);
-    const followUp = (t: Doc): HomeItem => {
-      const due = date(t.due);
-      return {
-        tone: due && due < DEMO_NOW ? "error" : "info",
-        title: `${str(t.channel ?? "Task")} · ${str(t.title)}`,
-        sub: [t.type, t.stopCondition ? `stops on: ${str(t.stopCondition)}` : ""].filter(Boolean).join(" · "),
-        href: path("collections", "tasks", t.id),
-        badge: due ? (due < DEMO_NOW ? "Overdue" : fmtTime(due)) : undefined,
-      };
-    };
     const openTasks = tasks.filter((t) => (t.status ?? "Open") === "Open");
+    /** How many follow-ups are due by tonight (someone's, or everyone's). */
     const todays = (owner?: string) =>
-      openTasks
-        .filter((t) => (!owner || idOf(t.owner) === owner) && (date(t.due) ?? DEMO_NOW) < endOfDay)
-        .map(followUp);
+      openTasks.filter((t) => (!owner || idOf(t.owner) === owner) && (date(t.due) ?? DEMO_NOW) < endOfDay).length;
 
     /* ---------------------------------------------------------------- tiles & charts */
     const sum = (a: number[]) => a.reduce((s, v) => s + v, 0);
@@ -657,37 +568,13 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
     const greeting = `Good morning, ${name}`;
     /** The greeting's subtitle: the day's live numbers, in one line. */
     const numbers = (...parts: string[]) => parts.join(" · ");
-    const queue = (title: string, list: HomeCase[], sub: string, value = costs): HomeWidget => ({
-      kind: "queue",
-      id: "queue",
-      title,
-      sub,
-      cases: value ? list : list.map((c) => ({ ...c, value: undefined })),
-      value,
-      owners: list !== mine,
-      href: path("collections", "cases"),
-    });
-    const briefingList = {
+    const briefingList: HomeWidget = {
+      kind: "briefing",
+      id: "briefing",
       title: "Daily briefing",
       sub: "Prepared at 07:00 from your cases, inbox and integrations",
       items: myBriefing,
       empty: "Nothing needs you this morning.",
-    };
-    const followUps = (owner?: string) => ({
-      title: "Today's follow-ups",
-      sub: "Reminders stop on reply, decline or case closure",
-      items: todays(owner),
-      empty: "No follow-ups due today.",
-      href: path("collections", "tasks"),
-      hrefLabel: "All follow-ups",
-    });
-    const decisions = {
-      title: "Waiting for your decision",
-      sub: "Everything is prepared — you approve or return",
-      items: forMe.map(approvalItem),
-      empty: "No decisions waiting. Nice.",
-      href: path("collections", "approvals"),
-      hrefLabel: "All approvals",
     };
     const quotesDue = live.filter(
       (c) =>
@@ -698,6 +585,9 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
     const inProgress = deliveries.filter((d) => !str(d.status).startsWith("Delivered"));
     const myLive = live.filter(own);
 
+    // Each role's figures here are the ones with a trend; its plain counts (decisions waiting, my
+    // live cases, bills, invoices, exceptions, the inbox, today's follow-ups) are the home page's
+    // `metrics`, which complete the strip of four.
     let body: Omit<Home, "role" | "eyebrow" | "greeting">;
     switch (role) {
       case "management":
@@ -712,12 +602,13 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
             { label: "Open approvals", href: path("collections", "approvals"), primary: true },
           ],
           widgets: [
-            { kind: "lists", id: "decisions", lists: [decisions, briefingList] },
+            briefingList,
             {
               kind: "tiles",
               id: "kpis",
               tiles: [
                 {
+                  main: true,
                   label: "Inquiries, last 4 weeks",
                   value: str(inquiries4.now),
                   note: "vs prior 4 weeks",
@@ -757,11 +648,6 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
                 profit,
               ],
             },
-            queue(
-              "All live cases",
-              everyone,
-              "Sorted by risk, then deadline · every case has an owner and a next action",
-            ),
           ],
         };
         break;
@@ -782,19 +668,11 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
             { label: "Open approvals", href: path("collections", "approvals"), primary: true },
           ],
           widgets: [
-            { kind: "lists", id: "decisions", lists: [decisions, briefingList] },
+            briefingList,
             {
               kind: "tiles",
               id: "money",
               tiles: [
-                {
-                  label: "Decisions waiting",
-                  value: str(forMe.length),
-                  note: forMe.some((a) => a.twoPerson)
-                    ? "includes a two-person approval"
-                    : "payments, deposits, bank changes",
-                  href: path("collections", "approvals"),
-                },
                 {
                   label: "Receivables",
                   value: `USD ${sum(H.ageing).toFixed(1)}k`,
@@ -836,7 +714,6 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
                 profit,
               ],
             },
-            queue("All live cases", everyone, "Sorted by risk, then deadline"),
           ],
         };
         break;
@@ -860,6 +737,7 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
               id: "ops",
               tiles: [
                 {
+                  main: true,
                   label: "Deliveries in progress",
                   value: str(inProgress.length),
                   note: inProgress.map((d) => `${str(d.number)} ${str(d.status).toLowerCase()}`).join(" · "),
@@ -867,31 +745,11 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
                   trend: { labels: H.weeks, values: moving, unit: "count" },
                   delta: moved(since(moving), signed(since(moving)), { than: "last week" }),
                 },
-                {
-                  label: "Supplier bills to match",
-                  value: str(openBills.length),
-                  note: "PO · receipt · bill",
-                  href: path("collections", "supplier-bills"),
-                },
-                {
-                  label: "Invoices to collect",
-                  value: str(receivable.length),
-                  note: "e-invoices valid at the tax authority",
-                  href: path("collections", "invoices"),
-                },
-                {
-                  label: "Integration exceptions",
-                  value: str(openExceptions.length),
-                  note: openExceptions.length ? "safe retry available" : "all clear",
-                  tone: openExceptions.length ? "warning" : "success",
-                  href: path("collections", "integration-exceptions"),
-                },
               ],
             },
             agenda,
-            { kind: "lists", id: "today", lists: [briefingList, followUps(me.id)] },
+            briefingList,
             { kind: "charts", id: "flow", charts: [cash, ack] },
-            queue("My queue", mine, "Cases I own, sorted by risk, then deadline"),
           ],
         };
         break;
@@ -913,43 +771,13 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
               kind: "tiles",
               id: "waits",
               tiles: [
-                {
-                  label: "My live cases",
-                  value: str(myLive.length),
-                  note: `${mine.filter((c) => c.urgent).length} urgent · ${mine.filter((c) => c.overdue).length} past deadline`,
-                  href: path("collections", "cases"),
-                },
                 waitTile("Awaiting customer decision", myLive),
                 waitTile("Awaiting internal approval", myLive),
                 wonTile,
               ],
             },
             agenda,
-            queue("My queue", mine, "Cases I own, sorted by risk, then deadline", false),
-            {
-              kind: "lists",
-              id: "today",
-              lists: [
-                briefingList,
-                {
-                  title: "Pipeline next steps",
-                  sub: "Growth CRM · calls, visits and registrations",
-                  items: opportunities.filter(own).map((o) => {
-                    const stepDue = date(o.nextStepDue);
-                    return {
-                      tone: stepDue && stepDue < DEMO_NOW ? ("error" as const) : ("info" as const),
-                      title: `${str(o.name)} · ${str(o.nextStep ?? "")}`,
-                      sub: `${str(o.stage)} · ${str(o.kind ?? "")} · ${str(o.estimatedValue ?? "")}`,
-                      href: path("collections", "opportunities", o.id),
-                      badge: stepDue ? fmtDay(stepDue) : undefined,
-                    };
-                  }),
-                  empty: "No pipeline steps due.",
-                  href: path("collections", "opportunities"),
-                  hrefLabel: "Pipeline",
-                },
-              ],
-            },
+            briefingList,
             { kind: "charts", id: "sales", charts: [pipeline, lost] },
           ],
         };
@@ -960,7 +788,7 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
         body = {
           subtitle: numbers(
             `${plural(newMessages.length, "message")} to triage`,
-            `${plural(todays().length, "follow-up")} due today`,
+            `${plural(todays(), "follow-up")} due today`,
             plural(live.length, "live case"),
           ),
           actions: [
@@ -969,42 +797,9 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
           ],
           widgets: [
             {
-              kind: "lists",
-              id: "inbox",
-              lists: [
-                {
-                  title: "Inbox to triage",
-                  sub: "AI has read each message — check the case, owner and missing details",
-                  items: newMessages.map((m) => ({
-                    tone: m.status === "Needs review" ? ("warning" as const) : ("info" as const),
-                    title: str(m.subject ?? m.from),
-                    sub: `${str(m.fromName ?? m.from)} · ${str(m.channel ?? "")} · ${str(m.classification ?? "")}`,
-                    href: path("collections", "intake-messages", m.id),
-                    badge: str(m.status),
-                  })),
-                  empty: "Inbox zero.",
-                  href: path("collections", "intake-messages"),
-                  hrefLabel: "Inbox",
-                },
-                followUps(),
-              ],
-            },
-            {
               kind: "tiles",
               id: "desk",
               tiles: [
-                {
-                  label: "Inbox to triage",
-                  value: str(newMessages.length),
-                  note: `${newMessages.filter((m) => m.status === "Needs review").length} need review`,
-                  href: path("collections", "intake-messages"),
-                },
-                {
-                  label: "Follow-ups due today",
-                  value: str(todays().length),
-                  note: "reminders stop on reply",
-                  href: path("collections", "tasks"),
-                },
                 {
                   label: "Out-of-hours RFQs",
                   value: str(last(H.afterHours)),
@@ -1016,7 +811,6 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
               ],
             },
             agenda,
-            queue("Desk cases", everyone, "Every live case, its owner and next step", false),
             { kind: "charts", id: "desk", charts: [afterHours, ack] },
           ],
         };
@@ -1028,12 +822,18 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
           subtitle: numbers(
             `${plural(mine.length, "case")} in your queue`,
             `${plural(awaitingReply, "supplier reply", "supplier replies")} outstanding`,
-            `${plural(todays(me.id).length, "follow-up")} today`,
+            `${plural(todays(me.id), "follow-up")} today`,
           ),
           actions: [
             { label: "Review inbox", href: path("collections", "intake-messages") },
             ...(mine[0]
-              ? [{ label: `Continue ${mine[0].caseId}`, href: mine[0].href, primary: true }]
+              ? [
+                  {
+                    label: `Continue ${str(mine[0].caseId)}`,
+                    href: path("collections", "cases", mine[0].id),
+                    primary: true,
+                  },
+                ]
               : [{ label: "All cases", href: path("collections", "cases"), primary: true }]),
           ],
           widgets: [
@@ -1041,12 +841,6 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
               kind: "tiles",
               id: "waits",
               tiles: [
-                {
-                  label: "My live cases",
-                  value: str(myLive.length),
-                  note: `${mine.filter((c) => c.tone === "error" || c.tone === "warning").length} at risk or blocked`,
-                  href: path("collections", "cases"),
-                },
                 waitTile("Awaiting supplier", live, `${plural(awaitingReply, "supplier RFQ")} awaiting reply`),
                 waitTile("Awaiting internal approval", live, `${plural(pending.length, "approval")} in the queue`),
                 {
@@ -1062,12 +856,7 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
               ],
             },
             agenda,
-            queue(
-              "My queue",
-              mine,
-              "Sorted by risk, then deadline · every case has an owner, deadline and next action",
-            ),
-            { kind: "lists", id: "today", lists: [briefingList, followUps(me.id)] },
+            briefingList,
             { kind: "charts", id: "mine", charts: [myDeadlines, myTurnaround] },
           ],
         };

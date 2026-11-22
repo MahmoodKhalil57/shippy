@@ -1,10 +1,10 @@
 import type { VariantProps } from "class-variance-authority";
 import { html, nothing } from "lit";
-import { customElement, property, query } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement, uid, type Renderable } from "../../base/light-element.ts";
 import { isOn, rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
-import { row, stack, text } from "../layout/algebra.ts";
+import { floating, floatingHeight, row, stack, text } from "../layout/algebra.ts";
 import { button, type ButtonVariants } from "./button.ts";
 import { iconButton, type IconButtonVariants } from "./icon-button.ts";
 import { iconSvg, type IconName } from "../media/icon.ts";
@@ -70,13 +70,17 @@ export const dropdownPanel = rcva(
         card: "card card-sm",
       },
       rounded: { true: "rounded-box" },
+      /**
+       * Whole tiles (`floating.*`): 4 (212px, a menu), 5 (a card), 6. Never wider than the window's
+       * whole tiles; `max-w-none` lifts daisyUI's menu `max-width: 100%` (of the trigger).
+       */
       width: {
-        "52": "w-[min(13rem,calc(100vw_-_2rem))] max-w-[calc(100vw-2rem)]",
-        "64": "w-[min(16rem,calc(100vw_-_2rem))] max-w-[calc(100vw-2rem)]",
-        "72": "w-[min(18rem,calc(100vw_-_2rem))] max-w-[calc(100vw-2rem)]",
-        // `floating.*` (layout/algebra.ts); the max-width overrides daisyUI's menu `max-width: 100%` (of the trigger).
-        "80": "w-[min(20rem,calc(100vw_-_2rem))] max-w-[calc(100vw-2rem)]",
+        "4": `${floating["4"]} max-w-none`,
+        "5": `${floating["5"]} max-w-none`,
+        "6": `${floating["6"]} max-w-none`,
       },
+      /** Quarter tiles down: its content's height, rounded up. */
+      height: { fit: floatingHeight.fit },
       padding: {
         "0": "p-0",
         // Inline: daisyUI's menu padding (0.5rem); a panel's own would be measured against its trigger.
@@ -174,8 +178,8 @@ export type DropdownMode = "focus" | "details" | "popover";
 
 /** Panel look per kind, from the docs examples. */
 const PANEL_DEFAULTS: Record<DropdownPanelKind, DropdownPanelVariants> = {
-  menu: { kind: "menu", rounded: true, width: "52", padding: "2", elevation: "2" },
-  card: { kind: "card", width: "64", elevation: "2" },
+  menu: { kind: "menu", rounded: true, width: "4", height: "fit", padding: "2", elevation: "2" },
+  card: { kind: "card", width: "5", height: "fit", elevation: "2" },
   plain: {},
 };
 
@@ -239,6 +243,16 @@ export class UiDropdown extends LightElement {
   @property({ attribute: false }) items: DropdownItem[] = [];
   /** details/popover modes: open state. */
   @property({ type: Boolean, reflect: true }) open = false;
+  /**
+   * A menu's items are built the first time it's about to open (the pointer reaches the trigger,
+   * it takes focus, or the popover is about to show), not with the page: a screen of tiles has a
+   * closed ⋯ menu on each, and building them all made every navigation lay out a third more
+   * elements than anyone could see.
+   */
+  @state() private _built = false;
+  #build = () => {
+    if (!this._built) this._built = true;
+  };
 
   private _id = uid("dropdown");
 
@@ -247,6 +261,7 @@ export class UiDropdown extends LightElement {
   @query("[data-trigger]") private _trigger?: HTMLElement;
 
   show() {
+    this.#build();
     if (this.mode === "focus") this._trigger?.focus();
     else if (this.mode === "popover") this._popover?.showPopover();
     this.open = true;
@@ -260,11 +275,15 @@ export class UiDropdown extends LightElement {
   connectedCallback() {
     super.connectedCallback();
     this.addEventListener("ui-select", this.#closeOnSelect);
+    this.addEventListener("pointerover", this.#build);
+    this.addEventListener("focusin", this.#build);
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
     this.removeEventListener("ui-select", this.#closeOnSelect);
+    this.removeEventListener("pointerover", this.#build);
+    this.removeEventListener("focusin", this.#build);
   }
 
   hide() {
@@ -341,6 +360,7 @@ export class UiDropdown extends LightElement {
       kind: d.kind,
       rounded: this.panelRounded ?? d.rounded,
       width: this.panelWidth ?? d.width,
+      height: d.height,
       // The docs' popover menu has no padding.
       padding: this.panelPadding ?? (popover ? undefined : d.padding),
       elevation: this.panelElevation ?? d.elevation,
@@ -384,6 +404,8 @@ export class UiDropdown extends LightElement {
         ${this.heading ? html`<h2 class=${dropdownCardTitle()}>${this.heading}</h2>` : nothing} ${this.slotted()}
       </div>`;
     }
+    // Not built yet (never about to open): nothing to lay out.
+    if (!this._built && !this.open) return nothing;
     return this.items.map(
       (item, i) =>
         html`${item.separator && i > 0 ? html`<li role="separator" class=${dropdownSeparator()}></li>` : nothing}
@@ -430,7 +452,10 @@ export class UiDropdown extends LightElement {
       return html`<details
         class=${dropdown(variants)}
         ?open=${this.open}
-        @toggle=${(e: Event) => (this.open = (e.target as HTMLDetailsElement).open)}
+        @toggle=${(e: Event) => {
+          this.open = (e.target as HTMLDetailsElement).open;
+          if (this.open) this.#build();
+        }}
       >
         <summary
           data-trigger
@@ -470,6 +495,7 @@ export class UiDropdown extends LightElement {
                 style="position-anchor:${anchor}"
                 role="menu"
                 aria-label=${ifDefined(this._menuName)}
+                @beforetoggle=${(e: ToggleEvent) => e.newState === "open" && this.#build()}
                 @toggle=${(e: ToggleEvent) => {
                   onToggle(e);
                   if (e.newState === "open") this._focusFirst();

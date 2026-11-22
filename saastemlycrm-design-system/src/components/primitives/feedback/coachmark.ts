@@ -4,7 +4,7 @@ import { styleMap } from "lit/directives/style-map.js";
 import { inlineStart } from "../../base/inline-start.ts";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
-import { floating, pad, row, stack, text } from "../layout/algebra.ts";
+import { floating, floatingHeight, pad, row, stack, text } from "../layout/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
 
 /**
@@ -27,7 +27,7 @@ export const coachmarkSpot = rcva(
   "pointer-events-none fixed rounded-box scrim-cutout ring-2 ring-primary [transition:top_var(--duration-spatial)_var(--ease-spatial),inset-inline-start_var(--duration-spatial)_var(--ease-spatial),width_var(--duration-spatial)_var(--ease-spatial),height_var(--duration-spatial)_var(--ease-spatial)] motion-reduce:transition-none top-(--top) start-(--left) h-(--h) w-(--w) max-w-full",
 );
 export const coachmarkCard = rcva(
-  `${stack} ${floating.sm} ${pad["4"]} liquid-glass pointer-events-auto fixed gap-2 rounded-box py-4 text-on-surface [transition:top_var(--duration-spatial)_var(--ease-spatial),inset-inline-start_var(--duration-spatial)_var(--ease-spatial),opacity_var(--duration-effects)_var(--ease-effects)] motion-reduce:transition-none top-(--top) start-(--left) starting:opacity-0`,
+  `${stack} ${floating["7"]} ${floatingHeight.fit} ${pad["4"]} liquid-glass pointer-events-auto fixed gap-2 rounded-box py-4 text-on-surface [transition:top_var(--duration-spatial)_var(--ease-spatial),inset-inline-start_var(--duration-spatial)_var(--ease-spatial),opacity_var(--duration-effects)_var(--ease-effects)] motion-reduce:transition-none top-(--top) start-(--left) starting:opacity-0`,
 );
 export const coachmarkEyebrow = rcva(`${row} items-center gap-2 text-label-md text-on-surface-variant`);
 export const coachmarkHeading = rcva(`${text.label} text-title-lg leading-snug`);

@@ -1,4 +1,10 @@
+import type { CollectionSettings } from "saastemlycrm-design-system/contracts";
+import { matches } from "saastemlycrm-design-system/payload";
 import { beforeEach, describe, expect, it } from "vite-plus/test";
+import { Suppliers } from "../src/collections/directory.ts";
+import { Opportunities } from "../src/collections/growth.ts";
+import { controlRoom } from "../src/pages/control-room.ts";
+import { BOARD_STAGES } from "../src/queries/growth.ts";
 import { backend, call, login } from "./backend.ts";
 
 /** Insights & growth: profit & close, the control room, the 07:00 briefing, Ask Golden Sea, growth CRM. */
@@ -80,14 +86,54 @@ describe("control room (/api/control-room)", () => {
     expect(kb.money).toBe(true);
     expect(kb.sections.map((s: { id: string }) => s.id)).toEqual(["pipeline", "speed", "money", "delivery"]);
     const turnaround = kb.sections[1].widgets.find((w: { title: string }) => w.title === "Quote turnaround");
-    // The period sets what shows at first; a trend always carries its whole history for the chart to cut.
-    expect(kb.show).toEqual({ week: 4, month: 3 });
+    // The period sets the key figures' window; a trend always carries its whole history for the chart to cut.
+    expect(kb.tiles.find((t: { trend?: unknown }) => t.trend).trend.labels).toHaveLength(4);
     expect(turnaround.labels).toHaveLength(12);
     expect(turnaround.ranges).toEqual([4, 8, 12]);
     await login("soaad.amer");
     const sa = (await call("GET", "/api/control-room")).body;
     expect(sa.money).toBe(false);
     expect(JSON.stringify(sa)).not.toMatch(/Gross profit|Margin by/);
+  });
+
+  it("counts each supplier's open RFQs on the supplier, as the supplier table reads it", async () => {
+    await login("karim.balbaa");
+    const open = ["Sent", "Awaiting reply", "Partial reply", "No response"];
+    const rfqs = (await call("GET", "/api/supplier-rfqs?limit=0&depth=0")).body.docs as {
+      supplier: string;
+      status: string;
+    }[];
+    const suppliers = (await call("GET", "/api/suppliers?limit=0&depth=0")).body.docs as {
+      id: string;
+      openRfqs: number;
+    }[];
+    for (const s of suppliers)
+      expect(s.openRfqs, s.id).toBe(rfqs.filter((r) => r.supplier === s.id && open.includes(r.status)).length);
+    expect(suppliers.some((s) => s.openRfqs > 0)).toBe(true);
+  });
+
+  it("says on the suppliers' fields what their figures mean, and ranks the busiest owner first", async () => {
+    await login("karim.balbaa");
+    type Field = { name?: string; fields?: Field[]; tabs?: { fields: Field[] }[]; custom?: Record<string, never> };
+    const flat = (fs: Field[]): Field[] =>
+      fs.flatMap((f) => (f.tabs ? f.tabs.flatMap((t) => flat(t.fields)) : !f.name && f.fields ? flat(f.fields) : [f]));
+    const field = (name: string) => flat(Suppliers.fields as Field[]).find((f) => f.name === name)!;
+    const tone = (name: string, doc: Record<string, unknown>) =>
+      (field(name).custom!.toneWhen as { when: never; tone: string }[]).find((r) => matches(doc, r.when))?.tone;
+    const table = controlRoom.clientProps.page.widgets.find((w) => w.title === "Supplier on-time vs reply time")!;
+    expect(table.records!.columns).toEqual(["name", "onTime", "replyHrs", "openRfqs"]);
+    // On time: a bar of 100%, amber under 85%, green from there; a reply past a day in amber.
+    expect(field("onTime").custom!.gauge).toEqual({ max: 100 });
+    const suppliers = (await call("GET", "/api/suppliers?limit=0&depth=0")).body.docs as Record<string, number>[];
+    const late = suppliers.filter((s) => typeof s.onTime === "number" && s.onTime < 85);
+    expect(late.length).toBeGreaterThan(0);
+    for (const s of suppliers.filter((x) => typeof x.onTime === "number"))
+      expect(tone("onTime", s)).toBe(s.onTime! < 85 ? "warning" : "success");
+    expect(tone("replyHrs", { replyHrs: 30 })).toBe("warning");
+    expect(tone("replyHrs", { replyHrs: 6 })).toBeUndefined();
+    const owners = controlRoom.clientProps.page.widgets.find((w) => w.title === "Live cases per owner")!;
+    // A ring of each owner's share, its parts largest first (the ring's own order).
+    expect(owners.breakdown).toMatchObject({ collection: "cases", by: "owner", as: "ring" });
   });
 });
 
@@ -143,16 +189,49 @@ describe("07:00 briefing and Ask Golden Sea", () => {
 });
 
 describe("growth CRM (/api/growth)", () => {
-  it("lays out the board, fleets, registrations, campaigns and next steps", async () => {
+  it("lays out the fleets per ship manager across customers, vessels and prospects", async () => {
     await login("soaad.amer");
     const g = (await call("GET", "/api/growth")).body;
-    expect(g.stages).not.toContain("Closed");
-    const stage = (s: string) => g.columns.find((c: { stage: string }) => c.stage === s).deals;
-    expect(stage("Registration submitted").map((d: { name: string }) => d.name)).toContain("Gulf Star Shipping");
-    expect(g.steps.find((s: { company: string }) => s.company === "Medline Tankers").noNext).toBe(true);
     const gulf = g.fleets.find((f: { company: string }) => f.company === "Gulf Star Shipping");
     expect(gulf.vessels[0]).toMatchObject({ imo: "9441201" });
-    expect(g.canSend).toBe(false);
+  });
+
+  it("keeps the board, the next steps, registrations and campaigns on their collections", async () => {
+    await login("soaad.amer");
+    expect(BOARD_STAGES).not.toContain("Closed");
+    const opps = (await call("GET", "/api/opportunities?limit=0&depth=1")).body.docs as Record<string, unknown>[];
+    const byName = (n: string) => opps.find((o) => o.name === n)!;
+    expect(byName("Gulf Star Shipping").stage).toBe("Registration submitted");
+    // No next step: flagged (in red), briefed, and offered "Plan next step" rather than "Record outcome".
+    const medline = byName("Medline Tankers");
+    expect(medline).toMatchObject({ noNextStep: true, step: "No next step — plan one or close" });
+    const step = (Opportunities.fields as never as { name?: string; custom?: Record<string, never> }[]).find(
+      (f) => f.name === "step",
+    )!;
+    const stepTone = (o: Record<string, unknown>) =>
+      (step.custom!.toneWhen as { when: never; tone: string }[]).find((r) => matches(o, r.when))?.tone;
+    expect(stepTone(medline)).toBe("error");
+    // A step past its date is overdue, in red; a planned one reads as its day.
+    expect(stepTone({ noNextStep: false, nextStepDue: "2026-11-10" })).toBe("error");
+    expect(stepTone({ noNextStep: false, nextStepDue: "2026-11-25" })).toBeUndefined();
+    expect(medline.brief).toMatch(/^Plan the next step, or close the opportunity\./);
+    const actions = (Opportunities.custom as CollectionSettings).actions!;
+    const offered = (o: Record<string, unknown>) =>
+      actions.filter((a) => matches(o, a.when as never)).map((a) => a.label);
+    expect(offered(medline)).toEqual(["Plan next step"]);
+    expect(offered(byName("Gulf Star Shipping"))).toEqual(["Record outcome"]);
+    // A step with what to say; the last outcome only once one is recorded (below).
+    expect(opps.some((o) => o.script && o.brief === o.nextStep)).toBe(true);
+    expect(opps.filter((o) => !(o.outcomes as unknown[] | undefined)?.length).every((o) => o.lastOutcome == null)).toBe(
+      true,
+    );
+    const regs = (await call("GET", "/api/vendor-registrations?limit=0&depth=0")).body.docs as Record<
+      string,
+      unknown
+    >[];
+    expect(regs.some((r) => /— missing/.test(String(r.paperwork)))).toBe(true);
+    const campaigns = (await call("GET", "/api/campaigns?limit=0&depth=0")).body.docs as Record<string, unknown>[];
+    expect(campaigns.every((c) => /contacts/.test(String(c.reach)))).toBe(true);
   });
 
   it("records an outcome and plans the next step", async () => {
@@ -160,7 +239,7 @@ describe("growth CRM (/api/growth)", () => {
     expect(
       (await call("POST", "/api/growth/op-gulfstar/outcome", { result: "Reached — positive", note: "x" })).status,
     ).toBe(400);
-    const g = (
+    const saved = (
       await call("POST", "/api/growth/op-gulfstar/outcome", {
         result: "Reached — positive",
         note: "Committee meets 24 Nov; documents complete.",
@@ -168,9 +247,15 @@ describe("growth CRM (/api/growth)", () => {
         nextStepDue: "2026-11-25",
       })
     ).body;
-    const step = g.steps.find((s: { id: string }) => s.id === "op-gulfstar");
-    expect(step).toMatchObject({ goal: "Call after the committee decision", due: "25 Nov" });
-    expect(step.last).toMatchObject({ result: "Reached — positive", by: "Karim Youssef" });
+    expect(saved.message).toMatch(/next step “Call after the committee decision” planned for 25 Nov/);
+    // The opportunity now says so itself: its next step, its date and its brief with the outcome.
+    const opp = (await call("GET", "/api/opportunities/op-gulfstar?depth=1")).body;
+    expect(opp).toMatchObject({ nextStep: "Call after the committee decision", noNextStep: false, step: "25 Nov" });
+    expect(opp.nextStepDue).toMatch(/^2026-11-25/);
+    expect(opp.brief).toBe("Call after the committee decision");
+    expect(opp.lastOutcome).toMatch(
+      /Last: Reached — positive — Committee meets 24 Nov; documents complete\. \(Karim Youssef/,
+    );
     const tasks = (await call("GET", "/api/tasks?where[opportunity][equals]=op-gulfstar&depth=0")).body.docs;
     expect(
       tasks.some((t: { status: string; type: string }) => t.status === "Open" && t.type === "Sales next step"),

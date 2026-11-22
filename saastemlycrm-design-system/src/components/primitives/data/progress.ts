@@ -4,6 +4,7 @@ import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
+import { tiles } from "../layout/algebra.ts";
 
 /**
  * Progress: how far along work the app is doing right now is (M3 linear progress indicator).
@@ -18,10 +19,11 @@ export const progress = rcva("progress progress-primary", {
   variants: {
     /** Bar width; full by default. */
     width: {
-      xs: "w-32 max-w-full",
-      sm: "w-56 max-w-full",
-      md: "w-72 max-w-full",
-      lg: "w-96 max-w-full",
+      // Whole tiles (`tiles.*`): 2, 4, 5, 7.
+      xs: tiles["2"],
+      sm: tiles["4"],
+      md: tiles["5"],
+      lg: tiles["7"],
       full: "w-full",
     },
   },

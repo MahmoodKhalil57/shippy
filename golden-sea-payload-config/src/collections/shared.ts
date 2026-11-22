@@ -102,6 +102,73 @@ export const financeAccess: CollectionConfig["access"] = {
 /** Field-level: costs & margins hidden from sales (as in the demo's "Viewing as Soaad Amer"). */
 export const costVisible = ({ req }: { req: PayloadRequest }) => Boolean(req.user) && role(req) !== "sales";
 
+/* ---------------------------------------------------------------- the demo's clock */
+
+/** The day the demo's records are set on (a Tuesday morning): what "today" and "overdue" count from. */
+export const TODAY = new Date("2026-11-17T09:30:00.000Z");
+export const DAY = 86_400_000;
+/** Whole days from `iso` to today: positive once it's past, negative before. */
+export const daysSince = (iso: unknown) =>
+  typeof iso === "string" && iso ? Math.floor((TODAY.getTime() - new Date(iso).getTime()) / DAY) : 0;
+
+/* ---------------------------------------------------------------- computed fields */
+
+/**
+ * A field computed whenever the document is read and never stored (Payload's `virtual`): the
+ * business logic lives with the collection, so every screen that shows its documents shows the
+ * same value. Read-only in the form. A query can't filter on it (a widget filters on it with
+ * `keep`).
+ */
+export const computed = <F extends Field>(
+  field: F,
+  compute: (doc: Record<string, unknown>, req: PayloadRequest) => unknown,
+): F =>
+  ({
+    ...field,
+    virtual: true,
+    admin: { readOnly: true, ...(field as { admin?: object }).admin },
+    hooks: {
+      afterRead: [({ data, req }: { data: Record<string, unknown>; req: PayloadRequest }) => compute(data, req)],
+    },
+  }) as F;
+
+/** EGP per unit of each currency (the active rates), read once per request. */
+export async function fxRates(req: PayloadRequest): Promise<Record<string, number>> {
+  const ctx = (req.context ??= {}) as { fx?: Promise<Record<string, number>> };
+  ctx.fx ??= (async () => {
+    const out: Record<string, number> = { EGP: 1, USD: 48.6, EUR: 52.9 };
+    try {
+      const g = (await req.payload.findGlobal({ slug: "fx-rates" as never, depth: 0 } as never)) as {
+        rates?: { currency?: string; egpPerUnit?: number; status?: string }[];
+      };
+      for (const r of g.rates ?? [])
+        if (r.status === "Active" && r.currency) out[r.currency] = Number(r.egpPerUnit) || 1;
+    } catch {
+      // No rates yet: the defaults.
+    }
+    return out;
+  })();
+  return ctx.fx;
+}
+
+/** A related document, populated or by id (read as the request's user). */
+export async function related(
+  req: PayloadRequest,
+  collection: string,
+  v: unknown,
+): Promise<Record<string, unknown> | null> {
+  if (v && typeof v === "object") return v as Record<string, unknown>;
+  if (typeof v !== "string" || !v) return null;
+  try {
+    return (await req.payload.findByID({ collection: collection as never, id: v, depth: 0, req } as never)) as Record<
+      string,
+      unknown
+    >;
+  } catch {
+    return null;
+  }
+}
+
 /* ---------------------------------------------------------------- reusable fields */
 
 export const money = (name: string, label?: string, extra: Partial<Field> = {}): Field =>

@@ -5,9 +5,22 @@ import { keyed } from "lit/directives/keyed.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { axisOf, labelBoxes, labelStep, niceScale, pointAt, smoothPath, type Point } from "../../base/chart.ts";
 import { LightElement } from "../../base/light-element.ts";
+import { whenIdle } from "../../base/work-queue.ts";
+import { motion } from "../../base/motion-queue.ts";
 import { rcva } from "../../base/variants.ts";
 import { buttonGroup, buttonGroupItem } from "../actions/button-group.ts";
-import { fixed, inlineRow, pad, row, rowEnd, stack, stackReverse, text } from "../layout/algebra.ts";
+import {
+  fixed,
+  floatingFit,
+  floatingHeight,
+  inlineRow,
+  pad,
+  row,
+  rowEnd,
+  stack,
+  stackReverse,
+  text,
+} from "../layout/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
 
 /**
@@ -38,13 +51,16 @@ import { iconSvg } from "../media/icon.ts";
  * The only `<svg>` drawn outside the icon registry (tests/icons.test.ts): lines need one. The
  * range switch borrows the button group's recipes.
  */
-export const chart = rcva(`${stack} ${text.label} relative w-full gap-2 text-body-sm text-on-surface-variant`, {
-  variants: {
-    /** Plot height: `spark` for KPI tiles, `md` for cards. */
-    height: { spark: "[--chart-h:2.5rem]", sm: "[--chart-h:7rem]", md: "[--chart-h:11rem]" },
+export const chart = rcva(
+  `${stack} ${text.label} relative w-full gap-2 text-body-sm text-on-surface-variant [anchor-scope:--chart-tip]`,
+  {
+    variants: {
+      /** Plot height: `spark` for KPI tiles, `md` for cards. */
+      height: { spark: "[--chart-h:2.5rem]", sm: "[--chart-h:7rem]", md: "[--chart-h:11rem]" },
+    },
+    defaultVariants: { height: "md" },
   },
-  defaultVariants: { height: "md" },
-});
+);
 
 /** Over the plot: the legend's chips at the start, the range switch at the end. */
 export const chartHead = rcva(`${row} items-center justify-between gap-x-3 gap-y-2`);
@@ -139,25 +155,33 @@ export const chartTargetLabel = rcva("absolute end-0 bottom-0.5 rounded-xs bg-su
 
 /** Hover: the column under the pointer (bars), or a crosshair with a dot per series (lines). */
 export const chartColumn = rcva(
-  "pointer-events-none absolute inset-y-0 start-(--a) end-(--b) rounded-t-xs bg-on-surface/(--state-hover)",
+  "pointer-events-none absolute inset-y-0 start-(--a) end-(--b) rounded-t-xs bg-on-surface/(--state-hover) [anchor-name:--chart-tip]",
 );
-export const chartCrosshair = rcva("pointer-events-none absolute inset-y-0 start-(--x) border-s border-outline");
+export const chartCrosshair = rcva(
+  "pointer-events-none absolute inset-y-0 start-(--x) border-s border-outline [anchor-name:--chart-tip]",
+);
 export const chartDot = rcva(
   "pointer-events-none absolute start-(--x) bottom-(--y) size-2.5 -translate-x-1/2 translate-y-1/2 rounded-full bg-current ring-2 ring-surface rtl:translate-x-1/2",
   { variants: { series: SERIES } },
 );
 /**
- * The tooltip: glass, beside the hovered x on the side with more room, and only as wide as that
- * room (a positioned box that fits its content shrinks to the space its offset leaves), so it
- * never leaves the plot.
+ * The tooltip: glass, in the top layer (a popover), anchored to the hovered column or crosshair
+ * (`--chart-tip`, scoped to its chart): beside it on the side with more room, its top at the
+ * plot's, or above a sparkline; it flips when that side has no room. Its own size in tiles: its
+ * content's width rounded up to whole tiles (at most 6) and quarter tiles down, so a narrow plot
+ * (a sparkline's 64px) never squeezes it, and no card around it clips it.
  */
 export const chartTooltip = rcva(
-  `${stack} ${pad["2.5"]} liquid-glass pointer-events-none absolute z-10 w-fit gap-0.5 rounded-field py-1.5 text-on-surface`,
+  `${stack} ${pad["2.5"]} ${floatingFit["6"]} ${floatingHeight.fit} liquid-glass pointer-events-none m-0 gap-0.5 overflow-visible rounded-field py-1.5 text-on-surface [position-anchor:--chart-tip]`,
   {
     variants: {
-      side: { start: "start-(--at)", end: "end-(--at)" },
-      /** Inside the plot, at its top; a sparkline's goes above it. */
-      place: { inside: "top-0", above: "bottom-full mb-1" },
+      place: {
+        /** Beside the hovered x, towards the end (or the start), its top at the plot's. */
+        start: "mx-1 [position-area:span-block-end_inline-end] [position-try-fallbacks:flip-inline]",
+        end: "mx-1 [position-area:span-block-end_inline-start] [position-try-fallbacks:flip-inline]",
+        /** Above a sparkline, centred on its x. */
+        above: "my-1 [position-area:block-start_center] [position-try-fallbacks:flip-block]",
+      },
     },
   },
 );
@@ -258,6 +282,13 @@ export class UiChart extends LightElement {
   @state() private _points?: number;
   /** Every how many points an x label shows (measured: `_fit`). */
   @state() private _step = 1;
+  /** The screen-reader table's rows are drawn (once the page has settled). */
+  @state() private _table = false;
+
+  connectedCallback() {
+    super.connectedCallback();
+    if (!this._table) whenIdle(this, () => (this._table = true));
+  }
   #uid = `chart-${++charts}`;
   /** How many points are on the x axis (set by `render`, read by `_fit`). */
   #points = 0;
@@ -292,7 +323,24 @@ export class UiChart extends LightElement {
 
   #observed = new WeakSet<Element>();
 
+  /** Its reveal (lines uncovered, bars growing) has been handed to the motion queue. */
+  #revealed = false;
+
   protected updated() {
+    // Its reveal is ambient motion (src/components/base/motion-queue.ts): it plays when nothing a
+    // person did is still moving, and on a page whose frames run late it skips to the drawn chart.
+    if (!this.#revealed && this.querySelector("svg, [data-chart-plot]")) {
+      this.#revealed = true;
+      const reveal = this.getAnimations({ subtree: true }).filter(
+        (a) =>
+          (a instanceof CSSAnimation && a.animationName === "chart-reveal") ||
+          (a instanceof CSSTransition && a.transitionProperty === "scale"),
+      );
+      void motion.add(reveal, "ambient", this);
+    }
+    // The hover's tooltip goes to the top layer once it's drawn (it leaves it with its element).
+    const tip = this.querySelector<HTMLElement>("[data-chart-tip]");
+    if (tip && !tip.matches(":popover-open")) tip.showPopover();
     // Observing reports each new element's size on the next frame; nothing is read here.
     for (const el of this.querySelectorAll<HTMLElement>("[data-chart-axis], [data-chart-sizer]"))
       if (!this.#observed.has(el)) {
@@ -535,10 +583,8 @@ export class UiChart extends LightElement {
     const bars = this.kind === "bars";
     const x = this._x(i, v.n);
     const half = bars ? 50 / v.n : 0;
-    // Beside the hovered x, on the side with more room, clear of its bars (each at most 48px wide).
+    // Beside the hovered x, on the side with more room (it flips if that has none).
     const side = x > 50 ? "end" : "start";
-    const wide = v.stacked ? 1 : v.shown.length;
-    const at = `calc(${side === "end" ? 100 - x : x}% + min(${half}%, ${wide * 1.5}rem) + 0.5rem)`;
     const label = v.labels[i];
     return html`
       ${
@@ -557,8 +603,9 @@ export class UiChart extends LightElement {
               )}`
       }
       <div
-        class=${chartTooltip({ side, place: this.kind === "spark" ? "above" : "inside" })}
-        style=${styleMap({ "--at": at })}
+        class=${chartTooltip({ place: this.kind === "spark" ? "above" : side })}
+        popover="manual"
+        data-chart-tip
         role="status"
       >
         ${label ? html`<span class=${chartTooltipTitle()}>${label}</span>` : nothing}
@@ -670,24 +717,30 @@ export class UiChart extends LightElement {
         <caption>
           ${this.label}
         </caption>
-        <tr>
-          <th></th>
-          ${v.shown.map((s) => html`<th>${s.name}</th>`)}
-        </tr>
-        ${Array.from(
-          { length: v.n },
-          (_, i) =>
-            html`<tr>
-              <th>${v.labels[i] ?? i + 1}</th>
-              ${v.shown.map((s) => html`<td>${this.format(s.values[i]!)}</td>`)}
-            </tr>`,
-        )}
         ${
-          this.target !== undefined
+          // The rows come at background priority once the page has settled (`whenIdle`): a screen of
+          // charts drew hundreds of cells no one sees in the frame it appeared.
+          this._table
             ? html`<tr>
-                <th>${this.targetLabel || "Target"}</th>
-                <td colspan=${v.shown.length}>${this.format(this.target)}</td>
-              </tr>`
+                  <th></th>
+                  ${v.shown.map((s) => html`<th>${s.name}</th>`)}
+                </tr>
+                ${Array.from(
+                  { length: v.n },
+                  (_, i) =>
+                    html`<tr>
+                      <th>${v.labels[i] ?? i + 1}</th>
+                      ${v.shown.map((s) => html`<td>${this.format(s.values[i]!)}</td>`)}
+                    </tr>`,
+                )}
+                ${
+                  this.target !== undefined
+                    ? html`<tr>
+                        <th>${this.targetLabel || "Target"}</th>
+                        <td colspan=${v.shown.length}>${this.format(this.target)}</td>
+                      </tr>`
+                    : nothing
+                }`
             : nothing
         }
       </table>

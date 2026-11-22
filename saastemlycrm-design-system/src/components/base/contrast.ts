@@ -74,6 +74,26 @@ export function auditContrast(root: Element = document.body): ContrastIssue[] {
     for (let e: Element | null = el; e; e = e.parentElement) {
       // The app frame's root (`<ui-frame>`, `data-frame`): its shell knows the image behind it.
       const shell = e.hasAttribute("data-frame") ? (e.closest("ui-app-shell") as unknown as Backdrop | null) : null;
+      if (shell)
+        // The frame's own layers under everything in it (`data-frame-layer`: the shell's glass, then
+        // the backdrop), from the text outwards: their tint is between the text and the image, and
+        // their blur evens the image out. Each is clipped (`UiFrame`): the slab (`data-frame-shell`)
+        // only in the main window, the chrome's glass (`data-frame-backdrop`) everywhere else; so
+        // text in the window is over the slab alone, and text on the chrome over the chrome's.
+        for (const layer of [...e.querySelectorAll(":scope > [data-frame-layer]")].reverse()) {
+          if (layer.hasAttribute("data-frame-shell") || layer.hasAttribute("data-frame-backdrop")) {
+            const w = e.querySelector("ui-frame-main main")?.getBoundingClientRect();
+            const cx = box.left + box.width / 2;
+            const cy = box.top + box.height / 2;
+            const inWindow = !!w && cx >= w.left && cx <= w.right && cy >= w.top && cy <= w.bottom;
+            if (layer.hasAttribute("data-frame-shell") ? !inWindow : inWindow) continue;
+          }
+          const ls = getComputedStyle(layer);
+          const frosted = /blur\(([\d.]+)px\)/.exec(ls.backdropFilter);
+          if (frosted) blur = Math.max(blur, parseFloat(frosted[1]!));
+          const bg = rgba(ls.backgroundColor);
+          if (bg[3] > 0) layers.push(bg);
+        }
       const image = shell?.backdropAt(box, blur);
       if (image?.length) {
         base = image.map((l) => [greyOf(l), greyOf(l), greyOf(l)] as Rgb);

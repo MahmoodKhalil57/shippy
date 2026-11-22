@@ -1,5 +1,6 @@
 import type { TileSize } from "../../components/base/board.ts";
-import type { Action, Tag, Tone, ViewBlock, ViewHeader } from "./schema.ts";
+import type { Query } from "./kinds.ts";
+import type { Action, Stat, Tag, Tone, ViewBlock, ViewHeader } from "./schema.ts";
 
 /**
  * Widgets: how a project describes its screens next to its collections and globals.
@@ -53,24 +54,144 @@ export interface WidgetScope {
   params: Record<string, string>;
 }
 
-/** A collection's documents as a table or list, with no code: columns are field names. */
+/**
+ * A collection's documents as a table, a list or entries, with no code: what each value means comes
+ * from the field config (labels, select tones, number formats: `custom.number`), and what people
+ * can do to each document from the collection's `custom.actions` (a table's last column, an
+ * entry's buttons). Columns are field names, or dotted paths into a related document
+ * (`customer.contactRule`).
+ */
 export interface RecordsSpec {
-  collection: string;
+  /** Whose documents: a collection's (with `doc: true` and `field`, the screen's document's array rows). */
+  collection?: string;
+  /** Or a global's array rows (`field`). */
+  global?: string;
+  /** The rows of an array field (a dotted path) of the screen's document (`doc: true`) or of the global. */
+  field?: string;
+  doc?: boolean;
   where?: Record<string, unknown>;
   sort?: string;
   limit?: number;
-  /** Field names; the first links to the document. */
+  /** Field names (or dotted paths into related documents); the first links to the document. */
   columns: string[];
   /** A field shown as the second line under a column: `{ customer: "city" }`. */
   supporting?: Record<string, string>;
-  layout?: "table" | "list";
+  /** Column headings other than the fields' own labels: `{ "eInvoice.status": "E-invoice" }`. */
+  labels?: Record<string, string>;
+  /** `entries`: one entry per document, its title as the heading, the columns as its meta line,
+   * its first toned select as its status, `text` (a field) under it, and its actions. */
+  layout?: "table" | "list" | "entries" | "timeline";
+  /** For `entries`: the field read as each entry's text. */
+  text?: string;
+  /** For `entries`: fields shown as label / value facts; a field of lines (an array of text, or text) as its quiet notes; a field as its notice (in the field's tone). */
+  facts?: string[];
+  notes?: string;
+  notice?: string;
+  /** For `list` and `entries`: fields shown as tags after it (each in its field's tone). */
+  tags?: string[];
+  /**
+   * `timeline`: one entry per row, in order: the first column is its time, the second its heading,
+   * `text` its text and `dot` (a field) its tone.
+   */
+  /** For `list` and `timeline`: a field whose tone is the item's dot. */
+  dot?: string;
+  /**
+   * For `list`: picking an item sets the screen parameter `param` to its `value` field (`id` by
+   * default): master–detail, a detail widget's query reads `$param.<param>`.
+   */
+  select?: { param: string; value?: string };
+  /** Draw nothing (the tile hides) when there are no rows. */
+  hideEmpty?: boolean;
+  /** Show the collection's actions on each document (default true). */
+  actions?: boolean;
+  /**
+   * Only the documents that match this, checked on them as read: for virtual fields (computed on
+   * read, so a query can't filter on them, as in Payload). Everything is fetched first.
+   */
+  keep?: Record<string, unknown>;
   empty?: string;
   /** Add "All <plural>" to the card, linking to the list with the same `where`. */
   more?: boolean;
 }
 
+/**
+ * Figures from a collection, one tile each: how many documents match, or the sum of a number field
+ * over them (read in the field's format: money in a fixed currency, a share, days). With no
+ * `where`, all of them.
+ */
+export interface MetricsSpec {
+  collection: string;
+  /** Show none of the figures when none of them has any documents (a case with no invoices yet). */
+  hideEmpty?: boolean;
+  items: {
+    label: string;
+    where?: Record<string, unknown>;
+    /**
+     * A number field to add up; left out, the count. Money in a document's own currency shows in
+     * it when every document added up shares it.
+     */
+    sum?: string;
+    /** Only documents matching this as read (virtual fields): see `RecordsSpec.keep`. */
+    keep?: Record<string, unknown>;
+    /** Another collection's, for this figure. */
+    collection?: string;
+    /** Under the figure; `$count` and `$sum` are its document count and its sum. */
+    note?: string;
+    /** Its tone, or one tone when there are some and another when there are none. */
+    tone?: Tone | { some: Tone; none: Tone };
+    /** The one the strip is about. */
+    main?: boolean;
+  }[];
+}
+
+/**
+ * A chart of a collection's documents with no code: grouped by a field (a select's options in their
+ * order, a relationship's titles, a date's day, week or month), counting them or adding up a number
+ * field, one series per value of `stack` (stacked) or one series. Values read in the summed field's
+ * format.
+ */
+export interface BreakdownSpec {
+  collection: string;
+  where?: Record<string, unknown>;
+  /** The field (or dotted path) on the axis. */
+  by: string;
+  /** For a date `by`: its bucket. */
+  bucket?: "day" | "week" | "month";
+  /** A field whose values are the series (stacked). */
+  stack?: string;
+  /** A number field to add up; left out, the count. */
+  sum?: string;
+  chart?: "bars" | "line";
+  /**
+   * `table`: the same numbers as a table, one row per group, a column per series and a total.
+   * `ring`: the groups as parts of a whole (a donut, `<ui-ring>`), each opening its documents; one
+   * series only (no `stack`), up to six parts (more fold into "Other"). `share`: the same parts as
+   * one 100% bar (a ring for a small tile). `treemap`: as rectangles sized by value (many groups).
+   */
+  as?: "chart" | "table" | "ring" | "share" | "treemap";
+  /** The largest groups only, the rest left out (by value). */
+  top?: number;
+  /** `value`: the groups largest first, not in the field's own order. */
+  sort?: "value";
+  /**
+   * Only the documents that match this, checked on them as read: for virtual fields (computed on
+   * read, so a query can't filter on them, as in Payload). Everything is fetched first.
+   */
+  keep?: Record<string, unknown>;
+}
+
 /** Counts of a collection's documents, each linking to the filtered list. */
-export type CountsSpec = { collection: string } & (
+export type CountsSpec = {
+  collection: string;
+  /**
+   * How a titled one draws its counts: `figures` (the default) a row of figures; `list` one row
+   * each, the label and its note (wrapping) at the start and the count at the end, in its tone
+   * only while there are any. A list reads well in a narrow column (a side panel). `funnel`: the counts as stages, in their
+   * order, each a bar as long as its share of the first, with the share that went on between two
+   * (`<ui-funnel>`).
+   */
+  layout?: "figures" | "list" | "funnel";
+} & (
   | /** One per value of a select field, in the value's tone. `skip` leaves values out. */ {
       field: string;
       skip?: string[];
@@ -85,12 +206,112 @@ export type CountsSpec = { collection: string } & (
 
 /** The document's own fields as label / value pairs (an edit tab). */
 export interface FieldsSpec {
+  /** Field names, or dotted paths through relationships and groups (`customer.contactRule`). */
   fields: string[];
+  /** Show the document's actions (its collection's `custom.actions`) under them (default true). */
+  actions?: boolean;
   layout?: "stacked" | "inline";
 }
 
+/**
+ * Payload's collection, document and global views as widgets: a root view shows them where the
+ * owner places them, as many as it likes (related collections on one page, one collection on
+ * several pages, each set up its own way). Nothing gets a page of its own: a link to a collection,
+ * a document or a global (`links()`) opens the root view that holds it (its home: the one marked
+ * `home`, else the first in the config), and leads nowhere when none does.
+ *
+ * Each keeps its state in the URL under its `key` (`?cases[q]=…&cases[page]=2`), so a filtered
+ * list can be bookmarked, shared and gone back to, with several on one page.
+ *
+ * Each is a tile like any other widget: `size` / `width` and `rows` are its target, `min…` /
+ * `max…` the bounds someone may resize it to, its skeleton waits in that box, and what doesn't fit
+ * fades behind "Show all" (12 tiles high by default; a list loads as a table, a form as a card).
+ * The tile's heading is the widget's `title`, else the collection's plural, the record's title or
+ * the global's name, with the list's count; `hide: ["header"]` makes it a bare tile. The widgets
+ * around it (a collection's `beforeList` / `afterList`, a document's `custom.edit.before`) are
+ * tiles of the same board beside it.
+ */
+export interface CollectionViewSpec {
+  /** The collection's slug. */
+  collection: string;
+  /** Its name in the URL (`?<key>[q]=…`); the collection's slug by default. Unique on a page. */
+  key?: string;
+  /** Where `links().list` / `links().doc` for this collection land (else the first view that has it). */
+  home?: boolean;
+  /** Always applied, under whatever people search and filter (not shown as a filter they can remove). */
+  where?: Record<string, unknown>;
+  /** Filters it starts with (people can change or remove them): field, operator, value. */
+  filters?: { field: string; operator: string; value: unknown }[];
+  /** The order it starts in (`-updatedAt`). */
+  sort?: string;
+  /** Rows per page it starts with. */
+  limit?: 10 | 25 | 50 | 100;
+  /**
+   * The layout it starts in (people can switch, unless `layouts` is hidden). Always: a table,
+   * cards, rich rows (`list`), chips (`compact`) and one record at a time (`focus`). With a status
+   * field: `groups`. With the collection's `custom.list.board`: a `board`. With its
+   * `custom.list.calendar` date: a month `calendar`, a `timeline` and a `heatmap` of the days. With
+   * a money field: a `ranking` and a `treemap`. With two number fields: a `scatter`. A layout the
+   * collection can't take falls back to the table.
+   */
+  layout?:
+    | "table"
+    | "cards"
+    | "list"
+    | "compact"
+    | "focus"
+    | "groups"
+    | "board"
+    | "calendar"
+    | "timeline"
+    | "heatmap"
+    | "ranking"
+    | "treemap"
+    | "scatter";
+  /** The columns it starts with (field names; the title stays first). */
+  columns?: string[];
+  /** Parts to leave out: the header (the tile's heading), search, filters, the column picker, the layout switch, export, the pager, selection (and bulk delete), Create, the widgets around the list (`beforeList` / `afterList`). */
+  hide?: (
+    | "header"
+    | "search"
+    | "filters"
+    | "columns"
+    | "layouts"
+    | "export"
+    | "pager"
+    | "select"
+    | "create"
+    | "around"
+  )[];
+}
+
+/** A document's form (and its tabs), or a new one's. */
+export interface DocumentViewSpec {
+  collection: string;
+  /** Which document: `$param.id` (the root view's path `/cases/:id`), `$doc.id`, an id, or `create`. */
+  id: string;
+  /** Its name in the URL (`?<key>[tab]=…`); the collection's slug by default. */
+  key?: string;
+  /** Where `links().doc` for this collection lands (else the first view whose id is a `$param`). */
+  home?: boolean;
+  /** One of its edit tabs (`admin.components.views.edit.<key>`) to show, instead of the form. */
+  tab?: string;
+  /** Parts to leave out: the header (the tile's heading), its summary (`<ui-record-hero>`), its tabs, the widgets about it (`custom.edit.before`), its sidebar, Delete. */
+  hide?: ("header" | "summary" | "tabs" | "around" | "sidebar" | "delete")[];
+}
+
+/** A global's form (and its tabs). */
+export interface GlobalViewSpec {
+  global: string;
+  key?: string;
+  /** Where `links().global` lands (else the first view that has it). */
+  home?: boolean;
+  tab?: string;
+  hide?: ("header" | "summary" | "tabs" | "around")[];
+}
+
 /** What every widget that draws something can say about itself. */
-interface WidgetBase<T> {
+export interface WidgetBase<T> {
   /**
    * Card heading: the widget is a card (shown with its heading while it loads). When it draws an
    * `entries` block it is a section instead: the heading over the entries' own cards (set
@@ -104,8 +325,39 @@ interface WidgetBase<T> {
   visible?: (scope: WidgetScope) => boolean;
   /** Hide it once its data is in, when this says so (a section with nothing to show yet). */
   hidden?(data: T, scope: WidgetScope): boolean;
+  /**
+   * For a widget with `hidden`, whether it usually shows, while its data loads the first time on
+   * a screen: `"shown"` holds its skeleton in its lanes (nothing moves when it does show), the
+   * default holds nothing (nothing moves when it hides). On later visits the board remembers what it
+   * did last time. A tile's lanes follow the tiles before it, so a wrong guess moves the tiles after
+   * it in the rows: put the tiles that may hide after the ones that always show.
+   */
+  expect?: "shown";
   /** Where its data comes from. */
   source?: Source;
+  /**
+   * Its height in tiles (56px each at the default text size; Android's `targetCellHeight`): the box it
+   * waits in while loading and shows its data in, so nothing moves when the data arrives. Left out,
+   * its kind's (`skeleton`: text 2, figures 3, lists, charts and cards 8, tables and entries 10),
+   * else its size's. What doesn't fit fades behind "Show all".
+   */
+  rows?: number;
+  /**
+   * Its width in tiles (53px each at the default text size), when a size (`s` 6, `m` 12, `l` 18,
+   * `full` all) isn't what it needs. Never more than the board has.
+   */
+  width?: number;
+  /** The fewest and most tiles across someone may resize it to. */
+  minWidth?: number;
+  maxWidth?: number;
+  /**
+   * The bounds someone may resize it to on their board (Android's `minResize…` / `maxResize…`):
+   * widths as sizes, heights as tiles. Left out, any width, and about half to twice its height.
+   */
+  minSize?: TileSize;
+  maxSize?: TileSize;
+  minRows?: number;
+  maxRows?: number;
   /** The skeleton's shape while loading. */
   skeleton?: "card" | "stats" | "table" | "list" | "chart" | "text" | "entries";
   /** Shown instead of hiding the widget when its data is refused (403). */
@@ -156,13 +408,31 @@ export interface EachSpec<T, I = any> {
 type NoBase = { [K in Exclude<keyof WidgetBase<unknown>, "visible">]?: never };
 
 type Only<K extends string> = {
-  [P in Exclude<"render" | "records" | "counts" | "fields" | "each" | "grid" | "split", K>]?: never;
+  [
+    P in Exclude<
+      | "render"
+      | "records"
+      | "counts"
+      | "metrics"
+      | "breakdown"
+      | "fields"
+      | "each"
+      | "grid"
+      | "split"
+      | "collection"
+      | "document"
+      | "global"
+      | "header",
+      K
+    >
+  ]?: never;
 };
 
 /**
  * A widget is exactly one kind: it draws its data (`render`), draws one tile per item of it
  * (`each`), is a no-code data widget (`records`, `counts`, `fields`), or groups other widgets
- * (`grid`, `split`; the board flattens them into tiles).
+ * (`grid`, `split`: the board flattens them into tiles). Small widgets after a tall one need no
+ * grouping: the board puts them one under another beside it (`place`).
  */
 export type Widget<T = unknown> =
   | (WidgetBase<T> &
@@ -172,14 +442,50 @@ export type Widget<T = unknown> =
       })
   | (WidgetBase<T> & Only<"records"> & { records: RecordsSpec })
   | (WidgetBase<T> & Only<"counts"> & { counts: CountsSpec })
+  | (WidgetBase<T> & Only<"metrics"> & { metrics: MetricsSpec })
+  | (WidgetBase<T> & Only<"breakdown"> & { breakdown: BreakdownSpec })
   | (WidgetBase<T> & Only<"fields"> & { fields: FieldsSpec })
   | (WidgetBase<T> & Only<"each"> & { each: EachSpec<T> })
+  /** A collection's list, with its search, filters, layouts and records opening in a sheet. */
+  | (WidgetBase<T> & Only<"collection"> & { collection: CollectionViewSpec })
+  /** A document's form, or a new one's. */
+  | (WidgetBase<T> & Only<"document"> & { document: DocumentViewSpec })
+  /** A global's form. */
+  | (WidgetBase<T> & Only<"global"> & { global: GlobalViewSpec })
+  /**
+   * The screen's header (its eyebrow, title, subtitle, tags, AI summary and actions), fixed or from
+   * data: a bare tile like any other widget, with its size, rows (2 by default) and bounds. A
+   * screen's `header` is this widget, first and the board's width.
+   */
+  | (WidgetBase<T> & Only<"header"> & { header: WidgetHeader })
   /** Children side by side, as many columns as fit. */
   | (NoBase & Only<"grid"> & { grid: Widget[]; visible?: (scope: WidgetScope) => boolean })
   /** A main column and a side column. */
   | (NoBase & Only<"split"> & { split: { main: Widget[]; side: Widget[] }; visible?: (scope: WidgetScope) => boolean });
 
-/** `$doc.id`, `$user.role`, `$param.period` in a string: the whole value when it's only that, else spliced in. */
+/**
+ * `$doc.id`, `$user.role`, `$param.period` in a string: the whole value when it's only that, else
+ * spliced in. `$today`, `$today-30d`, `$today+2w`: that day (`setToday`).
+ */
+/**
+ * The day relative dates count from (`$today-30d`): the project's `admin.custom.today` (a demo set
+ * at a fixed time, `setToday`), else the real day.
+ */
+let today: string | undefined;
+export const setToday = (iso: string | undefined) => (today = iso);
+/** The day it is for the dashboard (`setToday`'s, else the real day), as YYYY-MM-DD. */
+export const todayIso = () => (today ? new Date(today) : new Date()).toISOString().slice(0, 10);
+
+/** `$today`, `$today+7d`, `$today-30d`, `$today-2w`: midnight UTC of that day, as ISO. */
+function relativeDay(v: string): string | undefined {
+  const m = /^\$today(?:([+-])(\d+)([dw]))?$/.exec(v);
+  if (!m) return undefined;
+  const base = today ? new Date(today) : new Date();
+  const day = Date.UTC(base.getUTCFullYear(), base.getUTCMonth(), base.getUTCDate());
+  const n = m[1] ? Number(m[2]) * (m[3] === "w" ? 7 : 1) * (m[1] === "-" ? -1 : 1) : 0;
+  return new Date(day + n * 86_400_000).toISOString();
+}
+
 export function fill<T>(value: T, scope: WidgetScope): T {
   const look = (path: string): unknown => {
     const [root, key] = path.split(".");
@@ -191,6 +497,8 @@ export function fill<T>(value: T, scope: WidgetScope): T {
   const scalar = (x: unknown) => (typeof x === "string" || typeof x === "number" ? String(x) : "");
   const walk = (v: unknown): unknown => {
     if (typeof v === "string") {
+      const day = relativeDay(v);
+      if (day) return day;
       const whole = /^\$((?:doc|user|param)\.[\w-]+)$/.exec(v);
       if (whole) return look(whole[1]!);
       return v.replace(/\$((?:doc|user|param)\.[\w-]+)/g, (_, p: string) => encodeURIComponent(scalar(look(p))));
@@ -206,23 +514,58 @@ export function fill<T>(value: T, scope: WidgetScope): T {
 /** A widget that draws its data with `render`. */
 export type DrawingWidget<T = unknown> = Extract<Widget<T>, { render(data: T, scope: WidgetScope): unknown }>;
 
+/** A strip of figures from one source (`figures`). */
+export type FiguresSpec<T> = Omit<WidgetBase<T>, "title" | "subhead" | "head" | "size" | "source"> & {
+  /** 6 tiles across by default (`s`), 4 tiles wide (`width`), 3 high (a figure's `stats` rows). */
+  size?: TileSize;
+  /** The query that feeds them. */
+  data?: Query<T>;
+  /** The figures, in order; each becomes a tile of its own (its `label` is its key on the board). */
+  format(data: T, scope: WidgetScope): Stat[];
+};
+
 /**
- * Widgets that share one source: `const on = from<Cash>({ endpoint: "/cash" })`, then
- * `on({ title, render })`. Each gets the source and stays typed by its data.
+ * Figures as widgets: one tile per figure, untitled (the figure is the card and carries its label),
+ * each moved, resized and hidden on its own, rather than one widget holding a strip of them. They
+ * share one source, so they cost one request. `main` on a figure tints it (the one the strip is
+ * about).
+ *
+ * @example figures({ data: query.endpoint<Cash>("/cash"), format: (d) => [{ label: "Overdue", value: String(d.overdue), main: true }, …] })
  */
-export const from =
-  <T>(source: Source) =>
-  (w: Omit<DrawingWidget<T>, "source">): DrawingWidget<T> =>
-    ({ ...w, source }) as DrawingWidget<T>;
+export function figures<T>({ format: of, data, ...w }: FiguresSpec<T>): Widget<T> {
+  return {
+    size: "s",
+    width: 4,
+    skeleton: "stats",
+    ...w,
+    source: data,
+    each: {
+      items: (data: T, scope: WidgetScope) => of(data, scope),
+      key: (f: Stat, i: number) => f.label || String(i),
+      title: () => "",
+      // A tile one row high draws the figure on one line.
+      render: (f: Stat) => ({ type: "stats", size: w.rows === 1 ? "sm" : "md", items: [f] }),
+    },
+  } as Widget<T>;
+}
 
 /** The top of a root screen: fixed, or from data. */
 export type WidgetHeader =
   | ViewHeader
   /** From data (`source`), or from who is looking (no source). */
-  | { source?: Source; render(data: unknown, scope: WidgetScope): ViewHeader };
+  | { source?: Source; render(data: unknown, scope: WidgetScope): ViewHeader; rows?: number };
 
 export interface WidgetPage {
+  /**
+   * The screen's header: a `header` widget, the board's first and its full width (to place it
+   * elsewhere, size it otherwise or bound it, put a `header` widget in `widgets` instead).
+   */
   header?: WidgetHeader;
+  /**
+   * The header's height in tiles, the same box while it loads and once its words are in (default 2,
+   * 112px: an eyebrow, a title, a subtitle and a line under them).
+   */
+  headerRows?: number;
   /** Default values of the screen's parameters. */
   params?: Record<string, string>;
   widgets: Widget[];
@@ -231,8 +574,70 @@ export interface WidgetPage {
 /** A screen of widgets, in Payload's component form (`{ path, clientProps }`). */
 export const widgets = (page: WidgetPage) => ({ path: "app-widgets", clientProps: { page } });
 
-/** A widget, typed by its data: `widget<CaseProfit>({ source, render: (p) => … })`. */
-export const widget = <T>(w: Widget<T>): Widget<T> => w;
+/** A root view (Payload `admin.components.views.<key>`), as `collectionPage` and friends make it. */
+export interface PageView {
+  Component: ReturnType<typeof widgets>;
+  path: string;
+  meta?: { title: string; description?: string };
+  /** `auto`: in the navigation under the collection's `admin.group` (a global's: Configuration), by its plural label. */
+  nav?: { group: string; label: string } | "auto";
+}
+
+/**
+ * Widgets on a collection's, a document's or a global's own page beside its main tile: `before` it
+ * (figures, a breakdown, a chart about the records) and `after` it. A document page's widgets read
+ * `$param.id` (the record on the page).
+ */
+export interface Around {
+  before?: Widget[];
+  after?: Widget[];
+}
+
+/**
+ * A collection's own page: its list, the whole width, at `/collections/<slug>` (or `path`), its home, in the
+ * navigation under its group. Everything a `CollectionViewSpec` says applies.
+ */
+export const collectionPage = (
+  collection: string,
+  options: Omit<CollectionViewSpec, "collection"> &
+    Around & { path?: string; nav?: PageView["nav"] | false; rows?: number } = {},
+): PageView => {
+  const { path, nav, before = [], after = [], rows, ...spec } = options;
+  return {
+    Component: widgets({
+      widgets: [...before, { collection: { home: true, ...spec, collection }, size: "full", rows }, ...after],
+    }),
+    path: path ?? `/collections/${collection}`,
+    ...(nav === false ? {} : { nav: nav ?? "auto" }),
+  };
+};
+
+/** A document's own page: its form at `/collections/<slug>/:id` (or `path`, with `:id`), the collection's documents' home. */
+export const documentPage = (
+  collection: string,
+  options: Omit<DocumentViewSpec, "collection" | "id"> & Around & { path?: string } = {},
+): PageView => {
+  const { path, before = [], after = [], ...spec } = options;
+  return {
+    Component: widgets({
+      widgets: [...before, { document: { home: true, ...spec, collection, id: "$param.id" }, size: "full" }, ...after],
+    }),
+    path: path ?? `/collections/${collection}/:id`,
+  };
+};
+
+/** A global's own page: its form at `/globals/<slug>` (or `path`), in the navigation under Configuration. */
+export const globalPage = (
+  global: string,
+  options: Omit<GlobalViewSpec, "global"> & Around & { path?: string; nav?: PageView["nav"] | false } = {},
+): PageView => {
+  const { path, nav, before = [], after = [], ...spec } = options;
+  return {
+    Component: widgets({ widgets: [...before, { global: { home: true, ...spec, global }, size: "full" }, ...after] }),
+    path: path ?? `/globals/${global}`,
+    ...(nav === false ? {} : { nav: nav ?? "auto" }),
+  };
+};
 
 /**
  * An `each` widget's tiles once its data is in: one drawing widget per item, the widget's size,
@@ -247,6 +652,15 @@ export function eachTiles<T>(w: Widget<T>, data: T, scope: WidgetScope): { key: 
     widget: {
       title: e.title(item, i),
       size: w.size,
+      // Each item's tile takes the widget's size and bounds, and is arranged on its own.
+      rows: w.rows,
+      width: w.width,
+      minWidth: w.minWidth,
+      maxWidth: w.maxWidth,
+      minSize: w.minSize,
+      maxSize: w.maxSize,
+      minRows: w.minRows,
+      maxRows: w.maxRows,
       emphasis: w.emphasis,
       skeleton: w.skeleton,
       subhead: e.subhead?.(item, data, scope),

@@ -1,4 +1,6 @@
 import type { Endpoint, PayloadRequest } from "payload";
+import { reminderDraft } from "../collections/finance.ts";
+import { backorderOf, payableOf } from "../collections/fulfilment.ts";
 import { idOf, logActivity } from "../collections/shared.ts";
 import type { Doc } from "saastemlycrm-design-system/contracts";
 import { DEMO_NOW } from "./home.ts";
@@ -12,7 +14,7 @@ import * as link from "../links.ts";
  *
  * Everything an AI or an integration does here is a deterministic stub: the PO "reading", the
  * supplier re-check, the agent's ETA email, the tax authority's answer and the collection draft.
- * People confirm every write in the dashboard (the widgets in src/cms/widgets/case-order.ts,
+ * People confirm every write in the dashboard (the widgets in src/pages/case-order.ts,
  * case-delivery.ts, cash.ts). Sales never receives supplier costs or payables.
  */
 
@@ -481,83 +483,38 @@ async function caseOps(req: PayloadRequest) {
   if (!c) return fail("Case not found.", 404);
   const sales = isSales(req);
   const where = { case: { equals: id } };
-  const [customer, cpos, pos, receipts, deliveries, invoices, approvals, activities] = await Promise.all([
-    byId(req, "customers", str(idOf(c.customer))),
+  const [cpos, pos, receipts, deliveries, invoices, activities] = await Promise.all([
     find(req, "customer-pos", where),
     find(req, "purchase-orders", where),
     find(req, "receipts", where),
     find(req, "deliveries", where),
     find(req, "invoices", where),
-    find(req, "approvals", where),
     find(req, "activities", where),
   ]);
   const poIds = pos.map((p) => p.id);
-  const [bills, payments, names] = await Promise.all([
+  const [bills, names] = await Promise.all([
     poIds.length ? find(req, "supplier-bills", { purchaseOrder: { in: poIds } }) : Promise.resolve([] as Doc[]),
-    find(req, "payments"),
     supplierNames(req),
   ]);
   const plan = planFor(id, sales);
   const cpo = cpos.sort((a, b) => str(b.createdAt).localeCompare(str(a.createdAt)))[0] ?? null;
   const quotation = cpo ? await byId(req, "quotations", str(idOf(cpo.quotation))) : null;
 
-  const invoiceIds = new Set(invoices.map((i) => i.id));
-  const customerPayments = payments.filter((p) => p.direction === "in" && invoiceIds.has(str(idOf(p.invoice))));
-  const supplierPayments = payments.filter((p) => p.direction === "out" && poIds.includes(str(idOf(p.purchaseOrder))));
-
+  // The supplier POs, bills and receipts as the case's workflow reads them (the invoices only to
+  // know which drops are invoiced); their tables and the invoiced balance read the collections themselves (their fields, ../collections/fulfilment.ts and finance.ts).
   const purchaseOrders = pos
     .sort((a, b) => str(a.number).localeCompare(str(b.number)))
-    .map((p) => {
-      const pid = p.id;
-      const side = (p.supplierSide ?? {}) as Record<string, unknown>;
-      const paid = supplierPayments.filter((x) => str(idOf(x.purchaseOrder)) === pid);
-      const approval =
-        approvals.find((a) => /deposit|payment|PO/i.test(str(a.type)) && str(a.detail).includes(str(p.number))) ??
-        approvals.find(
-          (a) =>
-            idOf((a.subject as { value?: unknown } | undefined)?.value) === pid || str(a.title).includes(str(p.number)),
-        );
-      const lines = ((p.lines as Record<string, unknown>[] | undefined) ?? []).map((l) =>
-        sales ? { lineNo: l.lineNo, description: l.description, qty: l.qty, scheduledFor: l.scheduledFor } : l,
-      );
-      return {
-        id: pid,
-        number: p.number,
-        supplier: str(idOf(p.supplier)),
-        supplierName: names.get(str(idOf(p.supplier))) ?? str(idOf(p.supplier)),
-        currency: p.currency,
-        total: sales ? undefined : p.total,
-        deliverTo: p.deliverTo,
-        status: p.status,
-        recheck: sales ? [] : (p.recheck ?? []),
-        recheckDone: p.recheckDone,
-        lines,
-        acknowledgedAt: side.acknowledgedAt,
-        proforma: side.proforma,
-        depositPct: side.depositPct,
-        deposit: sales ? undefined : round2((num(p.total) * num(side.depositPct)) / 100),
-        balanceDue: side.balanceDue,
-        paid: sales ? undefined : round2(paid.reduce((s, x) => s + num(x.amount), 0)),
-        approval: approval ? { id: approval.id, title: approval.title, status: approval.status } : null,
-      };
-    });
+    .map((p) => ({
+      id: p.id,
+      number: p.number,
+      supplier: str(idOf(p.supplier)),
+      supplierName: names.get(str(idOf(p.supplier))) ?? str(idOf(p.supplier)),
+      status: p.status,
+      recheck: sales ? [] : (p.recheck ?? []),
+      recheckDone: p.recheckDone,
+    }));
 
-  const supplierBills = sales
-    ? []
-    : bills.map((b) => ({
-        id: b.id,
-        billNumber: b.billNumber,
-        supplier: str(idOf(b.supplier)),
-        supplierName: names.get(str(idOf(b.supplier))) ?? "",
-        purchaseOrder: str(idOf(b.purchaseOrder)),
-        poNumber: pos.find((p) => p.id === str(idOf(b.purchaseOrder)))?.number,
-        amount: b.amount,
-        currency: b.currency,
-        dueDate: b.dueDate,
-        status: b.status,
-        holdReason: b.holdReason,
-        match: b.match ?? [],
-      }));
+  const supplierBills = sales ? [] : bills.map((b) => ({ id: b.id, billNumber: b.billNumber, status: b.status }));
 
   const supplierOfPo = new Map(pos.map((p) => [p.id, names.get(str(idOf(p.supplier))) ?? ""]));
   const receiptRows = receipts
@@ -567,16 +524,9 @@ async function caseOps(req: PayloadRequest) {
       lineNo: r.lineNo,
       description: plan?.lines.find((l) => l.lineNo === r.lineNo)?.description ?? "",
       supplierName: supplierOfPo.get(str(idOf(r.purchaseOrder))) ?? "",
-      poNumber: pos.find((p) => p.id === str(idOf(r.purchaseOrder)))?.number,
       ordered: r.ordered,
       received: r.received,
       shortfall: r.shortfall,
-      receivedAt: r.receivedAt,
-      warehouse: r.warehouse,
-      lot: r.lot,
-      expiry: r.expiry,
-      qc: r.qc,
-      claim: r.claim,
       backorderDate: r.backorderDate,
     }));
 
@@ -631,48 +581,24 @@ async function caseOps(req: PayloadRequest) {
       invoice: invoicedBy(d),
     }));
 
-  // Backorders: receipt shortfalls that follow in a later drop, with an owner and a date.
-  const backorders = receiptRows
-    .filter((r) => num(r.shortfall) > 0)
-    .map((r) => {
-      const later = deliveryRows.find(
-        (d) => !/confirmed|Cancelled/.test(str(d.status)) && d.lines.some((l) => l.lineNo === r.lineNo) && d.drop > 1,
-      );
-      const ready = str((later?.plan as Record<string, unknown> | undefined)?.readyAt) || str(later?.plannedAt);
-      return {
-        lineNo: r.lineNo,
-        description: r.description,
-        qty: r.shortfall,
-        supplierName: r.supplierName,
-        date: r.backorderDate,
-        owner: str(idOf(c.owner)),
-        followsIn: later?.number ?? null,
-        late: Boolean(ready && r.backorderDate && str(r.backorderDate) > ready),
-      };
-    });
-
-  const invoiceRows = invoices
-    .sort((a, b) => str(a.number).localeCompare(str(b.number)))
-    .map((inv) => ({
-      id: inv.id,
-      number: inv.number,
-      basis: inv.basis,
-      delivery: deliveries.find((d) => d.id === str(idOf(inv.delivery)))?.number ?? null,
-      currency: inv.currency,
-      amount: inv.amount,
-      paid: inv.paid,
-      balance: inv.balance,
-      issuedAt: inv.issuedAt,
-      dueDate: inv.dueDate,
-      status: inv.status,
-      vatTreatment: inv.vatTreatment,
-      eInvoice: inv.eInvoice ?? {},
-      billing: inv.billing ?? {},
-      lines: inv.lines ?? [],
-      payments: customerPayments
-        .filter((p) => str(idOf(p.invoice)) === inv.id)
-        .map((p) => ({ reference: p.reference, amount: p.amount, paidAt: p.paidAt })),
-    }));
+  // Backorders: receipt shortfalls that follow in a later drop (the receipt's own `backorderOf`),
+  // with an owner and a date.
+  const backorders = receiptRows.flatMap((r) => {
+    const b = backorderOf(r, deliveries);
+    return b
+      ? [
+          {
+            lineNo: r.lineNo,
+            description: r.description,
+            qty: r.shortfall,
+            supplierName: r.supplierName,
+            date: r.backorderDate,
+            owner: str(idOf(c.owner)),
+            ...b,
+          },
+        ]
+      : [];
+  });
 
   const quotedLines = plan?.lines ?? [];
   const checks = ((cpo?.checks as Check[] | undefined) ?? []).map((ch) => ({
@@ -694,16 +620,6 @@ async function caseOps(req: PayloadRequest) {
       blocker: c.blocker,
       currency: plan?.currency ?? c.currency ?? "USD",
     },
-    customer: customer
-      ? {
-          id: customer.id,
-          name: customer.name,
-          contactRule: customer.contactRule,
-          billingEntity: customer.billingEntity,
-          paymentTermsDays: customer.paymentTermsDays,
-          country: customer.country,
-        }
-      : null,
     canSeeCosts: !sales,
     canFinance: canFinance(req),
     isManagement: user.role === "management",
@@ -725,10 +641,9 @@ async function caseOps(req: PayloadRequest) {
     orderConfirmed: /sales order confirmed|Purchasing|Delivering|Delivered|Invoiced|Closed/.test(str(c.stage)),
     purchaseOrders,
     bills: supplierBills,
-    receipts: receiptRows,
+    receipts: receiptRows.map((r) => ({ lineNo: r.lineNo, ordered: r.ordered, received: r.received })),
     deliveries: deliveryRows,
     backorders,
-    invoices: invoiceRows,
     alerts: activities
       .filter((a) => a.kind === "alert")
       .sort((a, b) => str(b.at).localeCompare(str(a.at)))
@@ -1190,70 +1105,41 @@ function hash(s: string) {
 
 /* ---------------------------------------------------------------- receivables & payables */
 
-export const AGE_BUCKETS = ["Not due", "1–30 days", "31–60 days", "60+ days"] as const;
-const bucketOf = (due: string) => {
-  const days = Math.floor((DEMO_NOW.getTime() - new Date(due).getTime()) / DAY);
-  return days <= 0 ? 0 : days <= 30 ? 1 : days <= 60 ? 2 : 3;
-};
-
-/** GET /api/operations/cash — receivables, payables, approvals, bank changes and the 8-week forecast. */
+/**
+ * GET /api/operations/cash — the 8-week cash forecast (across invoices, supplier POs, bills, payments
+ * and the budget), the open invoices a remittance or a reminder reads, payment approvals and bank
+ * changes. Receivables and payables themselves are the invoices' and POs' own fields.
+ */
 export async function cash(req: PayloadRequest) {
   const user = userOf(req);
   if (!user) return fail("You are not allowed to perform this action.", 401);
   const sales = isSales(req);
   const fx = await fxRates(req);
   const toEgp = (amount: number, cur: unknown) => amount * (fx[(str(cur) || "EGP") as Cur] ?? 1);
-  const toUsd = (amount: number, cur: unknown) => toEgp(amount, cur) / fx.USD;
-  const [invoices, customers, cases, tasks] = await Promise.all([
+  const [invoices, customers, cases] = await Promise.all([
     find(req, "invoices"),
     find(req, "customers"),
     find(req, "cases"),
-    find(req, "tasks", { type: { in: ["Collection", "Customer follow-up", "Internal reminder"] } }),
   ]);
   const custById = new Map(customers.map((c) => [c.id, c]));
   const caseById = new Map(cases.map((c) => [c.id, c]));
 
+  // Open invoices, as the forecast, a remittance match and a reminder read them (their ageing,
+  // USD balance and reminder are the invoices' own fields, ../collections/finance.ts).
   const open = invoices.filter((i) => num(i.balance) > 0 && !["Draft", "Cancelled"].includes(str(i.status)));
   const receivables = open
-    .map((i) => {
-      const cust = custById.get(str(idOf(i.customer)));
-      const daysOverdue = Math.floor((DEMO_NOW.getTime() - new Date(str(i.dueDate)).getTime()) / DAY);
-      const reminders = tasks.filter((t) => str(t.title).includes(str(i.number)));
-      return {
-        id: i.id,
-        number: i.number,
-        caseId: caseById.get(str(idOf(i.case)))?.caseId ?? null,
-        case: caseById.has(str(idOf(i.case))) ? str(idOf(i.case)) : null,
-        customer: str(idOf(i.customer)),
-        customerName: str(cust?.name),
-        contactRule: str(cust?.contactRule) || "allowed",
-        currency: i.currency,
-        amount: i.amount,
-        paid: i.paid,
-        balance: i.balance,
-        balanceUsd: round2(toUsd(num(i.balance), i.currency)),
-        dueDate: i.dueDate,
-        daysOverdue,
-        bucket: AGE_BUCKETS[bucketOf(str(i.dueDate))],
-        eInvoice: str((i.eInvoice as { status?: string } | undefined)?.status) || "Not submitted",
-        lastReminder: reminders.sort((a, b) => str(b.due).localeCompare(str(a.due)))[0]?.title ?? null,
-      };
-    })
-    .sort((a, b) => b.daysOverdue - a.daysOverdue);
-
-  const ageingMap = new Map<string, number[]>();
-  for (const r of receivables) {
-    const row = ageingMap.get(r.customerName) ?? [0, 0, 0, 0];
-    row[AGE_BUCKETS.indexOf(r.bucket)] += r.balanceUsd;
-    ageingMap.set(r.customerName, row);
-  }
-  const ageing = [...ageingMap.entries()]
-    .map(([customer, values]) => ({
-      customer,
-      values: values.map(round2),
-      total: round2(values.reduce((s, v) => s + v, 0)),
+    .map((i) => ({
+      id: i.id,
+      number: i.number,
+      case: str(idOf(i.case)) || null,
+      customer: str(idOf(i.customer)),
+      customerName: str(custById.get(str(idOf(i.customer)))?.name),
+      currency: i.currency,
+      balance: i.balance,
+      dueDate: i.dueDate,
+      daysOverdue: Math.floor((DEMO_NOW.getTime() - new Date(str(i.dueDate)).getTime()) / DAY),
     }))
-    .sort((a, b) => b.total - a.total);
+    .sort((a, b) => b.daysOverdue - a.daysOverdue);
 
   // Weeks starting Monday 16 Nov (the demo's week), eight of them.
   const start = new Date("2026-11-16T00:00:00.000Z").getTime();
@@ -1271,14 +1157,7 @@ export async function cash(req: PayloadRequest) {
   }
 
   const base = {
-    fx: { USD: fx.USD, EUR: fx.EUR },
     receivables,
-    ageing,
-    buckets: AGE_BUCKETS,
-    totals: {
-      receivableUsd: round2(receivables.reduce((s, r) => s + r.balanceUsd, 0)),
-      overdueUsd: round2(receivables.filter((r) => r.daysOverdue > 0).reduce((s, r) => s + r.balanceUsd, 0)),
-    },
     weeks: weeks.map((w) =>
       new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", timeZone: "UTC" }).format(w),
     ),
@@ -1288,7 +1167,6 @@ export async function cash(req: PayloadRequest) {
       ...base,
       canSeePayables: false,
       canFinance: false,
-      payables: [],
       approvals: [],
       bankChanges: [],
       cashIn: inflow.map(Math.round),
@@ -1308,61 +1186,13 @@ export async function cash(req: PayloadRequest) {
   const outPaid = (filter: (p: Doc) => boolean) =>
     payments.filter((p) => p.direction === "out" && filter(p)).reduce((s, p) => s + num(p.amount), 0);
 
-  const payables: Record<string, unknown>[] = [];
+  // Committed payments: what each supplier PO's payable has to pay now, by its due week (a bill on
+  // hold is left out until it matches). The payable itself is the PO's (../collections/fulfilment.ts).
   const outflow = Array.from({ length: 8 }, () => FIXED_WEEKLY_EGP / 1000);
   for (const po of pos) {
-    if (["Draft", "Awaiting approval", "Cancelled", "Closed"].includes(str(po.status))) continue;
-    const side = (po.supplierSide ?? {}) as Record<string, unknown>;
-    const bill = bills.find((b) => str(idOf(b.purchaseOrder)) === po.id && b.status !== "Cancelled");
-    const paid = outPaid((p) => str(idOf(p.purchaseOrder)) === po.id || (bill ? str(idOf(p.bill)) === bill.id : false));
-    const total = num(bill?.amount ?? po.total);
-    const balance = round2(Math.max(0, total - paid));
-    if (!balance) continue;
-    const deposit = round2((num(po.total) * num(side.depositPct)) / 100);
-    const depositApproval = approvals.find(
-      (a) =>
-        /deposit/i.test(str(a.type)) &&
-        (str(a.detail).includes(str(po.number)) || str(a.title).includes(str(po.number))),
-    );
-    // A deposit not yet paid comes first (it's due now, whatever the bill says).
-    const depositDue = deposit > 0 && paid < deposit;
-    const due = depositDue
-      ? DEMO_NOW.toISOString()
-      : str(bill?.dueDate) || str(side.balanceDue) || addDays(DEMO_NOW, 30);
-    const stage = depositDue
-      ? "Deposit to pay"
-      : bill?.status === "On hold"
-        ? "Bill on hold"
-        : paid && side.balanceDue
-          ? "Balance on delivery"
-          : bill
-            ? paid
-              ? "Balance due"
-              : "Bill matched"
-            : "Awaiting bill";
-    payables.push({
-      id: po.id,
-      po: po.number,
-      case: str(idOf(po.case)),
-      caseId: caseById.get(str(idOf(po.case)))?.caseId ?? null,
-      supplier: str(idOf(po.supplier)),
-      supplierName: supName.get(str(idOf(po.supplier))) ?? "",
-      currency: bill?.currency ?? po.currency,
-      total,
-      paid: round2(paid),
-      balance,
-      deposit,
-      depositPct: num(side.depositPct),
-      depositApproval: depositApproval ? { id: depositApproval.id, status: depositApproval.status } : null,
-      bill: bill ? { id: bill.id, number: bill.billNumber, status: bill.status, holdReason: bill.holdReason } : null,
-      due,
-      stage,
-    });
-    if (stage !== "Bill on hold")
-      outflow[Math.min(7, weekOf(due))] +=
-        toEgp(depositDue ? deposit - paid : balance, bill?.currency ?? po.currency) / 1000;
+    const p = payableOf(po, { bills, payments, approvals });
+    if (p && p.stage !== "Bill on hold") outflow[Math.min(7, weekOf(p.due))] += toEgp(p.toPay, p.currency) / 1000;
   }
-  payables.sort((a, b) => str(a.due).localeCompare(str(b.due)));
 
   const paymentTypes = ["Supplier deposit (payment)", "Supplier payment"];
   const recorded = new Set(payments.map((p) => str(idOf(p.approval))).filter(Boolean));
@@ -1451,8 +1281,6 @@ export async function cash(req: PayloadRequest) {
     ...base,
     canSeePayables: true,
     canFinance: canFinance(req),
-    payables,
-    payablesTotalEgp: Math.round(payables.reduce((s, p) => s + toEgp(num(p.balance), p.currency), 0)),
     approvals: approvalRows,
     bankChanges,
     cashIn: inflow.map(Math.round),
@@ -1472,50 +1300,13 @@ async function collectionDraft(req: PayloadRequest) {
 }
 
 /** The reminder draft for one invoice (also behind the cash page's reminders, ./cash.ts). */
+/** The AI's collection reminder for one invoice (the invoice's own `reminder` draft, ../collections/finance.ts). */
 export async function collectionDraftFor(req: PayloadRequest, invoice: string) {
   if (!req.user) return fail("Sign in first.", 401);
   const inv = await byId(req, "invoices", invoice);
   if (!inv) return fail("Invoice not found.", 404);
   const customer = await byId(req, "customers", str(idOf(inv.customer)));
-  const rule = str(customer?.contactRule) || "allowed";
-  const days = Math.floor((DEMO_NOW.getTime() - new Date(str(inv.dueDate)).getTime()) / DAY);
-  const money = `${str(inv.currency)} ${num(inv.balance).toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
-  const due = new Intl.DateTimeFormat("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(new Date(str(inv.dueDate)));
-  if (rule === "do-not-chase")
-    return Response.json({
-      mode: "internal",
-      rule,
-      title: `Internal: ${str(inv.number)} ${money} ${days > 0 ? `${days} days overdue` : `due ${due}`} — ${str(customer?.name)}`,
-      body: `${str(customer?.name)} must not be chased (account rule). Check the payment run with the account owner at the next scheduled call; escalate to Karim Balbaa if still open after 60 days. No message goes to the customer.`,
-      confidence: 1,
-    });
-  const contact = ((customer?.contacts as { name?: string; email?: string }[] | undefined) ?? [])[0];
-  const greeting = contact?.name ? `Dear ${contact.name.split(" ")[0]},` : "Dear accounts team,";
-  return Response.json({
-    mode: "customer",
-    rule,
-    to: contact?.email ?? str(customer?.contactEmail),
-    title: `Reminder: ${str(inv.number)} ${days > 0 ? `${days} days overdue` : `due ${due}`} — ${str(customer?.name)}`,
-    subject: `Golden Sea invoice ${str(inv.number)} — ${money} ${days > 0 ? "overdue" : `due ${due}`}`,
-    body: `${greeting}
-
-Our invoice ${str(inv.number)} for ${money} ${days > 0 ? `fell due on ${due}` : `is due on ${due}`}${num(inv.paid) ? ` (balance after your payment of ${str(inv.currency)} ${num(inv.paid).toLocaleString("en-US")})` : ""}. Could you let us know when it is scheduled for payment? A copy of the invoice and the signed delivery note are attached.
-
-If it has already been paid, please send us the remittance so we can allocate it.
-
-Kind regards,
-Golden Sea — Accounts`,
-    confidence: 0.92,
-    note:
-      rule === "one-follow-up"
-        ? "Account rule: one follow-up per invoice — this is it; later reminders are internal."
-        : "Account rule: follow-ups allowed.",
-  });
+  return Response.json(reminderDraft(inv, customer));
 }
 
 export const operationsEndpoints: Endpoint[] = [

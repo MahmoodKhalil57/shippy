@@ -4,6 +4,7 @@ import { customElement, property, query } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement, uid, type Renderable } from "../../base/light-element.ts";
 import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
+import { tiles } from "../layout/algebra.ts";
 import { fieldsetField, type FieldsetVariants } from "./fieldset.ts";
 import { label as labelRecipe } from "./label.ts";
 
@@ -45,19 +46,21 @@ export const select = rcva("select min-w-0", {
     validator: { true: "validator" },
     width: {
       auto: "w-auto",
-      "64": "w-64 max-w-full",
-      xs: "w-xs max-w-full",
-      sm: "w-sm max-w-full",
-      md: "w-md max-w-full",
-      lg: "w-lg max-w-full",
+      // Whole tiles (`tiles.*`): 5, 6, 7, 8, 10 (the old 16, 20, 24, 28, 32rem, to the nearest tile).
+      "64": tiles["5"],
+      xs: tiles["6"],
+      sm: tiles["7"],
+      md: tiles["8"],
+      lg: tiles["10"],
       full: "w-full",
     },
     /** Max height of the options picker (the docs' "custom dropdown height" uses `max-h-26`). */
     pickerHeight: {
-      "26": "[&_select::picker(select)]:max-h-26 [&::picker(select)]:max-h-26",
-      "40": "[&_select::picker(select)]:max-h-40 [&::picker(select)]:max-h-40",
-      "60": "[&_select::picker(select)]:max-h-60 [&::picker(select)]:max-h-60",
-      "80": "[&_select::picker(select)]:max-h-80 [&::picker(select)]:max-h-80",
+      // Whole tiles down: 2, 3, 4, 6 (the old 104, 160, 240, 320px, to the nearest tile).
+      "26": "[&_select::picker(select)]:max-h-[calc(2_*_var(--tile-h))] [&::picker(select)]:max-h-[calc(2_*_var(--tile-h))]",
+      "40": "[&_select::picker(select)]:max-h-[calc(3_*_var(--tile-h))] [&::picker(select)]:max-h-[calc(3_*_var(--tile-h))]",
+      "60": "[&_select::picker(select)]:max-h-[calc(4_*_var(--tile-h))] [&::picker(select)]:max-h-[calc(4_*_var(--tile-h))]",
+      "80": "[&_select::picker(select)]:max-h-[calc(6_*_var(--tile-h))] [&::picker(select)]:max-h-[calc(6_*_var(--tile-h))]",
     },
   },
 });

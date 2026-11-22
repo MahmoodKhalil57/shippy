@@ -290,7 +290,7 @@ export class UiFilterBuilder extends LightElement {
       <ui-dropdown
         mode="popover"
         panel="card"
-        panel-width="80"
+        panel-width="6"
         trigger-variant="text"
         trigger-size="xs"
         .label=${"Add filter"}

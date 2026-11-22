@@ -5,7 +5,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement, uid, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { chip, chipRemove } from "../data/chip.ts";
-import { inset, row, rowEnd, stack, text } from "../layout/algebra.ts";
+import { floating, floatingHeight, inset, row, rowEnd, stack, text } from "../layout/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
 import { fieldsetField, type FieldsetVariants } from "./fieldset.ts";
 
@@ -40,7 +40,7 @@ export const comboboxClear = rcva(
 );
 /** The options: a glass popover under the field, growing down from it (M3 enter / exit). */
 export const comboboxList = rcva(
-  `${text.label} liquid-glass [--outer-radius:var(--radius-box)] [--outer-padding:var(--space-50)] shadow-elevation-2 m-0 mt-1 max-h-72 w-[anchor-size(width)] min-w-[min(100%,12rem)] max-w-[calc(100vw-2rem)] origin-top overflow-y-auto overscroll-contain rounded-box p-1 text-body-md [position-area:bottom_span-right] [position-try-fallbacks:flip-block] scale-y-90 opacity-0 open:scale-y-100 open:opacity-100 [transition:opacity_var(--duration-short2)_var(--ease-emphasized-accelerate),scale_var(--duration-short3)_var(--ease-emphasized-accelerate),display_var(--duration-short3)_allow-discrete,overlay_var(--duration-short3)_allow-discrete] open:[transition:opacity_var(--duration-short3)_var(--ease-emphasized-decelerate),scale_var(--duration-medium1)_var(--ease-emphasized-decelerate),display_var(--duration-medium1)_allow-discrete,overlay_var(--duration-medium1)_allow-discrete] starting:open:scale-y-90 starting:open:opacity-0 motion-reduce:scale-y-100 [--scrollbar-inset:var(--radius-box)]`,
+  `${text.label} liquid-glass [--outer-radius:var(--radius-box)] [--outer-padding:var(--space-50)] shadow-elevation-2 m-0 mt-1 ${floatingHeight.fit} ${floatingHeight.list} ${floating.anchor} origin-top overflow-y-auto overscroll-contain rounded-box p-1 text-body-md [position-area:bottom_span-right] [position-try-fallbacks:flip-block] scale-y-90 opacity-0 open:scale-y-100 open:opacity-100 [transition:opacity_var(--duration-short2)_var(--ease-emphasized-accelerate),scale_var(--duration-short3)_var(--ease-emphasized-accelerate),display_var(--duration-short3)_allow-discrete,overlay_var(--duration-short3)_allow-discrete] open:[transition:opacity_var(--duration-short3)_var(--ease-emphasized-decelerate),scale_var(--duration-medium1)_var(--ease-emphasized-decelerate),display_var(--duration-medium1)_allow-discrete,overlay_var(--duration-medium1)_allow-discrete] starting:open:scale-y-90 starting:open:opacity-0 motion-reduce:scale-y-100 [--scrollbar-inset:var(--radius-box)]`,
 );
 export const comboboxGroup = rcva(`${inset["3"]} pt-2 pb-1 text-label-md text-on-surface-variant`);
 export const comboboxOption = rcva(

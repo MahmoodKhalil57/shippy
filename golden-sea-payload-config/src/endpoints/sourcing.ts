@@ -1,6 +1,7 @@
 import type { Endpoint, PayloadRequest } from "payload";
 import type { Doc } from "saastemlycrm-design-system/contracts";
 import { idOf, logActivity, scalar } from "../collections/shared.ts";
+import { urgencyOf } from "../collections/sourcing.ts";
 import { DEMO_NOW } from "./home.ts";
 import {
   HISTORY_CUSTOMERS,
@@ -744,6 +745,8 @@ export interface InboxMessage {
   id: string;
   channel: string;
   mailbox: string;
+  /** Where it came from, as the inbox says it (the message's own `via`). */
+  via: string;
   receivedAt: string;
   from: string;
   fromName: string;
@@ -753,61 +756,29 @@ export interface InboxMessage {
   classification: string;
   status: string;
   messageId: string;
-  hasAI: boolean;
-  extracted: boolean;
   createdCase?: { id: string; caseId: string };
+  /**
+   * Its match, once tried: the case and who reviewed it. Why it matched and the candidate cases are
+   * the message's own fields (`match.basis`, `candidates`), read with no code.
+   */
   match?: {
     case?: { id: string; caseId: string };
-    reference: string;
-    confidence: number;
-    basis: string[];
-    candidates: MatchCandidate[];
     reviewedBy: string;
   };
   acknowledgedAt: string;
-  simulated: boolean;
-  /** How urgent it reads (1–5): a deadline today, "asap", a complaint or a cancellation, still waiting. */
+  /** How urgent it reads (1–5): the message's own `urgency`. */
   urgency: number;
-}
-
-/** Urgency from the message's own words and status (deterministic, for the "Most urgent first" sort). */
-export function urgencyOf(m: Doc): number {
-  const text = `${str(m.subject)}\n${str(m.body)}`;
-  const status = str(m.status);
-  let n = status === "Needs review" ? 3 : status === "New" ? 2 : 1;
-  if (/\burgent|\basap\b|immediately|within 24\s*h|\btoday\b|tonight/i.test(text)) n += 2;
-  if (/complain|cancel|\bstop\b|damaged|wrong (item|delivery)/i.test(text)) n += 2;
-  return Math.min(5, n);
 }
 
 async function toInboxMessage(req: Req, m: Doc): Promise<InboxMessage> {
   const match = obj(m.match);
   const created = idOf(m.createdCase);
   const matchCase = idOf(match.case);
-  const candidates: MatchCandidate[] = [];
-  for (const c of list<Json>(match.candidates))
-    candidates.push({
-      case: str(idOf(c.case)),
-      caseId: await caseIdOf(req, c.case),
-      confidence: num(c.confidence),
-      reason: str(c.reason),
-    });
-  // Older seeded review items name their candidates in the basis only.
-  if (!candidates.length && str(m.status) === "Needs review")
-    for (const caseId of new Set(str(match.basis).match(/GS-RFQ-\d{4}/g) ?? [])) {
-      const [c] = await all(req, "cases", { caseId: { equals: caseId } });
-      if (c)
-        candidates.push({
-          case: c.id,
-          caseId,
-          confidence: candidates.length ? 0.41 : 0.62,
-          reason: "Named in the match notes",
-        });
-    }
   return {
     id: m.id,
     channel: str(m.channel),
     mailbox: str(m.mailbox),
+    via: str(m.via),
     receivedAt: str(m.receivedAt),
     from: str(m.from),
     fromName: str(m.fromName),
@@ -817,28 +788,21 @@ async function toInboxMessage(req: Req, m: Doc): Promise<InboxMessage> {
     classification: str(m.classification),
     status: str(m.status),
     messageId: str(m.messageId),
-    hasAI: Boolean(scenarioOf(m)),
-    extracted: list(obj(m.extraction).header).length > 0,
     createdCase: created ? { id: created, caseId: await caseIdOf(req, created) } : undefined,
     match:
       Object.keys(match).length && (matchCase || match.basis)
         ? {
             case: matchCase ? { id: matchCase, caseId: await caseIdOf(req, matchCase) } : undefined,
-            reference: str(match.reference),
-            confidence: num(match.confidence),
-            basis: str(match.basis).split("\n").filter(Boolean),
-            candidates,
             reviewedBy: await userName(req, match.reviewedBy),
           }
         : undefined,
     acknowledgedAt: str(m.acknowledgedAt),
-    simulated: str(m.messageId).startsWith("sim-"),
-    urgency: urgencyOf(m),
+    urgency: num(m.urgency) || urgencyOf(m),
   };
 }
 
+/** The inbox's channels and today's figures (its messages are the intake-messages collection's). */
 export interface InboxPayload {
-  messages: InboxMessage[];
   connections: { kind: string; account: string; status: string }[];
   stats: { processedToday: number; duplicates: number; review: number; newCount: number };
 }
@@ -1070,20 +1034,14 @@ export interface RfqScheduleStep {
   state: "done" | "next" | "planned" | "skipped";
 }
 
+/** A supplier RFQ's reminder schedule (the RFQ itself is read from its collection). */
 export interface CaseRfqRow {
   id: string;
   reference: string;
-  supplier: { id: string; name: string; city: string; isNew: boolean; source: string };
+  supplier: { name: string };
   lineNos: number[];
-  category: string;
-  mode: string;
-  sentAt: string;
-  dueAt: string;
   status: string;
-  reminders: number;
-  nextReminderAt: string;
   escalated: boolean;
-  lastEvent: string;
   schedule: RfqScheduleStep[];
 }
 
@@ -1102,30 +1060,6 @@ export interface CaseLine {
   rfqs: string[];
 }
 
-export interface CaseReply {
-  id: string;
-  subject: string;
-  fromName: string;
-  receivedAt: string;
-  reference: string;
-  confidence: number;
-  basis: string[];
-  status: string;
-}
-
-export interface CaseReview {
-  id: string;
-  subject: string;
-  fromName: string;
-  receivedAt: string;
-  confidence: number;
-  basis: string[];
-  candidates: MatchCandidate[];
-  uncertain: string[];
-  kind: "match" | "new-supplier";
-  caseId: string;
-}
-
 export interface CaseRfqsPayload {
   case: {
     id: string;
@@ -1139,8 +1073,6 @@ export interface CaseRfqsPayload {
   };
   lines: CaseLine[];
   rfqs: CaseRfqRow[];
-  replies: CaseReply[];
-  review: CaseReview[];
   newSuppliers: {
     id: string;
     name: string;
@@ -1155,7 +1087,6 @@ export interface CaseRfqsPayload {
       validUntil: string;
     }[];
   }[];
-  counts: { total: number; replied: number; waiting: number; closed: number; escalated: number };
   canSeeCosts: boolean;
   /** What the last "Simulate replies" brought in (`POST /case-rfqs/:id/simulate-replies`), for a while after. */
   arrivals: ReplyEvent[];
@@ -1222,23 +1153,10 @@ export async function caseRfqsPayload(req: Req, caseDoc: Doc): Promise<CaseRfqsP
     return {
       id: r.id,
       reference: str(r.reference),
-      supplier: {
-        id: str(s?.id),
-        name: str(s?.name) || "Supplier",
-        city: str(s?.city),
-        isNew: str(s?.status) === "New",
-        source: str(s?.source),
-      },
+      supplier: { name: str(s?.name) || "Supplier" },
       lineNos: list<number>(r.lineNos),
-      category: str(r.category),
-      mode: str(r.mode),
-      sentAt: str(r.sentAt),
-      dueAt: str(r.dueAt),
       status: str(r.status),
-      reminders: num(r.reminders),
-      nextReminderAt: str(r.nextReminderAt),
       escalated: Boolean(r.escalated),
-      lastEvent: str(r.lastEvent),
       schedule: scheduleOf(r),
     };
   });
@@ -1259,44 +1177,6 @@ export async function caseRfqsPayload(req: Req, caseDoc: Doc): Promise<CaseRfqsP
       rfqs: rows.filter((r) => r.lineNos.includes(n)).map((r) => r.reference),
     };
   });
-  const msgs = await all(
-    req,
-    "intake-messages",
-    { classification: { in: ["Supplier reply", "Duplicate"] } },
-    "-receivedAt",
-  );
-  const replies: CaseReply[] = [];
-  const review: CaseReview[] = [];
-  for (const m of msgs) {
-    const im = await toInboxMessage(req, m);
-    const onCase = im.match?.case?.id === caseDoc.id;
-    const candidate = im.match?.candidates.some((c) => c.case === caseDoc.id);
-    if (im.status === "Needs review" && (onCase || candidate)) {
-      const drafts = list<Json>(m.offerDraft);
-      review.push({
-        id: m.id,
-        subject: im.subject,
-        fromName: im.fromName,
-        receivedAt: im.receivedAt,
-        confidence: im.match?.confidence ?? 0,
-        basis: im.match?.basis ?? [],
-        candidates: im.match?.candidates ?? [],
-        uncertain: drafts.map((d) => str(d.uncertain)).filter(Boolean),
-        kind: onCase ? "new-supplier" : "match",
-        caseId: str(caseDoc.caseId),
-      });
-    } else if (onCase && im.classification === "Supplier reply")
-      replies.push({
-        id: m.id,
-        subject: im.subject,
-        fromName: im.fromName,
-        receivedAt: im.receivedAt,
-        reference: im.match?.reference ?? "",
-        confidence: im.match?.confidence ?? 0,
-        basis: im.match?.basis ?? [],
-        status: im.status,
-      });
-  }
   const newSupplierIds = [...new Set(offers.map((o) => str(idOf(o.supplier))))].filter(
     (id) => str(supplier(id)?.status) === "New",
   );
@@ -1332,16 +1212,7 @@ export async function caseRfqsPayload(req: Req, caseDoc: Doc): Promise<CaseRfqsP
     },
     lines,
     rfqs: rows,
-    replies,
-    review,
     newSuppliers,
-    counts: {
-      total: rows.length,
-      replied: rows.filter((r) => ["Replied", "Revised offer received"].includes(r.status)).length,
-      waiting: rows.filter((r) => OPEN_RFQ.includes(r.status)).length,
-      closed: rows.filter((r) => ["Declined", "No response"].includes(r.status)).length,
-      escalated: rows.filter((r) => r.escalated).length,
-    },
     canSeeCosts: !isSales(req),
     arrivals: arrivalsOf(caseDoc.id),
     plan: plans.get(caseDoc.id) ?? null,
@@ -1735,20 +1606,18 @@ export async function inboxPayload(req: Req): Promise<InboxPayload> {
   const docs = (await all(req, "intake-messages", undefined, "-receivedAt")).filter(
     (m) => str(m.source) !== "History import",
   );
-  const messages = await Promise.all(docs.map((m) => toInboxMessage(req, m)));
   const integrations = obj(await req.payload.findGlobal({ slug: "integrations" as never, req }));
   const connections = list<Json>(integrations.connections)
     .filter((c) => /mailbox|Website/.test(str(c.kind)))
     .map((c) => ({ kind: str(c.kind), account: str(c.account), status: str(c.status) }));
   connections.push({ kind: "WhatsApp", account: "forwarded by staff", status: "Manual" });
   return {
-    messages,
     connections,
     stats: {
-      processedToday: 14 + messages.filter((m) => m.simulated).length,
-      duplicates: 2 + messages.filter((m) => m.classification === "Duplicate").length,
-      review: messages.filter((m) => m.status === "Needs review").length,
-      newCount: messages.filter((m) => m.status === "New").length,
+      processedToday: 14 + docs.filter((m) => str(m.messageId).startsWith("sim-")).length,
+      duplicates: 2 + docs.filter((m) => m.classification === "Duplicate").length,
+      review: docs.filter((m) => m.status === "Needs review").length,
+      newCount: docs.filter((m) => m.status === "New").length,
     },
   };
 }

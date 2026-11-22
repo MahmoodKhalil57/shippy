@@ -40,6 +40,8 @@ export type FieldHook = (args: Record<string, unknown>) => unknown;
 export interface FieldLike {
   type: string;
   name?: string;
+  /** Payload's `virtual`: never stored, filled in on read (an `afterRead` hook computes it). */
+  virtual?: boolean;
   label?: unknown;
   required?: boolean;
   unique?: boolean;

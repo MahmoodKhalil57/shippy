@@ -3,7 +3,7 @@ import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
-import { fixedWidth, inset, row, rowEnd, rowFill, stack, text } from "../layout/algebra.ts";
+import { fixedWidth, inset, row, rowEnd, rowFill, rowGrow, rowLine, stack, text } from "../layout/algebra.ts";
 
 /**
  * List and list item: rows of records, each one subject (M3 lists; Apple lists).
@@ -64,12 +64,14 @@ export const listItemContent = rcva(`${stack} ${rowFill} gap-0.5`);
 export const listItemTop = rcva(`${row} items-baseline justify-between gap-x-2`);
 export const listItemOverline = rcva("text-label-sm text-on-surface-variant");
 /**
- * The headline: one line, cut with an ellipsis. In an agenda row (one led by a time) it may take
- * two: what is due is the row's point, and the time column and the chevron leave it little room.
+ * The headline: one line, cut with an ellipsis, taking the line's room so the trailing text stays
+ * at its end however narrow the row. In an agenda row (one led by a time) or beside a trailing
+ * text it may take two: what is due, or what a count counts, is the row's point, and the columns
+ * beside it leave it little room.
  */
 export const listItemHeadline = rcva("", {
   variants: {
-    lines: { "1": `${text.line} text-title-sm`, "2": `${text.label} line-clamp-2 text-title-sm` },
+    lines: { "1": `${rowLine} text-title-sm`, "2": `${rowGrow} ${text.label} line-clamp-2 text-title-sm` },
   },
   defaultVariants: { lines: "1" },
 });
@@ -155,7 +157,9 @@ export class UiListItem extends LightElement {
         ${
           headline || this.trailingText
             ? html`<span class=${listItemTop()}>
-                <span class=${listItemHeadline({ lines: this.leadingText ? "2" : "1" })}>${headline}</span>
+                <span class=${listItemHeadline({ lines: this.leadingText || this.trailingText ? "2" : "1" })}
+                  >${headline}</span
+                >
                 ${this.trailingText ? html`<span class=${listItemTrailingText()}>${this.trailingText}</span>` : nothing}
               </span>`
             : nothing

@@ -4,7 +4,7 @@ import { bodyOf, failWith, forward } from "./forward.ts";
 import * as link from "../links.ts";
 
 /**
- * The actions of the quotation tab "Preview & send" (../widgets/quote-preview.ts) that answer in
+ * The actions of the quotation tab "Preview & send" (../pages/quote-preview.ts) that answer in
  * words: each runs the quotation action (POST /api/commercial/quotations/:id/<action>, ./commercial.ts)
  * as the same request and says what happened (`{ message, href? }`). Registered next to the
  * commercial endpoints in ./index.ts.

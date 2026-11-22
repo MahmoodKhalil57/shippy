@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it } from "vite-plus/test";
 import { MemoryStore } from "mock-runner/testing";
-import type { MockConfig } from "saastemlycrm-design-system/contracts";
+import { stringify } from "qs-esm";
+import { fill, setToday, type MockConfig, type Widget, type WidgetScope } from "saastemlycrm-design-system/contracts";
+import { matches } from "saastemlycrm-design-system/payload";
+import { TODAY } from "../src/collections/shared.ts";
+import { Tasks } from "../src/collections/work.ts";
+import { homePage } from "../src/pages/home.ts";
+import { myDecisions } from "../src/queries/aside.ts";
 import { backend, call, config, login as signIn, seeds } from "./backend.ts";
 
 /**
@@ -270,6 +276,23 @@ describe("seed top-up", () => {
 describe("role dashboards (GET /api/home)", () => {
   // oxlint-disable-next-line typescript/no-explicit-any
   const kinds = (body: any) => body.widgets.map((w: { kind: string; id: string }) => `${w.kind}:${w.id}`);
+  /** The signed-in user, as the home page's widgets see them. */
+  const scope = async (): Promise<WidgetScope> => ({
+    user: (await call("GET", "/api/users/me")).body.user,
+    params: {},
+  });
+  /** The home page's data widgets this user sees. */
+  const shown = (s: WidgetScope) =>
+    (homePage.clientProps.page.widgets as Widget[]).filter((w) => !w.visible || w.visible(s));
+  /** A data widget's query as the dashboard sends it: `$user.id` and `$today+1d` filled in, from the demo's day. */
+  setToday(TODAY.toISOString());
+  const find = async (collection: string, where: unknown, extra: Record<string, unknown> = {}) => {
+    const q = fill({ where, limit: 0, depth: 0, ...extra }, await scope());
+    return (await call("GET", `/api/${collection}${stringify(q, { addQueryPrefix: true })}`)).body.docs as Record<
+      string,
+      unknown
+    >[];
+  };
 
   it("needs a signed-in user", async () => {
     expect((await call("GET", "/api/home")).status).toBe(401);
@@ -279,15 +302,22 @@ describe("role dashboards (GET /api/home)", () => {
     await login("karim.balbaa@goldensea.test");
     const { body } = await call("GET", "/api/home");
     expect(body).toMatchObject({ role: "management", greeting: "Good morning, Karim" });
-    expect(kinds(body)[0]).toBe("lists:decisions");
-    const decisions = body.widgets[0].lists[0].items.map((i: { title: string }) => i.title);
+    // The decisions are the approvals collection's, read with the approver's `where` (tinted, first).
+    const tile = shown(await scope()).find((w) => w.records?.collection === "approvals")!;
+    expect(tile).toMatchObject({ title: "Waiting for your decision", emphasis: "tinted" });
+    expect(tile.records!.where).toEqual(myDecisions.where);
+    const decisions = (await find("approvals", myDecisions.where)).map((a) => String(a.title));
     expect(decisions.length).toBeGreaterThan(0);
     // The finance director already decided the bank change; the CEO still has to (it's
     // "Approved 1 of 2", and waits for the second signature).
-    expect(decisions.some((t: string) => /bank/i.test(t))).toBe(true);
+    expect(decisions.some((t) => /bank/i.test(t))).toBe(true);
+    // Each says who has decided so far (its `progress`, the list's second line), dotted by status.
+    expect(tile.records).toMatchObject({ dot: "status" });
+    expect(tile.records!.columns).toContain("progress");
+    const bank = (await find("approvals", myDecisions.where)).find((a) => /bank/i.test(String(a.title)))!;
+    expect(bank.progress).toMatch(/approved · waiting for you/);
     await login("mohamed.helmy@goldensea.test");
-    const fd = (await call("GET", "/api/home")).body;
-    expect(fd.widgets[0].lists[0].items.every((i: { title: string }) => !/bank/i.test(i.title))).toBe(true);
+    expect((await find("approvals", myDecisions.where)).every((a) => !/bank/i.test(String(a.title)))).toBe(true);
   });
 
   it("gives each role its own day, and never sends Sales a value", async () => {
@@ -304,10 +334,49 @@ describe("role dashboards (GET /api/home)", () => {
     expect(seen.size).toBe(4);
     await login("soaad.amer@goldensea.test");
     const sales = (await call("GET", "/api/home")).body;
-    const queue = sales.widgets.find((w: { kind: string }) => w.kind === "queue");
-    expect(queue.value).toBe(false);
-    expect(queue.cases.every((c: { value?: number }) => c.value === undefined)).toBe(true);
     expect(JSON.stringify(sales)).not.toMatch(/Gross profit|EGP \d/);
+    // Sales' queue is their own live cases, with no value column, and the cases never carry one.
+    const queue = shown(await scope()).find((w) => w.records?.collection === "cases")!;
+    expect(queue.title).toBe("My queue");
+    expect(queue.records!.columns).not.toContain("value");
+    const cases = await find("cases", queue.records!.where);
+    expect(cases.length).toBeGreaterThan(0);
+    expect(cases.every((c) => c.value === undefined && c.owner === "sa")).toBe(true);
+  });
+
+  it("gives every role one case queue, sorted by risk, and the buyer today's follow-ups", async () => {
+    for (const user of (seeds.collections.users ?? []) as { email: string }[]) {
+      await login(user.email);
+      const ws = shown(await scope());
+      expect(ws.filter((w) => w.records?.collection === "cases").length, user.email).toBe(1);
+      const queue = ws.find((w) => w.records?.collection === "cases")!;
+      expect(queue.records!.sort, user.email).toBe("riskRank,-urgent,deadline");
+    }
+    // The buyer's queue: their live cases, blocked first, then at risk, each with its own due date.
+    await login("karim.youssef@goldensea.test");
+    const ws = shown(await scope());
+    const queue = ws.find((w) => w.records?.collection === "cases")!;
+    const docs = await find("cases", queue.records!.where, { sort: queue.records!.sort, depth: 1 });
+    expect(docs.length).toBeGreaterThan(1);
+    const ranks = docs.map((d) => Number(d.riskRank));
+    expect(ranks).toEqual([...ranks].sort((a, b) => a - b));
+    expect(docs.every((d) => typeof d.due === "string" && d.due.length > 0)).toBe(true);
+    // Today's follow-ups: the buyer's open tasks due by tonight, each saying when.
+    const followUps = ws.find((w) => w.title === "Today's follow-ups")!;
+    const tasks = await find("tasks", followUps.records!.where);
+    expect(tasks.length).toBeGreaterThan(0);
+    expect(tasks.every((t) => t.owner === "ky" && t.status === "Open")).toBe(true);
+    expect(tasks.map((t) => t.when)).toContain("11:00");
+    // Said as a tag, red once overdue; the queue's lines as a bar of all of them.
+    expect(followUps.records).toMatchObject({ tags: ["when"], dot: "when" });
+    const when = (Tasks.fields as { name?: string; custom?: { toneWhen?: { when: never; tone: string }[] } }[]).find(
+      (f) => f.name === "when",
+    )!;
+    const tone = (t: Record<string, unknown>) => when.custom!.toneWhen!.find((r) => matches(t, r.when))?.tone;
+    expect(tone({ when: "Overdue" })).toBe("error");
+    expect(tone({ when: "11:00" })).toBeUndefined();
+    expect(queue.records!.columns).toContain("lineCount.ready");
+    expect(docs.some((d) => (d.lineCount as { total?: number } | null)?.total)).toBe(true);
   });
 
   it("gives every role four figures, each delta in words, and what's due next, soonest first", async () => {
@@ -318,8 +387,14 @@ describe("role dashboards (GET /api/home)", () => {
       const { body } = await call("GET", "/api/home");
       // The greeting's subtitle is the day's live numbers.
       expect(body.subtitle, user.email).toMatch(/^\d.* · .* · /);
-      const tiles = part(body, "tiles").tiles as { delta?: { text: string; dir: string; good?: boolean } }[];
-      expect(tiles, user.email).toHaveLength(4);
+      const tiles = part(body, "tiles").tiles as {
+        main?: boolean;
+        delta?: { text: string; dir: string; good?: boolean };
+      }[];
+      // Its figures with a trend and its counts (the page's `metrics`) make the strip of four, one headline.
+      const counts = shown(await scope()).flatMap((w) => w.metrics?.items ?? []);
+      expect(tiles.length + counts.length, user.email).toBe(4);
+      expect([...tiles, ...counts].filter((t) => t.main).length, user.email).toBe(1);
       for (const { delta } of tiles) {
         if (!delta) continue;
         // The arrow agrees with the words: a rise reads "+", a fall "−", and no change says so.

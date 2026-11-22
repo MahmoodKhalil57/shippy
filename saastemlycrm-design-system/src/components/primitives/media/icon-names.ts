@@ -63,6 +63,16 @@ export const ICON_NAMES = [
   "filter",
   "columns",
   "table",
+  "calendar",
+  "list",
+  "compact",
+  "focus",
+  "stack",
+  "timeline",
+  "heat",
+  "mosaic",
+  "scatter",
+  "ranking",
   "thinking",
   "tool",
   "block",
@@ -87,6 +97,7 @@ export const ICON_NAMES = [
   "wallpaper",
   "no-image",
   "passkey",
+  "trash",
 ] as const;
 
 export type IconName = (typeof ICON_NAMES)[number];

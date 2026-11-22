@@ -20,5 +20,5 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "vite", "tests", "vite.config.ts"]
+  "include": ["src", "vite", "tests", "audit", "vite.config.ts"]
 }

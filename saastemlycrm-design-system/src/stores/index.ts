@@ -36,14 +36,53 @@ export const preferences = createStore(
     /** Collection tables' row height (M3 density: 0 default, -1 compact, -2 dense), for every table. */
     listDensity: "0" as "0" | "-1" | "-2",
     /** Collection lists shown as cards instead of a table, by collection. */
-    listView: {} as Record<string, "table" | "cards" | "board">,
+    listView: {} as Record<
+      string,
+      | "table"
+      | "cards"
+      | "list"
+      | "compact"
+      | "focus"
+      | "groups"
+      | "board"
+      | "calendar"
+      | "timeline"
+      | "heatmap"
+      | "ranking"
+      | "treemap"
+      | "scatter"
+    >,
     /**
      * Boards someone arranged, by screen (its path, a document's id as `:id`): their tiles' order
-     * (keys, applied leniently), sizes and hidden tiles. The board's rules still place them.
+     * (keys, applied leniently), sizes, heights (rows) and hidden tiles. The board's rules still
+     * place them, inside each widget's bounds.
      */
     boards: {} as Record<
       string,
-      { order?: string[]; sizes?: Record<string, "s" | "m" | "l" | "full">; hidden?: string[] }
+      {
+        order?: string[];
+        sizes?: Record<string, "s" | "m" | "l" | "full">;
+        /** Tiles across, from a tile's corner dragged (inside its bounds). */
+        widths?: Record<string, number>;
+        rows?: Record<string, number>;
+        /**
+         * Where each tile is, once someone arranged the board by hand (free placement): its lane and
+         * row (a lane alone, from before rows were kept).
+         */
+        pins?: Record<string, number | { lane: number; row: number }>;
+        /**
+         * The board's tiles across when it was arranged: on a board of another width, the places
+         * and widths are scaled to it (`arrangedAt`, `scaleArranged`).
+         */
+        lanes?: number;
+        hidden?: string[];
+        /**
+         * Widgets someone dragged here from a screen (the side panel's Widgets): the view they're on
+         * (`dashboard` or a root view's key), their key on it, and for one item of a widget drawn
+         * per item (a figure), that item. Drawn as their mini versions (src/app/widgets/mini.ts).
+         */
+        added?: { view: string; key: string; item?: string }[];
+      }
     >,
   },
   { persist: "saastemly:preferences" },

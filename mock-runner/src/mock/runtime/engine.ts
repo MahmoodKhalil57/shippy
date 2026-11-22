@@ -9,6 +9,7 @@ import {
   joinFields,
   merge,
   runFieldHooks,
+  dropVirtual,
   sanitize,
   validate,
   type FieldError,
@@ -444,6 +445,7 @@ export class Engine {
 
     doc = await this.hooks(c, "beforeChange", args, "data", doc);
     await runFieldHooks("beforeChange", fields, doc, { ...args, root: doc, original });
+    dropVirtual(fields, doc);
 
     if (c.auth && password) Object.assign(doc, await hashPassword(password));
     if (c.auth && original) {

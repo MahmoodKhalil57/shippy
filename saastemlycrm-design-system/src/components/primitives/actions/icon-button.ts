@@ -4,6 +4,7 @@ import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
+import { tip } from "../layout/algebra.ts";
 import { iconSvg, type IconName } from "../media/icon.ts";
 
 /**
@@ -49,7 +50,7 @@ export const iconButton = rcva(
 );
 /** The hover / focus label (a plain M3 tooltip). */
 export const iconButtonTooltip = rcva(
-  "tooltip tooltip-bottom [&>.tooltip-content]:liquid-glass-clear [&::before]:liquid-glass-clear [&::before]:text-on-surface [&::after]:invisible",
+  `tooltip tooltip-bottom [&>.tooltip-content]:liquid-glass-clear [&::before]:liquid-glass-clear [&::before]:text-on-surface [&::after]:invisible ${tip}`,
 );
 
 export type IconButtonVariants = VariantProps<typeof iconButton>;

@@ -76,7 +76,7 @@ export class UiColumnPicker extends LightElement {
     return html`<ui-dropdown
       mode="popover"
       panel="card"
-      panel-width="64"
+      panel-width="5"
       align="end"
       trigger-variant="text"
       trigger-size="xs"

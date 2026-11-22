@@ -2,50 +2,22 @@ import type { Endpoint, PayloadRequest } from "payload";
 import type { Doc } from "saastemlycrm-design-system/contracts";
 import { GROWTH_STAGES, SALES_RESULTS } from "../collections/growth.ts";
 import { logActivity } from "../collections/shared.ts";
-import {
-  NOW,
-  type Tone,
-  all,
-  body,
-  date,
-  docHref,
-  fail,
-  fmtDay,
-  idOf,
-  meOf,
-  nameOf,
-  num,
-  str,
-  unauthorized,
-} from "./insights-shared.ts";
+import { type Tone, all, body, docHref, fail, fmtDay, idOf, meOf, num, str, unauthorized } from "./insights-shared.ts";
 
 /**
  * The growth CRM (root view /growth), kept apart from operational RFQs:
  *
- * - GET /api/growth — prospects by stage, fleets per ship manager (vessels with IMO), vendor
- *   registrations, campaigns and the sales next steps with their "what to say" scripts.
+ * - GET /api/growth — fleets per ship manager (vessels with IMO): customers' vessel records and
+ *   prospects' known fleets, each vessel marked when Golden Sea has had a case for it. It spans
+ *   customers, vessels, cases and opportunities, so it is worked out here. The board's stages, the
+ *   sales next steps, registrations and campaigns are the collections' own (data widgets on
+ *   ../pages/growth.ts).
  * - POST /api/growth/:id/outcome { result, note, nextStep, nextStepDue, stage? } — records what
- *   happened on a next step: appends the outcome to the opportunity, plans the next step (and its
- *   task on the owner's follow-ups), closes the step's open task and logs it.
+ *   happened on a next step (the opportunities' "Record outcome"): appends the outcome to the
+ *   opportunity, plans the next step (and its task on the owner's follow-ups), closes the step's
+ *   open task and logs it.
  */
 
-/** The board's columns, in order ("Closed" stays off the board). */
-export const BOARD_STAGES = GROWTH_STAGES.filter((s) => s !== "Closed");
-
-export interface Deal {
-  id: string;
-  href: string;
-  name: string;
-  kind: string;
-  stage: string;
-  value: string;
-  owner: string;
-  source: string;
-  next: string;
-  due: string;
-  overdue: boolean;
-  noNext: boolean;
-}
 export interface FleetVessel {
   name: string;
   imo: string;
@@ -62,97 +34,15 @@ export interface Fleet {
   fleetSize: number;
   vessels: FleetVessel[];
 }
-export interface Registration {
-  id: string;
-  href: string;
-  company: string;
-  portal: string;
-  status: string;
-  tone: Tone;
-  submitted: string;
-  committee: string;
-  renewBy: string;
-  documents: { name: string; status: string }[];
-  missing: number;
-  next: string;
-}
-export interface CampaignRow {
-  id: string;
-  href: string;
-  name: string;
-  audience: string;
-  recipients: number;
-  consentOnly: boolean;
-  content: string;
-  status: string;
-  scheduled: string;
-  stats?: { sent: number; opened: number; replied: number };
-}
-export interface NextStep {
-  id: string;
-  href: string;
-  company: string;
-  stage: string;
-  who: string;
-  channel: string;
-  goal: string;
-  due: string;
-  overdue: boolean;
-  owner: string;
-  ownerId: string;
-  script: string;
-  noNext: boolean;
-  last?: { result: string; note: string; at: string; by: string };
-}
 export interface Growth {
-  stages: string[];
-  columns: { stage: string; deals: Deal[] }[];
   fleets: Fleet[];
-  registrations: Registration[];
-  campaigns: CampaignRow[];
-  steps: NextStep[];
-  results: string[];
-  /** Only management schedules or sends campaigns. */
-  canSend: boolean;
-  totals: { open: number; noNext: number; dueThisWeek: number; registrations: number };
 }
-
-const REG_TONE: Record<string, Tone> = {
-  "Documents requested": "warning",
-  Submitted: "info",
-  "Under review": "info",
-  Approved: "success",
-  Rejected: "error",
-  "Renewal overdue": "error",
-};
 
 export async function growth(req: PayloadRequest): Promise<Growth> {
-  const me = meOf(req)!;
-  const [opps, regs, campaigns, customers, vessels, cases, users] = await Promise.all(
-    ["opportunities", "vendor-registrations", "campaigns", "customers", "vessels", "cases", "users"].map((c) =>
-      all(req, c, 0),
-    ),
+  const [opps, customers, vessels, cases] = await Promise.all(
+    ["opportunities", "customers", "vessels", "cases"].map((c) => all(req, c, 0)),
   );
-  const userName = (v: unknown) => str(users.find((u) => u.id === idOf(v))?.name ?? nameOf(v));
   const open = opps.filter((o) => o.stage !== "Closed");
-  const noNext = (o: Doc) => !o.nextStep && o.stage !== "Active account" && o.stage !== "Closed";
-  const day = (v: unknown) => (date(v) ? fmtDay(date(v)!) : "");
-
-  const deal = (o: Doc): Deal => ({
-    id: o.id,
-    href: docHref("opportunities", o.id),
-    name: str(o.name),
-    kind: str(o.kind),
-    stage: str(o.stage),
-    value: str(o.estimatedValue),
-    owner: userName(o.owner),
-    source: str(o.source),
-    next: str(o.nextStep),
-    due: day(o.nextStepDue),
-    overdue: Boolean(date(o.nextStepDue) && date(o.nextStepDue)! < new Date(NOW.toISOString().slice(0, 10))),
-    noNext: noNext(o),
-  });
-  const byDue = (a: Doc, b: Doc) => str(a.nextStepDue || "9999").localeCompare(str(b.nextStepDue || "9999"));
 
   /* fleets: customers (their vessel records) and prospects (the fleet on the opportunity) */
   const suppliedVessels = new Set(cases.map((c) => str(c.vessel).toLowerCase()));
@@ -196,93 +86,7 @@ export async function growth(req: PayloadRequest): Promise<Growth> {
     });
   }
 
-  const registrations: Registration[] = regs.map((r) => {
-    const documents = ((r.documents as { name?: string; status?: string }[] | undefined) ?? []).map((d) => ({
-      name: str(d.name),
-      status: str(d.status) || "Missing",
-    }));
-    return {
-      id: r.id,
-      href: docHref("vendor-registrations", r.id),
-      company: str(r.company),
-      portal: str(r.portal),
-      status: str(r.status),
-      tone: REG_TONE[str(r.status)] ?? "neutral",
-      submitted: day(r.submittedAt),
-      committee: day(r.committeeDate),
-      renewBy: day(r.renewBy),
-      documents,
-      missing: documents.filter((d) => d.status === "Missing" || d.status === "Expired").length,
-      next: str(r.nextStep),
-    };
-  });
-
-  const campaignRows: CampaignRow[] = campaigns.map((c) => {
-    const s = c.stats as { sent?: number; opened?: number; replied?: number } | undefined;
-    return {
-      id: c.id,
-      href: docHref("campaigns", c.id),
-      name: str(c.name),
-      audience: str(c.audience),
-      recipients: num(c.recipients),
-      consentOnly: c.consentOnly !== false,
-      content: str(c.contentStatus) || "Draft",
-      status: str(c.status) || "Draft",
-      scheduled: date(c.scheduledAt) ? `${fmtDay(date(c.scheduledAt)!)} ${str(c.scheduledAt).slice(11, 16)}` : "",
-      stats: s && num(s.sent) ? { sent: num(s.sent), opened: num(s.opened), replied: num(s.replied) } : undefined,
-    };
-  });
-
-  const steps: NextStep[] = open
-    .filter((o) => o.stage !== "Active account" || o.nextStep)
-    .sort(byDue)
-    .map((o) => {
-      const outs = (o.outcomes as { at?: string; result?: string; note?: string; by?: unknown }[] | undefined) ?? [];
-      const last = outs.at(-1);
-      const d = deal(o);
-      return {
-        id: o.id,
-        href: d.href,
-        company: d.name,
-        stage: d.stage,
-        who: str(o.contact),
-        channel: str(o.channel) || "Call",
-        goal: d.next,
-        due: d.due,
-        overdue: d.overdue,
-        owner: d.owner,
-        ownerId: str(idOf(o.owner)),
-        script: str(o.script),
-        noNext: d.noNext,
-        last: last
-          ? { result: str(last.result), note: str(last.note), at: day(last.at), by: userName(last.by) }
-          : undefined,
-      };
-    });
-
-  const weekEnd = new Date(NOW.getTime() + 7 * 86_400_000);
-  return {
-    stages: BOARD_STAGES,
-    columns: BOARD_STAGES.map((stage) => ({
-      stage,
-      deals: open
-        .filter((o) => o.stage === stage)
-        .sort(byDue)
-        .map(deal),
-    })),
-    fleets,
-    registrations,
-    campaigns: campaignRows,
-    steps,
-    results: SALES_RESULTS,
-    canSend: str(me.role) === "management",
-    totals: {
-      open: open.length,
-      noNext: open.filter(noNext).length,
-      dueThisWeek: open.filter((o) => date(o.nextStepDue) && date(o.nextStepDue)! <= weekEnd).length,
-      registrations: regs.filter((r) => !["Approved", "Rejected"].includes(str(r.status))).length,
-    },
-  };
+  return { fleets };
 }
 
 export const growthEndpoints: Endpoint[] = [
@@ -376,12 +180,13 @@ export const growthEndpoints: Endpoint[] = [
         text: `${str(opp.name)}: ${result}${input.note ? ` — ${str(input.note)}` : ""}. ${nextStep ? `Next: ${nextStep} (${due ? fmtDay(due) : ""}).` : `Stage: ${stage}.`}`,
         entity: `opportunities/${id}`,
       });
-      // `message`: what the screen says once it's saved (the action's snackbar).
+      // `message`: what the screen says once it's saved (the action's snackbar); the screen reads
+      // the opportunity and its tasks again.
       const message =
         nextStep && due
           ? `Outcome saved — next step “${nextStep}” planned for ${due.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`
           : `Outcome saved — ${str(opp.name)} is now “${stage}”`;
-      return Response.json({ ...(await growth(req)), message });
+      return Response.json({ ok: true, message });
     },
   },
 ];

@@ -4,7 +4,7 @@ import { styleMap } from "lit/directives/style-map.js";
 import { inlineStart } from "../../base/inline-start.ts";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
-import { floating, inset, pad, row, stack, text } from "../layout/algebra.ts";
+import { floating, floatingHeight, inset, pad, row, stack, text } from "../layout/algebra.ts";
 import { auditContrast, type ContrastIssue } from "../../base/contrast.ts";
 import { auditProminence, type ProminenceIssue } from "../../base/prominence.ts";
 import { auditLayers, type LayoutIssue } from "../../base/layout.ts";
@@ -44,7 +44,7 @@ export const contrastAuditLabel = rcva(
   `${floating.fit} ${text.line} absolute -top-2 start-0 -translate-y-full rounded-xs bg-error px-1 text-label-sm font-semibold text-error-content`,
 );
 export const contrastAuditPanel = rcva(
-  `${stack} ${floating.md} ${pad["3"]} ${text.label} liquid-glass fixed bottom-4 start-4 z-[71] max-h-[min(28rem,60dvh)] gap-2 rounded-box py-3 text-body-md`,
+  `${stack} ${floating["8"]} ${floatingHeight.tool} ${pad["3"]} ${text.label} liquid-glass fixed bottom-4 start-4 z-[71] gap-2 rounded-box py-3 text-body-md`,
 );
 export const contrastAuditHead = rcva(`${row} items-center justify-between gap-2`);
 export const contrastAuditTitle = rcva("font-semibold");

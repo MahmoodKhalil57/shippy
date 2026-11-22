@@ -274,6 +274,8 @@ export interface ListItem {
   dot?: Tone;
   icon?: IconName;
   href?: string;
+  /** A short value (a count, a date) at the end of the headline's line, on it however narrow the list. */
+  value?: Cell;
   trailing?: Cell;
   tags?: Tag[];
   actions?: Action[];
@@ -380,7 +382,8 @@ export interface ViewBlocks {
   grid: { type: "grid"; blocks: ViewBlock[] };
   /** A main column and a narrower side column. */
   split: { type: "split"; main: ViewBlock[]; side: ViewBlock[] };
-  stats: { type: "stats"; items: Stat[]; size?: "md" | "lg" };
+  /** `size`: `sm` the figure on one line (a tile one row high), `md` a tile's, `lg` a page's headline. */
+  stats: { type: "stats"; items: Stat[]; size?: "sm" | "md" | "lg" };
   /** A paragraph. `muted` makes it a quiet note (prefer `note(text)`). Headings are `heading` blocks. */
   text: {
     type: "text";
@@ -439,6 +442,161 @@ export interface ViewBlocks {
     subhead?: string;
     chart: ChartSpec;
     /** Its accessible name when it has no `title` (inside a card of its own). */
+    label?: string;
+  };
+  /**
+   * Parts of a whole as a donut (`<ui-ring>`): up to six parts in the chart palette's order (more
+   * fold into "Other"), what they add up to in the middle (`total`, named by `center`), the parts
+   * listed beside it with their shares. With `max`, one reading of a known most (a progress ring).
+   * Pointing at a part brings it forward; a part with `href` opens it.
+   */
+  ring: {
+    type: "ring";
+    parts: { label: string; value: number; valueText?: string; href?: string }[];
+    max?: number;
+    total?: string;
+    center?: string;
+    /** Its accessible name. */
+    label?: string;
+  };
+  /**
+   * Stages one after another (`<ui-funnel>`): each a bar as long as its share of the first, the
+   * share that went on between two, and the whole funnel's in its caption.
+   */
+  funnel: {
+    type: "funnel";
+    stages: { label: string; value: number; valueText?: string; href?: string }[];
+    /** What a step's share says ("went on", "quoted"). */
+    step?: string;
+    label?: string;
+  };
+  /**
+   * How much happened each day (`<ui-heatmap>`): the days oldest first, a week a column, each as
+   * deep as its amount; the line under it reads the day pointed at, else `summary`.
+   */
+  heatmap: {
+    type: "heatmap";
+    days: { label: string; value: number; valueText?: string }[];
+    summary?: string;
+    label?: string;
+  };
+  /**
+   * Readings against targets (`<ui-bullet>` each): a bar on qualitative bands with a target tick,
+   * one per line ("Win rate 27% of a 30% target").
+   */
+  bullet: {
+    type: "bullet";
+    items: {
+      label: string;
+      value: number;
+      max: number;
+      min?: number;
+      target?: number;
+      /** Ascending thresholds splitting the track into poor / fair / good. */
+      bands?: number[];
+      valueText?: string;
+      targetText?: string;
+      lowerIsBetter?: boolean;
+    }[];
+  };
+  /** One reading on a half-circle gauge with a needle (`<ui-dial>`), its arc coloured by `zones`. */
+  dial: {
+    type: "dial";
+    value: number;
+    min?: number;
+    max: number;
+    valueText?: string;
+    caption?: string;
+    label?: string;
+    zones?: { to: number; tone: "success" | "warning" | "error" }[];
+  };
+  /** A share as a 10 × 10 grid of cells (`<ui-waffle>`), or several parts filling it in turn. */
+  waffle: {
+    type: "waffle";
+    value?: number;
+    max?: number;
+    valueText?: string;
+    caption?: string;
+    label?: string;
+    parts?: { label: string; value: number; href?: string }[];
+  };
+  /** Parts of a whole as one 100% bar with its legend (`<ui-share-bar>`): a ring for a small tile. */
+  share: {
+    type: "share";
+    parts: { label: string; value: number; valueText?: string; href?: string }[];
+    total?: string;
+    label?: string;
+  };
+  /** Parts of a whole as rectangles sized by value (`<ui-treemap>`): where the weight is. */
+  treemap: {
+    type: "treemap";
+    items: { label: string; value: number; valueText?: string; href?: string }[];
+    total?: string;
+    label?: string;
+  };
+  /**
+   * A bridge (`<ui-waterfall>`): a start, steps up and down, and totals (`total: true`, drawn from
+   * zero to the running total), so it shows how one figure becomes another.
+   */
+  waterfall: {
+    type: "waterfall";
+    steps: { label: string; value: number; valueText?: string; total?: boolean }[];
+    format?: NumberFormat;
+    /** Span the levels it moves through, not zero: small changes next to large totals. */
+    fit?: boolean;
+    label?: string;
+  };
+  /** A scatter split into four quadrants (`<ui-quadrant>`): who's where on two measures. */
+  quadrant: {
+    type: "quadrant";
+    points: { label: string; x: number; y: number; valueText?: string; href?: string; size?: number }[];
+    xLabel: string;
+    yLabel: string;
+    xMid?: number;
+    yMid?: number;
+    xDomain?: [number, number];
+    yDomain?: [number, number];
+    /** Corner captions: top start, top end, bottom start, bottom end. */
+    quadrants?: [string, string, string, string];
+    invertY?: boolean;
+    label?: string;
+  };
+  /** Deadlines with the time left, live, each bar draining as it runs out (`<ui-countdown>`). */
+  countdown: {
+    type: "countdown";
+    items: { label: string; due: string; from?: string; supporting?: string; href?: string }[];
+    /** The moment to count from (a demo's fixed today); left out, the clock. */
+    now?: string;
+    label?: string;
+  };
+  /** A month's calendar with what's due each day (`<ui-month>`); a day chosen lists its items. */
+  month: {
+    type: "month";
+    /** "2026-11". */
+    month: string;
+    today?: string;
+    events: { date: string; label: string; href?: string; tone?: "neutral" | "warning" | "error" | "success" }[];
+    weekStart?: 0 | 1;
+    label?: string;
+  };
+  /** A live what-if (`<ui-whatif>`): sliders in, figures out, recomputed as they move. */
+  whatif: {
+    type: "whatif";
+    inputs: {
+      key: string;
+      label: string;
+      min: number;
+      max: number;
+      step: number;
+      value: number;
+      format?: NumberFormat;
+    }[];
+    compute: (values: Record<string, number>) => {
+      label: string;
+      value: string;
+      tone?: "success" | "warning" | "error";
+      note?: string;
+    }[];
     label?: string;
   };
   alert: {

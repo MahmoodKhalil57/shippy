@@ -107,13 +107,6 @@ export const history = {
     ["Mare Nostrum Shipping", [5.2, 1.8, 0, 0]],
     ["Delta Offshore Services", [9.6, 3.5, 1.0, 0]],
   ] as [string, number[]][],
-  /** Supplier on-time delivery %, by month (`months`). */
-  supplierOnTime: {
-    S1: [92, 95, 93, 96, 94, 94],
-    S2: [86, 90, 85, 89, 88, 88],
-    S3: [78, 80, 84, 79, 83, 81],
-    S4: [96, 98, 97, 96, 98, 97],
-  } as Record<string, number[]>,
   /** Deliveries to vessels by outcome, last 6 weeks (the last six `weeks`). */
   deliveryOutcomes: {
     "On time": [8, 7, 9, 7, 9, 6],
@@ -121,3 +114,26 @@ export const history = {
     Late: [1, 0, 1, 1, 0, 1],
   } as Record<string, number[]>,
 };
+
+/**
+ * Inquiries per day for the 12 weeks to today (illustrative, like the series above): each week's
+ * inquiries spread over its days by how the week usually runs (the Sun–Thu working week busiest,
+ * Friday and Saturday near quiet) with a fixed day-to-day wobble, so the same 84 days come back
+ * every time. A day is `{ date, value }`, oldest first.
+ */
+export function inquiriesDaily(today: Date): { date: string; value: number }[] {
+  // Sun … Sat: how much of a week's inquiries a day takes.
+  const share = [0.21, 0.21, 0.2, 0.19, 0.15, 0.01, 0.03];
+  const wobble = [1, 0.8, 1.25, 0.9, 1.1, 0.7, 1.3, 1.05, 0.85, 1.2, 0.95];
+  const DAY = 86_400_000;
+  const end = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+  const weeks = history.weeks.map((w) => Date.parse(`${w} 2026 UTC`));
+  return Array.from({ length: 84 }, (_, i) => {
+    const t = end - (83 - i) * DAY;
+    // The week it falls in (before the first, the first's).
+    const k = Math.max(0, weeks.filter((w) => w <= t).length - 1);
+    const day = new Date(t).getUTCDay();
+    const value = Math.max(0, Math.round(history.inquiries[k]! * share[day]! * wobble[i % wobble.length]!));
+    return { date: new Date(t).toISOString().slice(0, 10), value };
+  });
+}
