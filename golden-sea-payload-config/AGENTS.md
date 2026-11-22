@@ -84,6 +84,20 @@ seed data (`src/seed`). Entry points: `.` (the config, `src/config.ts`) and `./s
     its calendar date) are in `src/collections/looks.ts`, merged into its `custom.list`. Each
     list page's widgets and starting layout are in `src/pages/records.ts`: counts, share bars,
     rings, treemaps and charts of its records (`collectionPage`'s `before`).
+  - A widget that draws a collection's own records is that collection's widget (a `collection` in
+    one of its layouts, or a no-code `breakdown`), never a shape computed by an endpoint: my
+    deadlines (cases, `chart`), what live cases wait on (cases, `breakdown` share), the suppliers'
+    quadrant (suppliers, `scatter`) and their on-time ranking (suppliers, `ranking`), the growth
+    pipeline (opportunities, `board`). Endpoint shapes are for what spans collections or is
+    history: the trends, the briefing, the money bridges.
+    Plain lists of one collection are collection widgets too (home's decisions, pipeline next
+    steps and inbox to triage; a case's open tasks, audit timeline and matched replies; the
+    approval rules' queue; the quotation preview's approvals), their records' actions on each row. A `records` widget stays where it says more
+    than a list layout can: second lines and own column labels (a case's orders, bills and
+    receipts, the collections table, the case queue, the exception queue and audit log, today's
+    follow-ups), entries' text, scripts and notes (sales next
+    steps, the inbox's review lists), an array field's rows, a master-detail list, or a filter on
+    virtual fields (`keep`).
   - The dashboards also place lists in their own layouts:
     - home: the open tasks as rows and the quote deadlines on a calendar;
     - control room: the live cases as cards and the deliveries on a calendar;

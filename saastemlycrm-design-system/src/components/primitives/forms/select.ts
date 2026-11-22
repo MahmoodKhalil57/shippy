@@ -65,8 +65,11 @@ export const select = rcva("select min-w-0", {
   },
 });
 
-/** Inline label text when `select` is on a wrapping `<label>` (e.g. "Type"). */
-export const selectAdornment = rcva("label");
+/**
+ * Inline label text when `select` is on a wrapping `<label>` (e.g. "Sort"): the name in the
+ * secondary ink, then the value, as one phrase (no divider between them: src/styles/daisy-m3.css).
+ */
+export const selectAdornment = rcva("label text-on-surface-variant");
 
 export type SelectVariants = VariantProps<typeof select>;
 

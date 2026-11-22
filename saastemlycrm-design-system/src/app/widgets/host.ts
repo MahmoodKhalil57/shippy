@@ -8,6 +8,8 @@ import type { Access } from "../app.ts";
 import { LightElement } from "../../components/base/light-element.ts";
 import "../../components/index.ts";
 import {
+  addressOf,
+  dashboardPath,
   collectionOf,
   collectionSettings,
   componentOf,
@@ -611,6 +613,8 @@ export class AppWidgets extends LightElement {
    * handles, and no tile moves in front of it).
    */
   #fixed = new Set<string>();
+  /** Tiles as tall as what they draw (the board's `rows: "fit"`): mini versions. */
+  #fitting = new Set<string>();
 
   #tiles(): WidgetItem[] {
     const out: WidgetItem[] = [];
@@ -632,15 +636,25 @@ export class AppWidgets extends LightElement {
               ? "header"
               : ""),
       );
-      const mini = this.#pins.has(key);
+      // A kept widget's mini version, each of its items too (a widget drawn per item: its figures).
+      const pinned = this.#pins.get(this.#sources.get(key)?.base ?? key);
+      const mini = !!pinned;
+      if (mini || w.fit) this.#fitting.add(key);
+      else this.#fitting.delete(key);
       const b = mini
         ? (() => {
-            // Exactly its mini rows: the default layout never bends a mini version.
-            // One item of a widget drawn per item is a figure (`expand`): one line.
-            const rows = this.#sources.get(key)?.item !== undefined ? 1 : miniRows(!!w.title, skeletonOf(w));
+            // The board's width; its height is what it draws (`rows: "fit"` on the board), the
+            // rows here only its first guess.
+            const rows = this.#sources.get(key)?.item !== undefined ? 2 : miniRows(!!w.title, skeletonOf(w));
             return boundsOf({ size: "full", minSize: "full", rows, minRows: rows, maxRows: rows });
           })()
-        : boundsOf({ ...w, size, rows: w.rows ?? (page ? PAGE_ROWS : defaultRows(skeletonOf(w), size)) });
+        : boundsOf({
+            ...w,
+            size,
+            rows: w.rows ?? (page ? PAGE_ROWS : defaultRows(skeletonOf(w), size)),
+            // A collection's list or a form is a table's kind however it's drawn; else its skeleton's.
+            kind: page ? "table" : skeletonOf(w),
+          });
       this.#bounds.set(key, b);
       out.push({
         key,
@@ -667,7 +681,7 @@ export class AppWidgets extends LightElement {
           .memory=${memory}
           .report=${(s: TileSize | null) => this.#report(key, s)}
           .mini=${mini}
-          .open=${mini ? viewPage(this.#pins.get(key)!.view)?.path : undefined}
+          .open=${pinned ? viewPage(pinned.view)?.path : undefined}
         ></app-widget>`,
       });
     };
@@ -1024,7 +1038,11 @@ export class AppWidgets extends LightElement {
 
   render() {
     // Everything on the screen is a tile on the board, the header first.
-    return html`<ui-board .items=${this.#tiles()} ?fit=${this.fit}></ui-board> ${this.#dialog()}`;
+    // A mini version fits what it draws: its tiles are measured, never cut or left with room over.
+    const items = this.#tiles().map((it) =>
+      this.#fitting.has(it.key) ? { ...it, rows: "fit" as const, remember: `${this.#boardKey}|${it.key}` } : it,
+    );
+    return html`<ui-board .items=${items} ?fit=${this.fit}></ui-board> ${this.#dialog()}`;
   }
 }
 
@@ -1458,11 +1476,14 @@ export class AppWidget extends LightElement {
         .spec=${c}
         .access=${this.host.access}
         .user=${this.host.user}
+        .ctx=${this.host.ctx}
+        .scope=${this.host.scope}
         @dashboard-list-count=${(e: CustomEvent<{ count: number }>) => (this.count = e.detail.count)}
       ></dashboard-list-view>`;
     } else if (w.document) {
       const d = this.#same("document", fill(w.document, scope));
-      heading ||= this.docTitle;
+      // On the record's own page its breadcrumbs and summary name it; elsewhere the tile does.
+      if (!d.home) heading ||= this.docTitle;
       body = html`<dashboard-edit-view
         tile
         .slug=${d.collection}
@@ -1476,7 +1497,7 @@ export class AppWidget extends LightElement {
     } else {
       const g = w.global!;
       const global = globalOf(g.global);
-      heading ||= global ? globalLabel(global) : g.global;
+      if (!g.home) heading ||= global ? globalLabel(global) : g.global;
       body = html`<dashboard-edit-view
         tile
         .globalSlug=${g.global}
@@ -1487,6 +1508,14 @@ export class AppWidget extends LightElement {
       ></dashboard-edit-view>`;
     }
     this.#sized(w.size ?? "full");
+    const list = w.collection ? this.#same("collection", fill(w.collection, this.host.scope)) : undefined;
+    // `hideEmpty`: nothing while the list holds no records.
+    if (list?.hideEmpty && this.count === 0) return nothing;
+    // A list placed on another page links to its collection's own page ("All"), unless it is that page.
+    const listPage =
+      list && !list.home && !list.hide?.includes("all")
+        ? addressOf(`/collections/${encodeURIComponent(list.collection)}`)
+        : null;
     // `hide: ["header"]`: a bare tile, its body alone.
     const bare = !!((w.collection ?? w.document ?? w.global)?.hide as string[] | undefined)?.includes("header");
     return html`<ui-tile
@@ -1501,7 +1530,17 @@ export class AppWidget extends LightElement {
         e.stopPropagation();
         if (this.memory) tileHeights.set(this.memory, e.detail.height);
       }}
-      >${body}</ui-tile
+      >${
+        listPage && !bare
+          ? html`<ui-button
+              slot="trailing"
+              size="xs"
+              variant="text"
+              href=${dashboardPath("collections", list!.collection)}
+              >All</ui-button
+            >`
+          : nothing
+      }${body}</ui-tile
     >`;
   }
 
@@ -1563,15 +1602,14 @@ export class AppWidget extends LightElement {
     if (this.state === "ready") this.#sized(w.size ?? "s");
     const all = this.state === "ready" ? asBlocks(w.render?.(this.data as never, scope)) : [];
     const cut = this.mini ? miniBlocks(all) : all;
-    // A mini figure or chart: its one line alone, bare, named by the widget's title (`miniRows` gives it a tile).
-    const one = this.mini && (!w.title || skeletonOf(w) === "stats" || skeletonOf(w) === "chart");
+    // A mini figure: alone, bare, named by the widget's title (the tile fits it).
     const figure = this.mini ? miniFigure(cut, w.title) : undefined;
     const blocks =
       figure ??
       (this.mini && this.state === "ready" && !cut.length && this.open
         ? miniOpen(this.open, w.title ?? "its screen")
         : cut);
-    const title = one || figure ? undefined : w.title;
+    const title = figure ? undefined : w.title;
     // Every widget is a tile; a titled one is a surface its content knows it's in (cards become
     // panels, entries become rows). An untitled one steers the screen: a bare tile.
     const ctx = title ? inCard(this.host.ctx) : this.host.ctx;

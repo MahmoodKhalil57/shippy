@@ -1,7 +1,7 @@
 import type { Endpoint } from "payload";
 import type { Doc } from "saastemlycrm-design-system/contracts";
 import { history as H } from "./history.ts";
-import { DAY, MONEY_ROLES, NOW, all, date, idOf, meOf, nameOf, num, str, unauthorized } from "./insights-shared.ts";
+import { DAY, MONEY_ROLES, NOW, all, date, idOf, meOf, nameOf, str, unauthorized } from "./insights-shared.ts";
 import * as link from "../links.ts";
 
 /**
@@ -15,8 +15,6 @@ import * as link from "../links.ts";
  * - `targets`: the figures management steers by against their targets (win rate, quote turnaround,
  *   time to acknowledge, on-time delivery), with the bands they read in.
  * - `turnaround` and `ack`: the latest quote turnaround and acknowledgement time, for dials.
- * - `waiting`: what the live cases wait on, for a share bar.
- * - `suppliers`: each supplier's on-time share and reply time, for a quadrant.
  * - Money (management, finance, operations; empty for everyone else): `receivables` by customer
  *   (USD thousands) and the gross profit `gp` bridge from expected to actual (EGP); the cash bridge
  *   is the cash forecast's own (GET /api/operations/cash).
@@ -41,8 +39,6 @@ export interface Visuals {
   }[];
   turnaround: number;
   ack: number;
-  waiting: { label: string; value: number; href?: string }[];
-  suppliers: { label: string; x: number; y: number; href?: string }[];
   money: boolean;
   receivables: { label: string; value: number }[];
   gp: { label: string; value: number; total?: boolean }[];
@@ -183,17 +179,6 @@ export function visuals(
     },
   ];
 
-  const waits = new Map<string, number>();
-  for (const c of live) {
-    const w = str(c.wait) || "Nothing — moving";
-    waits.set(w, (waits.get(w) ?? 0) + 1);
-  }
-  const waiting = [...waits].map(([label, value]) => ({ label, value })).sort((a, b) => b.value - a.value);
-
-  const suppliers = data.suppliers
-    .filter((s) => typeof s.onTime === "number" && typeof s.replyHrs === "number")
-    .map((s) => ({ label: str(s.name), x: num(s.onTime), y: num(s.replyHrs), href: link.doc("suppliers", str(s.id)) }));
-
   const receivables = money
     ? H.ageingByCustomer.map(([label, buckets]) => ({ label, value: Math.round(sum(buckets) * 10) / 10 }))
     : [];
@@ -220,8 +205,6 @@ export function visuals(
     targets,
     turnaround: last(H.turnaround),
     ack: last(H.ackMinutes),
-    waiting,
-    suppliers,
     money,
     receivables,
     gp,

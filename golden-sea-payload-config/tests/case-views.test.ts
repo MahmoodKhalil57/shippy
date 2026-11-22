@@ -178,8 +178,9 @@ describe("case tabs", () => {
     expect(waiting).toHaveLength(1);
     expect(toneOf(fieldAt(fields, "clarifications.reply")!, waiting[0])).toBe("warning");
     // The audit trail, newest first: each entry names the rule that fired or the person.
-    const log = titled(page, "Activity timeline").records!;
-    expect(log).toMatchObject({ collection: "activities", layout: "timeline", sort: "-at", dot: "kind" });
+    // The activities collection itself, on its timeline (its `kind` is each entry's status).
+    const log = titled(page, "Activity timeline").collection!;
+    expect(log).toMatchObject({ collection: "activities", layout: "timeline", sort: "-at" });
     const q = stringify({ where: { case: { equals: "gs-rfq-0142" } }, sort: log.sort, limit: 0, depth: 1 });
     const entries = (await call("GET", `/api/activities?${q}`)).body.docs as Json[];
     expect(entries.length).toBeGreaterThan(1);
@@ -273,7 +274,8 @@ describe("case tabs", () => {
   it("pricing: margin vs markup, approval request, Sales sees the quotation link", async () => {
     const page = casePricing.clientProps.page;
     const body = await draw(page, "gs-rfq-0142");
-    expect(card(body, "Margin vs markup")).toBeTruthy();
+    expect(text(body)).toMatch(/Margin = profit ÷ selling price/);
+    expect(text(body)).toMatch(/Markup = profit ÷ landed cost/);
     expect(card(body, "Costs and margins are hidden")).toBeFalsy();
     expect(blocks(body).some((b) => b.type === "form")).toBe(true);
     const approval = card(body, "Approval");
@@ -286,7 +288,7 @@ describe("case tabs", () => {
     const sales = await draw(page, "gs-rfq-0142");
     expect(text(sales)).toMatch(/hidden for your role/);
     expect(text(sales)).toMatch(/View quotation/);
-    expect(card(sales, "Margin vs markup")).toBeFalsy();
+    expect(text(sales)).not.toMatch(/Markup = profit ÷ landed cost/);
   });
 
   it("profit: expected vs actual, FX, claims and the close checklist; refused to Sales", async () => {

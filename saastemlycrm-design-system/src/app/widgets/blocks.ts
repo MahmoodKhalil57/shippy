@@ -48,7 +48,7 @@ const press = (a: Action, ctx: ViewContext) => (e: Event) => {
   });
 };
 
-export const action = (a: Action, ctx: ViewContext, size: "xs" | "sm" = "xs", linkLook: "text" | "tonal" = "text") =>
+export const action = (a: Action, ctx: ViewContext, size: "xs" | "sm" = "xs", linkLook: "text" | "tonal" = "tonal") =>
   html`<ui-button
     size=${size}
     .variant=${look(a, linkLook)}
@@ -139,7 +139,7 @@ export function cell(c: Cell, ctx?: ViewContext, inTable = false) {
         })}
     ></ui-switch>`;
   }
-  if (c.tag) return html`<ui-tag .tone=${c.tone ?? "neutral"}>${c.text}</ui-tag>`;
+  if (c.tag) return html`<ui-tag .tone=${c.tone ?? "neutral"} .hue=${c.hue}>${c.text}</ui-tag>`;
   // A person outside a table (a fact, a list's trailing value): the table draws its own avatar.
   if (c.person) {
     const name = c.href ? html`<ui-link variant="hover" .href=${c.href}>${c.text}</ui-link>` : c.text;
@@ -272,6 +272,7 @@ const stat = (
     ?main=${main}
     ?outlined=${!ctx.inCard}
     ?fill=${fill}
+    ?mini=${!!b.mini}
     .size=${b.size ?? "lg"}
     .href=${s.href}
     .label=${s.label}
@@ -281,12 +282,15 @@ const stat = (
     .delta=${s.delta?.text ?? ""}
     .deltaDir=${s.delta?.dir ?? "flat"}
     .deltaTone=${s.delta?.good === undefined ? "neutral" : s.delta.good ? "success" : "error"}
+    .share=${s.share?.value}
+    .shareText=${s.share?.text ?? ""}
   >
     ${
       s.trend
         ? html`<ui-chart
             slot="trend"
             kind="spark"
+            .height=${fill ? "fill" : "spark"}
             .label=${`${s.label}, trend`}
             .labels=${s.trend.labels}
             .series=${[{ name: s.label, values: s.trend.values }]}
@@ -297,18 +301,21 @@ const stat = (
   </ui-stat>`;
 
 defineBlock("stats", (b, ctx) =>
-  // A figure that is a widget of its own (`figures`): the card is the tile, filling its box.
-  b.items.length === 1 && !ctx.inCard
-    ? stat(b.items[0]!, b, ctx, !!b.items[0]!.main, true)
-    : // Balanced rows: all in one row when they fit, else in even rows (never one left over). In a
-      // tile the figures are tonal cells; on the page itself (a bare tile) each is a small card like
-      // the tiles around it. A delta is a chip with its arrow, in the ink of what it means.
-      html`<ui-grid
-        .balance=${b.items.length >= 2 && b.items.length <= 6 ? (String(b.items.length) as "2") : undefined}
-        .fit=${b.items.length >= 2 && b.items.length <= 6 ? undefined : "xs"}
-        gap="3"
-        >${b.items.map((s, i) => stat(s, b, ctx, !!s.main && b.items.findIndex((x) => x.main) === i))}</ui-grid
-      >`,
+  // A mini version's figure: at its own height (its tile fits it), the sparkline beside the value.
+  b.mini && b.items[0]
+    ? stat(b.items[0], b, ctx, !!b.items[0].main)
+    : // A figure that is a widget of its own (`figures`): the card is the tile, filling its box.
+      b.items.length === 1 && !ctx.inCard
+      ? stat(b.items[0]!, b, ctx, !!b.items[0]!.main, true)
+      : // Balanced rows: all in one row when they fit, else in even rows (never one left over). In a
+        // tile the figures are tonal cells; on the page itself (a bare tile) each is a small card like
+        // the tiles around it. A delta is a chip with its arrow, in the ink of what it means.
+        html`<ui-grid
+          .balance=${b.items.length >= 2 && b.items.length <= 6 ? (String(b.items.length) as "2") : undefined}
+          .fit=${b.items.length >= 2 && b.items.length <= 6 ? undefined : "xs"}
+          gap="3"
+          >${b.items.map((s, i) => stat(s, b, ctx, !!s.main && b.items.findIndex((x) => x.main) === i))}</ui-grid
+        >`,
 );
 
 defineBlock("heading", (b) => html`<ui-heading level="3" variant="title-sm">${b.text}</ui-heading>`);

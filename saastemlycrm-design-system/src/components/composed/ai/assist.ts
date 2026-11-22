@@ -73,7 +73,7 @@ addEventListener(AI_CHANGE, () => {
 });
 
 const aiButton = (icon: IconName, label: string, onClick: () => void, disabled = false) =>
-  html`<ui-button variant="text" size="xs" ?disabled=${disabled} @click=${onClick}
+  html`<ui-button variant="tonal" size="xs" ?disabled=${disabled} @click=${onClick}
     ><ui-icon name=${icon} size="xs"></ui-icon>${label}</ui-button
   >`;
 

@@ -55,8 +55,16 @@ export const chart = rcva(
   `${stack} ${text.label} relative w-full gap-2 text-body-sm text-on-surface-variant [anchor-scope:--chart-tip]`,
   {
     variants: {
-      /** Plot height: `spark` for KPI tiles, `md` for cards. */
-      height: { spark: "[--chart-h:2.5rem]", sm: "[--chart-h:7rem]", md: "[--chart-h:11rem]" },
+      /**
+       * Plot height: `spark` for KPI tiles, `md` for cards, `fill` for the room its parent gives it
+       * (a figure tile's trend band: the sparkline grows with the tile).
+       */
+      height: {
+        spark: "[--chart-h:2.5rem]",
+        sm: "[--chart-h:7rem]",
+        md: "[--chart-h:11rem]",
+        fill: "grow basis-0 min-h-10 [--chart-h:100%]",
+      },
     },
     defaultVariants: { height: "md" },
   },

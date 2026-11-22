@@ -28,7 +28,9 @@ import { fixedWidth, inset, row, rowEnd, rowFill, rowGrow, rowLine, stack, text 
 export const list = rcva(stack, {
   variants: {
     variant: {
-      divided: "[&>*+*_[data-list-row]]:border-t [&>*+*_[data-list-row]]:border-outline-variant",
+      // The hairline is on the square listitem, not on its row: a row that is a target is rounded
+      // (its state layer), and a border on it would bend at its corners.
+      divided: "[&>*+*_[role=listitem]]:border-t [&>*+*_[role=listitem]]:border-outline-variant",
       separated: "gap-1",
     },
   },

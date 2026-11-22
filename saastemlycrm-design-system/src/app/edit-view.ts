@@ -722,33 +722,38 @@ export class DashboardEditView extends LightElement {
         >`
       : nothing;
 
-    // In a widget's tile: one column under its actions (the tile has the title).
+    // In a widget's tile: one column under its actions (the tile has the title). On the record's
+    // own page (`home`) the way back to its list leads the actions: Dashboard › its collection.
     if (this.tile) {
       const canDelete = this.docId && !isAccount && collectionPerms?.delete.permission && this._shows("delete");
+      const home = !!(this.spec as { home?: boolean } | undefined)?.home && this._shows("header");
       return html`<ui-form label=${heading} @ui-submit=${() => this._save()}>
           <ui-flex direction="col" gap="5">
-            <ui-flex justify="end" align="center" gap="2" wrap>
-              ${this.dirty ? html`<ui-tag tone="warning">Unsaved changes</ui-tag>` : nothing}
-              ${
-                canDelete
-                  ? html`<ui-button variant="text" color="error" size="xs" @click=${() => (this.confirmDelete = true)}
-                      >Delete</ui-button
-                    >`
-                  : nothing
-              }
-              ${
-                canSave
-                  ? html`<ui-button
-                      type="submit"
-                      size="sm"
-                      color="primary"
-                      .disabled=${this.saving || (!this.dirty && !!(this.docId || g))}
-                      title="Ctrl + S"
-                    >
-                      ${this.saving ? "Saving…" : this.docId || g ? (this.dirty ? "Save" : "Saved") : "Create"}
-                    </ui-button>`
-                  : html`<ui-tag variant="outline">Read only</ui-tag>`
-              }
+            <ui-flex justify=${home ? "between" : "end"} align="center" gap="2" wrap>
+              ${home ? html`<ui-breadcrumbs .items=${crumbs}></ui-breadcrumbs>` : nothing}
+              <ui-flex align="center" gap="2" wrap>
+                ${this.dirty ? html`<ui-tag tone="warning">Unsaved changes</ui-tag>` : nothing}
+                ${
+                  canDelete
+                    ? html`<ui-button variant="text" color="error" size="xs" @click=${() => (this.confirmDelete = true)}
+                        >Delete</ui-button
+                      >`
+                    : nothing
+                }
+                ${
+                  canSave
+                    ? html`<ui-button
+                        type="submit"
+                        size="sm"
+                        color="primary"
+                        .disabled=${this.saving || (!this.dirty && !!(this.docId || g))}
+                        title="Ctrl + S"
+                      >
+                        ${this.saving ? "Saving…" : this.docId || g ? (this.dirty ? "Save" : "Saved") : "Create"}
+                      </ui-button>`
+                    : html`<ui-tag variant="outline">Read only</ui-tag>`
+                }
+              </ui-flex>
             </ui-flex>
             ${this._hero()} ${this._stage()} ${tabBar} ${problems} ${this._form(main, readonly)}
             ${hasSide && this._shows("sidebar") ? side : nothing}

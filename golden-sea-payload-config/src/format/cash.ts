@@ -24,6 +24,12 @@ export const position = (d: Cash): Stat[] => {
       value: `EGP ${Math.round(net)}k`,
       note: "Expected receipts − committed payments − fixed costs",
       tone: net < 0 ? "error" : "success",
+      // Week by week, what's left after the week's payments (EGP).
+      trend: {
+        labels: d.weeks,
+        values: d.cashIn.map((v, i) => (v - (d.cashOut[i] ?? 0)) * 1000),
+        format: { unit: "money", currency: "EGP", compact: true },
+      },
     },
   ];
 };

@@ -1,14 +1,7 @@
 import { custom, list, table, widgets } from "saastemlycrm-design-system/contracts";
 import * as fmt from "../format/growth.ts";
 import * as link from "../links.ts";
-import {
-  BOARD_STAGES,
-  growth,
-  nextSteps,
-  openOpportunities,
-  registrationsInProgress,
-  funnelStages,
-} from "../queries/growth.ts";
+import { growth, nextSteps, openOpportunities, registrationsInProgress, funnelStages } from "../queries/growth.ts";
 
 /**
  * The growth board (/growth): the growth CRM, kept apart from operational RFQs — prospects by
@@ -87,22 +80,22 @@ export const growthPage = widgets({
         ],
       },
     },
-    // One list per stage, soonest next step first, each opportunity tagged by where its step stands,
-    // with its "Record outcome".
-    ...BOARD_STAGES.map((stage) => ({
-      title: stage,
-      size: "s" as const,
-      records: {
+    // The pipeline as a board, a column per stage: the opportunities collection itself (drag a
+    // prospect to its next stage; switchable to rows, cards or a chart). "Record outcome" is on each
+    // in "Sales next steps" and in its record.
+    {
+      title: "Pipeline",
+      size: "full",
+      rows: 10,
+      minRows: 8,
+      collection: {
         collection: "opportunities",
-        where: { stage: { equals: stage } },
+        key: "board",
+        layout: "board",
         sort: "nextStepDue",
-        limit: 20,
-        columns: ["name", "kind", "nextStep", "estimatedValue", "owner", "source"],
-        tags: ["step"],
-        layout: "list" as const,
-        empty: "—",
+        hide: ["export", "columns", "select", "around", "search", "filters", "create"],
       },
-    })),
+    },
     {
       title: "Sales next steps",
       size: "m",
@@ -171,20 +164,7 @@ export const growthPage = widgets({
         labels: { name: "Campaign", contentStatus: "Content" },
       },
     },
-    // The pipeline as a board (drag a prospect to its next stage) and the vendor registrations as
-    // cards with their renewal dates.
-    {
-      title: "Pipeline board",
-      size: "full",
-      rows: 10,
-      minRows: 8,
-      collection: {
-        collection: "opportunities",
-        key: "board",
-        layout: "board",
-        hide: ["export", "columns", "select", "around", "search", "filters", "create"],
-      },
-    },
+    // The vendor registrations as cards with their renewal dates.
     {
       title: "Registrations at a glance",
       size: "l",

@@ -402,27 +402,6 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
       labels: H.lostReasons.map((r) => r[0]),
       series: [{ name: "Lost cases", values: H.lostReasons.map((r) => r[1]) }],
     };
-    // Deadlines on my cases over the next 7 days (quote deadlines and vessel ETAs).
-    const week = Array.from({ length: 7 }, (_, i) => new Date(Math.floor(DEMO_NOW.getTime() / DAY) * DAY + i * DAY));
-    const myDeadlines: HomeChart = {
-      title: "My deadlines, next 7 days",
-      sub: "Quote deadlines and vessel arrivals on cases I own",
-      kind: "bars",
-      unit: "count",
-      labels: week.map((d) => d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", timeZone: "UTC" })),
-      series: [
-        {
-          name: "Deadlines",
-          values: week.map(
-            (d) =>
-              live
-                .filter((c) => idOf(c.owner) === me.id)
-                .flatMap((c) => [date(c.deadline), date(c.eta)])
-                .filter((x) => x && Math.floor(x.getTime() / DAY) === Math.floor(d.getTime() / DAY)).length,
-          ),
-        },
-      ],
-    };
     const myTurnaround: HomeChart = {
       title: "My quote turnaround",
       sub: "Median days, last 8 weeks",
@@ -857,7 +836,8 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
             },
             agenda,
             briefingList,
-            { kind: "charts", id: "mine", charts: [myDeadlines, myTurnaround] },
+            // My deadlines over the next 7 days are the cases collection drawn as a chart (../pages/home.ts).
+            { kind: "charts", id: "mine", charts: [myTurnaround] },
           ],
         };
     }

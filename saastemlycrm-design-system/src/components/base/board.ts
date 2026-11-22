@@ -85,9 +85,29 @@ export function defaultRows(kind: TileKind | undefined, size: TileSize): number 
 }
 
 /**
+ * What each kind of widget holds at its smallest and its largest, in tiles (53px across, 56px down):
+ * the bounds a widget takes when it doesn't say (`boundsOf`), as Android's app widgets declare
+ * `minResizeWidth` / `maxResizeWidth` beside their target. A figure reads down to 3 tiles across (a
+ * label and a value of about seven characters, 159px) and is never wider than 8 (424px: past that
+ * it is a number in a field of nothing); a line of text 4; a list 5 (a headline beside its value);
+ * a card or entries 5 and 6; a chart 6 (its axis and a dozen bars); a table 8 (three columns).
+ * Down: a figure 2 to 6 tiles, text 1 to 6, the rest from a few rows to a screenful and more.
+ */
+export const KIND_BOUNDS: Record<TileKind, { minSpan: number; maxSpan?: number; minRows: number; maxRows: number }> = {
+  stats: { minSpan: 3, maxSpan: 8, minRows: 2, maxRows: 6 },
+  text: { minSpan: 4, minRows: 1, maxRows: 6 },
+  list: { minSpan: 5, minRows: 4, maxRows: 20 },
+  card: { minSpan: 5, minRows: 3, maxRows: 20 },
+  entries: { minSpan: 6, minRows: 4, maxRows: 30 },
+  chart: { minSpan: 6, minRows: 4, maxRows: 14 },
+  table: { minSpan: 8, minRows: 5, maxRows: 30 },
+};
+
+/**
  * A widget's size bounds (Android's `minResizeWidth` / `maxResizeWidth`, `minResizeHeight` /
- * `maxResizeHeight`): what someone may resize it to on their board. Left out, any width, and from
- * about half to twice its rows.
+ * `maxResizeHeight`): what someone may resize it to on their board. What the widget says, else its
+ * kind's (`KIND_BOUNDS`), else any width from its size's tiles, and from about half to twice its
+ * rows. Its own size is always inside them.
  */
 export interface TileBounds {
   size: TileSize;
@@ -111,7 +131,10 @@ export function boundsOf(w: {
   maxWidth?: number;
   /** Its own width in tiles, when exact rather than its size's (a figure 4 tiles wide). */
   width?: number;
+  /** What it holds (its skeleton): its kind's bounds where it gives none (`KIND_BOUNDS`). */
+  kind?: TileKind;
 }): TileBounds {
+  const k = w.kind ? KIND_BOUNDS[w.kind] : undefined;
   const order = TILE_SIZES;
   const minSize = w.minSize ?? "s";
   const maxSize = w.maxSize ?? "full";
@@ -119,8 +142,8 @@ export function boundsOf(w: {
   // hand can always go back to the size it was made at (a figure 4 tiles wide isn't held to the
   // 6 tiles of its size, `s`, once widened; a 2-row header isn't held to 3 rows).
   const rows = clampRows(w.rows);
-  const minRows = Math.min(rows, clampRows(w.minRows ?? Math.max(MIN_ROWS + 2, Math.round(w.rows / 2))));
-  const maxRows = Math.max(rows, clampRows(Math.max(minRows, w.maxRows ?? w.rows * 2)));
+  const minRows = Math.min(rows, clampRows(w.minRows ?? k?.minRows ?? Math.max(MIN_ROWS + 2, Math.round(w.rows / 2))));
+  const maxRows = Math.max(rows, clampRows(Math.max(minRows, w.maxRows ?? k?.maxRows ?? w.rows * 2)));
   const size =
     order.indexOf(w.size) < order.indexOf(minSize)
       ? minSize
@@ -128,8 +151,14 @@ export function boundsOf(w: {
         ? maxSize
         : w.size;
   const span = w.width ?? (size === "full" ? undefined : SIZE_TILES[size]);
-  const least = w.minWidth ?? (minSize === "full" ? undefined : SIZE_TILES[minSize]);
-  const most = w.maxWidth ?? (maxSize === "full" ? undefined : SIZE_TILES[maxSize]);
+  const least =
+    w.minWidth ??
+    (w.minSize === undefined ? k?.minSpan : undefined) ??
+    (minSize === "full" ? undefined : SIZE_TILES[minSize]);
+  const most =
+    w.maxWidth ??
+    (w.maxSize === undefined ? k?.maxSpan : undefined) ??
+    (maxSize === "full" ? undefined : SIZE_TILES[maxSize]);
   return {
     size,
     rows,

@@ -29,14 +29,13 @@ export const quotePreview = widgets({
     {
       title: "Approvals",
       size: "s",
-      records: {
+      collection: {
         collection: "approvals",
+        key: "approvals",
+        layout: "list",
         where: { "subject.value": { equals: "$doc.id" } },
         sort: "-createdAt",
-        columns: ["title", "status", "progress"],
-        layout: "list",
-        actions: false,
-        empty: "No approval requested yet.",
+        hide: ["export", "columns", "select", "around", "search", "filters", "create"],
       },
     },
     // The quotation's own: every version of it (its virtual `versions`, each opening its preview),

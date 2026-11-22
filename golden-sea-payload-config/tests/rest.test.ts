@@ -303,17 +303,19 @@ describe("role dashboards (GET /api/home)", () => {
     const { body } = await call("GET", "/api/home");
     expect(body).toMatchObject({ role: "management", greeting: "Good morning, Karim" });
     // The decisions are the approvals collection's, read with the approver's `where` (tinted, first).
-    const tile = shown(await scope()).find((w) => w.records?.collection === "approvals")!;
+    const tile = shown(await scope()).find((w) => w.collection?.collection === "approvals")!;
     expect(tile).toMatchObject({ title: "Waiting for your decision", emphasis: "tinted" });
-    expect(tile.records!.where).toEqual(myDecisions.where);
+    expect(tile.collection!.where).toEqual(myDecisions.where);
     const decisions = (await find("approvals", myDecisions.where)).map((a) => String(a.title));
     expect(decisions.length).toBeGreaterThan(0);
     // The finance director already decided the bank change; the CEO still has to (it's
     // "Approved 1 of 2", and waits for the second signature).
     expect(decisions.some((t) => /bank/i.test(t))).toBe(true);
-    // Each says who has decided so far (its `progress`, the list's second line), dotted by status.
-    expect(tile.records).toMatchObject({ dot: "status" });
-    expect(tile.records!.columns).toContain("progress");
+    // The approvals collection as rows: each with its status, and who has decided so far (its
+    // `progress`, one of the facts on the row's second line), with its Approve and Return.
+    expect(tile.collection).toMatchObject({ layout: "list" });
+    const approvals = (config as MockConfig).collections.find((c) => c.slug === "approvals")!;
+    expect((approvals.custom as { list: { cardFields: string[] } }).list.cardFields).toContain("progress");
     const bank = (await find("approvals", myDecisions.where)).find((a) => /bank/i.test(String(a.title)))!;
     expect(bank.progress).toMatch(/approved · waiting for you/);
     await login("mohamed.helmy@goldensea.test");

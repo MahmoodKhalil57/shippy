@@ -56,9 +56,13 @@ export const tabsTab = rcva("tab gap-2 [&>svg]:size-4", {
     disabled: { true: "tab-disabled" },
     /** Above the sticky panels in a scroll area. */
     scroll: { true: "z-1" },
-    /** The active tab's indicator and label in the primary colour (M3). */
+    /**
+     * The active tab's label in the primary colour (M3), and so its indicator (daisyUI draws it in
+     * the label's colour). Inactive tabs keep no indicator: a colour set here for every tab would
+     * draw one under each of them.
+     */
     activeColor: {
-      primary: "[&.tab-active,&:checked]:text-primary-ink [--tab-border-color:var(--color-primary)]",
+      primary: "[&.tab-active,&:checked]:text-primary-ink",
     },
   },
 });
@@ -73,6 +77,8 @@ export const tabsPanel = rcva("", {
     padding: {
       md: "w-full px-[min(24px,max(0px,calc((100%_-_7rem)/2)))] py-6",
       lg: "w-full px-[min(40px,max(0px,calc((100%_-_7rem)/2)))] py-10",
+      /** Only the room under the tab row: a form's sections, on the surface they're already on. */
+      top: "w-full pt-5",
       none: "",
     },
     /** Stays in view inside a horizontally scrolling tabs area. */

@@ -460,36 +460,52 @@ export const howCompared = (c: CompareWithDrafts): KindData<"text"> => {
 
 /**
  * The case's price at a glance: landed cost, selling total, expected gross profit (red below
- * zero, amber under the policy minimum), recoverable input VAT and how many lines are priced.
+ * zero, amber under the policy minimum), recoverable input VAT and how many lines are priced, each
+ * against its whole or target; none until a line is priced.
  */
 export const pricingFigures = (P: Pricing): Stat[] => {
   const t = P.totals;
   const estimates = P.charges.filter((c) => c.status === "Estimate").length;
+  // Nothing priced yet: no figures (they would all read zero); the line pricing says what to do.
+  if (!t.landedEGP) return [];
   return [
     {
       label: "Landed cost (priced lines)",
       value: egp(t.landedEGP),
       note: `incl. ${egp(P.chargesEGP)} shared charges · ${estimates ? `${estimates} estimate` : "all confirmed"}`,
+      share: t.sellEGP ? { value: t.landedEGP / t.sellEGP, text: "of the selling price" } : undefined,
     },
     {
       label: `Selling total (${P.currency}, excl. VAT)`,
       value: priced(t.sellQuote, P.currency, 0),
       note: `${egp(t.sellEGP)} at ${P.currency}/EGP ${P.fx.toFixed(2)}${P.discountPct ? ` · after ${P.discountPct}% discount` : ""}`,
+      share: t.sellEGP
+        ? { value: Math.max(0, t.profitEGP) / t.sellEGP, text: `${pct(t.marginPct)} of it is profit` }
+        : undefined,
     },
     {
       label: "Expected gross profit",
       value: egp(t.profitEGP),
       note: `Margin ${pct(t.marginPct)} · markup ${pct(t.markupPct)}`,
       tone: t.profitEGP < 0 ? "error" : t.marginPct < P.policy.minPct ? "warning" : "success",
+      share: {
+        value: Math.max(0, t.marginPct) / P.policy.targetPct,
+        text: `margin against the ${P.policy.targetPct}% target`,
+      },
     },
     {
       label: "Recoverable input VAT",
       value: egp(t.inputVatEGP),
       note: "14% on local supplier bills — excluded from cost",
+      share: t.landedEGP ? { value: t.inputVatEGP / t.landedEGP, text: "on top of landed cost" } : undefined,
     },
     {
       label: "Lines priced",
       value: `${P.rows.length} / ${P.rows.length + P.unpriced.length}`,
+      share:
+        P.rows.length + P.unpriced.length
+          ? { value: P.rows.length / (P.rows.length + P.unpriced.length), text: "of the lines" }
+          : undefined,
       note: P.unpriced.length ? `${P.unpriced.length} to follow as a revision` : "all lines priced",
     },
   ];
@@ -505,30 +521,27 @@ export const pricingForSales = ({ docs }: { docs: Doc[] }): KindData<"actions"> 
 });
 
 /**
- * The same profit read two ways, margin (on the selling price, what the policy is set on) and
- * markup (on landed cost), so nobody prices "cost + 25%" thinking it is a 25% margin.
+ * The same profit read two ways, each a figure of its own: margin (on the selling price, what the
+ * policy is set on) and markup (on landed cost), so nobody prices "cost + 25%" thinking it is a
+ * 25% margin.
  */
-export const marginVsMarkup = (P: Pricing): KindData<"stats"> => {
+export const marginVsMarkup = (P: Pricing): Stat[] => {
   const t = P.totals;
-  return {
-    note: [
-      "Same profit, two ways to read it — Golden Sea's policy is set on margin.",
-      "A 25% margin is a 33.3% markup: pricing “cost + 25%” would land at a 20% margin.",
-    ].join("\n"),
-    size: "md",
-    items: [
-      {
-        label: "Margin = profit ÷ selling price",
-        value: pct(t.marginPct),
-        note: `${egp(t.profitEGP)} ÷ ${egp(t.sellEGP)}`,
-      },
-      {
-        label: "Markup = profit ÷ landed cost",
-        value: pct(t.markupPct),
-        note: `${egp(t.profitEGP)} ÷ ${egp(t.landedEGP)}`,
-      },
-    ],
-  };
+  if (!t.landedEGP) return [];
+  return [
+    {
+      label: "Margin = profit ÷ selling price",
+      value: pct(t.marginPct),
+      note: `${egp(t.profitEGP)} ÷ ${egp(t.sellEGP)} · the policy is set on margin`,
+      share: { value: Math.max(0, t.marginPct) / 100, text: `policy target ${P.policy.targetPct}%` },
+    },
+    {
+      label: "Markup = profit ÷ landed cost",
+      value: pct(t.markupPct),
+      note: `${egp(t.profitEGP)} ÷ ${egp(t.landedEGP)} · a 25% margin is a 33.3% markup`,
+      share: { value: Math.max(0, t.markupPct) / 100, text: "on top of landed cost" },
+    },
+  ];
 };
 
 const flagTone = (x: string) => (/negative|expired|misses/i.test(x) ? ("error" as const) : ("warning" as const));

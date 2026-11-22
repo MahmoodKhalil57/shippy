@@ -8,13 +8,12 @@ import {
   gauges,
   header,
   heatmap,
-  quadrant,
   ring,
-  share,
   text,
   treemap,
   waterfall,
   widgets,
+  type CollectionViewSpec,
 } from "saastemlycrm-design-system/contracts";
 import * as shapes from "../format/visuals.ts";
 import { visuals } from "../queries/visuals.ts";
@@ -22,6 +21,19 @@ import type { CrChart, CrRanked } from "../endpoints/control-room.ts";
 import * as fmt from "../format/control-room.ts";
 import { LIVE } from "../queries/cases.ts";
 import { briefing, room } from "../queries/control-room.ts";
+
+/** The suppliers who deliver (not our own stock). */
+const SUPPLIERS = { kind: { not_equals: "own-stock" } };
+/** A collection widget on the room: its records and its layout menu, nothing else. */
+const COMPACT: NonNullable<CollectionViewSpec["hide"]> = [
+  "export",
+  "columns",
+  "select",
+  "around",
+  "search",
+  "filters",
+  "create",
+];
 
 /**
  * The control room (/control-room): "The business, live. Briefed at 07:00." for Karim Balbaa and
@@ -79,15 +91,14 @@ export const controlRoom = widgets({
       data: visuals,
       format: shapes.ackDial,
     }),
-    share({
+    // What the live cases wait on: the cases themselves, grouped by `wait`, as one bar (no code).
+    {
       title: "What live cases wait on",
       size: "m",
-      rows: 3,
-      maxRows: 4,
-      skeleton: "list",
-      data: visuals,
-      format: shapes.waiting,
-    }),
+      rows: 4,
+      maxRows: 5,
+      breakdown: { collection: "cases", where: LIVE, by: "wait", as: "share" },
+    },
     // How the pipeline converts, why it leaks, and how busy each day has been: shapes to read at a glance.
     funnel({
       title: "Quote funnel",
@@ -183,29 +194,44 @@ export const controlRoom = widgets({
       hidden: (v) => !v.money,
       format: shapes.gpBridge,
     }),
-    // The suppliers on two measures at once: who's reliable and fast, who's neither.
-    quadrant({
-      title: "Suppliers: on time vs reply time",
-      size: "m",
-      rows: 7,
-      maxRows: 8,
-      skeleton: "chart",
-      data: visuals,
-      format: shapes.supplierQuadrant,
-    }),
-    // Who delivers on time (a bar of 100%, amber under 85%) and how fast they answer (amber past a
-    // day): each supplier's own figures, best first.
+    // The suppliers on two measures at once (who's reliable and fast, who's neither), and ranked by
+    // on-time delivery: the suppliers collection itself, as a scatter and as a ranking, each
+    // switchable to the collection's other layouts.
     {
-      title: "Supplier on-time vs reply time",
-      subhead: "On-time delivery and average reply time per supplier — open RFQs from the live records",
-      size: "l",
-      records: {
+      title: "Suppliers: on time vs reply time",
+      subhead: "Each supplier by its on-time deliveries and how fast it replies; choose one to open it",
+      size: "m",
+      rows: 8,
+      maxRows: 9,
+      collection: {
         collection: "suppliers",
-        where: { kind: { not_equals: "own-stock" } },
-        sort: "-onTime",
-        limit: 50,
-        columns: ["name", "onTime", "replyHrs", "openRfqs"],
-        labels: { name: "Supplier", onTime: "On time", replyHrs: "Avg reply", openRfqs: "Open RFQs" },
+        key: "quadrant",
+        layout: "scatter",
+        where: SUPPLIERS,
+        scatter: {
+          x: "onTime",
+          y: "replyHrs",
+          xMid: 85,
+          yMid: 24,
+          invertY: true,
+          quadrants: ["Fast but late", "Reliable & fast", "Slow and late", "Reliable but slow"],
+        },
+        hide: COMPACT,
+      },
+    },
+    {
+      title: "Suppliers by on-time delivery",
+      subhead: "Best first; reply time and open RFQs under each, from the live records",
+      size: "m",
+      rows: 8,
+      maxRows: 12,
+      collection: {
+        collection: "suppliers",
+        key: "ontime",
+        layout: "ranking",
+        figure: "onTime",
+        where: SUPPLIERS,
+        hide: COMPACT,
       },
     },
     // The live cases as cards (stage, value, owner) and the deliveries on their month.

@@ -59,6 +59,11 @@ export interface RecordItem {
   person?: string;
   /** A share done, 0 to 1 (a delivery's lines received). */
   progress?: number;
+  /**
+   * What people can do to it (its buttons, drawn by the owner): on a card at its foot, on a row at
+   * its end, above the link that covers the rest of it.
+   */
+  actions?: unknown;
 }
 
 /** A link to what's related to a record (its orders, its vessels), with how many. */
@@ -168,7 +173,7 @@ export const recordGo = rcva(
 
 export const recordList = rcva(`${stack} w-full gap-1`);
 export const recordRow = rcva(
-  `${row} group/record items-center gap-x-3 gap-y-1 rounded-field ${inset["2"]} py-2 text-on-surface outline-none ${ENTER}`,
+  `${row} group/record relative items-center gap-x-3 gap-y-1 rounded-field ${inset["2"]} py-2 text-on-surface outline-none ${ENTER}`,
   {
     variants: {
       link: {
@@ -232,11 +237,28 @@ const status = (s: RecordItem["status"]) =>
 
 const initials = (name: string) => monogramLetters(name);
 
-/** A link when it has an address, else a plain box. */
-const box = (href: string | undefined, cls: string, i: number, label: string, body: TemplateResult) =>
-  href
-    ? html`<a class=${cls} href=${href} aria-label=${label} style=${styleMap({ "--i": String(i) })}>${body}</a>`
-    : html`<div class=${cls} aria-label=${label} style=${styleMap({ "--i": String(i) })}>${body}</div>`;
+/** The link over a record with buttons: it covers the box, under the buttons. */
+export const recordCover = rcva(
+  "absolute inset-0 z-0 rounded-field outline-none focus-visible:outline-2 focus-visible:outline-primary",
+);
+/** Its buttons, above the cover. */
+export const recordActions = rcva(`${row} relative z-10 items-center gap-1`);
+
+/**
+ * A link when it has an address, else a plain box. A record with buttons is a box with a link over
+ * it (buttons can't sit inside a link), its buttons on top.
+ */
+const box = (r: RecordItem, cls: string, i: number, label: string, body: TemplateResult) => {
+  const style = styleMap({ "--i": String(i) });
+  if (r.href && r.actions)
+    return html`<div class=${cls} style=${style}>
+      <a class=${recordCover()} href=${r.href} aria-label=${label}></a>${body}
+    </div>`;
+  return r.href
+    ? html`<a class=${cls} href=${r.href} aria-label=${label} style=${style}>${body}</a>`
+    : html`<div class=${cls} aria-label=${label} style=${style}>${body}</div>`;
+};
+const actionsOf = (r: RecordItem) => (r.actions ? html`<span class=${recordActions()}>${r.actions}</span>` : nothing);
 
 const named = (r: RecordItem) => (r.status ? `${r.title}, ${r.status.label}` : r.title);
 
@@ -316,9 +338,10 @@ export class UiRecordCards extends RecordsBase {
                     ><span class=${recordPerson()}>${r.person}</span>`
                 : nothing
             }
+            ${actionsOf(r)}
             ${r.href ? html`<span class=${recordGo()} aria-hidden="true">${iconSvg("arrow-right", { size: "sm" })}</span>` : nothing}
           </span>`;
-        return html`<li class=${stack}>${box(r.href, recordCard({ link: !!r.href }), i, named(r), body)}</li>`;
+        return html`<li class=${stack}>${box(r, recordCard({ link: !!r.href }), i, named(r), body)}</li>`;
       })}
     </ul>`;
   }
@@ -364,9 +387,10 @@ export class UiRecordList extends RecordsBase {
                 : nothing
             }
             ${status(r.status)} ${r.figure ? html`<span class=${recordRowFigure()}>${r.figure.value}</span>` : nothing}
-            ${r.href ? html`<span class="text-on-surface-variant rtl:rotate-180" aria-hidden="true">${iconSvg("chevron-right", { size: "sm" })}</span>` : nothing}
+            ${actionsOf(r)}
+            ${r.href && !r.actions ? html`<span class="text-on-surface-variant rtl:rotate-180" aria-hidden="true">${iconSvg("chevron-right", { size: "sm" })}</span>` : nothing}
           </span>`;
-        return html`<li class=${stack}>${box(r.href, recordRow({ link: !!r.href }), i, named(r), body)}</li>`;
+        return html`<li class=${stack}>${box(r, recordRow({ link: !!r.href }), i, named(r), body)}</li>`;
       })}
     </ul>`;
   }
@@ -389,7 +413,9 @@ export class UiRecordChips extends RecordsBase {
         const body = html`${monogram(r.monogram ?? r.title, "xs")}<span class=${recordChipName()}>${r.title}</span>${
             r.status ? html`<span class=${recordDot({ tone: r.status.tone })} aria-hidden="true"></span>` : nothing
           }`;
-        return html`<li class=${inlineRow}>${box(r.href, recordChip({ link: !!r.href }), i, named(r), body)}</li>`;
+        return html`<li class=${inlineRow}>
+          ${box({ ...r, actions: undefined }, recordChip({ link: !!r.href }), i, named(r), body)}
+        </li>`;
       })}
     </ul>`;
   }
@@ -456,7 +482,7 @@ export class UiRecordHero extends RecordsBase {
             </nav>`
           : nothing
       }
-      ${this.meta ? html`<p class=${recordHeroMeta()}>${this.meta}</p>` : nothing}
+      ${actionsOf(r)} ${this.meta ? html`<p class=${recordHeroMeta()}>${this.meta}</p>` : nothing}
     </section>`;
   }
 }

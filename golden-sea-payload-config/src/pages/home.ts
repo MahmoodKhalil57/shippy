@@ -202,16 +202,13 @@ export const homePage = widgets({
       size: "s",
       emphasis: "tinted",
       visible: to("management", "finance-director"),
-      records: {
+      collection: {
         collection: "approvals",
+        key: "waiting-for-your-decisio",
+        layout: "list",
         where: myDecisions.where,
         sort: "-createdAt",
-        limit: 20,
-        columns: ["title", "type", "requestedBy", "progress"],
-        dot: "status",
-        layout: "list",
-        empty: "No decisions waiting. Nice.",
-        more: true,
+        hide: ["export", "columns", "select", "around", "search", "filters", "create"],
       },
     },
     followUps(to("operations", "desk"), mine(dueToday)),
@@ -220,17 +217,13 @@ export const homePage = widgets({
       subhead: "Growth CRM · calls, visits and registrations",
       size: "s",
       visible: to("sales"),
-      records: {
+      collection: {
         collection: "opportunities",
+        key: "pipeline-next-steps",
+        layout: "list",
         where: { owner: { equals: "$user.id" } },
         sort: "nextStepDue",
-        limit: 20,
-        columns: ["name", "nextStep", "stage", "kind", "estimatedValue"],
-        tags: ["step"],
-        dot: "step",
-        layout: "list",
-        empty: "No pipeline steps due.",
-        more: true,
+        hide: ["export", "columns", "select", "around", "search", "filters", "create"],
       },
     },
     {
@@ -238,17 +231,13 @@ export const homePage = widgets({
       subhead: "AI has read each message — check the case, owner and missing details",
       size: "s",
       visible: to("office-admin"),
-      records: {
+      collection: {
         collection: "intake-messages",
+        key: "inbox-to-triage",
+        layout: "list",
         where: toTriage,
         sort: "-receivedAt",
-        limit: 20,
-        columns: ["subject", "fromName", "channel", "classification"],
-        tags: ["status"],
-        dot: "status",
-        layout: "list",
-        empty: "Inbox zero.",
-        more: true,
+        hide: ["export", "columns", "select", "around", "search", "filters", "create"],
       },
     },
     // The queue with the second list (3 + 1): every live case for management, finance and the
@@ -340,6 +329,27 @@ export const homePage = widgets({
     }),
     // A compact chart, then the role's other charts, two a row.
     chart.each(charts(1)),
+    // My quote deadlines over the next 7 days: the cases collection itself, drawn as a chart by
+    // deadline (switchable to a calendar, a timeline or rows), not a chart computed by hand.
+    {
+      title: "My deadlines, next 7 days",
+      subhead: "Quote deadlines on cases I own",
+      size: "m",
+      rows: 7,
+      minRows: 6,
+      visible: to("desk"),
+      collection: {
+        collection: "cases",
+        key: "mydeadlines",
+        layout: "chart",
+        where: {
+          owner: { equals: "$user.id" },
+          deadline: { greater_than_equal: "$today", less_than: "$today+7d" },
+        },
+        chart: { by: "deadline", bucket: "day", days: 7 },
+        hide: ["export", "columns", "select", "around", "search", "filters", "create"],
+      },
+    },
     // The collections themselves, laid out for a glance: the open tasks as rows, and the live cases
     // on a month calendar by their quote deadline (each switchable to a table, cards or a board).
     {

@@ -32,6 +32,8 @@ export interface CrTile {
   tone?: "success" | "warning" | "error";
   href?: string;
   trend?: { labels: string[]; values: number[]; unit: Unit };
+  /** Its part of a whole (overdue of open), 0 to 1, with its words. */
+  share?: { value: number; text: string };
 }
 export interface CrChart {
   kind: "chart";
@@ -157,8 +159,14 @@ export function controlRoom(
       {
         label: "Receivables open",
         value: `USD ${(usdOpen / 1000).toFixed(1)}k`,
-        note: `${receivable.length} open invoice${receivable.length === 1 ? "" : "s"} · ${receivable.filter((i) => i.dueDate && new Date(str(i.dueDate)) < NOW).length} overdue`,
+        note: `${receivable.length} open invoice${receivable.length === 1 ? "" : "s"}`,
         href: link.list("invoices"),
+        ...(() => {
+          const overdue = receivable.filter((i) => i.dueDate && new Date(str(i.dueDate)) < NOW).length;
+          return receivable.length
+            ? { share: { value: overdue / receivable.length, text: `${overdue} of ${receivable.length} overdue` } }
+            : {};
+        })(),
       },
     );
 

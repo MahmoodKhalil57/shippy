@@ -63,6 +63,11 @@ function cellOf(f: FieldLike, doc: Doc): Cell {
     return href ? { text, href } : text;
   }
   if (isToned(f)) return { text, tone: toneOf(f, v, text) as Tone, tag: true };
+  // A category (a select with no meaning in its values: a channel, a type): its own hue.
+  if (f.type === "select" && !f.hasMany) {
+    const at = optionsOf(f).findIndex((o) => o.value === String(v));
+    if (at >= 0) return { text, tag: true, hue: at };
+  }
   return text;
 }
 
@@ -446,13 +451,21 @@ type Found = number | { docs?: Doc[]; totalDocs: number };
 
 function metrics({ metrics: spec, ...w }: Kind<"metrics">): Widget<Record<string, Found>> {
   const items = spec.items.map((x, i) => ({ ...x, key: `m${i}`, slug: x.collection ?? spec.collection }));
+  // Each figure against its whole: the same count or sum over all of its collection's records
+  // (a figure is never a number alone: "4 · 40% of 10 cases").
   const source: Source = {
     all: Object.fromEntries(
-      items.map((x) => [
-        x.key,
-        x.sum || x.keep
-          ? ({ find: x.slug, where: x.where, limit: 0, depth: 1 } satisfies Source)
-          : ({ count: x.slug, where: x.where } satisfies Source),
+      items.flatMap((x) => [
+        [
+          x.key,
+          x.sum || x.keep
+            ? ({ find: x.slug, where: x.where, limit: 0, depth: 1 } satisfies Source)
+            : ({ count: x.slug, where: x.where } satisfies Source),
+        ],
+        [
+          `${x.key}.all`,
+          x.sum ? ({ find: x.slug, limit: 0, depth: 1 } satisfies Source) : ({ count: x.slug } satisfies Source),
+        ],
       ]),
     ),
   };
@@ -484,6 +497,20 @@ function metrics({ metrics: spec, ...w }: Kind<"metrics">): Widget<Record<string
       }
       const tone = toneFor(x.tone, n);
       const count = x.keep || x.sum ? docs.length : n;
+      // The whole it is part of: all the collection's records, counted or summed the same way.
+      const allGot = data[`${x.key}.all`];
+      const allFound = typeof allGot === "number" ? { totalDocs: allGot } : allGot;
+      const whole = x.sum
+        ? (allFound?.docs ?? []).reduce((t, d) => t + (Number(valueAt(d, x.sum!)) || 0), 0)
+        : (allFound?.totalDocs ?? 0);
+      const noun = c ? labels(c).plural.toLowerCase() : x.slug;
+      const share =
+        whole > 0 && (x.where || x.keep)
+          ? {
+              value: n / whole,
+              text: `${Math.round((n / whole) * 100)}% of ${x.sum ? `all ${noun}` : `${whole} ${noun}`}`,
+            }
+          : undefined;
       return {
         label: x.label,
         value,
@@ -492,6 +519,7 @@ function metrics({ metrics: spec, ...w }: Kind<"metrics">): Widget<Record<string
         main: x.main,
         tone: tone === "success" || tone === "warning" || tone === "error" ? tone : undefined,
         href: dashboardPath("collections", x.slug),
+        share,
       };
     });
   return figures<Record<string, Found>>({ ...w, data: source, format: shown } as never) as never;
@@ -656,23 +684,31 @@ function counts({ counts: spec, ...w }: Kind<"counts">): DrawingWidget<Record<st
       href: dashboardPath("collections", x.collection ?? slug),
     }));
   const hideEmpty = "field" in spec && spec.hideEmpty !== false;
-  const shown = (n: Record<string, number>) =>
-    items
-      .filter((x) => !hideEmpty || (n[x.key] ?? 0) > 0)
-      .map((x) => ({
-        label: x.label,
-        value: String(n[x.key] ?? 0),
-        note: x.note,
-        tone: x.tone === "success" || x.tone === "warning" || x.tone === "error" ? x.tone : undefined,
-        href: x.href,
-      }));
+  const noun = (c ? labels(c).plural : slug).toLowerCase();
+  const shown = (n: Record<string, number>) => {
+    const list = items.filter((x) => !hideEmpty || (n[x.key] ?? 0) > 0);
+    // Counts of one collection's values are parts of a whole: each its share of them all.
+    const whole = "field" in spec ? list.reduce((t, x) => t + (n[x.key] ?? 0), 0) : 0;
+    return list.map((x) => ({
+      label: x.label,
+      value: String(n[x.key] ?? 0),
+      note: x.note,
+      tone: x.tone === "success" || x.tone === "warning" || x.tone === "error" ? x.tone : undefined,
+      href: x.href,
+      share: whole
+        ? {
+            value: (n[x.key] ?? 0) / whole,
+            text: `${Math.round(((n[x.key] ?? 0) / whole) * 100)}% of ${whole} ${noun}`,
+          }
+        : undefined,
+    }));
+  };
   const source: Source = {
     all: Object.fromEntries(
       items.map((x) => [x.key, { count: x.collection ?? slug, where: x.where } satisfies Source]),
     ),
   };
-  // Untitled: each count is a widget of its own (a tile, arranged on its own); titled, one card.
-  if (!w.title) return figures<Record<string, number>>({ ...w, data: source, format: shown } as never) as never;
+  // A tile per value (`figures`): the board tiles them, and each carries its share of the whole.
   if (spec.layout === "funnel")
     return {
       ...w,
@@ -701,12 +737,7 @@ function counts({ counts: spec, ...w }: Kind<"counts">): DrawingWidget<Record<st
           })),
         }),
     };
-  return {
-    ...w,
-    skeleton: w.skeleton ?? "stats",
-    source,
-    render: (n) => block("stats", { size: "md", items: shown(n) }),
-  };
+  return figures<Record<string, number>>({ ...w, data: source, format: shown } as never) as never;
 }
 
 function fields({ fields: spec, ...w }: Kind<"fields">, scope: WidgetScope): DrawingWidget<Doc> {

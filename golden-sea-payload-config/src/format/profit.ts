@@ -80,19 +80,29 @@ export const profitFigures = (p: CaseProfit): Stat[] => {
     {
       label: "Expected gross profit",
       value: egp(p.expected.profit),
-      note: `at quotation · ${pct(p.expected.margin)} margin`,
+      note: "at quotation",
+      share: { value: Math.max(0, p.expected.margin) / 100, text: `${pct(p.expected.margin)} margin` },
     },
     {
       label: p.actual.final ? "Actual gross profit" : "Actual gross profit so far",
       value: egp(p.actual.profit),
       note: `${pct(p.actual.margin)} margin · ${p.actual.final ? "final, every cost is actual" : `${open} close check${open === 1 ? "" : "s"} open`}`,
       tone: p.actual.margin < 15 ? "error" : undefined,
+      share:
+        p.expected.profit > 0
+          ? { value: Math.max(0, p.actual.profit) / p.expected.profit, text: "of the expected profit" }
+          : undefined,
     },
     {
       label: "Difference",
       value: signed(Math.round(diff), egp),
-      note: `${signed(p.actual.margin - p.expected.margin, (n) => `${n.toFixed(1)} pts`)} of margin`,
+      note: "actual against expected",
       tone: diff < 0 ? "error" : "success",
+      delta: {
+        text: `${signed(p.actual.margin - p.expected.margin, (n) => `${n.toFixed(1)} pts`)} of margin`,
+        dir: diff < 0 ? "down" : diff > 0 ? "up" : "flat",
+        good: diff >= 0,
+      },
     },
     {
       label: "FX difference",
@@ -102,6 +112,20 @@ export const profitFigures = (p: CaseProfit): Stat[] => {
           ? "invoiced in EGP"
           : `quoted at ${p.quoteRate.toFixed(2)} · today ${p.currentRate.toFixed(2)} EGP/${p.currency}`,
       tone: p.fxTotal < 0 ? "error" : undefined,
+      ...(p.currency === "EGP"
+        ? {}
+        : {
+            delta: {
+              text: `rate ${p.quoteRate.toFixed(2)} → ${p.currentRate.toFixed(2)}`,
+              dir:
+                p.currentRate > p.quoteRate
+                  ? ("up" as const)
+                  : p.currentRate < p.quoteRate
+                    ? ("down" as const)
+                    : ("flat" as const),
+              good: p.fxTotal >= 0,
+            },
+          }),
     },
   ];
 };

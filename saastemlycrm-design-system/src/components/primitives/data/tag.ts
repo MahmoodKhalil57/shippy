@@ -23,6 +23,19 @@ import { iconSvg, type IconName } from "../media/icon.ts";
  */
 export const tag = rcva(`${inlineRow} items-center gap-1 rounded-sm align-middle`, {
   variants: {
+    /**
+     * A category's hue (a channel, a type: no meaning, only identity), the chart palette's slot in
+     * the field's own option order (categorical: fixed order, never cycled by rank), tinted, with
+     * the text in the text colour.
+     */
+    hue: {
+      "0": "bg-chart-1/20 text-on-surface",
+      "1": "bg-chart-2/20 text-on-surface",
+      "2": "bg-chart-3/20 text-on-surface",
+      "3": "bg-chart-4/20 text-on-surface",
+      "4": "bg-chart-5/20 text-on-surface",
+      "5": "bg-chart-6/20 text-on-surface",
+    },
     tone: {
       neutral: "bg-surface-container-high text-on-surface-variant",
       primary: "bg-primary-container text-on-primary-container",
@@ -68,9 +81,12 @@ export class UiTag extends LightElement {
   @property() icon?: IconName;
   /** Text label; authored children take precedence. */
   @property() label = "";
+  /** A category's hue slot (0–5: its option's place in its field, mod 6), instead of a status tone. */
+  @property({ type: Number }) hue?: number;
 
   render() {
-    return html`<span class=${tag({ tone: this.tone, variant: this.variant, size: this.size })}
+    const hue = this.hue === undefined ? undefined : (String(((this.hue % 6) + 6) % 6) as "0");
+    return html`<span class=${tag({ tone: hue ? undefined : this.tone, hue, variant: this.variant, size: this.size })}
       >${this.icon ? iconSvg(this.icon, { size: "xs" }) : nothing}<span class=${tagText()}
         >${this.hasContent ? this.content : this.label}</span
       ></span

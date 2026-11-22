@@ -10,17 +10,21 @@ import type { AutomationsView } from "../endpoints/platform.ts";
  */
 
 /**
- * The rules enabled and the AI-assisted ones (the automation-rules global's rows), and the results
- * waiting for review (exceptions, messages and extracted lines together).
+ * The rules enabled and the AI-assisted ones (the automation-rules global's rows), each its share
+ * of all the rules. What waits for review is the review queue beside them, with its count.
  */
 export const automationFigures = ({ stats: st }: AutomationsView): Stat[] => [
-  { label: "Rules", value: `${st.enabled}/${st.rules}`, note: "enabled · every one explicit" },
-  { label: "AI-assisted", value: String(st.ai), note: "drafts only, confidence on every value" },
   {
-    label: "Waiting for review",
-    value: String(st.review),
-    note: "low-confidence results",
-    tone: st.review ? "warning" : "success",
+    label: "Rules enabled",
+    value: String(st.enabled),
+    note: "every one explicit",
+    share: st.rules ? { value: st.enabled / st.rules, text: `${st.enabled} of ${st.rules} rules` } : undefined,
+  },
+  {
+    label: "AI-assisted",
+    value: String(st.ai),
+    note: "drafts only, confidence on every value",
+    share: st.rules ? { value: st.ai / st.rules, text: `${st.ai} of ${st.rules} rules` } : undefined,
   },
 ];
 

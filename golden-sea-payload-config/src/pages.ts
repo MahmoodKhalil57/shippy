@@ -29,9 +29,10 @@ export function pages(collections: CollectionConfig[], globals: GlobalConfig[]):
  * Related collections on one page: what the sourcing desk is waiting on, from the first message to
  * the offers to check. Each is a tile like any widget: the messages the page's width, 10 tiles high;
  * the supplier requests and the offers 12 tiles across, 8 high, side by side. Each list is the collection's own (search, sort, records opening in a sheet)
- * set up for this page: what it always keeps to (`where`), its columns, and no export, layouts or
- * widgets around it. Each keeps its state in the URL under its own key, so a filtered pipeline can
- * be shared. The full lists stay on their own pages.
+ * set up for this page: what it always keeps to (`where`), its columns, and no export or widgets
+ * around it. Each keeps its state in the URL under its own key, so a filtered pipeline can
+ * be shared. Messages and supplier requests start as rows, offers as cards (people switch to the
+ * table or another layout); the full lists stay on their own pages.
  */
 export const sourcingPipeline: PageView = {
   Component: widgets({
@@ -49,10 +50,11 @@ export const sourcingPipeline: PageView = {
         collection: {
           collection: "intake-messages",
           key: "messages",
+          layout: "list",
           where: { status: { in: ["New", "Needs review"] } },
           columns: ["subject", "fromName", "channel", "classification", "receivedAt"],
           sort: "-receivedAt",
-          hide: ["export", "layouts", "around", "select"],
+          hide: ["export", "around", "select"],
         },
       },
       {
@@ -63,10 +65,11 @@ export const sourcingPipeline: PageView = {
         collection: {
           collection: "supplier-rfqs",
           key: "rfqs",
+          layout: "list",
           where: { status: { in: ["Sent", "Awaiting reply"] } },
           columns: ["reference", "case", "supplier", "dueAt", "reminders"],
           sort: "dueAt",
-          hide: ["export", "layouts", "around", "select", "create"],
+          hide: ["export", "around", "select", "create"],
         },
       },
       {
@@ -78,9 +81,10 @@ export const sourcingPipeline: PageView = {
         collection: {
           collection: "offers",
           key: "offers",
+          layout: "cards",
           where: { compliance: { equals: "Pending" } },
           columns: ["label", "case", "supplier", "price", "currency", "leadDays"],
-          hide: ["export", "layouts", "around", "select", "create", "filters"],
+          hide: ["export", "around", "select", "create", "filters"],
         },
       },
     ],

@@ -17,6 +17,9 @@ import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts
  *   outlined   a medium-emphasis alternative ("Cancel" beside "Save")
  *   text       low emphasis: in cards, toolbars, dialogs' dismissive actions
  *   elevated   a filled-tonal action that must lift off a busy surface (rare)
+ * Every style reads as pressable by construction: a text or outlined button without a colour takes
+ * the primary ink (M3's text button), a tonal one without a colour the secondary container (M3's
+ * filled tonal), never the neutral ink of body text.
  * With a `color` and no `variant` a button is filled; with neither it's tonal. Colours are the
  * roles that mean something: `primary`, `secondary`, `error` (destructive: never the primary
  * action, Apple). Sizes are M3's: `xs` 32px (compact rows, cards), `sm` 40px (the default),
@@ -73,11 +76,11 @@ export const button = rcva(
       { variant: "filled", color: "primary", class: "btn-primary" },
       { variant: "filled", color: "secondary", class: "btn-secondary" },
       { variant: "filled", color: "error", class: "btn-error" },
-      { variant: "tonal", color: undefined, class: "bg-surface-container-highest text-on-surface" },
+      { variant: "tonal", color: undefined, class: "bg-secondary-container text-on-secondary-container" },
       { variant: "tonal", color: "primary", class: "bg-primary-container text-on-primary-container" },
       { variant: "tonal", color: "secondary", class: "bg-secondary-container text-on-secondary-container" },
       { variant: "tonal", color: "error", class: "bg-error-container text-on-error-container" },
-      { variant: ["outlined", "text", "elevated"], color: undefined, class: "text-on-surface" },
+      { variant: ["outlined", "text", "elevated"], color: undefined, class: "text-primary-ink" },
       { variant: ["outlined", "text", "elevated"], color: "primary", class: "text-primary-ink" },
       { variant: ["outlined", "text", "elevated"], color: "secondary", class: "text-secondary-ink" },
       { variant: ["outlined", "text", "elevated"], color: "error", class: "text-error-ink" },

@@ -267,8 +267,12 @@ export class UiDocForm extends LightElement {
           ${this._fields(f.fields ?? [], data, path)}
         </ui-collapse>`;
       case "tabs":
+        // The fields under their tab row, on the form's own surface (a white box in a glass sheet
+        // or a card read as a second card).
         return html`<ui-tabs
           variant="secondary"
+          .surface=${false}
+          padding="top"
           .items=${(f.tabs ?? []).map((tab) => {
             const at = tab.name ? [...path, tab.name] : path;
             const errors = this._errorsIn(at, tab.name ? undefined : tab.fields);

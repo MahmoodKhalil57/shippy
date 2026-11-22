@@ -125,9 +125,15 @@ async function draw(ctx: Ctx, page: WidgetPage, scope: WidgetScope, where: strin
           side: (await Promise.all(w.split.side.map(one))).flat(),
         },
       ];
+    const at = `${where} › ${w.title ?? "widget"}`;
+    // A collection placed on a page of widgets starts in a visual layout: a plain table is for its
+    // own page (people can still switch to it there and here).
+    if (w.collection && !w.collection.home && (w.collection.layout ?? "table") === "table")
+      problems.push(
+        `${at}: a plain table on a page of widgets; start it in a visual layout (\`list\`, \`cards\`, \`board\`, \`calendar\`, \`chart\`…)`,
+      );
     // Data widgets (`records`, `counts`, `fields`) are drawn by the design system from the field config.
     if (!w.render && !w.each) return [];
-    const at = `${where} › ${w.title ?? "widget"}`;
     const { status, data } = w.source ? await load(ctx, fill(w.source, scope), scope) : { status: 200, data: null };
     if (status === 403 && !w.denied) {
       gone.add(w);

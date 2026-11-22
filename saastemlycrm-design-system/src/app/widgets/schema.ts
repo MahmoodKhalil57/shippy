@@ -82,11 +82,13 @@ export interface TextCell {
   person?: never;
 }
 
-/** The value drawn as a tag (a status). */
+/** The value drawn as a tag (a status, in its tone; a category, in its hue). */
 export interface TagCell {
   text: string;
   tag: true;
   tone?: Tone;
+  /** A category's hue slot (its option's place in its field). */
+  hue?: number;
   switch?: never;
   person?: never;
 }
@@ -248,6 +250,11 @@ export interface Stat {
   delta?: { text: string; dir: "up" | "down" | "flat"; good?: boolean };
   /** The figure the row is about: drawn tinted. One per `stats` block (the first wins). */
   main?: boolean;
+  /**
+   * Its part of a whole or its way to a target, 0 to 1, drawn as a bar under it, with its words
+   * (`text`: "3 of 10 cases"; else the percentage).
+   */
+  share?: { value: number; text?: string };
 }
 
 export interface Column {
@@ -383,7 +390,16 @@ export interface ViewBlocks {
   /** A main column and a narrower side column. */
   split: { type: "split"; main: ViewBlock[]; side: ViewBlock[] };
   /** `size`: `sm` the figure on one line (a tile one row high), `md` a tile's, `lg` a page's headline. */
-  stats: { type: "stats"; items: Stat[]; size?: "sm" | "md" | "lg" };
+  stats: {
+    type: "stats";
+    items: Stat[];
+    size?: "sm" | "md" | "lg";
+    /**
+     * A mini version's figure (src/app/widgets/mini.ts): the first item at its own height, its
+     * sparkline beside the value, never filling its tile (the tile fits it).
+     */
+    mini?: boolean;
+  };
   /** A paragraph. `muted` makes it a quiet note (prefer `note(text)`). Headings are `heading` blocks. */
   text: {
     type: "text";

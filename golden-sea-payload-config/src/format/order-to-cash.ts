@@ -50,11 +50,15 @@ export const orderFigures = (d: CaseOps): Stat[] => {
       label: "Supplier POs confirmed",
       value: `${confirmed.length} of ${d.purchaseOrders.length}`,
       note: d.purchaseOrders.length ? "Re-checked before confirming" : "Prepared when the sales order is confirmed",
+      share: d.purchaseOrders.length
+        ? { value: confirmed.length / d.purchaseOrders.length, text: "confirmed" }
+        : undefined,
     },
     {
       label: "Received",
       value: ordered ? `${received} of ${ordered}` : "—",
       note: ordered && received < ordered ? `${ordered - received} on backorder` : "Units across all receipts",
+      share: ordered ? { value: received / ordered, text: "of the units ordered" } : undefined,
       tone: ordered && received < ordered ? "warning" : undefined,
     },
     ...(d.canSeeCosts
@@ -63,6 +67,9 @@ export const orderFigures = (d: CaseOps): Stat[] => {
             label: "Supplier bills",
             value: `${d.bills.length}`,
             note: held ? `${held} on hold — 3-way match` : "Matched to PO and receipt",
+            share: d.bills.length
+              ? { value: (d.bills.length - held) / d.bills.length, text: `${d.bills.length - held} matched` }
+              : undefined,
             tone: held ? ("error" as const) : undefined,
           },
         ]

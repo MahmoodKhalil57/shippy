@@ -75,26 +75,6 @@ export const winWaffle = (v: Visuals): KindData<"waffle"> => {
   };
 };
 
-/** What the live cases wait on, as one bar. */
-export const waiting = (v: Visuals): KindData<"share"> => ({
-  label: "What live cases wait on",
-  parts: v.waiting.map((w) => ({ ...w, valueText: String(w.value), href: link.list("cases") })),
-  total: `${v.waiting.reduce((t, w) => t + w.value, 0)} live cases`,
-});
-
-/** Suppliers by on-time share and reply time: the reliable and fast in the top end. */
-export const supplierQuadrant = (v: Visuals): KindData<"quadrant"> => ({
-  label: "Suppliers: on time vs reply time",
-  note: "Each supplier by its on-time deliveries and how fast it replies; choose one to open it",
-  points: v.suppliers.map((s) => ({ ...s, valueText: `${s.x}% on time · ${s.y} h to reply` })),
-  xLabel: "On time (%)",
-  yLabel: "Reply time (h)",
-  xMid: 85,
-  yMid: 24,
-  invertY: true,
-  quadrants: ["Fast but late", "Reliable & fast", "Slow and late", "Reliable but slow"],
-});
-
 /** Receivables by customer, sized by what they owe (money roles). */
 export const receivablesMap = (v: Visuals): KindData<"treemap"> | null =>
   v.receivables.length

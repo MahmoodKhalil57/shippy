@@ -120,8 +120,9 @@ describe("control room (/api/control-room)", () => {
     const field = (name: string) => flat(Suppliers.fields as Field[]).find((f) => f.name === name)!;
     const tone = (name: string, doc: Record<string, unknown>) =>
       (field(name).custom!.toneWhen as { when: never; tone: string }[]).find((r) => matches(doc, r.when))?.tone;
-    const table = controlRoom.clientProps.page.widgets.find((w) => w.title === "Supplier on-time vs reply time")!;
-    expect(table.records!.columns).toEqual(["name", "onTime", "replyHrs", "openRfqs"]);
+    // The suppliers collection itself, ranked by on-time delivery (a bar each, best first).
+    const ranked = controlRoom.clientProps.page.widgets.find((w) => w.title === "Suppliers by on-time delivery")!;
+    expect(ranked.collection).toMatchObject({ collection: "suppliers", layout: "ranking", figure: "onTime" });
     // On time: a bar of 100%, amber under 85%, green from there; a reply past a day in amber.
     expect(field("onTime").custom!.gauge).toEqual({ max: 100 });
     const suppliers = (await call("GET", "/api/suppliers?limit=0&depth=0")).body.docs as Record<string, number>[];

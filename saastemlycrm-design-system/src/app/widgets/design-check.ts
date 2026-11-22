@@ -29,7 +29,10 @@ const actionsOf = (b: ViewBlock): Action[] =>
 export const MAX_HEADING = 90;
 /** Most words in a button label. M3 Buttons: label text "should be very brief, ideally 1–3 words". */
 export const MAX_ACTION_WORDS = 4;
-/** Most stats in one row: the most a balanced row (`ui-grid balance`) lays out evenly. */
+/**
+ * Most stats in one row: the most a balanced row (`ui-grid balance`) lays out evenly. And no figure
+ * stands alone: each has a trend, a delta or a share (`designProblems`, "a bare figure").
+ */
 export const MAX_STATS = 6;
 
 const words = (c: Cell): string =>
@@ -222,8 +225,23 @@ export function designProblems(blocks: ViewBlock[], where: string, tiles?: Drawn
           if (b.text.length > MAX_HEADING) out.push(`${at}: heading block is ${b.text.length} characters`);
           break;
         case "stats":
+          // A figure is a tile of its own (`figures`), so the board lays it out, moves and resizes
+          // it: several figures inside one widget's tile ignore the board's tiling.
+          if (b.items.length > 1 && b.size !== "sm")
+            out.push(
+              `${at}: ${b.items.length} figures in one tile; make each its own widget (\`figures\`, or \`metrics\`/\`counts\`)`,
+            );
           if (b.items.length > MAX_STATS)
             out.push(`${at}: ${b.items.length} stats in a row; keep the ${MAX_STATS} that matter`);
+          // A figure is never a number alone: it says how it moved, what it is part of, or how it
+          // trends (a one-line counter, size "sm", is a side panel's, read beside its neighbours).
+          if (b.size !== "sm")
+            for (const s of b.items)
+              // A status in words ("Validated", "—") isn't a figure; a number is.
+              if (/\d/.test(s.value) && !s.trend && !s.delta && !s.share)
+                out.push(
+                  `${at} › "${s.label}": a bare figure; give it a trend (\`trend\`), a change (\`delta\`) or its part of a whole or a target (\`share\`)`,
+                );
           break;
         case "entries":
           for (const e of b.items) {

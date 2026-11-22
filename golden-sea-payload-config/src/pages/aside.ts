@@ -33,7 +33,7 @@ const forRole =
   ({ user }: WidgetScope) =>
     r ? user.role === r : !ROLES.includes(user.role ?? "");
 
-/** Board rows for the title and four counts, each label at most two lines (the list clamps it there). */
+/** Board rows while it loads: the title and four counts, each label at most two lines (the list clamps it there). */
 const ROWS = 6;
 
 /** One role's card: what they act on, then what they watch; a line each, no notes. */
@@ -43,9 +43,9 @@ const desk = (role: string | undefined, act: Counter[], watch: Counter[]): Widge
     title: "Your desk",
     visible: forRole(role),
     size: "full",
+    // As tall as its four lines (a label wraps to two at most): never cut, nothing left over.
     rows: ROWS,
-    minRows: ROWS,
-    maxRows: ROWS,
+    fit: true,
     skeleton: "list",
     counts: { collection: items[0]!.collection, layout: "list", items },
   };

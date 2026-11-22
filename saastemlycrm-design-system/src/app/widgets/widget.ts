@@ -251,7 +251,8 @@ export interface CollectionViewSpec {
    * cards, rich rows (`list`), chips (`compact`) and one record at a time (`focus`). With a status
    * field: `groups`. With the collection's `custom.list.board`: a `board`. With its
    * `custom.list.calendar` date: a month `calendar`, a `timeline` and a `heatmap` of the days. With
-   * a money field: a `ranking` and a `treemap`. With two number fields: a `scatter`. A layout the
+   * a money field: a `ranking` and a `treemap`. With a date or a status (or `chart`): a `chart` of
+   * how many records (or how much) per day, week, month or status. With two number fields: a `scatter`. A layout the
    * collection can't take falls back to the table.
    */
   layout?:
@@ -265,14 +266,44 @@ export interface CollectionViewSpec {
     | "calendar"
     | "timeline"
     | "heatmap"
+    | "chart"
     | "ranking"
     | "treemap"
     | "scatter";
+  /**
+   * The `chart` layout's set-up: the field its bars are by (`by`: a date, bucketed by `bucket`; a
+   * select, in its options' order; or a relationship), a number field to add up (`sum`; else it
+   * counts), `kind: "line"` for a line, and for a date by day, `days`: that many days from today,
+   * each shown, empty or not. Left out, it charts the records by their calendar date, else their
+   * status.
+   */
+  chart?: { by?: string; bucket?: "day" | "week" | "month"; sum?: string; kind?: "bars" | "line"; days?: number };
+  /**
+   * The number its cards, rows, `ranking` and `treemap` show large (a field; else the collection's
+   * `list.figure`, else its first money field): a supplier's on-time share, ranked.
+   */
+  figure?: string;
+  /**
+   * The `scatter` layout's set-up: its two number fields (`x`, `y`; else `list.scatter`, else the
+   * first two), where it splits (`xMid`, `yMid`; else the medians), `invertY` for a measure where
+   * less is better, and the corners' captions (top start, top end, bottom start, bottom end).
+   */
+  scatter?: {
+    x?: string;
+    y?: string;
+    xMid?: number;
+    yMid?: number;
+    invertY?: boolean;
+    quadrants?: [string, string, string, string];
+  };
   /** The columns it starts with (field names; the title stays first). */
   columns?: string[];
-  /** Parts to leave out: the header (the tile's heading), search, filters, the column picker, the layout switch, export, the pager, selection (and bulk delete), Create, the widgets around the list (`beforeList` / `afterList`). */
+  /** Draw nothing (the tile hides) while it holds no records: a case's purchase orders before there are any. */
+  hideEmpty?: boolean;
+  /** Parts to leave out: the header (the tile's heading), "All" (the link to the collection's own page), search, filters, the column picker, the layout switch, export, the pager, selection (and bulk delete), Create, the widgets around the list (`beforeList` / `afterList`). */
   hide?: (
     | "header"
+    | "all"
     | "search"
     | "filters"
     | "columns"
@@ -343,6 +374,11 @@ export interface WidgetBase<T> {
    */
   rows?: number;
   /**
+   * Its tile as tall as what it draws once its data is in (whole tiles, measured), `rows` its height
+   * while loading: for a short list of a known few lines in a side panel, never cut or left with room.
+   */
+  fit?: boolean;
+  /**
    * Its width in tiles (53px each at the default text size), when a size (`s` 6, `m` 12, `l` 18,
    * `full` all) isn't what it needs. Never more than the board has.
    */
@@ -352,7 +388,8 @@ export interface WidgetBase<T> {
   maxWidth?: number;
   /**
    * The bounds someone may resize it to on their board (Android's `minResize…` / `maxResize…`):
-   * widths as sizes, heights as tiles. Left out, any width, and about half to twice its height.
+   * widths as sizes, heights as tiles. Left out, its kind's (`skeleton`: `KIND_BOUNDS` in
+   * src/components/base/board.ts), else any width and about half to twice its height.
    */
   minSize?: TileSize;
   maxSize?: TileSize;

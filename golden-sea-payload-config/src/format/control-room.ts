@@ -64,6 +64,7 @@ export const roomFigures = (d: ControlRoom): Stat[] =>
     note: t.note,
     tone: t.tone,
     href: t.href,
+    share: t.share,
     trend: t.trend && {
       labels: t.trend.labels,
       values: scaled(t.trend.unit, t.trend.values),

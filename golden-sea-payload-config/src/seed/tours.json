@@ -198,7 +198,7 @@
       {
         "go": "/collections/cases/gs-rfq-0142/pricing",
         "target": {
-          "text": "Margin vs markup"
+          "text": "Margin = profit ÷ selling price"
         },
         "title": "Margin, not markup",
         "body": "Shared charges are spread over the lines; policy is checked on margin, and every line shows cost, charges and profit."

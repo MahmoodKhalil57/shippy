@@ -57,15 +57,14 @@ export const caseRfqs = widgets({
       title: "Replies matched",
       subhead: "Matched by reference, thread and sender — even when the supplier changed the subject.",
       size: "s",
-      records: {
+      collection: {
         collection: "intake-messages",
+        key: "replies-matched",
+        hideEmpty: true,
+        layout: "list",
         where: repliesOnCase,
         sort: "-receivedAt",
-        columns: ["subject", "fromName", "receivedAt"],
-        tags: ["match.reference", "match.confidencePct"],
-        layout: "list",
-        actions: false,
-        hideEmpty: true,
+        hide: ["export", "columns", "select", "around", "search", "filters", "create"],
       },
     },
     {

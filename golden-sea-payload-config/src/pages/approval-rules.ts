@@ -26,15 +26,13 @@ export const approvalRulesBefore: Widget[] = [
   {
     title: "Waiting for a decision",
     size: "s",
-    records: {
+    collection: {
       collection: "approvals",
+      key: "waiting-for-a-decision",
+      layout: "list",
       where: { status: { equals: "Pending" } },
       sort: "-createdAt",
-      limit: 5,
-      columns: ["title", "type"],
-      layout: "list",
-      empty: "Nothing is waiting for a decision.",
-      more: true,
+      hide: ["export", "columns", "select", "around", "search", "filters", "create"],
     },
   },
 ];

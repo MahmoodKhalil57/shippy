@@ -48,6 +48,7 @@ export const preferences = createStore(
       | "calendar"
       | "timeline"
       | "heatmap"
+      | "chart"
       | "ranking"
       | "treemap"
       | "scatter"

@@ -1,4 +1,5 @@
 import type { VariantProps } from "class-variance-authority";
+import { styleMap } from "lit/directives/style-map.js";
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { cssTime } from "../../base/css-time.ts";
@@ -7,7 +8,7 @@ import { motion } from "../../base/motion-queue.ts";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { card, cardBody, cardLinkIcon } from "../containers/card.ts";
-import { fixedWidth, padEnd, row, rowFill, rowLine, stack, text } from "../layout/algebra.ts";
+import { fixedWidth, padEnd, row, rowFill, rowGrow, rowLine, stack, text } from "../layout/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
 import { tag } from "./tag.ts";
 
@@ -32,6 +33,10 @@ import { tag } from "./tag.ts";
  * - **Trend:** a sparkline in the `trend` slot (`<ui-chart kind="spark" slot="trend">`) sits at
  *   the end of the figure's own line, in a 4rem column; where a long figure leaves it no room in a
  *   narrow cell, it goes under the figure.
+ * - **Share:** `share` (0 to 1) is the figure's part of a whole or its way to a target, drawn as a
+ *   bar under it in the figure's tone (else `chart-1`) with its words (`share-text`, "30% of 10
+ *   cases"; else the percentage): a figure is never a number alone. It grows from nothing as it
+ *   comes in (a transition from `@starting-style`; none with Reduce motion).
  * - `tone` colours the value when it means something (overdue, on target), in the tone's readable
  *   ink. With `href` the whole stat opens the list behind it.
  *
@@ -98,8 +103,61 @@ export const statDenseLine = rcva(`${text.label} truncate`, {
   variants: { kind: { label: "text-label-md text-on-surface-variant", note: "text-body-sm text-on-surface-variant" } },
 });
 
+/** The share: a track as wide as the cell, filled `--share` of the way in the figure's tone. */
+export const statShare = rcva(`${stack} gap-1`);
+export const statShareTrack = rcva("h-1.5 w-full overflow-hidden rounded-full bg-surface-container-highest");
+export const statShareFill = rcva(
+  "block h-full w-(--share) max-w-full rounded-full [transition:width_var(--duration-long2)_var(--ease-emphasized-decelerate)] starting:w-0 motion-reduce:transition-none",
+  {
+    variants: {
+      tone: {
+        neutral: "bg-chart-1",
+        success: "bg-success",
+        warning: "bg-warning",
+        error: "bg-error",
+        info: "bg-info",
+        primary: "bg-primary",
+      },
+    },
+    defaultVariants: { tone: "neutral" },
+  },
+);
+export const statShareText = rcva(`${text.line} text-label-sm tabular-nums text-on-surface-variant`);
+
+/**
+ * A figure that is its tile (`fill`) draws its trend as a band across the tile's foot, as wide as
+ * the tile, so the room under the figure is the trend, never empty space.
+ */
+export const statTrendBand = rcva(`${stack} grow basis-0 min-h-12 w-full pt-2`);
+
 /** The sparkline's column (the trend slot), at the end of the figure's line. */
 export const statTrend = rcva(`${fixedWidth["16"]} ms-auto`);
+
+/**
+ * A mini figure (`mini`: a side panel's kept widget), two lines in two tiles whatever it holds: its
+ * label, cut to one line; then its value and one picture of it taking the rest of the line, the
+ * first it has of its sparkline, its share (a track, its words its accessible name) or its change.
+ */
+export const statMini = rcva(`${stack} @container w-full gap-1`);
+export const statMiniLabel = rcva(`${text.line} text-label-md text-on-surface-variant`);
+export const statMiniFigure = rcva(`${row} items-center gap-3`);
+/** One line, never broken inside ("1.6 / d"); a title size in a panel under 7rem. */
+export const statMiniValue = rcva(`${text.line} tabular-nums text-headline-sm @max-[7rem]:text-title-lg`, {
+  variants: {
+    tone: {
+      neutral: "text-on-surface",
+      success: "text-success-ink",
+      warning: "text-warning-ink",
+      error: "text-error-ink",
+      info: "text-info-ink",
+      primary: "text-primary-ink",
+    },
+  },
+  defaultVariants: { tone: "neutral" },
+});
+/** What the value leaves of its line: the sparkline, the share's track or the change chip. */
+/** Left out in a panel under 7rem, where the value needs the line. */
+export const statMiniPicture = rcva(`${rowGrow} ${row} items-center justify-end @max-[7rem]:hidden`);
 
 export type StatVariants = VariantProps<typeof statValue>;
 /** Which way a figure moved against the previous period. */
@@ -133,12 +191,18 @@ export class UiStat extends LightElement {
   @property({ type: Boolean }) outlined = false;
   /** Fills its tile, whatever it holds (a figure that is a widget of its own). */
   @property({ type: Boolean }) fill = false;
+  /** A side panel's mini figure: its label and change on one line, the value and sparkline on the next. */
+  @property({ type: Boolean }) mini = false;
   /** The change against the previous period, in words ("+21%", "−0.4 d"). */
   @property() delta = "";
   /** Which way it moved: the chip's arrow. */
   @property({ attribute: "delta-dir" }) deltaDir: StatDeltaDir = "up";
   /** What the movement means: the chip's ink. */
   @property({ attribute: "delta-tone" }) deltaTone: StatDeltaTone = "neutral";
+  /** Its part of a whole, or its way to a target: 0 to 1, a bar under the figure. */
+  @property({ type: Number }) share?: number;
+  /** The share in words ("30% of 10 cases"); else the percentage. */
+  @property({ attribute: "share-text" }) shareText = "";
   /** The figure part of the way to `value` while it counts (`count-up.ts`); undefined once there. */
   @state() private _counting?: string;
   /** The number it last showed: a new value counts from it (the first from 0). */
@@ -181,6 +245,7 @@ export class UiStat extends LightElement {
   }
 
   render() {
+    if (this.mini) return this.#mini();
     if (this.size === "sm") return this.#dense();
     const chip = this.delta
       ? html`<span class=${tag({ tone: this.deltaTone, class: statDelta() })}
@@ -193,8 +258,9 @@ export class UiStat extends LightElement {
       <p class=${statLabel({ link: !!this.href })}>${this.label}</p>
       <div class=${statFigure()}>
         <p class=${statValue({ size: this.size, tone: this.tone })}>${this._counting ?? this.value}</p>
-        ${this.hasSlotted("trend") ? html`<div class=${statTrend()}>${this.slotted("trend")}</div>` : nothing}
+        ${this.hasSlotted("trend") && !this.fill ? html`<div class=${statTrend()}>${this.slotted("trend")}</div>` : nothing}
       </div>
+      ${this.#share()}
       ${
         this.delta || this.note
           ? html`<div class=${statMeta()}>
@@ -202,6 +268,7 @@ export class UiStat extends LightElement {
             </div>`
           : nothing
       }
+      ${this.fill && this.hasSlotted("trend") ? html`<div class=${statTrendBand()}>${this.slotted("trend")}</div>` : nothing}
     </div>`;
     const cls = card({
       variant: null,
@@ -218,6 +285,66 @@ export class UiStat extends LightElement {
       ? html`<a href=${this.href} class=${cls} data-surface=${surface} ?data-tile-lift=${this.fill}
           >${body}<span class=${cardLinkIcon()} aria-hidden="true">${iconSvg("arrow-right", { size: "sm" })}</span></a
         >`
+      : html`<div class=${cls} data-surface=${surface}>${body}</div>`;
+  }
+
+  /** The share bar and its words, when it has one. */
+  #share() {
+    if (this.share === undefined || !Number.isFinite(this.share)) return nothing;
+    const p = Math.round(Math.min(1, Math.max(0, this.share)) * 100);
+    return html`<div class=${statShare()}>
+      <span class=${statShareTrack()} aria-hidden="true"
+        ><span class=${statShareFill({ tone: this.tone ?? "neutral" })} style=${styleMap({ "--share": `${p}%` })}></span
+      ></span>
+      <p class=${statShareText()}>${this.shareText || `${p}%`}</p>
+    </div>`;
+  }
+
+  /**
+   * Two lines (`mini`): the label; the value and one picture of it, its sparkline, else its share's
+   * track, else its change chip. Its words (the share's, the change's) are the picture's name.
+   */
+  #mini() {
+    const p =
+      this.share === undefined || !Number.isFinite(this.share)
+        ? undefined
+        : Math.round(Math.min(1, Math.max(0, this.share)) * 100);
+    const picture = this.hasSlotted("trend")
+      ? this.slotted("trend")
+      : p !== undefined
+        ? html`<span
+            class=${statShareTrack()}
+            role="img"
+            aria-label=${this.shareText || `${p}%`}
+            title=${this.shareText || `${p}%`}
+            ><span
+              class=${statShareFill({ tone: this.tone ?? "neutral" })}
+              style=${styleMap({ "--share": `${p}%` })}
+            ></span
+          ></span>`
+        : this.delta
+          ? html`<span class=${tag({ tone: this.deltaTone, size: "sm", class: statDelta() })} title=${this.delta}
+              ><span class=${statDeltaText()}
+                >${iconSvg(DELTA_ICON[this.deltaDir], { size: "xs" }, { label: DELTA_WORD[this.deltaDir] })}${WORD_JOINER}${this.delta}</span
+              ></span
+            >`
+          : nothing;
+    const body = html`<div class=${cardBody({ class: statMini() })}>
+      <p class=${statMiniLabel()} title=${typeof this.label === "string" ? this.label : nothing}>${this.label}</p>
+      <div class=${statMiniFigure()}>
+        <p class=${statMiniValue({ tone: this.tone })}>${this._counting ?? this.value}</p>
+        ${picture === nothing ? nothing : html`<div class=${statMiniPicture()}>${picture}</div>`}
+      </div>
+    </div>`;
+    const cls = card({
+      variant: null,
+      size: "sm",
+      link: !!this.href,
+      class: statSurface({ surface: this.main ? "main" : this.outlined ? "outlined" : "tonal" }),
+    });
+    const surface = this.main ? "tinted" : nothing;
+    return this.href
+      ? html`<a href=${this.href} class=${cls} data-surface=${surface}>${body}</a>`
       : html`<div class=${cls} data-surface=${surface}>${body}</div>`;
   }
 

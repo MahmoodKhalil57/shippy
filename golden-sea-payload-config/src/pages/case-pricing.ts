@@ -5,7 +5,6 @@ import {
   figures,
   form,
   list,
-  stats,
   table,
   waterfall,
   whatif,
@@ -44,10 +43,8 @@ export const casePricing = widgets({
       data: pricing,
       format: fmt.pricingFigures,
     }),
-    stats({
-      title: "Margin vs markup",
-      size: "s",
-      skeleton: "stats",
+    // Margin and markup, the same profit read two ways: a figure each.
+    figures({
       data: pricing,
       format: fmt.marginVsMarkup,
     }),

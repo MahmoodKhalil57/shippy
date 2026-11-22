@@ -15,6 +15,43 @@ import {
 const one = (b: ViewBlock) => designProblems([block("card", { heading: "Widget", blocks: [b] })], "screen");
 
 describe("designProblems", () => {
+  it("refuses a bare figure: a number needs a trend, a change or a share", () => {
+    const fig = (extra: object) => one(block("stats", { items: [{ label: "Live cases", value: "4", ...extra }] }));
+    expect(fig({}).join()).toMatch(/"Live cases": a bare figure/);
+    expect(fig({ share: { value: 0.4, text: "4 of 10 cases" } })).toEqual([]);
+    expect(fig({ delta: { text: "+2", dir: "up" } })).toEqual([]);
+    expect(fig({ trend: { labels: ["a", "b"], values: [1, 2] } })).toEqual([]);
+    // A status in words isn't a figure, and a side panel's one-line counter reads beside its neighbours.
+    expect(one(block("stats", { items: [{ label: "Customer PO", value: "Validated" }] }))).toEqual([]);
+    expect(one(block("stats", { size: "sm", items: [{ label: "Live cases", value: "4" }] }))).toEqual([]);
+  });
+
+  it("refuses several figures in one tile: each is a widget of its own, tiled by the board", () => {
+    const share = { value: 0.5, text: "half" };
+    const two = one(
+      block("stats", {
+        items: [
+          { label: "Matched", value: "1", share },
+          { label: "On hold", value: "2", share },
+        ],
+      }),
+    );
+    expect(two.join()).toMatch(/2 figures in one tile; make each its own widget/);
+    expect(one(block("stats", { items: [{ label: "Matched", value: "1", share }] }))).toEqual([]);
+    // A side panel's one-line counters read as one list.
+    expect(
+      one(
+        block("stats", {
+          size: "sm",
+          items: [
+            { label: "Matched", value: "1" },
+            { label: "On hold", value: "2" },
+          ],
+        }),
+      ),
+    ).toEqual([]);
+  });
+
   it("passes a screen built the intended way", () => {
     expect(
       designProblems(

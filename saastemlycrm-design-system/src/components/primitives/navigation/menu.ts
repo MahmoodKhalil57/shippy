@@ -57,10 +57,14 @@ export const menu = rcva(
         /** As wide as its items, capped at its parent. */
         max: "w-max max-w-full",
       },
-      /** Icon size (docs: `h-5 w-5`, `h-4 w-4` in small menus). */
+      /**
+       * Icon size (docs: `h-5 w-5`, `h-4 w-4` in small menus): the icons of the menu's own rows (a
+       * link, a button or a group's summary), never a picture inside content a row holds (a widget's
+       * sparkline in the side panel).
+       */
       iconSize: {
-        sm: "[&_svg]:size-4",
-        md: "[&_svg]:size-5",
+        sm: "[&_li>:is(a,button,summary)_svg]:size-4 [&_li>details>summary_svg]:size-4",
+        md: "[&_li>:is(a,button,summary)_svg]:size-5 [&_li>details>summary_svg]:size-5",
       },
       /**
        * App navigation look, shared by the expanded list (`layout="nav"`) and the rail

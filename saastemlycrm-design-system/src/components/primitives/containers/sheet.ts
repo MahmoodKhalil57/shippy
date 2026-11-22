@@ -43,7 +43,13 @@ export const sheetBox = rcva(
     defaultVariants: { size: "md" },
   },
 );
-export const sheetHeader = rcva(`${row} ${inset["6"]} items-center gap-x-3 gap-y-1 pt-4 pb-3`);
+export const sheetHeader = rcva(`${row} ${inset["6"]} items-center gap-x-3 gap-y-1 pt-4`, {
+  variants: {
+    /** With no headline (its content names itself) it is only a row of tools, flush with what follows. */
+    titled: { true: "pb-3", false: "pb-0" },
+  },
+  defaultVariants: { titled: true },
+});
 /** The headline and its supporting line: the part that takes the room. */
 export const sheetHeadings = rcva(`${stack} ${rowFill} gap-0.5`);
 export const sheetHeading = rcva(`${text.label} text-title-lg`);
@@ -73,6 +79,11 @@ export class UiSheet extends LightElement {
   @property() heading: Renderable = "";
   /** A quiet line under the headline (what kind of thing it is). */
   @property() subhead: Renderable = "";
+  /**
+   * Its accessible name when it shows no headline (its content names itself: a record's summary
+   * with its title): the header is then only its tools and the close button.
+   */
+  @property() label = "";
   @property() size: SheetVariants["size"];
   /** The close button's name. */
   @property({ attribute: "close-label" }) closeLabel = "Close";
@@ -119,7 +130,8 @@ export class UiSheet extends LightElement {
   }
 
   render() {
-    const label = typeof this.heading === "string" && this.heading ? this.heading : nothing;
+    const label = typeof this.heading === "string" && this.heading ? this.heading : this.label || nothing;
+    const titled = !!(this.heading || this.subhead);
     return html`<dialog
       class=${sheet()}
       aria-label=${label}
@@ -129,9 +141,9 @@ export class UiSheet extends LightElement {
       @click=${(e: MouseEvent) => this.#pressedOutside && e.target === e.currentTarget && this.dismiss()}
     >
       <div class=${sheetBox({ size: this.size })}>
-        <header class=${sheetHeader()}>
+        <header class=${sheetHeader({ titled })}>
           <div class=${sheetHeadings()}>
-            <h2 class=${sheetHeading()}>${this.heading}</h2>
+            ${titled ? html`<h2 class=${sheetHeading()}>${this.heading}</h2>` : nothing}
             ${this.subhead ? html`<p class=${sheetSubhead()}>${this.subhead}</p>` : nothing}
           </div>
           ${this.hasSlotted("trailing") ? html`<div class=${sheetTrailing()}>${this.slotted("trailing")}</div>` : nothing}

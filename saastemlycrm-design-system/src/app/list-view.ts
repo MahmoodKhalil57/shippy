@@ -6,7 +6,11 @@ import { customElement, property, state } from "lit/decorators.js";
 import type { CollectionConfig, Where } from "payload";
 import { parse, stringify } from "qs-esm";
 import { DASHBOARD_ROUTE, api, withBase, type FindOptions } from "../api/client.ts";
-import { todayIso, type CollectionViewSpec } from "./widgets/widget.ts";
+import { todayIso, type CollectionViewSpec, type WidgetScope } from "./widgets/widget.ts";
+import type { ViewContext } from "./widgets/registry.ts";
+import { actionsFor } from "./widgets/data.ts";
+import { actionBar } from "./widgets/blocks.ts";
+import { formatNumber } from "./widgets/schema.ts";
 import type { RecordItem } from "../components/primitives/data/record.ts";
 import type { MonthEvent } from "../components/primitives/data/month.ts";
 import { linkTarget } from "./widgets/links.ts";
@@ -172,6 +176,7 @@ type ListLayout =
   | "calendar"
   | "timeline"
   | "heatmap"
+  | "chart"
   | "ranking"
   | "treemap"
   | "scatter";
@@ -186,13 +191,16 @@ const LAYOUTS: ListLayout[] = [
   "calendar",
   "timeline",
   "heatmap",
+  "chart",
   "ranking",
   "treemap",
   "scatter",
 ];
 /** Layouts that show the whole collection (as filtered) at once: no pages. */
-const WHOLE: ListLayout[] = ["calendar", "timeline", "heatmap", "ranking", "treemap", "scatter"];
+const WHOLE: ListLayout[] = ["calendar", "timeline", "heatmap", "chart", "ranking", "treemap", "scatter"];
 const DAY_MS = 86_400_000;
+/** A name that is a code (GS-RFQ-0141, INV/2026/0371): its monogram comes from whom it's for. */
+const CODE = /^[\p{Lu}\d]+[-/][\p{Lu}\d]/u;
 const dayLabel = new Intl.DateTimeFormat("en-GB", {
   weekday: "short",
   day: "numeric",
@@ -254,6 +262,13 @@ export class DashboardListView extends LightElement {
   @property() stateKey = "";
   /** What its widget says (./widgets/widget.ts `CollectionViewSpec`): presets, a fixed `where`, parts to hide. */
   @property({ attribute: false }) spec: CollectionViewSpec | null = null;
+  /**
+   * On a screen of widgets: the screen's action runner and scope, so cards, rows and the record
+   * in focus carry what people can do to each record (its collection's `custom.actions`), as a
+   * `records` widget's entries do. After an action the list reloads.
+   */
+  @property({ attribute: false }) ctx: ViewContext | null = null;
+  @property({ attribute: false }) scope: WidgetScope | null = null;
   /**
    * In a `collection` widget's tile (./widgets/host.ts): only the list itself; the tile has the
    * heading and the count (`dashboard-list-count`, after each load), Create sits in the toolbar,
@@ -565,6 +580,7 @@ export class DashboardListView extends LightElement {
             ...this._recordParts().fields,
             ...(this.calendarField ? [this.calendarField] : []),
             ...this._scatterFields(),
+            ...this._chartParts().fields,
           ];
     // A calendar holds its month's records, all of them.
     const cal = this.view === "calendar" ? this.calendarField : undefined;
@@ -575,7 +591,10 @@ export class DashboardListView extends LightElement {
       parts.push({ [cal.name!]: { greater_than_equal: start, less_than: end } } as Where);
     }
     const visible = [...new Set([...this.visible, ...shown])];
-    const select: Select = Object.fromEntries([field, ...visible.map((f) => f.name!)].map((n) => [n, true]));
+    // Records with actions come whole: an action's `when` and its `$row` paths read any field.
+    const select: Select | undefined = this._acting()
+      ? undefined
+      : Object.fromEntries([field, ...visible.map((f) => f.name!)].map((n) => [n, true]));
     const populate = Object.fromEntries(
       visible.flatMap((f) => {
         const target = relatedSlug(f);
@@ -670,7 +689,12 @@ export class DashboardListView extends LightElement {
    * coloured by its meaning: problems red, waiting amber, in progress blue, done green.
    */
   private _status(f: FieldLike, doc: Doc) {
-    if (!isToned(f)) return undefined;
+    if (!isToned(f)) {
+      // A category (a channel, a type): a chip in its option's hue, so the table isn't grey words.
+      if (f.type !== "select" || f.hasMany) return undefined;
+      const at = (f.options ?? []).findIndex((o) => (typeof o === "string" ? o : o.value) === String(doc[f.name!]));
+      return at < 0 ? undefined : html`<ui-tag .hue=${at}>${this._cellText(f, doc)}</ui-tag>`;
+    }
     const label = this._cellText(f, doc);
     if (!label || label === "—") return undefined;
     return html`<ui-tag .tone=${toneOf(f, doc[f.name!], label)}>${label}</ui-tag>`;
@@ -696,7 +720,8 @@ export class DashboardListView extends LightElement {
   /** The number fields a scatter plots (`custom.list.scatter`, else the first two number fields). */
   private _scatterFields(): FieldLike[] {
     const all = dataFields(formFields(this.collection));
-    const named = collectionSettings(this.collection).list?.scatter;
+    const spec = this.spec?.scatter;
+    const named = spec?.x && spec.y ? [spec.x, spec.y] : collectionSettings(this.collection).list?.scatter;
     const numbers = all.filter((f) => f.type === "number");
     const pick = named ? named.flatMap((n) => numbers.filter((f) => f.name === n)) : numbers.slice(0, 2);
     return pick.length === 2 ? pick : [];
@@ -724,6 +749,7 @@ export class DashboardListView extends LightElement {
     const named = (n?: string) => (n ? all.find((f) => f.name === n) : undefined);
     const status = named(settings.status) ?? this.boardField ?? all.find(isToned);
     const figure =
+      named(this.spec?.figure) ??
       named(settings.figure) ??
       all.find(
         (f) =>
@@ -739,6 +765,35 @@ export class DashboardListView extends LightElement {
       fields: [status, figure, person, eyebrow].filter((f): f is FieldLike => !!f),
     };
   }
+
+  /** Whether cards and rows draw actions here: a screen's list, a collection with actions, not a table. */
+  private _acting() {
+    return (
+      !!this.ctx &&
+      !!this.scope &&
+      this.view !== "table" &&
+      !!(collectionSettings(this.collection) as { actions?: unknown[] }).actions?.length
+    );
+  }
+
+  /** The screen's runner, reloading this list once an action is done. */
+  #ctx?: ViewContext;
+  private get _runner(): ViewContext | undefined {
+    const ctx = this.ctx;
+    if (!ctx) return undefined;
+    if (this.#ctx && this.#ctxOf === ctx) return this.#ctx;
+    this.#ctxOf = ctx;
+    this.#ctx = {
+      ...ctx,
+      run: (a) => {
+        const done = ctx.run(a);
+        if (done) void done.then(() => this._load());
+        return done;
+      },
+    };
+    return this.#ctx;
+  }
+  #ctxOf?: ViewContext;
 
   /** A document as a card or a row: its title, status, figure, person and up to four facts. */
   private _record(doc: Doc): RecordItem {
@@ -767,8 +822,9 @@ export class DashboardListView extends LightElement {
       monogram:
         eyebrow && relatedSlug(eyebrow) && said(eyebrow)
           ? said(eyebrow)
-          : /\d/.test(titleOf(c, doc))
-            ? said(this._cardFields().find((f) => relatedSlug(f) && !isPerson(f) && said(f))) || undefined
+          : CODE.test(titleOf(c, doc))
+            ? said(this._cardFields().find((f) => relatedSlug(f) && !isPerson(f) && !CODE.test(said(f)) && said(f))) ||
+              undefined
             : undefined,
       status:
         status && statusLabel
@@ -777,7 +833,15 @@ export class DashboardListView extends LightElement {
       figure: figure && figureText ? { label: labelOf(figure), value: figureText } : undefined,
       person: said(person) || undefined,
       facts,
+      actions: this._actionsOf(doc),
     };
+  }
+
+  /** What people can do to this record, as its buttons (only where the list draws them). */
+  private _actionsOf(doc: Doc) {
+    if (!this._acting()) return undefined;
+    const list = actionsFor(this.slug, doc, this.scope!);
+    return list.length ? actionBar(list, this._runner!) : undefined;
   }
 
   /** The layouts this collection can take: a board and a calendar only where it names their fields. */
@@ -795,6 +859,7 @@ export class DashboardListView extends LightElement {
       ...when(this.calendarField, "calendar", "Calendar"),
       ...when(this.calendarField, "timeline", "Timeline"),
       ...when(this.calendarField, "heatmap", "Heatmap"),
+      ...when(this._chartParts().by, "chart", `Chart by ${this._chartParts().title}`),
       ...when(figure, "ranking", `Ranking by ${(figure ? labelOf(figure) : "").toLowerCase()}`),
       ...when(figure, "treemap", "Treemap"),
       ...when(this._scatterFields().length, "scatter", "Scatter"),
@@ -1021,6 +1086,8 @@ export class DashboardListView extends LightElement {
         return this._timeline(r.docs);
       case "heatmap":
         return this._heatmap(r.docs);
+      case "chart":
+        return this._chart(r.docs);
       case "ranking":
       case "treemap":
         return this._ranked(view, r.docs);
@@ -1172,6 +1239,101 @@ export class DashboardListView extends LightElement {
     ></ui-heatmap>`;
   }
 
+  /**
+   * What the `chart` layout charts: its widget's `chart` set-up, else the records by their calendar
+   * date (by day), else by their status.
+   */
+  private _chartParts() {
+    const spec = this.spec?.chart ?? {};
+    const all = dataFields(formFields(this.collection));
+    const named = (n?: string) => (n ? all.find((f) => f.name === n) : undefined);
+    const by = named(spec.by) ?? this.calendarField ?? this._recordParts().status;
+    const sum = named(spec.sum);
+    const bucket = spec.bucket ?? "day";
+    const title = by ? `${labelOf(by).toLowerCase()}${by.type === "date" && !spec.days ? `, by ${bucket}` : ""}` : "";
+    return { by, sum, bucket, title, fields: [by, sum].filter((f): f is FieldLike => !!f) };
+  }
+
+  /**
+   * How many records (or how much of `sum`) per day, week or month of a date, or per value of a
+   * select or relationship; with `days`, every day from today, empty or not. Values read in the
+   * summed field's format.
+   */
+  private _chart(docs: Doc[]) {
+    const { by, sum, bucket } = this._chartParts();
+    const f = by!;
+    const spec = this.spec?.chart ?? {};
+    const { plural } = labels(this.collection);
+    const amount = (d: Doc) => (sum ? Number(d[sum.name!]) || 0 : 1);
+    const totals = new Map<string, number>();
+    const add = (key: string, d: Doc) => totals.set(key, (totals.get(key) ?? 0) + amount(d));
+    let keys: string[] = [];
+    let label: (k: string) => string = (k) => k;
+    if (f.type === "date") {
+      const keyOf = (iso: string) => {
+        const t = Date.parse(iso);
+        const day = new Date(t).toISOString().slice(0, 10);
+        if (bucket === "month") return day.slice(0, 7);
+        if (bucket === "week") return new Date(t - new Date(t).getUTCDay() * DAY_MS).toISOString().slice(0, 10);
+        return day;
+      };
+      for (const d of docs) if (typeof d[f.name!] === "string") add(keyOf(String(d[f.name!])), d);
+      if (spec.days && bucket === "day") {
+        const start = Date.parse(`${todayIso()}T00:00:00Z`);
+        keys = Array.from({ length: spec.days }, (_, i) => new Date(start + i * DAY_MS).toISOString().slice(0, 10));
+      } else {
+        // Every bucket from the first to the last, empty ones too, at most 60.
+        const have = [...totals.keys()].sort();
+        if (have.length) {
+          const step = (k: string) => {
+            if (bucket === "month") {
+              const [y, m] = k.split("-").map(Number) as [number, number];
+              return new Date(Date.UTC(y, m, 1)).toISOString().slice(0, 7);
+            }
+            return new Date(Date.parse(`${k}T00:00:00Z`) + (bucket === "week" ? 7 : 1) * DAY_MS)
+              .toISOString()
+              .slice(0, 10);
+          };
+          for (let k = have[0]!; k <= have.at(-1)! && keys.length < 60; k = step(k)) keys.push(k);
+        }
+      }
+      const fmt =
+        bucket === "month"
+          ? new Intl.DateTimeFormat("en-GB", { month: "short", year: "2-digit", timeZone: "UTC" })
+          : new Intl.DateTimeFormat("en-GB", {
+              weekday: bucket === "day" ? "short" : undefined,
+              day: "numeric",
+              month: bucket === "week" ? "short" : undefined,
+              timeZone: "UTC",
+            });
+      label = (k) => fmt.format(new Date(bucket === "month" ? `${k}-01T00:00:00Z` : `${k}T00:00:00Z`));
+    } else {
+      const names = new Map<string, string>();
+      for (const d of docs) {
+        const text = this._cellText(f, d);
+        if (!text || text === "—") continue;
+        names.set(text, text);
+        add(text, d);
+      }
+      const order = (f.options ?? []).map((o) => (typeof o === "string" ? o : String(o.label)));
+      keys = [...names.keys()].sort((a, b) => {
+        const ia = order.indexOf(a);
+        const ib = order.indexOf(b);
+        return ia >= 0 && ib >= 0 ? ia - ib : (totals.get(b) ?? 0) - (totals.get(a) ?? 0);
+      });
+    }
+    const number = (sum?.custom as { number?: Record<string, unknown> } | undefined)?.number;
+    const format = (v: number) =>
+      sum && number ? formatNumber(v, { ...number, currencyField: undefined } as never) : v.toLocaleString("en-GB");
+    return html`<ui-chart
+      .kind=${spec.kind ?? "bars"}
+      .label=${`${sum ? labelOf(sum) : plural} by ${labelOf(f).toLowerCase()}`}
+      .labels=${keys.map(label)}
+      .series=${[{ name: sum ? labelOf(sum) : plural, values: keys.map((k) => totals.get(k) ?? 0) }]}
+      .format=${format}
+    ></ui-chart>`;
+  }
+
   /** The records by their figure: as bars, largest first (`ranking`), or as a treemap. */
   private _ranked(view: "ranking" | "treemap", docs: Doc[]) {
     const f = this._recordParts().figure!;
@@ -1213,10 +1375,15 @@ export class DashboardListView extends LightElement {
         },
       ];
     });
+    const set = this.spec?.scatter ?? {};
     return html`<ui-quadrant
       .label=${`${labels(this.collection).plural}: ${labelOf(x).toLowerCase()} and ${labelOf(y).toLowerCase()}`}
       .xLabel=${labelOf(x)}
       .yLabel=${labelOf(y)}
+      .xMid=${set.xMid}
+      .yMid=${set.yMid}
+      ?invert-y=${!!set.invertY}
+      .quadrants=${set.quadrants}
       .points=${points}
     ></ui-quadrant>`;
   }
@@ -1290,10 +1457,11 @@ export class DashboardListView extends LightElement {
     const row = this.result?.docs.find((d) => String(d.id) === id);
     const heading = s?.title || (row ? titleOf(c, row) : labels(c).singular);
     const own = (e: Event) => e.target === e.currentTarget;
+    // Named once: the record's own summary (its badge, kind and title) leads the sheet, so the
+    // sheet's header holds only its tools (unsaved, open full page) and the close button.
     return html`<ui-sheet
         size="lg"
-        .heading=${heading}
-        .subhead=${heading === labels(c).singular ? "" : labels(c).singular}
+        .label=${heading}
         .open=${!!this.openId}
         @ui-dismiss=${(e: Event) => {
           // Only the sheet's own question: unsaved changes are asked about before it closes.
@@ -1303,7 +1471,18 @@ export class DashboardListView extends LightElement {
         }}
         @ui-close=${(e: Event) => own(e) && this._closed()}
       >
-        <span slot="trailing">${s?.dirty ? html`<ui-tag tone="warning">Unsaved changes</ui-tag>` : nothing}</span>
+        <span slot="trailing"
+          >${s?.dirty ? html`<ui-tag tone="warning">Unsaved changes</ui-tag>` : nothing}${
+            id
+              ? html`<ui-icon-button
+                  icon="external"
+                  label="Open full page"
+                  size="xs"
+                  href=${dashboardPath("collections", this.slug, id)}
+                ></ui-icon-button>`
+              : nothing
+          }</span
+        >
         ${
           id
             ? html`<dashboard-edit-view
@@ -1333,13 +1512,6 @@ export class DashboardListView extends LightElement {
                     >${s.saving ? "Saving…" : s.dirty ? "Save" : "Saved"}</ui-button
                   >`
                 : html`<ui-tag variant="outline">Read only</ui-tag>`
-          }
-          ${
-            id
-              ? html`<ui-button variant="text" href=${dashboardPath("collections", this.slug, id)}
-                  >Open full page</ui-button
-                >`
-              : nothing
           }
         </ui-flex>
       </ui-sheet>

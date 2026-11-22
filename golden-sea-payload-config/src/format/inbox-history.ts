@@ -77,7 +77,13 @@ export const dedup = (d: HistoryPayload): KindData<"gauges"> => ({
 });
 
 /** The business messages left once de-duplication is done: what "Organise" reads. */
-export const kept = (d: HistoryPayload): Stat[] => [{ label: "Business messages kept", value: count(d.kept) }];
+export const kept = (d: HistoryPayload): Stat[] => [
+  {
+    label: "Business messages kept",
+    value: count(d.kept),
+    share: d.scanned ? { value: d.kept / d.scanned, text: `of ${count(d.scanned)} scanned` } : undefined,
+  },
+];
 
 /**
  * Management's approval of the import, until it's given: only Karim Balbaa approves, once the

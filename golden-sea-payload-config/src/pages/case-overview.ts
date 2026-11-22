@@ -78,13 +78,13 @@ export const caseOverview = widgets({
     {
       title: "Open tasks",
       size: "s",
-      records: {
+      collection: {
         collection: "tasks",
+        key: "open-tasks",
+        layout: "list",
         where: { case: { equals: "$doc.id" }, status: { equals: "Open" } },
         sort: "due",
-        columns: ["title", "channel", "owner", "due"],
-        layout: "list",
-        empty: "Nothing open.",
+        hide: ["export", "columns", "select", "around", "search", "filters", "create"],
       },
     },
     // Every line of the case with its status and, where the AI read it, how sure it was.
@@ -136,16 +136,13 @@ export const caseOverview = widgets({
       subhead:
         "Every automatic step names the rule that fired; every human step names the person. Nothing is edited after the fact.",
       size: "m",
-      records: {
+      collection: {
         collection: "activities",
+        key: "activity-timeline-audit-",
+        layout: "timeline",
         where: { case: { equals: "$doc.id" } },
         sort: "-at",
-        limit: 100,
-        columns: ["at", "byline"],
-        text: "text",
-        dot: "kind",
-        layout: "timeline",
-        empty: "Nothing logged yet.",
+        hide: ["export", "columns", "select", "around", "search", "filters", "create"],
       },
     },
     custom({
