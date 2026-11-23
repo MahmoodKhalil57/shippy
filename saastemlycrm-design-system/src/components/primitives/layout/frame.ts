@@ -116,8 +116,16 @@ export const appShellSearch = rcva(
 );
 /** The search itself: as wide as that room allows, up to 28rem. */
 export const appShellSearchBox = rcva("w-full max-w-[calc(8*var(--tile-w))] grid justify-items-center");
+/**
+ * The header's actions, one tile each. Where the header can't hold the brand, the search, five
+ * actions and the end rail's tile (8 tiles of 3.3125rem, 26.5rem, and its 0.25rem inset each side:
+ * under 27rem; a compact frame has no end rail, so it folds with a tile to spare), the actions
+ * marked `data-fold` give
+ * way to the one marked `data-fold-only` (the same controls gathered in one menu); otherwise that
+ * one isn't shown. Without it they'd run over the search.
+ */
 export const appShellActions = rcva(
-  "[grid-row:1] [grid-column:6/var(--frame-actions-end,-1)] justify-self-end grid grid-flow-col auto-cols-(--tile-w) justify-items-center items-center",
+  "[grid-row:1] [grid-column:6/var(--frame-actions-end,-1)] justify-self-end grid grid-flow-col auto-cols-(--tile-w) justify-items-center items-center @max-[27rem]/frame:[&>[data-fold]]:hidden @min-[27rem]/frame:[&>[data-fold-only]]:hidden",
 );
 
 /**

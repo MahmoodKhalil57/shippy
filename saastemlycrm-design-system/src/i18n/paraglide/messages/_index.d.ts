@@ -793,6 +793,13 @@ export const app_view_loading: ((inputs?: App_View_LoadingInputs, options?: { lo
 /**
 * | output |
 * | --- |
+* | "Display settings" |
+*
+*/
+export const appearance_all_label: ((inputs?: Appearance_All_LabelInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Appearance_All_LabelInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
 * | "Background" |
 *
 */
@@ -884,6 +891,13 @@ export const appearance_scheme_default: ((inputs?: Appearance_Scheme_DefaultInpu
 /**
 * | output |
 * | --- |
+* | "Colour scheme" |
+*
+*/
+export const appearance_scheme_heading: ((inputs?: Appearance_Scheme_HeadingInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Appearance_Scheme_HeadingInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
 * | "Colour scheme: {name}" |
 *
 */
@@ -895,6 +909,13 @@ export const appearance_scheme_label: ((inputs: Appearance_Scheme_LabelInputs, o
 *
 */
 export const appearance_theme_dark: ((inputs?: Appearance_Theme_DarkInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Appearance_Theme_DarkInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Theme" |
+*
+*/
+export const appearance_theme_heading: ((inputs?: Appearance_Theme_HeadingInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Appearance_Theme_HeadingInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
@@ -5225,6 +5246,7 @@ export type App_Title_LoginInputs = {};
 export type App_Title_Not_FoundInputs = {};
 export type App_Title_SuffixInputs = {};
 export type App_View_LoadingInputs = {};
+export type Appearance_All_LabelInputs = {};
 export type Appearance_Background_HeadingInputs = {};
 export type Appearance_Background_LabelInputs = {};
 export type Appearance_Background_Live_Magnet_LinesInputs = {};
@@ -5238,8 +5260,10 @@ export type Appearance_Language_EnInputs = {};
 export type Appearance_Language_HeadingInputs = {};
 export type Appearance_Language_LabelInputs = { name: NonNullable<unknown> };
 export type Appearance_Scheme_DefaultInputs = {};
+export type Appearance_Scheme_HeadingInputs = {};
 export type Appearance_Scheme_LabelInputs = { name: NonNullable<unknown> };
 export type Appearance_Theme_DarkInputs = {};
+export type Appearance_Theme_HeadingInputs = {};
 export type Appearance_Theme_LabelInputs = { current: NonNullable<unknown>, next: NonNullable<unknown> };
 export type Appearance_Theme_LightInputs = {};
 export type Appearance_Theme_SystemInputs = {};

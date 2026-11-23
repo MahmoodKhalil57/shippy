@@ -23,5 +23,8 @@
   "appearance_language_en": "الإنجليزية",
   "appearance_language_ar": "العربية",
   "appearance_language_heading": "اللغة",
-  "appearance_language_current": "اللغة الحالية"
+  "appearance_language_current": "اللغة الحالية",
+  "appearance_all_label": "إعدادات العرض",
+  "appearance_theme_heading": "المظهر",
+  "appearance_scheme_heading": "نظام الألوان"
 }

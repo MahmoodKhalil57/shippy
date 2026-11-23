@@ -67,7 +67,11 @@ export interface BackgroundImage {
   thumb?: string;
 }
 
-export type AppearanceKind = "theme" | "scheme" | "background" | "language";
+export type AppearanceKind = "theme" | "scheme" | "background" | "language" | "all";
+
+/** The kinds `all` gathers, in its menu's order. */
+const GATHERED = ["theme", "language", "scheme", "background"] as const;
+type Single = (typeof GATHERED)[number];
 
 const THEME_ICON: Record<ThemeChoice, IconName> = { system: "contrast", dark: "moon", light: "sun" };
 const THEME_NAME: Record<ThemeChoice, () => string> = {
@@ -81,6 +85,10 @@ const THEME_NAME: Record<ThemeChoice, () => string> = {
  * @example <ui-appearance kind="scheme" persist></ui-appearance>
  * @example <ui-appearance kind="background" persist credit="Photos: Pexels" .backgrounds=${images}></ui-appearance>
  * @example <ui-appearance kind="language"></ui-appearance>
+ * @example <ui-appearance kind="all" persist .backgrounds=${images}></ui-appearance>
+ *
+ * `all`: the four in one menu (a section each), for a header with no room for four buttons (the
+ * frame shows it in their place: `data-fold-only` on it, `data-fold` on them).
  */
 @customElement("ui-appearance")
 export class UiAppearance extends LightElement {
@@ -101,14 +109,26 @@ export class UiAppearance extends LightElement {
   #from: { x: number; y: number } | null = null;
 
   private get _key() {
-    return STORAGE[this.kind === "theme" || this.kind === "language" ? "theme" : this.kind];
+    return this.#keyOf(this.kind === "all" ? "theme" : this.kind);
+  }
+
+  #keyOf(kind: Single) {
+    return STORAGE[kind === "theme" || kind === "language" ? "theme" : kind];
+  }
+
+  /** A kind's choice now: this control's own, or (in `all`) what's kept for it. */
+  #valueOf(kind: Single): string {
+    if (kind === this.kind) return this.value;
+    if (kind === "language") return locale();
+    return remembered(this.#keyOf(kind)) ?? "";
   }
 
   connectedCallback() {
     super.connectedCallback();
     this.addEventListener("pointerdown", (e) => (this.#from = { x: e.clientX, y: e.clientY }));
     if (this.kind === "language") this.value = locale();
-    if (!this.persist || this.kind === "language") return;
+    // `all` shows what the page has; the single controls (there too, folded away) apply it.
+    if (!this.persist || this.kind === "language" || this.kind === "all") return;
     const saved = remembered(this._key);
     if (saved == null) return;
     if (this.kind === "background") {
@@ -168,9 +188,9 @@ export class UiAppearance extends LightElement {
   }
 
   /** Apply a choice (revealed), remember it, close any menu, and say so. */
-  private async _pick(id: string, src: string | null = null) {
+  private async _pick(id: string, src: string | null = null, kind: Single = this.kind === "all" ? "theme" : this.kind) {
     // A language reloads the page in it: nothing to reveal.
-    if (this.kind === "language") {
+    if (kind === "language") {
       this.dispatchEvent(new CustomEvent("ui-change", { detail: { theme: id }, bubbles: true }));
       return setLanguage(id as Locale);
     }
@@ -179,14 +199,14 @@ export class UiAppearance extends LightElement {
     this.#from = null;
     await reveal(from, async () => {
       this.querySelector("ui-dropdown")?.hide();
-      if (this.kind === "theme") applyTheme(id);
-      else if (this.kind === "scheme") applyScheme(id);
+      if (kind === "theme") applyTheme(id);
+      else if (kind === "scheme") applyScheme(id);
       else {
         applyBackground(src, isLiveBackground(id) ? id : null);
         if (this.persist) remember(STORAGE.backgroundSrc, src);
       }
-      this.value = id;
-      if (this.persist) remember(this._key, id);
+      if (kind === this.kind) this.value = id;
+      if (this.persist) remember(this.#keyOf(kind), id);
       this.dispatchEvent(new CustomEvent("ui-change", { detail: { theme: id }, bubbles: true }));
       await this.updateComplete;
     });
@@ -203,13 +223,11 @@ export class UiAppearance extends LightElement {
     </ui-icon-button>`;
   }
 
-  private _scheme() {
-    const current = this.schemes.some((x) => x.id === this.value) ? this.value : "default";
+  #schemeItems(): MenuItem[] {
+    const value = this.#valueOf("scheme");
+    const current = this.schemes.some((x) => x.id === value) ? value : "default";
     const dark = isDark();
-    const label = m.appearance_scheme_label({
-      name: this.schemes.find((x) => x.id === current)?.label ?? m.appearance_scheme_default(),
-    });
-    const items: MenuItem[] = [
+    return [
       {
         label: m.appearance_scheme_default(),
         value: "default",
@@ -226,6 +244,14 @@ export class UiAppearance extends LightElement {
         };
       }),
     ];
+  }
+
+  private _scheme() {
+    const current = this.schemes.some((x) => x.id === this.value) ? this.value : "default";
+    const label = m.appearance_scheme_label({
+      name: this.schemes.find((x) => x.id === current)?.label ?? m.appearance_scheme_default(),
+    });
+    const items = this.#schemeItems();
     return html`<ui-dropdown
       mode="popover"
       align="end"
@@ -254,12 +280,46 @@ export class UiAppearance extends LightElement {
   private async _upload() {
     const file = await pickFile("image/*");
     if (!file?.type.startsWith("image/")) return;
-    await this._pick("custom", await shrinkImage(file));
+    await this._pick("custom", await shrinkImage(file), "background");
+  }
+
+  #backgroundTiles() {
+    const current = this.#valueOf("background") || "none";
+    const custom = current === "custom";
+    const pick = (id: string, src: string | null) => void this._pick(id, src, "background");
+    return html`<ui-grid cols="2" gap="2">
+      <ui-choice-tile
+        icon="no-image"
+        .label=${m.appearance_background_none()}
+        ?selected=${current === "none"}
+        @click=${() => pick("none", null)}
+      ></ui-choice-tile>
+      ${this.backgrounds.map(
+        (b) =>
+          html`<ui-choice-tile
+            .image=${b.thumb ?? b.src}
+            .label=${b.label}
+            ?selected=${current === b.id}
+            @click=${() => pick(b.id, b.src)}
+          ></ui-choice-tile>`,
+      )}
+      ${this.#live().map(
+        (b) =>
+          html`<ui-choice-tile .label=${b.label()} ?selected=${current === b.id} @click=${() => pick(b.id, null)}
+            >${liveBackground(b.id, true)}<!----></ui-choice-tile
+          >`,
+      )}
+      <ui-choice-tile
+        icon="upload"
+        .label=${custom ? m.appearance_background_replace() : m.appearance_background_upload()}
+        dashed
+        ?selected=${custom}
+        @click=${() => void this._upload()}
+      ></ui-choice-tile>
+    </ui-grid>`;
   }
 
   private _background() {
-    const current = this.value || "none";
-    const custom = current === "custom";
     return html`<ui-dropdown
       mode="popover"
       align="end"
@@ -277,39 +337,81 @@ export class UiAppearance extends LightElement {
             <ui-text as="span" variant="title-sm">${m.appearance_background_heading()}</ui-text>
             ${this.credit ? html`<ui-text as="span" variant="body-sm" color="muted">${this.credit}</ui-text>` : nothing}
           </ui-flex>
-          <ui-grid cols="2" gap="2">
-            <ui-choice-tile
-              icon="no-image"
-              .label=${m.appearance_background_none()}
-              ?selected=${current === "none"}
-              @click=${() => void this._pick("none", null)}
-            ></ui-choice-tile>
-            ${this.backgrounds.map(
-              (b) =>
-                html`<ui-choice-tile
-                  .image=${b.thumb ?? b.src}
-                  .label=${b.label}
-                  ?selected=${current === b.id}
-                  @click=${() => void this._pick(b.id, b.src)}
-                ></ui-choice-tile>`,
-            )}
-            ${this.#live().map(
-              (b) =>
-                html`<ui-choice-tile
-                  .label=${b.label()}
-                  ?selected=${current === b.id}
-                  @click=${() => void this._pick(b.id, null)}
-                  >${liveBackground(b.id, true)}<!----></ui-choice-tile
-                >`,
-            )}
-            <ui-choice-tile
-              icon="upload"
-              .label=${custom ? m.appearance_background_replace() : m.appearance_background_upload()}
-              dashed
-              ?selected=${custom}
-              @click=${() => void this._upload()}
-            ></ui-choice-tile>
-          </ui-grid>
+          ${this.#backgroundTiles()}
+        </ui-flex>
+      </ui-box>
+    </ui-dropdown>`;
+  }
+
+  #languageItems(): MenuItem[] {
+    const current = locale();
+    const MARK: Record<Locale, string> = { en: "EN", ar: "ع" };
+    const NAME: Record<Locale, () => string> = {
+      en: () => m.appearance_language_en(),
+      ar: () => m.appearance_language_ar(),
+    };
+    return LOCALES.map((id) => ({
+      icon: html`<ui-avatar initials=${MARK[id]} size="xs" shape="circle" tone="secondary"></ui-avatar>`,
+      label: html`<ui-flex direction="col" gap="0">
+        <ui-text as="span" variant="label-lg" lang=${id}>${LANGUAGES[id].name}</ui-text>
+        <ui-text as="span" variant="body-sm" color="muted"
+          >${id === current ? m.appearance_language_current() : NAME[id]()}</ui-text
+        >
+      </ui-flex>`,
+      value: id,
+      active: id === current,
+    }));
+  }
+
+  /**
+   * `all`: the four in one menu, a section each (theme, language, colour scheme, background), in a
+   * panel that scrolls when the window is short.
+   */
+  private _all() {
+    const theme = this.#valueOf("theme");
+    const themeNow = (THEMES as readonly string[]).includes(theme) ? (theme as ThemeChoice) : "system";
+    const section = (kind: Single, items: MenuItem[]) =>
+      html`<ui-menu
+        width="full"
+        surface="false"
+        .items=${items}
+        @ui-select=${(e: CustomEvent<{ item: MenuItem }>) => {
+          e.stopPropagation();
+          const id = e.detail.item.value;
+          if (typeof id === "string") void this._pick(id, null, kind);
+        }}
+      ></ui-menu>`;
+    return html`<ui-dropdown
+      mode="popover"
+      align="end"
+      panel="card"
+      panel-width="5"
+      trigger-variant="text"
+      trigger-shape="round"
+      trigger-spaced="false"
+      .triggerLabel=${m.appearance_all_label()}
+    >
+      <ui-icon slot="trigger" name="settings" size="md"></ui-icon>
+      <ui-box max-height="96">
+        <ui-flex direction="col" gap="3">
+          ${section("theme", [
+            { label: m.appearance_theme_heading(), heading: true },
+            ...THEMES.map((id) => ({
+              label: THEME_NAME[id](),
+              value: id,
+              active: id === themeNow,
+              icon: html`<ui-icon name=${THEME_ICON[id]} size="sm"></ui-icon>`,
+            })),
+          ])}
+          ${section("language", [{ label: m.appearance_language_heading(), heading: true }, ...this.#languageItems()])}
+          ${section("scheme", [{ label: m.appearance_scheme_heading(), heading: true }, ...this.#schemeItems()])}
+          <ui-flex direction="col" gap="2">
+            <ui-flex justify="between" align="baseline" gap="2">
+              <ui-text as="span" variant="title-sm">${m.appearance_background_heading()}</ui-text>
+              ${this.credit ? html`<ui-text as="span" variant="body-sm" color="muted">${this.credit}</ui-text>` : nothing}
+            </ui-flex>
+            ${this.#backgroundTiles()}
+          </ui-flex>
         </ui-flex>
       </ui-box>
     </ui-dropdown>`;
@@ -319,28 +421,8 @@ export class UiAppearance extends LightElement {
     const current = locale();
     // Each language by its monogram (a language isn't a country: no flags), named in its own words
     // and its own `lang` (a screen reader switches voice for it). The current one is the menu's
-    // active row.
-    const MARK: Record<Locale, string> = { en: "EN", ar: "ع" };
-    const NAME: Record<Locale, () => string> = {
-      en: () => m.appearance_language_en(),
-      ar: () => m.appearance_language_ar(),
-    };
-    const items: MenuItem[] = [
-      { label: m.appearance_language_heading(), heading: true },
-      ...LOCALES.map((id) => ({
-        icon: html`<ui-avatar initials=${MARK[id]} size="xs" shape="circle" tone="secondary"></ui-avatar>`,
-        // Under its name: its name in the page's language, or, for the page's own (the same
-        // words), that it's the current one. Every row two lines, the same height.
-        label: html`<ui-flex direction="col" gap="0">
-          <ui-text as="span" variant="label-lg" lang=${id}>${LANGUAGES[id].name}</ui-text>
-          <ui-text as="span" variant="body-sm" color="muted"
-            >${id === current ? m.appearance_language_current() : NAME[id]()}</ui-text
-          >
-        </ui-flex>`,
-        value: id,
-        active: id === current,
-      })),
-    ];
+    // active row, its name in the page's language (the same words) given as "Current language".
+    const items: MenuItem[] = [{ label: m.appearance_language_heading(), heading: true }, ...this.#languageItems()];
     return html`<ui-dropdown
       mode="popover"
       align="end"
@@ -366,6 +448,7 @@ export class UiAppearance extends LightElement {
   }
 
   render() {
+    if (this.kind === "all") return this._all();
     return this.kind === "scheme"
       ? this._scheme()
       : this.kind === "background"

@@ -113,6 +113,7 @@
 /** @typedef {{}} App_Title_Not_FoundInputs */
 /** @typedef {{}} App_Title_SuffixInputs */
 /** @typedef {{}} App_View_LoadingInputs */
+/** @typedef {{}} Appearance_All_LabelInputs */
 /** @typedef {{}} Appearance_Background_HeadingInputs */
 /** @typedef {{}} Appearance_Background_LabelInputs */
 /** @typedef {{}} Appearance_Background_Live_Magnet_LinesInputs */
@@ -126,8 +127,10 @@
 /** @typedef {{}} Appearance_Language_HeadingInputs */
 /** @typedef {{ name: NonNullable<unknown> }} Appearance_Language_LabelInputs */
 /** @typedef {{}} Appearance_Scheme_DefaultInputs */
+/** @typedef {{}} Appearance_Scheme_HeadingInputs */
 /** @typedef {{ name: NonNullable<unknown> }} Appearance_Scheme_LabelInputs */
 /** @typedef {{}} Appearance_Theme_DarkInputs */
+/** @typedef {{}} Appearance_Theme_HeadingInputs */
 /** @typedef {{ current: NonNullable<unknown>, next: NonNullable<unknown> }} Appearance_Theme_LabelInputs */
 /** @typedef {{}} Appearance_Theme_LightInputs */
 /** @typedef {{}} Appearance_Theme_SystemInputs */
@@ -1181,6 +1184,10 @@ export const app_view_loading = /** @type {(inputs: App_View_LoadingInputs) => L
 	return /** @type {LocalizedString} */ (`جارٍ تحميل هذه الشاشة.`)
 };
 
+export const appearance_all_label = /** @type {(inputs: Appearance_All_LabelInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`إعدادات العرض`)
+};
+
 export const appearance_background_heading = /** @type {(inputs: Appearance_Background_HeadingInputs) => LocalizedString} */ () => {
 	return /** @type {LocalizedString} */ (`الخلفية`)
 };
@@ -1233,12 +1240,20 @@ export const appearance_scheme_default = /** @type {(inputs: Appearance_Scheme_D
 	return /** @type {LocalizedString} */ (`الافتراضي`)
 };
 
+export const appearance_scheme_heading = /** @type {(inputs: Appearance_Scheme_HeadingInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`نظام الألوان`)
+};
+
 export const appearance_scheme_label = /** @type {(inputs: Appearance_Scheme_LabelInputs) => LocalizedString} */ (i) => {
 	return /** @type {LocalizedString} */ (`نظام الألوان: ${i?.name}`)
 };
 
 export const appearance_theme_dark = /** @type {(inputs: Appearance_Theme_DarkInputs) => LocalizedString} */ () => {
 	return /** @type {LocalizedString} */ (`داكن`)
+};
+
+export const appearance_theme_heading = /** @type {(inputs: Appearance_Theme_HeadingInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`المظهر`)
 };
 
 export const appearance_theme_label = /** @type {(inputs: Appearance_Theme_LabelInputs) => LocalizedString} */ (i) => {

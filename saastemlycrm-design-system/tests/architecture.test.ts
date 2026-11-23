@@ -82,8 +82,12 @@ const TEXT_ELEMENTS = new Set([
   "br",
   "wbr",
 ]);
-/** Attributes any element may carry; none of them style anything. */
-const GLOBAL_ATTRIBUTES = new Set(["slot", "id", "lang", "dir", "title"]);
+/**
+ * Attributes any element may carry; none of them style anything. `data-fold` / `data-fold-only`
+ * tell the frame's header, like `slot`, where an action goes when the header is narrow
+ * (`appShellActions`, src/components/primitives/layout/frame.ts).
+ */
+const GLOBAL_ATTRIBUTES = new Set(["slot", "id", "lang", "dir", "title", "data-fold", "data-fold-only"]);
 const TEXT_ELEMENT_ATTRIBUTES = new Set([...GLOBAL_ATTRIBUTES, "role", "datetime", "value", "cite"]);
 
 /** Problems with how a consumer template uses elements, as "line N: <tag attr>: problem". */

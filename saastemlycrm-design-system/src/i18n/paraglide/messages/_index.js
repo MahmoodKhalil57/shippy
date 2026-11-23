@@ -115,6 +115,7 @@ import { getLocale, experimentalStaticLocale, isDevelopment } from "../runtime.j
 /** @typedef {{}} App_Title_Not_FoundInputs */
 /** @typedef {{}} App_Title_SuffixInputs */
 /** @typedef {{}} App_View_LoadingInputs */
+/** @typedef {{}} Appearance_All_LabelInputs */
 /** @typedef {{}} Appearance_Background_HeadingInputs */
 /** @typedef {{}} Appearance_Background_LabelInputs */
 /** @typedef {{}} Appearance_Background_Live_Magnet_LinesInputs */
@@ -128,8 +129,10 @@ import { getLocale, experimentalStaticLocale, isDevelopment } from "../runtime.j
 /** @typedef {{}} Appearance_Language_HeadingInputs */
 /** @typedef {{ name: NonNullable<unknown> }} Appearance_Language_LabelInputs */
 /** @typedef {{}} Appearance_Scheme_DefaultInputs */
+/** @typedef {{}} Appearance_Scheme_HeadingInputs */
 /** @typedef {{ name: NonNullable<unknown> }} Appearance_Scheme_LabelInputs */
 /** @typedef {{}} Appearance_Theme_DarkInputs */
+/** @typedef {{}} Appearance_Theme_HeadingInputs */
 /** @typedef {{ current: NonNullable<unknown>, next: NonNullable<unknown> }} Appearance_Theme_LabelInputs */
 /** @typedef {{}} Appearance_Theme_LightInputs */
 /** @typedef {{}} Appearance_Theme_SystemInputs */
@@ -2088,6 +2091,18 @@ export const app_view_loading = /** @type {((inputs?: App_View_LoadingInputs, op
 });
 /**
 
+* @param {Appearance_All_LabelInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const appearance_all_label = /** @type {((inputs?: Appearance_All_LabelInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Appearance_All_LabelInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.appearance_all_label(inputs)
+	return __en.appearance_all_label(inputs)
+});
+/**
+
 * @param {Appearance_Background_HeadingInputs} inputs
 * @param {{ locale?: "en" | "ar" }} options
 * @returns {LocalizedString}
@@ -2244,6 +2259,18 @@ export const appearance_scheme_default = /** @type {((inputs?: Appearance_Scheme
 });
 /**
 
+* @param {Appearance_Scheme_HeadingInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const appearance_scheme_heading = /** @type {((inputs?: Appearance_Scheme_HeadingInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Appearance_Scheme_HeadingInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.appearance_scheme_heading(inputs)
+	return __en.appearance_scheme_heading(inputs)
+});
+/**
+
 * @param {Appearance_Scheme_LabelInputs} inputs
 * @param {{ locale?: "en" | "ar" }} options
 * @returns {LocalizedString}
@@ -2265,6 +2292,18 @@ export const appearance_theme_dark = /** @type {((inputs?: Appearance_Theme_Dark
 	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
 	if (locale === "ar") return __ar.appearance_theme_dark(inputs)
 	return __en.appearance_theme_dark(inputs)
+});
+/**
+
+* @param {Appearance_Theme_HeadingInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const appearance_theme_heading = /** @type {((inputs?: Appearance_Theme_HeadingInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Appearance_Theme_HeadingInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.appearance_theme_heading(inputs)
+	return __en.appearance_theme_heading(inputs)
 });
 /**
 

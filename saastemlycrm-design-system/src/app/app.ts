@@ -569,16 +569,26 @@ export class DashboardApp extends LightElement {
           .pageTitle=${this._title()}
           .onLogout=${() => void this._logout()}
         ></dashboard-command>
+        <!-- On a header too narrow for four buttons, one menu holds them (the frame folds them). -->
         <ui-appearance
           slot="actions"
           kind="background"
           persist
+          data-fold
           .credit=${site().branding.backgroundCredit ?? ""}
           .backgrounds=${backgrounds()}
         ></ui-appearance>
-        <ui-appearance slot="actions" kind="scheme" persist></ui-appearance>
-        <ui-appearance slot="actions" kind="theme" persist></ui-appearance>
-        <ui-appearance slot="actions" kind="language"></ui-appearance>
+        <ui-appearance slot="actions" kind="scheme" persist data-fold></ui-appearance>
+        <ui-appearance slot="actions" kind="theme" persist data-fold></ui-appearance>
+        <ui-appearance slot="actions" kind="language" data-fold></ui-appearance>
+        <ui-appearance
+          slot="actions"
+          kind="all"
+          persist
+          data-fold-only
+          .credit=${site().branding.backgroundCredit ?? ""}
+          .backgrounds=${backgrounds()}
+        ></ui-appearance>
         <ui-dropdown
           slot="actions"
           align="end"
