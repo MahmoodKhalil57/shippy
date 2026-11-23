@@ -123,16 +123,28 @@
       ],
       "missing": [
         {
-          "item": "Customer reference"
+          "item": {
+            "en": "Customer reference",
+            "ar": "مرجع العميل"
+          }
         },
         {
-          "item": "Currency"
+          "item": {
+            "en": "Currency",
+            "ar": "العملة"
+          }
         },
         {
-          "item": "Line 5: stem length and thread"
+          "item": {
+            "en": "Line 5: stem length and thread",
+            "ar": "البند 5: طول الساق والسن"
+          }
         }
       ],
-      "clarification": "Dear Chief Engineer,\n\nThank you for your RFQ for MV Helios Star — registered as your case. Before we quote, please confirm:\n • Your requisition / reference number.\n • Quotation currency (we will quote USD unless advised).\n • Line 5 thermometer: stem length and connection thread.\n\nBest regards,\nSoaad Amer — Golden Sea for Trading & Marketing",
+      "clarification": {
+        "en": "Dear Chief Engineer,\n\nThank you for your RFQ for MV Helios Star — registered as your case. Before we quote, please confirm:\n • Your requisition / reference number.\n • Quotation currency (we will quote USD unless advised).\n • Line 5 thermometer: stem length and connection thread.\n\nBest regards,\nSoaad Amer — Golden Sea for Trading & Marketing",
+        "ar": "حضرة كبير المهندسين،\\n\\nنشكركم على طلب عرض الأسعار للسفينة MV Helios Star — وقد سُجّل كملف لكم. قبل التسعير، يرجى تأكيد:\\n • رقم طلب التوريد / المرجع الخاص بكم.\\n • عملة العرض (سنسعّر بالدولار ما لم تُفيدونا بغير ذلك).\\n • ترمومتر البند 5: طول الساق وسن التوصيل.\\n\\nمع أطيب التحيات،\\nسعاد عامر — Golden Sea للتجارة والتسويق"
+      },
       "assignment": {
         "owner": "sa",
         "backup": "ky",
@@ -140,8 +152,14 @@
         "rule": "Helios Bulk account → owner Soaad Amer, backup Karim Youssef · urgent: vessel arrives in 2 days"
       },
       "acknowledgement": {
-        "subject": "We received your RFQ for MV Helios Star — MV Helios Star ((case number on creation))",
-        "body": "Dear Helios Bulk Carriers,\n\nThank you for your request for MV Helios Star at . It is registered with us as (case number on creation) (your reference for MV Helios Star), and Soaad Amer is looking after it.\n\nWe will send our quotation by Wed 18 Nov, 12:00. If anything changes on board — quantities, ETA or delivery point — simply reply to this email and it will reach the same case.\n\nKind regards,\nSoaad Amer\nGolden Sea for Trading & Marketing\nShip chandlers · Port Said · Suez · Alexandria · Damietta\n24/7 for urgent requests: +20 3 000 0000\n\nYour contact: Soaad Amer (backup Karim Youssef).\n\nGolden Sea for Trading & Marketing\nShip chandler · Port Said · Suez · Alexandria",
+        "subject": {
+          "en": "We received your RFQ for MV Helios Star — MV Helios Star ((case number on creation))",
+          "ar": "استلمنا طلب عرض الأسعار للسفينة MV Helios Star — MV Helios Star ((رقم الملف عند الإنشاء))"
+        },
+        "body": {
+          "en": "Dear Helios Bulk Carriers,\n\nThank you for your request for MV Helios Star at . It is registered with us as (case number on creation) (your reference for MV Helios Star), and Soaad Amer is looking after it.\n\nWe will send our quotation by Wed 18 Nov, 12:00. If anything changes on board — quantities, ETA or delivery point — simply reply to this email and it will reach the same case.\n\nKind regards,\nSoaad Amer\nGolden Sea for Trading & Marketing\nShip chandlers · Port Said · Suez · Alexandria · Damietta\n24/7 for urgent requests: +20 3 000 0000\n\nYour contact: Soaad Amer (backup Karim Youssef).\n\nGolden Sea for Trading & Marketing\nShip chandler · Port Said · Suez · Alexandria",
+          "ar": "السادة Helios Bulk Carriers،\\n\\nنشكركم على طلبكم الخاص بالسفينة MV Helios Star في . وقد سُجّل لدينا برقم (رقم الملف عند الإنشاء) (مرجعكم للسفينة MV Helios Star)، وتتولاه سعاد عامر.\\n\\nسنرسل عرض السعر قبل الأربعاء 18 نوفمبر، 12:00. إذا تغيّر أي شيء على متن السفينة — الكميات أو موعد الوصول أو نقطة التسليم — يكفي الرد على هذا البريد وسيصل إلى الملف نفسه.\\n\\nمع خالص التحية،\\nسعاد عامر\\nGolden Sea للتجارة والتسويق\\nمورّدو سفن · بورسعيد · السويس · الإسكندرية · دمياط\\nعلى مدار الساعة للطلبات العاجلة: +20 3 000 0000\\n\\nجهة اتصالكم: سعاد عامر (الاحتياطي كريم يوسف).\\n\\nGolden Sea للتجارة والتسويق\\nمورّد سفن · بورسعيد · السويس · الإسكندرية"
+        },
         "manual": false
       },
       "model": "gs-extract (demo stub) · vision + spreadsheet reader",
@@ -165,7 +183,10 @@
       "supplierRfq": "srfq-0142-c",
       "reference": "GS-SRFQ-0142-C",
       "confidence": 0.99,
-      "basis": "Reference GS-SRFQ-0142-C found in the body\nSubject changed (“RE: Price enquiry – belt grip spray”) — matched by reference, not by subject\nSender horizon-trading.example was not in the supplier list — supplier created automatically"
+      "basis": {
+        "en": "Reference GS-SRFQ-0142-C found in the body\nSubject changed (“RE: Price enquiry – belt grip spray”) — matched by reference, not by subject\nSender horizon-trading.example was not in the supplier list — supplier created automatically",
+        "ar": "وُجد المرجع GS-SRFQ-0142-C في نص الرسالة\\nتغيّر الموضوع («RE: Price enquiry – belt grip spray») — طوبقت بالمرجع لا بالموضوع\\nالمرسل horizon-trading.example لم يكن في قائمة الموردين — أُنشئ المورّد تلقائيًا"
+      }
     }
   },
   {
@@ -181,17 +202,26 @@
     "status": "Needs review",
     "match": {
       "confidence": 0.62,
-      "basis": "No supplier-RFQ reference in subject or body\nSubject changed (“prices as requested”)\nSender domain delta-marine.example = Delta Marine Stores, invited on GS-RFQ-0142 and GS-RFQ-0140\n4 of 5 lines resemble GS-RFQ-0142",
+      "basis": {
+        "en": "No supplier-RFQ reference in subject or body\nSubject changed (“prices as requested”)\nSender domain delta-marine.example = Delta Marine Stores, invited on GS-RFQ-0142 and GS-RFQ-0140\n4 of 5 lines resemble GS-RFQ-0142",
+        "ar": "لا يوجد مرجع طلب عرض مورّد في الموضوع أو النص\\nتغيّر الموضوع («prices as requested»)\\nنطاق المرسل delta-marine.example = Delta Marine Stores، المدعو في GS-RFQ-0142 وGS-RFQ-0140\\n4 من 5 بنود تشبه GS-RFQ-0142"
+      },
       "candidates": [
         {
           "case": "gs-rfq-0142",
           "confidence": 0.62,
-          "reason": "4 of 5 offered lines resemble GS-RFQ-0142 (GS-SRFQ-0142-A)"
+          "reason": {
+            "en": "4 of 5 offered lines resemble GS-RFQ-0142 (GS-SRFQ-0142-A)",
+            "ar": "4 من 5 بنود معروضة تشبه GS-RFQ-0142 (GS-SRFQ-0142-A)"
+          }
         },
         {
           "case": "gs-rfq-0140",
           "confidence": 0.38,
-          "reason": "Delta Marine was also asked on GS-RFQ-0140"
+          "reason": {
+            "en": "Delta Marine was also asked on GS-RFQ-0140",
+            "ar": "طُلب من Delta Marine أيضًا في GS-RFQ-0140"
+          }
         }
       ]
     },
@@ -219,7 +249,10 @@
     "match": {
       "case": "gs-rfq-0142",
       "confidence": 1,
-      "basis": "Same customer reference NSM-REQ-55821 and identical attachment hash as the original\nAlready linked to GS-RFQ-0142 — no new case, no second acknowledgement"
+      "basis": {
+        "en": "Same customer reference NSM-REQ-55821 and identical attachment hash as the original\nAlready linked to GS-RFQ-0142 — no new case, no second acknowledgement",
+        "ar": "مرجع العميل نفسه NSM-REQ-55821 وبصمة مرفقات مطابقة للأصل\\nمرتبطة بالفعل بـ GS-RFQ-0142 — لا ملف جديد ولا إشعار استلام ثانٍ"
+      }
     },
     "body": "(forwarded copy of the original RFQ already received 15 Nov 09:12)\n\n---------- Forwarded message ----------\nRFQ NSM-REQ-55821 — MV Aurora Crest, Port Said, ETA 21 Nov.",
     "files": [

@@ -5,6 +5,7 @@ import { rcva } from "../../base/variants.ts";
 import { inset, row, stack, text } from "../layout/algebra.ts";
 import { iconButton } from "../actions/icon-button.ts";
 import { iconSvg } from "../media/icon.ts";
+import { m } from "../../../i18n/index.ts";
 
 /**
  * Prompt input: where the person writes to an agent — a box that grows with the text, its tools
@@ -38,7 +39,7 @@ export class UiPromptInput extends LightElement {
   @property() value = "";
   @property() placeholder = "";
   @property() status: PromptInputStatus = "ready";
-  @property() label = "Message";
+  @property() label = m.prompt_input_label();
   @query("textarea") private _field?: HTMLTextAreaElement;
 
   focus() {
@@ -65,6 +66,7 @@ export class UiPromptInput extends LightElement {
       <textarea
         class=${promptInputText()}
         rows="1"
+        dir="auto"
         aria-label=${this.label}
         placeholder=${this.placeholder}
         .value=${this.value}
@@ -78,7 +80,7 @@ export class UiPromptInput extends LightElement {
             ? html`<button
                 type="button"
                 class=${iconButton({ variant: "tonal", size: "xs", shape: "square" })}
-                aria-label="Stop"
+                aria-label=${m.prompt_input_stop()}
                 @click=${() => this.dispatchEvent(new CustomEvent("ui-stop", { bubbles: true }))}
               >
                 ${iconSvg("stop", { size: "md" })}
@@ -86,7 +88,7 @@ export class UiPromptInput extends LightElement {
             : html`<button
                 type="button"
                 class=${iconButton({ variant: "filled", size: "xs", shape: "square" })}
-                aria-label="Send"
+                aria-label=${m.prompt_input_send()}
                 ?disabled=${!this.value.trim()}
                 @click=${() => this._submit()}
               >

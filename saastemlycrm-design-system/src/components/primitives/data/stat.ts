@@ -5,12 +5,14 @@ import { customElement, property, state } from "lit/decorators.js";
 import { cssTime } from "../../base/css-time.ts";
 import { figureAt, readFigure, settle } from "../../base/count-up.ts";
 import { motion } from "../../base/motion-queue.ts";
+import { m } from "../../../i18n/index.ts";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { card, cardBody, cardLinkIcon } from "../containers/card.ts";
 import { fixedWidth, padEnd, row, rowFill, rowGrow, rowLine, stack, text } from "../layout/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
 import { tag } from "./tag.ts";
+import { percentText } from "./visual-math.ts";
 
 /**
  * Stat: one key figure — what it is, the number, how it moved, a line of context, and its trend
@@ -168,7 +170,11 @@ export type StatDeltaDir = "up" | "down" | "flat";
 export type StatDeltaTone = "neutral" | "success" | "warning" | "error";
 
 const DELTA_ICON = { up: "arrow-up", down: "arrow-down", flat: "minus" } as const;
-const DELTA_WORD = { up: "Up", down: "Down", flat: "No change" } as const;
+const DELTA_WORD: Record<StatDeltaDir, () => string> = {
+  up: () => m.stat_delta_up(),
+  down: () => m.stat_delta_down(),
+  flat: () => m.stat_delta_flat(),
+};
 
 /**
  * @example <ui-stat label="Overdue" .value=${"USD 96,400"} note="2 invoices · oldest 12 days" tone="error"></ui-stat>
@@ -252,7 +258,9 @@ export class UiStat extends LightElement {
     const chip = this.delta
       ? html`<span class=${tag({ tone: this.deltaTone, class: statDelta() })}
           ><span class=${statDeltaText()}
-            >${iconSvg(DELTA_ICON[this.deltaDir], { size: "xs" }, { label: DELTA_WORD[this.deltaDir] })}${WORD_JOINER}${this.delta}</span
+            >${iconSvg(DELTA_ICON[this.deltaDir], { size: "xs" }, { label: DELTA_WORD[this.deltaDir]() })}${WORD_JOINER}<bdi
+              >${this.delta}</bdi
+            ></span
           ></span
         >`
       : nothing;
@@ -298,7 +306,7 @@ export class UiStat extends LightElement {
       <span class=${statShareTrack()} aria-hidden="true"
         ><span class=${statShareFill({ tone: this.tone ?? "neutral" })} style=${styleMap({ "--share": `${p}%` })}></span
       ></span>
-      <p class=${statShareText()}>${this.shareText || `${p}%`}</p>
+      <p class=${statShareText()}>${this.shareText || percentText(p)}</p>
     </div>`;
   }
 
@@ -317,8 +325,8 @@ export class UiStat extends LightElement {
         ? html`<span
             class=${statShareTrack()}
             role="img"
-            aria-label=${this.shareText || `${p}%`}
-            title=${this.shareText || `${p}%`}
+            aria-label=${this.shareText || percentText(p)}
+            title=${this.shareText || percentText(p)}
             ><span
               class=${statShareFill({ tone: this.tone ?? "neutral" })}
               style=${styleMap({ "--share": `${p}%` })}
@@ -327,7 +335,9 @@ export class UiStat extends LightElement {
         : this.delta
           ? html`<span class=${tag({ tone: this.deltaTone, size: "sm", class: statDelta() })} title=${this.delta}
               ><span class=${statDeltaText()}
-                >${iconSvg(DELTA_ICON[this.deltaDir], { size: "xs" }, { label: DELTA_WORD[this.deltaDir] })}${WORD_JOINER}${this.delta}</span
+                >${iconSvg(DELTA_ICON[this.deltaDir], { size: "xs" }, { label: DELTA_WORD[this.deltaDir]() })}${WORD_JOINER}<bdi
+                  >${this.delta}</bdi
+                ></span
               ></span
             >`
           : nothing;

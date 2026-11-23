@@ -1,5 +1,6 @@
 import type { KindData, Tone } from "saastemlycrm-design-system/contracts";
 import type { CaseOverview } from "../endpoints/platform.ts";
+import { m } from "../i18n/paraglide/messages.js";
 import { formatDate } from "./index.ts";
 
 /**
@@ -20,7 +21,7 @@ const lineGauges = (total: number, items: [label: string, value: number, tone: T
     max: Math.max(total, 1),
     tone,
     valueText: `${value} / ${total}`,
-    a11y: `${label}: ${value} of ${total} lines`,
+    a11y: m.case_overview_gauge_a11y({ label, value, total }),
   }));
 
 /**
@@ -30,17 +31,21 @@ const lineGauges = (total: number, items: [label: string, value: number, tone: T
 export const lifecycle = (d: CaseOverview): KindData<"steps"> => {
   const step = d.steps[d.current]!;
   return {
-    head: { tags: [{ label: `Step ${d.current + 1} of ${d.steps.length}`, tone: "primary" }], subhead: step.detail },
+    head: {
+      tags: [{ label: m.case_overview_step({ step: d.current + 1, total: d.steps.length }), tone: "primary" }],
+      subhead: step.detail,
+    },
     current: d.current,
     tone: d.halted === "lost" ? "error" : "primary",
     items: d.steps.map((s) => ({ label: s.label })),
-    tags: [{ label: `Phase ${step.phase}` }],
+    tags: [{ label: m.case_overview_phase({ phase: step.phase }) }],
     note: `${step.label}: ${d.stage}`,
     alerts: d.halted
       ? [
           {
             tone: d.halted === "lost" ? "error" : "warning",
-            text: `${d.halted === "lost" ? "The case ended here" : "Paused at the customer's decision"} — ${d.next}`,
+            text:
+              d.halted === "lost" ? m.case_overview_ended({ next: d.next }) : m.case_overview_paused({ next: d.next }),
           },
         ]
       : [],
@@ -50,10 +55,10 @@ export const lifecycle = (d: CaseOverview): KindData<"steps"> => {
 /** Once ordered: how far the lines are from order to invoice, and what holds them up. */
 export const fulfilment = ({ fulfilment: f }: CaseOverview): KindData<"gauges"> => ({
   items: lineGauges(f.total, [
-    ["Ordered", f.ordered, "info"],
-    ["Received", f.received, "info"],
-    ["Delivered", f.delivered, "info"],
-    ["Invoiced", f.invoiced, "info"],
+    [m.case_overview_ordered(), f.ordered, "info"],
+    [m.case_overview_received(), f.received, "info"],
+    [m.case_overview_delivered(), f.delivered, "info"],
+    [m.case_overview_invoiced(), f.invoiced, "info"],
   ]),
   alerts: f.notes.length ? [{ tone: "warning", text: f.notes.map((n) => `⚑ ${n}`).join("\n") }] : [],
 });
@@ -65,9 +70,8 @@ export const fulfilment = ({ fulfilment: f }: CaseOverview): KindData<"gauges"> 
 export const timelineSummary = (d: CaseOverview): KindData<"custom"> => ({
   element: "ui-ai-summary",
   props: {
-    label: "Catch me up on this case",
-    context:
-      "The activity log of a ship-supply case at Golden Sea, from the customer's RFQ to payment. Say where it stands and what is blocking it.",
+    label: m.case_overview_summary_label(),
+    context: m.case_overview_summary_context(),
     text: d.timeline.map((t) => `${formatDate(t.at)} · ${t.actor}: ${t.text}`).join("\n"),
   },
 });

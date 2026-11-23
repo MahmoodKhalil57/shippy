@@ -107,6 +107,69 @@ Pages say what a thing is, and the primitive decides how it looks. `tests/design
   - A position in a fixed sequence is `<ui-steps current tone>`: earlier steps get a tick, `state: "skipped"` shows a dash, and `supporting` is the small line under a label.
 - **Text**: `<ui-text variant="body-md">` and `<ui-heading variant="title-lg">` take type roles, plus `emphasized`. They have no `size` or `weight`.
 
+# Language: English and Arabic (i18n, l10n, accessibility)
+
+The interface runs in one language per page load, chosen by the person (`<ui-appearance
+kind="language">`), else the browser's, else English; switching saves it (`localStorage`
+`ui-language`) and reloads the page, so a session has one language and one direction, laid out
+once. Arabic is right to left. Everything below is checked (`tests/i18n.test.ts`).
+
+- **Interface text is compiled, never written in English in code.** Every word people read or hear
+  (template text, `label` / `aria-label` / `title` / `placeholder`, a menu item's label, a toast, an
+  error, an empty state) is a message: `m.<key>(inputs)` from `src/i18n/index.ts`. Messages live in
+  catalogs, ICU MessageFormat 1, one JSON per language (`messages/en.json` for shared words,
+  `messages/primitives/`, `messages/composed/`, `messages/app/` for each part), compiled by Paraglide
+  (`vite/i18n.ts`) into typed functions in `src/i18n/paraglide` (committed; `bun run i18n`, `vp dev`
+  and `vp build` recompile). Keys are `snake_case`, prefixed with the component or view
+  (`doc_form_collapse_all`, `list_view_showing`). A message is a whole sentence with its inputs
+  (`"Showing {count} of {total}"`), never words glued together in code, because Arabic orders them
+  differently. Counts use plurals (`{count, plural, one {# record} other {# records}}`; Arabic has
+  `zero`, `one`, `two`, `few`, `many` and `other`). Every language has every key with the same
+  inputs, and the compiled output is current (`catalogProblems`, `staleMessages` in
+  `src/testing/i18n.ts`). `literalTexts` (`vite/templates.ts`) finds English left in templates.
+- **Payload's text is Payload's shape.** A label, hint, placeholder, option label, action word or
+  view title in a project's config may be `{ en, ar }`. The dashboard reads the whole config in the
+  page's language once as it starts (`localizeConfig`), and every endpoint answer the same way (an
+  endpoint may hand back config text as written), so code reading `c.labels.plural` gets a string.
+  Anywhere else, `localize(value)`. The contracts export `localize`, `localizeConfig`,
+  `isLocalized`, `locale()` and `intl`. With `localization`, `fieldProblems` requires every one of
+  these texts in every language.
+- **One build per language.** A project's build can be one bundle per language
+  (`I18N_LOCALE`): `STATIC_LOCALE` (`vite/i18n.ts`) makes every message that language's, so the
+  bundler drops the others' words, and `localeText` keeps only that language's words in the
+  config's `{ en: …, ar: … }` (as `__lt("…")`, the same shape with one text, so code reading `.en`
+  or `.ar` works). Without `I18N_LOCALE` (dev, tests, a backend worker that answers each request in
+  its own language) every language is in. Switching language is a reload into the other build.
+- **The person's language goes with them** when the project's people have a `language` field: a
+  browser where nobody chose one follows theirs at sign-in (`followLanguage`); one where a language
+  was chosen keeps it and writes it to their record; every choice is written there before the
+  reload (`keepLanguage`).
+- **Content is Payload's localization.** Fields marked `localized: true` hold a value per language;
+  the API client sends `?locale=` (the interface's language) on every request, so they are read,
+  filtered, sorted and written in it, falling back to English (`mock-runner` implements Payload's
+  semantics).
+- **Numbers and dates** go through `intl` (`src/i18n/index.ts`): cached `Intl` formatters for the
+  language (`intl.number`, `intl.date`, `intl.relative`, `intl.list`, `intl.plural`,
+  `intl.collator` for sorting and comparing text). Never `toLocaleString("en-US")` or a fixed
+  `"en-GB"`. Arabic writes Latin digits (`ar-u-nu-latn`), so tabular figures line up and a tile's
+  build-time size holds. `formatNumber` (units, money, compact) is already localized.
+- **Direction is logical.** Layout uses `start` / `end` (the layout proof refuses `left` / `right`),
+  so right to left needs nothing per component. Icons that point a way (chevrons, arrows, "back",
+  "next") mirror in right to left; marks that don't (a check, a logo, media controls' play) don't.
+  Arrow keys follow the reading direction: in right to left, ArrowRight goes to the previous item
+  (roving focus, sliders, carousels, tabs, moving a tile with the keyboard).
+- **Mixed text is isolated.** A code, a number, an email or an English name inside an Arabic
+  sentence goes in its own run (`<bdi>`, or `dir="auto"` on text people typed), so its characters
+  don't reorder. A part in another language says so (`lang="en"`), so a screen reader reads it in
+  the right voice (WCAG 3.1.2); the page's own `lang` and `dir` are set before the first paint
+  (WCAG 3.1.1).
+- **Arabic type**: letters join, so it has no tracking (`index.css` sets `letter-spacing: 0` under
+  `:lang(ar)`) and no capitals; the system font (Segoe UI, SF Arabic) draws it.
+- **Figures keep their place in any language**: a `figures` widget's tiles are keyed by each
+  figure's `key` (a stable id) with its words in `label`, and `name(key)` gives a tile's words before
+  its data (`Figure`, `src/app/widgets/widget.ts`). A tile keyed by its words would lose its size and
+  place when the language changes.
+
 # The project is a Payload config package; this design system draws it
 
 This repository is a template. A new project changes only its config package (`golden-sea-payload-config`: config, endpoints, widgets, seed, and `public/` for its photos and icons) and its app joins the packages (`golden-sea-payload-config/app/main.ts`, `vite.config.ts`: `designSystem()`, `mockBackend({ config, seed })`, `startDashboard`); the design system, the agent and the mock backend stay as they are. `golden-sea-payload-config/tests/template.test.ts` fails when the design system or the backend imports another package or names the business, or when the project imports more of the design system than its pure contracts or defines a custom element: UI is always a block or a design-system component.

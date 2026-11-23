@@ -1,5 +1,7 @@
 import type { Figure, KindData } from "saastemlycrm-design-system/contracts";
 import type { UsageView } from "../endpoints/service.ts";
+import { m } from "../i18n/paraglide/messages.js";
+import { money as amount, numberFormat } from "./index.ts";
 
 /**
  * The service and what it's worth to Golden Sea: this month's use of each measure against the
@@ -8,20 +10,19 @@ import type { UsageView } from "../endpoints/service.ts";
  * costs aren't part of it). Pure: data in, what a kind draws out.
  */
 
-const count = new Intl.NumberFormat("en-GB", { maximumFractionDigits: 1 });
-const egp = new Intl.NumberFormat("en-GB", { maximumFractionDigits: 0 });
-const money = (n: number) => `EGP ${egp.format(Math.round(n))}`;
+const count = (n: number) => numberFormat({ maximumFractionDigits: 1 }).format(n);
+const money = (n: number) => amount(Math.round(n), "EGP");
 
 /** Each measure this month: a bar of what's used, the tick at full use, and where the month ends at this pace. */
 export const againstPlan = (u: UsageView): KindData<"bullet"> => ({
-  note: `${u.month}, day ${u.day} of ${u.days}. The tick is the plan at full use; quieter months use less.`,
+  note: m.service_plan_note({ month: u.month, day: count(u.day), days: count(u.days) }),
   items: u.lines.map((l) => ({
     label: l.measure,
     value: l.used,
     max: Math.max(l.fullUse, l.pace, l.used, 1) * 1.1,
     target: l.fullUse,
-    valueText: `${count.format(l.used)} so far, on pace for ${count.format(l.pace)}`,
-    targetText: `${count.format(l.fullUse)} at full use`,
+    valueText: m.service_so_far({ used: count(l.used), pace: count(l.pace) }),
+    targetText: m.service_at_full_use({ full: count(l.fullUse) }),
   })),
 });
 
@@ -32,6 +33,7 @@ const part = (n: number, of: number) => (of > 0 ? Math.min(1, n / of) : 0);
  * What the AI's work this month saved and how much of it a person checked, a figure each: the
  * hours of typing saved (the documents read, against the plan at full use), the replies matched
  * (those needing no person), the results a person checked and those waiting for one (of all calls).
+ * These are the figures' keys (their tiles on the board); `measuredFigureName` gives their words.
  */
 export const MEASURED = [
   "Hours of typing saved",
@@ -39,44 +41,59 @@ export const MEASURED = [
   "Checked by a person",
   "Waiting for review",
 ] as const;
-export const measured = ({ measured: m }: UsageView): Figure<(typeof MEASURED)[number]>[] => [
+export type MeasuredFigure = (typeof MEASURED)[number];
+
+/** A measured figure's words, in the interface's language. */
+export const measuredFigureName = (key: MeasuredFigure): string =>
+  ({
+    "Hours of typing saved": m.service_hours_saved,
+    "Replies matched": m.service_replies_matched,
+    "Checked by a person": m.service_checked,
+    "Waiting for review": m.service_waiting,
+  })[key]();
+
+export const measured = ({ measured: u }: UsageView): Figure<MeasuredFigure>[] => [
   {
-    label: "Hours of typing saved",
-    value: count.format(m.hoursSaved),
-    note: `about ${m.minutesPerDocument} minutes a document by hand`,
+    key: "Hours of typing saved",
+    label: measuredFigureName("Hours of typing saved"),
+    value: count(u.hoursSaved),
+    note: m.service_hours_saved_note({ n: u.minutesPerDocument, minutes: count(u.minutesPerDocument) }),
     share: {
-      value: part(m.documents, m.documentsFullUse),
-      text: `${count.format(m.documents)} of ${count.format(m.documentsFullUse)} documents at full use`,
+      value: part(u.documents, u.documentsFullUse),
+      text: m.service_documents_share({ documents: count(u.documents), full: count(u.documentsFullUse) }),
     },
     main: true,
   },
   {
-    label: "Replies matched",
-    value: count.format(m.repliesMatched),
-    note: "supplier replies filed on their case",
+    key: "Replies matched",
+    label: measuredFigureName("Replies matched"),
+    value: count(u.repliesMatched),
+    note: m.service_replies_matched_note(),
     share: {
-      value: part(m.repliesAutomatic, m.repliesMatched),
-      text: `${count.format(m.repliesAutomatic)} of ${count.format(m.repliesMatched)} with no one's help`,
+      value: part(u.repliesAutomatic, u.repliesMatched),
+      text: m.service_replies_share({ automatic: count(u.repliesAutomatic), matched: count(u.repliesMatched) }),
     },
   },
   {
-    label: "Checked by a person",
-    value: count.format(m.reviewed),
-    note: "AI results confirmed, corrected or rejected",
+    key: "Checked by a person",
+    label: measuredFigureName("Checked by a person"),
+    value: count(u.reviewed),
+    note: m.service_checked_note(),
     share: {
-      value: part(m.reviewed, m.calls),
-      text: `${count.format(m.reviewed)} of ${count.format(m.calls)} AI calls`,
+      value: part(u.reviewed, u.calls),
+      text: m.service_calls_share({ part: count(u.reviewed), calls: count(u.calls) }),
     },
   },
   {
-    label: "Waiting for review",
-    value: count.format(m.waitingForReview),
-    note: "uncertain results are never applied alone",
-    tone: m.waitingForReview ? "warning" : undefined,
+    key: "Waiting for review",
+    label: measuredFigureName("Waiting for review"),
+    value: count(u.waitingForReview),
+    note: m.service_waiting_note(),
+    tone: u.waitingForReview ? "warning" : undefined,
     href: "/automations",
     share: {
-      value: part(m.waitingForReview, m.calls),
-      text: `${count.format(m.waitingForReview)} of ${count.format(m.calls)} AI calls`,
+      value: part(u.waitingForReview, u.calls),
+      text: m.service_calls_share({ part: count(u.waitingForReview), calls: count(u.calls) }),
     },
   },
 ];
@@ -88,25 +105,25 @@ export const measured = ({ measured: m }: UsageView): Figure<(typeof MEASURED)[n
  * with Golden Sea's own figures. Nothing is saved.
  */
 export const payback = (u: UsageView): KindData<"whatif"> => ({
-  label: "Payback",
-  note: `Starts at the proposal's illustration; slide to your own figures. This month the AI already read ${count.format(u.measured.documents)} documents, about ${count.format(u.measured.hoursSaved)} hours of typing.`,
+  label: m.service_payback(),
+  note: m.service_payback_note({ documents: count(u.measured.documents), hours: count(u.measured.hoursSaved) }),
   inputs: [
-    { key: "orders", label: "Extra orders won a month", min: 0, max: 20, step: 1, value: 5 },
+    { key: "orders", label: m.service_extra_orders(), min: 0, max: 20, step: 1, value: 5 },
     {
       key: "value",
-      label: "Average order value",
+      label: m.service_order_value(),
       min: 10000,
       max: 250000,
       step: 1,
       value: 56417,
       format: { unit: "money", currency: "EGP" },
     },
-    { key: "margin", label: "Gross margin", min: 5, max: 40, step: 0.5, value: 20, format: { unit: "pct" } },
-    { key: "people", label: "People using it", min: 1, max: 20, step: 1, value: 5 },
-    { key: "hours", label: "Hours saved a person a week", min: 0, max: 15, step: 0.5, value: 5 },
+    { key: "margin", label: m.service_gross_margin(), min: 5, max: 40, step: 0.5, value: 20, format: { unit: "pct" } },
+    { key: "people", label: m.service_people(), min: 1, max: 20, step: 1, value: 5 },
+    { key: "hours", label: m.service_hours_per_person(), min: 0, max: 15, step: 0.5, value: 5 },
     {
       key: "rate",
-      label: "Cost of an hour",
+      label: m.service_hour_cost(),
       min: 50,
       max: 600,
       step: 10,
@@ -120,11 +137,12 @@ export const payback = (u: UsageView): KindData<"whatif"> => ({
     const hoursMonth = people * hours * weeks;
     const time = hoursMonth * rate;
     const total = won + time;
+    const h = Math.round(hoursMonth);
     return [
-      { label: "Margin from extra orders a month", value: money(won) },
-      { label: "Time saved a month", value: money(time), note: `${count.format(Math.round(hoursMonth))} hours` },
-      { label: "Value a month", value: money(total), tone: total > 0 ? "success" : undefined },
-      { label: "Value a year", value: money(total * 12) },
+      { label: m.service_margin_month(), value: money(won) },
+      { label: m.service_time_month(), value: money(time), note: m.service_hours({ n: h, hours: count(h) }) },
+      { label: m.service_value_month(), value: money(total), tone: total > 0 ? "success" : undefined },
+      { label: m.service_value_year(), value: money(total * 12) },
     ];
   },
 });

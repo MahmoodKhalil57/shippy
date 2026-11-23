@@ -1,3 +1,5 @@
+import { intl, m } from "../../../i18n/index.ts";
+
 /**
  * The arithmetic the data visuals share (`<ui-bullet>`, `<ui-dial>`, `<ui-waffle>`,
  * `<ui-share-bar>`): where a value sits in its range, which band or zone it's in, how a whole
@@ -23,6 +25,9 @@ export function fraction(value: number, min: number, max: number): number {
   if (!Number.isFinite(value) || !Number.isFinite(span) || span <= 0) return 0;
   return Math.min(1, Math.max(0, (value - min) / span));
 }
+
+/** A whole percent (0 to 100) written the language's way ("42%"). */
+export const percentText = (p: number) => intl.number({ style: "percent", maximumFractionDigits: 0 }).format(p / 100);
 
 /** `a` as a whole percent of `b`, or null when `b` isn't positive. */
 export const percentOf = (a: number, b: number): number | null =>
@@ -83,7 +88,7 @@ export function foldParts<T extends { label: string; value: number }>(parts: T[]
   const rest = p.slice(most - 1).reduce((t, x) => t + x.value, 0);
   return [
     ...p.slice(0, most - 1).map((part, i) => ({ part, slot: hue(i), other: false })),
-    { part: { label: "Other", value: rest }, slot: "muted", other: true },
+    { part: { label: m.visual_other(), value: rest }, slot: "muted", other: true },
   ];
 }
 

@@ -15,6 +15,16 @@ export interface BackendConfig {
   };
   /** Signs auth tokens. Generated and kept in the store when omitted. */
   secret?: string;
+  /** Payload's `localization`: the locales a `localized` field holds a value in (./mock/runtime/locales.ts). */
+  localization?: Localization;
+}
+
+/** Payload's `localization` config (the parts the engine reads). */
+export interface Localization {
+  locales: (string | { code: string; label?: unknown; rtl?: boolean })[];
+  defaultLocale: string;
+  /** Read a missing value from the default locale (default true). */
+  fallback?: boolean;
 }
 
 /** A stored document. */
@@ -42,6 +52,8 @@ export interface FieldLike {
   name?: string;
   /** Payload's `virtual`: never stored, filled in on read (an `afterRead` hook computes it). */
   virtual?: boolean;
+  /** Payload's `localized`: one value per locale (`localization`). */
+  localized?: boolean;
   label?: unknown;
   required?: boolean;
   unique?: boolean;

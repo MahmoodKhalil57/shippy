@@ -24,8 +24,19 @@ import {
   toggleBookmark,
   useAsTitle,
 } from "./shared.ts";
+import { m } from "../i18n/index.ts";
 
-const SECTION: Record<EntryKind, string> = { action: "Actions", page: "Pages", record: "Records" };
+const SECTION: Record<EntryKind, () => string> = {
+  action: () => m.command_section_actions(),
+  page: () => m.command_section_pages(),
+  record: () => m.command_section_records(),
+};
+/** Words people search a thing by, in the interface's language (a comma-separated message). */
+const keywords = (say: () => string) =>
+  say()
+    .split(",")
+    .map((w) => w.trim())
+    .filter(Boolean);
 const PER_SECTION: Record<EntryKind, number> = { action: 5, page: 6, record: 12 };
 const mac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
 
@@ -91,11 +102,11 @@ export class DashboardCommand extends LightElement {
         {
           id: "page:dashboard",
           kind: "page",
-          title: "Dashboard",
-          group: "Home",
-          description: "Your day, KPIs and charts",
+          title: m.app_nav_dashboard(),
+          group: m.app_nav_home(),
+          description: m.command_dashboard_description(),
           href: dashboardPath(),
-          keywords: ["overview", "home"],
+          keywords: ["dashboard", "overview", "home", ...keywords(m.command_dashboard_keywords)],
         },
         "home",
       ),
@@ -106,7 +117,7 @@ export class DashboardCommand extends LightElement {
             kind: "page",
             title: labels(c).plural,
             group: groupOf(c),
-            description: desc(c) ?? `All ${labels(c).plural.toLowerCase()}`,
+            description: desc(c) ?? m.command_collection_all({ plural: labels(c).plural.toLowerCase() }),
             keywords: [labels(c).singular, c.slug],
             href: dashboardPath("collections", c.slug),
           },
@@ -121,7 +132,7 @@ export class DashboardCommand extends LightElement {
               id: `page:global:${g.slug}`,
               kind: "page",
               title: globalLabel(g),
-              group: "Configuration",
+              group: m.command_group_configuration(),
               description: desc(g),
               href: dashboardPath("globals", g.slug),
             },
@@ -132,9 +143,10 @@ export class DashboardCommand extends LightElement {
         {
           id: "page:account",
           kind: "page",
-          title: "Account",
-          group: "You",
-          description: "Your profile and password",
+          title: m.app_title_account(),
+          group: m.command_group_you(),
+          description: m.command_account_description(),
+          keywords: ["account", "profile", "password"],
           href: dashboardPath("account"),
         },
         "user",
@@ -149,10 +161,10 @@ export class DashboardCommand extends LightElement {
             {
               id: `action:create:${c.slug}`,
               kind: "action",
-              title: `Create new ${labels(c).singular}`,
+              title: m.command_create_title({ singular: labels(c).singular }),
               group: labels(c).plural,
-              description: `Open a blank ${labels(c).singular.toLowerCase()} form`,
-              keywords: ["add", "new"],
+              description: m.command_create_description({ singular: labels(c).singular.toLowerCase() }),
+              keywords: ["create", "add", "new", ...keywords(m.command_create_keywords)],
               href: dashboardPath("collections", c.slug, "create"),
             },
             "plus",
@@ -162,9 +174,10 @@ export class DashboardCommand extends LightElement {
         {
           id: "action:bookmark",
           kind: "action",
-          title: here ? "Remove this page from bookmarks" : "Bookmark this page",
-          group: this.pageTitle || "This page",
-          description: "Bookmarks are listed in the side panel",
+          title: here ? m.command_bookmark_remove() : m.command_bookmark_add(),
+          group: this.pageTitle || m.command_this_page(),
+          description: m.command_bookmark_description(),
+          keywords: ["bookmark", "favourite", "favorite", ...keywords(m.command_bookmark_keywords)],
           run: () => toggleBookmark({ href: this.path, label: this.pageTitle }),
         },
         "star",
@@ -173,10 +186,9 @@ export class DashboardCommand extends LightElement {
         {
           id: "action:contrast",
           kind: "action",
-          title: "Check contrast and layout",
-          group: "Accessibility",
-          description:
-            "Outline text that fails WCAG AA contrast, and anything that overflows or is squeezed at this width",
+          title: m.command_contrast_title(),
+          group: m.command_group_accessibility(),
+          description: m.command_contrast_description(),
           keywords: [
             "accessibility",
             "a11y",
@@ -189,6 +201,7 @@ export class DashboardCommand extends LightElement {
             "layout",
             "overflow",
             "responsive",
+            ...keywords(m.command_contrast_keywords),
           ],
           run: () => window.dispatchEvent(new Event("ui-contrast-audit")),
         },
@@ -197,7 +210,14 @@ export class DashboardCommand extends LightElement {
       ...(this.onLogout
         ? [
             this._entry(
-              { id: "action:logout", kind: "action", title: "Log out", group: "You", run: this.onLogout },
+              {
+                id: "action:logout",
+                kind: "action",
+                title: m.app_log_out(),
+                group: m.command_group_you(),
+                keywords: ["logout", "sign out", ...keywords(m.command_logout_keywords)],
+                run: this.onLogout,
+              },
               "arrow-right",
             ),
           ]
@@ -307,7 +327,14 @@ export class DashboardCommand extends LightElement {
     const flat = sections.flatMap((s) => s.hits);
     let index = 0;
     const items: MenuItem[] = sections.flatMap((s) => [
-      { label: query.trim() ? SECTION[s.kind] : s.kind === "page" ? "Go to" : "Quick actions", heading: true },
+      {
+        label: query.trim()
+          ? SECTION[s.kind]()
+          : s.kind === "page"
+            ? m.command_suggest_pages()
+            : m.command_suggest_actions(),
+        heading: true,
+      },
       ...s.hits.map((hit) => {
         const i = index++;
         return {
@@ -316,7 +343,7 @@ export class DashboardCommand extends LightElement {
           href: hit.entry.run ? undefined : hit.entry.href,
           value: hit.entry.id,
           focus: i === highlighted,
-          badge: hit.related ? "related" : undefined,
+          badge: hit.related ? m.command_related() : undefined,
         } satisfies MenuItem;
       }),
     ]);
@@ -324,7 +351,7 @@ export class DashboardCommand extends LightElement {
     const q = query.trim();
     return html`<ui-search
         launcher
-        label="Search actions, pages, records…"
+        label=${m.command_launcher_label()}
         shortcut=${mac ? "⌘+K" : "Ctrl+K"}
         @click=${() => this._open()}
       ></ui-search>
@@ -341,11 +368,11 @@ export class DashboardCommand extends LightElement {
             variant="bare"
             size="lg"
             autocomplete="off"
-            label="Search actions, pages and records…"
+            label=${m.command_input_label()}
             .value=${query}
             @input=${(e: Event) => palette.set({ query: (e.target as HTMLInputElement).value, highlighted: 0 })}
           ></ui-search>
-          <ui-kbd size="sm">Esc</ui-kbd>
+          <ui-kbd size="sm" lang="en">Esc</ui-kbd>
         </ui-flex>
         ${
           items.length
@@ -361,25 +388,23 @@ export class DashboardCommand extends LightElement {
                 }}
               ></ui-menu>`
             : html`<ui-flex direction="col" align="center" gap="1" padding="8">
-                <ui-text emphasized>No results for “${q}”</ui-text>
-                <ui-text variant="body-md" color="muted"
-                  >Try other words — search understands related terms too.</ui-text
-                >
+                <ui-text emphasized>${m.command_no_results({ query: q })}</ui-text>
+                <ui-text variant="body-md" color="muted">${m.command_no_results_hint()}</ui-text>
               </ui-flex>`
         }
         ${this.indexing ? html`<ui-flex justify="center" padding="2"><ui-loading size="sm"></ui-loading></ui-flex>` : nothing}
         <ui-flex slot="footer" justify="between" align="center" gap="3">
           <ui-text variant="body-sm" color="muted" truncate
-            >${q ? `${flat.length} result${flat.length === 1 ? "" : "s"}` : "Type to search"} · fuzzy +
-            semantic</ui-text
+            >${q ? m.command_results({ count: flat.length }) : m.command_type_to_search()}</ui-text
           >
           <ui-flex align="center" gap="3">
             <ui-flex align="center" gap="1"
-              ><ui-text as="span" variant="body-sm" color="muted">Navigate</ui-text><ui-kbd size="xs">↑</ui-kbd
-              ><ui-kbd size="xs">↓</ui-kbd></ui-flex
+              ><ui-text as="span" variant="body-sm" color="muted">${m.command_navigate()}</ui-text
+              ><ui-kbd size="xs">↑</ui-kbd><ui-kbd size="xs">↓</ui-kbd></ui-flex
             >
             <ui-flex align="center" gap="1"
-              ><ui-text as="span" variant="body-sm" color="muted">Open</ui-text><ui-kbd size="xs">↵</ui-kbd></ui-flex
+              ><ui-text as="span" variant="body-sm" color="muted">${m.command_open()}</ui-text
+              ><ui-kbd size="xs">↵</ui-kbd></ui-flex
             >
           </ui-flex>
         </ui-flex>

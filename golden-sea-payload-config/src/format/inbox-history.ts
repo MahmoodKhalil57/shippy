@@ -1,6 +1,8 @@
 import type { Cell, Figure, KindData, ViewHeader } from "saastemlycrm-design-system/contracts";
 import { organise } from "../actions/inbox-history.ts";
 import type { HistoryPayload } from "../endpoints/sourcing.ts";
+import { m } from "../i18n/paraglide/messages.js";
+import { count, dateFormat } from "./index.ts";
 
 /**
  * The email-history import (GET /api/inbox-history, ../endpoints/sourcing.ts), read for the
@@ -9,80 +11,97 @@ import type { HistoryPayload } from "../endpoints/sourcing.ts";
  * data in, what a kind draws out.
  */
 
-export const count = (v: number) => v.toLocaleString("en-US");
-const DAY = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
+export { count };
 /** A date with its year (the history goes back to 2019). */
-export const dated = (v: string) => (v ? DAY.format(new Date(v)) : "");
-export const plural = (k: number) => (k > 1 ? "s" : "");
+export const dated = (v: string) =>
+  v ? dateFormat({ day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(v)) : "";
 
 /** A name with the "New to Odoo" tag beside it when Odoo doesn't know it yet. */
 export const named = (name: string, known: boolean): Cell => ({
   text: name,
   strong: true,
-  tags: known ? undefined : [{ label: "New to Odoo", tone: "primary" as const }],
+  tags: known ? undefined : [{ label: m.inbox_history_new_to_odoo(), tone: "primary" as const }],
 });
 
 /** The import's totals, as one phrase. */
 export const totalsText = (t: { customers: number; vessels: number; suppliers: number }) =>
-  `${count(t.customers)} customers, ${count(t.vessels)} vessels, ${count(t.suppliers)} suppliers`;
+  m.inbox_history_totals({
+    customers: t.customers,
+    customersText: count(t.customers),
+    vessels: t.vessels,
+    vesselsText: count(t.vessels),
+    suppliers: t.suppliers,
+    suppliersText: count(t.suppliers),
+  });
 
 /** The screen's header: "Organise" until the history is organised, then the "Organised" tag. */
 export const historyHeader = (d: HistoryPayload): ViewHeader => ({
-  eyebrow: "Sourcing desk · your history",
-  heading: "Inbox history",
-  subtitle: "We organise your past, not just your future: every inbox, every year.",
-  tags: d.organised ? [{ label: "Organised", tone: "success", icon: "success" }] : undefined,
+  eyebrow: m.inbox_history_eyebrow(),
+  heading: m.inbox_history_heading(),
+  subtitle: m.inbox_history_subtitle(),
+  tags: d.organised ? [{ label: m.inbox_history_organised(), tone: "success", icon: "success" }] : undefined,
   actions: d.organised ? undefined : [organise],
 });
 
-const STEPS = ["Connect mailboxes", "Scan (dry run)", "De-duplicate", "Organise", "Review uncertain", "Approve import"];
+const steps = () => [
+  m.inbox_history_step_connect(),
+  m.inbox_history_step_scan(),
+  m.inbox_history_step_dedup(),
+  m.inbox_history_step_organise(),
+  m.inbox_history_step_review(),
+  m.inbox_history_approve(),
+];
 
 /** Where the import is, from connecting the mailboxes to management's approval, and what it waits for. */
 export const importProgress = (d: HistoryPayload): KindData<"steps"> => ({
-  note: `Status: ${
-    d.approved
-      ? `imported · approved by ${d.approvedBy}`
-      : d.organised
-        ? d.pending
-          ? `${d.pending} uncertain item${plural(d.pending)} to review`
-          : "waiting for management's approval"
-        : "dry run ready — nothing has been imported"
-  }`,
+  note: d.approved
+    ? m.inbox_history_status_approved({ by: d.approvedBy })
+    : d.organised
+      ? d.pending
+        ? m.inbox_history_status_pending({ count: d.pending })
+        : m.inbox_history_status_waiting()
+      : m.inbox_history_status_dry_run(),
   current: d.approved ? 5 : d.organised ? (d.pending ? 4 : 5) : 3,
-  items: STEPS.map((label) => ({ label })),
+  items: steps().map((label) => ({ label })),
 });
 
 /** How many messages each year of the mailboxes holds: the years of history the import reads. */
 export const messagesPerYear = (d: HistoryPayload): KindData<"chart"> => ({
-  label: "Messages per year",
+  label: m.inbox_history_per_year(),
   chart: {
     kind: "bars",
     labels: d.perYear.labels,
-    series: [{ name: "Messages", values: d.perYear.values }],
+    series: [{ name: m.inbox_history_messages(), values: d.perYear.values }],
     format: { unit: "count" },
   },
 });
 
 /** What de-duplication removed, by reason: the same email often sits in three mailboxes. */
 export const dedup = (d: HistoryPayload): KindData<"gauges"> => ({
-  note: "The same email often sits in three mailboxes. Each message is kept once, with all its copies linked.",
+  note: m.inbox_history_dedup_note(),
   items: d.dedup.map((x) => ({
     label: x.label,
     value: x.count,
     max: d.scanned,
     tone: "neutral",
-    valueText: `− ${count(x.count)}`,
-    a11y: `${x.label}: ${count(x.count)} removed`,
+    valueText: m.inbox_history_dedup_value({ count: count(x.count) }),
+    a11y: m.inbox_history_dedup_a11y({ label: x.label, count: count(x.count) }),
   })),
 });
 
 /** The business messages left once de-duplication is done: what "Organise" reads. */
 export const KEPT = ["Business messages kept"] as const;
+/** A `KEPT` key's words. */
+export const keptFigureName = (key: (typeof KEPT)[number]): string =>
+  ({ "Business messages kept": m.inbox_history_kept() })[key];
 export const kept = (d: HistoryPayload): Figure<(typeof KEPT)[number]>[] => [
   {
-    label: "Business messages kept",
+    key: "Business messages kept",
+    label: m.inbox_history_kept(),
     value: count(d.kept),
-    share: d.scanned ? { value: d.kept / d.scanned, text: `of ${count(d.scanned)} scanned` } : undefined,
+    share: d.scanned
+      ? { value: d.kept / d.scanned, text: m.inbox_history_kept_share({ scanned: count(d.scanned) }) }
+      : undefined,
   },
 ];
 
@@ -92,30 +111,35 @@ export const kept = (d: HistoryPayload): Figure<(typeof KEPT)[number]>[] => [
  */
 export const importApproval = (d: HistoryPayload): KindData<"text"> => {
   const blocked = !d.organised
-    ? "Organise the history first."
+    ? m.inbox_history_organise_first()
     : d.pending
-      ? `${d.pending} uncertain item${plural(d.pending)} still need a decision.`
+      ? m.inbox_history_pending_decision({ count: d.pending })
       : "";
   return {
-    text: "Only management approves the import — nothing from the history becomes a record before Karim Balbaa says yes. Confidential threads stay out.",
+    text: m.inbox_history_approval_text(),
     note: d.canApprove
       ? undefined
-      : `Waiting for Karim Balbaa (management). ${blocked || "Everything is reviewed — it's ready for approval."}`,
+      : m.inbox_history_approval_waiting({ blocked: blocked || m.inbox_history_approval_ready() }),
     alerts: d.canApprove && blocked ? [{ tone: "warning", text: blocked }] : undefined,
     actions: d.canApprove
       ? [
           {
-            label: "Approve import",
+            label: m.inbox_history_approve(),
             icon: "check",
             main: true,
             disabled: Boolean(blocked),
             call: { path: "/inbox-history/approve" },
             confirm: {
-              heading: "Approve the history import?",
-              text: `Saves ${totalsText(d.totals)} and ${count(d.totals.prices)} dated prices from ${count(d.kept)} de-duplicated messages, with your ${d.review.length} decisions on the uncertain items. Rejected and confidential items are left out.`,
-              label: "Approve import",
+              heading: m.inbox_history_confirm_heading(),
+              text: m.inbox_history_confirm_text({
+                totals: totalsText(d.totals),
+                prices: count(d.totals.prices),
+                kept: count(d.kept),
+                decisions: d.review.length,
+              }),
+              label: m.inbox_history_approve(),
             },
-            done: "Import approved — customers, vessels, suppliers and dated prices saved",
+            done: m.inbox_history_approve_done(),
           },
         ]
       : undefined,
@@ -124,16 +148,16 @@ export const importApproval = (d: HistoryPayload): KindData<"text"> => {
 
 /** Once management approved the import: what was saved, and examples of the new records to open. */
 export const importApproved = (d: HistoryPayload): KindData<"text"> => ({
-  alerts: [{ tone: "success", text: `Approved by ${d.approvedBy}.` }],
-  text: `Your history is searchable from day one: ${totalsText(d.totals)} and ${count(d.totals.prices)} dated prices.`,
-  actions: d.created.map((c) => ({ label: `${c.kind}: ${c.name}`, href: c.href })),
+  alerts: [{ tone: "success", text: m.inbox_history_approved_by({ by: d.approvedBy }) }],
+  text: m.inbox_history_searchable({ totals: totalsText(d.totals), prices: count(d.totals.prices) }),
+  actions: d.created.map((c) => ({ label: m.inbox_history_created({ kind: c.kind, name: c.name }), href: c.href })),
 });
 
 /** Before "Organise": the call to action. */
 export const organiseCall = (): KindData<"text"> => ({
   muted: true,
-  text: "Press Organise: the AI reads the kept messages and builds your customers, vessels, suppliers and dated prices. Anything it isn't sure of comes to you first.",
-  note: "Then management approves the import. Nothing from the history becomes a record before.",
+  text: m.inbox_history_organise_text(),
+  note: m.inbox_history_organise_note(),
   actions: [organise],
 });
 
@@ -146,49 +170,73 @@ export const importNext = (d: HistoryPayload): KindData<"text"> =>
 
 /** Every mailbox and WhatsApp export the import reads, with its years, messages and attachments. */
 export const mailboxes = (d: HistoryPayload): KindData<"table"> => ({
-  head: { tags: [{ label: `${count(d.scanned)} messages · 2019–2026` }] },
-  note: "All of Golden Sea's mailboxes and WhatsApp exports, read in a dry run first — nothing is saved before approval.",
+  head: { tags: [{ label: m.inbox_history_scanned({ count: count(d.scanned) }) }] },
+  note: m.inbox_history_mailboxes_note(),
   columns: [
-    { key: "mailbox", label: "Mailbox" },
-    { key: "provider", label: "Source" },
-    { key: "years", label: "Years" },
-    { key: "emails", label: "Messages", align: "end" },
-    { key: "attachments", label: "Attachments", align: "end" },
+    { key: "mailbox", label: m.inbox_history_col_mailbox() },
+    { key: "provider", label: m.inbox_history_col_source() },
+    { key: "years", label: m.inbox_history_col_years() },
+    { key: "emails", label: m.inbox_history_messages(), align: "end" },
+    { key: "attachments", label: m.inbox_history_col_attachments(), align: "end" },
   ],
-  rows: d.mailboxes.map((m) => ({
-    mailbox: { text: m.mailbox, strong: true },
-    provider: { text: m.provider, tag: true },
-    years: `${m.from}–${m.to}`,
-    emails: count(m.emails),
-    attachments: count(m.attachments),
+  rows: d.mailboxes.map((b) => ({
+    mailbox: { text: b.mailbox, strong: true },
+    provider: { text: b.provider, tag: true },
+    years: `${b.from}–${b.to}`,
+    emails: count(b.emails),
+    attachments: count(b.attachments),
   })),
 });
 
 /** After "Organise": what was found, one figure each (before it, each label with no value). */
 export const FOUND_TOTALS = ["Customers", "Vessels", "Suppliers", "Dated prices"] as const;
+/** A `FOUND_TOTALS` key's words. */
+export const foundFigureName = (key: (typeof FOUND_TOTALS)[number]): string =>
+  ({
+    Customers: m.inbox_history_customers(),
+    Vessels: m.inbox_history_vessels(),
+    Suppliers: m.inbox_history_suppliers(),
+    "Dated prices": m.inbox_history_dated_prices(),
+  })[key];
 export const foundTotals = (d: HistoryPayload): Figure<(typeof FOUND_TOTALS)[number]>[] =>
   d.organised
     ? [
-        { label: "Customers", value: count(d.totals.customers), note: "ship managers & owners" },
-        { label: "Vessels", value: count(d.totals.vessels), note: "IMO · fleet · ports" },
-        { label: "Suppliers", value: count(d.totals.suppliers), note: "who quoted what" },
         {
-          label: "Dated prices",
+          key: "Customers",
+          label: m.inbox_history_customers(),
+          value: count(d.totals.customers),
+          note: m.inbox_history_customers_note(),
+        },
+        {
+          key: "Vessels",
+          label: m.inbox_history_vessels(),
+          value: count(d.totals.vessels),
+          note: m.inbox_history_vessels_note(),
+        },
+        {
+          key: "Suppliers",
+          label: m.inbox_history_suppliers(),
+          value: count(d.totals.suppliers),
+          note: m.inbox_history_suppliers_note(),
+        },
+        {
+          key: "Dated prices",
+          label: m.inbox_history_dated_prices(),
           value: count(d.totals.prices),
-          note: `${count(d.totals.pricesWithoutPo)} with no PO`,
+          note: m.inbox_history_prices_note({ count: count(d.totals.pricesWithoutPo) }),
         },
       ]
     : [];
 
 /** After "Organise": the ship managers found in the history, top 5 by RFQs, new ones tagged. */
 export const foundCustomers = (d: HistoryPayload): KindData<"table"> => ({
-  note: `${count(d.totals.customers)} found · top 5 by RFQs`,
+  note: m.inbox_history_customers_found({ count: count(d.totals.customers) }),
   columns: [
-    { key: "name", label: "Customer" },
-    { key: "country", label: "Country" },
-    { key: "years", label: "Years" },
-    { key: "rfqs", label: "RFQs" },
-    { key: "vessels", label: "Vessels" },
+    { key: "name", label: m.inbox_history_col_customer() },
+    { key: "country", label: m.inbox_history_col_country() },
+    { key: "years", label: m.inbox_history_col_years() },
+    { key: "rfqs", label: m.inbox_history_col_rfqs() },
+    { key: "vessels", label: m.inbox_history_vessels() },
   ],
   rows: d.customers.map((c) => ({
     name: named(c.name, c.known),
@@ -201,13 +249,13 @@ export const foundCustomers = (d: HistoryPayload): KindData<"table"> => ({
 
 /** After "Organise": the vessels found, matched by IMO (renames kept), with their fleet and ports. */
 export const foundVessels = (d: HistoryPayload): KindData<"table"> => ({
-  note: `${count(d.totals.vessels)} found · matched by IMO, renames kept`,
+  note: m.inbox_history_vessels_found({ count: count(d.totals.vessels) }),
   columns: [
-    { key: "name", label: "Vessel" },
-    { key: "imo", label: "IMO" },
-    { key: "fleet", label: "Fleet" },
-    { key: "ports", label: "Ports" },
-    { key: "calls", label: "Calls" },
+    { key: "name", label: m.inbox_history_col_vessel() },
+    { key: "imo", label: m.inbox_history_col_imo() },
+    { key: "fleet", label: m.inbox_history_col_fleet() },
+    { key: "ports", label: m.inbox_history_col_ports() },
+    { key: "calls", label: m.inbox_history_col_calls() },
   ],
   rows: d.vessels.map((v) => ({
     name: named(v.name, v.known),
@@ -220,12 +268,12 @@ export const foundVessels = (d: HistoryPayload): KindData<"table"> => ({
 
 /** After "Organise": the suppliers found and what they quote, including ones never ordered from. */
 export const foundSuppliers = (d: HistoryPayload): KindData<"table"> => ({
-  note: `${count(d.totals.suppliers)} found · incl. ones you never ordered from`,
+  note: m.inbox_history_suppliers_found({ count: count(d.totals.suppliers) }),
   columns: [
-    { key: "name", label: "Supplier" },
-    { key: "categories", label: "What they quote" },
-    { key: "quoted", label: "Lines quoted" },
-    { key: "ordered", label: "Ordered" },
+    { key: "name", label: m.inbox_history_col_supplier() },
+    { key: "categories", label: m.inbox_history_col_categories() },
+    { key: "quoted", label: m.inbox_history_col_quoted() },
+    { key: "ordered", label: m.inbox_history_ordered() },
   ],
   rows: d.suppliers.map((s) => ({
     name: named(s.name, s.known),
@@ -240,24 +288,24 @@ export const foundSuppliers = (d: HistoryPayload): KindData<"table"> => ({
  * itself only for those who may see prices.
  */
 export const foundPrices = (d: HistoryPayload): KindData<"table"> => ({
-  note: `${count(d.totals.prices)} prices, each with its date and validity`,
+  note: m.inbox_history_prices_found({ count: count(d.totals.prices) }),
   columns: [
-    { key: "item", label: "Item" },
-    { key: "supplier", label: "Supplier" },
-    { key: "price", label: "Price" },
-    { key: "quotedAt", label: "Quoted" },
-    { key: "ordered", label: "PO" },
+    { key: "item", label: m.inbox_history_col_item() },
+    { key: "supplier", label: m.inbox_history_col_supplier() },
+    { key: "price", label: m.inbox_history_col_price() },
+    { key: "quotedAt", label: m.inbox_history_col_quoted_at() },
+    { key: "ordered", label: m.inbox_history_col_po() },
   ],
   rows: d.prices.map((p) => ({
     item: { text: p.item, strong: true },
     supplier: p.supplier,
     price:
       d.canSeePrices && typeof p.price === "number"
-        ? `${p.currency} ${count(p.price)} / ${p.per}`
-        : { text: "hidden for your role", tone: "neutral" },
+        ? m.inbox_history_price({ price: m.index_money({ currency: p.currency, amount: count(p.price) }), per: p.per })
+        : { text: m.inbox_history_price_hidden(), tone: "neutral" },
     quotedAt: dated(String(p.quotedAt)),
     ordered: p.ordered
-      ? { text: "Ordered", tone: "success", tag: true }
-      : { text: "No PO — still remembered", tag: true },
+      ? { text: m.inbox_history_ordered(), tone: "success", tag: true }
+      : { text: m.inbox_history_no_po(), tag: true },
   })),
 });

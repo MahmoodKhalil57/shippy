@@ -11,6 +11,7 @@ import type { ViewContext } from "./widgets/registry.ts";
 import { actionsFor } from "./widgets/data.ts";
 import { actionBar } from "./widgets/blocks.ts";
 import { formatNumber } from "./widgets/schema.ts";
+import { intl, m } from "../i18n/index.ts";
 import type { RecordItem } from "../components/primitives/data/record.ts";
 import type { MonthEvent } from "../components/primitives/data/month.ts";
 import { linkTarget } from "./widgets/links.ts";
@@ -99,7 +100,7 @@ const isJoin = (f: FieldLike): f is JoinField => f.type === "join";
 const pseudo = (name: string): FieldLike => ({
   name,
   type: "date",
-  label: name === "createdAt" ? "Created" : "Updated",
+  label: name === "createdAt" ? m.list_view_created() : m.list_view_updated(),
 });
 const labelOf = (f: FieldLike) =>
   typeof f.label === "string" ? f.label : f.name![0]!.toUpperCase() + f.name!.slice(1).replace(/([A-Z])/g, " $1");
@@ -201,13 +202,11 @@ const WHOLE: ListLayout[] = ["calendar", "timeline", "heatmap", "chart", "rankin
 const DAY_MS = 86_400_000;
 /** A name that is a code (GS-RFQ-0141, INV/2026/0371): its monogram comes from whom it's for. */
 const CODE = /^[\p{Lu}\d]+[-/][\p{Lu}\d]/u;
-const dayLabel = new Intl.DateTimeFormat("en-GB", {
-  weekday: "short",
-  day: "numeric",
-  month: "short",
-  timeZone: "UTC",
-});
-const longDate = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+const DAY_LABEL: Intl.DateTimeFormatOptions = { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" };
+const LONG_DATE: Intl.DateTimeFormatOptions = { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" };
+/** A count of records in the collection's own words ("3 orders"). */
+const countOf = (count: number, singular: string, plural: string) =>
+  m.list_view_count_of({ count, singular: singular.toLowerCase(), plural: plural.toLowerCase() });
 const DEFAULTS: ListQuery = { q: "", sort: "", page: 1, limit: "10", filters: [], match: "and" };
 
 /** What the URL says for this list, else what its widget starts with (`CollectionViewSpec`). */
@@ -685,8 +684,10 @@ export class DashboardListView extends LightElement {
     if (isJoin(f)) {
       const count = (v as { totalDocs?: number } | undefined)?.totalDocs ?? 0;
       const related = collectionOf(f.collection);
-      const { singular, plural } = related ? labels(related) : { singular: "item", plural: "items" };
-      return `${count} ${(count === 1 ? singular : plural).toLowerCase()}`;
+      const { singular, plural } = related
+        ? labels(related)
+        : { singular: m.list_view_item(), plural: m.list_view_items() };
+      return countOf(count, singular, plural);
     }
     return cellText(f, v, doc);
   }
@@ -856,20 +857,20 @@ export class DashboardListView extends LightElement {
     const { status, figure } = this._recordParts();
     const when = (ok: unknown, value: ListLayout, label: string) => (ok ? [{ value, label }] : []);
     return [
-      { value: "table", label: "Table" },
-      { value: "cards", label: "Cards" },
-      { value: "list", label: "List" },
-      { value: "compact", label: "Compact" },
-      { value: "focus", label: "Focus, one at a time" },
-      ...when(status, "groups", `Grouped by ${(status ? labelOf(status) : "").toLowerCase()}`),
-      ...when(this.boardField, "board", "Board"),
-      ...when(this.calendarField, "calendar", "Calendar"),
-      ...when(this.calendarField, "timeline", "Timeline"),
-      ...when(this.calendarField, "heatmap", "Heatmap"),
-      ...when(this._chartParts().by, "chart", `Chart by ${this._chartParts().title}`),
-      ...when(figure, "ranking", `Ranking by ${(figure ? labelOf(figure) : "").toLowerCase()}`),
-      ...when(figure, "treemap", "Treemap"),
-      ...when(this._scatterFields().length, "scatter", "Scatter"),
+      { value: "table", label: m.list_view_layout_table() },
+      { value: "cards", label: m.list_view_layout_cards() },
+      { value: "list", label: m.list_view_layout_list() },
+      { value: "compact", label: m.list_view_layout_compact() },
+      { value: "focus", label: m.list_view_layout_focus() },
+      ...when(status, "groups", m.list_view_layout_groups({ field: (status ? labelOf(status) : "").toLowerCase() })),
+      ...when(this.boardField, "board", m.list_view_layout_board()),
+      ...when(this.calendarField, "calendar", m.list_view_layout_calendar()),
+      ...when(this.calendarField, "timeline", m.list_view_layout_timeline()),
+      ...when(this.calendarField, "heatmap", m.list_view_layout_heatmap()),
+      ...when(this._chartParts().by, "chart", m.list_view_layout_chart({ field: this._chartParts().title })),
+      ...when(figure, "ranking", m.list_view_layout_ranking({ field: (figure ? labelOf(figure) : "").toLowerCase() })),
+      ...when(figure, "treemap", m.list_view_layout_treemap()),
+      ...when(this._scatterFields().length, "scatter", m.list_view_layout_scatter()),
     ] as { value: ListLayout; label: string }[];
   }
 
@@ -883,7 +884,7 @@ export class DashboardListView extends LightElement {
   /** Cards have no headers to sort by: the sortable columns, each way. */
   private _sortOptions() {
     return [
-      { label: "Default order", value: "" },
+      { label: m.list_view_sort_default(), value: "" },
       ...this._columns()
         .filter((c) => c.sortable && !this.hiddenKeys.includes(c.key))
         .flatMap((c) => [
@@ -918,7 +919,7 @@ export class DashboardListView extends LightElement {
     const doc = this.result?.docs.find((d) => String(d.id) === id);
     if (!f || !doc) return;
     const options = this._boardOptions();
-    const none = `no ${labelOf(f).toLowerCase()}`;
+    const none = m.list_view_none_inline({ field: labelOf(f).toLowerCase() });
     const label = (column: string) => options.find((o) => o.value === column)?.label ?? none;
     // Where it is now (src/components/base/kanban.ts: a value the board has no column for is in none).
     const from = columnOf(
@@ -941,14 +942,16 @@ export class DashboardListView extends LightElement {
     try {
       await api.update(this.slug, id, { [f.name!]: valueOf(to) });
       toast(
-        `${title} → ${label(to)}`,
+        m.list_view_moved({ title, column: label(to) }),
         "success",
-        undoable ? { label: "Undo", undo: true, onClick: () => void this._move(id, from, false) } : undefined,
+        undoable
+          ? { label: m.list_view_undo(), undo: true, onClick: () => void this._move(id, from, false) }
+          : undefined,
       );
       this._refreshAround();
     } catch (e) {
       put(from);
-      toast(`${title} stays in ${label(from)}: ${(e as Error).message}`, "error");
+      toast(m.list_view_move_failed({ title, column: label(from), error: (e as Error).message }), "error");
     }
   }
 
@@ -971,7 +974,9 @@ export class DashboardListView extends LightElement {
       options.map((o) => o.value),
     );
     const labelOfColumn = (key: string) =>
-      key === NONE ? `No ${labelOf(f).toLowerCase()}` : (options.find((o) => o.value === key)?.label ?? key);
+      key === NONE
+        ? m.list_view_none_column({ field: labelOf(f).toLowerCase() })
+        : (options.find((o) => o.value === key)?.label ?? key);
     const movable = !!this.access.collections[this.slug]?.update.permission;
     const menu = (id: string, title: string, at: string) =>
       html`<ui-dropdown
@@ -981,8 +986,8 @@ export class DashboardListView extends LightElement {
         trigger-size="xs"
         trigger-shape="round"
         trigger-spaced="false"
-        .triggerLabel=${`Move ${title}`}
-        .items=${options.filter((o) => o.value !== at).map((o) => ({ label: `Move to ${o.label}`, value: o.value }))}
+        .triggerLabel=${m.list_view_move_menu({ title })}
+        .items=${options.filter((o) => o.value !== at).map((o) => ({ label: m.list_view_move_to({ column: o.label }), value: o.value }))}
         @ui-select=${(e: CustomEvent<{ item: { value: string } }>) => {
           e.stopPropagation();
           this.querySelector("ui-kanban")?.land(id);
@@ -1013,7 +1018,7 @@ export class DashboardListView extends LightElement {
     }));
     return html`<ui-kanban
       ?movable=${movable}
-      .label=${`${labels(c).plural} by ${labelOf(f).toLowerCase()}`}
+      .label=${m.list_view_by({ things: labels(c).plural, field: labelOf(f).toLowerCase() })}
       .columns=${items}
       @ui-move=${(e: CustomEvent<{ key: string; to: string }>) => void this._move(e.detail.key, e.detail.to)}
     ></ui-kanban>`;
@@ -1130,26 +1135,30 @@ export class DashboardListView extends LightElement {
       <ui-flex align="center" gap="2" wrap>
         <ui-icon-button
           icon="chevron-left"
-          label="Previous"
+          label=${m.list_view_previous()}
           size="sm"
           ?disabled=${at === 0}
           @click=${() => go(at - 1)}
         ></ui-icon-button>
-        <ui-text variant="title-sm">${at + 1} of ${n}</ui-text>
+        <ui-text variant="title-sm">${m.list_view_position({ at: at + 1, total: n })}</ui-text>
         <ui-icon-button
           icon="chevron-right"
-          label="Next"
+          label=${m.list_view_next()}
           size="sm"
           ?disabled=${at === n - 1}
           @click=${() => go(at + 1)}
         ></ui-icon-button>
-        ${rec.href ? html`<ui-button size="xs" variant="tonal" href=${rec.href}>Open</ui-button>` : nothing}
+        ${rec.href ? html`<ui-button size="xs" variant="tonal" href=${rec.href}>${m.list_view_open()}</ui-button>` : nothing}
       </ui-flex>
-      <ui-progress .value=${((at + 1) / n) * 100} max="100" label=${`${at + 1} of ${n}`}></ui-progress>
+      <ui-progress
+        .value=${((at + 1) / n) * 100}
+        max="100"
+        label=${m.list_view_position({ at: at + 1, total: n })}
+      ></ui-progress>
       <ui-record-hero
         .record=${rec}
         .figures=${[...(rec.figure ? [rec.figure] : []), ...(rec.facts ?? [])]}
-        .meta=${rec.person ? `With ${rec.person}` : ""}
+        .meta=${rec.person ? m.list_view_with({ person: rec.person }) : ""}
       ></ui-record-hero>
     </ui-flex>`;
   }
@@ -1172,7 +1181,7 @@ export class DashboardListView extends LightElement {
     return html`<ui-flex direction="col" gap="5">
       ${keys.map((k) => {
         const rows = groups.get(k)!;
-        const label = k ? this._cellText(f, rows[0]!) : `No ${labelOf(f).toLowerCase()}`;
+        const label = k ? this._cellText(f, rows[0]!) : m.list_view_none_column({ field: labelOf(f).toLowerCase() });
         return html`<ui-flex direction="col" gap="2">
           <ui-flex align="center" gap="2">
             <ui-tag .tone=${toneOf(f, k, label)}>${label}</ui-tag>
@@ -1199,7 +1208,7 @@ export class DashboardListView extends LightElement {
       snap-icon
       .items=${dated.map((d) => {
         const rec = this._record(d);
-        const when = longDate.format(new Date(String(d[f.name!])));
+        const when = intl.date(LONG_DATE).format(new Date(String(d[f.name!])));
         const under = [rec.status?.label, rec.figure?.value, ...(rec.facts ?? []).slice(0, 2).map((x) => x.value)]
           .filter(Boolean)
           .join(" · ");
@@ -1233,15 +1242,15 @@ export class DashboardListView extends LightElement {
       const t = start + i * DAY_MS;
       const n = counts.get(new Date(t).toISOString().slice(0, 10)) ?? 0;
       return {
-        label: dayLabel.format(new Date(t)).replace(",", ""),
+        label: intl.date(DAY_LABEL).format(new Date(t)).replace(",", ""),
         value: n,
-        valueText: `${n} ${(n === 1 ? singular : plural).toLowerCase()}`,
+        valueText: countOf(n, singular, plural),
       };
     });
     const total = cells.reduce((t, c) => t + c.value, 0);
     return html`<ui-heatmap
-      .label=${`${plural} per day by ${labelOf(f).toLowerCase()}`}
-      .summary=${`${total} ${plural.toLowerCase()} in 12 weeks by ${labelOf(f).toLowerCase()}`}
+      .label=${m.list_view_heatmap_label({ things: plural, field: labelOf(f).toLowerCase() })}
+      .summary=${m.list_view_heatmap_summary({ total, things: plural.toLowerCase(), field: labelOf(f).toLowerCase() })}
       .cells=${cells}
     ></ui-heatmap>`;
   }
@@ -1257,7 +1266,8 @@ export class DashboardListView extends LightElement {
     const by = named(spec.by) ?? this.calendarField ?? this._recordParts().status;
     const sum = named(spec.sum);
     const bucket = spec.bucket ?? "day";
-    const title = by ? `${labelOf(by).toLowerCase()}${by.type === "date" && !spec.days ? `, by ${bucket}` : ""}` : "";
+    const field = by ? labelOf(by).toLowerCase() : "";
+    const title = by && by.type === "date" && !spec.days ? m.list_view_chart_bucket({ field, bucket }) : field;
     return { by, sum, bucket, title, fields: [by, sum].filter((f): f is FieldLike => !!f) };
   }
 
@@ -1306,8 +1316,8 @@ export class DashboardListView extends LightElement {
       }
       const fmt =
         bucket === "month"
-          ? new Intl.DateTimeFormat("en-GB", { month: "short", year: "2-digit", timeZone: "UTC" })
-          : new Intl.DateTimeFormat("en-GB", {
+          ? intl.date({ month: "short", year: "2-digit", timeZone: "UTC" })
+          : intl.date({
               weekday: bucket === "day" ? "short" : undefined,
               day: "numeric",
               month: bucket === "week" ? "short" : undefined,
@@ -1331,10 +1341,10 @@ export class DashboardListView extends LightElement {
     }
     const number = (sum?.custom as { number?: Record<string, unknown> } | undefined)?.number;
     const format = (v: number) =>
-      sum && number ? formatNumber(v, { ...number, currencyField: undefined } as never) : v.toLocaleString("en-GB");
+      sum && number ? formatNumber(v, { ...number, currencyField: undefined } as never) : intl.number().format(v);
     return html`<ui-chart
       .kind=${spec.kind ?? "bars"}
-      .label=${`${sum ? labelOf(sum) : plural} by ${labelOf(f).toLowerCase()}`}
+      .label=${m.list_view_by({ things: sum ? labelOf(sum) : plural, field: labelOf(f).toLowerCase() })}
       .labels=${keys.map(label)}
       .series=${[{ name: sum ? labelOf(sum) : plural, values: keys.map((k) => totals.get(k) ?? 0) }]}
       .format=${format}
@@ -1352,14 +1362,14 @@ export class DashboardListView extends LightElement {
     const plural = labels(this.collection).plural;
     if (view === "treemap")
       return html`<ui-treemap
-        .label=${`${plural} by ${labelOf(f).toLowerCase()}`}
+        .label=${m.list_view_by({ things: plural, field: labelOf(f).toLowerCase() })}
         .items=${valued.map(({ d, v }) => {
           const rec = this._record(d);
           return { label: rec.title, value: v, valueText: rec.figure?.value ?? String(v), href: rec.href };
         })}
       ></ui-treemap>`;
     return html`<ui-record-list
-      .label=${`${plural} by ${labelOf(f).toLowerCase()}`}
+      .label=${m.list_view_by({ things: plural, field: labelOf(f).toLowerCase() })}
       .records=${valued.map(({ d, v }) => ({ ...this._record(d), progress: v / most }))}
     ></ui-record-list>`;
   }
@@ -1384,7 +1394,11 @@ export class DashboardListView extends LightElement {
     });
     const set = this.spec?.scatter ?? {};
     return html`<ui-quadrant
-      .label=${`${labels(this.collection).plural}: ${labelOf(x).toLowerCase()} and ${labelOf(y).toLowerCase()}`}
+      .label=${m.list_view_scatter_label({
+        things: labels(this.collection).plural,
+        x: labelOf(x).toLowerCase(),
+        y: labelOf(y).toLowerCase(),
+      })}
       .xLabel=${labelOf(x)}
       .yLabel=${labelOf(y)}
       .xMid=${set.xMid}
@@ -1399,8 +1413,8 @@ export class DashboardListView extends LightElement {
   private _calendar() {
     const f = this.calendarField!;
     const month = this._month;
-    const [y, m] = month.split("-").map(Number) as [number, number];
-    const shift = (n: number) => new Date(Date.UTC(y, m - 1 + n, 1)).toISOString().slice(0, 7);
+    const [y, mo] = month.split("-").map(Number) as [number, number];
+    const shift = (n: number) => new Date(Date.UTC(y, mo - 1 + n, 1)).toISOString().slice(0, 7);
     const toneFor = (t: string | undefined): MonthEvent["tone"] =>
       t === "warning" || t === "error" || t === "success" || t === "neutral" ? t : undefined;
     const events: MonthEvent[] = (this.result?.docs ?? []).flatMap((d) => {
@@ -1416,36 +1430,38 @@ export class DashboardListView extends LightElement {
         },
       ];
     });
-    const name = new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric", timeZone: "UTC" }).format(
-      new Date(Date.UTC(y, m - 1, 1)),
-    );
+    const name = intl
+      .date({ month: "long", year: "numeric", timeZone: "UTC" })
+      .format(new Date(Date.UTC(y, mo - 1, 1)));
     const today = todayIso();
     return html`<ui-flex direction="col" gap="3">
       <ui-flex align="center" gap="2" wrap>
         <ui-icon-button
           icon="chevron-left"
-          label="Previous month"
+          label=${m.list_view_previous_month()}
           size="xs"
           @click=${() => this._set({ month: shift(-1) })}
         ></ui-icon-button>
         <ui-text variant="title-sm">${name}</ui-text>
         <ui-icon-button
           icon="chevron-right"
-          label="Next month"
+          label=${m.list_view_next_month()}
           size="xs"
           @click=${() => this._set({ month: shift(1) })}
         ></ui-icon-button>
         ${
           month !== today.slice(0, 7)
             ? html`<ui-button size="xs" variant="text" @click=${() => this._set({ month: today.slice(0, 7) })}
-                >This month</ui-button
+                >${m.list_view_this_month()}</ui-button
               >`
             : nothing
         }
-        <ui-text variant="body-sm" color="muted">${events.length} by ${labelOf(f).toLowerCase()}</ui-text>
+        <ui-text variant="body-sm" color="muted"
+          >${m.list_view_calendar_count({ count: events.length, field: labelOf(f).toLowerCase() })}</ui-text
+        >
       </ui-flex>
       <ui-month
-        .label=${`${labels(this.collection).plural} by ${labelOf(f).toLowerCase()}, ${name}`}
+        .label=${m.list_view_calendar_label({ things: labels(this.collection).plural, field: labelOf(f).toLowerCase(), month: name })}
         .month=${month}
         .today=${today}
         .events=${events}
@@ -1479,11 +1495,11 @@ export class DashboardListView extends LightElement {
         @ui-close=${(e: Event) => own(e) && this._closed()}
       >
         <span slot="trailing"
-          >${s?.dirty ? html`<ui-tag tone="warning">Unsaved changes</ui-tag>` : nothing}${
+          >${s?.dirty ? html`<ui-tag tone="warning">${m.list_view_unsaved()}</ui-tag>` : nothing}${
             id
               ? html`<ui-icon-button
                   icon="external"
-                  label="Open full page"
+                  label=${m.list_view_open_full()}
                   size="xs"
                   href=${dashboardPath("collections", this.slug, id)}
                 ></ui-icon-button>`
@@ -1516,18 +1532,18 @@ export class DashboardListView extends LightElement {
                     title="Ctrl + S"
                     .disabled=${s.saving || !s.dirty}
                     @click=${() => this._form?.save()}
-                    >${s.saving ? "Saving…" : s.dirty ? "Save" : "Saved"}</ui-button
+                    >${s.saving ? m.list_view_saving() : s.dirty ? m.list_view_save() : m.list_view_saved()}</ui-button
                   >`
-                : html`<ui-tag variant="outline">Read only</ui-tag>`
+                : html`<ui-tag variant="outline">${m.list_view_read_only()}</ui-tag>`
           }
         </ui-flex>
       </ui-sheet>
       <ui-modal
-        heading="Discard unsaved changes?"
+        heading=${m.list_view_discard_heading()}
         .open=${!!this.leaving}
-        confirm-label="Discard"
+        confirm-label=${m.list_view_discard()}
         confirm-tone="error"
-        cancel-label="Keep editing"
+        cancel-label=${m.list_view_keep_editing()}
         @ui-confirm=${() => {
           const then = this.leaving;
           this.leaving = null;
@@ -1537,7 +1553,7 @@ export class DashboardListView extends LightElement {
         }}
         @ui-close=${() => (this.leaving = null)}
       >
-        <ui-text>What you changed in ${heading} hasn't been saved.</ui-text>
+        <ui-text>${m.list_view_discard_text({ title: heading })}</ui-text>
       </ui-modal>`;
   }
 
@@ -1590,7 +1606,7 @@ export class DashboardListView extends LightElement {
     const title = useAsTitle(c);
     const all = allColumns(c);
     const titleField = all.find((f) => f.name === title);
-    const titleLabel = titleField ? labelOf(titleField) : title === "id" ? "ID" : title;
+    const titleLabel = titleField ? labelOf(titleField) : title === "id" ? m.list_view_id() : title;
     const r = this.result;
     const { q, sort, limit, filters, match } = this.query;
     const filtered = !!q || filters.length > 0;
@@ -1598,7 +1614,9 @@ export class DashboardListView extends LightElement {
     const count = this.allMatching ? (r?.totalDocs ?? 0) : this.selected.length;
     const view = this.view;
     const empty = html`<ui-flex direction="col" align="center" gap="2">
-      <ui-text emphasized>No ${plural.toLowerCase()} ${filtered ? "match" : "yet"}</ui-text>
+      <ui-text emphasized
+        >${filtered ? m.list_view_empty_filtered({ things: plural.toLowerCase() }) : m.list_view_empty({ things: plural.toLowerCase() })}</ui-text
+      >
       ${
         filtered
           ? html`<ui-button
@@ -1608,9 +1626,9 @@ export class DashboardListView extends LightElement {
                 this.typed = "";
                 this._set({ q: "", filters: [] });
               }}
-              >Clear search and filters</ui-button
+              >${m.list_view_clear_filters()}</ui-button
             >`
-          : html`<ui-text variant="body-md" color="muted">Create the first one.</ui-text>`
+          : html`<ui-text variant="body-md" color="muted">${m.list_view_create_first()}</ui-text>`
       }
     </ui-flex>`;
     const link = linkColumnOf(c);
@@ -1636,7 +1654,7 @@ export class DashboardListView extends LightElement {
         !this.spec || this.spec.home
           ? html`<ui-breadcrumbs
               slot="breadcrumbs"
-              .items=${[{ label: "Dashboard", href: dashboardPath() }, { label: plural }]}
+              .items=${[{ label: m.list_view_dashboard(), href: dashboardPath() }, { label: plural }]}
             ></ui-breadcrumbs>`
           : nothing
       }
@@ -1644,7 +1662,7 @@ export class DashboardListView extends LightElement {
         >${
           creatable
             ? html`<ui-button color="primary" href=${dashboardPath("collections", this.slug, "create")}
-                >+ Create new ${singular}</ui-button
+                >${m.list_view_create_new({ singular })}</ui-button
               >`
             : nothing
         }</ui-flex
@@ -1694,7 +1712,7 @@ export class DashboardListView extends LightElement {
                         slot="end"
                         size="sm"
                         width="auto"
-                        leading="Sort"
+                        leading=${m.list_view_sort()}
                         .options=${this._sortOptions()}
                         .value=${sort}
                         @change=${(e: Event) => this._set({ sort: (e.target as HTMLSelectElement).value })}
@@ -1709,7 +1727,7 @@ export class DashboardListView extends LightElement {
                         slot="end"
                         size="sm"
                         width="auto"
-                        leading="View"
+                        leading=${m.list_view_view()}
                         .options=${this._layouts()}
                         .value=${view}
                         @change=${(e: Event) => this._view((e.target as HTMLSelectElement).value as ListLayout)}
@@ -1746,7 +1764,7 @@ export class DashboardListView extends LightElement {
                         size="xs"
                         variant="tonal"
                         href=${dashboardPath("collections", this.slug, "create")}
-                        >+ New ${singular.toLowerCase()}</ui-button
+                        >${m.list_view_new({ singular: singular.toLowerCase() })}</ui-button
                       >`
                     : nothing
                 }
@@ -1758,7 +1776,7 @@ export class DashboardListView extends LightElement {
                         variant="text"
                         ?disabled=${!r?.totalDocs}
                         @click=${() => void this._export()}
-                        ><ui-icon name="upload" size="sm"></ui-icon> Export CSV</ui-button
+                        ><ui-icon name="upload" size="sm"></ui-icon> ${m.list_view_export_csv()}</ui-button
                       >`
                     : nothing
                 }
@@ -1767,7 +1785,7 @@ export class DashboardListView extends LightElement {
         ${
           shows("search")
             ? html`<ui-search
-                label=${`Search by ${titleLabel.toLowerCase()}`}
+                label=${m.list_view_search_by({ field: titleLabel.toLowerCase() })}
                 .value=${this.typed}
                 @input=${(e: Event) => {
                   this.typed = (e.target as HTMLInputElement).value;
@@ -1781,19 +1799,23 @@ export class DashboardListView extends LightElement {
 
       ${
         count
-          ? html`<ui-toolbar label="Selection">
-              <ui-text variant="title-sm">${count} selected</ui-text>
+          ? html`<ui-toolbar label=${m.list_view_selection()}>
+              <ui-text variant="title-sm">${m.list_view_selected({ count })}</ui-text>
               ${
                 !this.allMatching && r && this.selected.length === pageRows && r.totalDocs > pageRows
                   ? html`<ui-button size="xs" variant="text" @click=${() => (this.allMatching = true)}
-                      >Select all ${r.totalDocs} ${filtered ? "matching" : plural.toLowerCase()}</ui-button
+                      >${
+                        filtered
+                          ? m.list_view_select_all_matching({ total: r.totalDocs })
+                          : m.list_view_select_all({ total: r.totalDocs, things: plural.toLowerCase() })
+                      }</ui-button
                     >`
                   : nothing
               }
               ${
                 perms?.delete.permission
                   ? html`<ui-button size="xs" color="error" variant="tonal" @click=${() => (this.confirming = true)}
-                      >Delete ${count}</ui-button
+                      >${m.list_view_delete_count({ count })}</ui-button
                     >`
                   : nothing
               }
@@ -1804,7 +1826,7 @@ export class DashboardListView extends LightElement {
                   this.selected = [];
                   this.allMatching = false;
                 }}
-                >Clear selection</ui-button
+                >${m.list_view_clear_selection()}</ui-button
               >
             </ui-toolbar>`
           : nothing
@@ -1866,15 +1888,19 @@ export class DashboardListView extends LightElement {
                 <ui-text variant="body-md" color="muted"
                   >${
                     !r
-                      ? "Loading…"
+                      ? m.list_view_loading()
                       : r.totalDocs
-                        ? `${r.pagingCounter}–${r.pagingCounter + r.docs.length - 1} of ${r.totalDocs}`
-                        : "No records"
+                        ? m.list_view_range({
+                            from: r.pagingCounter,
+                            to: r.pagingCounter + r.docs.length - 1,
+                            total: r.totalDocs,
+                          })
+                        : m.list_view_no_records()
                   }</ui-text
                 >
                 <ui-select
                   size="sm"
-                  leading="Rows"
+                  leading=${m.list_view_rows()}
                   .options=${["10", "25", "50", "100"]}
                   .value=${limit}
                   ?disabled=${!r?.totalDocs}
@@ -1893,14 +1919,14 @@ export class DashboardListView extends LightElement {
     </ui-flex>`;
     const dialogs = html`${this._sheet()}
       <ui-modal
-        heading=${`Delete ${count} ${count === 1 ? singular : plural}?`}
+        heading=${m.list_view_delete_heading({ count, singular, plural })}
         .open=${this.confirming}
-        confirm-label="Delete"
+        confirm-label=${m.list_view_delete()}
         confirm-tone="error"
         @ui-confirm=${() => this._deleteSelected()}
         @ui-close=${() => (this.confirming = false)}
       >
-        <ui-text>This can't be undone.</ui-text>
+        <ui-text>${m.list_view_cannot_undo()}</ui-text>
       </ui-modal>`;
     // In a widget's tile: the tile has the heading and the count; the list is its body.
     if (this.tile) return html`${list}${dialogs}`;

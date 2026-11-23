@@ -3,6 +3,8 @@
  * this design system, and nothing that draws. Pure (no DOM, no Lit), so a project's config can
  * also run in a service worker or on a server.
  *
+ * - Languages: `localize` / `localizeConfig` (Payload's `{ en, ar }` text in one language),
+ *   `locale()`, `intl` (numbers and dates in the language), `Localized`.
  * - The config: `defineConfig`, `MockConfig`, field and document types, `tones`,
  *   `CollectionSettings`, `DashboardSettings`, tours.
  * - Screens: `widgets()`, `Widget`, `Source`, `WidgetScope`, `figures()` (./app/widgets/widget.ts), and the
@@ -17,6 +19,18 @@
  *   (`inputOf`): `fieldProblems`, `fieldError` (./fields.ts).
  */
 export * from "./config.ts";
+// Payload's `{ en, ar }` text, read in a language; the language and its number and date formats.
+export {
+  intl,
+  isLocalized,
+  locale,
+  localize,
+  localizeConfig,
+  LOCALES,
+  type Locale,
+  type Localizable,
+  type Localized,
+} from "../i18n/index.ts";
 export * from "./fields.ts";
 export * from "../app/widgets/widget.ts";
 export * from "../app/widgets/schema.ts";

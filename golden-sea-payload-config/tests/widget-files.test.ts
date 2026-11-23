@@ -52,7 +52,7 @@ describe("screens", () => {
         if (re.test(src)) problems.push(`${rel(p)}: ${what}`);
       for (const i of imports(src))
         if (
-          !/^saastemlycrm-design-system\/contracts$|^\.\.\/(format|queries|actions|endpoints)\/[^/]+\.ts$|^\.\.\/links\.ts$/.test(
+          !/^saastemlycrm-design-system\/contracts$|^\.\.\/(format|queries|actions|endpoints)\/[^/]+\.ts$|^\.\.\/links\.ts$|^\.\.\/i18n\/paraglide\/(messages|runtime)\.js$/.test(
             i,
           )
         )
@@ -70,7 +70,7 @@ describe("screens", () => {
       if (/(?<![.\w])block\(/.test(src)) problems.push(`${rel(p)}: block(`);
       for (const i of imports(src))
         if (
-          !/^saastemlycrm-design-system\/contracts$|^\.\/[^/]+\.ts$|^\.\.\/(actions|endpoints)\/[^/]+\.ts$|^\.\.\/links\.ts$/.test(
+          !/^saastemlycrm-design-system\/contracts$|^\.\/[^/]+\.ts$|^\.\.\/(actions|endpoints)\/[^/]+\.ts$|^\.\.\/links\.ts$|^\.\.\/i18n\/paraglide\/(messages|runtime)\.js$/.test(
             i,
           )
         )

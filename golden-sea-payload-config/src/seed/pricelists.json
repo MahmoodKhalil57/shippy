@@ -1,7 +1,10 @@
 [
   {
     "id": "pl-vecom-2026",
-    "title": "Vecom Marine 2026",
+    "title": {
+      "en": "Vecom Marine 2026",
+      "ar": "Vecom Marine 2026"
+    },
     "principal": "S10",
     "currency": "EUR",
     "discountPct": 15,

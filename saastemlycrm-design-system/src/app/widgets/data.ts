@@ -18,6 +18,7 @@ import {
   useAsTitle,
 } from "../shared.ts";
 import { block, type Action, type Cell, type Row, type Tone } from "./schema.ts";
+import { intl, m } from "../../i18n/index.ts";
 import {
   figures,
   type BreakdownSpec,
@@ -317,7 +318,9 @@ function records({ records: r, ...w }: Kind<"records">, scope: WidgetScope): Dra
     head: (data, s) => ({
       count: of.count ? of.count(data) : of.rows(data).length,
       actions:
-        r.more && of.more ? [{ label: `All ${of.label.toLowerCase()}`, href: of.more, variant: "text" as const }] : [],
+        r.more && of.more
+          ? [{ label: m.widget_data_all({ what: of.label.toLowerCase() }), href: of.more, variant: "text" as const }]
+          : [],
       ...w.head?.(data, s),
     }),
     render: (data, s) => {
@@ -504,7 +507,9 @@ function metrics({ metrics: spec, ...w }: Kind<"metrics">): Widget<Record<string
         whole > 0 && (x.where || x.keep)
           ? {
               value: n / whole,
-              text: `${Math.round((n / whole) * 100)}% of ${x.sum ? `all ${noun}` : `${whole} ${noun}`}`,
+              text: x.sum
+                ? m.widget_share_of_all({ pct: Math.round((n / whole) * 100), noun })
+                : m.widget_share_of_total({ pct: Math.round((n / whole) * 100), total: whole, noun }),
             }
           : undefined;
       return {
@@ -532,15 +537,12 @@ function bucketOf(v: unknown, bucket: BreakdownSpec["bucket"]): [string, string]
   const d = new Date(v);
   if (Number.isNaN(d.getTime())) return undefined;
   if (bucket === "month")
-    return [d.toLocaleDateString("en-GB", { month: "short", year: "2-digit", timeZone: "UTC" }), v.slice(0, 7)];
+    return [intl.date({ month: "short", year: "2-digit", timeZone: "UTC" }).format(d), v.slice(0, 7)];
   if (bucket === "week") {
     const monday = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - ((d.getUTCDay() + 6) % 7)));
-    return [
-      monday.toLocaleDateString("en-GB", { day: "2-digit", month: "short", timeZone: "UTC" }),
-      monday.toISOString(),
-    ];
+    return [intl.date({ day: "2-digit", month: "short", timeZone: "UTC" }).format(monday), monday.toISOString()];
   }
-  return [d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", timeZone: "UTC" }), v.slice(0, 10)];
+  return [intl.date({ day: "2-digit", month: "short", timeZone: "UTC" }).format(d), v.slice(0, 10)];
 }
 
 function breakdown({ breakdown: b, ...w }: Kind<"breakdown">): DrawingWidget<{ docs: Doc[] }> {
@@ -620,7 +622,7 @@ function breakdown({ breakdown: b, ...w }: Kind<"breakdown">): DrawingWidget<{ d
           label: name,
           parts,
           total: money(grand),
-          center: sum ? "in all" : labels(c).plural.toLowerCase(),
+          center: sum ? m.widget_data_in_all() : labels(c).plural.toLowerCase(),
         });
       }
       if (b.as === "table") {
@@ -630,7 +632,7 @@ function breakdown({ breakdown: b, ...w }: Kind<"breakdown">): DrawingWidget<{ d
           columns: [
             { key: "__x", label: labelOf(by) },
             ...series.map((s, i) => ({ key: `s${i}`, label: s, align: "end" as const })),
-            ...(series.length > 1 ? [{ key: "__total", label: "Total", align: "end" as const }] : []),
+            ...(series.length > 1 ? [{ key: "__total", label: m.widget_total(), align: "end" as const }] : []),
           ],
           rows: [...xLabels]
             .sort((p, q) => total(q) - total(p))
@@ -699,7 +701,7 @@ function counts({ counts: spec, ...w }: Kind<"counts">): DrawingWidget<Record<st
       share: whole
         ? {
             value: (n[x.key] ?? 0) / whole,
-            text: `${Math.round(((n[x.key] ?? 0) / whole) * 100)}% of ${whole} ${noun}`,
+            text: m.widget_share_of_total({ pct: Math.round(((n[x.key] ?? 0) / whole) * 100), total: whole, noun }),
           }
         : undefined,
     }));

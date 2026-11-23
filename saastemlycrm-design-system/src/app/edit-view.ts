@@ -1,4 +1,5 @@
 import { text } from "../payload/util.ts";
+import { intl, m } from "../i18n/index.ts";
 import { LightElement } from "../components/base/light-element.ts";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
@@ -70,7 +71,9 @@ function joinFieldsOf(fields: FieldLike[]): (FieldLike & { collection: string })
 const fileSize = (bytes: unknown) => {
   const n = Number(bytes);
   if (!Number.isFinite(n) || n <= 0) return "";
-  return n < 1024 ? `${n} B` : n < 1024 ** 2 ? `${(n / 1024).toFixed(0)} KB` : `${(n / 1024 ** 2).toFixed(1)} MB`;
+  const [value, unit, digits] =
+    n < 1024 ? [n, "byte", 0] : n < 1024 ** 2 ? [n / 1024, "kilobyte", 0] : [n / 1024 ** 2, "megabyte", 1];
+  return intl.number({ style: "unit", unit, unitDisplay: "short", maximumFractionDigits: digits }).format(value);
 };
 
 /** Populated relationships (depth 1) back to ids, so the form edits plain values. */
@@ -199,7 +202,12 @@ export class DashboardEditView extends LightElement {
     if (!this.embedded && !this.tile) return;
     const c = collectionOf(this.slug);
     const detail: DocState = {
-      title: c && this.doc ? titleOf(c, this.doc) : c && !this.docId ? `New ${labels(c).singular.toLowerCase()}` : "",
+      title:
+        c && this.doc
+          ? titleOf(c, this.doc)
+          : c && !this.docId
+            ? m.edit_view_new_title({ what: labels(c).singular.toLowerCase() })
+            : "",
       loading: this.loading,
       saving: this.saving,
       dirty: this.dirty,
@@ -440,7 +448,7 @@ export class DashboardEditView extends LightElement {
             : nothing
       }
       <ui-file-input
-        .legend=${this.doc ? "Replace file" : "File *"}
+        .legend=${this.doc ? m.edit_view_replace_file() : m.edit_view_file_required()}
         @ui-change=${(e: CustomEvent<{ files: FileList | null }>) => {
           this.file = e.detail.files?.[0] ?? null;
           this.dirty = true;
@@ -449,7 +457,8 @@ export class DashboardEditView extends LightElement {
       ${
         this.doc
           ? html`<ui-text variant="body-sm" color="muted"
-              >${text(this.doc.mimeType)} · ${Number(this.doc.filesize).toLocaleString("en-US")} bytes
+              >${text(this.doc.mimeType)} ·
+              ${intl.number({ style: "unit", unit: "byte", unitDisplay: "long" }).format(Number(this.doc.filesize))}
               ${this.doc.width ? html`· ${this.doc.width}×${this.doc.height}` : nothing}</ui-text
             >`
           : nothing
@@ -516,7 +525,11 @@ export class DashboardEditView extends LightElement {
       if (f.type !== "relationship" || f.hasMany || typeof f.relationTo !== "string" || !has(f)) continue;
       const id = String(doc[f.name!]);
       const name = this.relations[f.relationTo]?.find((o) => String(o.value) === id)?.label;
-      if (name) links.push({ label: `${labelOf(f)}: ${name}`, href: dashboardPath("collections", f.relationTo, id) });
+      if (name)
+        links.push({
+          label: m.edit_view_link({ field: labelOf(f), name }),
+          href: dashboardPath("collections", f.relationTo, id),
+        });
     }
     for (const f of joinFieldsOf(this._fields)) {
       const view = this.joins[f.name!];
@@ -531,13 +544,13 @@ export class DashboardEditView extends LightElement {
         : undefined;
       links.push({ label: labelOf(f), count: view.total, href });
     }
-    const updated = doc.updatedAt ? `Updated ${formatDate(doc.updatedAt)}` : "";
+    const updated = doc.updatedAt ? m.edit_view_updated({ date: formatDate(doc.updatedAt) }) : "";
     const name = g ? globalLabel(g) : titleOf(c!, doc);
     return html`<ui-record-hero
       .record=${{
         key: String(doc.id ?? g?.slug),
         title: name,
-        eyebrow: g ? "Setting" : labels(c!).singular,
+        eyebrow: g ? m.edit_view_setting() : labels(c!).singular,
         supporting: g && typeof g.admin?.description === "string" ? g.admin.description : undefined,
         status: status ? tagOf(status) : undefined,
       }}
@@ -583,20 +596,24 @@ export class DashboardEditView extends LightElement {
     const isAccount = c?.slug === userSlug && location.pathname.endsWith("/account");
 
     if (this.docId && !this.doc) {
-      return html`<ui-alert tone="warning" heading="Not found"
-        >This document doesn't exist or you can't read it.</ui-alert
+      return html`<ui-alert tone="warning" heading=${m.edit_view_not_found()}
+        >${m.edit_view_not_found_body()}</ui-alert
       >`;
     }
 
     const { main, sidebar } = splitSidebar(this._fields);
     const readonly = !canSave;
-    const heading = g ? globalLabel(g) : this.docId ? titleOf(c!, this.doc) : `Create new ${labels(c!).singular}`;
+    const heading = g
+      ? globalLabel(g)
+      : this.docId
+        ? titleOf(c!, this.doc)
+        : m.edit_view_create_title({ what: labels(c!).singular });
     const crumbs = g
-      ? [{ label: "Dashboard", href: dashboardPath() }, { label: heading }]
+      ? [{ label: m.edit_view_dashboard(), href: dashboardPath() }, { label: heading }]
       : isAccount
-        ? [{ label: "Dashboard", href: dashboardPath() }, { label: "Account" }]
+        ? [{ label: m.edit_view_dashboard(), href: dashboardPath() }, { label: m.edit_view_account() }]
         : [
-            { label: "Dashboard", href: dashboardPath() },
+            { label: m.edit_view_dashboard(), href: dashboardPath() },
             {
               label: labels(c!).plural,
               // Its list, when a view holds it.
@@ -619,9 +636,9 @@ export class DashboardEditView extends LightElement {
       tabs.length && this._shows("tabs")
         ? html`<ui-tabs
             variant="primary"
-            label=${`${heading} sections`}
+            label=${m.edit_view_sections({ what: heading })}
             .active=${this._tab ? tabs.findIndex((t) => t.key === this._tab) + 1 : 0}
-            .items=${[{ label: "Details", href: base }, ...tabs.map((t) => ({ label: t.label, href: `${base}${t.path}` }))]}
+            .items=${[{ label: m.edit_view_details(), href: base }, ...tabs.map((t) => ({ label: t.label, href: `${base}${t.path}` }))]}
           ></ui-tabs>`
         : nothing;
     const active = tabs.find((t) => t.key === this._tab);
@@ -666,7 +683,8 @@ export class DashboardEditView extends LightElement {
             rows: "fit",
             remember: `edit|${this.globalSlug || this.slug}|${this._tab}|view`,
             flush: !!el,
-            content: el ?? html`<ui-alert tone="info" heading=${active.label}>This screen is loading.</ui-alert>`,
+            content:
+              el ?? html`<ui-alert tone="info" heading=${active.label}>${m.edit_view_screen_loading()}</ui-alert>`,
           },
         ]}
       ></ui-board>`;
@@ -678,8 +696,8 @@ export class DashboardEditView extends LightElement {
       ${
         c?.auth
           ? html`<ui-text-input
-                .legend=${this.docId ? "New password" : "Password *"}
-                hint=${this.docId ? "Leave empty to keep the current password." : ""}
+                .legend=${this.docId ? m.edit_view_new_password() : m.edit_view_password_required()}
+                hint=${this.docId ? m.edit_view_password_hint() : ""}
                 type="password"
                 autocomplete="new-password"
                 field-width="full"
@@ -698,9 +716,9 @@ export class DashboardEditView extends LightElement {
         this.doc
           ? html`<ui-box surface="base-200" rounded="box" padding="4">
               <ui-flex direction="col" gap="1">
-                ${this.doc.id ? html`<ui-text variant="body-sm" color="muted">ID <ui-text as="span" variant="body-sm" mono>${this.doc.id}</ui-text></ui-text>` : nothing}
-                ${this.doc.updatedAt ? html`<ui-text variant="body-sm" color="muted">Updated ${formatDate(this.doc.updatedAt)}</ui-text>` : nothing}
-                ${this.doc.createdAt ? html`<ui-text variant="body-sm" color="muted">Created ${formatDate(this.doc.createdAt)}</ui-text>` : nothing}
+                ${this.doc.id ? html`<ui-text variant="body-sm" color="muted">${m.edit_view_id()} <ui-text as="span" variant="body-sm" mono dir="ltr">${this.doc.id}</ui-text></ui-text>` : nothing}
+                ${this.doc.updatedAt ? html`<ui-text variant="body-sm" color="muted">${m.edit_view_updated({ date: formatDate(this.doc.updatedAt) })}</ui-text>` : nothing}
+                ${this.doc.createdAt ? html`<ui-text variant="body-sm" color="muted">${m.edit_view_created({ date: formatDate(this.doc.createdAt) })}</ui-text>` : nothing}
               </ui-flex>
             </ui-box>`
           : nothing
@@ -709,17 +727,19 @@ export class DashboardEditView extends LightElement {
 
     const count = Object.keys(this.errors).length;
     const problems = count
-      ? html`<ui-alert tone="error" heading=${`${count} ${count === 1 ? "field needs" : "fields need"} attention`}
+      ? html`<ui-alert tone="error" heading=${m.edit_view_problems({ count })}
           >${Object.entries(this.errors)
             .slice(0, 3)
-            .map(
-              ([path, message]) =>
-                `${humanize(
+            .map(([path, message]) =>
+              m.edit_view_problem({
+                field: humanize(
                   path
                     .split(".")
                     .filter((p) => !/^\d+$/.test(p))
                     .pop() ?? path,
-                )}: ${message}`,
+                ),
+                message,
+              }),
             )
             .join(" ")}${count > 3 ? " …" : ""}</ui-alert
         >`
@@ -736,18 +756,18 @@ export class DashboardEditView extends LightElement {
         home || !canSave
           ? html`<ui-flex justify=${home ? "between" : "end"} align="center" gap="2" wrap>
               ${home ? html`<ui-breadcrumbs .items=${crumbs}></ui-breadcrumbs>` : nothing}
-              ${canSave ? nothing : html`<ui-tag variant="outline">Read only</ui-tag>`}
+              ${canSave ? nothing : html`<ui-tag variant="outline">${m.edit_view_read_only()}</ui-tag>`}
             </ui-flex>`
           : nothing;
       const actions =
         canSave || canDelete
           ? html`<ui-divider></ui-divider>
               <ui-flex justify="end" align="center" gap="2" wrap>
-                ${this.dirty ? html`<ui-tag tone="warning">Unsaved changes</ui-tag>` : nothing}
+                ${this.dirty ? html`<ui-tag tone="warning">${m.edit_view_unsaved()}</ui-tag>` : nothing}
                 ${
                   canDelete
                     ? html`<ui-button variant="text" color="error" size="sm" @click=${() => (this.confirmDelete = true)}
-                        >Delete</ui-button
+                        >${m.edit_view_delete()}</ui-button
                       >`
                     : nothing
                 }
@@ -757,9 +777,17 @@ export class DashboardEditView extends LightElement {
                         type="submit"
                         color="primary"
                         .disabled=${this.saving || (!this.dirty && !!(this.docId || g))}
-                        title="Ctrl + S"
+                        title=${m.edit_view_save_shortcut()}
                       >
-                        ${this.saving ? "Saving…" : this.docId || g ? (this.dirty ? "Save" : "Saved") : "Create"}
+                        ${
+                          this.saving
+                            ? m.edit_view_saving()
+                            : this.docId || g
+                              ? this.dirty
+                                ? m.edit_view_save()
+                                : m.edit_view_saved()
+                              : m.edit_view_create()
+                        }
                       </ui-button>`
                     : nothing
                 }
@@ -772,14 +800,14 @@ export class DashboardEditView extends LightElement {
           </ui-flex>
         </ui-form>
         <ui-modal
-          heading=${`Delete ${heading}?`}
+          heading=${m.edit_view_delete_confirm({ what: heading })}
           .open=${this.confirmDelete}
-          confirm-label="Delete"
+          confirm-label=${m.edit_view_delete()}
           confirm-tone="error"
           @ui-confirm=${() => this._delete()}
           @ui-close=${() => (this.confirmDelete = false)}
         >
-          <ui-text>This can't be undone.</ui-text>
+          <ui-text>${m.edit_view_cannot_undo()}</ui-text>
         </ui-modal>`;
     }
     // In a sheet: one column, and no page header (the sheet has the title and Save).
@@ -809,7 +837,7 @@ export class DashboardEditView extends LightElement {
                     : nothing
                 }
                 <span slot="status"
-                  >${this.dirty ? html`<ui-tag tone="warning">Unsaved changes</ui-tag>` : nothing}</span
+                  >${this.dirty ? html`<ui-tag tone="warning">${m.edit_view_unsaved()}</ui-tag>` : nothing}</span
                 >
                 <ui-flex slot="actions" gap="2" wrap>
                   ${
@@ -819,7 +847,7 @@ export class DashboardEditView extends LightElement {
                           color="error"
                           size="xs"
                           @click=${() => (this.confirmDelete = true)}
-                          >Delete</ui-button
+                          >${m.edit_view_delete()}</ui-button
                         >`
                       : nothing
                   }
@@ -829,11 +857,19 @@ export class DashboardEditView extends LightElement {
                           type="submit"
                           color="primary"
                           .disabled=${this.saving || (!this.dirty && !!(this.docId || g))}
-                          title="Ctrl + S"
+                          title=${m.edit_view_save_shortcut()}
                         >
-                          ${this.saving ? "Saving…" : this.docId || g ? (this.dirty ? "Save" : "Saved") : "Create"}
+                          ${
+                            this.saving
+                              ? m.edit_view_saving()
+                              : this.docId || g
+                                ? this.dirty
+                                  ? m.edit_view_save()
+                                  : m.edit_view_saved()
+                                : m.edit_view_create()
+                          }
                         </ui-button>`
-                      : html`<ui-tag variant="outline">Read only</ui-tag>`
+                      : html`<ui-tag variant="outline">${m.edit_view_read_only()}</ui-tag>`
                   }
                 </ui-flex>
               </ui-page-header>
@@ -880,14 +916,14 @@ export class DashboardEditView extends LightElement {
       ></ui-board>
 
       <ui-modal
-        heading=${`Delete ${heading}?`}
+        heading=${m.edit_view_delete_confirm({ what: heading })}
         .open=${this.confirmDelete}
-        confirm-label="Delete"
+        confirm-label=${m.edit_view_delete()}
         confirm-tone="error"
         @ui-confirm=${() => this._delete()}
         @ui-close=${() => (this.confirmDelete = false)}
       >
-        <ui-text>This can't be undone.</ui-text>
+        <ui-text>${m.edit_view_cannot_undo()}</ui-text>
       </ui-modal>
     </ui-form>`;
   }

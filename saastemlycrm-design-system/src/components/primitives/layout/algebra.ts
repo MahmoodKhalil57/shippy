@@ -238,6 +238,14 @@ export const scrollRoom = `${inset["1"]} py-1`;
  * on what touches its edge is drawn whole, and nothing it holds can push it wider. For a box that
  * clips without scrolling and may hold something focusable. tests/clip-room.test.ts.
  */
+/**
+ * What the app stands on: the background someone chose (`--app-background`), else the theme's
+ * washes of its primary, secondary and accent over the surface. The frame's, and any page shown
+ * outside it (signing in: `<ui-box backdrop>`).
+ */
+export const backdrop =
+  "bg-surface-container [background-image:var(--app-background,none),radial-gradient(70%_60%_at_0%_0%,color-mix(in_oklab,var(--color-primary)_16%,transparent),transparent_70%),radial-gradient(60%_55%_at_100%_100%,color-mix(in_oklab,var(--color-secondary)_12%,transparent),transparent_70%),radial-gradient(45%_40%_at_100%_0%,color-mix(in_oklab,var(--color-accent)_9%,transparent),transparent_70%)] bg-cover bg-center";
+
 export const clipRoom = "overflow-clip [overflow-clip-margin:4px]";
 export const scrollX = `min-w-0 max-w-full overflow-x-auto ${scrollRoom}`;
 /**

@@ -12,6 +12,7 @@ import {
 } from "../queries/aside.ts";
 import { mine } from "../queries/cases.ts";
 import { openTasks, toTriage } from "../queries/work.ts";
+import { m } from "../i18n/paraglide/messages.js";
 
 /**
  * The side panel's widgets (its Widgets section): for each role, one card the panel's width with
@@ -40,7 +41,7 @@ const ROWS = 6;
 const desk = (role: string | undefined, act: Counter[], watch: Counter[]): Widget => {
   const items = [...act, ...watch].map((x) => ({ ...x, note: undefined }));
   return {
-    title: "Your desk",
+    title: m.page_aside_your_desk(),
     visible: forRole(role),
     size: "full",
     // As tall as its four lines (a label wraps to two at most): never cut, nothing left over.
@@ -51,81 +52,81 @@ const desk = (role: string | undefined, act: Counter[], watch: Counter[]): Widge
 };
 
 const awaitingApproval: Counter = {
-  label: "Held for approval",
+  label: m.page_aside_held(),
   collection: "cases",
   where: { wait: { equals: "Awaiting internal approval" } },
-  note: "Cases waiting on a margin, deposit or other approval",
+  note: m.page_aside_held_note(),
 };
 const overdue: Counter = {
-  label: "Overdue invoices",
+  label: m.page_aside_overdue(),
   collection: "invoices",
   where: overdueInvoices,
-  note: "Past their due date with a balance open",
+  note: m.page_aside_overdue_note(),
   tone: "warning",
 };
 const billsOnHold: Counter = {
-  label: "Bills on hold",
+  label: m.page_aside_bills_on_hold(),
   collection: "supplier-bills",
   where: { status: { equals: "On hold" } },
-  note: "PO, receipt and bill don't match yet",
+  note: m.page_aside_bills_on_hold_note(),
   tone: "warning",
 };
 const deliveries: Counter = {
-  label: "Deliveries in progress",
+  label: m.page_aside_deliveries(),
   collection: "deliveries",
   where: { status: { not_equals: "Delivered" } },
-  note: "Drops planned or on the way to a vessel",
+  note: m.page_aside_deliveries_note(),
 };
 const awaitingCustomer: Counter = {
-  label: "Waiting on customers",
+  label: m.page_aside_awaiting_customer(),
   collection: "cases",
   where: mine({ wait: { equals: "Awaiting customer decision" } }),
-  note: "Your quotes sent, waiting for a decision",
+  note: m.page_aside_awaiting_customer_note(),
   tone: "warning",
 };
 const draftQuotes: Counter = {
-  label: "Quotes to finish",
+  label: m.page_aside_draft_quotes(),
   collection: "quotations",
   where: { status: { equals: "Draft" } },
-  note: "Drafts not yet sent",
+  note: m.page_aside_draft_quotes_note(),
 };
 const pipeline: Counter = {
-  label: "My pipeline",
+  label: m.page_aside_pipeline(),
   collection: "opportunities",
   where: { owner: { equals: "$user.id" } },
-  note: "Prospects you're working on",
+  note: m.page_aside_pipeline_note(),
 };
 const inbox: Counter = {
-  label: "Inbox to triage",
+  label: m.page_aside_inbox(),
   collection: "intake-messages",
   where: toTriage,
-  note: "New messages and uncertain matches",
+  note: m.page_aside_inbox_note(),
   tone: "warning",
 };
 const followUps: Counter = {
-  label: "Open follow-ups",
+  label: m.page_aside_follow_ups(),
   collection: "tasks",
   where: openTasks,
-  note: "Calls, messages and reminders to do",
+  note: m.page_aside_follow_ups_note(),
 };
 const rfqsWaiting: Counter = {
-  label: "RFQs awaiting reply",
+  label: m.page_aside_rfqs_waiting(),
   collection: "supplier-rfqs",
   where: { status: { equals: "Awaiting reply" } },
-  note: "Suppliers who haven't answered yet",
+  note: m.page_aside_rfqs_waiting_note(),
   tone: "warning",
 };
 const myTasks: Counter = {
-  label: "My open tasks",
+  label: m.page_aside_my_tasks(),
   collection: "tasks",
   where: mine(openTasks),
-  note: "Your follow-ups still open",
+  note: m.page_aside_my_tasks_note(),
 };
 const awaitingSupplier: Counter = {
-  label: "Waiting on suppliers",
+  label: m.page_aside_awaiting_supplier(),
   collection: "cases",
   where: { wait: { equals: "Awaiting supplier" } },
-  note: "Cases held for supplier replies",
+  note: m.page_aside_awaiting_supplier_note(),
 };
 
 export const aside: Widget[] = [

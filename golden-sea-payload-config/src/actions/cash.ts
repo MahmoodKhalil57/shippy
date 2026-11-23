@@ -1,4 +1,5 @@
 import type { Action } from "saastemlycrm-design-system/contracts";
+import { m } from "../i18n/paraglide/messages.js";
 import type { BankChange, Decision } from "../endpoints/cash.ts";
 import { dayTime } from "../format/index.ts";
 
@@ -14,7 +15,7 @@ export const decisionLines = (list: Decision[]) =>
   list
     .map(
       (x) =>
-        `${x.decision === "Approve" ? "Approved" : "Rejected"} by ${x.name || x.user}${x.at ? ` · ${dayTime(x.at)}` : ""}${x.reason ? ` — ${x.reason}` : ""}`,
+        `${m.action_cash_decided({ decision: x.decision === "Approve" ? "approve" : "reject", name: x.name || x.user })}${x.at ? ` · ${dayTime(x.at)}` : ""}${x.reason ? ` — ${x.reason}` : ""}`,
     )
     .join("\n");
 
@@ -26,36 +27,45 @@ export function decideActions(a: { id: string; title: string }, bank: BankChange
           {
             type: "checkbox",
             name: "callBack",
-            label: "I called back on the number on file and the supplier confirmed the new account",
+            label: m.action_cash_called_back(),
           },
         ]
       : []),
-    { type: "textarea", name: "reason", label: "Note (optional)" },
+    { type: "textarea", name: "reason", label: m.action_cash_note_optional() },
   ];
   return [
     {
-      label: "Reject",
+      label: m.action_cash_reject(),
       call: call("Reject"),
-      confirm: { heading: `Reject: ${a.title}`, label: "Reject", tone: "error" },
-      fields: [{ type: "textarea", name: "reason", label: "Reason (required)", required: true }],
-      done: `Rejected: ${a.title}.`,
+      confirm: {
+        heading: m.action_cash_reject_heading({ title: a.title }),
+        label: m.action_cash_reject(),
+        tone: "error",
+      },
+      fields: [{ type: "textarea", name: "reason", label: m.action_cash_reason_required(), required: true }],
+      done: m.action_cash_rejected({ title: a.title }),
     },
     // A bank-detail change asks for the call-back first (a form). A payment approval pays nothing
     // (recording the payment is its own confirmed step), so it happens at once. Either can be
     // withdrawn with the snackbar's Undo until the details are applied or the payment recorded.
     bank
       ? {
-          label: "Approve after call-back",
+          label: m.action_cash_approve_call_back(),
           main: true,
           call: call("Approve"),
           confirm: {
-            heading: `Approve: ${a.title}`,
-            text: `Call the supplier back on the number on file (${bank.phoneOnFile || "—"}) — never on a number from the request — and confirm the new account with them.`,
-            label: "Approve",
+            heading: m.action_cash_approve_heading({ title: a.title }),
+            text: m.action_cash_call_back_text({ phone: bank.phoneOnFile || "—" }),
+            label: m.action_cash_approve(),
           },
           fields: approveFields,
-          done: `Approved: ${a.title}.`,
+          done: m.action_cash_approved({ title: a.title }),
         }
-      : { label: "Approve", main: true, call: call("Approve"), done: `Approved: ${a.title}.` },
+      : {
+          label: m.action_cash_approve(),
+          main: true,
+          call: call("Approve"),
+          done: m.action_cash_approved({ title: a.title }),
+        },
   ];
 }

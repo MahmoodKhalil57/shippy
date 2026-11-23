@@ -1,4 +1,5 @@
 import type { Action } from "saastemlycrm-design-system/contracts";
+import { m } from "../i18n/paraglide/messages.js";
 
 /**
  * The email-history import's actions (POST /api/inbox-history/…, ../endpoints/sourcing.ts).
@@ -7,9 +8,9 @@ import type { Action } from "saastemlycrm-design-system/contracts";
  * actions), and nothing is saved before management approves the import.
  */
 export const organise: Action = {
-  label: "Organise",
+  label: m.action_history_organise(),
   icon: "sparkles",
   main: true,
   call: { path: "/inbox-history/organise" },
-  done: "History organised — uncertain items are waiting for you",
+  done: m.action_history_organised(),
 };

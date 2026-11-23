@@ -1,30 +1,56 @@
 import type { Tone } from "saastemlycrm-design-system/contracts";
+import { m } from "../i18n/paraglide/messages.js";
+import { getLocale } from "../i18n/paraglide/runtime.js";
 
 /**
  * The formats Golden Sea's widgets share (money, dates, people, status tones). Pure: no requests,
- * no UI. The formatters (./<domain>.ts) build on these.
+ * no UI. The formatters (./<domain>.ts) build on these. Numbers and dates are in the interface's
+ * language: Arabic with Latin digits (`ar-u-nu-latn`), English as en-US numbers and en-GB dates.
  */
 
+/** The language tag for numbers (`en-US`) or dates (`en-GB`); Arabic is the same for both. */
+export const numberLocale = () => (getLocale() === "ar" ? "ar-u-nu-latn" : "en-US");
+export const dateLocale = () => (getLocale() === "ar" ? "ar-u-nu-latn" : "en-GB");
+
+const numbers = new Map<string, Intl.NumberFormat>();
+const dates = new Map<string, Intl.DateTimeFormat>();
+/** A number formatter in the interface's language, made once per set of options. */
+export function numberFormat(o: Intl.NumberFormatOptions = {}): Intl.NumberFormat {
+  const id = `${numberLocale()} ${JSON.stringify(o)}`;
+  let f = numbers.get(id);
+  if (!f) numbers.set(id, (f = new Intl.NumberFormat(numberLocale(), o)));
+  return f;
+}
+/** A date formatter in the interface's language, made once per set of options. */
+export function dateFormat(o: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
+  const id = `${dateLocale()} ${JSON.stringify(o)}`;
+  let f = dates.get(id);
+  if (!f) dates.set(id, (f = new Intl.DateTimeFormat(dateLocale(), o)));
+  return f;
+}
+/** A whole number with grouping ("1,234"). */
+export const count = (n: number) => numberFormat().format(n);
+
+/** An amount with its currency ("USD 1,234.50"; EGP and large amounts whole). */
 export function money(n: number | undefined | null, cur = "USD"): string {
   if (n == null || Number.isNaN(n)) return "—";
   const whole = cur === "EGP" || Math.abs(n) >= 100000;
-  return `${cur} ${n.toLocaleString("en-US", {
-    minimumFractionDigits: whole ? 0 : 2,
-    maximumFractionDigits: whole ? 0 : 2,
-  })}`;
+  const amount = numberFormat({ minimumFractionDigits: whole ? 0 : 2, maximumFractionDigits: whole ? 0 : 2 }).format(n);
+  return m.index_money({ currency: cur, amount });
 }
+/** An amount in thousands, whole, with its currency ("EGP 1,234k"). */
+export const thousands = (k: number, cur = "EGP") =>
+  m.index_money_k({ currency: cur, amount: numberFormat({ maximumFractionDigits: 0 }).format(Math.round(k)) });
 
-const dayFmt = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", timeZone: "UTC" });
-const timeFmt = new Intl.DateTimeFormat("en-GB", {
-  day: "2-digit",
-  month: "short",
-  hour: "2-digit",
-  minute: "2-digit",
-  timeZone: "UTC",
-});
 const valid = (iso?: string | null) => Boolean(iso) && !Number.isNaN(new Date(String(iso)).getTime());
-export const day = (iso?: string | null) => (valid(iso) ? dayFmt.format(new Date(String(iso))) : "—");
-export const dayTime = (iso?: string | null) => (valid(iso) ? timeFmt.format(new Date(String(iso))) : "—");
+export const day = (iso?: string | null) =>
+  valid(iso) ? dateFormat({ day: "2-digit", month: "short", timeZone: "UTC" }).format(new Date(String(iso))) : "—";
+export const dayTime = (iso?: string | null) =>
+  valid(iso)
+    ? dateFormat({ day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "UTC" }).format(
+        new Date(String(iso)),
+      )
+    : "—";
 
 export const USERS: Record<string, string> = {
   ky: "Karim Youssef",
@@ -67,18 +93,11 @@ export function statusTone(status = ""): Tone {
   return "neutral";
 }
 
-const dateFmt = new Intl.DateTimeFormat("en-GB", {
-  day: "2-digit",
-  month: "short",
-  year: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-});
-const dateDayFmt = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-
 /** A date as the dashboard shows it: a date at midnight shows as just the day. */
 export const formatDate = (v?: unknown) => {
   if (typeof v !== "string" || !v) return "";
   const d = new Date(v);
-  return d.getHours() === 0 && d.getMinutes() === 0 ? dateDayFmt.format(d) : dateFmt.format(d);
+  return d.getHours() === 0 && d.getMinutes() === 0
+    ? dateFormat({ day: "2-digit", month: "short", year: "numeric" }).format(d)
+    : dateFormat({ day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(d);
 };

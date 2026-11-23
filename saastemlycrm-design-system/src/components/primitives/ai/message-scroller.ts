@@ -4,6 +4,7 @@ import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { iconButton } from "../actions/icon-button.ts";
 import { iconSvg } from "../media/icon.ts";
+import { m } from "../../../i18n/index.ts";
 
 /**
  * Message scroller: the scrolling thread of an AI conversation.
@@ -108,7 +109,7 @@ export class UiMessageScroller extends LightElement {
           ? html`<button
               type="button"
               class=${iconButton({ variant: "tonal", size: "xs", class: messageScrollerJump() })}
-              aria-label="Jump to latest"
+              aria-label=${m.message_scroller_jump()}
               @click=${() => this.scrollToEnd()}
             >
               ${iconSvg("arrow-down", { size: "sm" })}

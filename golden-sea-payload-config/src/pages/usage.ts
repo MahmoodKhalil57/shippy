@@ -2,6 +2,7 @@ import { bullet, figures, widgets } from "saastemlycrm-design-system/contracts";
 import * as fmt from "../format/service.ts";
 import * as link from "../links.ts";
 import { usage } from "../queries/service.ts";
+import { m } from "../i18n/paraglide/messages.js";
 
 /**
  * Service usage (/usage): what the platform did this month, counted in units, against the plan
@@ -13,18 +14,17 @@ import { usage } from "../queries/service.ts";
  */
 export const usagePage = widgets({
   header: {
-    eyebrow: "Configuration · service",
-    heading: "Service usage",
-    subtitle:
-      "What the platform did this month, counted the way the running costs are: documents read, questions answered, emails processed, support hours and changes. Quieter months use less.",
+    eyebrow: m.page_usage_eyebrow(),
+    heading: m.page_usage_heading(),
+    subtitle: m.page_usage_subtitle(),
     actions: [
-      { label: "AI log", href: link.list("ai-calls"), main: true },
-      { label: "Edit the plan", href: link.global("service-usage") },
+      { label: m.page_usage_ai_log(), href: link.list("ai-calls"), main: true },
+      { label: m.page_usage_edit_plan(), href: link.global("service-usage") },
     ],
   },
   widgets: [
     bullet({
-      title: "This month against the plan at full use",
+      title: m.page_usage_against_plan(),
       size: "l",
       rows: 8,
       skeleton: "list",
@@ -32,15 +32,15 @@ export const usagePage = widgets({
       format: fmt.againstPlan,
     }),
     {
-      title: "AI calls by task",
+      title: m.page_usage_ai_calls(),
       size: "s",
       rows: 8,
       breakdown: { collection: "ai-calls", by: "task", as: "ring" },
     },
     figures({ data: usage, labels: fmt.MEASURED, format: fmt.measured }),
     {
-      title: "Support log",
-      subhead: "Sunday to Thursday, on your hours: fixes, updates, security patches and questions.",
+      title: m.page_usage_support_title(),
+      subhead: m.page_usage_support_subhead(),
       size: "m",
       records: {
         global: "service-usage",
@@ -49,8 +49,8 @@ export const usagePage = widgets({
       },
     },
     {
-      title: "Change requests",
-      subhead: "Each one estimated and approved before work starts.",
+      title: m.page_usage_changes_title(),
+      subhead: m.page_usage_changes_subhead(),
       size: "m",
       records: {
         global: "service-usage",

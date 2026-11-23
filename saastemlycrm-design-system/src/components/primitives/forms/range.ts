@@ -5,6 +5,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
 import { inset, pad, row, text, tileCap } from "../layout/algebra.ts";
+import { formatInt } from "../../../i18n/index.ts";
 
 /**
  * Range slider: Selects a value by sliding a handle.
@@ -175,6 +176,7 @@ export class UiRange extends LightElement {
       step=${ifDefined(this.step)}
       name=${ifDefined(this.name)}
       aria-label=${ifDefined(this.label)}
+      aria-valuetext=${ifDefined(this.format?.(this.value))}
       ?disabled=${this.disabled}
       @input=${this._onInput}
       @change=${this._onChange}
@@ -183,7 +185,7 @@ export class UiRange extends LightElement {
     const p = this.max > this.min ? (this.value - this.min) / (this.max - this.min) : 0;
     const bubble = this.bubble
       ? html`<span class=${rangeBubble()} aria-hidden="true"
-          >${this.format ? this.format(this.value) : this.value}</span
+          >${this.format ? this.format(this.value) : formatInt(this.value)}</span
         >`
       : nothing;
     if (!wrapped)

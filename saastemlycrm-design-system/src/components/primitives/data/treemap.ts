@@ -1,6 +1,7 @@
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
+import { formatInt, intl, m } from "../../../i18n/index.ts";
 import { LightElement } from "../../base/light-element.ts";
 import { motion } from "../../base/motion-queue.ts";
 import { squarify } from "../../base/treemap.ts";
@@ -152,12 +153,12 @@ export class UiTreemap extends LightElement {
       W,
       H,
     );
-    const share = (v: number) => `${Math.round((v / (sum || 1)) * 100)}%`;
-    const amount = (x: TreemapItem) => x.valueText ?? String(x.value);
+    const share = (v: number) => intl.number({ style: "percent", maximumFractionDigits: 0 }).format(v / (sum || 1));
+    const amount = (x: TreemapItem) => x.valueText ?? formatInt(x.value);
     const on = parts[this._active];
     const readout = on
       ? `${on.label} · ${amount(on)} · ${share(on.value)}`
-      : `${this.label ? `${this.label} · ` : ""}${this.total ?? String(sum)}`;
+      : `${this.label ? `${this.label} · ` : ""}${this.total ?? formatInt(sum)}`;
     return html`<div class=${treemap()}>
       <ul
         class=${treemapPlot()}
@@ -182,7 +183,7 @@ export class UiTreemap extends LightElement {
             "--h": `${(r.h / H) * 100}%`,
             "--i": String(i),
           });
-          const name = `${x.label}, ${amount(x)}, ${share(x.value)}`;
+          const name = m.treemap_cell({ label: x.label, amount: amount(x), share: share(x.value) });
           const body = html`<span class=${treemapEdge({ slot })}></span> ${
               show === "none"
                 ? nothing

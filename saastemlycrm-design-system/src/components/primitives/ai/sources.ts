@@ -4,6 +4,7 @@ import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { inset, pad, padStart, row, stack, text } from "../layout/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
+import { m } from "../../../i18n/index.ts";
 
 /**
  * Sources: what an answer was based on — "Used 3 sources", opening to the list of links.
@@ -44,7 +45,7 @@ export class UiSources extends LightElement {
     if (!unique.length) return html``;
     return html`<details class=${sources()} ?open=${this.open}>
       <summary class=${sourcesSummary()}>
-        ${iconSvg("globe", { size: "sm" })} Used ${unique.length} ${unique.length === 1 ? "source" : "sources"}
+        ${iconSvg("globe", { size: "sm" })} ${m.sources_used({ count: unique.length })}
         <span class=${sourcesChevron()}>${iconSvg("chevron-down", { size: "xs" })}</span>
       </summary>
       <div class=${sourcesList()} role="list">

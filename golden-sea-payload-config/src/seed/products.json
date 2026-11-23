@@ -1,7 +1,10 @@
 [
   {
     "id": "P1",
-    "name": "CRC Belt Grip spray 400 ml",
+    "name": {
+      "en": "CRC Belt Grip spray 400 ml",
+      "ar": "بخاخ CRC Belt Grip سعة 400 مل"
+    },
     "aliases": [
       {
         "alias": "Belt dressing spray"
@@ -20,11 +23,17 @@
     "unit": "EA",
     "packs": [
       {
-        "label": "Can 400 ml",
+        "label": {
+          "en": "Can 400 ml",
+          "ar": "علبة 400 مل"
+        },
         "baseQty": 1
       },
       {
-        "label": "Carton 12",
+        "label": {
+          "en": "Carton 12",
+          "ar": "كرتونة 12"
+        },
         "baseQty": 12
       }
     ],
@@ -33,7 +42,10 @@
   },
   {
     "id": "P2",
-    "name": "LOCTITE 243 threadlocker 50 ml",
+    "name": {
+      "en": "LOCTITE 243 threadlocker 50 ml",
+      "ar": "مثبّت براغي LOCTITE 243 سعة 50 مل"
+    },
     "aliases": [
       {
         "alias": "Loctite blue medium strength"
@@ -55,7 +67,10 @@
   },
   {
     "id": "P3",
-    "name": "Electrical contact cleaner",
+    "name": {
+      "en": "Electrical contact cleaner",
+      "ar": "منظف ملامسات كهربائية"
+    },
     "aliases": [
       {
         "alias": "Contact cleaner aerosol"
@@ -69,15 +84,24 @@
     "unit": "L",
     "packs": [
       {
-        "label": "Can 250 ml",
+        "label": {
+          "en": "Can 250 ml",
+          "ar": "علبة 250 مل"
+        },
         "baseQty": 0.25
       },
       {
-        "label": "Can 500 ml",
+        "label": {
+          "en": "Can 500 ml",
+          "ar": "علبة 500 مل"
+        },
         "baseQty": 0.5
       },
       {
-        "label": "Bottle 1 L",
+        "label": {
+          "en": "Bottle 1 L",
+          "ar": "زجاجة 1 لتر"
+        },
         "baseQty": 1
       }
     ],
@@ -88,7 +112,10 @@
   },
   {
     "id": "P4",
-    "name": "Welding electrode E6013 Ø3.2 mm",
+    "name": {
+      "en": "Welding electrode E6013 Ø3.2 mm",
+      "ar": "قطب لحام E6013 Ø3.2 مم"
+    },
     "aliases": [
       {
         "alias": "Rutile electrode 3.2"
@@ -102,7 +129,10 @@
     "unit": "kg",
     "packs": [
       {
-        "label": "Pack 5 kg",
+        "label": {
+          "en": "Pack 5 kg",
+          "ar": "عبوة 5 كجم"
+        },
         "baseQty": 5
       }
     ],
@@ -110,7 +140,10 @@
   },
   {
     "id": "P5",
-    "name": "Safety helmet EN 397 white + chin strap",
+    "name": {
+      "en": "Safety helmet EN 397 white + chin strap",
+      "ar": "خوذة سلامة EN 397 بيضاء + حزام ذقن"
+    },
     "aliases": [
       {
         "alias": "Hard hat white"
@@ -126,7 +159,10 @@
   },
   {
     "id": "P6",
-    "name": "FR coverall navy EN ISO 11612",
+    "name": {
+      "en": "FR coverall navy EN ISO 11612",
+      "ar": "أفرول مقاوم للهب كحلي EN ISO 11612"
+    },
     "aliases": [
       {
         "alias": "Fire retardant boiler suit"
@@ -141,7 +177,10 @@
   },
   {
     "id": "P7",
-    "name": "Chicken breast boneless, frozen",
+    "name": {
+      "en": "Chicken breast boneless, frozen",
+      "ar": "صدور دجاج منزوعة العظم، مجمدة"
+    },
     "aliases": [
       {
         "alias": "Frozen chicken fillet"
@@ -156,7 +195,10 @@
   },
   {
     "id": "P8",
-    "name": "Cigarettes (bond), carton 200",
+    "name": {
+      "en": "Cigarettes (bond), carton 200",
+      "ar": "سجائر (إيداع جمركي)، كرتونة 200"
+    },
     "store": "Bond stores",
     "unit": "carton",
     "certificates": ["Customs bond release"],

@@ -3,6 +3,7 @@ import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
+import { m } from "../../../i18n/index.ts";
 
 /**
  * Loading: something is on its way (M3 loading and progress indicators; Apple progress indicators).
@@ -50,7 +51,7 @@ export class UiLoading extends LightElement {
   @property() variant: LoadingVariants["variant"] = "spinner";
   @property() size: LoadingVariants["size"];
   @property() color: LoadingVariants["color"];
-  @property() label = "Loading";
+  @property() label = m.loading_label();
 
   render() {
     return html`<span

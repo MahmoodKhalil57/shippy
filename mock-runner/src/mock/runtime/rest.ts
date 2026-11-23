@@ -264,6 +264,14 @@ export class RestApi {
       query,
       json: () => request.clone().json(),
       formData: () => request.clone().formData(),
+      // Payload's `req.locale` / `req.fallbackLocale`: custom endpoints read and write in it too.
+      locale: typeof query.locale === "string" ? query.locale : undefined,
+      fallbackLocale:
+        query["fallback-locale"] === "none" || query["fallback-locale"] === "false"
+          ? false
+          : typeof query["fallback-locale"] === "string"
+            ? query["fallback-locale"]
+            : undefined,
     };
   }
 

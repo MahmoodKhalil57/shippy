@@ -18,6 +18,7 @@ import {
   text,
 } from "../layout/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
+import { formatInt, m } from "../../../i18n/index.ts";
 
 /**
  * Field: one question on a form, around whatever answers it (a text box, a segmented choice, a
@@ -252,14 +253,15 @@ export class UiField extends LightElement {
               >`
             : nothing
         }
-        ${this.required && !this.filled ? html`<span class=${fieldRequired()}>Required</span>` : nothing} ${mark}
+        ${this.required && !this.filled ? html`<span class=${fieldRequired()}>${m.field_required_pill()}</span>` : nothing}
+        ${mark}
         ${
           this.hint || this.about
             ? html`<button
                   type="button"
                   class=${fieldHelp({ open: this._help })}
                   popovertarget=${this.#helpId}
-                  aria-label=${`About ${typeof this.label === "string" ? this.label : "this field"}`}
+                  aria-label=${typeof this.label === "string" && this.label ? m.field_about({ label: this.label }) : m.field_about_this()}
                   aria-expanded=${this._help ? "true" : "false"}
                 >
                   ${iconSvg("live-help", { size: "xs" })}
@@ -284,8 +286,8 @@ export class UiField extends LightElement {
                 type="button"
                 data-suggest
                 class=${fieldSuggest({ open: !!this.suggestion })}
-                aria-label=${`Suggest ${typeof this.label === "string" ? this.label : "an answer"}`}
-                title="Suggest an answer"
+                aria-label=${typeof this.label === "string" && this.label ? m.field_suggest({ label: this.label }) : m.field_suggest_answer()}
+                title=${m.field_suggest_answer()}
                 aria-busy=${this.suggesting ? "true" : "false"}
                 aria-disabled=${this.suggesting ? "true" : "false"}
                 @click=${this.#ask}
@@ -309,18 +311,18 @@ export class UiField extends LightElement {
                   type="button"
                   data-suggestion-take
                   class=${fieldSuggestionTake()}
-                  aria-label=${`Suggested: ${this.suggestion}. Use it`}
+                  aria-label=${m.field_suggestion_use_label({ suggestion: this.suggestion })}
                   @click=${() => this.#answer(true)}
                   @keydown=${(e: KeyboardEvent) => e.key === "Escape" && (e.preventDefault(), this.#answer(false))}
                 >
                   <span class=${fieldSuggestionIcon()} aria-hidden="true">${iconSvg("assistant", { size: "sm" })}</span>
                   <span class=${fieldSuggestionText()}>${this.suggestion}</span>
-                  <span class=${fieldSuggestionUse()} aria-hidden="true">Use</span>
+                  <span class=${fieldSuggestionUse()} aria-hidden="true">${m.field_suggestion_use()}</span>
                 </button>
                 <button
                   type="button"
                   class=${fieldSuggestionDismiss()}
-                  aria-label="Dismiss the suggestion"
+                  aria-label=${m.field_suggestion_dismiss()}
                   @click=${() => this.#answer(false)}
                 >
                   ${iconSvg("x", { size: "sm" })}
@@ -352,7 +354,7 @@ export class UiField extends LightElement {
               ${
                 this.count != null
                   ? html`<span class=${fieldCount({ level })}
-                      >${this.max != null ? `${this.count} / ${this.max}` : this.count}</span
+                      >${this.max != null ? m.field_count_of({ count: formatInt(this.count), max: formatInt(this.max) }) : formatInt(this.count)}</span
                     >`
                   : nothing
               }

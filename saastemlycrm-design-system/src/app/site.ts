@@ -1,5 +1,6 @@
 import { api } from "../api/client.ts";
 import type { Doc, Tour } from "../contracts/config.ts";
+import { m } from "../i18n/index.ts";
 
 /**
  * The dashboard's own content, read from the project's data rather than code: the `branding`
@@ -47,9 +48,9 @@ export interface AssistantInfo {
   examples: { question: string; kind: RequestKind; argument?: string }[];
 }
 
-let branding: Branding = { name: "Dashboard", icon: "grid", backgrounds: [] };
+let branding: Branding = { name: m.site_default_name(), icon: "grid", backgrounds: [] };
 const NO_ASSISTANT: AssistantInfo = {
-  name: "Assistant",
+  name: m.site_assistant_name(),
   business: "a business",
   ask: "/ask",
   roleNotes: [],

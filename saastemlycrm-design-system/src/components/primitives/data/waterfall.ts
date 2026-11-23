@@ -1,6 +1,8 @@
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
+import { formatInt, m } from "../../../i18n/index.ts";
+import { isRtl } from "../../base/reading.ts";
 import { LightElement } from "../../base/light-element.ts";
 import { motion } from "../../base/motion-queue.ts";
 import { rcva } from "../../base/variants.ts";
@@ -103,7 +105,7 @@ export class UiWaterfall extends LightElement {
   /** The whole, for screen readers ("Margin bridge"). */
   @property() label = "";
   /** How a number reads in the readout (running totals, and changes without `valueText`). */
-  @property({ attribute: false }) format: (n: number) => string = (n) => n.toLocaleString();
+  @property({ attribute: false }) format: (n: number) => string = (n) => formatInt(n);
   /** Span the levels the bridge moves through rather than zero (small changes, large totals). */
   @property({ type: Boolean }) fit = false;
   @state() private _active = -1;
@@ -124,9 +126,11 @@ export class UiWaterfall extends LightElement {
   }
 
   #read(s: WaterfallStep, c: BridgeColumn) {
-    if (c.kind === "total") return `${s.label}: ${this.format(c.run)}`;
+    if (c.kind === "total") return m.waterfall_total({ label: s.label, run: this.format(c.run) });
     const sign = s.value < 0 ? MINUS : "+";
-    return `${s.label}: ${sign}${s.valueText ?? this.format(Math.abs(s.value))} → ${this.format(c.run)}`;
+    // The signed change kept left to right (an isolate), so its sign stays in front in Arabic.
+    const change = `⁦${sign}${s.valueText ?? this.format(Math.abs(s.value))}⁩`;
+    return m.waterfall_change({ label: s.label, change, run: this.format(c.run) });
   }
 
   /** ←→ (mirrored right to left), Home and End move between the columns. */
@@ -135,7 +139,7 @@ export class UiWaterfall extends LightElement {
     const marks = [...this.querySelectorAll<HTMLElement>("[data-step]")];
     const at = marks.indexOf(document.activeElement as HTMLElement);
     if (!n || at < 0) return;
-    const rtl = getComputedStyle(this).direction === "rtl";
+    const rtl = isRtl(this);
     const step: Record<string, number> = { ArrowLeft: rtl ? 1 : -1, ArrowRight: rtl ? -1 : 1 };
     let next: number;
     if (e.key in step) next = Math.min(n - 1, Math.max(0, at + step[e.key]!));
@@ -226,9 +230,9 @@ export class UiWaterfall extends LightElement {
         <span class=${waterfallKey()} aria-hidden="true">
           ${(
             [
-              ["up", "Increase"],
-              ["down", "Decrease"],
-              ["total", "Total"],
+              ["up", m.waterfall_increase()],
+              ["down", m.waterfall_decrease()],
+              ["total", m.waterfall_total_key()],
             ] as const
           )
             .filter(([k]) => kinds.has(k))

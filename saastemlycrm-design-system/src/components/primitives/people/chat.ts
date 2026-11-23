@@ -74,7 +74,8 @@ export const chatTemplate = (m: ChatMessage) =>
     ${
       m.author || m.time
         ? html`<div class=${chatHeader()}>
-            ${m.author ?? nothing} ${m.time ? html`<time class=${chatTime()}>${m.time}</time>` : nothing}
+            ${m.author ? html`<bdi>${m.author}</bdi>` : nothing}
+            ${m.time ? html`<time class=${chatTime()}>${m.time}</time>` : nothing}
           </div>`
         : nothing
     }
@@ -128,7 +129,8 @@ export class UiChat extends LightElement {
           ? html`<div class=${chatHeader()}>${this.slotted("header")}</div>`
           : this.author || this.time
             ? html`<div class=${chatHeader()}>
-                ${this.author} ${this.time ? html`<time class=${chatTime()}>${this.time}</time>` : nothing}
+                ${this.author ? html`<bdi>${this.author}</bdi>` : nothing}
+                ${this.time ? html`<time class=${chatTime()}>${this.time}</time>` : nothing}
               </div>`
             : nothing
       }

@@ -8,7 +8,10 @@
     "sentAt": "2026-11-15T11:05:00.000Z",
     "dueAt": "2026-11-17T12:00:00.000Z",
     "status": "Replied",
-    "lastEvent": "Full offer received 16 Nov 10:22",
+    "lastEvent": {
+      "en": "Full offer received 16 Nov 10:22",
+      "ar": "وصل العرض كاملًا 16 نوفمبر 10:22"
+    },
     "sentBy": "ky"
   },
   {
@@ -20,7 +23,10 @@
     "sentAt": "2026-11-15T11:05:00.000Z",
     "dueAt": "2026-11-17T12:00:00.000Z",
     "status": "Revised offer received",
-    "lastEvent": "v2 received after correction request",
+    "lastEvent": {
+      "en": "v2 received after correction request",
+      "ar": "وصل v2 بعد طلب التصحيح"
+    },
     "sentBy": "ky"
   },
   {
@@ -32,7 +38,10 @@
     "sentAt": "2026-11-15T11:40:00.000Z",
     "dueAt": "2026-11-17T12:00:00.000Z",
     "status": "Replied",
-    "lastEvent": "New supplier — offer captured from email",
+    "lastEvent": {
+      "en": "New supplier — offer captured from email",
+      "ar": "مورّد جديد — سُجّل العرض من البريد"
+    },
     "sentBy": "ky"
   },
   {
@@ -44,7 +53,10 @@
     "sentAt": "2026-11-15T11:05:00.000Z",
     "dueAt": "2026-11-17T12:00:00.000Z",
     "status": "Replied",
-    "lastEvent": "10 of 15 available",
+    "lastEvent": {
+      "en": "10 of 15 available",
+      "ar": "المتاح 10 من 15"
+    },
     "sentBy": "ky"
   },
   {
@@ -58,7 +70,10 @@
     "status": "Awaiting reply",
     "reminders": 1,
     "nextReminderAt": "2026-11-17T15:00:00.000Z",
-    "lastEvent": "Reminder 1 sent 16 Nov 15:00",
+    "lastEvent": {
+      "en": "Reminder 1 sent 16 Nov 15:00",
+      "ar": "أُرسل التذكير 1 في 16 نوفمبر 15:00"
+    },
     "sentBy": "ky"
   },
   {
@@ -72,7 +87,10 @@
     "status": "Awaiting reply",
     "reminders": 2,
     "escalated": true,
-    "lastEvent": "Escalated to Soaad Amer 16 Nov 10:00 after 2 reminders",
+    "lastEvent": {
+      "en": "Escalated to Soaad Amer 16 Nov 10:00 after 2 reminders",
+      "ar": "صُعّد إلى سعاد عامر 16 نوفمبر 10:00 بعد تذكيرين"
+    },
     "sentBy": "sa"
   },
   {
@@ -86,7 +104,10 @@
     "status": "Partial reply",
     "reminders": 1,
     "nextReminderAt": "2026-11-17T12:00:00.000Z",
-    "lastEvent": "Lines 5–6 quoted 13 Nov; the two pump seals are still to follow",
+    "lastEvent": {
+      "en": "Lines 5–6 quoted 13 Nov; the two pump seals are still to follow",
+      "ar": "سُعّر البندان 5–6 في 13 نوفمبر؛ ولا يزال مانعا تسرب المضخة منتظرين"
+    },
     "sentBy": "sa"
   },
   {
@@ -100,7 +121,10 @@
     "status": "Awaiting reply",
     "reminders": 1,
     "nextReminderAt": "2026-11-17T12:00:00.000Z",
-    "lastEvent": "Reminder 1 sent 15 Nov 09:00",
+    "lastEvent": {
+      "en": "Reminder 1 sent 15 Nov 09:00",
+      "ar": "أُرسل التذكير 1 في 15 نوفمبر 09:00"
+    },
     "sentBy": "sa"
   },
   {
@@ -112,7 +136,10 @@
     "sentAt": "2026-11-13T09:30:00.000Z",
     "dueAt": "2026-11-15T12:00:00.000Z",
     "status": "Replied",
-    "lastEvent": "Offer received 14 Nov 16:40 — line 1 quoted in RAL 7035, not 7038",
+    "lastEvent": {
+      "en": "Offer received 14 Nov 16:40 — line 1 quoted in RAL 7035, not 7038",
+      "ar": "وصل العرض 14 نوفمبر 16:40 — البند 1 مسعّر بلون RAL 7035 لا 7038"
+    },
     "sentBy": "ky"
   },
   {
@@ -124,7 +151,10 @@
     "sentAt": "2026-11-13T09:30:00.000Z",
     "dueAt": "2026-11-15T12:00:00.000Z",
     "status": "Replied",
-    "lastEvent": "Full offer received 14 Nov 11:05",
+    "lastEvent": {
+      "en": "Full offer received 14 Nov 11:05",
+      "ar": "وصل العرض كاملًا 14 نوفمبر 11:05"
+    },
     "sentBy": "ky"
   },
   {
@@ -136,7 +166,10 @@
     "sentAt": "2026-11-13T09:30:00.000Z",
     "dueAt": "2026-11-15T12:00:00.000Z",
     "status": "Replied",
-    "lastEvent": "Full offer received 14 Nov 13:20, mill certificate attached",
+    "lastEvent": {
+      "en": "Full offer received 14 Nov 13:20, mill certificate attached",
+      "ar": "وصل العرض كاملًا 14 نوفمبر 13:20، مع شهادة المصنع"
+    },
     "sentBy": "ky"
   },
   {
@@ -148,7 +181,10 @@
     "sentAt": "2026-11-06T10:00:00.000Z",
     "dueAt": "2026-11-09T12:00:00.000Z",
     "status": "Replied",
-    "lastEvent": "Full offer received 8 Nov 15:30",
+    "lastEvent": {
+      "en": "Full offer received 8 Nov 15:30",
+      "ar": "وصل العرض كاملًا 8 نوفمبر 15:30"
+    },
     "sentBy": "ky"
   },
   {
@@ -160,7 +196,10 @@
     "sentAt": "2026-11-06T10:00:00.000Z",
     "dueAt": "2026-11-09T12:00:00.000Z",
     "status": "Replied",
-    "lastEvent": "Full offer received 9 Nov 09:10",
+    "lastEvent": {
+      "en": "Full offer received 9 Nov 09:10",
+      "ar": "وصل العرض كاملًا 9 نوفمبر 09:10"
+    },
     "sentBy": "ky"
   },
   {
@@ -172,7 +211,10 @@
     "sentAt": "2026-11-09T09:00:00.000Z",
     "dueAt": "2026-11-11T12:00:00.000Z",
     "status": "Replied",
-    "lastEvent": "Full offer received 10 Nov 14:15",
+    "lastEvent": {
+      "en": "Full offer received 10 Nov 14:15",
+      "ar": "وصل العرض كاملًا 10 نوفمبر 14:15"
+    },
     "sentBy": "sa"
   },
   {
@@ -184,7 +226,10 @@
     "sentAt": "2026-11-09T09:00:00.000Z",
     "dueAt": "2026-11-11T12:00:00.000Z",
     "status": "Replied",
-    "lastEvent": "Offer received 11 Nov 10:40",
+    "lastEvent": {
+      "en": "Offer received 11 Nov 10:40",
+      "ar": "وصل العرض 11 نوفمبر 10:40"
+    },
     "sentBy": "sa"
   },
   {
@@ -196,7 +241,10 @@
     "sentAt": "2026-11-04T09:30:00.000Z",
     "dueAt": "2026-11-05T15:00:00.000Z",
     "status": "Replied",
-    "lastEvent": "Offer received 5 Nov 10:15 — drop-ship to Port Said",
+    "lastEvent": {
+      "en": "Offer received 5 Nov 10:15 — drop-ship to Port Said",
+      "ar": "وصل العرض 5 نوفمبر 10:15 — شحن مباشر إلى بورسعيد"
+    },
     "sentBy": "ky"
   },
   {
@@ -208,7 +256,10 @@
     "sentAt": "2026-11-04T09:30:00.000Z",
     "dueAt": "2026-11-05T15:00:00.000Z",
     "status": "Replied",
-    "lastEvent": "Full offer received 5 Nov 12:40",
+    "lastEvent": {
+      "en": "Full offer received 5 Nov 12:40",
+      "ar": "وصل العرض كاملًا 5 نوفمبر 12:40"
+    },
     "sentBy": "ky"
   },
   {
@@ -220,7 +271,10 @@
     "sentAt": "2026-11-04T09:30:00.000Z",
     "dueAt": "2026-11-05T15:00:00.000Z",
     "status": "Revised offer received",
-    "lastEvent": "v2 at EGP 340 received 11 Nov after the v1 price expired 10 Nov",
+    "lastEvent": {
+      "en": "v2 at EGP 340 received 11 Nov after the v1 price expired 10 Nov",
+      "ar": "وصل v2 بسعر EGP 340 في 11 نوفمبر بعد انتهاء سعر v1 في 10 نوفمبر"
+    },
     "sentBy": "ky"
   },
   {
@@ -232,7 +286,10 @@
     "sentAt": "2026-11-05T10:00:00.000Z",
     "dueAt": "2026-11-07T12:00:00.000Z",
     "status": "Revised offer received",
-    "lastEvent": "ESAB OK 46.00 priced for line 1 on 13 Nov, as the customer asked",
+    "lastEvent": {
+      "en": "ESAB OK 46.00 priced for line 1 on 13 Nov, as the customer asked",
+      "ar": "سُعّر ESAB OK 46.00 للبند 1 في 13 نوفمبر، كما طلب العميل"
+    },
     "sentBy": "sa"
   },
   {
@@ -244,7 +301,10 @@
     "sentAt": "2026-11-05T10:00:00.000Z",
     "dueAt": "2026-11-07T12:00:00.000Z",
     "status": "Replied",
-    "lastEvent": "Full offer received 6 Nov 15:50",
+    "lastEvent": {
+      "en": "Full offer received 6 Nov 15:50",
+      "ar": "وصل العرض كاملًا 6 نوفمبر 15:50"
+    },
     "sentBy": "sa"
   },
   {
@@ -258,7 +318,10 @@
     "status": "Awaiting reply",
     "reminders": 1,
     "nextReminderAt": "2026-11-17T15:00:00.000Z",
-    "lastEvent": "Reminder 1 sent 16 Nov 15:00",
+    "lastEvent": {
+      "en": "Reminder 1 sent 16 Nov 15:00",
+      "ar": "أُرسل التذكير 1 في 16 نوفمبر 15:00"
+    },
     "sentBy": "sa"
   },
   {
@@ -270,7 +333,10 @@
     "sentAt": "2026-10-30T09:00:00.000Z",
     "dueAt": "2026-11-02T12:00:00.000Z",
     "status": "Replied",
-    "lastEvent": "Full offer received 1 Nov 11:30",
+    "lastEvent": {
+      "en": "Full offer received 1 Nov 11:30",
+      "ar": "وصل العرض كاملًا 1 نوفمبر 11:30"
+    },
     "sentBy": "ah"
   },
   {
@@ -282,7 +348,10 @@
     "sentAt": "2026-10-30T09:00:00.000Z",
     "dueAt": "2026-11-02T12:00:00.000Z",
     "status": "Replied",
-    "lastEvent": "Offer received 31 Oct 16:05",
+    "lastEvent": {
+      "en": "Offer received 31 Oct 16:05",
+      "ar": "وصل العرض 31 أكتوبر 16:05"
+    },
     "sentBy": "ah"
   },
   {
@@ -294,7 +363,10 @@
     "sentAt": "2026-10-30T09:00:00.000Z",
     "dueAt": "2026-11-02T12:00:00.000Z",
     "status": "Replied",
-    "lastEvent": "Offer received 1 Nov 09:20 — drop-ship to the Abu Qir base",
+    "lastEvent": {
+      "en": "Offer received 1 Nov 09:20 — drop-ship to the Abu Qir base",
+      "ar": "وصل العرض 1 نوفمبر 09:20 — شحن مباشر إلى قاعدة أبو قير"
+    },
     "sentBy": "ah"
   },
   {
@@ -306,7 +378,10 @@
     "sentAt": "2026-10-22T09:00:00.000Z",
     "dueAt": "2026-10-24T12:00:00.000Z",
     "status": "Replied",
-    "lastEvent": "Full offer received 23 Oct 15:10 — genuine Yanmar and MAN parts",
+    "lastEvent": {
+      "en": "Full offer received 23 Oct 15:10 — genuine Yanmar and MAN parts",
+      "ar": "وصل العرض كاملًا 23 أكتوبر 15:10 — قطع Yanmar وMAN أصلية"
+    },
     "sentBy": "ky"
   },
   {
@@ -318,7 +393,10 @@
     "sentAt": "2026-10-22T09:00:00.000Z",
     "dueAt": "2026-10-24T12:00:00.000Z",
     "status": "Replied",
-    "lastEvent": "Offer received 23 Oct 10:45",
+    "lastEvent": {
+      "en": "Offer received 23 Oct 10:45",
+      "ar": "وصل العرض 23 أكتوبر 10:45"
+    },
     "sentBy": "ky"
   },
   {
@@ -330,7 +408,10 @@
     "sentAt": "2026-10-22T09:00:00.000Z",
     "dueAt": "2026-10-24T12:00:00.000Z",
     "status": "Replied",
-    "lastEvent": "Offer received 22 Oct 16:30",
+    "lastEvent": {
+      "en": "Offer received 22 Oct 16:30",
+      "ar": "وصل العرض 22 أكتوبر 16:30"
+    },
     "sentBy": "ky"
   },
   {
@@ -342,7 +423,10 @@
     "sentAt": "2026-11-02T09:15:00.000Z",
     "dueAt": "2026-11-04T12:00:00.000Z",
     "status": "Replied",
-    "lastEvent": "Full offer received 3 Nov 14:00 — prices valid to 20 Nov",
+    "lastEvent": {
+      "en": "Full offer received 3 Nov 14:00 — prices valid to 20 Nov",
+      "ar": "وصل العرض كاملًا 3 نوفمبر 14:00 — الأسعار سارية حتى 20 نوفمبر"
+    },
     "sentBy": "sa"
   },
   {
@@ -354,7 +438,10 @@
     "sentAt": "2026-11-02T09:15:00.000Z",
     "dueAt": "2026-11-04T12:00:00.000Z",
     "status": "Replied",
-    "lastEvent": "Offer received 4 Nov 10:30",
+    "lastEvent": {
+      "en": "Offer received 4 Nov 10:30",
+      "ar": "وصل العرض 4 نوفمبر 10:30"
+    },
     "sentBy": "sa"
   }
 ]

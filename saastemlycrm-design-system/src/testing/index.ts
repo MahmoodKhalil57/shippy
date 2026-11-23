@@ -5,3 +5,4 @@
  */
 export * from "./screens.ts";
 export * from "./mocks.ts";
+export * from "./i18n.ts";

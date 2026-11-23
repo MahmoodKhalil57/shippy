@@ -1,5 +1,5 @@
 import { stringify } from "qs-esm";
-import type { CollectionSettings } from "saastemlycrm-design-system/contracts";
+import { localize, type CollectionSettings } from "saastemlycrm-design-system/contracts";
 import { matches } from "saastemlycrm-design-system/payload";
 import { beforeEach, describe, expect, it } from "vite-plus/test";
 import { Cases } from "../src/collections/cases.ts";
@@ -93,7 +93,7 @@ describe("case overview", () => {
   });
 
   it("offers Reassign on the case to the desk, management, owner or backup", async () => {
-    const reassign = (Cases.custom as CollectionSettings).actions!.find((a) => a.label === "Reassign")!;
+    const reassign = (Cases.custom as CollectionSettings).actions!.find((a) => localize(a.label, "en") === "Reassign")!;
     const read = async (user: string) => {
       await login(user);
       return (await call("GET", "/api/cases/gs-rfq-0142?depth=1")).body;
@@ -241,7 +241,7 @@ describe("automations", () => {
       unknown
     >[];
     const offered = (x: Record<string, unknown>) =>
-      actions.filter((a) => matches(x, a.when as never)).map((a) => a.label);
+      actions.filter((a) => matches(x, a.when as never)).map((a) => localize(a.label, "en"));
     const want: Record<string, string[]> = {
       Open: ["Safe retry"],
       "Waiting for review": ["Mark reviewed"],
@@ -251,7 +251,7 @@ describe("automations", () => {
     };
     expect(docs.length).toBeGreaterThan(2);
     for (const x of docs) expect(offered(x), String(x.id)).toEqual(want[String(x.status)]);
-    const by = (label: string) => actions.find((a) => a.label === label)!;
+    const by = (label: string) => actions.find((a) => localize(a.label, "en") === label)!;
     expect(by("Safe retry")).toMatchObject({ call: { path: "/automations/retry/$row.id" }, reply: true });
     expect(by("Retry again")).toMatchObject({ call: { path: "/automations/retry/$row.id" }, reply: true });
     expect(by("Mark reviewed")).toMatchObject({ call: { path: "/automations/review/$row.id" } });

@@ -2,6 +2,7 @@ import { custom, list, table, widgets } from "saastemlycrm-design-system/contrac
 import * as fmt from "../format/growth.ts";
 import * as link from "../links.ts";
 import { growth, nextSteps, openOpportunities, registrationsInProgress, funnelStages } from "../queries/growth.ts";
+import { m } from "../i18n/paraglide/messages.js";
 
 /**
  * The growth board (/growth): the growth CRM, kept apart from operational RFQs — prospects by
@@ -19,13 +20,12 @@ import { growth, nextSteps, openOpportunities, registrationsInProgress, funnelSt
  */
 export const growthPage = widgets({
   header: {
-    eyebrow: "Growth",
-    heading: "Growth board",
-    subtitle:
-      "Prospects, fleets, introductions and vendor registrations — kept apart from operational RFQs, and linked to the customer once business is won.",
+    eyebrow: m.page_growth_eyebrow(),
+    heading: m.page_growth_heading(),
+    subtitle: m.page_growth_subtitle(),
     actions: [
-      { label: "Campaigns", href: link.list("campaigns") },
-      { label: "Add opportunity", href: link.create("opportunities"), main: true },
+      { label: m.page_growth_campaigns(), href: link.list("campaigns") },
+      { label: m.page_growth_add(), href: link.create("opportunities"), main: true },
     ],
   },
   // The figures, one tile per stage of the board (in order), then the steps, fleets, registrations and campaigns.
@@ -33,8 +33,8 @@ export const growthPage = widgets({
     // The pipeline as a funnel (each stage: the prospects that reached it or went further) and
     // where the prospects come from, as one bar: no code, the opportunities themselves.
     {
-      title: "Growth funnel",
-      subhead: "Prospects that reached each stage or went further",
+      title: m.page_growth_funnel(),
+      subhead: m.page_growth_funnel_subhead(),
       size: "s",
       rows: 8,
       maxRows: 10,
@@ -45,7 +45,7 @@ export const growthPage = widgets({
       },
     },
     {
-      title: "Where prospects come from",
+      title: m.page_growth_sources(),
       size: "m",
       rows: 4,
       maxRows: 5,
@@ -58,23 +58,23 @@ export const growthPage = widgets({
       metrics: {
         collection: "opportunities",
         items: [
-          { label: "Open opportunities", where: openOpportunities, note: "prospects to active accounts" },
+          { label: m.page_growth_open(), where: openOpportunities, note: m.page_growth_open_note() },
           {
-            label: "Next steps this week",
+            label: m.page_growth_this_week(),
             where: { ...openOpportunities, nextStepDue: { less_than_equal: "$today+7d" } },
-            note: "calls, emails and visits planned",
+            note: m.page_growth_this_week_note(),
           },
           {
-            label: "No next step",
+            label: m.page_growth_no_step(),
             where: { noNextStep: { equals: true } },
-            note: "plan one or close the opportunity",
+            note: m.page_growth_no_step_note(),
             tone: { some: "error", none: "neutral" },
           },
           {
-            label: "Registrations in progress",
+            label: m.page_growth_registrations(),
             collection: "vendor-registrations",
             where: registrationsInProgress,
-            note: "waiting on documents or a committee",
+            note: m.page_growth_registrations_note(),
             tone: { some: "warning", none: "neutral" },
           },
         ],
@@ -84,7 +84,7 @@ export const growthPage = widgets({
     // prospect to its next stage; switchable to rows, cards or a chart). "Record outcome" is on each
     // in "Sales next steps" and in its record.
     {
-      title: "Pipeline",
+      title: m.page_growth_pipeline(),
       size: "full",
       rows: 10,
       minRows: 8,
@@ -97,10 +97,9 @@ export const growthPage = widgets({
       },
     },
     {
-      title: "Sales next steps",
+      title: m.page_growth_next_steps(),
       size: "m",
-      subhead:
-        "Each step has a channel, a date and what to say. Call or message yourself, then record what happened — the next step lands on the owner's follow-ups.",
+      subhead: m.page_growth_next_steps_subhead(),
       records: {
         collection: "opportunities",
         where: nextSteps,
@@ -115,23 +114,23 @@ export const growthPage = widgets({
       },
     },
     list({
-      title: "Fleets per ship manager",
+      title: m.page_growth_fleets(),
       size: "s",
       skeleton: "list",
       data: growth,
       format: fmt.fleets,
     }),
     table({
-      title: "Vessels per ship manager",
+      title: m.page_growth_vessels(),
       size: "l",
       skeleton: "table",
-      subhead: "Vessels with IMO for customers and prospects — the room to grow is every vessel we don't supply yet.",
+      subhead: m.page_growth_vessels_subhead(),
       data: growth,
       format: fmt.fleetVessels,
     }),
     {
-      title: "Vendor registrations",
-      subhead: "Applications to become an approved supplier of a ship manager or owner.",
+      title: m.page_growth_vendor_title(),
+      subhead: m.page_growth_vendor_subhead(),
       size: "l",
       records: {
         collection: "vendor-registrations",
@@ -139,34 +138,35 @@ export const growthPage = widgets({
         limit: 50,
         columns: ["company", "status", "dates", "paperwork", "nextStep"],
         supporting: { company: "portal" },
-        labels: { nextStep: "Next" },
+        labels: { nextStep: m.page_growth_next() },
         more: true,
       },
     },
     custom({
-      title: "Registration documents",
+      title: m.page_growth_documents(),
       size: "s",
       skeleton: "text",
       format: fmt.registrationReader,
     }),
     // Approved lists and content only; only management schedules or sends (the collection's hook).
     {
-      title: "Campaigns",
+      title: m.page_growth_campaigns(),
       size: "l",
       head: (_data, { user }) => ({
-        subhead: `Approved lists and content only. ${user.role === "management" ? "You can schedule and send." : "Only Karim Balbaa schedules or sends."}`,
+        subhead:
+          user.role === "management" ? m.page_growth_campaigns_can_send() : m.page_growth_campaigns_cannot_send(),
       }),
       records: {
         collection: "campaigns",
         limit: 50,
         columns: ["name", "contentStatus", "status", "results"],
         supporting: { name: "reach", status: "scheduledAt" },
-        labels: { name: "Campaign", contentStatus: "Content" },
+        labels: { name: m.page_growth_campaign(), contentStatus: m.page_growth_content() },
       },
     },
     // The vendor registrations as cards with their renewal dates.
     {
-      title: "Registrations at a glance",
+      title: m.page_growth_registrations_glance(),
       size: "l",
       rows: 9,
       minRows: 6,

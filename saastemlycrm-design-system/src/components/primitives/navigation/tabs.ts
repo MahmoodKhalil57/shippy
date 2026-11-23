@@ -5,6 +5,7 @@ import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement, uid, type Renderable } from "../../base/light-element.ts";
 import { booleanAttribute, rcva } from "../../base/variants.ts";
+import { inlineStep } from "../../base/reading.ts";
 
 /**
  * Tabs: Shows a list of links in a tabbed format.
@@ -160,8 +161,9 @@ export class UiTabs extends LightElement {
     if (!enabled.length) return;
     const pos = enabled.indexOf(this.active);
     let next: number | undefined;
-    if (e.key === "ArrowRight") next = enabled[(pos + 1) % enabled.length];
-    else if (e.key === "ArrowLeft") next = enabled[(pos - 1 + enabled.length) % enabled.length];
+    // Left and right follow the reading direction (in right to left, ArrowRight is the previous tab).
+    const step = inlineStep(e.key, this);
+    if (step) next = enabled[(pos + step + enabled.length) % enabled.length];
     else if (e.key === "Home") next = enabled[0];
     else if (e.key === "End") next = enabled[enabled.length - 1];
     if (next === undefined) return;

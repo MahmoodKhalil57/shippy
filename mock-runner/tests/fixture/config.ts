@@ -80,6 +80,9 @@ const Categories: CollectionConfig = {
   fields: [
     { name: "name", type: "text", required: true, unique: true },
     { name: "kind", type: "select", options: ["topic", "series"] },
+    // Localized: one value per locale (fixture `localization`).
+    { name: "blurb", type: "text", localized: true },
+    { name: "aliases", type: "array", fields: [{ name: "label", type: "text", localized: true }] },
     { name: "posts", type: "join", collection: "posts", on: "category" },
   ],
 };
@@ -118,6 +121,7 @@ const Settings: GlobalConfig = {
   access: { read: () => true, update: isAdmin },
   fields: [
     { name: "siteName", type: "text", defaultValue: "Untitled" },
+    { name: "tagline", type: "text", localized: true },
     { name: "perPage", type: "number", defaultValue: 10, min: 1 },
   ],
 };
@@ -126,4 +130,5 @@ export const fixture: BackendConfig = {
   admin: { user: "users" },
   collections: [Users, Categories, Posts, Notes, Media],
   globals: [Settings],
+  localization: { locales: ["en", { code: "ar", rtl: true }], defaultLocale: "en", fallback: true },
 };

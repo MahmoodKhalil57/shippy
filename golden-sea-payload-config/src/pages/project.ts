@@ -2,6 +2,7 @@ import { gantt, gauges, list, steps, table, tiles, widgets } from "saastemlycrm-
 import * as fmt from "../format/project.ts";
 import * as link from "../links.ts";
 import { plan } from "../queries/project.ts";
+import { m } from "../i18n/paraglide/messages.js";
 
 /**
  * The delivery plan (/project), for Golden Sea: phases and work packages, each with the demo
@@ -13,71 +14,70 @@ import { plan } from "../queries/project.ts";
  */
 export const projectPage = widgets({
   header: {
-    eyebrow: "Golden Sea × SaaSTEMLY · delivery plan",
-    heading: "From the first email to the last payment",
-    subtitle:
-      "Four phases over 13 weeks, each shown in this demo. Every requirement from your brief is covered and proven by an acceptance test before the final payment.",
+    eyebrow: m.page_project_eyebrow(),
+    heading: m.page_project_heading(),
+    subtitle: m.page_project_subtitle(),
     actions: [
-      { label: "Start at the inbox", href: "/inbox", main: true },
-      { label: "Follow one case", href: link.doc("cases", "gs-rfq-0142", "overview") },
+      { label: m.page_project_start(), href: "/inbox", main: true },
+      { label: m.page_project_follow(), href: link.doc("cases", "gs-rfq-0142", "overview") },
     ],
   },
   widgets: [
     // The roadmap and the monthly plan, the milestones with the phases, then two by two.
     gantt({
-      title: "Roadmap — 13 weeks, phased",
+      title: m.page_project_roadmap(),
       size: "l",
       skeleton: "table",
       data: plan,
       format: fmt.roadmap,
     }),
     list({
-      title: "Monthly plan — from go-live",
+      title: m.page_project_monthly(),
       size: "s",
       skeleton: "list",
       data: plan,
       format: fmt.monthlyPlan,
     }),
     steps({
-      title: "Value from week 7. Everything by week 13.",
+      title: m.page_project_weeks(),
       size: "m",
       rows: 3,
       data: plan,
       format: fmt.milestoneWeeks,
     }),
-    tiles({ title: "Milestones", size: "m", data: plan, format: fmt.milestones }),
+    tiles({ title: m.page_project_milestones(), size: "m", data: plan, format: fmt.milestones }),
     // One tile per phase of the plan, in order: the plan has four (discovery to go-live).
     list.each({
       size: "s",
       skeleton: "list",
       data: plan,
       tiles: 4,
-      empty: { heading: "No phase planned here." },
+      empty: { heading: m.page_project_no_phase() },
       items: (d) => d.phases,
       key: (p: fmt.Phase) => p.key,
       title: (p: fmt.Phase) => p.name,
       format: fmt.phase,
     }),
-    tiles({ title: "Running through every phase", size: "m", data: plan, format: fmt.platformWork }),
-    tiles({ title: "Nine problems you named. Nine answers.", size: "m", data: plan, format: fmt.problems }),
-    tiles({ title: "AI never sends, prices or pays without a person.", size: "m", data: plan, format: fmt.trust }),
-    tiles({ title: "The last 20% is paid after 30 days of real use.", size: "m", data: plan, format: fmt.payment }),
+    tiles({ title: m.page_project_every_phase(), size: "m", data: plan, format: fmt.platformWork }),
+    tiles({ title: m.page_project_problems(), size: "m", data: plan, format: fmt.problems }),
+    tiles({ title: m.page_project_trust(), size: "m", data: plan, format: fmt.trust }),
+    tiles({ title: m.page_project_payment(), size: "m", data: plan, format: fmt.payment }),
     table({
-      title: "Your brief, line by line",
+      title: m.page_project_brief(),
       size: "l",
       skeleton: "table",
       data: plan,
       format: fmt.brief,
     }),
     gauges({
-      title: "Acceptance tests passing",
+      title: m.page_project_passing(),
       size: "s",
       rows: 3,
       data: plan,
       format: fmt.acceptancePassing,
     }),
     table({
-      title: "Acceptance tests from your brief",
+      title: m.page_project_acceptance(),
       size: "l",
       skeleton: "table",
       data: plan,
@@ -85,7 +85,7 @@ export const projectPage = widgets({
     }),
     // The deliveries on their month, each opening its record.
     {
-      title: "Delivery calendar",
+      title: m.page_project_calendar(),
       size: "m",
       rows: 10,
       minRows: 8,

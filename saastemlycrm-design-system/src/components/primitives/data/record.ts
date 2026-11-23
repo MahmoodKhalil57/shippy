@@ -1,6 +1,7 @@
 import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
+import { m } from "../../../i18n/index.ts";
 import { LightElement } from "../../base/light-element.ts";
 import { monogramHue, monogramLetters } from "../../base/monogram.ts";
 import { motion } from "../../base/motion-queue.ts";
@@ -166,7 +167,7 @@ export const recordInitials = rcva(
 );
 /** The arrow that slides in on hover. */
 export const recordGo = rcva(
-  `${rowEnd} text-primary opacity-0 -translate-x-1 [transition:opacity_var(--duration-short4)_var(--ease-standard),translate_var(--duration-short4)_var(--ease-standard)] group-hover/record:translate-x-0 group-hover/record:opacity-100 group-focus-visible/record:opacity-100 motion-reduce:transition-none rtl:rotate-180`,
+  `${rowEnd} text-primary opacity-0 -translate-x-1 [transition:opacity_var(--duration-short4)_var(--ease-standard),translate_var(--duration-short4)_var(--ease-standard)] group-hover/record:translate-x-0 group-hover/record:opacity-100 group-focus-visible/record:opacity-100 motion-reduce:transition-none rtl:translate-x-1`,
 );
 
 // ---------------------------------------------------------------- rows
@@ -258,7 +259,7 @@ const box = (r: RecordItem, cls: string, i: number, label: string, body: Templat
 };
 const actionsOf = (r: RecordItem) => (r.actions ? html`<span class=${recordActions()}>${r.actions}</span>` : nothing);
 
-const named = (r: RecordItem) => (r.status ? `${r.title}, ${r.status.label}` : r.title);
+const named = (r: RecordItem) => (r.status ? m.record_named({ title: r.title, status: r.status.label }) : r.title);
 
 /** Hands the entrance animations to the motion queue once, when the first records are drawn. */
 abstract class RecordsBase extends LightElement {
@@ -386,7 +387,7 @@ export class UiRecordList extends RecordsBase {
             }
             ${status(r.status)} ${r.figure ? html`<span class=${recordRowFigure()}>${r.figure.value}</span>` : nothing}
             ${actionsOf(r)}
-            ${r.href && !r.actions ? html`<span class="text-on-surface-variant rtl:rotate-180" aria-hidden="true">${iconSvg("chevron-right", { size: "sm" })}</span>` : nothing}
+            ${r.href && !r.actions ? html`<span class="text-on-surface-variant" aria-hidden="true">${iconSvg("chevron-right", { size: "sm" })}</span>` : nothing}
           </span>`;
         return html`<li class=${stack}>${box(r, recordRow({ link: !!r.href }), i, named(r), body)}</li>`;
       })}
@@ -468,7 +469,7 @@ export class UiRecordHero extends RecordsBase {
       }
       ${
         this.links.length
-          ? html`<nav class=${recordHeroLinks()} aria-label="Related">
+          ? html`<nav class=${recordHeroLinks()} aria-label=${m.record_related()}>
               ${this.links.map((l) => {
                 const inner = html`${l.label}${
                   l.count !== undefined ? html`<span class=${recordHeroCount()}>${l.count}</span>` : nothing

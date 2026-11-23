@@ -1,6 +1,6 @@
 import { stringify } from "qs-esm";
 import { beforeEach, describe, expect, it } from "vite-plus/test";
-import type { CollectionSettings } from "saastemlycrm-design-system/contracts";
+import { localize, type CollectionSettings } from "saastemlycrm-design-system/contracts";
 import { matches } from "saastemlycrm-design-system/payload";
 import { IntakeMessages, SupplierRfqs } from "../src/collections/sourcing.ts";
 import { lineCategory } from "../src/endpoints/sourcing.ts";
@@ -233,7 +233,7 @@ describe("supplier RFQs", () => {
     const waiting = await remind("srfq-0142-e");
     expect(waiting.doc.reminderState).toBe("1 of 2 · next 17 Nov, 15:00");
     // The second reminder also alerts the owner: internal, so no dialog.
-    expect(waiting.actions.map((a) => [a.label, Boolean(a.confirm)])).toEqual([["Remind now", false]]);
+    expect(waiting.actions.map((a) => [localize(a.label, "en"), Boolean(a.confirm)])).toEqual([["Remind now", false]]);
     expect(waiting.actions[0]!.call!.path).toBe("/sourcing/rfqs/$row.id/remind");
     const replied = await remind("srfq-0142-a");
     expect(replied.doc.reminderState).toBe("0 of 2 · stopped");

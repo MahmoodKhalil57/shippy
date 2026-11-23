@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vite-plus/test";
-import type { CollectionSettings } from "saastemlycrm-design-system/contracts";
+import { localize, type CollectionSettings } from "saastemlycrm-design-system/contracts";
 import { matches } from "saastemlycrm-design-system/payload";
 import { Approvals, Quotations } from "../src/collections/commercial.ts";
 import { backend, call, login } from "./backend.ts";
@@ -270,7 +270,7 @@ describe("approvals queue", () => {
       const doc = (await call("GET", `/api/approvals/${id}?depth=0`)).body;
       return ((Approvals.custom as CollectionSettings).actions ?? [])
         .filter((a) => (!a.roles || a.roles.includes(me.role)) && (!a.when || matches(doc, a.when as never)))
-        .map((a) => a.label);
+        .map((a) => localize(a.label, "en"));
     };
     await login("karim.balbaa");
     expect(await labels("ap-deposit-0133")).toEqual([
@@ -281,7 +281,9 @@ describe("approvals queue", () => {
     ]);
     expect(await labels("ap-bank-s3")).toEqual(["Supplier record", "Return", "Approve"]);
     // Deciding goes through the action's endpoint, then finance records the payment.
-    const call1 = (Approvals.custom as CollectionSettings).actions!.find((a) => a.label === "Approve")!.call!;
+    const call1 = (Approvals.custom as CollectionSettings).actions!.find(
+      (a) => localize(a.label, "en") === "Approve",
+    )!.call!;
     expect(call1.path).toBe("/commercial/approvals/$row.id/decide");
     expect(
       (await call("POST", "/api/commercial/approvals/ap-deposit-0133/decide", { decision: "Approve" })).status,

@@ -7,6 +7,7 @@ import "../../primitives/media/icon.ts";
 import type { MenuItem } from "../../primitives/navigation/menu.ts";
 import "../../primitives/navigation/menu.ts";
 import "../../primitives/typography/text.ts";
+import { m } from "../../../i18n/index.ts";
 
 /**
  * Model selector: which model an agent runs on — a small chip (its icon and name) opening a menu
@@ -44,13 +45,13 @@ export class UiModelSelector extends LightElement {
 
   render() {
     const all = this.groups.flatMap((g) => g.models);
-    const current = all.find((m) => m.id === this.value) ?? all[0];
-    const item = (m: ModelOption): MenuItem => ({
-      label: m.label,
-      icon: m.icon ? html`<ui-icon name=${m.icon} size="sm"></ui-icon>` : undefined,
-      active: m.id === current?.id,
-      value: m.id,
-      ...(m.description ? { card: true, description: m.description } : {}),
+    const current = all.find((x) => x.id === this.value) ?? all[0];
+    const item = (x: ModelOption): MenuItem => ({
+      label: x.label,
+      icon: x.icon ? html`<ui-icon name=${x.icon} size="sm"></ui-icon>` : undefined,
+      active: x.id === current?.id,
+      value: x.id,
+      ...(x.description ? { card: true, description: x.description } : {}),
     });
     const items: MenuItem[] = this.groups.map((g) => ({ heading: true, label: g.label, children: g.models.map(item) }));
     return html`<ui-dropdown
@@ -63,7 +64,7 @@ export class UiModelSelector extends LightElement {
       trigger-variant="text"
       trigger-size="xs"
       trigger-spaced="false"
-      .label=${`Model: ${current?.label ?? ""}`}
+      .label=${m.model_selector_label({ name: current?.label ?? "" })}
     >
       <ui-text slot="trigger" as="span" variant="label-md" emphasized>
         ${current?.icon ? html`<ui-icon name=${current.icon} size="sm"></ui-icon>` : ""} ${current?.label}

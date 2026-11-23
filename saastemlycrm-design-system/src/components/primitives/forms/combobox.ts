@@ -8,6 +8,7 @@ import { rcva } from "../../base/variants.ts";
 import { chip, chipRemove } from "../data/chip.ts";
 import { floating, floatingHeight, inset, row, rowEnd, stack, text } from "../layout/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
+import { m } from "../../../i18n/index.ts";
 import { fieldsetField, type FieldsetVariants } from "./fieldset.ts";
 
 /**
@@ -139,7 +140,7 @@ export class UiCombobox extends LightElement {
     const typed = this._query.trim();
     const exists = this.options.some((o) => o.label.toLowerCase() === typed.toLowerCase());
     return this.creatable && typed && !exists && !this._values.includes(typed)
-      ? [...list, { value: typed, label: `Add “${typed}”`, create: true }]
+      ? [...list, { value: typed, label: m.combobox_add({ value: typed }), create: true }]
       : list;
   }
 
@@ -247,7 +248,7 @@ export class UiCombobox extends LightElement {
                         : html`<button
                             type="button"
                             class=${chipRemove({ variant: "input" })}
-                            aria-label=${`Remove ${this._labelOf(v)}`}
+                            aria-label=${m.combobox_remove({ value: this._labelOf(v) })}
                             @click=${(e: Event) => {
                               e.stopPropagation();
                               this._remove(v);
@@ -266,12 +267,13 @@ export class UiCombobox extends LightElement {
           role="combobox"
           aria-label=${ifDefined(!this.legend && !this.label ? this.ariaLabelText : undefined)}
           autocomplete="off"
+          dir="auto"
           inputmode=${ifDefined(this.inputmode)}
           aria-expanded=${this._open ? "true" : "false"}
           aria-controls=${listId}
           aria-autocomplete="list"
           aria-activedescendant=${ifDefined(this._open && matches.length ? `${this._id}-${this._active}` : undefined)}
-          placeholder=${this.multiple && values.length ? "" : this.placeholder || (this.multiple ? "Choose…" : "—")}
+          placeholder=${this.multiple && values.length ? "" : this.placeholder || (this.multiple ? m.combobox_choose() : "—")}
           .value=${this._open || this.multiple ? this._query : single}
           ?disabled=${this.disabled}
           ?readonly=${this.readonly}
@@ -289,7 +291,7 @@ export class UiCombobox extends LightElement {
               ? html`<button
                   type="button"
                   class=${comboboxClear()}
-                  aria-label="Clear"
+                  aria-label=${m.combobox_clear()}
                   @click=${(e: Event) => {
                     e.stopPropagation();
                     this._emit([]);
@@ -314,7 +316,7 @@ export class UiCombobox extends LightElement {
         ${
           this._open && !matches.length
             ? html`<li class=${comboboxEmpty()} role="presentation">
-                ${this.options.length ? "No matches" : this.creatable ? "Type to add" : "Nothing to choose from"}
+                ${this.options.length ? m.combobox_no_matches() : this.creatable ? m.combobox_type_to_add() : m.combobox_nothing()}
               </li>`
             : nothing
         }

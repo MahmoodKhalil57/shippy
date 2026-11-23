@@ -52,6 +52,41 @@ seed data (`src/seed`). Entry points: `.` (the config, `src/config.ts`) and `./s
   a server. It defines no custom elements. `tests/template.test.ts` enforces all of this, and that
   the design system and the backend import neither other package. Only `app/`, `vite.config.ts`
   and `tests/` import the dashboard and the backend (lint `overrides` allow it there).
+- **English and Arabic** (the design system's AGENTS.md, "Language", has the rules and the tools):
+  - **Config text** (collection and global labels, field labels, hints, placeholders, option labels,
+    `custom.about`, navigation groups, view titles) is Payload's `{ en, ar }`; `fieldProblems`
+    requires both (`tests/fields.test.ts`).
+  - **Content**: `localization` (`src/config.ts`: English, the default, and Arabic). Text people
+    read in a record (names of products and services, descriptions, notes, titles, reasons,
+    messages) is `localized: true`, and its seed gives `{ "en": …, "ar": … }`. Codes, references,
+    emails, phone numbers, amounts, dates, people's and companies' names stay single-valued.
+  - **Screens, formatters, actions and endpoints** take their words from this project's catalog:
+    `m.<key>(inputs)` from `src/i18n/paraglide/messages.js` (`messages/{locale}.json` and
+    `messages/<part>/{locale}.json`, ICU MessageFormat 1, compiled the design system's way:
+    `vpx ../saastemlycrm-design-system/vite/compile-i18n.ts .`). An endpoint runs in the backend
+    (a service worker), so it names the request's language: `m.key(inputs, { locale: req.locale })`
+    (`req.locale` is `en` or `ar`, from `?locale=`). Numbers go through `formatNumber` and dates
+    through `intl` (contracts), never a fixed `"en-US"`.
+  - **Endpoints and hooks read in the request's language**: a Local API read passes `req` or
+    `locale: req.locale` (`req.payload.find({ collection, locale: req.locale, … })`); without it
+    Payload reads the default locale and Arabic screens show English records. A tile an endpoint
+    sends has a stable `key` (its English words) beside its `label` in the request's language.
+  - **Figures** have a stable `key` and their words in `label`, with `name(key)` on the widget
+    (`Figure` in the contracts), so a tile keeps its place in both languages.
+  - **Typed as a string, given in both languages**: where a type only takes a string (Payload's
+    `placeholder` on select, relationship and date fields; an action's words), `words({ en, ar })`
+    (`src/collections/shared.ts`) passes the pair through unchanged at runtime.
+  - **Actions** (`custom.actions`): their label, confirm heading, text and button, fields, `done`,
+    `prompt` and `reason` are `{ en, ar }` too (`fieldProblems`); a value that is only `$row.…`
+    is the record's own text, already in the reader's language.
+  - **The build is one per language** (`build-locales.ts`, `bun run build`): Arabic, then English
+    into `../docs` (the worker, built last, precaches both); `index.html` loads the page's
+    language's entry (the first-paint script preloads it). Each page carries only its own words.
+  - **People's language** is the users' `language` field: it follows them to another browser, and
+    the picker writes it.
+  - `tests/i18n.test.ts`: both languages say every message with the same inputs, the compiled
+    messages are current, and `index.html` sets `<html lang dir>` from the saved language before
+    the first paint.
 - **Business logic lives in the collections**, so every screen reads it the same way:
   - **Values derived from a document** are fields on its collection. If a query must filter on them, they are stored by a `beforeChange` hook (an invoice's `balance`, `status`). If they depend on the time or on other documents, they are virtual and computed on read (`computed()` in `src/collections/shared.ts`). Examples: an invoice's `balanceUsd`, `daysOverdue`, `ageBucket` and its AI `reminder` draft.
   - **The demo's clock** is `TODAY` (`src/collections/shared.ts`). The config's `admin.custom.today` is set from it, so `$today-30d` in a widget query counts from the same day as the virtual fields.

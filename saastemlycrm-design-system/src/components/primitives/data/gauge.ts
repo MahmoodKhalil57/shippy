@@ -1,6 +1,7 @@
 import type { VariantProps } from "class-variance-authority";
 import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import { formatInt, m } from "../../../i18n/index.ts";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { row, rowFill, text, tiles } from "../layout/algebra.ts";
@@ -87,8 +88,8 @@ export class UiGauge extends LightElement {
         aria-valuenow=${this.value}
         aria-valuemin=${this.min}
         aria-valuemax=${this.max}
-        aria-label=${this.label || (typeof this.heading === "string" ? this.heading : "") || "Gauge"}
-        aria-valuetext=${this.label || `${this.value} of ${this.max}`}
+        aria-label=${this.label || (typeof this.heading === "string" ? this.heading : "") || m.gauge_label()}
+        aria-valuetext=${this.label || m.gauge_value_of({ value: formatInt(this.value), max: formatInt(this.max) })}
       >
         <div class=${gaugeFill({ tone: this.tone })} style="--fill:${pct}%"></div>
       </div>

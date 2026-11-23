@@ -1,4 +1,5 @@
 import type { Engine } from "./engine.ts";
+import { withSeedLocales } from "./locales.ts";
 import { text } from "../../payload/index.ts";
 
 /**
@@ -45,14 +46,14 @@ export async function seedStore(engine: Engine, seeds: Seeds) {
   for (const c of order) {
     for (const data of seeds.collections[c.slug] ?? []) {
       try {
-        await engine.create({ collection: c.slug, data, context, depth: 0 });
+        await engine.create({ collection: c.slug, data, context, depth: 0, locale: "all" });
       } catch (e) {
         console.warn(`[mock backend] seed ${c.slug}/${text(data.id ?? "?")} skipped:`, (e as Error).message, e);
       }
     }
   }
   for (const [slug, data] of Object.entries(seeds.globals)) {
-    if (engine.hasGlobal(slug)) await engine.updateGlobal({ slug, data, context, depth: 0 });
+    if (engine.hasGlobal(slug)) await engine.updateGlobal({ slug, data, context, depth: 0, locale: "all" });
   }
   await engine.store.setMeta("seededIds", seedIds(seeds));
   await engine.store.setMeta("seededAt", new Date().toISOString());
@@ -72,6 +73,8 @@ function seedIds(seeds: Seeds): Record<string, string[]> {
 /**
  * The seed grew since this store was seeded (new users, cases…): add the documents it has never
  * loaded, leaving everything else — edits, and seed documents deleted on purpose — as it is.
+ * Documents it has loaded gain the languages their seed has gained (`withSeedLocales`): text
+ * people haven't changed reads in every language the seed now gives.
  * Stores seeded before ids were tracked add whichever seed documents are missing, once.
  */
 export async function topUpSeed(engine: Engine, seeds: Seeds) {
@@ -85,9 +88,19 @@ export async function topUpSeed(engine: Engine, seeds: Seeds) {
     for (const data of seeds.collections[c.slug] ?? []) {
       if (data.id == null) continue;
       const id = text(data.id);
-      if (known.has(id) || (await engine.store.get(c.slug, id))) continue;
+      const stored = await engine.store.get(c.slug, id);
+      // Loaded before: only the languages its seed has gained since (./locales.ts).
+      if (stored) {
+        const next = withSeedLocales(engine.fields(c.slug), stored, data, engine.config.localization);
+        if (next) {
+          await engine.store.put(c.slug, next);
+          added.push(`${c.slug}/${id} (languages)`);
+        }
+        continue;
+      }
+      if (known.has(id)) continue;
       try {
-        await engine.create({ collection: c.slug, data, context, depth: 0 });
+        await engine.create({ collection: c.slug, data, context, depth: 0, locale: "all" });
         added.push(`${c.slug}/${id}`);
       } catch (e) {
         console.warn(`[mock backend] seed ${c.slug}/${id} skipped:`, (e as Error).message, e);
@@ -98,11 +111,17 @@ export async function topUpSeed(engine: Engine, seeds: Seeds) {
   // they don't have yet (fields added since). What people set is never overwritten.
   for (const [slug, data] of Object.entries(seeds.globals)) {
     if (!engine.hasGlobal(slug)) continue;
-    const stored = await engine.store.getGlobal(slug);
+    let stored = await engine.store.getGlobal(slug);
+    const translated = stored && withSeedLocales(engine.globalFields(slug), stored, data, engine.config.localization);
+    if (translated) {
+      await engine.store.putGlobal(slug, translated);
+      stored = translated;
+      added.push(`globals/${slug} (languages)`);
+    }
     const missing = stored ? Object.fromEntries(Object.entries(data).filter(([k]) => stored[k] === undefined)) : data;
     if (!Object.keys(missing).length) continue;
     try {
-      await engine.updateGlobal({ slug, data: missing, context, depth: 0 });
+      await engine.updateGlobal({ slug, data: missing, context, depth: 0, locale: "all" });
       added.push(stored ? `globals/${slug} (${Object.keys(missing).join(", ")})` : `globals/${slug}`);
     } catch (e) {
       console.warn(`[mock backend] seed globals/${slug} skipped:`, (e as Error).message, e);

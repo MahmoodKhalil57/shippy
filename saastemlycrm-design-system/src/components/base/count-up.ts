@@ -4,7 +4,11 @@
  * "%"), its decimals and its thousands separators. Pure: `readFigure` splits a figure, `figureAt`
  * draws it part of the way from one number to another. The motion itself is a stat's
  * (`<ui-stat>`): ambient, in the motion queue, paced by animation frames, none with Reduce motion.
+ * Numbers are written the language's way (`intl.number`; Arabic writes Latin digits, with the
+ * same separators).
  */
+
+import { intl } from "../../i18n/index.ts";
 
 export interface Figure {
   /** What comes before the number ("USD ", "−"). */
@@ -38,11 +42,9 @@ export function readFigure(text: string): Figure | undefined {
 /** The figure `to`, its number `t` (0 to 1) of the way from `from`: the same words, decimals and separators. */
 export function figureAt(from: number, to: Figure, t: number): string {
   const v = from + (to.value - from) * Math.min(1, Math.max(0, t));
-  const body = Math.abs(v).toLocaleString("en-US", {
-    minimumFractionDigits: to.decimals,
-    maximumFractionDigits: to.decimals,
-    useGrouping: to.grouped,
-  });
+  const body = intl
+    .number({ minimumFractionDigits: to.decimals, maximumFractionDigits: to.decimals, useGrouping: to.grouped })
+    .format(Math.abs(v));
   const neg = v < 0 && Number(body.replaceAll(",", "")) !== 0;
   return `${to.before}${neg ? (to.minus ? "−" : "-") : ""}${body}${to.after}`;
 }

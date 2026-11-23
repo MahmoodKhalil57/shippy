@@ -2,49 +2,94 @@
   {
     "id": "op-baltic",
     "name": "Baltic Reefer Management",
-    "kind": "Ship manager · 14 reefers",
+    "kind": {
+      "en": "Ship manager · 14 reefers",
+      "ar": "مدير سفن · 14 سفينة مبرّدة"
+    },
     "segment": "Marine",
     "source": "Inbound",
     "estimatedValue": "EUR 40k / yr",
     "stage": "First RFQ",
     "owner": "sa",
-    "nextStep": "Quote MV Polar Bay requisition",
+    "nextStep": {
+      "en": "Quote MV Polar Bay requisition",
+      "ar": "تسعير طلب توريد MV Polar Bay"
+    },
     "nextStepDue": "2026-11-18T00:00:00.000Z",
     "contact": "Lena K., fleet purchasing (Riga)",
     "channel": "Email",
-    "script": "Thank Lena for the Polar Bay requisition; confirm Alexandria delivery on arrival ≈ 26 Nov; ask for the IMO and a quote deadline. Mention our cold-chain trucks for provisions and the 24/7 Suez transit desk.",
+    "script": {
+      "en": "Thank Lena for the Polar Bay requisition; confirm Alexandria delivery on arrival ≈ 26 Nov; ask for the IMO and a quote deadline. Mention our cold-chain trucks for provisions and the 24/7 Suez transit desk.",
+      "ar": "اشكر Lena على طلب توريد Polar Bay؛ أكّد التسليم في الإسكندرية عند الوصول ≈ 26 نوفمبر؛ اطلب رقم IMO وموعد تقديم العرض. اذكر شاحناتنا المبرّدة للمؤن ومكتب عبور السويس على مدار الساعة."
+    },
     "fleetSize": 14,
     "fleet": [
-      { "name": "MV Polar Bay", "imo": "9356107", "vesselType": "Reefer" },
-      { "name": "MV Arctic Dawn", "imo": "9356119", "vesselType": "Reefer" },
-      { "name": "MV Baltic Frost", "imo": "9402277", "vesselType": "Reefer" }
+      {
+        "name": "MV Polar Bay",
+        "imo": "9356107",
+        "vesselType": "Reefer"
+      },
+      {
+        "name": "MV Arctic Dawn",
+        "imo": "9356119",
+        "vesselType": "Reefer"
+      },
+      {
+        "name": "MV Baltic Frost",
+        "imo": "9402277",
+        "vesselType": "Reefer"
+      }
     ]
   },
   {
     "id": "op-gulfstar",
     "name": "Gulf Star Shipping",
-    "kind": "Shipowner · 6 bulkers",
+    "kind": {
+      "en": "Shipowner · 6 bulkers",
+      "ar": "مالك سفن · 6 ناقلات بضائع سائبة"
+    },
     "segment": "Marine",
     "source": "Canal agent intro",
     "estimatedValue": "USD 60k / yr",
     "stage": "Registration submitted",
     "owner": "ky",
-    "nextStep": "Chase registration decision",
+    "nextStep": {
+      "en": "Chase registration decision",
+      "ar": "متابعة قرار التسجيل"
+    },
     "nextStepDue": "2026-11-20T00:00:00.000Z",
     "contact": "Procurement lead (Dubai office)",
     "channel": "Call",
-    "script": "We submitted our vendor registration on 2 Nov. Is anything missing on your side, and when will the committee decide? Mention: 24/7 Suez Canal transit supply and on-board delivery at anchorage.",
+    "script": {
+      "en": "We submitted our vendor registration on 2 Nov. Is anything missing on your side, and when will the committee decide? Mention: 24/7 Suez Canal transit supply and on-board delivery at anchorage.",
+      "ar": "قدّمنا تسجيلنا كمورّد في 2 نوفمبر. هل ينقص شيء من جهتكم، ومتى ستقرر اللجنة؟ اذكر: توريد عبور قناة السويس على مدار الساعة والتسليم على متن السفينة في المخطاف."
+    },
     "fleetSize": 6,
     "fleet": [
-      { "name": "MV Gulf Star", "imo": "9441201", "vesselType": "Bulk carrier" },
-      { "name": "MV Gulf Pearl", "imo": "9441213", "vesselType": "Bulk carrier" },
-      { "name": "MV Desert Wind", "imo": "9512876", "vesselType": "Bulk carrier" }
+      {
+        "name": "MV Gulf Star",
+        "imo": "9441201",
+        "vesselType": "Bulk carrier"
+      },
+      {
+        "name": "MV Gulf Pearl",
+        "imo": "9441213",
+        "vesselType": "Bulk carrier"
+      },
+      {
+        "name": "MV Desert Wind",
+        "imo": "9512876",
+        "vesselType": "Bulk carrier"
+      }
     ]
   },
   {
     "id": "op-medline",
     "name": "Medline Tankers",
-    "kind": "Ship manager · 22 tankers",
+    "kind": {
+      "en": "Ship manager · 22 tankers",
+      "ar": "مدير سفن · 22 ناقلة"
+    },
     "segment": "Marine",
     "source": "Trade fair contact",
     "estimatedValue": "USD 120k / yr",
@@ -52,60 +97,104 @@
     "owner": "sa",
     "contact": "Fleet procurement (Piraeus)",
     "channel": "Email",
-    "script": "Follow up the Posidonia meeting: send the approved “Intro — ship managers” email with our Suez/Alexandria coverage, then ask which documents their vendor registration needs.",
+    "script": {
+      "en": "Follow up the Posidonia meeting: send the approved “Intro — ship managers” email with our Suez/Alexandria coverage, then ask which documents their vendor registration needs.",
+      "ar": "تابع اجتماع Posidonia: أرسل بريد «تعريف — مديرو السفن» المعتمد مع تغطيتنا في السويس والإسكندرية، ثم اسأل عن المستندات التي يحتاجها تسجيل المورّد لديهم."
+    },
     "fleetSize": 22,
     "fleet": [
-      { "name": "MT Medline Aurora", "imo": "9623341", "vesselType": "Tanker" },
-      { "name": "MT Medline Spirit", "imo": "9623353", "vesselType": "Tanker" }
+      {
+        "name": "MT Medline Aurora",
+        "imo": "9623341",
+        "vesselType": "Tanker"
+      },
+      {
+        "name": "MT Medline Spirit",
+        "imo": "9623353",
+        "vesselType": "Tanker"
+      }
     ]
   },
   {
     "id": "op-aegean",
     "name": "Aegean Ferries",
-    "kind": "Operator · 4 ferries",
+    "kind": {
+      "en": "Operator · 4 ferries",
+      "ar": "مشغّل · 4 عبّارات"
+    },
     "segment": "Marine",
     "source": "Research list",
     "estimatedValue": "EUR 25k / yr",
     "stage": "Prospect",
     "owner": "kb",
-    "nextStep": "Intro call with the fleet superintendent",
+    "nextStep": {
+      "en": "Intro call with the fleet superintendent",
+      "ar": "مكالمة تعارف مع مشرف الأسطول"
+    },
     "nextStepDue": "2026-11-24T00:00:00.000Z",
     "contact": "Fleet superintendent",
     "channel": "Call",
-    "script": "Introduce Golden Sea: cabin and provision stores for their Alexandria calls, one quotation within 24 h, Arabic/English documents. Ask who approves new suppliers and when their next Alexandria call is.",
+    "script": {
+      "en": "Introduce Golden Sea: cabin and provision stores for their Alexandria calls, one quotation within 24 h, Arabic/English documents. Ask who approves new suppliers and when their next Alexandria call is.",
+      "ar": "عرّف بـ Golden Sea: مستلزمات الكبائن والمؤن لرسوّهم في الإسكندرية، عرض سعر واحد خلال 24 ساعة، مستندات بالعربية والإنجليزية. اسأل من يعتمد الموردين الجدد ومتى رسوّهم القادم في الإسكندرية."
+    },
     "fleetSize": 4,
-    "fleet": [{ "name": "MV Aegean Star", "imo": "9184421", "vesselType": "Ferry" }]
+    "fleet": [
+      {
+        "name": "MV Aegean Star",
+        "imo": "9184421",
+        "vesselType": "Ferry"
+      }
+    ]
   },
   {
     "id": "op-redsea",
     "name": "Red Sea Dredging",
-    "kind": "Industrial · dredging fleet",
+    "kind": {
+      "en": "Industrial · dredging fleet",
+      "ar": "صناعي · أسطول تجريف"
+    },
     "segment": "Industrial",
     "source": "Existing contact",
     "estimatedValue": "EGP 1.2M / yr",
     "stage": "Approved vendor",
     "owner": "ah",
-    "nextStep": "Send capability deck and first price list",
+    "nextStep": {
+      "en": "Send capability deck and first price list",
+      "ar": "إرسال عرض القدرات وأول قائمة أسعار"
+    },
     "nextStepDue": "2026-11-19T00:00:00.000Z",
     "contact": "Eng. Tarek, stores manager",
     "channel": "Email",
-    "script": "We're now on your approved vendor list — attached our capability deck and price list for engine stores, PPE and welding. Could we visit the Suez base next week to see the store room?"
+    "script": {
+      "en": "We're now on your approved vendor list — attached our capability deck and price list for engine stores, PPE and welding. Could we visit the Suez base next week to see the store room?",
+      "ar": "أصبحنا الآن في قائمة مورّديكم المعتمدين — أرفقنا عرض قدراتنا وقائمة أسعار مستلزمات المحركات ومعدات الوقاية واللحام. هل يمكننا زيارة قاعدة السويس الأسبوع القادم لرؤية المخزن؟"
+    }
   },
   {
     "id": "op-nordvik",
     "name": "Nordvik Ship Management",
-    "kind": "Ship manager · 9 vessels",
+    "kind": {
+      "en": "Ship manager · 9 vessels",
+      "ar": "مدير سفن · 9 سفن"
+    },
     "segment": "Marine",
     "source": "Referral",
     "estimatedValue": "USD 90k / yr",
     "stage": "Active account",
     "owner": "ky",
     "customer": "nordvik",
-    "nextStep": "Quarterly review call with Ingrid L.",
+    "nextStep": {
+      "en": "Quarterly review call with Ingrid L.",
+      "ar": "مكالمة المراجعة الربع سنوية مع Ingrid L."
+    },
     "nextStepDue": "2026-11-25T00:00:00.000Z",
     "contact": "Ingrid L., purchasing officer",
     "channel": "Call",
-    "script": "Review the quarter: 9 RFQs, quote turnaround down to 1.6 days. Ask about MV Fjord Spirit and the rest of the fleet we don't supply yet, and whether a fleet price agreement for engine stores would help.",
+    "script": {
+      "en": "Review the quarter: 9 RFQs, quote turnaround down to 1.6 days. Ask about MV Fjord Spirit and the rest of the fleet we don't supply yet, and whether a fleet price agreement for engine stores would help.",
+      "ar": "راجع الربع: 9 طلبات عروض، وانخفض زمن الرد على العروض إلى 1.6 يوم. اسأل عن MV Fjord Spirit وبقية الأسطول الذي لا نورّد له بعد، وهل تفيد اتفاقية أسعار للأسطول في مستلزمات المحركات."
+    },
     "fleetSize": 9
   }
 ]

@@ -1,5 +1,6 @@
 import type { Action, Figure, IconName, KindData } from "saastemlycrm-design-system/contracts";
 import type { AutomationsView } from "../endpoints/platform.ts";
+import { m } from "../i18n/paraglide/messages.js";
 
 /**
  * Automations & exceptions, read for the widgets no one collection can say: the figures that span
@@ -14,18 +15,29 @@ import type { AutomationsView } from "../endpoints/platform.ts";
  * of all the rules. What waits for review is the review queue beside them, with its count.
  */
 export const AUTOMATION_FIGURES = ["Rules enabled", "AI-assisted"] as const;
+
+/** An automation figure's words in the interface's language (the keys are `AUTOMATION_FIGURES`). */
+export const automationFigureName = (key: (typeof AUTOMATION_FIGURES)[number]): string =>
+  ({ "Rules enabled": m.automations_figure_enabled, "AI-assisted": m.automations_figure_ai })[key]();
+
 export const automationFigures = ({ stats: st }: AutomationsView): Figure<(typeof AUTOMATION_FIGURES)[number]>[] => [
   {
-    label: "Rules enabled",
+    key: "Rules enabled",
+    label: automationFigureName("Rules enabled"),
     value: String(st.enabled),
-    note: "every one explicit",
-    share: st.rules ? { value: st.enabled / st.rules, text: `${st.enabled} of ${st.rules} rules` } : undefined,
+    note: m.automations_enabled_note(),
+    share: st.rules
+      ? { value: st.enabled / st.rules, text: m.automations_of_rules({ count: st.enabled, total: st.rules }) }
+      : undefined,
   },
   {
-    label: "AI-assisted",
+    key: "AI-assisted",
+    label: automationFigureName("AI-assisted"),
     value: String(st.ai),
-    note: "drafts only, confidence on every value",
-    share: st.rules ? { value: st.ai / st.rules, text: `${st.ai} of ${st.rules} rules` } : undefined,
+    note: m.automations_ai_note(),
+    share: st.rules
+      ? { value: st.ai / st.rules, text: m.automations_of_rules({ count: st.ai, total: st.rules }) }
+      : undefined,
   },
 ];
 
@@ -35,26 +47,26 @@ export const automationFigures = ({ stats: st }: AutomationsView): Figure<(typeo
  */
 export const reviewQueue = (d: AutomationsView): KindData<"list"> => ({
   head: { count: d.review.length, countTone: d.review.length ? "warning" : "success" },
-  note: "Below the confidence threshold the AI never applies a value: it leaves the field blank or the match unlinked and waits here for a person.",
-  empty: "Nothing waiting for review.",
+  note: m.automations_review_note(),
+  empty: m.automations_review_empty(),
   items: d.review.map((r) => ({
     headline: r.title,
     supporting: r.detail,
     icon: "sparkles",
     tags: r.confidence === undefined ? undefined : [{ label: `${Math.round(r.confidence * 100)}%`, tone: "warning" }],
     actions: [
-      { label: "Open", href: r.href },
+      { label: m.automations_open(), href: r.href },
       ...(r.kind === "exception"
         ? [
             {
-              label: "Mark reviewed",
+              label: m.automations_mark_reviewed(),
               call: { path: `/automations/review/${encodeURIComponent(r.id)}`, body: {} },
               confirm: {
-                heading: "Mark as reviewed?",
-                text: `${r.title}\nConfirm you checked the flagged fields at the source. Your name goes on the audit log; the AI's values are never applied without this.`,
-                label: "Confirm reviewed",
+                heading: m.automations_confirm_heading(),
+                text: m.automations_confirm_text({ title: r.title }),
+                label: m.automations_confirm_label(),
               },
-              done: "Reviewed — your name is on the audit log",
+              done: m.automations_reviewed_done(),
             } satisfies Action,
           ]
         : []),
@@ -62,25 +74,28 @@ export const reviewQueue = (d: AutomationsView): KindData<"list"> => ({
   })),
 });
 
+/** A fixed line's words, read when it is drawn (in the interface's language). */
+type Line = () => string;
+
 /** What runs on its own under approved rules. */
-export const AUTOMATIC = [
-  "Capture emails, link files, extract draft data, spot likely duplicates",
-  "Assign owners, update proven events, calculate waiting times",
-  "Calculate costs, FX conversions, margins and comparisons",
-  "Create reminders, escalations, dashboards and daily briefings",
-  "Prepare linked quotations, POs, bills and invoice drafts",
+export const AUTOMATIC: Line[] = [
+  m.automations_auto_capture,
+  m.automations_auto_assign,
+  m.automations_auto_calculate,
+  m.automations_auto_remind,
+  m.automations_auto_prepare,
 ];
 
 /** What is prepared and waits for an authorised person. */
-export const BY_PEOPLE = [
-  "Uncertain matches, technical interpretation, missing information",
-  "Owner overrides, exception resolution, discretionary closure",
-  "Final selling prices, discounts, substitutions, supplier selection",
-  "External messages and follow-ups unless explicitly pre-approved",
-  "Commercial commitments, accounting postings and payments",
+export const BY_PEOPLE: Line[] = [
+  m.automations_people_uncertain,
+  m.automations_people_overrides,
+  m.automations_people_prices,
+  m.automations_people_messages,
+  m.automations_people_commitments,
 ];
 
 /** Fixed lines, no data: a list of them, each with the same icon. */
-export const iconLines = (icon: IconName, lines: string[]) => (): KindData<"list"> => ({
-  items: lines.map((headline) => ({ headline, icon })),
+export const iconLines = (icon: IconName, lines: Line[]) => (): KindData<"list"> => ({
+  items: lines.map((line) => ({ headline: line(), icon })),
 });

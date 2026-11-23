@@ -8,6 +8,7 @@ import { button } from "../actions/button.ts";
 import { iconButton } from "../actions/icon-button.ts";
 import { floating, floatingHeight, inset, row, text } from "../layout/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
+import { m } from "../../../i18n/index.ts";
 
 /**
  * Modal: Shows a dialog or box when a button is clicked.
@@ -117,7 +118,7 @@ export class UiModal extends LightElement {
   @property({ attribute: "confirm-tone" }) confirmTone: "primary" | "error" = "primary";
   /** Hold the confirm action until a choice is made (Cancel never is). */
   @property({ type: Boolean, attribute: "confirm-disabled" }) confirmDisabled = false;
-  @property({ attribute: "cancel-label" }) cancelLabel = "Cancel";
+  @property({ attribute: "cancel-label" }) cancelLabel = m.modal_cancel();
 
   @query("dialog") private _dialog!: HTMLDialogElement;
 
@@ -193,7 +194,9 @@ export class UiModal extends LightElement {
         ${
           this.closeButton
             ? html`<form method="dialog" class=${modalClose()}>
-                <button class=${iconButton({ size: "xs" })} aria-label="Close">${iconSvg("x", { size: "sm" })}</button>
+                <button class=${iconButton({ size: "xs" })} aria-label=${m.modal_close()}>
+                  ${iconSvg("x", { size: "sm" })}
+                </button>
               </form>`
             : nothing
         }
@@ -229,7 +232,7 @@ export class UiModal extends LightElement {
       </div>
       ${
         this.backdropClose
-          ? html`<form method="dialog" class=${modalBackdrop()}><button aria-label="Close">close</button></form>`
+          ? html`<form method="dialog" class=${modalBackdrop()}><button>${m.modal_close()}</button></form>`
           : nothing
       }
     </dialog>`;

@@ -1,5 +1,6 @@
 import type { AgentTool, JsonSchema } from "./webmcp.ts";
-import { business, helper, org } from "./identity.ts";
+import { answerIn, business, helper, org } from "./identity.ts";
+import { intl, m } from "../i18n/index.ts";
 
 /**
  * "Saastama-Micro-3.5" (id `aibrowser`): the helper on the browser's own on-device model, through Chrome's Prompt API
@@ -91,17 +92,16 @@ const CATALOGUES: ((tools: readonly AgentTool[]) => string)[] = [
 
 /** The brief for a small context (the full instructions don't fit every device). */
 const brief = () =>
-  `You are the ${helper()} inside the ${org()} platform (${org()} is ${business()}). You see and act only through tools; start with get_screen. Only state what tools return. Answer briefly.`;
+  `You are the ${helper()} inside the ${org()} platform (${org()} is ${business()}). You see and act only through tools; start with get_screen. Only state what tools return. Answer briefly. ${answerIn()}`;
 const JSON_PROTOCOL =
   'Reply with JSON only: {"action":"tool","tool":"<name>","arguments":{...}} to use one tool (you then get its result), or {"action":"answer","answer":"<reply>"} to answer the person.';
 
 const tooLarge = (e: unknown) =>
   e instanceof Error && (e.name === "QuotaExceededError" || /too large/i.test(e.message));
 
-const NO_API =
-  'This browser has no built-in AI model. Saastama-Micro-3.5 needs Chrome\'s on-device AI or the downloadable model: see "Turn on on-device AI" on the login page.';
-const UNAVAILABLE =
-  "Chrome's built-in model isn't available on this device (it needs about 22 GB of free disk space and a GPU with more than 4 GB of memory, or 16 GB of RAM).";
+/** Why the on-device model can't run, as the helper shows it. */
+const NO_API = () => m.agent_no_builtin_model({ model: "Saastama-Micro-3.5" });
+const UNAVAILABLE = () => m.agent_builtin_unavailable();
 
 /** A tool as the Prompt API's tool use takes it. */
 const asTool = (t: AgentTool) => ({ name: t.name, description: t.description, inputSchema: t.inputSchema });
@@ -121,9 +121,9 @@ export class BrowserModelChat {
   #status: (text: string) => void = () => {};
   #awaitingActivation = false;
 
-  #monitor = (m: DownloadMonitor) =>
-    m.addEventListener("downloadprogress", (e) =>
-      this.#status(`Downloading the AI model… ${Math.round(e.loaded * 100)}%`),
+  #monitor = (monitor: DownloadMonitor) =>
+    monitor.addEventListener("downloadprogress", (e) =>
+      this.#status(m.agent_downloading_progress({ percent: intl.number({ style: "percent" }).format(e.loaded) })),
     );
 
   /**
@@ -132,7 +132,7 @@ export class BrowserModelChat {
    */
   async #create(instructions: string, tools: readonly AgentTool[]): Promise<Prepared> {
     const api = languageModel();
-    if (!api) throw new Error(NO_API);
+    if (!api) throw new Error(NO_API());
     if (toolApi()) {
       for (const list of [tools, tools.filter((t) => CORE.includes(t.name))]) {
         try {
@@ -169,7 +169,7 @@ export class BrowserModelChat {
         if (!tooLarge(e) || i === briefs.length - 1) throw e;
       }
     }
-    throw new Error("Chrome's built-in model has too little room for the helper on this device.");
+    throw new Error(m.agent_builtin_too_small());
   }
 
   /** Start preparing the base session (once; a failed one is retried on the next call). */
@@ -214,11 +214,11 @@ export class BrowserModelChat {
   /** This conversation's session: a copy of the prepared one (prepared now if it isn't yet). */
   async #open(instructions: string, tools: readonly AgentTool[], onStatus: (text: string) => void) {
     const api = languageModel();
-    if (!api) throw new Error(NO_API);
+    if (!api) throw new Error(NO_API());
     if (!this.#base) {
       const availability = await api.availability(LANGUAGES);
-      if (availability === "unavailable") throw new Error(UNAVAILABLE);
-      if (availability !== "available") onStatus("Downloading the AI model (once per device)…");
+      if (availability === "unavailable") throw new Error(UNAVAILABLE());
+      if (availability !== "available") onStatus(m.agent_downloading());
     }
     this.#status = onStatus;
     try {

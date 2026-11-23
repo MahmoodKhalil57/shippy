@@ -5,6 +5,7 @@ import { rcva } from "../../base/variants.ts";
 import { inset, row, rowFill, stack, text } from "../layout/algebra.ts";
 import { button } from "../actions/button.ts";
 import { iconSvg } from "../media/icon.ts";
+import { m } from "../../../i18n/index.ts";
 
 /**
  * Confirmation: an agent asks before it acts — what it wants to do, the details, Allow / Don't.
@@ -51,8 +52,8 @@ export class UiConfirmation extends LightElement {
   @property() label: Renderable = "";
   @property() description: Renderable = "";
   @property() state: ConfirmationState = "requested";
-  @property({ attribute: "approve-label" }) approveLabel = "Allow";
-  @property({ attribute: "deny-label" }) denyLabel = "Don't";
+  @property({ attribute: "approve-label" }) approveLabel = m.confirmation_allow();
+  @property({ attribute: "deny-label" }) denyLabel = m.confirmation_deny();
 
   private _answer(approved: boolean) {
     this.dispatchEvent(new CustomEvent(approved ? "ui-approve" : "ui-deny", { bubbles: true }));
@@ -63,7 +64,7 @@ export class UiConfirmation extends LightElement {
     return html`<div
       class=${confirmation({ state: this.state })}
       role=${requested ? "alertdialog" : "group"}
-      aria-label="Confirmation"
+      aria-label=${m.confirmation_label()}
     >
       <div class=${confirmationHead()}>
         <span class=${confirmationIcon({ state: this.state })}
@@ -94,7 +95,7 @@ export class UiConfirmation extends LightElement {
               </button>
             </div>`
           : html`<div class=${confirmationOutcome({ state: this.state })}>
-              ${this.state === "approved" ? "Allowed" : "Not allowed"}
+              ${this.state === "approved" ? m.confirmation_allowed() : m.confirmation_not_allowed()}
             </div>`
       }
     </div>`;

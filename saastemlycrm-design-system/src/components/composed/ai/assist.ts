@@ -38,6 +38,7 @@ import {
   type SummaryType,
 } from "../../../agent/built-in-ai.ts";
 import { AI_CHANGE, usingLocalModel } from "../../../agent/ai-polyfill.ts";
+import { intl, locale, m } from "../../../i18n/index.ts";
 
 /**
  * On-device AI assists: small, reviewable jobs on the text a person is looking at, run by
@@ -141,7 +142,7 @@ abstract class AssistElement extends LightElement {
     try {
       return await job((f) => (this.progress = f));
     } catch (e) {
-      this.error = (e as Error).message || "The on-device model couldn't do this.";
+      this.error = (e as Error).message || m.assist_error_failed();
       return undefined;
     } finally {
       this.working = "";
@@ -154,7 +155,7 @@ abstract class AssistElement extends LightElement {
       return aiNote(
         "loading",
         this.progress != null && this.progress < 1
-          ? `Getting the on-device model… ${Math.round(this.progress * 100)}%`
+          ? m.assist_downloading({ percent: intl.number({ style: "percent" }).format(this.progress) })
           : this.working,
       );
     if (this.error) return aiNote("error", this.error, "error");
@@ -216,14 +217,16 @@ export class UiAiText extends AssistElement {
     const from = this.language || (await detectLanguage(this.text).catch(() => null))?.language || "en";
     this.language = from;
     const to = from === "en" ? this.alternate : "en";
-    const text = await this.run(`Translating to ${languageName(to)}…`, (p) => translate(this.text, from, to, p));
+    const text = await this.run(m.assist_translating_to({ language: languageName(to) }), (p) =>
+      translate(this.text, from, to, p),
+    );
     if (text) this.translated = { text, to };
   }
 
   private async _summarize() {
     if (this.summary) return void (this.summary = "");
     const source = this.translated?.to === "en" ? this.translated.text : this.text;
-    this.summary = (await this.run("Reading…", (p) => summarize(source, { type: "key-points" }, p))) ?? "";
+    this.summary = (await this.run(m.assist_reading(), (p) => summarize(source, { type: "key-points" }, p))) ?? "";
   }
 
   render() {
@@ -231,23 +234,23 @@ export class UiAiText extends AssistElement {
     const lang = this.translated?.to ?? this.language;
     const canTranslate = this.translatable && supported("Translator");
     const canSummarize = this.summarizable && supported("Summarizer");
-    const target = (this.language || "en") === "en" ? languageName(this.alternate) : "English";
+    const target = (this.language || "en") === "en" ? languageName(this.alternate) : languageName("en");
     return html`<ui-flex direction="col" gap="2">
       ${
         canTranslate || canSummarize || this.language
           ? aiBar(
               html` ${this.language ? aiBadge("globe", languageName(this.language)) : nothing}
-              ${canTranslate ? aiButton("translate", this.translated ? "Show original" : `Translate to ${target}`, () => void this._translate(), !!this.working) : nothing}
-              ${canSummarize ? aiButton("sparkles", this.summary ? "Hide summary" : "Catch me up", () => void this._summarize(), !!this.working) : nothing}
+              ${canTranslate ? aiButton("translate", this.translated ? m.assist_show_original() : m.assist_translate_to({ language: target }), () => void this._translate(), !!this.working) : nothing}
+              ${canSummarize ? aiButton("sparkles", this.summary ? m.assist_hide_summary() : m.assist_catch_me_up(), () => void this._summarize(), !!this.working) : nothing}
               ${this.status()}`,
             )
           : nothing
       }
-      ${this.summary ? aiBox("Key points · on this device", html`<ui-markdown .text=${this.summary}></ui-markdown>`) : nothing}
+      ${this.summary ? aiBox(m.assist_key_points_heading(), html`<ui-markdown .text=${this.summary}></ui-markdown>`) : nothing}
       <ui-flex direction="col" gap="2" lang=${lang || nothing} dir=${RTL.has(lang) ? "rtl" : "auto"}>
         ${paragraphs(shown)}
       </ui-flex>
-      ${this.translated ? aiNote("translate", "Translated on this device — check names and figures against the original.") : nothing}
+      ${this.translated ? aiNote("translate", m.assist_translated_note()) : nothing}
     </ui-flex>`;
   }
 }
@@ -265,7 +268,7 @@ export class UiAiText extends AssistElement {
 export class UiAiSummary extends AssistElement {
   @property() text = "";
   @property() type: SummaryType = "key-points";
-  @property() label = "Catch me up";
+  @property() label = m.assist_catch_me_up();
   @property() context = "";
   @property({ type: Boolean }) auto = false;
   @state() private summary = "";
@@ -281,7 +284,7 @@ export class UiAiSummary extends AssistElement {
   private async _run() {
     if (this.summary) return void (this.summary = "");
     this.summary =
-      (await this.run("Reading…", (p) =>
+      (await this.run(m.assist_reading(), (p) =>
         summarize(this.text, { type: this.type, context: this.context || undefined }, p),
       )) ?? "";
   }
@@ -290,17 +293,17 @@ export class UiAiSummary extends AssistElement {
     if (!supported("Summarizer") || !this.text.trim()) return nothing;
     if (this.auto && this.type !== "key-points")
       return this.summary
-        ? html`<ui-flex gap="1" align="start" title="Summarised on this device">
+        ? html`<ui-flex gap="1" align="start" title=${m.assist_summarised_on_device()}>
             <ui-icon name="sparkles" size="xs" color="primary"></ui-icon>
             <ui-text variant="body-sm" color="muted">${this.summary}</ui-text>
           </ui-flex>`
         : nothing;
     return html`<ui-flex direction="col" gap="2">
       ${aiBar(
-        html`${aiButton("sparkles", this.summary ? "Hide summary" : this.label, () => void this._run(), !!this.working)}
+        html`${aiButton("sparkles", this.summary ? m.assist_hide_summary() : this.label, () => void this._run(), !!this.working)}
         ${this.status()}`,
       )}
-      ${this.summary ? aiBox("Summary · on this device", html`<ui-markdown .text=${this.summary}></ui-markdown>`) : nothing}
+      ${this.summary ? aiBox(m.assist_summary_heading(), html`<ui-markdown .text=${this.summary}></ui-markdown>`) : nothing}
     </ui-flex>`;
   }
 }
@@ -350,39 +353,47 @@ export class UiAiTools extends AssistElement {
     const text = this.value;
     const ctx = this.context || undefined;
     const jobs: Record<ToolKey, [string, (p: (f: number) => void) => Promise<string>, string]> = {
-      draft: ["Drafting…", (p) => write(this.brief, { tone: "formal", context: ctx }, p), "Drafted"],
-      formal: ["Rewriting…", (p) => rewrite(text, { tone: "more-formal", context: ctx }, p), "Made more formal"],
+      draft: [m.assist_drafting(), (p) => write(this.brief, { tone: "formal", context: ctx }, p), m.assist_drafted()],
+      formal: [
+        m.assist_rewriting(),
+        (p) => rewrite(text, { tone: "more-formal", context: ctx }, p),
+        m.assist_made_formal(),
+      ],
       friendly: [
-        "Rewriting…",
+        m.assist_rewriting(),
         (p) => rewrite(text, { tone: "more-casual", context: "Warmer and friendlier, still professional." }, p),
-        "Made friendlier",
+        m.assist_made_friendlier(),
       ],
       firm: [
-        "Rewriting…",
+        m.assist_rewriting(),
         (p) =>
           rewrite(
             text,
             { tone: "more-formal", context: "Firmer and more direct, still polite. Keep every figure and date." },
             p,
           ),
-        "Made firmer",
+        m.assist_made_firmer(),
       ],
-      shorter: ["Shortening…", (p) => rewrite(text, { length: "shorter", context: ctx }, p), "Shortened"],
+      shorter: [
+        m.assist_shortening(),
+        (p) => rewrite(text, { length: "shorter", context: ctx }, p),
+        m.assist_shortened(),
+      ],
       proofread: [
-        "Proofreading…",
+        m.assist_proofreading(),
         async (p) => {
           const r = await proofread(text, p);
-          this.done = r.fixes ? `${r.fixes} fix${r.fixes === 1 ? "" : "es"}` : "No fixes needed";
+          this.done = r.fixes ? m.assist_fixes({ count: r.fixes }) : m.assist_no_fixes();
           return r.text;
         },
         "",
       ],
       translate: [
-        "Translating…",
+        m.assist_translating(),
         async (p) => {
           const from = (await detectLanguage(text, p).catch(() => null))?.language ?? "en";
           const to = from === "en" ? "ar" : "en";
-          this.done = `Translated to ${languageName(to)}`;
+          this.done = m.assist_translated_to({ language: languageName(to) });
           return translate(text, from, to, p);
         },
         "",
@@ -391,7 +402,7 @@ export class UiAiTools extends AssistElement {
     const [label, job, done] = jobs[key];
     const result = await this.run(label, job);
     if (result != null && result !== text) this._set(result, done || this.done);
-    else if (result === text && key === "proofread") this.done = "No fixes needed";
+    else if (result === text && key === "proofread") this.done = m.assist_no_fixes();
   }
 
   render() {
@@ -408,13 +419,13 @@ export class UiAiTools extends AssistElement {
     const show = (k: ToolKey) => want.has(k) && supported(api[k]) && (k !== "draft" || !!this.brief);
     const empty = !this.value.trim();
     const items: [ToolKey, IconName, string][] = [
-      ["draft", "sparkles", "Draft with AI"],
-      ["formal", "edit", "More formal"],
-      ["friendly", "heart", "Friendlier"],
-      ["firm", "flag", "Firmer"],
-      ["shorter", "minus", "Shorter"],
-      ["proofread", "check", "Proofread"],
-      ["translate", "translate", "Translate"],
+      ["draft", "sparkles", m.assist_tool_draft()],
+      ["formal", "edit", m.assist_tool_formal()],
+      ["friendly", "heart", m.assist_tool_friendly()],
+      ["firm", "flag", m.assist_tool_firm()],
+      ["shorter", "minus", m.assist_tool_shorter()],
+      ["proofread", "check", m.assist_tool_proofread()],
+      ["translate", "translate", m.assist_tool_translate()],
     ];
     const buttons = items.filter(([k]) => show(k));
     if (!buttons.length) return nothing;
@@ -425,7 +436,7 @@ export class UiAiTools extends AssistElement {
           ? this.status()
           : this.done
             ? html`${aiNote("check", this.done)}
-              ${this.previous != null ? aiButton("retry", "Undo", () => this._undo()) : nothing}`
+              ${this.previous != null ? aiButton("retry", m.assist_undo(), () => this._undo()) : nothing}`
             : nothing
       }`,
     );
@@ -446,7 +457,7 @@ const decisionReady = async () => {
     api === "DecisionModel" ? { questions: [{ id: "ok", type: "boolean", prompt: "Is this text?" }] } : {};
   return (await availability(api, options)) === "available";
 };
-const pct = (c?: number) => (c == null ? "" : ` · ${Math.round(c * 100)}%`);
+const pct = (c?: number) => (c == null ? "" : ` · ${intl.number({ style: "percent" }).format(c)}`);
 
 /**
  * @example <ui-ai-classify .text=${message.body} .options=${["New order", "Supplier offer", …]} what="incoming emails to a supplier"></ui-ai-classify>
@@ -460,7 +471,7 @@ export class UiAiClassify extends AssistElement {
   @property() text = "";
   @property({ attribute: false }) options: string[] = [];
   @property() what = "messages";
-  @property() label = "Looks like";
+  @property() label = m.assist_looks_like();
   /** Offer "Use this" (fires `ui-select`); without it the suggestion is for information. */
   @property({ type: Boolean }) pickable = false;
   @state() private result: Classification | null = null;
@@ -473,7 +484,7 @@ export class UiAiClassify extends AssistElement {
   }
 
   private async _run() {
-    this.result = (await this.run("Reading…", (p) => classify(this.text, this.options, this.what, p))) ?? null;
+    this.result = (await this.run(m.assist_reading(), (p) => classify(this.text, this.options, this.what, p))) ?? null;
   }
 
   render() {
@@ -482,17 +493,17 @@ export class UiAiClassify extends AssistElement {
     return aiBar(
       html` ${
         r
-          ? html`${aiBadge("sparkles", `${this.label}: ${r.category}${pct(r.confidence)}`)}
+          ? html`${aiBadge("sparkles", `${m.assist_classified({ label: this.label, category: r.category })}${pct(r.confidence)}`)}
             ${
               this.pickable
-                ? aiButton("check", "Use this", () =>
+                ? aiButton("check", m.assist_use_this(), () =>
                     this.dispatchEvent(new CustomEvent("ui-select", { detail: { value: r.category }, bubbles: true })),
                   )
                 : nothing
             }`
           : this.working || this.error
             ? this.status()
-            : aiButton("sparkles", "Suggest a category", () => void this._run())
+            : aiButton("sparkles", m.assist_suggest_category(), () => void this._run())
       }`,
     );
   }
@@ -513,7 +524,7 @@ export class UiAiClassify extends AssistElement {
 export class UiAiCheck extends AssistElement {
   @property() text = "";
   @property({ attribute: false }) questions: (CheckQuestion & { yes: string; no: string })[] = [];
-  @property() label = "Check with AI";
+  @property() label = m.assist_check_with_ai();
   @state() private answers: CheckAnswer[] | null = null;
 
   protected updated(changed: PropertyValues) {
@@ -521,7 +532,7 @@ export class UiAiCheck extends AssistElement {
   }
 
   private async _run() {
-    this.answers = (await this.run("Checking…", (p) => check(this.text, this.questions, p))) ?? null;
+    this.answers = (await this.run(m.assist_checking(), (p) => check(this.text, this.questions, p))) ?? null;
   }
 
   render() {
@@ -529,13 +540,13 @@ export class UiAiCheck extends AssistElement {
     const answers = this.answers;
     return html`<ui-flex direction="col" gap="2">
       ${aiBar(
-        html`${aiButton("sparkles", answers ? "Check again" : this.label, () => void this._run(), !!this.working)}
+        html`${aiButton("sparkles", answers ? m.assist_check_again() : this.label, () => void this._run(), !!this.working)}
         ${this.status()}`,
       )}
       ${
         answers
           ? aiBox(
-              "Checked on this device — a person decides",
+              m.assist_checked_heading(),
               html`<ui-flex direction="col" gap="1">
                 ${this.questions.map((q) => {
                   const a = answers.find((x) => x.id === q.id);
@@ -574,7 +585,7 @@ export class UiAiReadFile extends AssistElement {
     "This is a photo from a customer or supplier (a request for quotation, a requisition, a nameplate or an invoice). List every item with its quantity and unit, one per line, then any reference numbers, names and dates. Write only what you can read.";
   @property({ attribute: "audio-prompt" }) audioPrompt =
     "This is a voice note from a customer or supplier. Transcribe it, then list any items with quantities and units, names, places and dates.";
-  @property() label = "Read a photo or voice note";
+  @property() label = m.assist_read_file();
   /** Offer "Use this" (fires `ui-select` { value } with what was read). */
   @property({ type: Boolean }) pickable = false;
   @state() private result: { name: string; kind: MediaKind; text: string } | null = null;
@@ -583,7 +594,7 @@ export class UiAiReadFile extends AssistElement {
     const file = await pickFile("image/*,audio/*");
     if (!file) return;
     const kind: MediaKind = file.type.startsWith("audio/") ? "audio" : "image";
-    const text = await this.run(kind === "audio" ? "Listening…" : "Reading the photo…", (p) =>
+    const text = await this.run(kind === "audio" ? m.assist_listening() : m.assist_reading_photo(), (p) =>
       readMedia(file, kind, kind === "audio" ? this.audioPrompt : this.imagePrompt, p),
     );
     if (text) this.result = { name: file.name, kind, text };
@@ -597,11 +608,13 @@ export class UiAiReadFile extends AssistElement {
       ${
         this.result
           ? aiBox(
-              `${this.result.kind === "audio" ? "Heard" : "Read"} from ${this.result.name} · on this device — check it`,
+              this.result.kind === "audio"
+                ? m.assist_heard_from({ name: this.result.name })
+                : m.assist_read_from({ name: this.result.name }),
               html`<ui-markdown .text=${this.result.text}></ui-markdown> ${
                   this.pickable
                     ? aiBar(
-                        aiButton("check", "Use this", () =>
+                        aiButton("check", m.assist_use_this(), () =>
                           this.dispatchEvent(
                             new CustomEvent("ui-select", { detail: { value: this.result!.text }, bubbles: true }),
                           ),
@@ -635,15 +648,15 @@ export class UiAiExtract extends AssistElement {
   /** What the input is ("supplier reply", "trade licence"), for the model. */
   @property() what = "message";
   @property() text = "";
-  @property() label = "Fill from text";
-  @property() placeholder = "Paste the message here…";
+  @property() label = m.assist_fill_from_text();
+  @property() placeholder = m.assist_paste_placeholder();
   @property({ type: Boolean }) pickable = false;
-  @property({ attribute: "use-label" }) useLabel = "Use these";
+  @property({ attribute: "use-label" }) useLabel = m.assist_use_these();
   @state() private pasted = "";
   @state() private values: Extracted | null = null;
 
   private async _fromText(text: string) {
-    this.values = (await this.run("Reading…", (p) => extract(text, this.fields, this.what, p))) ?? null;
+    this.values = (await this.run(m.assist_reading(), (p) => extract(text, this.fields, this.what, p))) ?? null;
   }
 
   private async _fromFile() {
@@ -651,7 +664,7 @@ export class UiAiExtract extends AssistElement {
     if (!file) return;
     const kind: MediaKind = file.type.startsWith("audio/") ? "audio" : "image";
     this.values =
-      (await this.run(kind === "audio" ? "Listening…" : "Reading the photo…", (p) =>
+      (await this.run(kind === "audio" ? m.assist_listening() : m.assist_reading_photo(), (p) =>
         extract({ file, kind }, this.fields, this.what, p),
       )) ?? null;
   }
@@ -686,7 +699,7 @@ export class UiAiExtract extends AssistElement {
       ${
         values
           ? aiBox(
-              "Found on this device — check before using",
+              m.assist_found_heading(),
               html`<ui-flex direction="col" gap="1">
                   ${this.fields.map((f) => {
                     const v = values[f.id];
@@ -695,7 +708,9 @@ export class UiAiExtract extends AssistElement {
                       <ui-text as="span" variant="body-sm" color="muted">${f.label}</ui-text>
                       ${
                         missing
-                          ? html`<ui-text as="span" variant="body-md" color="muted" italic>not found</ui-text>`
+                          ? html`<ui-text as="span" variant="body-md" color="muted" italic
+                              >${m.assist_not_found()}</ui-text
+                            >`
                           : html`<ui-text as="span" variant="label-lg">${String(v)}</ui-text>`
                       }
                     </ui-flex>`;
@@ -751,7 +766,7 @@ export class UiAiFlag extends LightElement {
     return html`<ui-alert
       tone=${this.tone}
       .heading=${`${this.heading}${pct(this.hit.confidence)}`}
-      .description=${`${this.note} Spotted on this device — it can be wrong.`}
+      .description=${m.assist_flag_note({ note: this.note })}
     ></ui-alert>`;
   }
 }
@@ -792,9 +807,9 @@ export class UiAiReplies extends AssistElement {
       ${aiBar(
         html` ${aiButton(
           "chat",
-          this.replies.length ? "Other replies" : "Suggest replies",
+          this.replies.length ? m.assist_other_replies() : m.assist_suggest_replies(),
           async () => {
-            this.replies = (await this.run("Writing replies…", (p) => quickReplies(this.text, p))) ?? [];
+            this.replies = (await this.run(m.assist_writing_replies(), (p) => quickReplies(this.text, p))) ?? [];
             this.copied = -1;
           },
           !!this.working,
@@ -811,7 +826,7 @@ export class UiAiReplies extends AssistElement {
             justify="start"
             @click=${() => void this._pick(i)}
           >
-            ${r}${this.copied === i ? html` · ${aiNote("check", "Copied")}` : nothing}
+            ${r}${this.copied === i ? html` · ${aiNote("check", m.assist_copied())}` : nothing}
           </ui-button>`,
       )}
     </ui-flex>`;
@@ -827,7 +842,7 @@ export class UiAiReplies extends AssistElement {
  */
 @customElement("ui-ai-dictate")
 export class UiAiDictate extends AssistElement {
-  @property() label = "Dictate";
+  @property() label = m.assist_dictate();
   @state() private recording = false;
   #recorder: MediaRecorder | null = null;
 
@@ -838,7 +853,7 @@ export class UiAiDictate extends AssistElement {
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch {
-      this.error = "The microphone isn't available (check the browser's permission).";
+      this.error = m.assist_no_microphone();
       return;
     }
     const chunks: Blob[] = [];
@@ -849,7 +864,7 @@ export class UiAiDictate extends AssistElement {
       stream.getTracks().forEach((t) => t.stop());
       this.recording = false;
       const audio = new Blob(chunks, { type: recorder.mimeType || "audio/webm" });
-      const value = await this.run("Writing it down…", (p) => transcribe(audio, p));
+      const value = await this.run(m.assist_writing_down(), (p) => transcribe(audio, p));
       if (value) this.dispatchEvent(new CustomEvent("ui-select", { detail: { value }, bubbles: true }));
     };
     recorder.start();
@@ -859,8 +874,8 @@ export class UiAiDictate extends AssistElement {
   render() {
     if (!supported("LanguageModel") || usingLocalModel() || !("mediaDevices" in navigator)) return nothing;
     return aiBar(
-      html` ${aiButton(this.recording ? "stop" : "mic", this.recording ? "Stop and write it down" : this.label, () => void this._toggle(), !!this.working)}
-      ${this.recording ? aiNote("loading", "Listening…") : this.status()}`,
+      html` ${aiButton(this.recording ? "stop" : "mic", this.recording ? m.assist_stop_dictating() : this.label, () => void this._toggle(), !!this.working)}
+      ${this.recording ? aiNote("loading", m.assist_listening()) : this.status()}`,
     );
   }
 }
@@ -874,8 +889,9 @@ export class UiAiDictate extends AssistElement {
 @customElement("ui-speak")
 export class UiSpeak extends LightElement {
   @property() text = "";
-  @property() label = "Read aloud";
-  @property() lang = "en-GB";
+  @property() label = m.assist_read_aloud();
+  /** The voice's language (default: the interface's). */
+  @property() lang = locale() === "ar" ? "ar" : "en-GB";
   @state() private speaking = false;
 
   disconnectedCallback() {
@@ -899,7 +915,9 @@ export class UiSpeak extends LightElement {
 
   render() {
     if (!("speechSynthesis" in window) || !this.text.trim()) return nothing;
-    return aiButton(this.speaking ? "stop" : "play", this.speaking ? "Stop" : this.label, () => this._toggle());
+    return aiButton(this.speaking ? "stop" : "play", this.speaking ? m.assist_stop() : this.label, () =>
+      this._toggle(),
+    );
   }
 }
 

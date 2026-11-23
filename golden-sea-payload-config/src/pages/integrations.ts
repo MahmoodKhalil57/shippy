@@ -2,6 +2,7 @@ import { details, gauges, message, settings, widgets } from "saastemlycrm-design
 import * as fmt from "../format/integrations.ts";
 import * as link from "../links.ts";
 import { integrations, integrationsGlobal } from "../queries/integrations.ts";
+import { m } from "../i18n/paraglide/messages.js";
 
 /**
  * Integrations & data (/integrations): the connected mailboxes (status, last sync, messages
@@ -17,42 +18,44 @@ import { integrations, integrationsGlobal } from "../queries/integrations.ts";
 export const integrationsPage = widgets({
   params: { lang: "en" },
   header: {
-    eyebrow: "Configuration · integrations",
-    heading: "Integrations & data",
-    subtitle:
-      "Your mailboxes, website, WhatsApp, the tax authority and Odoo, connected — with daily backups, a staging copy and your data exportable at any time.",
+    eyebrow: m.page_integrations_eyebrow(),
+    heading: m.page_integrations_heading(),
+    subtitle: m.page_integrations_subtitle(),
     actions: [
-      { label: "Exception queue", href: "/automations" },
-      { label: "Edit connections", href: link.global("integrations") },
+      { label: m.page_integrations_exception_queue(), href: "/automations" },
+      { label: m.page_integrations_edit(), href: link.global("integrations") },
     ],
   },
   // Each wide tile with a small one beside it.
   widgets: [
     {
-      title: "Mailboxes",
-      subhead:
-        "Every email to these mailboxes becomes or joins a case, with its attachments kept. A failed sync never drops mail: it waits in the exception queue and imports once on reconnect.",
+      title: m.page_integrations_mailboxes(),
+      subhead: m.page_integrations_mailboxes_subhead(),
       size: "l",
       records: {
         global: "integrations",
         field: "mailboxes",
         columns: ["account", "status", "lastSyncAt", "received", "tokenExpiresAt"],
         supporting: { account: "kind", status: "notes", lastSyncAt: "poll", tokenExpiresAt: "expiresInDays" },
-        labels: { account: "Mailbox", received: "Emails imported", tokenExpiresAt: "Token expires" },
+        labels: {
+          account: m.page_integrations_mailbox(),
+          received: m.page_integrations_imported(),
+          tokenExpiresAt: m.page_integrations_token(),
+        },
       },
     },
     details({
-      title: "Email history import",
+      title: m.page_integrations_history(),
       // Its subhead comes with the data; this line holds its place while it loads.
-      subhead: "Days of email imported",
+      subhead: m.page_integrations_history_subhead(),
       size: "s",
       skeleton: "card",
       data: integrationsGlobal,
       format: fmt.emailImport,
     }),
     {
-      title: "Channels",
-      subhead: "The website, WhatsApp, the tax authority, AI extraction, documents and Odoo underneath.",
+      title: m.page_integrations_channels(),
+      subhead: m.page_integrations_channels_subhead(),
       size: "l",
       rows: 14,
       records: {
@@ -66,16 +69,15 @@ export const integrationsPage = widgets({
       },
     },
     details({
-      title: "Backups, staging & export",
+      title: m.page_integrations_backups(),
       size: "s",
       skeleton: "text",
       data: integrationsGlobal,
       format: fmt.backups,
     }),
     {
-      title: "Moving off Odoo",
-      subhead:
-        "Each part of Odoo's data is counted, copied in, then checked by a person against Odoo. Odoo is switched off once every part is done.",
+      title: m.page_integrations_odoo_title(),
+      subhead: m.page_integrations_odoo_subhead(),
       size: "l",
       records: {
         global: "integrations",
@@ -85,21 +87,21 @@ export const integrationsPage = widgets({
       },
     },
     gauges({
-      title: "Odoo migration",
+      title: m.page_integrations_migration(),
       size: "s",
       rows: 4,
       data: integrationsGlobal,
       format: fmt.migration,
     }),
     message({
-      title: "Branded acknowledgement",
+      title: m.page_integrations_ack(),
       size: "l",
       skeleton: "text",
       data: integrations,
       format: fmt.acknowledgement,
     }),
     settings({
-      title: "Language — English / العربية",
+      title: m.page_integrations_language(),
       size: "l",
       skeleton: "text",
       data: integrations,

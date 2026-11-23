@@ -280,11 +280,28 @@ export type { IconName };
 /** Icon copies rendered so far, for unique ids inside icons. */
 let iconCopies = 0;
 
+/**
+ * Icons that point a way along the line (back, forward, a side panel, sending): drawn mirrored in
+ * right to left, so they point the reading direction. Marks that don't point (a check, play, a
+ * chart) stay as drawn.
+ */
+export const DIRECTIONAL_ICONS: ReadonlySet<IconName> = new Set<IconName>([
+  "chevron-left",
+  "chevron-right",
+  "arrow-left",
+  "arrow-right",
+  "menu-panel",
+  "send",
+]);
+/** The mirror, as its own transform (so it composes with the `pop` variant's scale). */
+const mirrored = "rtl:[transform:scaleX(-1)]";
+
 export function iconSvg(name: IconName, variants: IconVariants = {}, opts: { label?: string; class?: string } = {}) {
   const { viewBox, body, animated } = ICONS[name];
   const uid = `icon-${++iconCopies}`; // unique ids inside this copy (see plugins/icons.ts)
+  const cls = opts.class ?? icon(variants);
   return html`<svg
-    class=${opts.class ?? icon(variants)}
+    class=${DIRECTIONAL_ICONS.has(name) ? `${cls} ${mirrored}` : cls}
     xmlns="http://www.w3.org/2000/svg"
     viewBox=${viewBox}
     role=${opts.label ? "img" : nothing}

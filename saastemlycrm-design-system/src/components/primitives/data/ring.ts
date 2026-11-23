@@ -1,6 +1,7 @@
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
+import { formatInt, intl, m } from "../../../i18n/index.ts";
 import { LightElement } from "../../base/light-element.ts";
 import { motion } from "../../base/motion-queue.ts";
 import { rcva } from "../../base/variants.ts";
@@ -112,11 +113,11 @@ export class UiRing extends LightElement {
   #revealed = false;
 
   /** At most six hues: a seventh part and later fold into "Other". */
-  #shown(): RingPart[] {
+  #shown(): (RingPart & { other?: boolean })[] {
     const p = this.parts.filter((x) => x.value > 0);
     if (p.length <= 6) return p;
     const rest = p.slice(5);
-    return [...p.slice(0, 5), { label: "Other", value: rest.reduce((t, x) => t + x.value, 0) }];
+    return [...p.slice(0, 5), { label: m.visual_other(), value: rest.reduce((t, x) => t + x.value, 0), other: true }];
   }
 
   #drawn(): { parts: Drawn[]; whole: number; sum: number } {
@@ -127,7 +128,7 @@ export class UiRing extends LightElement {
     const parts = shown.map((x, i): Drawn => {
       const from = at;
       at += (x.value / whole) * 360;
-      const slot: Slot = x.label === "Other" && i === 5 && this.parts.length > 6 ? "muted" : (String(i) as Slot);
+      const slot: Slot = x.other ? "muted" : (String(i) as Slot);
       return { ...x, slot, from, to: at };
     });
     return { parts, whole, sum };
@@ -175,7 +176,8 @@ export class UiRing extends LightElement {
   render() {
     const { parts, whole, sum } = this.#drawn();
     const active = parts[this._active];
-    const share = (v: number) => `${Math.round((v / (this.max ? whole : sum || 1)) * 100)}%`;
+    const share = (v: number) =>
+      intl.number({ style: "percent", maximumFractionDigits: 0 }).format(v / (this.max ? whole : sum || 1));
     return html`<div class=${ring()}>
       <div class=${ringDial()}>
         <div
@@ -191,7 +193,7 @@ export class UiRing extends LightElement {
         ></div>
         <div class=${ringMiddle()} aria-hidden="true">
           <span class=${ringValue()}
-            >${active ? (active.valueText ?? String(active.value)) : this.totalText || String(sum)}</span
+            >${active ? (active.valueText ?? formatInt(active.value)) : this.totalText || formatInt(sum)}</span
           >
           <span class=${ringCaption()}>${active ? `${active.label} · ${share(active.value)}` : this.centerLabel}</span>
         </div>
@@ -200,7 +202,7 @@ export class UiRing extends LightElement {
         ${parts.map((p, i) => {
           const body = html`<span class=${ringDot({ slot: p.slot })}></span>
             <span class=${ringLabel()}>${p.label}</span>
-            <span class=${ringAmount()}>${p.valueText ?? String(p.value)}</span>
+            <span class=${ringAmount()}>${p.valueText ?? formatInt(p.value)}</span>
             <span class=${ringShare()}>${share(p.value)}</span>`;
           const cls = ringItem({ dim: this._active >= 0 && this._active !== i, link: !!p.href });
           const on = () => this.#set(i);

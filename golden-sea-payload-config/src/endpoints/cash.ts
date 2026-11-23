@@ -5,6 +5,8 @@ import { withdrawal } from "./commercial.ts";
 import { forward } from "./forward.ts";
 import { cash, collectionDraftFor, operationsEndpoints } from "./operations.ts";
 import * as link from "../links.ts";
+import { m } from "../i18n/paraglide/messages.js";
+import { type Lang, intlLocale, langOf } from "./insights-shared.ts";
 
 /**
  * Receivables & payables (/cash, src/pages/cash.ts) beyond GET /api/operations/cash:
@@ -97,12 +99,18 @@ export interface Draft {
 /** GET /api/cash/payables. */
 export type CashPayables = Pick<Cash, "canFinance" | "approvals" | "bankChanges">;
 
-const money = (n: number, cur = "USD") => {
+const money = (n: number, cur = "USD", lang: Lang = "en") => {
   const whole = cur === "EGP" || Math.abs(n) >= 100000;
-  return `${cur} ${n.toLocaleString("en-US", { minimumFractionDigits: whole ? 0 : 2, maximumFractionDigits: whole ? 0 : 2 })}`;
+  return `${cur} ${n.toLocaleString(intlLocale(lang, "en-US"), { minimumFractionDigits: whole ? 0 : 2, maximumFractionDigits: whole ? 0 : 2 })}`;
 };
-const DAY = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", timeZone: "UTC" });
-const day = (iso?: string | null) => (iso && !Number.isNaN(new Date(iso).getTime()) ? DAY.format(new Date(iso)) : "—");
+const DAY = {
+  en: new Intl.DateTimeFormat(intlLocale("en"), { day: "2-digit", month: "short", timeZone: "UTC" }),
+  ar: new Intl.DateTimeFormat(intlLocale("ar"), { day: "2-digit", month: "short", timeZone: "UTC" }),
+};
+const day = (iso?: string | null, lang: Lang = "en") =>
+  iso && !Number.isNaN(new Date(iso).getTime()) ? DAY[lang].format(new Date(iso)) : "—";
+/** The request's language, as Paraglide's options. */
+const loc = (req: PayloadRequest) => ({ locale: langOf(req) });
 
 const fail = (message: string, status = 400) => Response.json({ errors: [{ message }] }, { status });
 
@@ -146,7 +154,7 @@ const action = (
   path: `/cash/${path}`,
   method: "post",
   handler: async (req: PayloadRequest) => {
-    if (!req.user) return fail("You are not allowed to perform this action.", 401);
+    if (!req.user) return fail(m.api_insights_shared_not_allowed({}, loc(req)), 401);
     const d = await load(req);
     if (d instanceof Response) return d;
     try {
@@ -168,21 +176,22 @@ const update = (req: PayloadRequest, collection: string, id: string, data: Recor
 
 export const cashEndpoints: Endpoint[] = [
   // Payables, approvals and bank changes: never for Sales.
-  read("payables", async (_req, d) =>
+  read("payables", async (req, d) =>
     d.canSeePayables
       ? Response.json({
           canFinance: d.canFinance,
           approvals: d.approvals,
           bankChanges: d.bankChanges,
         } satisfies CashPayables)
-      : fail("Supplier payables, payment approvals and bank details are not visible to Sales.", 403),
+      : fail(m.api_cash_payables_hidden_from_sales({}, loc(req)), 403),
   ),
   // A person sends the reminder (or files the internal one): recorded as a task on the account.
   action("reminder", async (req, d, b) => {
+    const o = loc(req);
     const invoice = d.receivables.find((r) => r.id === s(b.invoice));
-    if (!invoice) return fail("Invoice not found.", 404);
+    if (!invoice) return fail(m.api_cash_invoice_not_found({}, o), 404);
     const x = await draft(req, invoice.id);
-    if (!x) return fail("Invoice not found.", 404);
+    if (!x) return fail(m.api_cash_invoice_not_found({}, o), 404);
     const text = s(b.body).trim() || x.body;
     const internal = x.mode === "internal";
     await create(req, "tasks", {
@@ -192,31 +201,35 @@ export const cashEndpoints: Endpoint[] = [
       due: new Date().toISOString(),
       case: invoice.case ?? undefined,
       customer: invoice.customer,
-      who: internal ? "Account owner" : x.to,
-      goal: `Collect ${money(invoice.balance, invoice.currency)} on ${invoice.number}`,
+      who: internal ? m.api_cash_account_owner({}, o) : x.to,
+      goal: m.api_cash_collect_goal(
+        { amount: money(invoice.balance, invoice.currency, o.locale), number: invoice.number },
+        o,
+      ),
       script: internal ? text : `${x.subject}\n\n${text}`,
       internalOnly: internal,
       owner: userId(req),
       createdByRule: "Collection reminder",
       stopCondition: "Payment received",
-      ...(internal ? {} : { status: "Done", outcome: { result: "Sent", note: "Reviewed and sent by a person." } }),
+      ...(internal ? {} : { status: "Done", outcome: { result: "Sent", note: m.api_cash_reminder_sent_note({}, o) } }),
     });
     return Response.json({ ok: true });
   }),
   // An approver decides on a payment or a bank-detail change (once, and only if they are named on it).
   action("decide", async (req, d, b) => {
+    const o = loc(req);
     const id = s(b.approval);
     const bank = d.bankChanges.find((x) => x.id === id);
     const item = bank ?? d.approvals.find((x) => x.id === id);
-    if (!item) return fail("Approval not found.", 404);
-    if (!item.canDecide) return fail("You can't decide on this approval.", 403);
+    if (!item) return fail(m.api_cash_approval_not_found({}, o), 404);
+    if (!item.canDecide) return fail(m.api_cash_cant_decide({}, o), 403);
     const decision = s(b.decision) === "Reject" ? "Reject" : "Approve";
     const note = s(b.reason).trim();
-    if (decision === "Reject" && !note) return fail("Give a reason for rejecting.");
-    if (bank && decision === "Approve" && b.callBack !== true)
-      return fail("Call back on the number on file and tick the confirmation first.");
-    const reason = bank && b.callBack === true ? `Call-back done on number on file. ${note}`.trim() : note;
+    if (decision === "Reject" && !note) return fail(m.api_cash_give_reject_reason({}, o));
+    if (bank && decision === "Approve" && b.callBack !== true) return fail(m.api_cash_call_back_first({}, o));
+    const reason = bank && b.callBack === true ? m.api_cash_call_back_done({ note }, o).trim() : note;
     const current = (await req.payload.findByID({
+      locale: req.locale,
       collection: "approvals" as never,
       id,
       depth: 0,
@@ -231,10 +244,11 @@ export const cashEndpoints: Endpoint[] = [
   }),
   // Finance applies the new bank details once two people approved.
   action("apply-bank", async (req, d, b) => {
+    const o = loc(req);
     const bank = d.bankChanges.find((x) => x.id === s(b.approval));
-    if (!bank?.request) return fail("Bank-detail change not found.", 404);
-    if (!d.canFinance) return fail("Management and finance apply bank details.", 403);
-    if (bank.status !== "Approved" || bank.applied) return fail("Two different people must approve first.");
+    if (!bank?.request) return fail(m.api_cash_bank_change_not_found({}, o), 404);
+    if (!d.canFinance) return fail(m.api_cash_finance_applies_bank({}, o), 403);
+    if (bank.status !== "Approved" || bank.applied) return fail(m.api_cash_two_approvers_first({}, o));
     const r = bank.request;
     await update(req, "suppliers", r.supplier, {
       bank: {
@@ -250,12 +264,13 @@ export const cashEndpoints: Endpoint[] = [
   }),
   // Finance records a supplier payment made in the bank against its approval.
   action("record-payment", async (req, d, b) => {
+    const o = loc(req);
     const a = d.approvals.find((x) => x.id === s(b.approval));
-    if (!a?.po) return fail("Approval not found.", 404);
-    if (!d.canFinance) return fail("Management and finance record payments.", 403);
-    if (a.status !== "Approved") return fail("The payment isn't approved yet.");
+    if (!a?.po) return fail(m.api_cash_approval_not_found({}, o), 404);
+    if (!d.canFinance) return fail(m.api_cash_finance_records_payments({}, o), 403);
+    if (a.status !== "Approved") return fail(m.api_cash_payment_not_approved({}, o));
     const reference = s(b.reference).trim();
-    if (!reference) return fail("Give the bank reference.");
+    if (!reference) return fail(m.api_cash_give_bank_reference({}, o));
     await create(req, "payments", {
       direction: "out",
       reference,
@@ -272,7 +287,8 @@ export const cashEndpoints: Endpoint[] = [
   // Finance asks the Financial Director or the CEO to approve a supplier payment.
   // What's owed on a PO is the PO's own `payable` (../collections/fulfilment.ts).
   action("request-approval", async (req, d, b) => {
-    if (!d.canFinance) return fail("Management and finance request payment approvals.", 403);
+    const o = loc(req);
+    if (!d.canFinance) return fail(m.api_cash_finance_requests_approvals({}, o), 403);
     const po = (await req.payload
       .findByID({ collection: "purchase-orders" as never, id: s(b.payable), depth: 0, req } as never)
       .catch(() => null)) as Record<string, unknown> | null;
@@ -282,40 +298,52 @@ export const cashEndpoints: Endpoint[] = [
       approvals: await all(req, "approvals"),
     };
     const p = po ? payableOf(po, docs) : null;
-    if (!po || !p) return fail("Payable not found.", 404);
+    if (!po || !p) return fail(m.api_cash_payable_not_found({}, o), 404);
     if (p.stage === "Bill on hold" || p.depositApproval || p.paymentApproval)
-      return fail("An approval is already in progress for this payable.");
+      return fail(m.api_cash_approval_in_progress({}, o));
     const supplier = await related(req, "suppliers", po.supplier);
     const supplierName = s(supplier?.name);
     const number = s(po.number);
     await create(req, "approvals", {
-      title: `Pay ${supplierName} ${money(p.balance, p.currency)} — ${number}`,
+      title: m.api_cash_pay_title(
+        { supplier: supplierName, amount: money(p.balance, p.currency, o.locale), number },
+        o,
+      ),
       type: "Supplier payment",
       case: idOf(po.case),
-      detail: `PO ${number}${p.bill ? ` · bill ${p.bill.number} matched (PO = receipt = bill)` : ""} · due ${day(p.due)} · bank details unchanged.`,
+      detail: p.bill
+        ? m.api_cash_pay_detail_matched({ number, bill: p.bill.number, due: day(p.due, o.locale) }, o)
+        : m.api_cash_pay_detail({ number, due: day(p.due, o.locale) }, o),
       approvers: ["kb", "mh"],
       subject: { relationTo: "purchase-orders", value: s(po.id) },
     });
     for (const user of ["kb", "mh"])
       await create(req, "notifications", {
         user,
-        title: `Approve payment to ${supplierName}`,
-        detail: `${money(p.balance, p.currency)} · ${number}`,
+        title: m.api_cash_approve_payment_title({ supplier: supplierName }, o),
+        detail: `${money(p.balance, p.currency, o.locale)} · ${number}`,
         kind: "Payment",
         href: "/cash",
       }).catch(() => null);
     return Response.json({ ok: true });
   }),
   // "Match a remittance": which open invoices a payment advice pays — plain matching, not a model.
-  action("match", async (_req, d, b) => {
+  action("match", async (req, d, b) => {
+    const o = loc(req);
     const found = matchRemittance(d.receivables, { invoices: s(b.invoices), amount: b.amount });
-    if (!found.length)
-      return fail("No open invoice matches these numbers or this amount — check the remittance by hand.");
-    const list = found.map((r) => `${r.number} (${r.customerName}, ${money(r.balance, r.currency)} open)`).join("; ");
+    if (!found.length) return fail(m.api_cash_no_remittance_match({}, o));
+    const list = found
+      .map((r) =>
+        m.api_cash_match_item(
+          { number: r.number, customer: r.customerName, amount: money(r.balance, r.currency, o.locale) },
+          o,
+        ),
+      )
+      .join(m.api_cash_list_separator({}, o));
     return Response.json({
       ok: true,
       invoices: found.map((r) => r.id),
-      message: `Looks like it pays ${found.length === 1 ? "this invoice" : `these ${found.length} invoices`}: ${list}. A person records the payment.`,
+      message: m.api_cash_match_message({ count: found.length, list }, o),
       ...(found.length === 1 ? { href: link.doc("invoices", found[0]!.id) } : {}),
     });
   }),
@@ -344,14 +372,15 @@ export const cashEndpoints: Endpoint[] = [
     path: "/cash/payment",
     method: "post",
     handler: async (req: PayloadRequest) => {
-      if (!req.user) return fail("You are not allowed to perform this action.", 401);
+      const o = loc(req);
+      if (!req.user) return fail(m.api_insights_shared_not_allowed({}, o), 401);
       const b = await input(req);
       const inv = (await req.payload
         .findByID({ collection: "invoices" as never, id: s(b.invoice), depth: 0, req, overrideAccess: false } as never)
         .catch(() => null)) as { id: string; number: string; currency: string; balance: number } | null;
-      if (!inv) return fail("Invoice not found.", 404);
+      if (!inv) return fail(m.api_cash_invoice_not_found({}, o), 404);
       const amount = Number(b.amount);
-      if (!(amount > 0)) return fail("Enter the amount received.");
+      if (!(amount > 0)) return fail(m.api_cash_enter_amount({}, o));
       try {
         await req.payload.create({
           req,
@@ -373,7 +402,16 @@ export const cashEndpoints: Endpoint[] = [
       }
       const left = Math.max(0, inv.balance - amount);
       return Response.json({
-        message: `${money(amount, inv.currency)} allocated to ${inv.number}${left ? ` — balance ${money(left, inv.currency)}` : " — paid in full"}.`,
+        message: left
+          ? m.api_cash_allocated_balance(
+              {
+                amount: money(amount, inv.currency, o.locale),
+                number: inv.number,
+                balance: money(left, inv.currency, o.locale),
+              },
+              o,
+            )
+          : m.api_cash_allocated_paid({ amount: money(amount, inv.currency, o.locale), number: inv.number }, o),
       });
     },
   },

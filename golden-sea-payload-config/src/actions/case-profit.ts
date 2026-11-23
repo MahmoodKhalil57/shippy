@@ -1,81 +1,111 @@
 import type { Action } from "saastemlycrm-design-system/contracts";
 import type { CaseProfit, CloseCheck } from "../endpoints/profit.ts";
+import { numberFormat } from "../format/index.ts";
 import { egp, pct } from "../format/profit.ts";
+import { m } from "../i18n/paraglide/messages.js";
 
 /**
  * A case's profit and close: what people can do from the profit widgets (POST
  * /api/case-profit/:id/…, ../endpoints/profit.ts, which re-checks who may do what): confirm
  * actuals, record the receipt, settle a claim, close.
  */
+
+/** An amount in its currency, as received, in the interface's language: "USD 12,480.5". */
+const money = (amount: number, currency: string) => m.action_money({ currency, amount: numberFormat().format(amount) });
+
 export function profitActions(p: CaseProfit) {
   const base = `/case-profit/${encodeURIComponent(p.id)}`;
   const billed = p.lines.filter((l) => l.kind === "charge" && l.state === "Billed");
   const actuals: Action = {
-    label: "Confirm actuals",
+    label: m.action_profit_confirm_actuals(),
     main: true,
     call: { path: `${base}/actuals` },
     confirm: {
-      heading: "Replace estimates with actuals",
+      heading: m.action_profit_actuals_heading(),
       text: [
-        "These billed amounts replace the estimates on the case's shared charges:",
-        ...billed.map((l) => `${l.label} (${l.detail}): ${egp(l.expected)} to ${egp(l.actual ?? 0)}`),
+        m.action_profit_actuals_intro(),
+        ...billed.map((l) =>
+          m.action_profit_actual_line({
+            label: l.label,
+            detail: l.detail,
+            expected: egp(l.expected),
+            actual: egp(l.actual ?? 0),
+          }),
+        ),
       ].join("\n"),
-      label: "Confirm actuals",
+      label: m.action_profit_confirm_actuals(),
     },
-    done: "Actual costs confirmed. Estimates replaced on the case.",
+    done: m.action_profit_actuals_done(),
   };
   const r = p.receipt;
   const receipt: Action | undefined = r && {
-    label: "Record receipt",
+    label: m.action_profit_record_receipt(),
     call: { path: `${base}/receipt` },
-    prompt: `Record receipt for ${r.number}`,
+    prompt: m.action_profit_receipt_prompt({ invoice: r.number }),
     fields: [
       {
         type: "text",
         name: "reference",
-        label: "Bank reference",
+        label: m.action_profit_bank_reference(),
         required: true,
         defaultValue: "TRX-77984",
         admin: {
-          description: `${r.currency} ${r.amount.toLocaleString("en-US")} received from ${p.customer}${
-            r.currency === "EGP" ? "" : ` at ${r.rate.toFixed(2)} EGP/${r.currency}`
-          }. Recorded after the bank movement; the platform never starts transfers.`,
+          description:
+            r.currency === "EGP"
+              ? m.action_profit_receipt_description({ amount: money(r.amount, r.currency), customer: p.customer })
+              : m.action_profit_receipt_description_rate({
+                  amount: money(r.amount, r.currency),
+                  customer: p.customer,
+                  rate: r.rate.toFixed(2),
+                  currency: r.currency,
+                }),
         },
       },
     ],
-    done: `Receipt recorded and allocated to ${r.number}.`,
+    done: m.action_profit_receipt_done({ invoice: r.number }),
   };
   const claim = (ref: string): Action | undefined => {
     const c = p.claims.find((x) => x.ref === ref);
     return (
       c && {
-        label: "Record credit note",
+        label: m.action_profit_record_credit_note(),
         call: { path: `${base}/claims/${encodeURIComponent(c.ref)}` },
         confirm: {
-          heading: `Settle claim ${c.ref}`,
-          text: `${c.title}. ${c.note}\nCredit note ${c.creditNote} from ${c.against} for ${egp(c.amount)} is booked against the replacement cost.`,
-          label: "Record credit note",
+          heading: m.action_profit_claim_heading({ ref: c.ref }),
+          text: m.action_profit_claim_text({
+            title: c.title,
+            note: c.note,
+            creditNote: c.creditNote,
+            against: c.against,
+            amount: egp(c.amount),
+          }),
+          label: m.action_profit_record_credit_note(),
         },
-        done: `Credit note ${c.creditNote} recorded. Claim ${c.ref} settled.`,
+        done: m.action_profit_claim_done({ creditNote: c.creditNote, ref: c.ref }),
       }
     );
   };
   const close: Action = {
-    label: "Close case",
+    label: m.action_profit_close(),
     main: true,
     call: { path: `${base}/close` },
     disabled: !p.canClose,
     reason: p.canClose
-      ? "Every check is green."
+      ? m.action_profit_close_ready()
       : p.canAct
-        ? "Turn every check green to close."
-        : "Management and finance close cases.",
+        ? m.action_profit_close_open()
+        : m.action_profit_close_role(),
     confirm: {
-      heading: `Close ${p.caseId}?`,
-      text: `Actual gross profit ${egp(p.actual.profit)} (${pct(p.actual.margin)}) against ${egp(p.expected.profit)} expected (${pct(p.expected.margin)}).\nSupplier prices, lead times and on-time results feed back to the supplier records.`,
-      label: "Close case",
+      heading: m.action_profit_close_heading({ case: p.caseId }),
+      text: m.action_profit_close_text({
+        actual: egp(p.actual.profit),
+        actualMargin: pct(p.actual.margin),
+        expected: egp(p.expected.profit),
+        expectedMargin: pct(p.expected.margin),
+      }),
+      label: m.action_profit_close(),
     },
-    done: `${p.caseId} closed. Supplier prices and on-time results fed back.`,
+    done: m.action_profit_close_done({ case: p.caseId }),
   };
   return { actuals, receipt, claim, close };
 }

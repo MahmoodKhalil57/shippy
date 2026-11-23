@@ -4,7 +4,10 @@
     "at": "2026-11-15T09:12:00.000Z",
     "case": "gs-rfq-0142",
     "kind": "auto",
-    "text": "RFQ email received (sales@, Outlook). 1 PDF attachment linked.",
+    "text": {
+      "en": "RFQ email received (sales@, Outlook). 1 PDF attachment linked.",
+      "ar": "استُلم بريد طلب العرض (sales@، Outlook). رُبط مرفق PDF واحد."
+    },
     "rule": "Create case from RFQ email"
   },
   {
@@ -12,7 +15,10 @@
     "at": "2026-11-15T09:14:00.000Z",
     "case": "gs-rfq-0142",
     "kind": "auto",
-    "text": "Acknowledgement sent using approved template “RFQ received – marine”.",
+    "text": {
+      "en": "Acknowledgement sent using approved template “RFQ received – marine”.",
+      "ar": "أُرسل إشعار الاستلام بالقالب المعتمد «RFQ received – marine»."
+    },
     "rule": "RFQ acknowledgement"
   },
   {
@@ -20,7 +26,10 @@
     "at": "2026-11-16T09:30:00.000Z",
     "case": "gs-rfq-0142",
     "kind": "alert",
-    "text": "Suez Industrial offer line 2: LOCTITE 242 offered, 243 requested. Line blocked from pricing.",
+    "text": {
+      "en": "Suez Industrial offer line 2: LOCTITE 242 offered, 243 requested. Line blocked from pricing.",
+      "ar": "عرض Suez Industrial للبند 2: عُرض LOCTITE 242 والمطلوب 243. أُوقف البند عن التسعير."
+    },
     "rule": "Offer deviation check"
   },
   {
@@ -29,14 +38,20 @@
     "case": "gs-rfq-0142",
     "kind": "human",
     "actor": "ky",
-    "text": "Correction request sent to Suez Industrial (client not disclosed)."
+    "text": {
+      "en": "Correction request sent to Suez Industrial (client not disclosed).",
+      "ar": "أُرسل طلب تصحيح إلى Suez Industrial (دون كشف العميل)."
+    }
   },
   {
     "id": "act-5",
     "at": "2026-11-15T09:13:00.000Z",
     "case": "gs-rfq-0142",
     "kind": "auto",
-    "text": "6 draft lines extracted from the PDF (IMPA codes on 6 of 6). Line 6 at 58% confidence: size breakdown missing — sent to review, nothing overwritten.",
+    "text": {
+      "en": "6 draft lines extracted from the PDF (IMPA codes on 6 of 6). Line 6 at 58% confidence: size breakdown missing — sent to review, nothing overwritten.",
+      "ar": "استُخرجت 6 مسودات بنود من ملف PDF (رموز IMPA في 6 من 6). البند 6 بثقة 58%: توزيع المقاسات ناقص — أُرسل للمراجعة، ولم يُستبدل شيء."
+    },
     "rule": "Create case from RFQ email"
   },
   {
@@ -44,7 +59,10 @@
     "at": "2026-11-15T09:15:00.000Z",
     "case": "gs-rfq-0142",
     "kind": "auto",
-    "text": "Owner Karim Youssef, backup Soaad Amer (customer rule: Nordvik → supply chain desk).",
+    "text": {
+      "en": "Owner Karim Youssef, backup Soaad Amer (customer rule: Nordvik → supply chain desk).",
+      "ar": "المالك كريم يوسف، والاحتياطي سعاد عامر (قاعدة العميل: Nordvik ← مكتب سلسلة التوريد)."
+    },
     "rule": "Assign owner"
   },
   {
@@ -53,7 +71,10 @@
     "case": "gs-rfq-0142",
     "kind": "human",
     "actor": "ky",
-    "text": "Asked the customer for the coverall size breakdown (line 6). Lines 1–5 keep moving."
+    "text": {
+      "en": "Asked the customer for the coverall size breakdown (line 6). Lines 1–5 keep moving.",
+      "ar": "طُلب من العميل توزيع مقاسات الأفرولات (البند 6). البنود 1–5 مستمرة."
+    }
   },
   {
     "id": "act-8",
@@ -61,7 +82,10 @@
     "case": "gs-rfq-0142",
     "kind": "human",
     "actor": "ky",
-    "text": "4 supplier RFQs sent (split by category), client identity removed. Due 17 Nov 14:00.",
+    "text": {
+      "en": "4 supplier RFQs sent (split by category), client identity removed. Due 17 Nov 14:00.",
+      "ar": "أُرسلت 4 طلبات عروض للموردين (مقسّمة حسب الفئة)، مع حذف هوية العميل. الاستحقاق 17 نوفمبر 14:00."
+    },
     "entity": "supplier-rfqs"
   },
   {
@@ -70,14 +94,20 @@
     "case": "gs-rfq-0142",
     "kind": "human",
     "actor": "ky",
-    "text": "Phone: customer confirmed LOCTITE 243, 50 ml, 3 pcs (line 2). Answer logged on the clarification."
+    "text": {
+      "en": "Phone: customer confirmed LOCTITE 243, 50 ml, 3 pcs (line 2). Answer logged on the clarification.",
+      "ar": "هاتفيًا: أكّد العميل LOCTITE 243، 50 مل، 3 قطع (البند 2). سُجّلت الإجابة على التوضيح."
+    }
   },
   {
     "id": "act-10",
     "at": "2026-11-16T08:55:00.000Z",
     "case": "gs-rfq-0142",
     "kind": "auto",
-    "text": "Reply from new sender horizon-trading.example matched to GS-SRFQ-0142-C by reference (subject changed). Supplier Horizon Trading created; price saved with date and validity.",
+    "text": {
+      "en": "Reply from new sender horizon-trading.example matched to GS-SRFQ-0142-C by reference (subject changed). Supplier Horizon Trading created; price saved with date and validity.",
+      "ar": "رد من مرسل جديد horizon-trading.example طوبق مع GS-SRFQ-0142-C بالمرجع (تغيّر الموضوع). أُنشئ المورّد Horizon Trading؛ وحُفظ السعر بتاريخه وصلاحيته."
+    },
     "rule": "Save new supplier & prices"
   },
   {
@@ -85,7 +115,10 @@
     "at": "2026-11-16T10:05:00.000Z",
     "case": "gs-rfq-0142",
     "kind": "auto",
-    "text": "Forwarded copy of the RFQ (FW: NSM-REQ-55821) recognised by message-id — linked to this case. No new case, no second acknowledgement.",
+    "text": {
+      "en": "Forwarded copy of the RFQ (FW: NSM-REQ-55821) recognised by message-id — linked to this case. No new case, no second acknowledgement.",
+      "ar": "تم التعرف على نسخة محوّلة من طلب العرض (FW: NSM-REQ-55821) بمعرّف الرسالة — رُبطت بهذا الملف. لا ملف جديد ولا إشعار استلام ثانٍ."
+    },
     "rule": "Create case from RFQ email"
   },
   {
@@ -94,14 +127,20 @@
     "case": "gs-rfq-0142",
     "kind": "human",
     "actor": "ky",
-    "text": "Handover note for backup Soaad Amer: “Line 6 waits for Capt. Erik's sizes; lines 1–5 ready to price once Port Said Welding replies on line 4.”"
+    "text": {
+      "en": "Handover note for backup Soaad Amer: “Line 6 waits for Capt. Erik's sizes; lines 1–5 ready to price once Port Said Welding replies on line 4.”",
+      "ar": "مذكرة تسليم للاحتياطي سعاد عامر: «البند 6 ينتظر مقاسات الكابتن Erik؛ البنود 1–5 جاهزة للتسعير بمجرد رد Port Said Welding على البند 4.»"
+    }
   },
   {
     "id": "act-13",
     "at": "2026-11-16T15:20:00.000Z",
     "case": "gs-rfq-0142",
     "kind": "auto",
-    "text": "Delta Marine reply without a reference matched at 71% — sent to the review queue, not applied.",
+    "text": {
+      "en": "Delta Marine reply without a reference matched at 71% — sent to the review queue, not applied.",
+      "ar": "رد Delta Marine بلا مرجع طوبق بنسبة 71% — أُرسل إلى قائمة المراجعة، ولم يُطبَّق."
+    },
     "rule": "Match supplier reply"
   },
   {
@@ -109,7 +148,10 @@
     "at": "2026-11-17T06:00:00.000Z",
     "case": "gs-rfq-0142",
     "kind": "auto",
-    "text": "Reminder 1 sent to Port Said Welding (GS-SRFQ-0142-E). Reminder 2 scheduled for 17:00 unless they reply.",
+    "text": {
+      "en": "Reminder 1 sent to Port Said Welding (GS-SRFQ-0142-E). Reminder 2 scheduled for 17:00 unless they reply.",
+      "ar": "أُرسل التذكير 1 إلى Port Said Welding (GS-SRFQ-0142-E). التذكير 2 مجدول الساعة 17:00 ما لم يردّوا."
+    },
     "rule": "Supplier reminder"
   },
   {
@@ -118,7 +160,10 @@
     "case": "gs-rfq-0142",
     "kind": "human",
     "actor": "ky",
-    "text": "Selected Horizon Trading v1 for line 1 (best landed cost).",
+    "text": {
+      "en": "Selected Horizon Trading v1 for line 1 (best landed cost).",
+      "ar": "اختير Horizon Trading v1 للبند 1 (أفضل تكلفة واصلة)."
+    },
     "entity": "offers"
   },
   {
@@ -126,7 +171,10 @@
     "at": "2026-11-17T07:58:00.000Z",
     "case": "gs-rfq-0141",
     "kind": "alert",
-    "text": "Cairo Chem: 2 reminders without reply — escalated to the owner and the 07:00 briefing; status No response.",
+    "text": {
+      "en": "Cairo Chem: 2 reminders without reply — escalated to the owner and the 07:00 briefing; status No response.",
+      "ar": "Cairo Chem: تذكيران دون رد — صُعّد إلى المالك وملخص الساعة 07:00؛ الحالة: لا استجابة."
+    },
     "rule": "Escalate no response"
   },
   {
@@ -134,7 +182,10 @@
     "at": "2026-11-17T07:40:00.000Z",
     "kind": "human",
     "actor": "ah",
-    "text": "Proposed USD rate 48.95 (awaiting approval by Karim Balbaa).",
+    "text": {
+      "en": "Proposed USD rate 48.95 (awaiting approval by Karim Balbaa).",
+      "ar": "سعر USD مقترح 48.95 (بانتظار موافقة كريم بلباع)."
+    },
     "entity": "globals/fx-rates"
   },
   {
@@ -143,14 +194,20 @@
     "case": "gs-rfq-0135",
     "kind": "human",
     "actor": "sa",
-    "text": "Reassigned from Karim Youssef to Soaad Amer. Handover note: “Customer wants the ESAB alternative priced in v2; datasheet attached to line 3.”"
+    "text": {
+      "en": "Reassigned from Karim Youssef to Soaad Amer. Handover note: “Customer wants the ESAB alternative priced in v2; datasheet attached to line 3.”",
+      "ar": "أُعيد الإسناد من كريم يوسف إلى سعاد عامر. مذكرة التسليم: «يريد العميل تسعير بديل ESAB في v2؛ ورقة البيانات مرفقة بالبند 3.»"
+    }
   },
   {
     "id": "act-19",
     "at": "2026-11-16T15:02:00.000Z",
     "kind": "human",
     "actor": "kb",
-    "text": "Approved acknowledgement template “RFQ received – marine” v3.",
+    "text": {
+      "en": "Approved acknowledgement template “RFQ received – marine” v3.",
+      "ar": "اعتُمد قالب إشعار الاستلام «RFQ received – marine» الإصدار 3."
+    },
     "entity": "globals/message-templates"
   },
   {
@@ -158,7 +215,10 @@
     "at": "2026-11-17T07:45:00.000Z",
     "case": "gs-rfq-0136",
     "kind": "alert",
-    "text": "Customer PO NSM-PO-77104 line 3 uses the expired v1 price. Sales-order confirmation blocked until resolved.",
+    "text": {
+      "en": "Customer PO NSM-PO-77104 line 3 uses the expired v1 price. Sales-order confirmation blocked until resolved.",
+      "ar": "أمر شراء العميل NSM-PO-77104 يستخدم في البند 3 سعر v1 المنتهي. تأكيد أمر البيع متوقف حتى الحل."
+    },
     "rule": "Customer PO check"
   },
   {
@@ -166,7 +226,10 @@
     "at": "2026-11-16T17:00:00.000Z",
     "case": "gs-rfq-0139",
     "kind": "auto",
-    "text": "No answer 3 days after GS-Q-0139 — internal reminder created only (Atlas Tankers: do not chase).",
+    "text": {
+      "en": "No answer 3 days after GS-Q-0139 — internal reminder created only (Atlas Tankers: do not chase).",
+      "ar": "لا رد بعد 3 أيام من GS-Q-0139 — أُنشئ تذكير داخلي فقط (Atlas Tankers: بلا متابعة)."
+    },
     "rule": "Customer follow-up"
   },
   {
@@ -174,14 +237,20 @@
     "at": "2026-11-15T16:05:00.000Z",
     "case": "gs-rfq-0133",
     "kind": "auto",
-    "text": "Agent update: ETA moved +1 day. Delivery 2, truck booking and supplier pickup moved automatically; owner Ahmedy alerted.",
+    "text": {
+      "en": "Agent update: ETA moved +1 day. Delivery 2, truck booking and supplier pickup moved automatically; owner Ahmedy alerted.",
+      "ar": "تحديث الوكيل: تأخر موعد الوصول يومًا واحدًا. نُقلت الدفعة 2 وحجز الشاحنة واستلام المورّد تلقائيًا؛ ونُبّه المالك أحمدي."
+    },
     "rule": "ETA change"
   },
   {
     "id": "act-23",
     "at": "2026-11-16T18:40:00.000Z",
     "kind": "alert",
-    "text": "E-invoice INV/2026/0419 not submitted — signature service unreachable after 3 retries. Sent to the exception queue.",
+    "text": {
+      "en": "E-invoice INV/2026/0419 not submitted — signature service unreachable after 3 retries. Sent to the exception queue.",
+      "ar": "الفاتورة الإلكترونية INV/2026/0419 لم تُقدَّم — تعذّر الوصول إلى خدمة التوقيع بعد 3 محاولات. أُرسلت إلى قائمة الاستثناءات."
+    },
     "rule": "E-invoice submission",
     "entity": "integration-exceptions/ex-eta"
   },
@@ -189,7 +258,10 @@
     "id": "act-24",
     "at": "2026-11-17T06:12:00.000Z",
     "kind": "alert",
-    "text": "purchasing@ mailbox token expired — 12 emails waiting. Sent to the exception queue.",
+    "text": {
+      "en": "purchasing@ mailbox token expired — 12 emails waiting. Sent to the exception queue.",
+      "ar": "انتهى رمز صندوق بريد purchasing@ — 12 رسالة منتظرة. أُرسلت إلى قائمة الاستثناءات."
+    },
     "rule": "Create case from RFQ email",
     "entity": "integration-exceptions/ex-outlook"
   },
@@ -198,14 +270,20 @@
     "at": "2026-11-16T21:40:00.000Z",
     "case": "gs-rfq-0141",
     "kind": "auto",
-    "text": "Urgent RFQ outside office hours — WhatsApp alert to on-duty Ahmedy; acknowledged after 6 min.",
+    "text": {
+      "en": "Urgent RFQ outside office hours — WhatsApp alert to on-duty Ahmedy; acknowledged after 6 min.",
+      "ar": "طلب عرض عاجل خارج ساعات العمل — تنبيه واتساب للمناوب أحمدي؛ أُقرّ به بعد 6 دقائق."
+    },
     "rule": "After-hours & weekend RFQ"
   },
   {
     "id": "act-26",
     "at": "2026-11-17T05:00:00.000Z",
     "kind": "auto",
-    "text": "Daily briefing sent to 7 people at 07:00 Cairo.",
+    "text": {
+      "en": "Daily briefing sent to 7 people at 07:00 Cairo.",
+      "ar": "أُرسل الملخص اليومي إلى 7 أشخاص الساعة 07:00 بتوقيت القاهرة."
+    },
     "rule": "Daily briefing"
   },
   {
@@ -214,6 +292,9 @@
     "case": "gs-rfq-0131",
     "kind": "human",
     "actor": "ky",
-    "text": "Handover note for Ahmedy: “Handed over after delivery: DN-0131 signed by the Chief Engineer on 9 Nov. USD 10,000 received 12 Nov; balance USD 4,200 due 30 Nov. Claim CLM-0131-1 (2 cracked helmets) is open with Delta Marine.”"
+    "text": {
+      "en": "Handover note for Ahmedy: “Handed over after delivery: DN-0131 signed by the Chief Engineer on 9 Nov. USD 10,000 received 12 Nov; balance USD 4,200 due 30 Nov. Claim CLM-0131-1 (2 cracked helmets) is open with Delta Marine.”",
+      "ar": "مذكرة تسليم لأحمدي: «سُلّم بعد التسليم: وقّع كبير المهندسين إذن التسليم DN-0131 في 9 نوفمبر. استُلم USD 10,000 في 12 نوفمبر؛ والرصيد USD 4,200 مستحق 30 نوفمبر. المطالبة CLM-0131-1 (خوذتان مشروختان) مفتوحة مع Delta Marine.»"
+    }
   }
 ]

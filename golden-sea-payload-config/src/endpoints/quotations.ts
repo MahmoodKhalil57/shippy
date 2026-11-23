@@ -2,6 +2,8 @@ import type { Endpoint, PayloadRequest } from "payload";
 import { commercialEndpoints, type QuoteView } from "./commercial.ts";
 import { bodyOf, failWith, forward } from "./forward.ts";
 import * as link from "../links.ts";
+import { m } from "../i18n/paraglide/messages.js";
+import { langOf, optionLabel } from "./insights-shared.ts";
 
 /**
  * The actions of the quotation tab "Preview & send" (../pages/quote-preview.ts) that answer in
@@ -23,14 +25,15 @@ export const quotationEndpoints: Endpoint[] = [
     method: "post",
     handler: async (req) => {
       const b = await bodyOf(req);
+      const lang = langOf(req);
       const portal = b.method === "portal";
       const r = await act<QuoteView>(req, "send", { method: portal ? "portal" : "email", to: b.to });
       if (r instanceof Response) return r;
       const number = r.quotation.number;
       return Response.json({
         message: portal
-          ? `${number} marked as entered in the portal.`
-          : `${number} sent to ${typeof b.to === "string" ? b.to : ""}.`,
+          ? m.api_quotations_entered_in_portal({ number }, { locale: lang })
+          : m.api_quotations_sent_to({ number, to: typeof b.to === "string" ? b.to : "" }, { locale: lang }),
       });
     },
   },
@@ -39,11 +42,19 @@ export const quotationEndpoints: Endpoint[] = [
     method: "post",
     handler: async (req) => {
       const b = await bodyOf(req);
+      const lang = langOf(req);
       const decision = typeof b.decision === "string" ? b.decision : "";
       const note = typeof b.note === "string" ? b.note.trim() : "";
-      if (decision === "Lost" && !note) return failWith("Give the lost reason.");
+      if (decision === "Lost" && !note) return failWith(m.api_quotations_give_lost_reason({}, { locale: lang }));
       const r = await act(req, "decision", { decision, note });
-      return r instanceof Response ? r : Response.json({ message: `Decision recorded: ${decision}.` });
+      return r instanceof Response
+        ? r
+        : Response.json({
+            message: m.api_quotations_decision_recorded(
+              { decision: optionLabel(req, "quotations", "decision", decision) },
+              { locale: lang },
+            ),
+          });
     },
   },
   {
@@ -54,7 +65,7 @@ export const quotationEndpoints: Endpoint[] = [
       const r = await act<{ id: string }>(req, "revise", { reason: (await bodyOf(req)).reason });
       if (r instanceof Response) return r;
       return Response.json({
-        message: "New version created — the previous one is kept for audit.",
+        message: m.api_quotations_new_version({}, { locale: langOf(req) }),
         href: link.doc("quotations", r.id, "preview"),
       });
     },

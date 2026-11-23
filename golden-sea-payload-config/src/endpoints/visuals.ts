@@ -1,7 +1,21 @@
-import type { Endpoint } from "payload";
+import type { Endpoint, PayloadRequest } from "payload";
 import type { Doc } from "saastemlycrm-design-system/contracts";
 import { history as H } from "./history.ts";
-import { DAY, MONEY_ROLES, NOW, all, date, idOf, meOf, nameOf, str, unauthorized } from "./insights-shared.ts";
+import { m } from "../i18n/paraglide/messages.js";
+import {
+  DAY,
+  MONEY_ROLES,
+  NOW,
+  all,
+  date,
+  idOf,
+  langOf,
+  meOf,
+  nameOf,
+  optionLabel,
+  str,
+  unauthorized,
+} from "./insights-shared.ts";
 import * as link from "../links.ts";
 
 /**
@@ -54,7 +68,10 @@ export function visuals(
   role: string,
   me: string,
   data: { cases: Doc[]; invoices: Doc[]; deliveries: Doc[]; suppliers: Doc[] },
+  /** The request, for its language (English without one). */
+  req?: PayloadRequest,
 ): Visuals {
+  const o = { locale: req ? langOf(req) : "en" } as const;
   const money = MONEY_ROLES.includes(role);
   const LIVE_END = ["Closed — settled", "Lost", "Expired"];
   const live = data.cases.filter((c) => !LIVE_END.includes(str(c.stage)));
@@ -66,7 +83,7 @@ export function visuals(
     const due = date(c.deadline);
     if (due) {
       deadlines.push({
-        label: `${caseName(c)}: quote due`,
+        label: m.api_visuals_quote_due({ name: caseName(c) }, o),
         due: iso(due),
         from: iso(new Date(due.getTime() - 5 * DAY)),
         supporting: `${str(c.caseId)} · ${nameOf(c.customer)}`,
@@ -76,7 +93,7 @@ export function visuals(
     const eta = date(c.eta);
     if (eta && eta.getTime() > NOW.getTime()) {
       deadlines.push({
-        label: `${caseName(c)} arrives`,
+        label: m.api_visuals_arrives({ name: caseName(c) }, o),
         due: iso(eta),
         from: iso(new Date(eta.getTime() - 7 * DAY)),
         supporting: `${str(c.caseId)} · ${str(c.port)}`,
@@ -97,7 +114,7 @@ export function visuals(
       const left = (due!.getTime() - NOW.getTime()) / DAY;
       calendar.push({
         date: dayOf(due!),
-        label: `Quote due · ${caseName(c)}`,
+        label: m.api_visuals_calendar_quote_due({ name: caseName(c) }, o),
         href: link.doc("cases", str(c.id)),
         tone: left < 0 ? "error" : left < 2 ? "warning" : "neutral",
       });
@@ -106,7 +123,7 @@ export function visuals(
     if (inMonth(eta))
       calendar.push({
         date: dayOf(eta!),
-        label: `Arrives · ${caseName(c)}`,
+        label: m.api_visuals_calendar_arrives({ name: caseName(c) }, o),
         href: link.doc("cases", str(c.id)),
         tone: "neutral",
       });
@@ -116,7 +133,10 @@ export function visuals(
     if (inMonth(at))
       calendar.push({
         date: dayOf(at!),
-        label: `Delivery ${str(d.number)} · ${str(d.status)}`,
+        label: m.api_visuals_calendar_delivery(
+          { number: str(d.number), status: req ? optionLabel(req, "deliveries", "status", d.status) : str(d.status) },
+          o,
+        ),
         href: link.doc("deliveries", str(d.id)),
         tone: str(d.status) === "Delivered" ? "success" : "neutral",
       });
@@ -127,7 +147,7 @@ export function visuals(
       if (inMonth(due) && str(i.status) !== "Paid")
         calendar.push({
           date: dayOf(due!),
-          label: `Invoice ${str(i.number)} due · ${nameOf(i.customer)}`,
+          label: m.api_visuals_calendar_invoice_due({ number: str(i.number), customer: nameOf(i.customer) }, o),
           href: link.doc("invoices", str(i.id)),
           tone: due!.getTime() < NOW.getTime() ? "error" : "neutral",
         });
@@ -140,7 +160,7 @@ export function visuals(
   const onTime = Math.round((sum(onTimeWeeks) / Math.max(1, sum(allWeeks))) * 100);
   const targets: Visuals["targets"] = [
     {
-      label: "Win rate, 12 weeks",
+      label: m.api_visuals_target_win_rate({}, o),
       value: winRate,
       max: 60,
       target: 30,
@@ -149,27 +169,27 @@ export function visuals(
       targetText: "30%",
     },
     {
-      label: "Quote turnaround",
+      label: m.api_visuals_target_turnaround({}, o),
       value: last(H.turnaround),
       max: 4,
       target: 1,
       bands: [1, 2],
-      valueText: `${last(H.turnaround)} d`,
-      targetText: "1 d",
+      valueText: m.api_visuals_days({ n: last(H.turnaround) }, o),
+      targetText: m.api_visuals_days({ n: 1 }, o),
       lowerIsBetter: true,
     },
     {
-      label: "Time to acknowledge",
+      label: m.api_visuals_target_acknowledge({}, o),
       value: last(H.ackMinutes),
       max: 60,
       target: 15,
       bands: [15, 30],
-      valueText: `${last(H.ackMinutes)} min`,
-      targetText: "15 min",
+      valueText: m.api_visuals_minutes({ n: last(H.ackMinutes) }, o),
+      targetText: m.api_visuals_minutes({ n: 15 }, o),
       lowerIsBetter: true,
     },
     {
-      label: "Deliveries on time, 6 weeks",
+      label: m.api_visuals_target_on_time({}, o),
       value: onTime,
       max: 100,
       target: 90,
@@ -188,12 +208,12 @@ export function visuals(
   const gp = money
     ? [
         // The start is a step (a total adds nothing, so a first total would stand at zero).
-        { label: "At quote", value: expected * 1000 },
-        { label: "Freight", value: -12_000 },
-        { label: "Supplier prices", value: -9_000 },
-        { label: "FX", value: -6_000 },
-        { label: "Recovered", value: (actual - expected + 27) * 1000 },
-        { label: "Actual", value: actual * 1000, total: true },
+        { label: m.api_visuals_gp_at_quote({}, o), value: expected * 1000 },
+        { label: m.api_visuals_gp_freight({}, o), value: -12_000 },
+        { label: m.api_visuals_gp_supplier_prices({}, o), value: -9_000 },
+        { label: m.api_visuals_gp_fx({}, o), value: -6_000 },
+        { label: m.api_visuals_gp_recovered({}, o), value: (actual - expected + 27) * 1000 },
+        { label: m.api_visuals_gp_actual({}, o), value: actual * 1000, total: true },
       ]
     : [];
 
@@ -217,11 +237,11 @@ export const visualsEndpoints: Endpoint[] = [
     method: "get",
     handler: async (req) => {
       const me = meOf(req);
-      if (!me) return unauthorized();
+      if (!me) return unauthorized(langOf(req));
       const [cases, invoices, deliveries, suppliers] = await Promise.all(
         ["cases", "invoices", "deliveries", "suppliers"].map((c) => all(req, c, 1)),
       );
-      return Response.json(visuals(str(me.role), str(me.id), { cases, invoices, deliveries, suppliers }));
+      return Response.json(visuals(str(me.role), str(me.id), { cases, invoices, deliveries, suppliers }, req));
     },
   },
 ];

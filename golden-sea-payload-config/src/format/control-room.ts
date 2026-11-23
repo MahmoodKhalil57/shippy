@@ -8,7 +8,9 @@ import {
 } from "saastemlycrm-design-system/contracts";
 import type { Briefing } from "../endpoints/assistant.ts";
 import type { ControlRoom, CrChart, CrRanked, CrWidget, Unit } from "../endpoints/control-room.ts";
+import { m } from "../i18n/paraglide/messages.js";
 import * as link from "../links.ts";
+import { dateFormat } from "./index.ts";
 import { seesMoney } from "./visuals.ts";
 
 /**
@@ -54,17 +56,20 @@ export const roomRankingTiles = (scope: WidgetScope) => (seesMoney(scope) ? 5 : 
  * to receivables & payables for those who may see money (the data says: `money`).
  */
 export const roomHeader = (d: ControlRoom): ViewHeader => ({
-  eyebrow: "Control room · for Karim Balbaa & Mohamed Helmy",
-  heading: "The business, live.",
-  subtitle: "Briefed at 07:00 from every case, quote, delivery and payment — and answers to any question about them.",
+  eyebrow: m.control_room_eyebrow(),
+  heading: m.control_room_heading(),
+  subtitle: m.control_room_subtitle(),
   actions: [
-    { label: "Approvals", href: "/approvals" },
-    ...(d.money ? [{ label: "Receivables & payables", href: "/cash" }] : []),
-    { label: "All cases", href: link.list("cases"), main: true },
+    { label: m.control_room_approvals(), href: "/approvals" },
+    ...(d.money ? [{ label: m.control_room_receivables_payables(), href: "/cash" }] : []),
+    { label: m.control_room_all_cases(), href: link.list("cases"), main: true },
   ],
 });
 
-/** The key figures' labels, one tile each, in order; the money roles see profit and receivables too. */
+/**
+ * The key figures' keys, one tile each, in order; the money roles see profit and receivables too.
+ * The keys are the English labels (saved boards keep their tiles); `roomFigureName` gives the words.
+ */
 const ROOM_FIGURES = ["Open RFQs", "Avg time to quote", "Win rate", "Waiting on suppliers"] as const;
 const MONEY_FIGURES = ["Gross profit", "Receivables open"] as const;
 type RoomFigure = (typeof ROOM_FIGURES)[number] | (typeof MONEY_FIGURES)[number];
@@ -73,6 +78,17 @@ export const roomFigureLabels = (scope: WidgetScope): readonly RoomFigure[] =>
 const isRoomFigure = (label: string): label is RoomFigure =>
   (ROOM_FIGURES as readonly string[]).includes(label) || (MONEY_FIGURES as readonly string[]).includes(label);
 
+const ROOM_FIGURE_NAMES: Record<RoomFigure, () => string> = {
+  "Open RFQs": m.control_room_figure_open_rfqs,
+  "Avg time to quote": m.control_room_figure_avg_time_to_quote,
+  "Win rate": m.control_room_figure_win_rate,
+  "Waiting on suppliers": m.control_room_figure_waiting_on_suppliers,
+  "Gross profit": m.control_room_figure_gross_profit,
+  "Receivables open": m.control_room_figure_receivables_open,
+};
+/** A key figure's words in the interface's language. */
+export const roomFigureName = (key: RoomFigure): string => ROOM_FIGURE_NAMES[key]();
+
 /**
  * The key figures for the last four weeks, each with its trend; the first is the headline (tinted).
  * The month's gross profit ("Gross profit Oct") is filed under "Gross profit", its month in the note.
@@ -80,14 +96,15 @@ const isRoomFigure = (label: string): label is RoomFigure =>
 export const roomFigures = (d: ControlRoom): Figure<RoomFigure>[] =>
   d.tiles.flatMap((t, i) => {
     const month = /^Gross profit (.+)$/.exec(t.label)?.[1];
-    const label = month ? "Gross profit" : t.label;
-    if (!isRoomFigure(label)) return [];
+    const key = month ? "Gross profit" : t.label;
+    if (!isRoomFigure(key)) return [];
     return [
       {
         main: i === 0,
-        label,
+        key,
+        label: roomFigureName(key),
         value: t.value,
-        note: month ? `${month}: ${t.note ?? ""}` : t.note,
+        note: month ? m.control_room_month_note({ month, note: t.note ?? "" }) : t.note,
         tone: t.tone,
         href: t.href,
         share: t.share,
@@ -109,13 +126,18 @@ export const briefing = (b: Briefing): KindData<"text"> => {
   const sources = b.items.flatMap((i) => i.sources).filter((x) => !seen.has(x.href) && Boolean(seen.add(x.href)));
   return {
     head: {
-      tags: [{ label: "AI draft", tone: "primary", icon: "sparkles" }],
-      actions: [{ label: "Summarise", icon: "sparkles", call: { path: "/briefing/refresh" }, reply: true }],
+      tags: [{ label: m.control_room_ai_draft(), tone: "primary", icon: "sparkles" }],
+      actions: [
+        { label: m.control_room_summarise(), icon: "sparkles", call: { path: "/briefing/refresh" }, reply: true },
+      ],
     },
     text: b.summary,
     speak: true,
     actions: sources.map((x) => ({ label: x.label, href: x.href })),
-    note: `${b.at === "07:00" ? "Written at 07:00" : `Summarised again at ${b.at}`} from ${b.read} live records. A draft to read — nothing is sent, priced or paid.`,
+    note:
+      b.at === "07:00"
+        ? m.control_room_briefing_written({ count: b.read })
+        : m.control_room_briefing_summarised({ at: b.at, count: b.read }),
   };
 };
 
@@ -125,21 +147,20 @@ export const briefing = (b: Briefing): KindData<"text"> => {
  * and answers; it never sends, prices or pays.
  */
 export const askGoldenSea = (): KindData<"ask"> => ({
-  head: { tags: [{ label: "Assistant", tone: "primary", icon: "chat" }] },
+  head: { tags: [{ label: m.control_room_assistant(), tone: "primary", icon: "chat" }] },
   endpoint: "/ask",
   suggestions: { endpoint: "/ask/suggestions" },
-  question: "What's the status of Aurora Crest?",
-  name: "Golden Sea assistant",
-  placeholder: "Ask Golden Sea…",
-  intro:
-    "Ask about a vessel or case number, approvals, who owes us money, suppliers, deadlines or the growth pipeline. Answers come from the live records and link to them.",
-  reading: "Reading cases, approvals, invoices and suppliers…",
-  footnote: "The assistant reads and answers; it never sends, prices or pays.",
+  question: m.control_room_ask_question(),
+  name: m.control_room_ask_name(),
+  placeholder: m.control_room_ask_placeholder(),
+  intro: m.control_room_ask_intro(),
+  reading: m.control_room_ask_reading(),
+  footnote: m.control_room_ask_footnote(),
 });
 
 /** In place of the profit and cash dashboards, for those who may not see them: why they're missing. */
 export const moneyWithheld = (): KindData<"text"> => ({
-  text: "Gross profit, margins, receivables and cash flow are shown to management and finance only.",
+  text: m.control_room_money_withheld(),
   muted: true,
 });
 
@@ -150,7 +171,7 @@ export const moneyWithheld = (): KindData<"text"> => ({
  * of it (a trend reads best long); the chart's own range switch cuts it ("4 w", "12 w").
  */
 export const trendChart = (w: CrChart): KindData<"chart"> => {
-  const unit = w.grain === "month" ? "m" : "w";
+  const range = w.grain === "month" ? m.control_room_range_months : m.control_room_range_weeks;
   const shown = w.grain && w.ranges?.length ? Math.max(...w.ranges) : undefined;
   return {
     head: { subhead: w.sub },
@@ -164,7 +185,7 @@ export const trendChart = (w: CrChart): KindData<"chart"> => {
       targetLabel: w.targetLabel,
       highlightLast: Boolean(w.highlightLast),
       stacked: Boolean(w.stacked),
-      ranges: w.grain ? w.ranges?.map((points) => ({ label: `${points} ${unit}`, points })) : undefined,
+      ranges: w.grain ? w.ranges?.map((points) => ({ label: range({ points }), points })) : undefined,
       range: shown || undefined,
     },
   };
@@ -191,16 +212,13 @@ export const rankedGauges = (r: CrRanked): KindData<"gauges"> => {
   };
 };
 
-const PERIOD_WORDS: Record<ControlRoom["period"], string> = {
-  "4w": "the last 4 weeks",
-  "12w": "the last 12 weeks",
-  "6m": "the last 12 weeks",
-};
-
-/** The quote funnel over the period: inquiries, quoted, won, each opening the cases. */
+/**
+ * The quote funnel over the period (the last 4 weeks, else the last 12): inquiries, quoted, won,
+ * each opening the cases.
+ */
 export const quoteFunnel = (d: ControlRoom): KindData<"funnel"> => ({
-  label: `Quote funnel, ${PERIOD_WORDS[d.period]}`,
-  note: `RFQ cases received in ${PERIOD_WORDS[d.period]}, how many were quoted and how many won`,
+  label: d.period === "4w" ? m.control_room_funnel_4w() : m.control_room_funnel_12w(),
+  note: d.period === "4w" ? m.control_room_funnel_note_4w() : m.control_room_funnel_note_12w(),
   stages: d.visuals.funnel.map((s) => ({ ...s, href: link.list("cases") })),
 });
 
@@ -208,10 +226,10 @@ export const quoteFunnel = (d: ControlRoom): KindData<"funnel"> => ({
 export const lostRing = (d: ControlRoom): KindData<"ring"> => {
   const total = d.visuals.lost.reduce((t, x) => t + x.value, 0);
   return {
-    label: "Why quotes were lost",
+    label: m.control_room_lost_label(),
     parts: d.visuals.lost.map((x) => ({ ...x, valueText: String(x.value) })),
     total: String(total),
-    center: "lost",
+    center: m.control_room_lost_center(),
   };
 };
 
@@ -221,32 +239,27 @@ export const ageingRing = (d: ControlRoom): KindData<"ring"> | null => {
   const usd = (v: number) => fmt("usd-k", v);
   const total = d.visuals.ageing.reduce((t, x) => t + x.value, 0);
   return {
-    label: "Receivables by age",
+    label: m.control_room_ageing_label(),
     parts: d.visuals.ageing.map((x) => ({ ...x, valueText: usd(x.value), href: link.list("invoices") })),
     total: usd(total),
-    center: "open",
+    center: m.control_room_ageing_center(),
   };
 };
-
-const DAY_NAME = new Intl.DateTimeFormat("en-GB", {
-  weekday: "short",
-  day: "numeric",
-  month: "short",
-  timeZone: "UTC",
-});
 
 /** Inquiries per day for the last 12 weeks: the busy days and the quiet weeks. */
 export const inquiryDays = (d: ControlRoom): KindData<"heatmap"> => {
   const days = d.visuals.days.map((x) => ({
-    label: DAY_NAME.format(new Date(`${x.date}T00:00:00Z`)).replace(",", ""),
+    label: dateFormat({ weekday: "short", day: "numeric", month: "short", timeZone: "UTC" })
+      .format(new Date(`${x.date}T00:00:00Z`))
+      .replace(/[,،]/, ""),
     value: x.value,
-    valueText: `${x.value} ${x.value === 1 ? "inquiry" : "inquiries"}`,
+    valueText: m.control_room_inquiries({ count: x.value }),
   }));
   const total = days.reduce((t, x) => t + x.value, 0);
   const busiest = days.reduce((b, x) => (x.value > b.value ? x : b), days[0]!);
   return {
-    label: "Inquiries per day, last 12 weeks",
+    label: m.control_room_days_label(),
     days,
-    summary: `${total} inquiries in 12 weeks · busiest ${busiest.label} (${busiest.value})`,
+    summary: m.control_room_days_summary({ total, day: busiest.label, count: busiest.value }),
   };
 };

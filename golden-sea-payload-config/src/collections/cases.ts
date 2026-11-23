@@ -5,17 +5,20 @@ import {
   CASE_TYPES,
   CURRENCIES,
   DAY,
-  PORTS,
-  QUOTE_DECISIONS,
-  STORES,
+  PORT_OPTIONS,
+  QUOTE_DECISION_OPTIONS,
+  STORE_OPTIONS,
   TODAY,
-  UNITS,
+  UNIT_OPTIONS,
   autoNumber,
+  choices,
   computed,
+  inLanguage,
   costVisible,
   idOf,
   logActivity,
   scalar,
+  words,
 } from "./shared.ts";
 import { caseDelivery } from "../pages/case-delivery.ts";
 import { caseOrder } from "../pages/case-order.ts";
@@ -50,6 +53,33 @@ export const STAGES = [
   "Expired",
 ];
 
+/** Each stage in Arabic (its option label and the timeline). */
+const STAGE_AR: Record<string, string> = {
+  New: "جديد",
+  Validating: "قيد التحقق",
+  Sourcing: "قيد التوريد",
+  "Awaiting supplier": "بانتظار المورّد",
+  "Comparing offers": "مقارنة العروض",
+  "Awaiting corrected offer": "بانتظار عرض مصحَّح",
+  "Awaiting management approval": "بانتظار موافقة الإدارة",
+  "Quotation submitted": "قُدّم عرض السعر",
+  "Awaiting customer decision": "بانتظار قرار العميل",
+  "Revision requested": "طُلبت مراجعة",
+  "Won — PO mismatch": "فوز — عدم تطابق أمر الشراء",
+  "Won — sales order confirmed": "فوز — تأكيد أمر البيع",
+  Purchasing: "قيد الشراء",
+  "Delivering (drop 1 of 2)": "قيد التسليم (الدفعة 1 من 2)",
+  Delivered: "تم التسليم",
+  "Invoiced — partially paid": "مفوتر — مدفوع جزئيًا",
+  "Customs clearance": "التخليص الجمركي",
+  "Held for vessel": "محتجز للسفينة",
+  "Closed — settled": "مغلق — تمت التسوية",
+  "On hold": "معلّق",
+  Lost: "خسارة",
+  Expired: "منتهي",
+};
+export const STAGE_OPTIONS = choices(STAGES, STAGE_AR);
+
 export const WAITS = [
   "Awaiting supplier",
   "Awaiting corrected offer",
@@ -57,6 +87,14 @@ export const WAITS = [
   "Awaiting customer decision",
   "Awaiting delivery or payment",
 ];
+
+export const WAIT_OPTIONS = choices(WAITS, {
+  "Awaiting supplier": "بانتظار المورّد",
+  "Awaiting corrected offer": "بانتظار عرض مصحَّح",
+  "Awaiting internal approval": "بانتظار موافقة داخلية",
+  "Awaiting customer decision": "بانتظار قرار العميل",
+  "Awaiting delivery or payment": "بانتظار التسليم أو الدفع",
+});
 
 /** Line status → the progress bucket it counts in before the order. */
 export const LINE_BUCKET: Record<string, LineBucket> = {
@@ -120,15 +158,24 @@ export function lineCounts(c: Record<string, unknown>) {
 const RISK_RANK: Record<string, number> = { danger: 0, warn: 1, info: 2, ok: 3, neutral: 4 };
 
 const time = (d: Date) => d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
-/** A date against the demo's clock: "today 16:00", "tomorrow 09:00", "in 3 days", "2 days overdue". */
-export function relativeDue(iso: unknown): string {
+/** A number of days in Arabic: "يوم واحد", "يومان", "3 أيام", "11 يومًا". */
+const arDays = (n: number) => (n === 1 ? "يوم واحد" : n === 2 ? "يومان" : n <= 10 ? `${n} أيام` : `${n} يومًا`);
+/**
+ * A date against the demo's clock: "today 16:00", "tomorrow 09:00", "in 3 days", "2 days overdue";
+ * in the request's language (`req`), else English.
+ */
+export function relativeDue(iso: unknown, req?: { locale?: unknown }): string {
   if (typeof iso !== "string" || !iso) return "";
   const d = new Date(iso);
   const days = Math.floor(d.getTime() / DAY) - Math.floor(TODAY.getTime() / DAY);
-  if (days === 0) return d < TODAY ? `overdue since ${time(d)}` : `today ${time(d)}`;
-  if (days === 1) return `tomorrow ${time(d)}`;
-  if (days > 1) return `in ${days} days`;
-  return `${-days} day${days === -1 ? "" : "s"} overdue`;
+  const say = (en: string, ar: string) => inLanguage(req, { en, ar });
+  if (days === 0)
+    return d < TODAY
+      ? say(`overdue since ${time(d)}`, `متأخر منذ ${time(d)}`)
+      : say(`today ${time(d)}`, `اليوم ${time(d)}`);
+  if (days === 1) return say(`tomorrow ${time(d)}`, `غدًا ${time(d)}`);
+  if (days > 1) return say(`in ${days} days`, `خلال ${arDays(days)}`);
+  return say(`${-days} day${days === -1 ? "" : "s"} overdue`, `متأخر ${arDays(-days)}`);
 }
 
 /**
@@ -145,11 +192,16 @@ const rowComputed = <F extends Field>(field: F, compute: (row: Record<string, un
     },
   }) as F;
 
-/** The counts besides "Ready", each a bar of all the lines in its own tone. */
+/** The counts besides "Ready", each a bar of all the lines in its own tone, with its words. */
 const LINE_GAUGES = [
-  ["waiting", "Waiting", "warning"],
-  ["blocked", "Blocked", "error"],
-  ["noOffer", "No offer", "neutral"],
+  ["waiting", { en: "Waiting", ar: "منتظر" }, { en: "Lines that are waiting.", ar: "البنود المنتظرة." }, "warning"],
+  ["blocked", { en: "Blocked", ar: "متوقف" }, { en: "Lines that are blocked.", ar: "البنود المتوقفة." }, "error"],
+  [
+    "noOffer",
+    { en: "No offer", ar: "بلا عرض" },
+    { en: "Lines that are no offer.", ar: "البنود التي بلا عرض." },
+    "neutral",
+  ],
 ] as const;
 
 /** The demo's clock, for what a value's tone says against it (`custom.toneWhen`). */
@@ -191,16 +243,34 @@ const LINE_STATUSES = [
   "Closed — not awarded",
 ];
 
+const LINE_STATUS_OPTIONS = choices(LINE_STATUSES, {
+  "Clarification needed": "يحتاج توضيحًا",
+  "Not sourced": "لم يُورَّد",
+  "Awaiting supplier": "بانتظار المورّد",
+  "Ready to select": "جاهز للاختيار",
+  "Awaiting customer acceptance": "بانتظار قبول العميل",
+  "Offer selected": "اختير العرض",
+  "Split offer selected": "اختير عرض مجزّأ",
+  Ordered: "تم الطلب",
+  Received: "تم الاستلام",
+  Delivered: "تم التسليم",
+  Invoiced: "مفوتر",
+  "Closed — not awarded": "مغلق — لم يُرسَ",
+});
+
 /** A client RFQ (or service request), from intake to settlement. The parent of everything else. */
 export const Cases: CollectionConfig = {
   slug: "cases",
-  labels: { singular: "Case", plural: "Cases" },
+  labels: { singular: { en: "Case", ar: "ملف" }, plural: { en: "Cases", ar: "الملفات" } },
   admin: {
     useAsTitle: "caseId",
     listSearchableFields: ["caseId", "vessel", "customerRef"],
     defaultColumns: ["caseId", "customer", "vessel", "stage", "deadline", "owner", "value"],
-    group: "Sourcing desk",
-    description: "Client RFQs and everything that follows: supplier RFQs, quotes, POs, delivery and payment.",
+    group: { en: "Sourcing desk", ar: "مكتب التوريد" },
+    description: {
+      en: "Client RFQs and everything that follows: supplier RFQs, quotes, POs, delivery and payment.",
+      ar: "طلبات عروض أسعار العملاء وكل ما يليها: طلبات الموردين، العروض، أوامر الشراء، التسليم والدفع.",
+    },
     // The case workspace: one tab per step from first email to last payment (Payload custom
     // edit views, each a screen in src/pages).
     // Counts by what each case is waiting for, above the list, each opening the filtered list.
@@ -211,37 +281,37 @@ export const Cases: CollectionConfig = {
           overview: {
             Component: caseOverview,
             path: "/overview",
-            tab: { label: "Overview", href: "/overview" },
+            tab: { label: words({ en: "Overview", ar: "نظرة عامة" }), href: "/overview" },
           },
           rfqs: {
             Component: caseRfqs,
             path: "/rfqs",
-            tab: { label: "Supplier RFQs", href: "/rfqs" },
+            tab: { label: words({ en: "Supplier RFQs", ar: "طلبات عروض الموردين" }), href: "/rfqs" },
           },
           compare: {
             Component: caseCompare,
             path: "/compare",
-            tab: { label: "Compare offers", href: "/compare" },
+            tab: { label: words({ en: "Compare offers", ar: "مقارنة العروض" }), href: "/compare" },
           },
           pricing: {
             Component: casePricing,
             path: "/pricing",
-            tab: { label: "Pricing", href: "/pricing" },
+            tab: { label: words({ en: "Pricing", ar: "التسعير" }), href: "/pricing" },
           },
           order: {
             Component: caseOrder,
             path: "/order",
-            tab: { label: "Order & purchasing", href: "/order" },
+            tab: { label: words({ en: "Order & purchasing", ar: "الطلب والمشتريات" }), href: "/order" },
           },
           delivery: {
             Component: caseDelivery,
             path: "/delivery",
-            tab: { label: "Delivery & billing", href: "/delivery" },
+            tab: { label: words({ en: "Delivery & billing", ar: "التسليم والفوترة" }), href: "/delivery" },
           },
           profit: {
             Component: caseProfit,
             path: "/profit",
-            tab: { label: "Profit & close", href: "/profit" },
+            tab: { label: words({ en: "Profit & close", ar: "الربح والإغلاق" }), href: "/profit" },
           },
         },
       },
@@ -271,33 +341,45 @@ export const Cases: CollectionConfig = {
     // whoever may hand the case over (`canReassign`), wherever cases show; the endpoint re-checks.
     actions: [
       {
-        label: "Reassign",
+        label: words({ en: "Reassign", ar: "إعادة إسناد" }),
         when: { canReassign: { equals: true } },
         call: { path: "/case-overview/$row.id/reassign" },
         confirm: {
-          heading: "Reassign $row.caseId",
-          text: "The new owner gets the case, its open tasks and a notification. The handover note is logged on the timeline. AI drafts the note from the case, its clarifications, open tasks and timeline.",
-          label: "Confirm handover",
+          heading: words({ en: "Reassign $row.caseId", ar: "إعادة إسناد $row.caseId" }),
+          text: words({
+            en: "The new owner gets the case, its open tasks and a notification. The handover note is logged on the timeline. AI drafts the note from the case, its clarifications, open tasks and timeline.",
+            ar: "يتسلّم المالك الجديد الملف ومهامه المفتوحة ويصله إشعار. تُسجَّل مذكرة التسليم على الخط الزمني. يصوغ الذكاء الاصطناعي المذكرة من الملف وتوضيحاته ومهامه المفتوحة وخطه الزمني.",
+          }),
+          label: words({ en: "Confirm handover", ar: "تأكيد التسليم" }),
         },
         fields: [
           {
             type: "select",
             name: "to",
-            label: "Hand over to",
+            label: words({ en: "Hand over to", ar: "تسليم إلى" }),
             required: true,
             defaultValue: "$row.backup.id",
             // The desk without the owner (`handoverTeam`), the backup marked.
             options: "$row.handoverTeam" as never,
-            admin: { description: "The colleague who takes the case over.", placeholder: "Choose a person" },
+            admin: {
+              description: words({ en: "The colleague who takes the case over.", ar: "الزميل الذي يتسلّم الملف." }),
+              placeholder: words({ en: "Choose a person", ar: "اختر شخصًا" }),
+            },
           },
           {
             type: "textarea",
             name: "note",
-            label: "Handover note",
+            label: words({ en: "Handover note", ar: "مذكرة التسليم" }),
             required: true,
             admin: {
-              description: "Edit freely. Nothing is saved until you confirm.",
-              placeholder: "e.g. Offers are in for lines 1 to 6, customer call pending.",
+              description: words({
+                en: "Edit freely. Nothing is saved until you confirm.",
+                ar: "عدّل بحرية. لا يُحفظ شيء حتى تؤكد.",
+              }),
+              placeholder: words({
+                en: "e.g. Offers are in for lines 1 to 6, customer call pending.",
+                ar: "مثال: وصلت العروض للبنود 1 إلى 6، ومكالمة العميل معلّقة.",
+              }),
               rows: 10,
             },
           },
@@ -334,10 +416,20 @@ export const Cases: CollectionConfig = {
       // Stage, owner and decision changes go to the case timeline.
       async ({ doc, previousDoc, operation, req }) => {
         if (req.context?.seed) return doc;
-        if (operation === "create") await logActivity(req, { case: doc.id, text: `Case ${doc.caseId} created.` });
+        if (operation === "create")
+          await logActivity(req, {
+            case: doc.id,
+            text: { en: `Case ${doc.caseId} created.`, ar: `أُنشئ الملف ${doc.caseId}.` },
+          });
         else {
           if (previousDoc?.stage !== doc.stage)
-            await logActivity(req, { case: doc.id, text: `Stage: ${previousDoc?.stage ?? "—"} → ${doc.stage}.` });
+            await logActivity(req, {
+              case: doc.id,
+              text: {
+                en: `Stage: ${previousDoc?.stage ?? "—"} → ${doc.stage}.`,
+                ar: `المرحلة: ${STAGE_AR[previousDoc?.stage] ?? previousDoc?.stage ?? "—"} ← ${STAGE_AR[doc.stage] ?? doc.stage}.`,
+              },
+            });
           const prevOwner = typeof previousDoc?.owner === "object" ? previousDoc?.owner?.id : previousDoc?.owner;
           const owner = typeof doc.owner === "object" ? doc.owner?.id : doc.owner;
           if (prevOwner && prevOwner !== owner) {
@@ -345,7 +437,11 @@ export const Cases: CollectionConfig = {
               .findByID({ collection: "users", id: String(owner), depth: 0 })
               .catch(() => null);
             const name = typeof user?.name === "string" ? user.name : String(owner);
-            await logActivity(req, { case: doc.id, text: `Reassigned to ${name}. ${doc.handoverNote ?? ""}`.trim() });
+            const note = scalar(doc.handoverNote);
+            await logActivity(req, {
+              case: doc.id,
+              text: { en: `Reassigned to ${name}. ${note}`.trim(), ar: `أُعيد الإسناد إلى ${name}. ${note}`.trim() },
+            });
           }
         }
         return doc;
@@ -358,7 +454,12 @@ export const Cases: CollectionConfig = {
       path: "/:id/summary",
       method: "get",
       handler: async (req) => {
-        const doc = await req.payload.findByID({ collection: "cases", id: String(req.routeParams?.id), depth: 1 });
+        const doc = await req.payload.findByID({
+          locale: req.locale,
+          collection: "cases",
+          id: String(req.routeParams?.id),
+          depth: 1,
+        });
         const customer = typeof doc.customer === "object" && doc.customer ? doc.customer.name : doc.customer;
         return Response.json({
           id: doc.id,
@@ -372,7 +473,7 @@ export const Cases: CollectionConfig = {
       type: "tabs",
       tabs: [
         {
-          label: "Case",
+          label: { en: "Case", ar: "ملف" },
           fields: [
             {
               type: "row",
@@ -380,27 +481,40 @@ export const Cases: CollectionConfig = {
                 {
                   name: "caseId",
                   type: "text",
-                  label: "Case",
+                  label: { en: "Case", ar: "ملف" },
                   unique: true,
-                  admin: { readOnly: true, description: "Numbered automatically when the case is created." },
+                  admin: {
+                    readOnly: true,
+                    description: {
+                      en: "Numbered automatically when the case is created.",
+                      ar: "يُرقَّم تلقائيًا عند إنشاء الملف.",
+                    },
+                  },
                 },
                 {
                   name: "customer",
                   type: "relationship",
+                  label: { en: "Customer", ar: "العميل" },
                   relationTo: "customers",
                   required: true,
                   admin: {
-                    description: "The shipping company or owner asking for the quote.",
-                    placeholder: "e.g. Nordvik Ship Management",
+                    description: {
+                      en: "The shipping company or owner asking for the quote.",
+                      ar: "شركة الشحن أو المالك الذي يطلب العرض.",
+                    },
+                    placeholder: words({ en: "e.g. Nordvik Ship Management", ar: "مثال: Nordvik Ship Management" }),
                   },
                 },
                 {
                   name: "customerRef",
                   type: "text",
-                  label: "Customer reference",
+                  label: { en: "Customer reference", ar: "مرجع العميل" },
                   admin: {
-                    description: "The customer's own RFQ or requisition number, if any.",
-                    placeholder: "e.g. RFQ-2026-0457",
+                    description: {
+                      en: "The customer's own RFQ or requisition number, if any.",
+                      ar: "رقم طلب عرض الأسعار أو طلب التوريد الخاص بالعميل، إن وُجد.",
+                    },
+                    placeholder: { en: "e.g. RFQ-2026-0457", ar: "مثال: RFQ-2026-0457" },
                   },
                 },
               ],
@@ -411,26 +525,37 @@ export const Cases: CollectionConfig = {
                 {
                   name: "vessel",
                   type: "text",
+                  label: { en: "Vessel", ar: "السفينة" },
                   required: true,
-                  admin: { description: "The ship the stores are for.", placeholder: "e.g. MV Nordic Tern" },
+                  admin: {
+                    description: { en: "The ship the stores are for.", ar: "السفينة التي تُورَّد لها المستلزمات." },
+                    placeholder: { en: "e.g. MV Nordic Tern", ar: "مثال: MV Nordic Tern" },
+                  },
                 },
                 {
                   name: "vesselRecord",
                   type: "relationship",
                   relationTo: "vessels",
-                  label: "Vessel record (IMO)",
+                  label: { en: "Vessel record (IMO)", ar: "سجل السفينة (IMO)" },
                   admin: {
-                    description: "Link the vessel's record to keep its IMO number and history.",
-                    placeholder: "Search vessels",
+                    description: {
+                      en: "Link the vessel's record to keep its IMO number and history.",
+                      ar: "اربط سجل السفينة للاحتفاظ برقم IMO وتاريخها.",
+                    },
+                    placeholder: words({ en: "Search vessels", ar: "ابحث في السفن" }),
                   },
                 },
                 {
                   name: "port",
                   type: "select",
-                  options: PORTS,
+                  label: { en: "Port", ar: "الميناء" },
+                  options: PORT_OPTIONS,
                   admin: {
-                    description: "Where the goods are handed over to the vessel.",
-                    placeholder: "e.g. Port Said",
+                    description: {
+                      en: "Where the goods are handed over to the vessel.",
+                      ar: "مكان تسليم البضاعة إلى السفينة.",
+                    },
+                    placeholder: words({ en: "e.g. Port Said", ar: "مثال: بورسعيد" }),
                   },
                 },
               ],
@@ -441,78 +566,112 @@ export const Cases: CollectionConfig = {
                 {
                   name: "eta",
                   type: "date",
-                  label: "ETA",
+                  label: { en: "ETA", ar: "موعد الوصول المتوقع" },
                   admin: {
                     date: { pickerAppearance: "dayAndTime" },
-                    description: "When the vessel is expected at the port.",
+                    description: {
+                      en: "When the vessel is expected at the port.",
+                      ar: "موعد وصول السفينة المتوقع إلى الميناء.",
+                    },
                   },
                 },
                 {
                   name: "deadline",
                   type: "date",
                   required: true,
-                  label: "Quote deadline",
-                  admin: { description: "When the customer needs our quotation by." },
+                  label: { en: "Quote deadline", ar: "موعد تقديم العرض" },
+                  admin: {
+                    description: {
+                      en: "When the customer needs our quotation by.",
+                      ar: "الموعد الذي يحتاج فيه العميل عرض السعر.",
+                    },
+                  },
                 },
                 {
                   name: "currency",
                   type: "select",
                   options: CURRENCIES,
                   defaultValue: "USD",
-                  label: "Quote currency",
-                  admin: { description: "The currency the customer is quoted in.", placeholder: "USD" },
+                  label: { en: "Quote currency", ar: "عملة العرض" },
+                  admin: {
+                    description: { en: "The currency the customer is quoted in.", ar: "العملة التي يُسعَّر بها العميل." },
+                    placeholder: words({ en: "USD", ar: "USD" }),
+                  },
                 },
               ],
             },
             {
               name: "agent",
               type: "text",
-              label: "Port agent / delivery contact",
+              label: { en: "Port agent / delivery contact", ar: "الوكيل البحري / جهة الاستلام" },
               admin: {
-                description: "Who meets the goods at the port, usually the vessel's agent.",
-                placeholder: "e.g. Ahmed Hassan, Suez Agency",
+                description: {
+                  en: "Who meets the goods at the port, usually the vessel's agent.",
+                  ar: "من يستلم البضاعة في الميناء، وعادةً وكيل السفينة.",
+                },
+                placeholder: { en: "e.g. Ahmed Hassan, Suez Agency", ar: "مثال: أحمد حسن، وكالة السويس" },
               },
             },
             {
               name: "nextAction",
               type: "text",
-              label: "Next action",
+              localized: true,
+              label: { en: "Next action", ar: "الإجراء التالي" },
               required: true,
               admin: {
-                description: "The next step and who takes it.",
-                placeholder: "e.g. Chase supplier offers for lines 3 to 5",
+                description: { en: "The next step and who takes it.", ar: "الخطوة التالية ومن يتولاها." },
+                placeholder: {
+                  en: "e.g. Chase supplier offers for lines 3 to 5",
+                  ar: "مثال: متابعة عروض الموردين للبنود 3 إلى 5",
+                },
               },
             },
             {
               name: "blocker",
               type: "text",
+              label: { en: "Blocker", ar: "العائق" },
+              localized: true,
               // Red on a blocked case.
               custom: { toneWhen: [{ when: { tone: { equals: "danger" } }, tone: "error" }] },
               admin: {
-                description: "What stops this case moving, if anything.",
-                placeholder: "e.g. Customer has not confirmed the brand",
+                description: { en: "What stops this case moving, if anything.", ar: "ما يعيق تقدّم هذا الملف، إن وُجد." },
+                placeholder: {
+                  en: "e.g. Customer has not confirmed the brand",
+                  ar: "مثال: لم يؤكد العميل العلامة التجارية",
+                },
               },
             },
             {
               name: "handoverNote",
               type: "textarea",
+              label: { en: "Handover Note", ar: "مذكرة التسليم" },
+              localized: true,
               admin: {
-                description: "Logged on the timeline when the owner changes.",
-                placeholder: "e.g. Offers are in for lines 1 to 6, customer call pending.",
+                description: {
+                  en: "Logged on the timeline when the owner changes.",
+                  ar: "يُسجَّل على الخط الزمني عند تغيّر المالك.",
+                },
+                placeholder: {
+                  en: "e.g. Offers are in for lines 1 to 6, customer call pending.",
+                  ar: "مثال: وصلت العروض للبنود 1 إلى 6، ومكالمة العميل معلّقة.",
+                },
               },
             },
           ],
         },
         {
-          label: "Requested lines",
+          label: { en: "Requested lines", ar: "البنود المطلوبة" },
           fields: [
             {
               name: "items",
               type: "array",
-              labels: { singular: "Line", plural: "Lines" },
+              label: { en: "Items", ar: "البنود" },
+              labels: { singular: { en: "Line", ar: "بند" }, plural: { en: "Lines", ar: "البنود" } },
               admin: {
-                description:
-                  "The customer's lines, as extracted and validated. Offers and the quotation refer to them by line number.",
+                description: {
+                  en: "The customer's lines, as extracted and validated. Offers and the quotation refer to them by line number.",
+                  ar: "بنود العميل كما استُخرجت وتم التحقق منها. تشير العروض وعرض السعر إليها برقم البند.",
+                },
               },
               fields: [
                 {
@@ -523,16 +682,24 @@ export const Cases: CollectionConfig = {
                       type: "number",
                       required: true,
                       min: 1,
-                      label: "#",
-                      admin: { description: "The line's position in the customer's list.", placeholder: "e.g. 3" },
+                      label: { en: "#", ar: "#" },
+                      admin: {
+                        description: {
+                          en: "The line's position in the customer's list.",
+                          ar: "ترتيب البند في قائمة العميل.",
+                        },
+                        placeholder: { en: "e.g. 3", ar: "مثال: 3" },
+                      },
                     },
                     {
                       name: "description",
                       type: "text",
+                      label: { en: "Description", ar: "الوصف" },
+                      localized: true,
                       required: true,
                       admin: {
-                        description: "The item as the customer names it.",
-                        placeholder: "e.g. Safety helmet, white, size L",
+                        description: { en: "The item as the customer names it.", ar: "الصنف كما يسمّيه العميل." },
+                        placeholder: { en: "e.g. Safety helmet, white, size L", ar: "مثال: خوذة سلامة، بيضاء، مقاس L" },
                       },
                     },
                   ],
@@ -543,23 +710,39 @@ export const Cases: CollectionConfig = {
                     {
                       name: "product",
                       type: "relationship",
+                      label: { en: "Product", ar: "المنتج" },
                       relationTo: "products",
                       admin: {
-                        description: "Match it to a catalogue product to reuse suppliers and prices.",
-                        placeholder: "Search products",
+                        description: {
+                          en: "Match it to a catalogue product to reuse suppliers and prices.",
+                          ar: "اربطه بمنتج من الكتالوج لإعادة استخدام الموردين والأسعار.",
+                        },
+                        placeholder: words({ en: "Search products", ar: "ابحث في المنتجات" }),
                       },
                     },
                     {
                       name: "brand",
                       type: "text",
-                      admin: { description: "The brand the customer asks for.", placeholder: "e.g. Jotun" },
+                      label: { en: "Brand", ar: "العلامة التجارية" },
+                      admin: {
+                        description: {
+                          en: "The brand the customer asks for.",
+                          ar: "العلامة التجارية التي يطلبها العميل.",
+                        },
+                        placeholder: { en: "e.g. Jotun", ar: "مثال: Jotun" },
+                      },
                     },
                     {
                       name: "exactBrand",
                       type: "checkbox",
-                      label: "Exact brand / part only",
+                      label: { en: "Exact brand / part only", ar: "العلامة / رقم القطعة نفسه فقط" },
                       defaultValue: false,
-                      admin: { description: "Tick when only this brand or part number is acceptable." },
+                      admin: {
+                        description: {
+                          en: "Tick when only this brand or part number is acceptable.",
+                          ar: "حدّد عندما لا يُقبل إلا هذه العلامة أو رقم القطعة.",
+                        },
+                      },
                     },
                   ],
                 },
@@ -569,30 +752,43 @@ export const Cases: CollectionConfig = {
                     {
                       name: "model",
                       type: "text",
-                      admin: { description: "The model or type of the item.", placeholder: "e.g. HEMPEL 45880" },
+                      label: { en: "Model", ar: "الموديل" },
+                      admin: {
+                        description: { en: "The model or type of the item.", ar: "طراز الصنف أو نوعه." },
+                        placeholder: { en: "e.g. HEMPEL 45880", ar: "مثال: HEMPEL 45880" },
+                      },
                     },
                     {
                       name: "partNo",
                       type: "text",
-                      label: "Part no.",
-                      admin: { description: "The maker's part number.", placeholder: "e.g. 4410-2203" },
+                      label: { en: "Part no.", ar: "رقم القطعة" },
+                      admin: {
+                        description: { en: "The maker's part number.", ar: "رقم القطعة لدى الشركة المصنّعة." },
+                        placeholder: { en: "e.g. 4410-2203", ar: "مثال: 4410-2203" },
+                      },
                     },
                     {
                       name: "impa",
                       type: "text",
-                      label: "IMPA",
+                      label: { en: "IMPA", ar: "IMPA" },
                       admin: {
-                        description: "The IMPA code, the standard marine stores number.",
-                        placeholder: "e.g. 150101",
+                        description: {
+                          en: "The IMPA code, the standard marine stores number.",
+                          ar: "رمز IMPA، الرقم القياسي لمستلزمات السفن.",
+                        },
+                        placeholder: { en: "e.g. 150101", ar: "مثال: 150101" },
                       },
                     },
                     {
                       name: "issa",
                       type: "text",
-                      label: "ISSA",
+                      label: { en: "ISSA", ar: "ISSA" },
                       admin: {
-                        description: "The ISSA code, the ship chandlers' catalogue number.",
-                        placeholder: "e.g. 41.01.01",
+                        description: {
+                          en: "The ISSA code, the ship chandlers' catalogue number.",
+                          ar: "رمز ISSA، رقم كتالوج مورّدي السفن.",
+                        },
+                        placeholder: { en: "e.g. 41.01.01", ar: "مثال: 41.01.01" },
                       },
                     },
                   ],
@@ -603,35 +799,53 @@ export const Cases: CollectionConfig = {
                     {
                       name: "qty",
                       type: "number",
+                      label: { en: "Qty", ar: "الكمية" },
                       required: true,
                       min: 0,
-                      admin: { description: "How many units the customer wants.", placeholder: "e.g. 12" },
+                      admin: {
+                        description: {
+                          en: "How many units the customer wants.",
+                          ar: "عدد الوحدات التي يطلبها العميل.",
+                        },
+                        placeholder: { en: "e.g. 12", ar: "مثال: 12" },
+                      },
                     },
                     {
                       name: "unit",
                       type: "select",
-                      options: UNITS,
+                      label: { en: "Unit", ar: "الوحدة" },
+                      options: UNIT_OPTIONS,
                       required: true,
-                      admin: { description: "The unit the quantity is counted in.", placeholder: "e.g. pcs" },
+                      admin: {
+                        description: { en: "The unit the quantity is counted in.", ar: "الوحدة التي تُعدّ بها الكمية." },
+                        placeholder: words({ en: "e.g. pcs", ar: "مثال: قطعة" }),
+                      },
                     },
                     {
                       name: "packSize",
                       type: "number",
                       min: 0,
-                      label: "Base units per unit",
+                      label: { en: "Base units per unit", ar: "الوحدات الأساسية في كل وحدة" },
                       defaultValue: 1,
                       admin: {
-                        description: "How many base units one unit holds, such as 12 per carton.",
-                        placeholder: "e.g. 12",
+                        description: {
+                          en: "How many base units one unit holds, such as 12 per carton.",
+                          ar: "عدد الوحدات الأساسية في الوحدة الواحدة، مثل 12 في الكرتونة.",
+                        },
+                        placeholder: { en: "e.g. 12", ar: "مثال: 12" },
                       },
                     },
                     {
                       name: "store",
                       type: "select",
-                      options: STORES,
+                      label: { en: "Store", ar: "القسم" },
+                      options: STORE_OPTIONS,
                       admin: {
-                        description: "Which store department the item belongs to.",
-                        placeholder: "Pick a store",
+                        description: {
+                          en: "Which store department the item belongs to.",
+                          ar: "قسم المستلزمات الذي ينتمي إليه الصنف.",
+                        },
+                        placeholder: words({ en: "Pick a store", ar: "اختر قسمًا" }),
                       },
                     },
                   ],
@@ -639,10 +853,13 @@ export const Cases: CollectionConfig = {
                 {
                   name: "certificates",
                   type: "text",
-                  label: "Certificates / requirements",
+                  label: { en: "Certificates / requirements", ar: "الشهادات / المتطلبات" },
                   admin: {
-                    description: "Papers or specs the customer needs with the goods.",
-                    placeholder: "e.g. Class certificate, MSDS",
+                    description: {
+                      en: "Papers or specs the customer needs with the goods.",
+                      ar: "المستندات أو المواصفات التي يحتاجها العميل مع البضاعة.",
+                    },
+                    placeholder: { en: "e.g. Class certificate, MSDS", ar: "مثال: شهادة التصنيف، MSDS" },
                   },
                 },
                 {
@@ -651,16 +868,23 @@ export const Cases: CollectionConfig = {
                     {
                       name: "status",
                       type: "select",
-                      options: LINE_STATUSES,
+                      label: { en: "Status", ar: "الحالة" },
+                      options: LINE_STATUS_OPTIONS,
                       defaultValue: "Not sourced",
                       // In the tone of the bucket it counts in: ready, waiting, blocked, no offer.
                       custom: {
                         ...tones(Object.fromEntries(LINE_STATUSES.map((s) => [s, BUCKET_TONE[bucketOf(s)]]))),
-                        about: "Each status counts as ready, waiting, blocked or no offer on the case's line bar.",
+                        about: {
+                          en: "Each status counts as ready, waiting, blocked or no offer on the case's line bar.",
+                          ar: "تُحتسب كل حالة جاهزةً أو منتظرةً أو متوقفةً أو بلا عرض في شريط بنود الملف.",
+                        },
                       },
                       admin: {
-                        description: "Where this line stands in sourcing and delivery.",
-                        placeholder: "Pick a status",
+                        description: {
+                          en: "Where this line stands in sourcing and delivery.",
+                          ar: "موقف هذا البند في التوريد والتسليم.",
+                        },
+                        placeholder: words({ en: "Pick a status", ar: "اختر حالة" }),
                       },
                     },
                     {
@@ -668,10 +892,13 @@ export const Cases: CollectionConfig = {
                       type: "number",
                       min: 0,
                       max: 1,
-                      label: "AI extraction confidence",
+                      label: { en: "AI extraction confidence", ar: "ثقة الاستخراج بالذكاء الاصطناعي" },
                       admin: {
                         readOnly: true,
-                        description: "How sure the AI was when it read this line from the email.",
+                        description: {
+                          en: "How sure the AI was when it read this line from the email.",
+                          ar: "مدى ثقة الذكاء الاصطناعي عند قراءة هذا البند من البريد.",
+                        },
                       },
                     },
                     // How sure the AI was, as a share; amber under 85% (check it at the source).
@@ -679,8 +906,13 @@ export const Cases: CollectionConfig = {
                       {
                         name: "aiRead",
                         type: "number",
-                        label: "AI read",
-                        admin: { description: "The AI's confidence as a percentage; amber under 85%." },
+                        label: { en: "AI read", ar: "قراءة الذكاء الاصطناعي" },
+                        admin: {
+                          description: {
+                            en: "The AI's confidence as a percentage; amber under 85%.",
+                            ar: "ثقة الذكاء الاصطناعي كنسبة مئوية؛ بالكهرماني تحت 85%.",
+                          },
+                        },
                         custom: {
                           ...formats.percent(0),
                           toneWhen: [{ when: { aiRead: { less_than: 85 } }, tone: "warning" }],
@@ -693,35 +925,61 @@ export const Cases: CollectionConfig = {
                 {
                   name: "missing",
                   type: "text",
-                  label: "Missing / unclear",
+                  localized: true,
+                  label: { en: "Missing / unclear", ar: "ناقص / غير واضح" },
                   admin: {
-                    description: "What is unclear on this line and must be asked.",
-                    placeholder: "e.g. Size and colour",
+                    description: {
+                      en: "What is unclear on this line and must be asked.",
+                      ar: "ما هو غير واضح في هذا البند ويجب السؤال عنه.",
+                    },
+                    placeholder: { en: "e.g. Size and colour", ar: "مثال: المقاس واللون" },
                   },
                 },
                 {
                   name: "originalText",
                   type: "textarea",
-                  admin: { readOnly: true, description: "Exactly as written by the customer." },
+                  label: { en: "Original Text", ar: "النص الأصلي" },
+                  admin: {
+                    readOnly: true,
+                    description: { en: "Exactly as written by the customer.", ar: "كما كتبه العميل حرفيًا." },
+                  },
                 },
                 {
                   name: "selection",
                   type: "group",
-                  label: "Selected offer",
-                  admin: { description: "The offer chosen for this line and why." },
+                  label: { en: "Selected offer", ar: "العرض المختار" },
+                  admin: {
+                    description: {
+                      en: "The offer chosen for this line and why.",
+                      ar: "العرض المختار لهذا البند وسببه.",
+                    },
+                  },
                   fields: [
                     {
                       name: "offers",
                       type: "relationship",
+                      label: { en: "Offers", ar: "العروض" },
                       relationTo: "offers",
                       hasMany: true,
-                      admin: { description: "More than one = split sourcing.", placeholder: "Search offers" },
+                      admin: {
+                        description: { en: "More than one = split sourcing.", ar: "أكثر من عرض = توريد مجزّأ." },
+                        placeholder: words({ en: "Search offers", ar: "ابحث في العروض" }),
+                      },
                     },
                     {
                       name: "splitQty",
                       type: "array",
-                      labels: { singular: "Split", plural: "Split quantities" },
-                      admin: { description: "How the quantity is shared between offers." },
+                      label: { en: "Split Qty", ar: "تقسيم الكمية" },
+                      labels: {
+                        singular: { en: "Split", ar: "تجزئة" },
+                        plural: { en: "Split quantities", ar: "الكميات المجزّأة" },
+                      },
+                      admin: {
+                        description: {
+                          en: "How the quantity is shared between offers.",
+                          ar: "كيف تتوزع الكمية بين العروض.",
+                        },
+                      },
                       fields: [
                         {
                           type: "row",
@@ -729,19 +987,30 @@ export const Cases: CollectionConfig = {
                             {
                               name: "offer",
                               type: "relationship",
+                              label: { en: "Offer", ar: "العرض" },
                               relationTo: "offers",
                               required: true,
                               admin: {
-                                description: "The offer that covers part of the quantity.",
-                                placeholder: "Search offers",
+                                description: {
+                                  en: "The offer that covers part of the quantity.",
+                                  ar: "العرض الذي يغطي جزءًا من الكمية.",
+                                },
+                                placeholder: words({ en: "Search offers", ar: "ابحث في العروض" }),
                               },
                             },
                             {
                               name: "qty",
                               type: "number",
+                              label: { en: "Qty", ar: "الكمية" },
                               min: 0,
                               required: true,
-                              admin: { description: "Units taken from this offer.", placeholder: "e.g. 6" },
+                              admin: {
+                                description: {
+                                  en: "Units taken from this offer.",
+                                  ar: "الوحدات المأخوذة من هذا العرض.",
+                                },
+                                placeholder: { en: "e.g. 6", ar: "مثال: 6" },
+                              },
                             },
                           ],
                         },
@@ -750,9 +1019,17 @@ export const Cases: CollectionConfig = {
                     {
                       name: "reason",
                       type: "textarea",
+                      label: { en: "Reason", ar: "السبب" },
+                      localized: true,
                       admin: {
-                        description: "Required when the choice isn't the best-fit offer.",
-                        placeholder: "e.g. Cheaper offer lacks the certificate",
+                        description: {
+                          en: "Required when the choice isn't the best-fit offer.",
+                          ar: "مطلوب عندما لا يكون الاختيار هو العرض الأنسب.",
+                        },
+                        placeholder: {
+                          en: "e.g. Cheaper offer lacks the certificate",
+                          ar: "مثال: العرض الأرخص بلا شهادة",
+                        },
                       },
                     },
                     {
@@ -760,9 +1037,15 @@ export const Cases: CollectionConfig = {
                       type: "number",
                       min: -50,
                       max: 90,
-                      label: "Margin %",
+                      label: { en: "Margin %", ar: "الهامش %" },
                       access: { read: costVisible },
-                      admin: { description: "Our margin on this line; hidden from Sales.", placeholder: "e.g. 18" },
+                      admin: {
+                        description: {
+                          en: "Our margin on this line; hidden from Sales.",
+                          ar: "هامشنا على هذا البند؛ مخفي عن المبيعات.",
+                        },
+                        placeholder: { en: "e.g. 18", ar: "مثال: 18" },
+                      },
                     },
                     {
                       type: "row",
@@ -770,15 +1053,29 @@ export const Cases: CollectionConfig = {
                         {
                           name: "customerAccepted",
                           type: "checkbox",
-                          label: "Customer accepted alternative in writing",
+                          label: {
+                            en: "Customer accepted alternative in writing",
+                            ar: "وافق العميل على البديل كتابيًا",
+                          },
                           defaultValue: false,
-                          admin: { description: "Tick once the customer agreed to a substitute in writing." },
+                          admin: {
+                            description: {
+                              en: "Tick once the customer agreed to a substitute in writing.",
+                              ar: "حدّد بعد موافقة العميل كتابيًا على البديل.",
+                            },
+                          },
                         },
                         {
                           name: "acceptanceEvidence",
                           type: "upload",
+                          label: { en: "Acceptance Evidence", ar: "إثبات القبول" },
                           relationTo: "media",
-                          admin: { description: "The email or message where the customer agreed." },
+                          admin: {
+                            description: {
+                              en: "The email or message where the customer agreed.",
+                              ar: "البريد أو الرسالة التي وافق فيها العميل.",
+                            },
+                          },
                         },
                       ],
                     },
@@ -789,8 +1086,17 @@ export const Cases: CollectionConfig = {
             {
               name: "clarifications",
               type: "array",
-              labels: { singular: "Clarification", plural: "Clarifications" },
-              admin: { description: "Questions asked about the lines, and the answers." },
+              label: { en: "Clarifications", ar: "الاستيضاحات" },
+              labels: {
+                singular: { en: "Clarification", ar: "توضيح" },
+                plural: { en: "Clarifications", ar: "التوضيحات" },
+              },
+              admin: {
+                description: {
+                  en: "Questions asked about the lines, and the answers.",
+                  ar: "الأسئلة المطروحة حول البنود وإجاباتها.",
+                },
+              },
               fields: [
                 {
                   type: "row",
@@ -799,58 +1105,107 @@ export const Cases: CollectionConfig = {
                       name: "lineNo",
                       type: "number",
                       min: 1,
-                      label: "Line #",
-                      admin: { description: "The line the question is about.", placeholder: "e.g. 4" },
+                      label: { en: "Line #", ar: "رقم البند" },
+                      admin: {
+                        description: { en: "The line the question is about.", ar: "البند الذي يخصه السؤال." },
+                        placeholder: { en: "e.g. 4", ar: "مثال: 4" },
+                      },
                     },
                     {
                       name: "to",
                       type: "select",
-                      options: ["Customer", "Supplier", "Internal"],
+                      label: { en: "To", ar: "إلى" },
+                      options: [
+                        { value: "Customer", label: { en: "Customer", ar: "العميل" } },
+                        { value: "Supplier", label: { en: "Supplier", ar: "المورّد" } },
+                        { value: "Internal", label: { en: "Internal", ar: "داخلي" } },
+                      ],
                       defaultValue: "Customer",
-                      admin: { description: "Who the question goes to.", placeholder: "Customer" },
+                      admin: {
+                        description: { en: "Who the question goes to.", ar: "الجهة التي يُوجَّه إليها السؤال." },
+                        placeholder: words({ en: "Customer", ar: "العميل" }),
+                      },
                     },
                     {
                       name: "via",
                       type: "select",
-                      options: ["Email", "Phone", "WhatsApp", "Supplier question"],
-                      admin: { description: "How the question was sent.", placeholder: "Email" },
+                      label: { en: "Via", ar: "عبر" },
+                      options: [
+                        { value: "Email", label: { en: "Email", ar: "البريد الإلكتروني" } },
+                        { value: "Phone", label: { en: "Phone", ar: "الهاتف" } },
+                        { value: "WhatsApp", label: { en: "WhatsApp", ar: "WhatsApp" } },
+                        { value: "Supplier question", label: { en: "Supplier question", ar: "سؤال المورّد" } },
+                      ],
+                      admin: {
+                        description: { en: "How the question was sent.", ar: "طريقة إرسال السؤال." },
+                        placeholder: words({ en: "Email", ar: "البريد الإلكتروني" }),
+                      },
                     },
                   ],
                 },
                 {
                   name: "question",
                   type: "textarea",
+                  label: { en: "Question", ar: "السؤال" },
+                  localized: true,
                   required: true,
                   admin: {
-                    description: "What we need to know, in one clear question.",
-                    placeholder: "e.g. Is size 42 or 43 required?",
+                    description: {
+                      en: "What we need to know, in one clear question.",
+                      ar: "ما نحتاج معرفته، في سؤال واحد واضح.",
+                    },
+                    placeholder: { en: "e.g. Is size 42 or 43 required?", ar: "مثال: هل المقاس المطلوب 42 أم 43؟" },
                   },
                 },
                 {
                   type: "row",
                   fields: [
-                    { name: "askedAt", type: "date", admin: { description: "When the question was sent." } },
+                    {
+                      name: "askedAt",
+                      type: "date",
+                      label: { en: "Asked At", ar: "تاريخ السؤال" },
+                      admin: { description: { en: "When the question was sent.", ar: "وقت إرسال السؤال." } },
+                    },
                     {
                       name: "askedBy",
                       type: "relationship",
+                      label: { en: "Asked By", ar: "سأله" },
                       relationTo: "users",
-                      admin: { description: "The colleague who asked.", placeholder: "Search team" },
+                      admin: {
+                        description: { en: "The colleague who asked.", ar: "الزميل الذي سأل." },
+                        placeholder: words({ en: "Search team", ar: "ابحث في الفريق" }),
+                      },
                     },
                   ],
                 },
                 {
                   name: "answer",
                   type: "textarea",
-                  admin: { description: "The reply received.", placeholder: "e.g. Size 42, white." },
+                  label: { en: "Answer", ar: "الإجابة" },
+                  localized: true,
+                  admin: {
+                    description: { en: "The reply received.", ar: "الرد الوارد." },
+                    placeholder: { en: "e.g. Size 42, white.", ar: "مثال: مقاس 42، أبيض." },
+                  },
                 },
-                { name: "answeredAt", type: "date", admin: { description: "When the reply came in." } },
+                {
+                  name: "answeredAt",
+                  type: "date",
+                  label: { en: "Answered At", ar: "تاريخ الإجابة" },
+                  admin: { description: { en: "When the reply came in.", ar: "وقت وصول الرد." } },
+                },
                 // The answer, or "Waiting" (amber) while the question is open.
                 rowComputed(
                   {
                     name: "reply",
                     type: "text",
-                    label: "Answer",
-                    admin: { description: "The answer, or Waiting while the question is open." },
+                    label: { en: "Answer", ar: "الإجابة" },
+                    admin: {
+                      description: {
+                        en: "The answer, or Waiting while the question is open.",
+                        ar: "الإجابة، أو «بانتظار الرد» ما دام السؤال مفتوحًا.",
+                      },
+                    },
                     custom: { toneWhen: [{ when: { answer: { exists: false } }, tone: "warning" }] },
                   },
                   (q) => scalar(q.answer) || "Waiting",
@@ -860,13 +1215,18 @@ export const Cases: CollectionConfig = {
           ],
         },
         {
-          label: "Line status",
+          label: { en: "Line status", ar: "حالة البنود" },
           fields: [
             {
               name: "lines",
               type: "group",
-              label: "Line status (summary)",
-              admin: { description: "Line counts used until the lines themselves are entered." },
+              label: { en: "Line status (summary)", ar: "حالة البنود (ملخص)" },
+              admin: {
+                description: {
+                  en: "Line counts used until the lines themselves are entered.",
+                  ar: "أعداد البنود المستخدمة إلى أن تُدخل البنود نفسها.",
+                },
+              },
               fields: [
                 {
                   type: "row",
@@ -874,31 +1234,52 @@ export const Cases: CollectionConfig = {
                     {
                       name: "ready",
                       type: "number",
+                      label: { en: "Ready", ar: "جاهز" },
                       defaultValue: 0,
                       min: 0,
-                      admin: { description: "Lines ready to quote or order.", placeholder: "e.g. 4" },
+                      admin: {
+                        description: { en: "Lines ready to quote or order.", ar: "البنود الجاهزة للتسعير أو الطلب." },
+                        placeholder: { en: "e.g. 4", ar: "مثال: 4" },
+                      },
                     },
                     {
                       name: "waiting",
                       type: "number",
+                      label: { en: "Waiting", ar: "بانتظار" },
                       defaultValue: 0,
                       min: 0,
-                      admin: { description: "Lines waiting on a supplier or the customer.", placeholder: "e.g. 2" },
+                      admin: {
+                        description: {
+                          en: "Lines waiting on a supplier or the customer.",
+                          ar: "البنود المنتظرة لمورّد أو للعميل.",
+                        },
+                        placeholder: { en: "e.g. 2", ar: "مثال: 2" },
+                      },
                     },
                     {
                       name: "blocked",
                       type: "number",
+                      label: { en: "Blocked", ar: "متوقف" },
                       defaultValue: 0,
                       min: 0,
-                      admin: { description: "Lines stuck on a missing detail.", placeholder: "e.g. 1" },
+                      admin: {
+                        description: { en: "Lines stuck on a missing detail.", ar: "البنود المتوقفة على تفصيل ناقص." },
+                        placeholder: { en: "e.g. 1", ar: "مثال: 1" },
+                      },
                     },
                     {
                       name: "noOffer",
                       type: "number",
-                      label: "No offer",
+                      label: { en: "No offer", ar: "بلا عرض" },
                       defaultValue: 0,
                       min: 0,
-                      admin: { description: "Lines no supplier has offered on yet.", placeholder: "e.g. 0" },
+                      admin: {
+                        description: {
+                          en: "Lines no supplier has offered on yet.",
+                          ar: "البنود التي لم يقدّم عليها أي مورّد عرضًا بعد.",
+                        },
+                        placeholder: { en: "e.g. 0", ar: "مثال: 0" },
+                      },
                     },
                   ],
                 },
@@ -907,16 +1288,22 @@ export const Cases: CollectionConfig = {
             {
               name: "quoteLines",
               type: "array",
-              labels: { singular: "Quote line", plural: "Quote lines" },
-              admin: { description: "The lines as quoted to the customer." },
+              label: { en: "Quote Lines", ar: "بنود عرض السعر" },
+              labels: {
+                singular: { en: "Quote line", ar: "بند العرض" },
+                plural: { en: "Quote lines", ar: "بنود العرض" },
+              },
+              admin: { description: { en: "The lines as quoted to the customer.", ar: "البنود كما سُعّرت للعميل." } },
               fields: [
                 {
                   name: "description",
                   type: "text",
+                  label: { en: "Description", ar: "الوصف" },
+                  localized: true,
                   required: true,
                   admin: {
-                    description: "What the customer is quoted for.",
-                    placeholder: "e.g. Safety helmet, white, size L",
+                    description: { en: "What the customer is quoted for.", ar: "ما يُسعَّر للعميل." },
+                    placeholder: { en: "e.g. Safety helmet, white, size L", ar: "مثال: خوذة سلامة، بيضاء، مقاس L" },
                   },
                 },
                 {
@@ -925,42 +1312,72 @@ export const Cases: CollectionConfig = {
                     {
                       name: "qty",
                       type: "number",
+                      label: { en: "Qty", ar: "الكمية" },
                       min: 0,
-                      admin: { description: "Units quoted.", placeholder: "e.g. 12" },
+                      admin: {
+                        description: { en: "Units quoted.", ar: "الوحدات المسعّرة." },
+                        placeholder: { en: "e.g. 12", ar: "مثال: 12" },
+                      },
                     },
                     {
                       name: "unit",
                       type: "select",
-                      options: ["pcs", "kg", "ltr", "set", "roll"],
-                      admin: { description: "The unit the quantity is counted in.", placeholder: "e.g. pcs" },
+                      label: { en: "Unit", ar: "الوحدة" },
+                      options: [
+                        { value: "pcs", label: { en: "pcs", ar: "قطعة" } },
+                        { value: "kg", label: { en: "kg", ar: "كجم" } },
+                        { value: "ltr", label: { en: "ltr", ar: "لتر" } },
+                        { value: "set", label: { en: "set", ar: "طقم" } },
+                        { value: "roll", label: { en: "roll", ar: "لفة" } },
+                      ],
+                      admin: {
+                        description: { en: "The unit the quantity is counted in.", ar: "الوحدة التي تُعدّ بها الكمية." },
+                        placeholder: words({ en: "e.g. pcs", ar: "مثال: قطعة" }),
+                      },
                     },
                     {
                       name: "unitPrice",
                       type: "number",
-                      label: "Unit price (USD)",
+                      label: { en: "Unit price (USD)", ar: "سعر الوحدة (USD)" },
                       min: 0,
-                      admin: { description: "The selling price per unit in US dollars.", placeholder: "e.g. 24.50" },
+                      admin: {
+                        description: {
+                          en: "The selling price per unit in US dollars.",
+                          ar: "سعر البيع للوحدة بالدولار الأمريكي.",
+                        },
+                        placeholder: { en: "e.g. 24.50", ar: "مثال: 24.50" },
+                      },
                     },
                   ],
                 },
                 {
                   name: "supplier",
                   type: "relationship",
+                  label: { en: "Supplier", ar: "المورّد" },
                   relationTo: "suppliers",
-                  admin: { description: "Who supplies this line.", placeholder: "Search suppliers" },
+                  admin: {
+                    description: { en: "Who supplies this line.", ar: "المورّد الذي يورّد هذا البند." },
+                    placeholder: words({ en: "Search suppliers", ar: "ابحث في الموردين" }),
+                  },
                 },
               ],
             },
           ],
         },
         {
-          label: "Pricing",
+          label: { en: "Pricing", ar: "التسعير" },
           fields: [
             {
               name: "pricing",
               type: "group",
+              label: { en: "Pricing", ar: "التسعير" },
               access: { read: costVisible },
-              admin: { description: "How shared charges and the discount are priced; hidden from Sales." },
+              admin: {
+                description: {
+                  en: "How shared charges and the discount are priced; hidden from Sales.",
+                  ar: "كيف تُسعَّر الرسوم المشتركة والخصم؛ مخفي عن المبيعات.",
+                },
+              },
               fields: [
                 {
                   type: "row",
@@ -968,44 +1385,65 @@ export const Cases: CollectionConfig = {
                     {
                       name: "allocation",
                       type: "select",
-                      label: "Shared charges allocated",
+                      label: { en: "Shared charges allocated", ar: "توزيع الرسوم المشتركة" },
                       defaultValue: "value",
                       options: [
-                        { label: "By line value", value: "value" },
-                        { label: "By quantity", value: "qty" },
-                        { label: "Equal per line", value: "lines" },
+                        { label: { en: "By line value", ar: "حسب قيمة البند" }, value: "value" },
+                        { label: { en: "By quantity", ar: "حسب الكمية" }, value: "qty" },
+                        { label: { en: "Equal per line", ar: "بالتساوي لكل بند" }, value: "lines" },
                       ],
                       admin: {
-                        description: "How shared charges are split across the lines.",
-                        placeholder: "By line value",
+                        description: {
+                          en: "How shared charges are split across the lines.",
+                          ar: "كيف تُوزَّع الرسوم المشتركة على البنود.",
+                        },
+                        placeholder: words({ en: "By line value", ar: "حسب قيمة البند" }),
                       },
                     },
                     {
                       name: "discountPct",
                       type: "number",
-                      label: "Customer discount %",
+                      label: { en: "Customer discount %", ar: "خصم العميل %" },
                       min: 0,
                       max: 50,
                       defaultValue: 0,
                       admin: {
-                        description: "Discount given to the customer on the whole quote.",
-                        placeholder: "e.g. 5",
+                        description: {
+                          en: "Discount given to the customer on the whole quote.",
+                          ar: "الخصم الممنوح للعميل على العرض كاملًا.",
+                        },
+                        placeholder: { en: "e.g. 5", ar: "مثال: 5" },
                       },
                     },
                     {
                       name: "fxRateUSD",
                       type: "number",
-                      label: "FX snapshot USD/EGP",
+                      label: { en: "FX snapshot USD/EGP", ar: "سعر الصرف المثبّت USD/EGP" },
                       min: 0,
-                      admin: { readOnly: true, description: "The dollar rate in EGP fixed when the case was priced." },
+                      admin: {
+                        readOnly: true,
+                        description: {
+                          en: "The dollar rate in EGP fixed when the case was priced.",
+                          ar: "سعر الدولار بالجنيه المثبّت عند تسعير الملف.",
+                        },
+                      },
                     },
                   ],
                 },
                 {
                   name: "charges",
                   type: "array",
-                  labels: { singular: "Shared charge", plural: "Shared charges" },
-                  admin: { description: "Charges shared by the whole case, such as port fees." },
+                  label: { en: "Charges", ar: "الرسوم" },
+                  labels: {
+                    singular: { en: "Shared charge", ar: "رسوم مشتركة" },
+                    plural: { en: "Shared charges", ar: "الرسوم المشتركة" },
+                  },
+                  admin: {
+                    description: {
+                      en: "Charges shared by the whole case, such as port fees.",
+                      ar: "رسوم يتحملها الملف كله، مثل رسوم الميناء.",
+                    },
+                  },
                   fields: [
                     {
                       type: "row",
@@ -1013,34 +1451,56 @@ export const Cases: CollectionConfig = {
                         {
                           name: "label",
                           type: "text",
+                          label: { en: "Label", ar: "التسمية" },
+                          localized: true,
                           required: true,
-                          admin: { description: "What the charge is for.", placeholder: "e.g. Port clearance" },
+                          admin: {
+                            description: { en: "What the charge is for.", ar: "الغرض من الرسوم." },
+                            placeholder: { en: "e.g. Port clearance", ar: "مثال: تخليص الميناء" },
+                          },
                         },
                         {
                           name: "amountEGP",
                           type: "number",
                           min: 0,
-                          label: "Amount (EGP)",
-                          admin: { description: "The estimated amount in Egyptian pounds.", placeholder: "e.g. 8,500" },
+                          label: { en: "Amount (EGP)", ar: "المبلغ (EGP)" },
+                          admin: {
+                            description: {
+                              en: "The estimated amount in Egyptian pounds.",
+                              ar: "المبلغ التقديري بالجنيه المصري.",
+                            },
+                            placeholder: { en: "e.g. 8,500", ar: "مثال: 8,500" },
+                          },
                         },
                         {
                           name: "status",
                           type: "select",
-                          options: ["Estimate", "Confirmed", "Not applicable"],
+                          label: { en: "Status", ar: "الحالة" },
+                          options: [
+                            { value: "Estimate", label: { en: "Estimate", ar: "تقديري" } },
+                            { value: "Confirmed", label: { en: "Confirmed", ar: "مؤكد" } },
+                            { value: "Not applicable", label: { en: "Not applicable", ar: "لا ينطبق" } },
+                          ],
                           defaultValue: "Estimate",
                           admin: {
-                            description: "Whether the charge is a guess or confirmed.",
-                            placeholder: "Estimate",
+                            description: {
+                              en: "Whether the charge is a guess or confirmed.",
+                              ar: "هل الرسوم تقديرية أم مؤكدة.",
+                            },
+                            placeholder: words({ en: "Estimate", ar: "تقديري" }),
                           },
                         },
                         {
                           name: "actualEGP",
                           type: "number",
                           min: 0,
-                          label: "Actual (EGP)",
+                          label: { en: "Actual (EGP)", ar: "الفعلي (EGP)" },
                           admin: {
-                            description: "What the charge actually cost in Egyptian pounds.",
-                            placeholder: "e.g. 9,200",
+                            description: {
+                              en: "What the charge actually cost in Egyptian pounds.",
+                              ar: "التكلفة الفعلية للرسوم بالجنيه المصري.",
+                            },
+                            placeholder: { en: "e.g. 9,200", ar: "مثال: 9,200" },
                           },
                         },
                       ],
@@ -1052,15 +1512,18 @@ export const Cases: CollectionConfig = {
           ],
         },
         {
-          label: "Service",
+          label: { en: "Service", ar: "الخدمة" },
           fields: [
             {
               name: "service",
               type: "group",
-              label: "Spare-parts clearance & forwarding",
+              label: { en: "Spare-parts clearance & forwarding", ar: "تخليص وشحن قطع الغيار" },
               admin: {
                 condition: (data) => data?.caseType === "service",
-                description: "Customs and forwarding for spare parts sent to a vessel.",
+                description: {
+                  en: "Customs and forwarding for spare parts sent to a vessel.",
+                  ar: "التخليص الجمركي والشحن لقطع غيار مرسلة إلى سفينة.",
+                },
               },
               fields: [
                 {
@@ -1069,21 +1532,35 @@ export const Cases: CollectionConfig = {
                     {
                       name: "awb",
                       type: "text",
-                      label: "AWB / B/L",
+                      label: { en: "AWB / B/L", ar: "بوليصة الشحن الجوي / البحري" },
                       admin: {
-                        description: "The air waybill or bill of lading number.",
-                        placeholder: "e.g. 176-12345675",
+                        description: {
+                          en: "The air waybill or bill of lading number.",
+                          ar: "رقم بوليصة الشحن الجوي أو البحري.",
+                        },
+                        placeholder: { en: "e.g. 176-12345675", ar: "مثال: 176-12345675" },
                       },
                     },
                     {
                       name: "carrier",
                       type: "text",
+                      label: { en: "Carrier", ar: "الناقل" },
                       admin: {
-                        description: "The airline or shipping line carrying the parcel.",
-                        placeholder: "e.g. Emirates SkyCargo",
+                        description: {
+                          en: "The airline or shipping line carrying the parcel.",
+                          ar: "شركة الطيران أو الخط الملاحي الناقل للطرد.",
+                        },
+                        placeholder: { en: "e.g. Emirates SkyCargo", ar: "مثال: Emirates SkyCargo" },
                       },
                     },
-                    { name: "arrival", type: "date", admin: { description: "When the shipment lands in Egypt." } },
+                    {
+                      name: "arrival",
+                      type: "date",
+                      label: { en: "Arrival", ar: "الوصول" },
+                      admin: {
+                        description: { en: "When the shipment lands in Egypt.", ar: "موعد وصول الشحنة إلى مصر." },
+                      },
+                    },
                   ],
                 },
                 {
@@ -1092,31 +1569,60 @@ export const Cases: CollectionConfig = {
                     {
                       name: "customsDeclaration",
                       type: "text",
-                      admin: { description: "The customs declaration number.", placeholder: "e.g. 2026/118452" },
+                      label: { en: "Customs Declaration", ar: "البيان الجمركي" },
+                      admin: {
+                        description: { en: "The customs declaration number.", ar: "رقم البيان الجمركي." },
+                        placeholder: { en: "e.g. 2026/118452", ar: "مثال: 2026/118452" },
+                      },
                     },
                     {
                       name: "customsStatus",
                       type: "select",
-                      options: ["Documents pending", "Submitted", "Released", "Held by customs"],
-                      admin: { description: "Where customs clearance stands.", placeholder: "Pick a status" },
+                      label: { en: "Customs Status", ar: "الحالة الجمركية" },
+                      options: [
+                        { value: "Documents pending", label: { en: "Documents pending", ar: "مستندات معلّقة" } },
+                        { value: "Submitted", label: { en: "Submitted", ar: "مقدَّم" } },
+                        { value: "Released", label: { en: "Released", ar: "مُفرج عنه" } },
+                        { value: "Held by customs", label: { en: "Held by customs", ar: "محتجز لدى الجمارك" } },
+                      ],
+                      admin: {
+                        description: { en: "Where customs clearance stands.", ar: "موقف التخليص الجمركي." },
+                        placeholder: words({ en: "Pick a status", ar: "اختر حالة" }),
+                      },
                     },
-                    { name: "releasedAt", type: "date", admin: { description: "When customs released the goods." } },
+                    {
+                      name: "releasedAt",
+                      type: "date",
+                      label: { en: "Released At", ar: "تاريخ الإفراج" },
+                      admin: {
+                        description: { en: "When customs released the goods.", ar: "موعد إفراج الجمارك عن البضاعة." },
+                      },
+                    },
                   ],
                 },
                 {
                   name: "consolidateWith",
                   type: "relationship",
                   relationTo: "cases",
-                  label: "Deliver together with case",
+                  label: { en: "Deliver together with case", ar: "تسليم مع ملف" },
                   admin: {
-                    description: "Another case whose delivery goes out with this one.",
-                    placeholder: "e.g. GS-RFQ-0142",
+                    description: {
+                      en: "Another case whose delivery goes out with this one.",
+                      ar: "ملف آخر يُسلَّم مع هذا الملف.",
+                    },
+                    placeholder: words({ en: "e.g. GS-RFQ-0142", ar: "مثال: GS-RFQ-0142" }),
                   },
                 },
                 {
                   name: "fees",
                   type: "array",
-                  admin: { description: "Extra fees paid for clearance and forwarding." },
+                  label: { en: "Fees", ar: "الرسوم" },
+                  admin: {
+                    description: {
+                      en: "Extra fees paid for clearance and forwarding.",
+                      ar: "الرسوم الإضافية المدفوعة للتخليص والشحن.",
+                    },
+                  },
                   fields: [
                     {
                       type: "row",
@@ -1124,21 +1630,35 @@ export const Cases: CollectionConfig = {
                         {
                           name: "label",
                           type: "text",
+                          label: { en: "Label", ar: "التسمية" },
+                          localized: true,
                           required: true,
-                          admin: { description: "What the fee is for.", placeholder: "e.g. Customs duty" },
+                          admin: {
+                            description: { en: "What the fee is for.", ar: "الغرض من الرسم." },
+                            placeholder: { en: "e.g. Customs duty", ar: "مثال: رسوم جمركية" },
+                          },
                         },
                         {
                           name: "amountUSD",
                           type: "number",
+                          label: { en: "Amount U S D", ar: "المبلغ بالدولار" },
                           min: 0,
-                          admin: { description: "The fee in US dollars.", placeholder: "e.g. 350" },
+                          admin: {
+                            description: { en: "The fee in US dollars.", ar: "الرسم بالدولار الأمريكي." },
+                            placeholder: { en: "e.g. 350", ar: "مثال: 350" },
+                          },
                         },
                         {
                           name: "atCost",
                           type: "checkbox",
-                          label: "Re-billed at cost",
+                          label: { en: "Re-billed at cost", ar: "يُعاد تحميله بالتكلفة" },
                           defaultValue: false,
-                          admin: { description: "Tick when the fee is passed on without markup." },
+                          admin: {
+                            description: {
+                              en: "Tick when the fee is passed on without markup.",
+                              ar: "حدّد عندما يُمرَّر الرسم دون هامش.",
+                            },
+                          },
                         },
                       ],
                     },
@@ -1149,10 +1669,13 @@ export const Cases: CollectionConfig = {
             {
               name: "held",
               type: "group",
-              label: "Held stores",
+              label: { en: "Held stores", ar: "مستلزمات محتجزة" },
               admin: {
                 condition: (data) => data?.caseType === "held",
-                description: "Stores we keep for a vessel until it arrives.",
+                description: {
+                  en: "Stores we keep for a vessel until it arrives.",
+                  ar: "مستلزمات نحتفظ بها لسفينة حتى وصولها.",
+                },
               },
               fields: [
                 {
@@ -1161,27 +1684,49 @@ export const Cases: CollectionConfig = {
                     {
                       name: "location",
                       type: "text",
+                      label: { en: "Location", ar: "الموقع" },
                       admin: {
-                        description: "Where in our warehouse the stores sit.",
-                        placeholder: "e.g. Alexandria, rack B3",
+                        description: {
+                          en: "Where in our warehouse the stores sit.",
+                          ar: "موقع المستلزمات في مستودعنا.",
+                        },
+                        placeholder: { en: "e.g. Alexandria, rack B3", ar: "مثال: الإسكندرية، رف B3" },
                       },
                     },
-                    { name: "receivedAt", type: "date", admin: { description: "When the stores arrived with us." } },
+                    {
+                      name: "receivedAt",
+                      type: "date",
+                      label: { en: "Received At", ar: "تاريخ الاستلام" },
+                      admin: {
+                        description: { en: "When the stores arrived with us.", ar: "موعد وصول المستلزمات إلينا." },
+                      },
+                    },
                     {
                       name: "freeDays",
                       type: "number",
+                      label: { en: "Free Days", ar: "الأيام المجانية" },
                       min: 0,
                       defaultValue: 14,
-                      admin: { description: "Days we hold the stores free of charge.", placeholder: "e.g. 14" },
+                      admin: {
+                        description: {
+                          en: "Days we hold the stores free of charge.",
+                          ar: "أيام الاحتفاظ بالمستلزمات مجانًا.",
+                        },
+                        placeholder: { en: "e.g. 14", ar: "مثال: 14" },
+                      },
                     },
                     {
                       name: "dailyChargeUSD",
                       type: "number",
+                      label: { en: "Daily Charge U S D", ar: "الرسم اليومي بالدولار" },
                       min: 0,
                       defaultValue: 5,
                       admin: {
-                        description: "The charge per day in US dollars once free days run out.",
-                        placeholder: "e.g. 5",
+                        description: {
+                          en: "The charge per day in US dollars once free days run out.",
+                          ar: "الرسم اليومي بالدولار بعد انتهاء الأيام المجانية.",
+                        },
+                        placeholder: { en: "e.g. 5", ar: "مثال: 5" },
                       },
                     },
                   ],
@@ -1195,16 +1740,22 @@ export const Cases: CollectionConfig = {
     {
       name: "caseType",
       type: "select",
+      label: { en: "Case Type", ar: "نوع الملف" },
       options: CASE_TYPES,
       defaultValue: "rfq",
-      admin: { position: "sidebar", description: "What kind of job this is.", placeholder: "Pick a case type" },
+      admin: {
+        position: "sidebar",
+        description: { en: "What kind of job this is.", ar: "نوع هذه المهمة." },
+        placeholder: words({ en: "Pick a case type", ar: "اختر نوع الملف" }),
+      },
     },
     {
       name: "stage",
       type: "select",
+      label: { en: "Stage", ar: "المرحلة" },
       required: true,
       defaultValue: "New",
-      options: STAGES,
+      options: STAGE_OPTIONS,
       custom: tones({
         New: "info",
         Validating: "info",
@@ -1231,26 +1782,29 @@ export const Cases: CollectionConfig = {
       }),
       admin: {
         position: "sidebar",
-        description: "Where the case is, from first email to settlement.",
-        placeholder: "Pick a stage",
+        description: {
+          en: "Where the case is, from first email to settlement.",
+          ar: "مرحلة الملف، من أول بريد حتى التسوية.",
+        },
+        placeholder: words({ en: "Pick a stage", ar: "اختر مرحلة" }),
       },
     },
     {
       name: "decision",
       type: "select",
-      label: "Customer decision",
-      options: [...QUOTE_DECISIONS, "Partially won"],
+      label: { en: "Customer decision", ar: "قرار العميل" },
+      options: QUOTE_DECISION_OPTIONS,
       admin: {
         position: "sidebar",
-        description: "The customer's answer on our quotation.",
-        placeholder: "Pick a decision",
+        description: { en: "The customer's answer on our quotation.", ar: "رد العميل على عرض السعر." },
+        placeholder: words({ en: "Pick a decision", ar: "اختر قرارًا" }),
       },
     },
     {
       name: "wait",
       type: "select",
-      label: "Waiting for",
-      options: WAITS,
+      label: { en: "Waiting for", ar: "بانتظار" },
+      options: WAIT_OPTIONS,
       custom: tones({
         "Awaiting supplier": "warning",
         "Awaiting corrected offer": "warning",
@@ -1260,111 +1814,149 @@ export const Cases: CollectionConfig = {
       }),
       admin: {
         position: "sidebar",
-        description: "What the case is waiting on right now.",
-        placeholder: "Pick what it waits for",
+        description: { en: "What the case is waiting on right now.", ar: "ما ينتظره الملف الآن." },
+        placeholder: words({ en: "Pick what it waits for", ar: "اختر ما ينتظره" }),
       },
     },
     {
       name: "tone",
       type: "select",
-      label: "Risk",
+      label: { en: "Risk", ar: "المخاطر" },
       defaultValue: "info",
       options: [
-        { label: "Blocked", value: "danger" },
-        { label: "At risk", value: "warn" },
-        { label: "On track", value: "info" },
-        { label: "Done", value: "ok" },
-        { label: "Paused", value: "neutral" },
+        { label: { en: "Blocked", ar: "متوقف" }, value: "danger" },
+        { label: { en: "At risk", ar: "معرّض للخطر" }, value: "warn" },
+        { label: { en: "On track", ar: "على المسار" }, value: "info" },
+        { label: { en: "Done", ar: "تم" }, value: "ok" },
+        { label: { en: "Paused", ar: "متوقف مؤقتًا" }, value: "neutral" },
       ],
       custom: tones({ danger: "error", warn: "warning", info: "info", ok: "success", neutral: "neutral" }),
       admin: {
         position: "sidebar",
-        description: "How worried we are about this case.",
-        placeholder: "Pick a risk level",
+        description: { en: "How worried we are about this case.", ar: "مدى قلقنا بشأن هذا الملف." },
+        placeholder: words({ en: "Pick a risk level", ar: "اختر مستوى المخاطر" }),
       },
     },
     {
       name: "riskRank",
       type: "number",
-      label: "Risk rank",
-      admin: { hidden: true, readOnly: true, description: "0 blocked … 4 paused: what queues sort by." },
+      label: { en: "Risk rank", ar: "ترتيب المخاطر" },
+      admin: {
+        hidden: true,
+        readOnly: true,
+        description: {
+          en: "0 blocked … 4 paused: what queues sort by.",
+          ar: "0 متوقف … 4 متوقف مؤقتًا: ما ترتّب به قوائم العمل.",
+        },
+      },
     },
     {
       name: "owner",
       type: "relationship",
+      label: { en: "Owner", ar: "المسؤول" },
       relationTo: "users",
       required: true,
-      admin: { position: "sidebar", description: "The person responsible for the case.", placeholder: "Search team" },
+      admin: {
+        position: "sidebar",
+        description: { en: "The person responsible for the case.", ar: "المسؤول عن الملف." },
+        placeholder: words({ en: "Search team", ar: "ابحث في الفريق" }),
+      },
     },
     {
       name: "backup",
       type: "relationship",
+      label: { en: "Backup", ar: "البديل" },
       relationTo: "users",
       admin: {
         position: "sidebar",
-        description: "Covers the case when the owner is away.",
-        placeholder: "Search team",
+        description: { en: "Covers the case when the owner is away.", ar: "يغطي الملف عند غياب المالك." },
+        placeholder: words({ en: "Search team", ar: "ابحث في الفريق" }),
       },
     },
     {
       name: "value",
       type: "number",
-      label: "Value (USD)",
+      label: { en: "Value (USD)", ar: "القيمة (USD)" },
       min: 0,
       custom: formats.money("USD"),
       // The selling value: never for Sales (as everywhere else).
       access: { read: costVisible },
       admin: {
         position: "sidebar",
-        description: "The selling value of the case in US dollars; hidden from Sales.",
-        placeholder: "e.g. 18,500",
+        description: {
+          en: "The selling value of the case in US dollars; hidden from Sales.",
+          ar: "قيمة بيع الملف بالدولار الأمريكي؛ مخفية عن المبيعات.",
+        },
+        placeholder: { en: "e.g. 18,500", ar: "مثال: 18,500" },
       },
     },
     {
       name: "urgent",
       type: "checkbox",
+      label: { en: "Urgent", ar: "عاجل" },
       defaultValue: false,
-      admin: { position: "sidebar", description: "Tick for a case that must jump the queue." },
+      admin: {
+        position: "sidebar",
+        description: { en: "Tick for a case that must jump the queue.", ar: "حدّد للملف الذي يجب تقديمه على غيره." },
+      },
     },
     {
       name: "lostReason",
       type: "text",
+      label: { en: "Lost Reason", ar: "سبب الخسارة" },
+      localized: true,
       admin: {
         position: "sidebar",
         condition: (data) => data?.stage === "Lost",
-        description: "Why we lost the case, for later review.",
-        placeholder: "e.g. Customer chose a cheaper bid",
+        description: { en: "Why we lost the case, for later review.", ar: "سبب خسارة الملف، للمراجعة لاحقًا." },
+        placeholder: { en: "e.g. Customer chose a cheaper bid", ar: "مثال: اختار العميل عرضًا أرخص" },
       },
     },
     {
       name: "sourceMessage",
       type: "relationship",
+      label: { en: "Source Message", ar: "الرسالة المصدر" },
       relationTo: "intake-messages",
-      admin: { position: "sidebar", readOnly: true, description: "The email this case was created from." },
+      admin: {
+        position: "sidebar",
+        readOnly: true,
+        description: { en: "The email this case was created from.", ar: "البريد الذي أُنشئ منه هذا الملف." },
+      },
     },
     {
       name: "closedAt",
       type: "date",
-      admin: { position: "sidebar", readOnly: true, description: "When the case was settled and closed." },
+      label: { en: "Closed At", ar: "تاريخ الإغلاق" },
+      admin: {
+        position: "sidebar",
+        readOnly: true,
+        description: { en: "When the case was settled and closed.", ar: "موعد تسوية الملف وإغلاقه." },
+      },
     },
     // Worked out on read, the same on every screen that shows a case (never stored).
     computed(
       {
         name: "due",
         type: "text",
-        label: "Due",
+        label: { en: "Due", ar: "الاستحقاق" },
         // Red once the deadline has passed.
         custom: { toneWhen: [{ when: { deadline: { less_than: NOW } }, tone: "error" }] },
-        admin: { position: "sidebar", description: "How long until the quote deadline." },
+        admin: {
+          position: "sidebar",
+          description: { en: "How long until the quote deadline.", ar: "المدة المتبقية حتى موعد تقديم العرض." },
+        },
       },
-      (c) => relativeDue(c.deadline),
+      (c, req) => relativeDue(c.deadline, req),
     ),
     computed(
       {
         name: "vesselPort",
         type: "text",
-        label: "Vessel · port",
-        admin: { condition: () => false, description: "The vessel and its port on one line." },
+        label: { en: "Vessel · port", ar: "السفينة · الميناء" },
+        admin: {
+          condition: () => false,
+          description: { en: "The vessel and its port on one line.", ar: "السفينة وميناؤها في سطر واحد." },
+        },
       },
       (c) => [scalar(c.vessel), scalar(c.port)].filter(Boolean).join(" · "),
     ),
@@ -1374,20 +1966,29 @@ export const Cases: CollectionConfig = {
       {
         name: "lineCount",
         type: "group",
-        label: "Lines",
-        admin: { condition: () => false, description: "How far the lines are before the order." },
+        label: { en: "Lines", ar: "البنود" },
+        admin: {
+          condition: () => false,
+          description: { en: "How far the lines are before the order.", ar: "مدى تقدّم البنود قبل الطلب." },
+        },
         fields: [
           {
             name: "total",
             type: "number",
-            label: "Lines",
-            admin: { description: "How many lines the case has.", placeholder: "e.g. 6" },
+            label: { en: "Lines", ar: "البنود" },
+            admin: {
+              description: { en: "How many lines the case has.", ar: "عدد بنود الملف." },
+              placeholder: { en: "e.g. 6", ar: "مثال: 6" },
+            },
           },
           {
             name: "ready",
             type: "number",
-            label: "Ready",
-            admin: { description: "Lines ready to quote or order.", placeholder: "e.g. 4" },
+            label: { en: "Ready", ar: "جاهز" },
+            admin: {
+              description: { en: "Lines ready to quote or order.", ar: "البنود الجاهزة للتسعير أو الطلب." },
+              placeholder: { en: "e.g. 4", ar: "مثال: 4" },
+            },
             custom: {
               gauge: { max: "lineCount.total" },
               toneWhen: [
@@ -1396,18 +1997,21 @@ export const Cases: CollectionConfig = {
               ],
             },
           },
-          ...LINE_GAUGES.map(([name, label, tone]) => ({
+          ...LINE_GAUGES.map(([name, label, description, tone]) => ({
             name,
             type: "number" as const,
             label,
-            admin: { description: `Lines that are ${label.toLowerCase()}.`, placeholder: "e.g. 1" },
+            admin: { description, placeholder: { en: "e.g. 1", ar: "مثال: 1" } },
             custom: { gauge: { max: "lineCount.total" }, toneWhen: [{ when: {}, tone }] },
           })),
           {
             name: "readyPct",
             type: "number",
-            label: "Ready share",
-            admin: { description: "Share of the lines that are ready.", placeholder: "e.g. 67" },
+            label: { en: "Ready share", ar: "نسبة الجاهز" },
+            admin: {
+              description: { en: "Share of the lines that are ready.", ar: "نسبة البنود الجاهزة." },
+              placeholder: { en: "e.g. 67", ar: "مثال: 67" },
+            },
             custom: formats.percent(0),
           },
         ],
@@ -1431,22 +2035,30 @@ export const Cases: CollectionConfig = {
       {
         name: "lineNote",
         type: "text",
-        label: "Lines",
-        admin: { condition: () => false, description: "Of how many lines, and how many are blocked." },
+        label: { en: "Lines", ar: "البنود" },
+        admin: {
+          condition: () => false,
+          description: { en: "Of how many lines, and how many are blocked.", ar: "من أصل كم بندًا، وكم منها متوقف." },
+        },
       },
-      (c) => {
+      (c, req) => {
         const l = lineCounts(c);
-        return l.total ? [`of ${l.total}`, l.blocked ? `${l.blocked} blocked` : ""].filter(Boolean).join(" · ") : null;
+        const of = inLanguage(req, { en: `of ${l.total}`, ar: `من ${l.total}` });
+        const blocked = l.blocked ? inLanguage(req, { en: `${l.blocked} blocked`, ar: `${l.blocked} متوقف` }) : "";
+        return l.total ? [of, blocked].filter(Boolean).join(" · ") : null;
       },
     ),
     computed(
       {
         name: "flag",
         type: "select",
-        label: "Urgency",
-        options: ["Urgent"],
+        label: { en: "Urgency", ar: "الاستعجال" },
+        options: [{ value: "Urgent", label: { en: "Urgent", ar: "عاجل" } }],
         custom: tones({ Urgent: "error" }),
-        admin: { condition: () => false, description: "Shows Urgent when the case is marked urgent." },
+        admin: {
+          condition: () => false,
+          description: { en: "Shows Urgent when the case is marked urgent.", ar: "تظهر «عاجل» عندما يُعلَّم الملف عاجلًا." },
+        },
       },
       (c) => (c.urgent === true ? "Urgent" : null),
     ),
@@ -1455,7 +2067,11 @@ export const Cases: CollectionConfig = {
       {
         name: "canReassign",
         type: "checkbox",
-        admin: { condition: () => false, description: "Whether the reader may hand this case over." },
+        label: { en: "Can Reassign", ar: "يمكن إعادة الإسناد" },
+        admin: {
+          condition: () => false,
+          description: { en: "Whether the reader may hand this case over.", ar: "هل يحق للقارئ تسليم هذا الملف." },
+        },
       },
       (c, req) => mayReassign(c, req.user as Reader),
     ),
@@ -1464,12 +2080,19 @@ export const Cases: CollectionConfig = {
       {
         name: "handoverTeam",
         type: "json",
-        admin: { condition: () => false, description: "The people this case can be handed to." },
+        label: { en: "Handover Team", ar: "فريق التسليم" },
+        admin: {
+          condition: () => false,
+          description: { en: "The people this case can be handed to.", ar: "الأشخاص الذين يمكن تسليم الملف إليهم." },
+        },
       },
       async (c, req) =>
         (await desk(req))
           .filter((u) => u.id !== idOf(c.owner))
-          .map((u) => ({ label: `${scalar(u.name)}${u.id === idOf(c.backup) ? " (backup)" : ""}`, value: u.id })),
+          .map((u) => ({
+            label: `${scalar(u.name)}${u.id === idOf(c.backup) ? inLanguage(req, { en: " (backup)", ar: " (احتياطي)" }) : ""}`,
+            value: u.id,
+          })),
     ),
   ],
 };

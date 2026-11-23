@@ -30,6 +30,16 @@ export interface MockConfig {
   };
   /** Signs auth tokens. Generated and kept in the browser when omitted. */
   secret?: string;
+  /**
+   * Payload's `localization`: the languages a `localized: true` field holds a value in. The
+   * dashboard reads and writes them in the interface's language (`?locale=`), falling back to
+   * `defaultLocale`. Labels, hints and placeholders take Payload's `{ en, ar }` anywhere.
+   */
+  localization?: {
+    locales: (string | { code: string; label?: unknown; rtl?: boolean })[];
+    defaultLocale: string;
+    fallback?: boolean;
+  };
 }
 
 /** A custom root view (Payload `admin.components.views.<key>`). */
@@ -81,6 +91,11 @@ export interface FieldLike {
   name?: string;
   /** Payload's `virtual`: never stored, computed on read (an `afterRead` hook); shown, never queried. */
   virtual?: boolean;
+  /**
+   * Payload's `localized`: a value per language (`localization`), read and written in the
+   * request's (the interface's) language, falling back to the default language.
+   */
+  localized?: boolean;
   label?: unknown;
   required?: boolean;
   unique?: boolean;

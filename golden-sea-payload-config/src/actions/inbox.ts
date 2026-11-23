@@ -1,7 +1,7 @@
 import type { Action, PromptField } from "saastemlycrm-design-system/contracts";
 import type { ExtractionResult, InboxMessage } from "../endpoints/sourcing.ts";
 import { SIMULATED_FORWARD, SIMULATED_REPLY, SIMULATED_RFQ } from "../endpoints/sourcing-data.ts";
-import { plural } from "../format/inbox.ts";
+import { m } from "../i18n/paraglide/messages.js";
 
 /**
  * The inbox: what people can do from its widgets (POST /api/inbox/…, ../endpoints/sourcing.ts):
@@ -23,33 +23,36 @@ const simulate = (kind: "rfq" | "forward" | "reply", label: string, done: string
 
 /** The demo's new arrivals: an RFQ email, a forwarded copy of one, a supplier's reply. */
 export const simulations: Action[] = [
-  simulate("rfq", "Simulate new email", `New email: “${SIMULATED_RFQ.subject}”`, true),
-  simulate("forward", "Simulate forwarded copy", `New email: “${SIMULATED_FORWARD.subject}”`),
-  simulate("reply", "Simulate supplier reply", `New supplier reply: “${SIMULATED_REPLY.subject}”`),
+  simulate("rfq", m.action_inbox_simulate_email(), m.action_inbox_new_email({ subject: SIMULATED_RFQ.subject }), true),
+  simulate(
+    "forward",
+    m.action_inbox_simulate_forward(),
+    m.action_inbox_new_email({ subject: SIMULATED_FORWARD.subject }),
+  ),
+  simulate("reply", m.action_inbox_simulate_reply(), m.action_inbox_new_reply({ subject: SIMULATED_REPLY.subject })),
 ];
 
 /** Set a message aside: not an RFQ, or not related to any case. */
-export const notRelated = (m: InboxMessage, label: string): Action => ({
+export const notRelated = (msg: InboxMessage, label: string): Action => ({
   label,
-  call: { path: path(m.id, "review"), body: { decision: "not-related" } },
-  done: "Marked not related",
+  call: { path: path(msg.id, "review"), body: { decision: "not-related" } },
+  done: m.action_inbox_not_related(),
 });
 
 /** Create the case from the draft: owner, backup and deadline are confirmed in the dialog. */
 export function createAction(
-  m: InboxMessage,
+  msg: InboxMessage,
   x: ExtractionResult,
   users: { docs: { id: string; name?: unknown }[] },
 ): Action {
   const people = users.docs.map((u) => ({ label: typeof u.name === "string" ? u.name : u.id, value: u.id }));
   const options = (id: string, name: string) => (people.length ? people : [{ label: name, value: id }]);
   const flagged = x.lines.filter((l) => l.flag).length;
-  const kind = x.caseType === "service" ? "service" : "RFQ";
   const fields: PromptField[] = [
     {
       type: "select",
       name: "owner",
-      label: "Owner",
+      label: m.action_inbox_owner(),
       required: true,
       defaultValue: x.assignment.owner,
       options: options(x.assignment.owner, x.assignment.ownerName),
@@ -58,7 +61,7 @@ export function createAction(
     {
       type: "select",
       name: "backup",
-      label: "Backup",
+      label: m.action_inbox_backup(),
       defaultValue: x.assignment.backup,
       options: options(x.assignment.backup, x.assignment.backupName),
       admin: { width: "50%" },
@@ -66,22 +69,30 @@ export function createAction(
     {
       type: "date",
       name: "deadline",
-      label: "Quote deadline",
+      label: m.action_inbox_deadline(),
       required: true,
       defaultValue: x.assignment.deadline,
-      admin: { description: "A reminder is scheduled before it." },
+      admin: { description: m.action_inbox_deadline_hint() },
     },
   ];
   return {
-    label: "Create case",
+    label: m.action_inbox_create(),
     main: true,
-    call: { path: path(m.id, "create-case") },
+    call: { path: path(msg.id, "create-case") },
     confirm: {
-      heading: "Create this case?",
-      label: "Create case",
+      heading: m.action_inbox_create_heading(),
+      label: m.action_inbox_create(),
       text: [
-        `Creates a ${kind} case for ${x.customerName}${x.newCustomer ? " (new customer record)" : ""} with ${plural(x.lines.length, "line")} exactly as drafted.`,
-        `${x.acknowledgement.manual ? "The acknowledgement is yours to send by hand." : "The acknowledgement is sent once, from the approved template."}${flagged ? " Flagged lines stay “Clarification needed” until the customer answers." : ""}`,
+        m.action_inbox_creates({
+          kind: x.caseType === "service" ? "service" : "rfq",
+          customer: x.customerName,
+          isNew: x.newCustomer ? "yes" : "no",
+          count: x.lines.length,
+        }),
+        [
+          x.acknowledgement.manual ? m.action_inbox_ack_manual() : m.action_inbox_ack_auto(),
+          ...(flagged ? [m.action_inbox_flagged()] : []),
+        ].join(" "),
       ].join("\n"),
     },
     fields,

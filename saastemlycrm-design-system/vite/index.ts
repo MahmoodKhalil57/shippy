@@ -4,6 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import componentCss from "./component-css.ts";
 import dedupeCss from "./dedupe-css.ts";
 import icons from "./icons.ts";
+import { i18n } from "./i18n.ts";
 import layerVariants from "./layer-variants.ts";
 import scopedInvalidation from "./scoped-invalidation.ts";
 
@@ -14,9 +15,13 @@ const pkg = fileURLToPath(new URL("..", import.meta.url));
  * (generated from its recipes, so only imported components ship CSS), Tailwind, variant rules
  * in ordered cascade layers, de-duplicated CSS, and `~icons/<collection>/<name>` icons.
  * `scan`: more folders whose templates use responsive tokens (`size="sm lg:lg"`).
+ * Also compiles the design system's interface text (./i18n.ts); a project compiles its own with
+ * `i18n(<its root>)`.
  */
 export function designSystem(options: { scan?: string[] } = {}) {
   return [
+    // Its interface text in every language (messages/*.json into src/i18n/paraglide).
+    i18n(pkg),
     // Must come before tailwindcss(): generates each component's stylesheet.
     componentCss({
       dir: path.join(pkg, "src/components"),
@@ -32,3 +37,5 @@ export function designSystem(options: { scan?: string[] } = {}) {
     icons(),
   ];
 }
+
+export { i18n, i18nCompileOptions, LANGUAGE_KEY, localeText, STATIC_LOCALE } from "./i18n.ts";

@@ -1,5 +1,5 @@
 import type { VariantProps } from "class-variance-authority";
-import { clipRoom, scrollRoom } from "../layout/algebra.ts";
+import { backdrop, clipRoom, scrollRoom } from "../layout/algebra.ts";
 import { customElement, property } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { html, literal, type StaticValue } from "lit/static-html.js";
@@ -110,6 +110,8 @@ export const box = rcva("", {
     },
     /** Center the content on both axes. */
     center: { true: "grid min-w-0 place-items-center" },
+    /** The app's backdrop (its background image, else the theme's washes): a page outside the frame. */
+    backdrop: { true: `${backdrop} text-on-surface` },
   },
 });
 
@@ -147,6 +149,8 @@ export class UiBox extends LightElement {
   @property() height: BoxVariants["height"];
   @property() overflow: BoxVariants["overflow"];
   @property({ converter: responsiveBoolean }) center: Responsive<boolean> = false;
+  /** The app's backdrop behind it: a page outside the frame (signing in). */
+  @property({ type: Boolean }) backdrop = false;
   /**
    * Its share of a wrapping row: any CSS length or percentage (`50%`, `20rem`), e.g. a Payload
    * field's `admin.width`. See the `basis` variant.
@@ -169,6 +173,7 @@ export class UiBox extends LightElement {
       height: this.height,
       overflow: this.overflow,
       center: this.center,
+      backdrop: this.backdrop,
       basis: !!this.basis,
       grow: this.basis ? this.grow : undefined,
     });

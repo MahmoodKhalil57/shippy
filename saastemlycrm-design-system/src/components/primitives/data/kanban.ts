@@ -1,6 +1,7 @@
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
+import { m } from "../../../i18n/index.ts";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { fixed, grid, inset, row, rowFill, rowLine, stack, text } from "../layout/algebra.ts";
@@ -175,7 +176,7 @@ export class UiKanban extends LightElement {
       card.style.transition = "none";
       this._held = { card, grabX: start.x - r.left, grabY: start.y - r.top, x: start.x, y: start.y, dx: 0, dy: 0 };
       this._drag = { key: item.key, from: column.key, over: column.key };
-      this._announce = `Dragging ${item.headline}. Drop it on a column, or press Escape to cancel.`;
+      this._announce = m.kanban_dragging({ card: item.headline });
       this._autoScroll();
     };
     const timer = touch
@@ -305,10 +306,10 @@ export class UiKanban extends LightElement {
     if (!d) return;
     const name = (key: string) => this.columns.find((c) => c.key === key)?.label ?? key;
     if (!commit || d.over === d.from) {
-      this._announce = "Not moved.";
+      this._announce = m.kanban_not_moved();
       return;
     }
-    this._announce = `Moved to ${name(d.over)}.`;
+    this._announce = m.kanban_moved({ column: name(d.over) });
     this.land(d.key);
     this.dispatchEvent(new CustomEvent("ui-move", { detail: { key: d.key, from: d.from, to: d.over }, bubbles: true }));
   }
@@ -359,7 +360,7 @@ export class UiKanban extends LightElement {
         (c) =>
           html`<section
             class=${kanbanColumn({ over: !!this._drag && this._drag.over === c.key && this._drag.from !== c.key })}
-            aria-label=${`${c.label}, ${c.items.length}`}
+            aria-label=${m.kanban_column({ column: c.label, count: c.items.length })}
             data-kanban-column=${c.key}
           >
             <div class=${kanbanHeader()}>

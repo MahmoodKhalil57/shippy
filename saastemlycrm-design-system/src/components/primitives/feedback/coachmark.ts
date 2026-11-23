@@ -6,6 +6,8 @@ import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { floating, floatingHeight, pad, row, stack, text } from "../layout/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
+import { inlineStep } from "../../base/reading.ts";
+import { m } from "../../../i18n/index.ts";
 
 /**
  * Coachmark: a guided-tour step — the page dims, a spotlight frames one element, and a step card
@@ -86,8 +88,9 @@ export class UiCoachmark extends LightElement {
   #onKey = (e: KeyboardEvent) => {
     if (!this.open) return;
     if (e.key === "Escape") this._fire("ui-close");
-    else if (e.key === "ArrowRight" && !this.busy) this._fire("ui-next");
-    else if (e.key === "ArrowLeft" && this.step > 1) this._fire("ui-back");
+    // In reading order: ArrowRight is the next step in left to right, the previous one in right to left.
+    else if (inlineStep(e.key, this) === 1 && !this.busy) this._fire("ui-next");
+    else if (inlineStep(e.key, this) === -1 && this.step > 1) this._fire("ui-back");
   };
 
   connectedCallback() {
@@ -197,7 +200,7 @@ export class UiCoachmark extends LightElement {
         role="dialog"
         aria-modal="false"
         aria-live="polite"
-        aria-label=${typeof this.heading === "string" ? this.heading : "Guided tour"}
+        aria-label=${typeof this.heading === "string" ? this.heading : m.coachmark_label()}
         style=${styleMap({ "--top": `${at.top}px`, "--left": `${inlineStart(at.left, this._card.w)}px` })}
       >
         <div class=${coachmarkEyebrow()}>
@@ -207,7 +210,7 @@ export class UiCoachmark extends LightElement {
         <div class=${coachmarkHeading()}>${this.heading}</div>
         <div class=${coachmarkBody()}>${this.content}</div>
         <div class=${coachmarkFooter()}>
-          <div class=${coachmarkProgress()} aria-label=${`Step ${this.step} of ${this.total}`}>
+          <div class=${coachmarkProgress()} aria-label=${m.coachmark_step({ step: this.step, total: this.total })}>
             ${Array.from(
               { length: this.total },
               (_, i) =>
@@ -218,7 +221,7 @@ export class UiCoachmark extends LightElement {
           </div>
           <div class=${coachmarkProgress()}>
             <button type="button" class=${coachmarkButton({ kind: "ghost" })} @click=${() => this._fire("ui-close")}>
-              ${last ? "Close" : "Skip"}
+              ${last ? m.coachmark_close() : m.coachmark_skip()}
             </button>
             ${
               this.step > 1
@@ -227,7 +230,7 @@ export class UiCoachmark extends LightElement {
                     class=${coachmarkButton({ kind: "ghost" })}
                     @click=${() => this._fire("ui-back")}
                   >
-                    Back
+                    ${m.coachmark_back()}
                   </button>`
                 : nothing
             }
@@ -237,7 +240,7 @@ export class UiCoachmark extends LightElement {
               ?disabled=${this.busy}
               @click=${() => this._fire(last ? "ui-finish" : "ui-next")}
             >
-              ${this.busy ? html`<span class=${coachmarkSpinner()}></span>` : last ? "Finish" : "Next"}
+              ${this.busy ? html`<span class=${coachmarkSpinner()}></span>` : last ? m.coachmark_finish() : m.coachmark_next()}
             </button>
           </div>
         </div>

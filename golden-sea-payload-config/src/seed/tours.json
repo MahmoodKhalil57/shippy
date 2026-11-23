@@ -1,28 +1,52 @@
 [
   {
     "id": "morning",
-    "title": "One morning, four people",
-    "summary": "The buyer, sales, the CEO and finance start their day — each sees only what needs them.",
+    "title": {
+      "en": "One morning, four people",
+      "ar": "صباح واحد، أربعة أشخاص"
+    },
+    "summary": {
+      "en": "The buyer, sales, the CEO and finance start their day — each sees only what needs them.",
+      "ar": "المشتري والمبيعات والرئيس التنفيذي والمالية يبدؤون يومهم — كلٌّ يرى فقط ما يحتاجه."
+    },
     "steps": [
       {
         "as": "ky",
         "go": "/",
-        "title": "Every role has its own day",
-        "body": "This is Karim Youssef, supply chain. Golden Sea's dashboard is built for the person signed in: his waiting states, his queue, his follow-ups."
+        "title": {
+          "en": "Every role has its own day",
+          "ar": "لكل دور يومه الخاص"
+        },
+        "body": {
+          "en": "This is Karim Youssef, supply chain. Golden Sea's dashboard is built for the person signed in: his waiting states, his queue, his follow-ups.",
+          "ar": "هذا كريم يوسف، سلسلة التوريد. لوحة تحكم Golden Sea مبنية للشخص المسجّل دخوله: ما ينتظره، وقائمته، ومتابعاته."
+        }
       },
       {
         "target": {
           "text": "My queue"
         },
-        "title": "A queue sorted by risk",
-        "body": "Every live case has an owner, a deadline and a next action. Blocked and at-risk cases come first, then the nearest deadline."
+        "title": {
+          "en": "A queue sorted by risk",
+          "ar": "قائمة مرتبة حسب المخاطر"
+        },
+        "body": {
+          "en": "Every live case has an owner, a deadline and a next action. Blocked and at-risk cases come first, then the nearest deadline.",
+          "ar": "لكل ملف حي مالك وموعد نهائي وإجراء تالٍ. تأتي الملفات المتوقفة والمعرضة للخطر أولًا، ثم الأقرب موعدًا."
+        }
       },
       {
         "target": {
           "text": "Daily briefing"
         },
-        "title": "Briefed at 07:00",
-        "body": "What changed overnight and what needs him today: deadlines, a PO mismatch, a supplier that hasn't replied, failed integrations."
+        "title": {
+          "en": "Briefed at 07:00",
+          "ar": "ملخص الساعة 07:00"
+        },
+        "body": {
+          "en": "What changed overnight and what needs him today: deadlines, a PO mismatch, a supplier that hasn't replied, failed integrations.",
+          "ar": "ما تغيّر خلال الليل وما يحتاجه اليوم: المواعيد النهائية، وعدم تطابق أمر شراء، ومورّد لم يرد، وتكاملات فاشلة."
+        }
       },
       {
         "as": "sa",
@@ -30,8 +54,14 @@
         "target": {
           "text": "My queue"
         },
-        "title": "Sales sees the same cases — without costs",
-        "body": "Soaad Amer signs in. Her queue has no values, costs or margins: sales never sees what Golden Sea pays its suppliers."
+        "title": {
+          "en": "Sales sees the same cases — without costs",
+          "ar": "المبيعات ترى الملفات نفسها — دون التكاليف"
+        },
+        "body": {
+          "en": "Soaad Amer signs in. Her queue has no values, costs or margins: sales never sees what Golden Sea pays its suppliers.",
+          "ar": "تسجّل سعاد عامر الدخول. قائمتها بلا قيم أو تكاليف أو هوامش: لا ترى المبيعات أبدًا ما تدفعه Golden Sea لمورّديها."
+        }
       },
       {
         "as": "kb",
@@ -39,8 +69,14 @@
         "target": {
           "text": "Waiting for your decision"
         },
-        "title": "The CEO starts with decisions",
-        "body": "Karim Balbaa sees what waits for him first — a margin exception from Soaad, a supplier deposit, an FX rate, and a bank change that already has one of its two approvals."
+        "title": {
+          "en": "The CEO starts with decisions",
+          "ar": "الرئيس التنفيذي يبدأ بالقرارات"
+        },
+        "body": {
+          "en": "Karim Balbaa sees what waits for him first — a margin exception from Soaad, a supplier deposit, an FX rate, and a bank change that already has one of its two approvals.",
+          "ar": "يرى كريم بلباع ما ينتظره أولًا — استثناء هامش من سعاد، ودفعة مقدمة لمورّد، وسعر صرف، وتغيير بنك حصل بالفعل على إحدى موافقتيه."
+        }
       },
       {
         "as": "mh",
@@ -48,8 +84,14 @@
         "target": {
           "text": "Waiting for your decision"
         },
-        "title": "Finance approves payments",
-        "body": "Mohamed Helmy only sees payments and deposits. He already approved the bank change after a call-back; it now waits for the CEO — two people, always."
+        "title": {
+          "en": "Finance approves payments",
+          "ar": "المالية تعتمد المدفوعات"
+        },
+        "body": {
+          "en": "Mohamed Helmy only sees payments and deposits. He already approved the bank change after a call-back; it now waits for the CEO — two people, always.",
+          "ar": "يرى محمد حلمي المدفوعات والدفعات المقدمة فقط. وقد وافق على تغيير البنك بعد معاودة الاتصال؛ وهو الآن ينتظر الرئيس التنفيذي — شخصان، دائمًا."
+        }
       },
       {
         "as": "ky",
@@ -59,15 +101,27 @@
           "text": "Notifications",
           "sel": "dashboard-aside li"
         },
-        "title": "Everyone's own notifications",
-        "body": "Notifications, bookmarks and the counters in this panel belong to the person signed in. Back as Karim Youssef — his are about his cases."
+        "title": {
+          "en": "Everyone's own notifications",
+          "ar": "إشعارات خاصة بكل شخص"
+        },
+        "body": {
+          "en": "Notifications, bookmarks and the counters in this panel belong to the person signed in. Back as Karim Youssef — his are about his cases.",
+          "ar": "الإشعارات والإشارات المرجعية والعدادات في هذه اللوحة تخص الشخص المسجّل دخوله. عدنا إلى كريم يوسف — وإشعاراته عن ملفاته."
+        }
       }
     ]
   },
   {
     "id": "rfq-to-case",
-    "title": "Any format in, one case out",
-    "summary": "An RFQ email with Excel, PDF and a photo becomes one clean case — AI reads, a person decides.",
+    "title": {
+      "en": "Any format in, one case out",
+      "ar": "أي صيغة تدخل، ملف واحد يخرج"
+    },
+    "summary": {
+      "en": "An RFQ email with Excel, PDF and a photo becomes one clean case — AI reads, a person decides.",
+      "ar": "بريد طلب عرض مع Excel وPDF وصورة يصبح ملفًا واحدًا نظيفًا — الذكاء الاصطناعي يقرأ، والشخص يقرر."
+    },
     "steps": [
       {
         "as": "ky",
@@ -75,16 +129,28 @@
         "target": {
           "text": "Connected channels"
         },
-        "title": "One inbox for every channel",
-        "body": "Outlook, Gmail, the website quick-quote form and WhatsApp all land in one list — nothing lives in someone's personal mailbox."
+        "title": {
+          "en": "One inbox for every channel",
+          "ar": "صندوق وارد واحد لكل القنوات"
+        },
+        "body": {
+          "en": "Outlook, Gmail, the website quick-quote form and WhatsApp all land in one list — nothing lives in someone's personal mailbox.",
+          "ar": "Outlook وGmail ونموذج طلب العرض السريع على الموقع وواتساب كلها تصل إلى قائمة واحدة — لا شيء يبقى في بريد شخصي."
+        }
       },
       {
         "click": "Simulate new email",
         "target": {
           "text": "Original message"
         },
-        "title": "The original is kept",
-        "body": "A new RFQ for MV Aurora Crest arrives with an Excel list, a PDF and a WhatsApp photo. The email and every file stay with the case."
+        "title": {
+          "en": "The original is kept",
+          "ar": "يُحفظ الأصل"
+        },
+        "body": {
+          "en": "A new RFQ for MV Aurora Crest arrives with an Excel list, a PDF and a WhatsApp photo. The email and every file stay with the case.",
+          "ar": "يصل طلب عرض جديد للسفينة MV Aurora Crest مع قائمة Excel وملف PDF وصورة واتساب. يبقى البريد وكل ملف مع الملف."
+        }
       },
       {
         "click": "Extract with AI",
@@ -92,36 +158,66 @@
         "target": {
           "text": "Draft lines"
         },
-        "title": "AI reads, people decide",
-        "body": "Every line gets its IMPA code, quantity, unit and the file it came from, with a confidence. The 62% photo line is flagged for a person."
+        "title": {
+          "en": "AI reads, people decide",
+          "ar": "الذكاء الاصطناعي يقرأ، والناس يقررون"
+        },
+        "body": {
+          "en": "Every line gets its IMPA code, quantity, unit and the file it came from, with a confidence. The 62% photo line is flagged for a person.",
+          "ar": "يحصل كل بند على رمز IMPA والكمية والوحدة والملف الذي جاء منه، مع درجة ثقة. ويُعلَّم بند الصورة بثقة 62% ليراجعه شخص."
+        }
       },
       {
         "target": {
           "text": "Missing or unclear"
         },
-        "title": "Nothing is guessed",
-        "body": "Missing details become a drafted clarification to the customer — drafted, not sent."
+        "title": {
+          "en": "Nothing is guessed",
+          "ar": "لا شيء بالتخمين"
+        },
+        "body": {
+          "en": "Missing details become a drafted clarification to the customer — drafted, not sent.",
+          "ar": "تتحول التفاصيل الناقصة إلى مسودة توضيح للعميل — مسودة، لا تُرسل."
+        }
       },
       {
         "target": {
           "text": "Owner, backup and deadline"
         },
-        "title": "Owner, backup, deadline",
-        "body": "Assignment rules suggest who owns it and who backs them up; the deadline comes from the customer's request."
+        "title": {
+          "en": "Owner, backup, deadline",
+          "ar": "المالك والاحتياطي والموعد النهائي"
+        },
+        "body": {
+          "en": "Assignment rules suggest who owns it and who backs them up; the deadline comes from the customer's request.",
+          "ar": "تقترح قواعد الإسناد المالك والاحتياطي؛ ويأتي الموعد النهائي من طلب العميل."
+        }
       },
       {
         "target": {
           "text": "Create the case"
         },
-        "title": "One click to a case",
-        "body": "Confirming creates the case with its lines, links the email and sends one branded acknowledgement."
+        "title": {
+          "en": "One click to a case",
+          "ar": "نقرة واحدة إلى ملف"
+        },
+        "body": {
+          "en": "Confirming creates the case with its lines, links the email and sends one branded acknowledgement.",
+          "ar": "التأكيد ينشئ الملف ببنوده، ويربط البريد، ويرسل إشعار استلام واحدًا بهوية الشركة."
+        }
       }
     ]
   },
   {
     "id": "replies",
-    "title": "Every reply matched, every price remembered",
-    "summary": "Supplier RFQs go out without the client's name; replies are matched even with new subjects.",
+    "title": {
+      "en": "Every reply matched, every price remembered",
+      "ar": "كل رد مطابق، وكل سعر محفوظ"
+    },
+    "summary": {
+      "en": "Supplier RFQs go out without the client's name; replies are matched even with new subjects.",
+      "ar": "تُرسل طلبات عروض الموردين دون اسم العميل؛ وتُطابق الردود حتى بمواضيع جديدة."
+    },
     "steps": [
       {
         "as": "ky",
@@ -129,8 +225,14 @@
         "target": {
           "text": "Each supplier sees only the lines they can quote"
         },
-        "title": "The client stays hidden",
-        "body": "Lines are split by category and each supplier sees only its lines — never the customer or the vessel."
+        "title": {
+          "en": "The client stays hidden",
+          "ar": "يبقى العميل مخفيًا"
+        },
+        "body": {
+          "en": "Lines are split by category and each supplier sees only its lines — never the customer or the vessel.",
+          "ar": "تُقسّم البنود حسب الفئة ولا يرى كل مورّد إلا بنوده — دون العميل أو السفينة أبدًا."
+        }
       },
       {
         "click": "Simulate replies",
@@ -138,22 +240,40 @@
         "target": {
           "text": "Replies arriving"
         },
-        "title": "Matched by reference",
-        "body": "Replies arrive with changed subjects; each is matched to its RFQ by its reference, and reminders stop for that supplier."
+        "title": {
+          "en": "Matched by reference",
+          "ar": "مطابقة بالمرجع"
+        },
+        "body": {
+          "en": "Replies arrive with changed subjects; each is matched to its RFQ by its reference, and reminders stop for that supplier.",
+          "ar": "تصل الردود بمواضيع متغيرة؛ ويُطابق كلٌّ منها مع طلب عرضه بمرجعه، وتتوقف التذكيرات لذلك المورّد."
+        }
       },
       {
         "target": {
           "text": "New suppliers saved"
         },
-        "title": "Remembered without an order",
-        "body": "A supplier Golden Sea never bought from replied. It's created automatically, with its price, date and validity."
+        "title": {
+          "en": "Remembered without an order",
+          "ar": "محفوظ دون طلب"
+        },
+        "body": {
+          "en": "A supplier Golden Sea never bought from replied. It's created automatically, with its price, date and validity.",
+          "ar": "ردّ مورّد لم تشترِ منه Golden Sea قط. يُنشأ تلقائيًا، مع سعره وتاريخه وصلاحيته."
+        }
       },
       {
         "target": {
           "text": "Needs a person"
         },
-        "title": "A person confirms the uncertain",
-        "body": "An unclear price unit isn't used until someone confirms it."
+        "title": {
+          "en": "A person confirms the uncertain",
+          "ar": "شخص يؤكد غير المؤكد"
+        },
+        "body": {
+          "en": "An unclear price unit isn't used until someone confirms it.",
+          "ar": "وحدة السعر غير الواضحة لا تُستخدم حتى يؤكدها أحد."
+        }
       },
       {
         "as": "kb",
@@ -161,15 +281,27 @@
         "target": {
           "text": "Import approval"
         },
-        "title": "Years of email, organised",
-        "body": "The same engine reads the old inboxes into customers, vessels, suppliers and dated prices. Nothing is saved until Karim Balbaa approves."
+        "title": {
+          "en": "Years of email, organised",
+          "ar": "سنوات من البريد، منظمة"
+        },
+        "body": {
+          "en": "The same engine reads the old inboxes into customers, vessels, suppliers and dated prices. Nothing is saved until Karim Balbaa approves.",
+          "ar": "المحرك نفسه يقرأ صناديق البريد القديمة إلى عملاء وسفن وموردين وأسعار مؤرخة. لا يُحفظ شيء حتى يوافق كريم بلباع."
+        }
       }
     ]
   },
   {
     "id": "quote",
-    "title": "From offers to an approved quotation",
-    "summary": "The buyer compares and prices, the CEO approves, the customer gets Golden Sea's own layout.",
+    "title": {
+      "en": "From offers to an approved quotation",
+      "ar": "من العروض إلى عرض سعر معتمد"
+    },
+    "summary": {
+      "en": "The buyer compares and prices, the CEO approves, the customer gets Golden Sea's own layout.",
+      "ar": "المشتري يقارن ويسعّر، والرئيس التنفيذي يعتمد، والعميل يتلقى تنسيق Golden Sea الخاص."
+    },
     "steps": [
       {
         "as": "ky",
@@ -178,37 +310,67 @@
         "target": {
           "text": "How offers are compared"
         },
-        "title": "Cheapest isn't always cheapest on board",
-        "body": "Every offer is normalised to EGP per base unit. Switch to landed cost and freight to Port Said re-ranks them."
+        "title": {
+          "en": "Cheapest isn't always cheapest on board",
+          "ar": "الأرخص ليس دائمًا الأرخص على متن السفينة"
+        },
+        "body": {
+          "en": "Every offer is normalised to EGP per base unit. Switch to landed cost and freight to Port Said re-ranks them.",
+          "ar": "يُوحَّد كل عرض إلى جنيه لكل وحدة أساسية. بدّل إلى التكلفة الواصلة فيعيد الشحن إلى بورسعيد ترتيبها."
+        }
       },
       {
         "target": {
           "text": "L2 · LOCTITE 243"
         },
-        "title": "The wrong part is caught",
-        "body": "242 was offered for an exact-part 243 line, so the line is blocked from pricing. v1 is kept for the record; the corrected v2 is used."
+        "title": {
+          "en": "The wrong part is caught",
+          "ar": "تُكتشف القطعة الخاطئة"
+        },
+        "body": {
+          "en": "242 was offered for an exact-part 243 line, so the line is blocked from pricing. v1 is kept for the record; the corrected v2 is used.",
+          "ar": "عُرض 242 لبند يتطلب القطعة 243 نفسها، فأُوقف البند عن التسعير. يُحفظ v1 للسجل؛ ويُستخدم v2 المصحَّح."
+        }
       },
       {
         "target": {
           "text": "L5 · Safety helmet"
         },
-        "title": "Own stock and split sourcing",
-        "body": "Alexandria stock is cheapest per unit but dearest delivered. The proposal splits 10 + 5 across two suppliers, both before the vessel's ETA."
+        "title": {
+          "en": "Own stock and split sourcing",
+          "ar": "المخزون الخاص والتوريد المجزّأ"
+        },
+        "body": {
+          "en": "Alexandria stock is cheapest per unit but dearest delivered. The proposal splits 10 + 5 across two suppliers, both before the vessel's ETA.",
+          "ar": "مخزون الإسكندرية الأرخص للوحدة لكنه الأغلى عند التسليم. يقسّم الاقتراح 10 + 5 على موردَين، وكلاهما قبل موعد وصول السفينة."
+        }
       },
       {
         "go": "/collections/cases/gs-rfq-0142/pricing",
         "target": {
           "text": "Margin = profit ÷ selling price"
         },
-        "title": "Margin, not markup",
-        "body": "Shared charges are spread over the lines; policy is checked on margin, and every line shows cost, charges and profit."
+        "title": {
+          "en": "Margin, not markup",
+          "ar": "الهامش لا نسبة الإضافة"
+        },
+        "body": {
+          "en": "Shared charges are spread over the lines; policy is checked on margin, and every line shows cost, charges and profit.",
+          "ar": "تُوزَّع الرسوم المشتركة على البنود؛ وتُفحص السياسة على الهامش، ويعرض كل بند التكلفة والرسوم والربح."
+        }
       },
       {
         "target": {
           "text": "Approval"
         },
-        "title": "A person approves",
-        "body": "The quotation and its exceptions go to Karim Balbaa with one click. AI never prices on its own."
+        "title": {
+          "en": "A person approves",
+          "ar": "شخص يعتمد"
+        },
+        "body": {
+          "en": "The quotation and its exceptions go to Karim Balbaa with one click. AI never prices on its own.",
+          "ar": "يذهب عرض السعر واستثناءاته إلى كريم بلباع بنقرة واحدة. الذكاء الاصطناعي لا يسعّر وحده أبدًا."
+        }
       },
       {
         "as": "kb",
@@ -216,8 +378,14 @@
         "target": {
           "text": "Waiting for you"
         },
-        "title": "Evidence first",
-        "body": "Karim Balbaa sees what he's deciding and why — the margin, the FX rate, the deposit, and the bank change Mohamed Helmy already approved."
+        "title": {
+          "en": "Evidence first",
+          "ar": "الإثبات أولًا"
+        },
+        "body": {
+          "en": "Karim Balbaa sees what he's deciding and why — the margin, the FX rate, the deposit, and the bank change Mohamed Helmy already approved.",
+          "ar": "يرى كريم بلباع ما يقرره ولماذا — الهامش، وسعر الصرف، والدفعة المقدمة، وتغيير البنك الذي وافق عليه محمد حلمي بالفعل."
+        }
       },
       {
         "go": "/collections/quotations/q-0142-v1/preview",
@@ -225,15 +393,27 @@
         "target": {
           "text": "Decision state"
         },
-        "title": "Their layout, their language",
-        "body": "The same quotation in Golden Sea's own layout, in English or Arabic, in EGP or USD. Nothing goes to the customer until a person confirms the email."
+        "title": {
+          "en": "Their layout, their language",
+          "ar": "تنسيقهم، ولغتهم"
+        },
+        "body": {
+          "en": "The same quotation in Golden Sea's own layout, in English or Arabic, in EGP or USD. Nothing goes to the customer until a person confirms the email.",
+          "ar": "عرض السعر نفسه بتنسيق Golden Sea الخاص، بالإنجليزية أو العربية، بالجنيه أو الدولار. لا يذهب شيء إلى العميل حتى يؤكد شخص البريد."
+        }
       }
     ]
   },
   {
     "id": "po-check",
-    "title": "The PO doesn't match the quote",
-    "summary": "A customer PO with an old price and the wrong quantity is caught before anything is ordered.",
+    "title": {
+      "en": "The PO doesn't match the quote",
+      "ar": "أمر الشراء لا يطابق العرض"
+    },
+    "summary": {
+      "en": "A customer PO with an old price and the wrong quantity is caught before anything is ordered.",
+      "ar": "أمر شراء عميل بسعر قديم وكمية خاطئة يُكتشف قبل طلب أي شيء."
+    },
     "steps": [
       {
         "as": "ky",
@@ -241,44 +421,80 @@
         "target": {
           "text": "Customer PO check"
         },
-        "title": "The PO is checked line by line",
-        "body": "Nordvik's PO is matched to the approved quotation version. An old pack size, an expired v1 price and 15 instead of 10 helmets block the commitment until the customer agrees in writing."
+        "title": {
+          "en": "The PO is checked line by line",
+          "ar": "يُفحص أمر الشراء بندًا بندًا"
+        },
+        "body": {
+          "en": "Nordvik's PO is matched to the approved quotation version. An old pack size, an expired v1 price and 15 instead of 10 helmets block the commitment until the customer agrees in writing.",
+          "ar": "يُطابق أمر شراء Nordvik مع إصدار عرض السعر المعتمد. حجم عبوة قديم، وسعر v1 منتهٍ، و15 خوذة بدلًا من 10 توقف الالتزام حتى يوافق العميل كتابيًا."
+        }
       },
       {
         "target": {
           "text": "Partial award"
         },
-        "title": "Partial awards, never silent",
-        "body": "Lines the customer didn't order stay open for a revision or close with a recorded reason."
+        "title": {
+          "en": "Partial awards, never silent",
+          "ar": "ترسية جزئية، لا تمر بصمت أبدًا"
+        },
+        "body": {
+          "en": "Lines the customer didn't order stay open for a revision or close with a recorded reason.",
+          "ar": "البنود التي لم يطلبها العميل تبقى مفتوحة للمراجعة أو تُغلق بسبب مسجّل."
+        }
       },
       {
         "target": {
           "text": "Supplier purchase orders"
         },
-        "title": "Purchase orders per supplier",
-        "body": "Once the PO is agreed, supplier POs are prepared — drop-shipped or through the warehouse — and each is re-checked against the latest offer first."
+        "title": {
+          "en": "Purchase orders per supplier",
+          "ar": "أوامر شراء لكل مورّد"
+        },
+        "body": {
+          "en": "Once the PO is agreed, supplier POs are prepared — drop-shipped or through the warehouse — and each is re-checked against the latest offer first.",
+          "ar": "بعد الاتفاق على أمر الشراء، تُعدّ أوامر شراء الموردين — بالشحن المباشر أو عبر المستودع — ويُراجع كلٌّ منها أولًا مقابل أحدث عرض."
+        }
       },
       {
         "target": {
           "text": "Supplier bills"
         },
-        "title": "Three-way match",
-        "body": "Each supplier bill is matched to its PO and the goods received; a duplicate bill is refused."
+        "title": {
+          "en": "Three-way match",
+          "ar": "مطابقة ثلاثية"
+        },
+        "body": {
+          "en": "Each supplier bill is matched to its PO and the goods received; a duplicate bill is refused.",
+          "ar": "تُطابق كل فاتورة مورّد مع أمر شرائها والبضاعة المستلمة؛ وتُرفض الفاتورة المكررة."
+        }
       },
       {
         "as": "kb",
         "target": {
           "text": "Re-check before confirming"
         },
-        "title": "Karim Balbaa confirms",
-        "body": "Signed in as the CEO: a flagged price change on a supplier PO is shown before he commits, and deposits wait for a payment approval."
+        "title": {
+          "en": "Karim Balbaa confirms",
+          "ar": "كريم بلباع يؤكد"
+        },
+        "body": {
+          "en": "Signed in as the CEO: a flagged price change on a supplier PO is shown before he commits, and deposits wait for a payment approval.",
+          "ar": "مسجّلًا الدخول كالرئيس التنفيذي: يظهر تغيّر سعر معلَّم في أمر شراء مورّد قبل أن يلتزم، وتنتظر الدفعات المقدمة موافقة دفع."
+        }
       }
     ]
   },
   {
     "id": "delivery-to-cash",
-    "title": "From the quay to the bank",
-    "summary": "An ETA change re-plans the delivery, proof of delivery unlocks the invoice, finance collects and pays.",
+    "title": {
+      "en": "From the quay to the bank",
+      "ar": "من الرصيف إلى البنك"
+    },
+    "summary": {
+      "en": "An ETA change re-plans the delivery, proof of delivery unlocks the invoice, finance collects and pays.",
+      "ar": "تغيّر موعد الوصول يعيد تخطيط التسليم، وإثبات التسليم يفتح الفاتورة، والمالية تحصّل وتدفع."
+    },
     "steps": [
       {
         "as": "ah",
@@ -286,22 +502,40 @@
         "target": {
           "text": "Vessel delivery plan"
         },
-        "title": "The vessel moves, the plan follows",
-        "body": "Port, ETA, agent, truck, boarding staff and launch in one plan. When the agent moves the ETA, drop 2 is re-planned and the owner is alerted."
+        "title": {
+          "en": "The vessel moves, the plan follows",
+          "ar": "السفينة تتحرك، والخطة تتبعها"
+        },
+        "body": {
+          "en": "Port, ETA, agent, truck, boarding staff and launch in one plan. When the agent moves the ETA, drop 2 is re-planned and the owner is alerted.",
+          "ar": "الميناء وموعد الوصول والوكيل والشاحنة وطاقم الصعود واللنش في خطة واحدة. عندما يغيّر الوكيل موعد الوصول، يُعاد تخطيط الدفعة 2 ويُنبَّه المالك."
+        }
       },
       {
         "target": {
           "text": "Drops & proof of delivery"
         },
-        "title": "No evidence, no \"Delivered\"",
-        "body": "Two drops for one order. A drop counts as delivered only with the signed delivery note from the vessel."
+        "title": {
+          "en": "No evidence, no \"Delivered\"",
+          "ar": "لا إثبات، لا «تم التسليم»"
+        },
+        "body": {
+          "en": "Two drops for one order. A drop counts as delivered only with the signed delivery note from the vessel.",
+          "ar": "دفعتان لطلب واحد. لا تُحتسب الدفعة مسلّمة إلا بإذن التسليم الموقّع من السفينة."
+        }
       },
       {
         "target": {
           "text": "Customer invoices & payments"
         },
-        "title": "Invoice what was delivered, then e-invoice",
-        "body": "Only delivered quantities are invoiced, each invoice goes to the Egyptian tax authority, and rejections or outages get a safe retry."
+        "title": {
+          "en": "Invoice what was delivered, then e-invoice",
+          "ar": "فوتر ما سُلّم، ثم الفاتورة الإلكترونية"
+        },
+        "body": {
+          "en": "Only delivered quantities are invoiced, each invoice goes to the Egyptian tax authority, and rejections or outages get a safe retry.",
+          "ar": "لا يُفوتر إلا ما سُلّم، وتذهب كل فاتورة إلى مصلحة الضرائب المصرية، ويحصل الرفض أو الانقطاع على إعادة محاولة آمنة."
+        }
       },
       {
         "as": "mh",
@@ -309,8 +543,14 @@
         "target": {
           "text": "Payments needing approval"
         },
-        "title": "A person approves, finance pays",
-        "body": "Receivables and payables side by side. Supplier payments wait for the Financial Director or the CEO."
+        "title": {
+          "en": "A person approves, finance pays",
+          "ar": "شخص يعتمد، والمالية تدفع"
+        },
+        "body": {
+          "en": "Receivables and payables side by side. Supplier payments wait for the Financial Director or the CEO.",
+          "ar": "المستحقات والمدفوعات جنبًا إلى جنب. تنتظر مدفوعات الموردين المدير المالي أو الرئيس التنفيذي."
+        }
       },
       {
         "as": "kb",
@@ -318,15 +558,27 @@
         "target": {
           "text": "Bank-detail change"
         },
-        "title": "Two different people, always",
-        "body": "A supplier's new bank account needs a call-back on the number on file and two approvers — Finance and the CEO."
+        "title": {
+          "en": "Two different people, always",
+          "ar": "شخصان مختلفان، دائمًا"
+        },
+        "body": {
+          "en": "A supplier's new bank account needs a call-back on the number on file and two approvers — Finance and the CEO.",
+          "ar": "الحساب البنكي الجديد للمورّد يحتاج معاودة اتصال بالرقم المسجّل ومعتمدَين — المالية والرئيس التنفيذي."
+        }
       }
     ]
   },
   {
     "id": "handover",
-    "title": "Handover without losing anything",
-    "summary": "One case from first email to last payment, and a handover AI drafts for a person to confirm.",
+    "title": {
+      "en": "Handover without losing anything",
+      "ar": "تسليم دون فقدان شيء"
+    },
+    "summary": {
+      "en": "One case from first email to last payment, and a handover AI drafts for a person to confirm.",
+      "ar": "ملف واحد من أول بريد حتى آخر دفعة، ومذكرة تسليم يصوغها الذكاء الاصطناعي ليؤكدها شخص."
+    },
     "steps": [
       {
         "as": "ky",
@@ -334,36 +586,66 @@
         "target": {
           "text": "Lifecycle"
         },
-        "title": "One case, sixteen steps",
-        "body": "From the first email to the last payment, everything happens on one case. GS-RFQ-0142 is comparing offers."
+        "title": {
+          "en": "One case, sixteen steps",
+          "ar": "ملف واحد، ست عشرة خطوة"
+        },
+        "body": {
+          "en": "From the first email to the last payment, everything happens on one case. GS-RFQ-0142 is comparing offers.",
+          "ar": "من أول بريد حتى آخر دفعة، كل شيء يحدث على ملف واحد. GS-RFQ-0142 في مرحلة مقارنة العروض."
+        }
       },
       {
         "target": {
           "text": "Line progress"
         },
-        "title": "Never complete too early",
-        "body": "Three of six lines are ready and one is blocked by a clarification — a case only looks done when every line is."
+        "title": {
+          "en": "Never complete too early",
+          "ar": "لا اكتمال قبل الأوان أبدًا"
+        },
+        "body": {
+          "en": "Three of six lines are ready and one is blocked by a clarification — a case only looks done when every line is.",
+          "ar": "ثلاثة من ستة بنود جاهزة وواحد متوقف بسبب توضيح — لا يبدو الملف مكتملًا إلا باكتمال كل بند."
+        }
       },
       {
         "target": {
           "text": "Owner & backup"
         },
-        "title": "AI drafts the handover",
-        "body": "Reassigning asks AI for a handover note — open questions, tasks, the customer's contact rule. A person edits and confirms it."
+        "title": {
+          "en": "AI drafts the handover",
+          "ar": "الذكاء الاصطناعي يصوغ مذكرة التسليم"
+        },
+        "body": {
+          "en": "Reassigning asks AI for a handover note — open questions, tasks, the customer's contact rule. A person edits and confirms it.",
+          "ar": "إعادة الإسناد تطلب من الذكاء الاصطناعي مذكرة تسليم — الأسئلة المفتوحة، والمهام، وقاعدة التواصل مع العميل. يعدّلها شخص ويؤكدها."
+        }
       },
       {
         "target": {
           "text": "Activity timeline"
         },
-        "title": "Every step logged",
-        "body": "Automatic steps name the rule that fired; human steps name the person. That's the audit trail."
+        "title": {
+          "en": "Every step logged",
+          "ar": "كل خطوة مسجّلة"
+        },
+        "body": {
+          "en": "Automatic steps name the rule that fired; human steps name the person. That's the audit trail.",
+          "ar": "الخطوات التلقائية تذكر القاعدة التي عملت؛ والخطوات البشرية تذكر الشخص. هذا هو سجل التدقيق."
+        }
       }
     ]
   },
   {
     "id": "exceptions",
-    "title": "Nothing fails silently",
-    "summary": "A failed mailbox and a low-confidence AI result, handled safely; urgent RFQs reach the on-duty person.",
+    "title": {
+      "en": "Nothing fails silently",
+      "ar": "لا شيء يفشل بصمت"
+    },
+    "summary": {
+      "en": "A failed mailbox and a low-confidence AI result, handled safely; urgent RFQs reach the on-duty person.",
+      "ar": "صندوق بريد معطّل ونتيجة ذكاء اصطناعي منخفضة الثقة، يُعالجان بأمان؛ وتصل طلبات العروض العاجلة إلى المناوب."
+    },
     "steps": [
       {
         "as": "kb",
@@ -371,37 +653,67 @@
         "target": {
           "text": "Exception queue"
         },
-        "title": "Failures are visible",
-        "body": "An expired Outlook token and an unreachable e-invoice signing service sit in a queue with an owner — not in a log nobody reads."
+        "title": {
+          "en": "Failures are visible",
+          "ar": "الإخفاقات ظاهرة"
+        },
+        "body": {
+          "en": "An expired Outlook token and an unreachable e-invoice signing service sit in a queue with an owner — not in a log nobody reads.",
+          "ar": "رمز Outlook منتهٍ وخدمة توقيع فواتير إلكترونية متعذرة تنتظران في قائمة لها مالك — لا في سجل لا يقرؤه أحد."
+        }
       },
       {
         "target": {
           "text": "AI review queue"
         },
-        "title": "Low confidence waits for a person",
-        "body": "Uncertain AI results are never applied automatically; someone reviews them here."
+        "title": {
+          "en": "Low confidence waits for a person",
+          "ar": "الثقة المنخفضة تنتظر شخصًا"
+        },
+        "body": {
+          "en": "Uncertain AI results are never applied automatically; someone reviews them here.",
+          "ar": "نتائج الذكاء الاصطناعي غير المؤكدة لا تُطبَّق تلقائيًا أبدًا؛ يراجعها أحد هنا."
+        }
       },
       {
         "target": {
           "text": "Rule registry"
         },
-        "title": "Every automation is explicit",
-        "body": "Trigger, owner, due time, approval, retry behaviour and stop condition for each rule — switched on and off by management, and logged."
+        "title": {
+          "en": "Every automation is explicit",
+          "ar": "كل أتمتة صريحة"
+        },
+        "body": {
+          "en": "Trigger, owner, due time, approval, retry behaviour and stop condition for each rule — switched on and off by management, and logged.",
+          "ar": "المُشغِّل والمالك وموعد الاستحقاق والموافقة وسلوك إعادة المحاولة وشرط التوقف لكل قاعدة — تفعّلها الإدارة وتوقفها، ويُسجَّل ذلك."
+        }
       },
       {
         "go": "/roles",
         "target": {
           "text": "After-hours routing"
         },
-        "title": "Urgent RFQs after hours",
-        "body": "Outside Sunday–Thursday office hours, urgent RFQs go to the on-duty person, with a backup if nobody answers."
+        "title": {
+          "en": "Urgent RFQs after hours",
+          "ar": "طلبات العروض العاجلة بعد الدوام"
+        },
+        "body": {
+          "en": "Outside Sunday–Thursday office hours, urgent RFQs go to the on-duty person, with a backup if nobody answers.",
+          "ar": "خارج ساعات العمل من الأحد إلى الخميس، تذهب طلبات العروض العاجلة إلى المناوب، مع احتياطي إذا لم يرد أحد."
+        }
       }
     ]
   },
   {
     "id": "close",
-    "title": "Settle and close a case",
-    "summary": "Estimates become actuals, FX and claims are accounted for, and only green checks close the case.",
+    "title": {
+      "en": "Settle and close a case",
+      "ar": "تسوية الملف وإغلاقه"
+    },
+    "summary": {
+      "en": "Estimates become actuals, FX and claims are accounted for, and only green checks close the case.",
+      "ar": "تتحول التقديرات إلى أرقام فعلية، وتُحتسب فروق الصرف والمطالبات، ولا يُغلق الملف إلا بالفحوص الخضراء."
+    },
     "steps": [
       {
         "as": "mh",
@@ -409,36 +721,66 @@
         "target": {
           "text": "Expected vs actual"
         },
-        "title": "Estimates become actuals",
-        "body": "The profit promised at quotation against the real result: the launch cost more than estimated once it was billed."
+        "title": {
+          "en": "Estimates become actuals",
+          "ar": "التقديرات تصبح فعلية"
+        },
+        "body": {
+          "en": "The profit promised at quotation against the real result: the launch cost more than estimated once it was billed.",
+          "ar": "الربح الموعود عند التسعير مقابل النتيجة الفعلية: كلّف اللنش أكثر من التقدير بعد فوترته."
+        }
       },
       {
         "target": {
           "text": "FX differences"
         },
-        "title": "FX is real money",
-        "body": "USD 10,000 arrived at 48.80 against the quoted 48.60 — a gain of EGP 2,000, on the case where it happened."
+        "title": {
+          "en": "FX is real money",
+          "ar": "فروق الصرف أموال حقيقية"
+        },
+        "body": {
+          "en": "USD 10,000 arrived at 48.80 against the quoted 48.60 — a gain of EGP 2,000, on the case where it happened.",
+          "ar": "وصل USD 10,000 بسعر 48.80 مقابل 48.60 المسعّر — ربح EGP 2,000، على الملف الذي حدث فيه."
+        }
       },
       {
         "target": {
           "text": "Claims"
         },
-        "title": "Claims settle against credit notes",
-        "body": "Two helmets cracked in transit; the supplier's credit note settles the claim."
+        "title": {
+          "en": "Claims settle against credit notes",
+          "ar": "تُسوّى المطالبات مقابل إشعارات الدائن"
+        },
+        "body": {
+          "en": "Two helmets cracked in transit; the supplier's credit note settles the claim.",
+          "ar": "انشرخت خوذتان أثناء النقل؛ ويسوّي إشعار الدائن من المورّد المطالبة."
+        }
       },
       {
         "target": {
           "text": "Close checklist"
         },
-        "title": "Only green closes",
-        "body": "Bills matched, deliveries signed, invoices accepted by the tax authority and paid, claims settled — then the case can close."
+        "title": {
+          "en": "Only green closes",
+          "ar": "لا إغلاق إلا بالأخضر"
+        },
+        "body": {
+          "en": "Bills matched, deliveries signed, invoices accepted by the tax authority and paid, claims settled — then the case can close.",
+          "ar": "فواتير مطابقة، وتسليمات موقّعة، وفواتير قبلتها مصلحة الضرائب ودُفعت، ومطالبات مسوّاة — ثم يمكن إغلاق الملف."
+        }
       }
     ]
   },
   {
     "id": "control-room",
-    "title": "The business, live — briefed at 07:00",
-    "summary": "The CEO's control room and Ask Golden Sea — and what Sales is never told.",
+    "title": {
+      "en": "The business, live — briefed at 07:00",
+      "ar": "العمل مباشرةً — ملخص الساعة 07:00"
+    },
+    "summary": {
+      "en": "The CEO's control room and Ask Golden Sea — and what Sales is never told.",
+      "ar": "غرفة تحكم الرئيس التنفيذي و«اسأل Golden Sea» — وما لا يُقال للمبيعات أبدًا."
+    },
     "steps": [
       {
         "as": "kb",
@@ -446,8 +788,14 @@
         "target": {
           "text": "daily AI briefing"
         },
-        "title": "Briefed before coffee",
-        "body": "Written at 07:00 from live records, with links to its sources."
+        "title": {
+          "en": "Briefed before coffee",
+          "ar": "ملخص قبل القهوة"
+        },
+        "body": {
+          "en": "Written at 07:00 from live records, with links to its sources.",
+          "ar": "يُكتب الساعة 07:00 من السجلات الحية، مع روابط إلى مصادره."
+        }
       },
       {
         "click": "Who owes us money?",
@@ -455,15 +803,27 @@
         "target": {
           "text": "Ask Golden Sea"
         },
-        "title": "Ask anything",
-        "body": "Questions are answered from the live data, and every answer cites the records it used."
+        "title": {
+          "en": "Ask anything",
+          "ar": "اسأل أي شيء"
+        },
+        "body": {
+          "en": "Questions are answered from the live data, and every answer cites the records it used.",
+          "ar": "يُجاب عن الأسئلة من البيانات الحية، وتستشهد كل إجابة بالسجلات التي استخدمتها."
+        }
       },
       {
         "target": {
           "text": "Margin by store"
         },
-        "title": "Policy in the numbers",
-        "body": "Margin by store against the 15% minimum, plus pipeline, speed, cash and supplier performance."
+        "title": {
+          "en": "Policy in the numbers",
+          "ar": "السياسة في الأرقام"
+        },
+        "body": {
+          "en": "Margin by store against the 15% minimum, plus pipeline, speed, cash and supplier performance.",
+          "ar": "الهامش حسب القسم مقابل الحد الأدنى 15%، إضافة إلى المسار والسرعة والنقد وأداء الموردين."
+        }
       },
       {
         "as": "sa",
@@ -471,15 +831,27 @@
         "target": {
           "text": "Ask Golden Sea"
         },
-        "title": "Sales never sees margins",
-        "body": "Signed in as Soaad Amer, the same assistant declines questions about costs and margins."
+        "title": {
+          "en": "Sales never sees margins",
+          "ar": "المبيعات لا ترى الهوامش أبدًا"
+        },
+        "body": {
+          "en": "Signed in as Soaad Amer, the same assistant declines questions about costs and margins.",
+          "ar": "مسجّلًا الدخول باسم سعاد عامر، يرفض المساعد نفسه الأسئلة عن التكاليف والهوامش."
+        }
       }
     ]
   },
   {
     "id": "growth",
-    "title": "Growing the customer base",
-    "summary": "Prospects, fleets and vendor registrations — with what to say on the next call.",
+    "title": {
+      "en": "Growing the customer base",
+      "ar": "تنمية قاعدة العملاء"
+    },
+    "summary": {
+      "en": "Prospects, fleets and vendor registrations — with what to say on the next call.",
+      "ar": "العملاء المحتملون والأساطيل وتسجيلات الموردين — مع ما يُقال في المكالمة التالية."
+    },
     "steps": [
       {
         "as": "sa",
@@ -487,22 +859,40 @@
         "target": {
           "text": "Prospects by stage"
         },
-        "title": "A pipeline beyond RFQs",
-        "body": "Ship managers from first introduction to active account; stalled prospects are flagged."
+        "title": {
+          "en": "A pipeline beyond RFQs",
+          "ar": "مسار يتجاوز طلبات العروض"
+        },
+        "body": {
+          "en": "Ship managers from first introduction to active account; stalled prospects are flagged.",
+          "ar": "مديرو السفن من أول تعارف حتى الحساب النشط؛ ويُعلَّم العملاء المحتملون المتعثرون."
+        }
       },
       {
         "target": {
           "text": "Sales next steps"
         },
-        "title": "Know what to say",
-        "body": "Each next step has a short script. Recording the outcome plans the next one."
+        "title": {
+          "en": "Know what to say",
+          "ar": "اعرف ماذا تقول"
+        },
+        "body": {
+          "en": "Each next step has a short script. Recording the outcome plans the next one.",
+          "ar": "لكل خطوة تالية نص قصير. وتسجيل النتيجة يخطط للخطوة التالية."
+        }
       },
       {
         "target": {
           "text": "Vendor registrations"
         },
-        "title": "Registrations tracked",
-        "body": "Documents and committee dates for getting onto each ship manager's approved-vendor list."
+        "title": {
+          "en": "Registrations tracked",
+          "ar": "تسجيلات متابَعة"
+        },
+        "body": {
+          "en": "Documents and committee dates for getting onto each ship manager's approved-vendor list.",
+          "ar": "المستندات ومواعيد اللجان للانضمام إلى قائمة الموردين المعتمدين لدى كل مدير سفن."
+        }
       }
     ]
   }

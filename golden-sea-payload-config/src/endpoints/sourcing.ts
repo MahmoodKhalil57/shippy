@@ -23,6 +23,9 @@ import {
   type Scenario,
 } from "./sourcing-data.ts";
 import * as link from "../links.ts";
+import { m } from "../i18n/paraglide/messages.js";
+import { type Lang, intlLocale, langOf, optionLabel } from "./insights-shared.ts";
+import { sourcingInArabic } from "./sourcing-ar.ts";
 
 /**
  * Root endpoints for the sourcing desk (registered in ./index.ts):
@@ -135,17 +138,29 @@ async function notify(
   );
 }
 
-const DATE = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", timeZone: "UTC" });
-const DATETIME = new Intl.DateTimeFormat("en-GB", {
+const DATE_OPTIONS: Intl.DateTimeFormatOptions = { day: "2-digit", month: "short", timeZone: "UTC" };
+const DATETIME_OPTIONS: Intl.DateTimeFormatOptions = {
   weekday: "short",
   day: "2-digit",
   month: "short",
   hour: "2-digit",
   minute: "2-digit",
   timeZone: "UTC",
-});
-const fmtDate = (v: unknown) => (str(v) ? DATE.format(new Date(str(v))) : "");
-const fmtDateTime = (v: unknown) => (str(v) ? DATETIME.format(new Date(str(v))) : "");
+};
+const DATE = {
+  en: new Intl.DateTimeFormat(intlLocale("en"), DATE_OPTIONS),
+  ar: new Intl.DateTimeFormat(intlLocale("ar"), DATE_OPTIONS),
+};
+const DATETIME = {
+  en: new Intl.DateTimeFormat(intlLocale("en"), DATETIME_OPTIONS),
+  ar: new Intl.DateTimeFormat(intlLocale("ar"), DATETIME_OPTIONS),
+};
+const fmtDate = (v: unknown, lang: Lang = "en") => (str(v) ? DATE[lang].format(new Date(str(v))) : "");
+const fmtDateTime = (v: unknown, lang: Lang = "en") => (str(v) ? DATETIME[lang].format(new Date(str(v))) : "");
+/** The request's language, as Paraglide's options. */
+const loc = (req: Req) => ({ locale: langOf(req) });
+/** Canned AI text (./sourcing-data.ts) in a language. */
+const canned = <T>(value: T, lang: Lang): T => (lang === "ar" ? sourcingInArabic(value) : value);
 
 async function userName(req: Req, id: unknown): Promise<string> {
   const uid = idOf(id);
@@ -304,6 +319,7 @@ async function caseIdOf(req: Req, id: unknown) {
  * then the sender's domain (uncertain → review queue). Never guesses below the threshold.
  */
 export async function matchMessage(req: Req, msg: Doc): Promise<MatchResult> {
+  const t = loc(req);
   const subject = str(msg.subject);
   const text = `${subject}\n${str(msg.body)}`;
   const suppliers = await all(req, "suppliers");
@@ -317,14 +333,13 @@ export async function matchMessage(req: Req, msg: Doc): Promise<MatchResult> {
       const caseId = await caseIdOf(req, rfq.case);
       const invited = idOf(rfq.supplier);
       const basis = [
-        `Reference ${ref} found in the ${REF_RE.test(subject) ? "subject" : "body"}`,
-        REF_RE.test(subject)
-          ? "Thread subject kept"
-          : `Subject changed (“${subject}”) — matched by reference, not by subject`,
+        (REF_RE.test(subject) ? m.api_sourcing_ref_in_subject : m.api_sourcing_ref_in_body)({ ref }, t),
+        REF_RE.test(subject) ? m.api_sourcing_subject_kept({}, t) : m.api_sourcing_subject_changed({ subject }, t),
       ];
-      if (sender && sender.id === invited) basis.push(`Sender domain ${domain} = ${str(sender.name)}`);
-      else if (sender) basis.push(`Sent by ${str(sender.name)} for an RFQ sent to another supplier`);
-      else basis.push(`Sender ${domain || str(msg.from)} is not in the supplier list — new supplier`);
+      if (sender && sender.id === invited)
+        basis.push(m.api_sourcing_sender_domain({ domain, name: str(sender.name) }, t));
+      else if (sender) basis.push(m.api_sourcing_sent_by_other({ name: str(sender.name) }, t));
+      else basis.push(m.api_sourcing_sender_unknown({ sender: domain || str(msg.from) }, t));
       return {
         outcome: "linked",
         case: idOf(rfq.case),
@@ -355,10 +370,11 @@ export async function matchMessage(req: Req, msg: Doc): Promise<MatchResult> {
         caseId,
         confidence: 1,
         basis: [
-          `Identical attachments (${hash.slice(0, 14)}…) to “${str(first.subject)}”, received ${fmtDateTime(first.receivedAt)}`,
-          linkedCase
-            ? `Already linked to ${caseId} — no new case, no second acknowledgement`
-            : "The original message isn't a case yet — handle that one; this copy is kept with it",
+          m.api_sourcing_identical_attachments(
+            { hash: hash.slice(0, 14), subject: str(first.subject), at: fmtDateTime(first.receivedAt, t.locale) },
+            t,
+          ),
+          linkedCase ? m.api_sourcing_already_linked_no_new({ caseId }, t) : m.api_sourcing_original_not_case({}, t),
         ],
       };
     }
@@ -372,7 +388,10 @@ export async function matchMessage(req: Req, msg: Doc): Promise<MatchResult> {
         case: c.id,
         caseId: str(c.caseId),
         confidence: 0.98,
-        basis: [`Customer reference ${customerRef} = ${str(c.caseId)}`, "No new case, no second acknowledgement"],
+        basis: [
+          m.api_sourcing_customer_ref_is({ ref: customerRef, caseId: str(c.caseId) }, t),
+          m.api_sourcing_no_new_case({}, t),
+        ],
       };
   }
 
@@ -388,7 +407,14 @@ export async function matchMessage(req: Req, msg: Doc): Promise<MatchResult> {
         case: cid,
         caseId: await caseIdOf(req, cid),
         confidence: Math.max(0.3, 0.62 - i * 0.21),
-        reason: `${str(sender.name)} was asked on ${str(r.reference)} (${str(r.status).toLowerCase()})`,
+        reason: m.api_sourcing_was_asked_on(
+          {
+            name: str(sender.name),
+            reference: str(r.reference),
+            status: optionLabel(req, "supplier-rfqs", "status", r.status).toLowerCase(),
+          },
+          t,
+        ),
       });
       i++;
     }
@@ -397,11 +423,11 @@ export async function matchMessage(req: Req, msg: Doc): Promise<MatchResult> {
       supplier: sender.id,
       confidence: candidates[0]?.confidence ?? 0.4,
       basis: [
-        "No supplier-RFQ reference in subject or body",
-        `Sender domain ${domain} = ${str(sender.name)}`,
+        m.api_sourcing_no_reference({}, t),
+        m.api_sourcing_sender_domain({ domain, name: str(sender.name) }, t),
         candidates.length > 1
-          ? `Invited on ${candidates.length} open cases — can't tell which`
-          : "Below 85% — a person confirms before anything is linked",
+          ? m.api_sourcing_invited_on_many({ count: candidates.length }, t)
+          : m.api_sourcing_below_threshold({}, t),
       ],
       candidates,
     };
@@ -409,12 +435,12 @@ export async function matchMessage(req: Req, msg: Doc): Promise<MatchResult> {
   return {
     outcome: "none",
     confidence: 0,
-    basis: ["No reference, no thread, unknown sender — a person classifies it"],
+    basis: [m.api_sourcing_unclassifiable({}, t)],
   };
 }
 
 /** Offers from a matched reply: created once per RFQ line (the Compare tab reads them). */
-async function saveOffers(req: Req, rfq: Doc, supplierId: string, lines: OfferLine[], messageId?: string) {
+async function saveOffers(req: Req, rfq: Doc, supplierId: string, lines: OfferLine[]) {
   const existing = await all(req, "offers", {
     and: [{ supplierRfq: { equals: rfq.id } }, { supplier: { equals: supplierId } }],
   });
@@ -440,7 +466,7 @@ async function saveOffers(req: Req, rfq: Doc, supplierId: string, lines: OfferLi
         packLabel: l.packLabel,
         leadDays: l.leadDays,
         validUntil: iso(DEMO_NOW.getTime() + l.validDays * DAY),
-        paymentTerms: "Cash",
+        paymentTerms: m.api_sourcing_cash_terms({}, loc(req)),
         deliveryBasis: "Delivered to port",
         source: "Email",
         compliance: "Pending",
@@ -453,7 +479,7 @@ async function saveOffers(req: Req, rfq: Doc, supplierId: string, lines: OfferLi
     await logActivity(req, {
       case: idOf(rfq.case),
       kind: "auto",
-      text: `${created.length} offer line${created.length > 1 ? "s" : ""} captured from the reply to ${str(rfq.reference)}${messageId ? "" : ""} — dated prices saved to the supplier's history.`,
+      text: m.api_sourcing_offers_captured({ count: created.length, reference: str(rfq.reference) }, loc(req)),
     });
   return created;
 }
@@ -498,6 +524,8 @@ export interface ExtractionResult {
 }
 
 async function extraction(req: Req, msg: Doc): Promise<ExtractionResult> {
+  const t = loc(req);
+  const lang = t.locale;
   const s = scenarioOf(msg);
   const draft = s?.draft;
   const owner = draft?.owner ?? userId(req) ?? "ky";
@@ -512,35 +540,54 @@ async function extraction(req: Req, msg: Doc): Promise<ExtractionResult> {
   );
   const tpl = templates.find((t) => t.key === "rfq-ack");
   const vars = {
-    contact: str(msg.fromName).split(/[·(]/)[0].trim() || "Sir / Madam",
-    vessel: draft?.vessel ?? "your vessel",
-    caseId: "(case number on creation)",
-    dueAt: fmtDateTime(deadline),
-    customerRef: draft?.customerRef ?? `for ${draft?.vessel ?? "your vessel"}`,
+    contact: str(msg.fromName).split(/[·(]/)[0].trim() || m.api_sourcing_sir_madam({}, t),
+    vessel: draft?.vessel ?? m.api_sourcing_your_vessel({}, t),
+    caseId: m.api_sourcing_case_number_on_creation({}, t),
+    dueAt: fmtDateTime(deadline, lang),
+    customerRef:
+      draft?.customerRef ??
+      m.api_sourcing_for_vessel({ vessel: draft?.vessel ?? m.api_sourcing_your_vessel({}, t) }, t),
     owner: ownerName,
   };
-  const ackBody = `${fill(str(tpl?.body) || "Dear {{contact}},\n\nThank you — your request for {{vessel}} is registered as {{caseId}}. We will revert by {{dueAt}}.", vars)}\n\nYour contact: ${ownerName} (backup ${backupName}).\n\nGolden Sea for Trading & Marketing\nShip chandler · Port Said · Suez · Alexandria`;
+  // The acknowledgement in the request's language: the approved template's Arabic when there is one.
+  const tplBody = lang === "ar" ? str(tpl?.bodyAr) || str(tpl?.body) : str(tpl?.body);
+  const tplSubject = lang === "ar" ? str(tpl?.subjectAr) || str(tpl?.subject) : str(tpl?.subject);
+  const ackBody = `${fill(tplBody || m.api_sourcing_ack_default_body({}, t), vars)}\n\n${m.api_sourcing_ack_footer({ owner: ownerName, backup: backupName }, t)}`;
   return {
     kind: "extraction",
-    header: s?.header ?? [
-      { field: "Customer", value: customerName, confidence: 0.5 },
-      { field: "Subject", value: str(msg.subject), confidence: 0.9 },
-    ],
-    lines: s?.lines ?? [],
-    missing: s?.missing ?? ["No lines found — add them by hand"],
+    header: canned(
+      s?.header ?? [
+        { field: "Customer", value: customerName, confidence: 0.5 },
+        { field: "Subject", value: str(msg.subject), confidence: 0.9 },
+      ],
+      lang,
+    ),
+    lines: (s?.lines ?? []).map((l) => (l.flag ? { ...l, flag: canned(l.flag, lang) } : l)),
+    missing: canned(s?.missing ?? ["No lines found — add them by hand"], lang),
+    // The customer's clarification goes out in English, as the customer writes (international ship managers).
     clarification: fill(s?.clarification ?? "", { ...vars, caseId: "your case" }),
-    notes: s?.notes ?? [],
-    assignment: { owner, ownerName, backup, backupName, deadline, rule: draft?.rule ?? "No rule matched — you own it" },
+    notes: canned(s?.notes ?? [], lang),
+    assignment: {
+      owner,
+      ownerName,
+      backup,
+      backupName,
+      deadline,
+      rule: draft?.rule ? canned(draft.rule, lang) : m.api_sourcing_no_rule({}, t),
+    },
     acknowledgement: {
-      subject: fill(str(tpl?.subject) || "We received your RFQ {{customerRef}}", vars),
+      subject: fill(tplSubject || m.api_sourcing_ack_default_subject({}, t), vars),
       body: ackBody,
       manual: Boolean(s?.manualAck) || str(msg.channel) !== "Email",
-      template: `${str(tpl?.name) || "RFQ received – marine"} · v${num(tpl?.version) || 1} (approved)`,
+      template: m.api_sourcing_template_label(
+        { name: str(tpl?.name) || "RFQ received – marine", version: num(tpl?.version) || 1 },
+        t,
+      ),
     },
     caseType: draft?.caseType ?? "rfq",
     customerName,
     newCustomer: !customer && Boolean(draft?.newCustomer),
-    model: "gs-extract (demo stub) · vision + spreadsheet reader",
+    model: m.api_sourcing_model({}, t),
   };
 }
 
@@ -583,31 +630,32 @@ async function saveExtraction(req: Req, msg: Doc, x: ExtractionResult) {
 }
 
 /** Applies a match result to the message (and, for supplier replies, to the RFQ and offers). */
-async function applyMatch(req: Req, msg: Doc, m: MatchResult) {
-  const status = m.outcome === "linked" || (m.outcome === "duplicate" && m.case) ? "Linked" : "Needs review";
+async function applyMatch(req: Req, msg: Doc, match: MatchResult) {
+  const status =
+    match.outcome === "linked" || (match.outcome === "duplicate" && match.case) ? "Linked" : "Needs review";
   let classification = str(msg.classification) || "Supplier reply";
-  if (m.outcome === "duplicate") classification = "Duplicate";
+  if (match.outcome === "duplicate") classification = "Duplicate";
   await update(req, "intake-messages", msg.id, {
     status,
     classification,
     match: {
-      case: m.case ?? null,
-      supplierRfq: m.supplierRfq ?? null,
-      reference: m.reference,
-      confidence: m.confidence,
-      basis: m.basis.join("\n"),
-      candidates: (m.candidates ?? []).map((c) => ({ case: c.case, confidence: c.confidence, reason: c.reason })),
+      case: match.case ?? null,
+      supplierRfq: match.supplierRfq ?? null,
+      reference: match.reference,
+      confidence: match.confidence,
+      basis: match.basis.join("\n"),
+      candidates: (match.candidates ?? []).map((c) => ({ case: c.case, confidence: c.confidence, reason: c.reason })),
     },
   });
-  if (m.outcome === "linked" && m.supplierRfq && m.supplier && !m.newSupplier) {
-    const rfq = await byId(req, "supplier-rfqs", m.supplierRfq);
-    if (rfq && idOf(rfq.supplier) === m.supplier && !ANSWERED_RFQ.includes(str(rfq.status))) {
-      const lines = await replyLines(req, rfq, m.supplier);
+  if (match.outcome === "linked" && match.supplierRfq && match.supplier && !match.newSupplier) {
+    const rfq = await byId(req, "supplier-rfqs", match.supplierRfq);
+    if (rfq && idOf(rfq.supplier) === match.supplier && !ANSWERED_RFQ.includes(str(rfq.status))) {
+      const lines = await replyLines(req, rfq, match.supplier);
       await update(req, "intake-messages", msg.id, { offerDraft: lines });
-      await saveOffers(req, rfq, m.supplier, lines);
+      await saveOffers(req, rfq, match.supplier, lines);
       await update(req, "supplier-rfqs", rfq.id, {
         status: "Replied",
-        lastEvent: `Reply matched by reference (subject “${str(msg.subject)}”) — reminders stopped`,
+        lastEvent: m.api_sourcing_reply_matched_event({ subject: str(msg.subject) }, loc(req)),
       });
     }
   }
@@ -616,8 +664,10 @@ async function applyMatch(req: Req, msg: Doc, m: MatchResult) {
 /* ------------------------------------------------------------------ inbox: case creation */
 
 async function createCaseFrom(req: Req, msg: Doc, input: Json) {
+  const t = loc(req);
+  const lang = t.locale;
   const s = scenarioOf(msg);
-  if (!s) throw Object.assign(new Error("Nothing extracted from this message yet."), { status: 400 });
+  if (!s) throw Object.assign(new Error(m.api_sourcing_nothing_extracted({}, t)), { status: 400 });
   const d = s.draft;
   let customer = d.customer;
   if (!customer && d.newCustomer) {
@@ -654,8 +704,8 @@ async function createCaseFrom(req: Req, msg: Doc, input: Json) {
     store: l.store,
     status: l.flag ? "Clarification needed" : "Not sourced",
     confidence: l.confidence,
-    missing: l.flag,
-    originalText: `${l.originalText} · source: ${l.source}`,
+    missing: l.flag ? canned(l.flag, lang) : l.flag,
+    originalText: m.api_sourcing_original_text({ text: l.originalText, source: l.source }, t),
   }));
   const data: Json = {
     caseType: d.caseType,
@@ -670,8 +720,16 @@ async function createCaseFrom(req: Req, msg: Doc, input: Json) {
     owner,
     backup,
     urgent: Boolean(d.urgent),
-    nextAction: d.nextAction,
-    blocker: flagged.length ? `Line ${flagged.map((l) => l.lineNo).join(", ")}: ${flagged[0].flag}` : undefined,
+    nextAction: canned(d.nextAction, lang),
+    blocker: flagged.length
+      ? m.api_sourcing_blocker(
+          {
+            lines: flagged.map((l) => l.lineNo).join(lang === "ar" ? "، " : ", "),
+            flag: canned(flagged[0].flag!, lang),
+          },
+          t,
+        )
+      : undefined,
     stage: d.caseType === "service" ? "Customs clearance" : flagged.length ? "Validating" : "Sourcing",
     tone: d.urgent ? "warn" : "info",
     items,
@@ -681,7 +739,7 @@ async function createCaseFrom(req: Req, msg: Doc, input: Json) {
             lineNo: flagged[0].lineNo,
             to: "Customer",
             via: str(msg.channel) === "WhatsApp" ? "WhatsApp" : "Email",
-            question: s.missing.join(" · "),
+            question: canned(s.missing, lang).join(" · "),
           },
         ]
       : [],
@@ -707,27 +765,38 @@ async function createCaseFrom(req: Req, msg: Doc, input: Json) {
     classification: d.caseType === "service" ? "Service request" : "New RFQ",
     ...(firstAck ? { acknowledgedAt: iso(DEMO_NOW.getTime()) } : {}),
   });
-  const who = str((req.user as { name?: unknown } | null)?.name) || "a person";
+  const who = str((req.user as { name?: unknown } | null)?.name) || m.api_sourcing_a_person({}, t);
   await logActivity(req, {
     case: c.id,
     kind: "human",
-    text: `Created from the ${str(msg.channel).toLowerCase()} “${str(msg.subject)}” — ${items.length} AI-extracted line${items.length === 1 ? "" : "s"} checked and confirmed by ${who}.`,
+    text: m.api_sourcing_created_activity(
+      {
+        channel: optionLabel(req, "intake-messages", "channel", msg.channel).toLowerCase(),
+        subject: str(msg.subject),
+        count: items.length,
+        who,
+      },
+      t,
+    ),
   });
   await logActivity(req, {
     case: c.id,
     kind: "auto",
     text: firstAck
-      ? `Acknowledgement sent once from the approved template “${x.acknowledgement.template}”.`
+      ? m.api_sourcing_ack_sent_activity({ template: x.acknowledgement.template }, t)
       : manual
-        ? "Acknowledgement to be sent by the owner by hand (WhatsApp / phone source)."
-        : "Already acknowledged earlier — no second acknowledgement.",
+        ? m.api_sourcing_ack_by_hand_activity({}, t)
+        : m.api_sourcing_ack_already_activity({}, t),
   });
   if (owner !== userId(req))
     await notify(
       req,
       owner,
-      `New case ${str(c.caseId)} assigned to you`,
-      `${x.customerName} · ${d.vessel} · quote due ${fmtDateTime(deadline)}`,
+      m.api_sourcing_new_case_assigned({ caseId: str(c.caseId) }, t),
+      m.api_sourcing_new_case_detail(
+        { customer: x.customerName, vessel: d.vessel, due: fmtDateTime(deadline, lang) },
+        t,
+      ),
       link.doc("cases", c.id),
       "Update",
     );
@@ -735,7 +804,10 @@ async function createCaseFrom(req: Req, msg: Doc, input: Json) {
     case: { id: c.id, caseId: str(c.caseId) },
     acknowledged: firstAck,
     manualAck: manual,
-    message: `Case ${str(c.caseId)} created · ${firstAck ? "acknowledgement sent once" : manual ? "acknowledge by hand" : "already acknowledged"}`,
+    message: m.api_sourcing_case_created(
+      { caseId: str(c.caseId), ack: firstAck ? "sent" : manual ? "manual" : "already" },
+      t,
+    ),
   };
 }
 
@@ -898,10 +970,10 @@ export async function historyPayload(req: Req): Promise<HistoryPayload> {
     organised: msgs.length > 0,
     canApprove: role(req) === "management",
     canSeePrices: !isSales(req),
-    mailboxes: HISTORY_MAILBOXES,
+    mailboxes: canned(HISTORY_MAILBOXES, langOf(req)),
     perYear: HISTORY_PER_YEAR,
     scanned,
-    dedup: HISTORY_DEDUP,
+    dedup: canned(HISTORY_DEDUP, langOf(req)),
     kept,
     totals: HISTORY_TOTALS,
     customers: HISTORY_CUSTOMERS,
@@ -959,7 +1031,7 @@ async function commitHistory(req: Req) {
         imo: v.imo,
         vesselType: "Reefer",
         customer,
-        notes: `Found in inbox history: ${v.calls} calls (${v.ports}).`,
+        notes: m.api_sourcing_vessel_history_note({ calls: v.calls, ports: v.ports }, loc(req)),
       });
   }
   for (const s of HISTORY_SUPPLIERS.filter((x) => !x.known)) {
@@ -971,7 +1043,7 @@ async function commitHistory(req: Req) {
       emailDomain: s.domain,
       status: "New",
       kind: "local",
-      source: `Inbox history import — quoted ${s.quoted} lines 2022–2025, never ordered`,
+      source: m.api_sourcing_supplier_history_source({ quoted: s.quoted }, loc(req)),
     });
   }
   const prices = [...HISTORY_PRICES];
@@ -1022,7 +1094,17 @@ async function commitHistory(req: Req) {
   await logActivity(req, {
     kind: "human",
     entity: "globals/integrations",
-    text: `Inbox history import approved by ${await userName(req, userId(req))}: ${HISTORY_TOTALS.customers} customers, ${HISTORY_TOTALS.vessels} vessels, ${HISTORY_TOTALS.suppliers} suppliers and ${HISTORY_TOTALS.prices.toLocaleString("en-US")} dated prices (${saved} sample prices written in the demo).`,
+    text: m.api_sourcing_history_approved_activity(
+      {
+        name: await userName(req, userId(req)),
+        customers: HISTORY_TOTALS.customers,
+        vessels: HISTORY_TOTALS.vessels,
+        suppliers: HISTORY_TOTALS.suppliers,
+        prices: HISTORY_TOTALS.prices.toLocaleString(intlLocale(langOf(req), "en-US")),
+        saved,
+      },
+      loc(req),
+    ),
   });
 }
 
@@ -1114,7 +1196,9 @@ const arrivalsOf = (caseId: string) => {
   return last && Date.now() - last.at < SHOW_ARRIVALS_MS ? last.events : [];
 };
 
-function scheduleOf(r: Doc): RfqScheduleStep[] {
+function scheduleOf(r: Doc, req?: Req): RfqScheduleStep[] {
+  const t = { locale: req ? langOf(req) : "en" } as const;
+  const status = req ? optionLabel(req, "supplier-rfqs", "status", r.status) : str(r.status);
   const sent = Date.parse(str(r.sentAt));
   const reminders = num(r.reminders);
   const answered = ANSWERED_RFQ.includes(str(r.status));
@@ -1122,24 +1206,24 @@ function scheduleOf(r: Doc): RfqScheduleStep[] {
     return answered
       ? [
           {
-            label: `${str(r.status)} without an invitation — reply matched by reference`,
+            label: m.api_sourcing_step_uninvited({ status }, t),
             at: str(r.updatedAt),
             state: "done",
           },
         ]
-      : [{ label: "Draft — not sent", at: "", state: "planned" }];
-  const steps: RfqScheduleStep[] = [{ label: "Sent", at: iso(sent), state: "done" }];
+      : [{ label: m.api_sourcing_step_draft({}, t), at: "", state: "planned" }];
+  const steps: RfqScheduleStep[] = [{ label: m.api_sourcing_step_sent({}, t), at: iso(sent), state: "done" }];
   REMINDER_HOURS.forEach((h, i) => {
     const state: RfqScheduleStep["state"] =
       reminders > i ? "done" : answered ? "skipped" : reminders === i ? "next" : "planned";
-    steps.push({ label: `Reminder ${i + 1}`, at: iso(sent + h * HOUR), state });
+    steps.push({ label: m.api_sourcing_step_reminder({ n: i + 1 }, t), at: iso(sent + h * HOUR), state });
   });
   steps.push({
-    label: "Escalate to case owner",
+    label: m.api_sourcing_step_escalate({}, t),
     at: iso(sent + (REMINDER_HOURS[1] + 4) * HOUR),
     state: r.escalated ? "done" : answered ? "skipped" : "planned",
   });
-  if (answered) steps.push({ label: `${str(r.status)} — reminders stopped`, at: str(r.updatedAt), state: "done" });
+  if (answered) steps.push({ label: m.api_sourcing_step_stopped({ status }, t), at: str(r.updatedAt), state: "done" });
   return steps;
 }
 
@@ -1153,11 +1237,11 @@ export async function caseRfqsPayload(req: Req, caseDoc: Doc): Promise<CaseRfqsP
     return {
       id: r.id,
       reference: str(r.reference),
-      supplier: { name: str(s?.name) || "Supplier" },
+      supplier: { name: str(s?.name) || m.api_sourcing_supplier({}, loc(req)) },
       lineNos: list<number>(r.lineNos),
       status: str(r.status),
       escalated: Boolean(r.escalated),
-      schedule: scheduleOf(r),
+      schedule: scheduleOf(r, req),
     };
   });
   const lines: CaseLine[] = list<Json>(caseDoc.items).map((i) => {
@@ -1172,7 +1256,10 @@ export async function caseRfqsPayload(req: Req, caseDoc: Doc): Promise<CaseRfqsP
       status: str(i.status),
       exactBrand: Boolean(i.exactBrand),
       impa: str(i.impa),
-      held: str(i.status) === "Clarification needed" ? str(i.missing) || "Needs clarification first" : "",
+      held:
+        str(i.status) === "Clarification needed"
+          ? str(i.missing) || m.api_sourcing_needs_clarification({}, loc(req))
+          : "",
       offers: offers.filter((o) => num(o.lineNo) === n && !o.superseded).length,
       rfqs: rows.filter((r) => r.lineNos.includes(n)).map((r) => r.reference),
     };
@@ -1251,27 +1338,35 @@ export function rfqPreview(
   dueAt: string,
   supplier: Doc,
   sender: string,
+  lang: Lang = "en",
 ): RfqDraft["preview"] {
+  const t = { locale: lang };
   const body = [
-    "Dear supplier,",
+    m.api_sourcing_rfq_dear({}, t),
     "",
-    `Please quote the following, delivered ${str(caseDoc.port) || "to port"} by ${fmtDate(caseDoc.eta) || "the date below"}:`,
+    m.api_sourcing_rfq_please_quote(
+      {
+        port: str(caseDoc.port) || m.api_sourcing_rfq_to_port({}, t),
+        date: fmtDate(caseDoc.eta, lang) || m.api_sourcing_rfq_date_below({}, t),
+      },
+      t,
+    ),
     "",
     ...lines.map(
       (l, i) =>
-        ` ${i + 1}. ${str(l.description)} — ${num(l.qty)} ${str(l.unit)}${l.exactBrand ? " (exact brand / part only)" : " (alternatives: state brand)"}${str(l.impa) ? ` · IMPA ${str(l.impa)}` : ""}${str(l.partNo) ? ` · part ${str(l.partNo)}` : ""}`,
+        ` ${i + 1}. ${str(l.description)} — ${num(l.qty)} ${str(l.unit)}${l.exactBrand ? m.api_sourcing_rfq_exact({}, t) : m.api_sourcing_rfq_alternatives({}, t)}${str(l.impa) ? ` · IMPA ${str(l.impa)}` : ""}${str(l.partNo) ? m.api_sourcing_rfq_part({ part: str(l.partNo) }, t) : ""}`,
     ),
     "",
-    "For each line please state: unit price & currency, available quantity, pack size, lead time, delivery basis, freight, validity and payment terms — and attach SDS / TDS / certificates.",
+    m.api_sourcing_rfq_please_state({}, t),
     "",
-    `Please keep our reference ${reference} in your reply.`,
+    m.api_sourcing_rfq_keep_reference({ reference }, t),
     "",
-    "Best regards,",
+    m.api_sourcing_rfq_best_regards({}, t),
     `${sender} — Golden Sea for Trading & Marketing`,
   ].join("\n");
   return {
     to: str(supplier.contact) || `sales@${domainOf(supplier) || "supplier.example"}`,
-    subject: `Request for quotation ${reference} — reply by ${fmtDateTime(dueAt)}`,
+    subject: m.api_sourcing_rfq_subject({ reference, due: fmtDateTime(dueAt, lang) }, t),
     body,
   };
 }
@@ -1281,16 +1376,17 @@ async function planRfqs(req: Req, caseDoc: Doc, mode: "split" | "full", only?: n
   const existing = await all(req, "supplier-rfqs", { case: { equals: caseDoc.id } });
   const asked = (sid: string, n: number) =>
     existing.some((r) => idOf(r.supplier) === sid && list<number>(r.lineNos).includes(n) && str(r.status) !== "Draft");
+  const t = loc(req);
   const items = list<Json>(caseDoc.items).filter((i) => !only?.length || only.includes(num(i.lineNo)));
   const held = items
     .filter((i) => str(i.status) === "Clarification needed")
-    .map((i) => ({ lineNo: num(i.lineNo), reason: str(i.missing) || "Needs clarification first" }));
+    .map((i) => ({ lineNo: num(i.lineNo), reason: str(i.missing) || m.api_sourcing_needs_clarification({}, t) }));
   const sendable = items.filter((i) => str(i.status) !== "Clarification needed");
   const bySupplier = new Map<string, { s: Doc; lines: Json[]; cats: Set<string> }>();
   const skipped: string[] = [];
   const add = (s: Doc, item: Json, cat: string) => {
     if (asked(s.id, num(item.lineNo))) {
-      skipped.push(`L${num(item.lineNo)} already asked of ${str(s.name)}`);
+      skipped.push(m.api_sourcing_already_asked({ line: num(item.lineNo), name: str(s.name) }, t));
       return;
     }
     const e = bySupplier.get(s.id) ?? { s, lines: [], cats: new Set<string>() };
@@ -1322,11 +1418,11 @@ async function planRfqs(req: Req, caseDoc: Doc, mode: "split" | "full", only?: n
       reference,
       note:
         mode === "full"
-          ? "General chandler — receives the full list"
+          ? m.api_sourcing_general_full({}, t)
           : list<string>(e.s.categories).some((c) => e.cats.has(c))
-            ? `Specialist in ${category}`
-            : "No specialist on file — general chandler",
-      preview: rfqPreview(caseDoc, e.lines, reference, dueAt, e.s, sender),
+            ? m.api_sourcing_specialist({ category }, t)
+            : m.api_sourcing_no_specialist({}, t),
+      preview: rfqPreview(caseDoc, e.lines, reference, dueAt, e.s, sender, t.locale),
     };
   });
   return { mode, dueAt, drafts, held, skipped };
@@ -1355,26 +1451,33 @@ async function remind(req: Req, rfq: Doc): Promise<ReplyEvent> {
   const c = await byId(req, "cases", str(idOf(rfq.case)));
   const supplier = await byId(req, "suppliers", str(idOf(rfq.supplier)));
   const escalate = reminders >= ESCALATE_AFTER;
+  const t = loc(req);
   await update(req, "supplier-rfqs", rfq.id, {
     reminders,
     status: escalate && num(rfq.reminders) >= ESCALATE_AFTER ? "No response" : "Awaiting reply",
     escalated: escalate || Boolean(rfq.escalated),
     nextReminderAt: escalate ? null : iso(DEMO_NOW.getTime() + DAY),
     lastEvent: escalate
-      ? `Reminder ${reminders} sent — no reply after ${ESCALATE_AFTER} reminders, escalated to the case owner`
-      : `Reminder ${reminders} sent (approved template, client hidden) · next in 24 h`,
+      ? m.api_sourcing_reminder_escalated_event({ n: reminders, after: ESCALATE_AFTER }, t)
+      : m.api_sourcing_reminder_sent_event({ n: reminders }, t),
   });
   if (escalate && !rfq.escalated) {
     await logActivity(req, {
       case: idOf(rfq.case),
       kind: "alert",
-      text: `${str(rfq.reference)}: ${str(supplier?.name)} silent after ${ESCALATE_AFTER} reminders — escalated to the owner.`,
+      text: m.api_sourcing_silent_activity(
+        { reference: str(rfq.reference), name: str(supplier?.name), after: ESCALATE_AFTER },
+        t,
+      ),
     });
     await notify(
       req,
       idOf(c?.owner),
-      `${str(supplier?.name)} hasn't replied to ${str(rfq.reference)}`,
-      `${ESCALATE_AFTER} reminders sent · ${str(c?.caseId)} quote due ${fmtDateTime(c?.deadline)} — call them or source elsewhere`,
+      m.api_sourcing_silent_title({ name: str(supplier?.name), reference: str(rfq.reference) }, t),
+      m.api_sourcing_silent_detail(
+        { after: ESCALATE_AFTER, caseId: str(c?.caseId), due: fmtDateTime(c?.deadline, t.locale) },
+        t,
+      ),
       link.doc("cases", str(idOf(rfq.case)), "rfqs"),
       "Alert",
     );
@@ -1384,7 +1487,9 @@ async function remind(req: Req, rfq: Doc): Promise<ReplyEvent> {
     supplier: str(supplier?.name),
     subject: "",
     outcome: escalate ? "Escalated" : "Reminder sent",
-    detail: escalate ? `Escalated to ${await userName(req, c?.owner)}` : `Reminder ${reminders} sent`,
+    detail: escalate
+      ? m.api_sourcing_escalated_to({ name: await userName(req, c?.owner) }, t)
+      : m.api_sourcing_reminder_n_sent({ n: reminders }, t),
   };
 }
 
@@ -1397,6 +1502,7 @@ export async function simulateReplies(req: Req, caseDoc: Doc): Promise<ReplyEven
   const onCase = await all(req, "supplier-rfqs", { case: { equals: caseDoc.id } }, "reference");
   const rfqs = onCase.filter((r) => ["Sent", "Awaiting reply"].includes(str(r.status)));
   const events: ReplyEvent[] = [];
+  const o = loc(req);
   let t = await demoNow(req);
   // The RFQ the new supplier answers: the first open one, else the latest one sent.
   const firstOpen = rfqs[0] ?? onCase.filter((r) => str(r.sentAt)).at(-1);
@@ -1428,19 +1534,22 @@ export async function simulateReplies(req: Req, caseDoc: Doc): Promise<ReplyEven
           supplierRfq: r.id,
           reference: str(r.reference),
           confidence: 0.99,
-          basis: `Reference ${str(r.reference)} in the subject\nSender domain ${domain} = ${name}`,
+          basis: [
+            m.api_sourcing_ref_in_subject({ ref: str(r.reference) }, o),
+            m.api_sourcing_sender_domain({ domain, name }, o),
+          ].join("\n"),
         },
       });
       await update(req, "supplier-rfqs", r.id, {
         status: "Declined",
-        lastEvent: "Declined by email — reminders stopped",
+        lastEvent: m.api_sourcing_declined_event({}, o),
       });
       events.push({
         reference: str(r.reference),
         supplier: name,
         subject: "RE: Request for quotation",
         outcome: "Declined",
-        detail: "Cannot supply — reminders stopped",
+        detail: m.api_sourcing_cannot_supply({}, o),
       });
       continue;
     }
@@ -1474,25 +1583,23 @@ export async function simulateReplies(req: Req, caseDoc: Doc): Promise<ReplyEven
         reference: str(r.reference),
         confidence: 0.99,
         basis: [
-          `Reference ${str(r.reference)} found in the ${pattern === 0 ? "body" : "subject"}`,
-          pattern === 0
-            ? `Subject changed (“${subject}”) — matched by reference, not by subject`
-            : "Thread subject kept",
-          `Sender domain ${domain} = ${name}`,
+          (pattern === 0 ? m.api_sourcing_ref_in_body : m.api_sourcing_ref_in_subject)({ ref: str(r.reference) }, o),
+          pattern === 0 ? m.api_sourcing_subject_changed({ subject }, o) : m.api_sourcing_subject_kept({}, o),
+          m.api_sourcing_sender_domain({ domain, name }, o),
         ].join("\n"),
       },
     });
     await saveOffers(req, r, sid, lines);
     await update(req, "supplier-rfqs", r.id, {
       status: "Replied",
-      lastEvent: `Offer received${pattern === 0 ? ` (subject “${subject}”)` : ""} — matched by reference, reminders stopped`,
+      lastEvent: m.api_sourcing_offer_received_event({ changed: pattern === 0 ? "yes" : "no", subject }, o),
     });
     events.push({
       reference: str(r.reference),
       supplier: name,
       subject,
       outcome: "Replied",
-      detail: `${lines.length} line${lines.length > 1 ? "s" : ""} offered${pattern === 0 ? " · subject changed, matched by reference" : ""}`,
+      detail: m.api_sourcing_lines_offered({ count: lines.length, changed: pattern === 0 ? "yes" : "no" }, o),
     });
   }
 
@@ -1509,7 +1616,10 @@ export async function simulateReplies(req: Req, caseDoc: Doc): Promise<ReplyEven
       status: "New",
       kind: "local",
       currency: "EGP",
-      source: `Auto-created from an email reply to ${str(firstOpen.reference)} (${fmtDate(iso(t))}) — quoted, never ordered`,
+      source: m.api_sourcing_auto_created_source(
+        { reference: str(firstOpen.reference), date: fmtDate(iso(t), o.locale) },
+        o,
+      ),
     });
     const already = await all(req, "supplier-rfqs", {
       and: [{ case: { equals: caseDoc.id } }, { supplier: { equals: s.id } }],
@@ -1524,7 +1634,7 @@ export async function simulateReplies(req: Req, caseDoc: Doc): Promise<ReplyEven
         status: "Replied",
         category,
         mode: "Split by category",
-        lastEvent: `Not invited — replied to ${str(firstOpen.reference)} forwarded to them; supplier created automatically`,
+        lastEvent: m.api_sourcing_not_invited_event({ reference: str(firstOpen.reference) }, o),
         anonymised: true,
       });
       const lines = (await replyLines(req, firstOpen, s.id)).map((l) => {
@@ -1537,8 +1647,15 @@ export async function simulateReplies(req: Req, caseDoc: Doc): Promise<ReplyEven
           validDays: 5,
           confidence: perKg ? 0.71 : 0.86,
           uncertain: perKg
-            ? `Quoted “${price} LE” — read as per kg, converted to ${(price * l.packSize).toLocaleString("en-US")} per ${l.packSize} kg pack. Confirm the unit.`
-            : `New supplier: confirm the offered item matches line ${l.lineNo}.`,
+            ? m.api_sourcing_per_kg_uncertain(
+                {
+                  price,
+                  converted: (price * l.packSize).toLocaleString(intlLocale(o.locale, "en-US")),
+                  pack: l.packSize,
+                },
+                o,
+              )
+            : m.api_sourcing_new_supplier_confirm({ line: l.lineNo }, o),
         };
       });
       const reference = str(firstOpen.reference);
@@ -1565,10 +1682,13 @@ export async function simulateReplies(req: Req, caseDoc: Doc): Promise<ReplyEven
           reference,
           confidence: 0.93,
           basis: [
-            `Reference ${reference} found in the body`,
-            "Subject changed (“price offer”) — matched by reference, not by subject",
-            `Sender ${NEW_SUPPLIER.emailDomain} is not in the supplier list — new supplier ${fresh ? "created" : "already saved"} automatically`,
-            "Price unit unclear — a person confirms",
+            m.api_sourcing_ref_in_body({ ref: reference }, o),
+            m.api_sourcing_subject_changed({ subject: "price offer" }, o),
+            (fresh ? m.api_sourcing_new_supplier_created : m.api_sourcing_new_supplier_saved)(
+              { domain: NEW_SUPPLIER.emailDomain },
+              o,
+            ),
+            m.api_sourcing_price_unit_unclear({}, o),
           ].join("\n"),
         },
       });
@@ -1578,12 +1698,12 @@ export async function simulateReplies(req: Req, caseDoc: Doc): Promise<ReplyEven
         supplier: NEW_SUPPLIER.name,
         subject: "price offer",
         outcome: "New supplier saved",
-        detail: "Not in the database: supplier created, dated price stored with validity — unit to confirm",
+        detail: m.api_sourcing_new_supplier_detail({}, o),
       });
       await logActivity(req, {
         case: caseDoc.id,
         kind: "auto",
-        text: `New supplier ${NEW_SUPPLIER.name} replied to ${reference} — supplier and dated price saved automatically; unit waits for a person.`,
+        text: m.api_sourcing_new_supplier_activity({ name: NEW_SUPPLIER.name, reference }, o),
       });
     }
   }
@@ -1593,7 +1713,7 @@ export async function simulateReplies(req: Req, caseDoc: Doc): Promise<ReplyEven
 /* ------------------------------------------------------------------ endpoints */
 
 const guard = (handler: (req: Req) => Promise<Response>) => async (req: Req) => {
-  if (!req.user) return fail(401, "You are not allowed to perform this action.");
+  if (!req.user) return fail(401, m.api_insights_shared_not_allowed({}, loc(req)));
   try {
     return await handler(req);
   } catch (e) {
@@ -1610,7 +1730,7 @@ export async function inboxPayload(req: Req): Promise<InboxPayload> {
   const connections = list<Json>(integrations.connections)
     .filter((c) => /mailbox|Website/.test(str(c.kind)))
     .map((c) => ({ kind: str(c.kind), account: str(c.account), status: str(c.status) }));
-  connections.push({ kind: "WhatsApp", account: "forwarded by staff", status: "Manual" });
+  connections.push({ kind: "WhatsApp", account: m.api_sourcing_forwarded_by_staff({}, loc(req)), status: "Manual" });
   return {
     connections,
     stats: {
@@ -1670,13 +1790,13 @@ async function linkedReply(req: Req, msg: Doc): Promise<Doc | null> {
 
 async function messageOr404(req: Req) {
   const msg = await byId(req, "intake-messages", str(req.routeParams?.id));
-  if (!msg) throw Object.assign(new Error("Message not found."), { status: 404 });
+  if (!msg) throw Object.assign(new Error(m.api_sourcing_message_not_found({}, loc(req))), { status: 404 });
   return msg;
 }
 
 export async function caseOr404(req: Req) {
   const c = await byId(req, "cases", str(req.routeParams?.id));
-  if (!c) throw Object.assign(new Error("Case not found."), { status: 404 });
+  if (!c) throw Object.assign(new Error(m.api_sourcing_case_not_found({}, loc(req))), { status: 404 });
   return c;
 }
 
@@ -1722,12 +1842,12 @@ export const sourcingEndpoints: Endpoint[] = [
     method: "post",
     handler: guard(async (req) => {
       const msg = await messageOr404(req);
-      const m = await matchMessage(req, msg);
-      if (m.outcome === "duplicate") {
-        await applyMatch(req, msg, m);
+      const match = await matchMessage(req, msg);
+      if (match.outcome === "duplicate") {
+        await applyMatch(req, msg, match);
         return json({
           kind: "duplicate",
-          match: m,
+          match,
           message: await toInboxMessage(req, (await byId(req, "intake-messages", msg.id))!),
         });
       }
@@ -1742,16 +1862,19 @@ export const sourcingEndpoints: Endpoint[] = [
     method: "post",
     handler: guard(async (req) => {
       const msg = await messageOr404(req);
-      const m = await matchMessage(req, msg);
-      await applyMatch(req, msg, m);
-      const pct = `${Math.round(m.confidence * 100)}%`;
+      const match = await matchMessage(req, msg);
+      await applyMatch(req, msg, match);
+      const t = loc(req);
+      const pct = `${Math.round(match.confidence * 100)}%`;
       const message =
-        m.outcome === "linked"
-          ? `Matched to ${m.caseId} by ${m.reference} (${pct})`
-          : m.outcome === "duplicate"
-            ? `Duplicate — ${m.caseId ? `already linked to ${m.caseId}` : "kept with the original"}`
-            : "Uncertain — sent to the review queue";
-      return json({ match: m, doc: await toInboxMessage(req, (await byId(req, "intake-messages", msg.id))!), message });
+        match.outcome === "linked"
+          ? m.api_sourcing_matched_to({ caseId: str(match.caseId), reference: str(match.reference), pct }, t)
+          : match.outcome === "duplicate"
+            ? match.caseId
+              ? m.api_sourcing_duplicate_linked({ caseId: match.caseId }, t)
+              : m.api_sourcing_duplicate_kept({}, t)
+            : m.api_sourcing_uncertain_review({}, t);
+      return json({ match, doc: await toInboxMessage(req, (await byId(req, "intake-messages", msg.id))!), message });
     }),
   },
   {
@@ -1766,7 +1889,7 @@ export const sourcingEndpoints: Endpoint[] = [
           case: { id: idOf(msg.createdCase), caseId },
           acknowledged: false,
           already: true,
-          message: `Case ${caseId} was already created from this message`,
+          message: m.api_sourcing_case_already_created({ caseId }, loc(req)),
         });
       }
       return json(await createCaseFrom(req, msg, await body(req)), 201);
@@ -1795,7 +1918,8 @@ export const sourcingEndpoints: Endpoint[] = [
       }
       const caseId = str(input.case) || str(idOf(match.case));
       const c = caseId ? await byId(req, "cases", caseId) : null;
-      if (!c) return fail(400, "Pick the case this message belongs to.");
+      const t = loc(req);
+      if (!c) return fail(400, m.api_sourcing_pick_case({}, t));
       await update(req, "intake-messages", msg.id, {
         status: "Linked",
         match: { ...match, case: c.id, reviewedBy: userId(req), reviewedAt: iso(DEMO_NOW.getTime()) },
@@ -1817,13 +1941,24 @@ export const sourcingEndpoints: Endpoint[] = [
         const drafts = list<OfferLine>(msg.offerDraft);
         if (drafts.length && !offers.length) await saveOffers(req, rfq, str(idOf(rfq.supplier)), drafts);
         if (!ANSWERED_RFQ.includes(str(rfq.status)))
-          await update(req, "supplier-rfqs", rfq.id, { status: "Replied", lastEvent: "Reply linked after review" });
+          await update(req, "supplier-rfqs", rfq.id, {
+            status: "Replied",
+            lastEvent: m.api_sourcing_linked_after_review_event({}, t),
+          });
       }
       const who = await userName(req, userId(req));
       await logActivity(req, {
         case: c.id,
         kind: "human",
-        text: `“${str(msg.subject)}” from ${str(msg.fromName)} linked by ${who} after review${list(msg.offerDraft).length ? " — offer confirmed" : ""}.`,
+        text: m.api_sourcing_linked_activity(
+          {
+            subject: str(msg.subject),
+            from: str(msg.fromName),
+            who,
+            offer: list(msg.offerDraft).length ? "yes" : "no",
+          },
+          t,
+        ),
       });
       // A link that counted a supplier's reply on the case (offers, the RFQ's status) stands.
       return json({
@@ -1838,16 +1973,17 @@ export const sourcingEndpoints: Endpoint[] = [
     method: "post",
     handler: guard(async (req) => {
       const msg = await messageOr404(req);
+      const t = loc(req);
       const match = obj(msg.match);
       if (!["Ignored", "Linked"].includes(str(msg.status)) || !idOf(match.reviewedBy))
-        return fail(409, "This message isn't filed by a review — there is nothing to take back.");
+        return fail(409, m.api_sourcing_not_filed_by_review({}, t));
       if (idOf(match.reviewedBy) !== userId(req))
         return fail(
           403,
-          `${await userName(req, idOf(match.reviewedBy) ?? undefined)} filed this message — only they can take it back.`,
+          m.api_sourcing_only_filer({ name: await userName(req, idOf(match.reviewedBy) ?? undefined) }, t),
         );
       if (str(msg.status) === "Linked" && (await linkedReply(req, msg)))
-        return fail(409, "The supplier's reply is already counted on the case — the link can't be taken back.");
+        return fail(409, m.api_sourcing_reply_counted({}, t));
       const was = obj(await body(req));
       const before = ["New", "Needs review"].includes(str(was.status)) ? str(was.status) : "Needs review";
       const guess = str(was.case) ? await byId(req, "cases", str(was.case)) : null;
@@ -1859,11 +1995,14 @@ export const sourcingEndpoints: Endpoint[] = [
         await logActivity(req, {
           case: idOf(match.case)!,
           kind: "human",
-          text: `“${str(msg.subject)}” from ${str(msg.fromName)} put back in the review queue by ${await userName(req, userId(req))}.`,
+          text: m.api_sourcing_reopened_activity(
+            { subject: str(msg.subject), from: str(msg.fromName), who: await userName(req, userId(req)) },
+            t,
+          ),
         });
       return json({
         doc: await toInboxMessage(req, (await byId(req, "intake-messages", msg.id))!),
-        message: "Back in the review queue",
+        message: m.api_sourcing_back_in_queue({}, t),
       });
     }),
   },
@@ -1880,6 +2019,7 @@ export const sourcingEndpoints: Endpoint[] = [
     method: "post",
     handler: guard(async (req) => {
       const existing = await historyMessages(req);
+      const t = loc(req);
       for (const u of HISTORY_UNCERTAIN) {
         if (existing.some((m) => m.messageId === `history-${u.key}`)) continue;
         await create(req, "intake-messages", {
@@ -1898,15 +2038,29 @@ export const sourcingEndpoints: Endpoint[] = [
                 : "New RFQ",
           status: "Needs review",
           source: "History import",
-          history: { kind: u.kind, question: u.question, proposal: u.proposal, confidence: u.confidence },
+          history: {
+            kind: u.kind,
+            question: canned(u.question, t.locale),
+            proposal: canned(u.proposal, t.locale),
+            confidence: u.confidence,
+          },
         });
       }
       if (!existing.length)
         await notify(
           req,
           "kb",
-          "Inbox history ready for your approval",
-          `${HISTORY_TOTALS.customers} customers, ${HISTORY_TOTALS.vessels} vessels, ${HISTORY_TOTALS.suppliers} suppliers, ${HISTORY_TOTALS.prices.toLocaleString("en-US")} dated prices · ${HISTORY_UNCERTAIN.length} uncertain items to review`,
+          m.api_sourcing_history_ready({}, t),
+          m.api_sourcing_history_ready_detail(
+            {
+              customers: HISTORY_TOTALS.customers,
+              vessels: HISTORY_TOTALS.vessels,
+              suppliers: HISTORY_TOTALS.suppliers,
+              prices: HISTORY_TOTALS.prices.toLocaleString(intlLocale(t.locale, "en-US")),
+              uncertain: HISTORY_UNCERTAIN.length,
+            },
+            t,
+          ),
           "/inbox-history",
           "Approval",
         );
@@ -1918,25 +2072,25 @@ export const sourcingEndpoints: Endpoint[] = [
     method: "post",
     handler: guard(async (req) => {
       const msg = await messageOr404(req);
-      if (str(msg.source) !== "History import") return fail(400, "Not a history item.");
+      const t = loc(req);
+      if (str(msg.source) !== "History import") return fail(400, m.api_sourcing_not_history_item({}, t));
       const input = str((await body(req)).decision);
       const path = `/inbox-history/review/${encodeURIComponent(msg.id)}`;
       // The Undo of a decision: back to "needs a decision", while the import isn't approved.
       if (input === "reopen") {
-        if (str(msg.status) === "Needs review") return fail(409, "This item is already waiting for a decision.");
-        if ((await historyPayload(req)).approved)
-          return fail(409, "The import is approved and saved — its decisions can't be taken back.");
+        if (str(msg.status) === "Needs review") return fail(409, m.api_sourcing_already_waiting({}, t));
+        if ((await historyPayload(req)).approved) return fail(409, m.api_sourcing_import_approved({}, t));
         if (idOf(obj(msg.match).reviewedBy) !== userId(req))
           return fail(
             403,
-            `${await userName(req, idOf(obj(msg.match).reviewedBy) ?? undefined)} decided this item — only they can take it back.`,
+            m.api_sourcing_only_decider({ name: await userName(req, idOf(obj(msg.match).reviewedBy) ?? undefined) }, t),
           );
         await updateAsUser(req, "intake-messages", msg.id, {
           status: "Needs review",
           history: { ...obj(msg.history), decision: null },
           match: { ...obj(msg.match), reviewedBy: null, reviewedAt: null },
         });
-        return json({ ...(await historyPayload(req)), message: "Back to needing a decision" });
+        return json({ ...(await historyPayload(req)), message: m.api_sourcing_back_to_decision({}, t) });
       }
       const decision = input === "reject" ? "Rejected" : "Confirmed";
       await update(req, "intake-messages", msg.id, {
@@ -1952,11 +2106,11 @@ export const sourcingEndpoints: Endpoint[] = [
     path: "/inbox-history/approve",
     method: "post",
     handler: guard(async (req) => {
-      if (role(req) !== "management")
-        return fail(403, "Only management (Karim Balbaa) can approve the history import.");
+      const t = loc(req);
+      if (role(req) !== "management") return fail(403, m.api_sourcing_management_approves({}, t));
       const p = await historyPayload(req);
-      if (!p.organised) return fail(400, "Organise the history first.");
-      if (p.pending) return fail(400, `${p.pending} uncertain item${p.pending > 1 ? "s" : ""} still need a decision.`);
+      if (!p.organised) return fail(400, m.api_sourcing_organise_first({}, t));
+      if (p.pending) return fail(400, m.api_sourcing_pending_items({ count: p.pending }, t));
       if (!p.approved) await commitHistory(req);
       return json(await historyPayload(req));
     }),
@@ -1977,17 +2131,18 @@ export const sourcingEndpoints: Endpoint[] = [
       const input = await body(req);
       const mode = str(input.mode) === "full" ? "full" : "split";
       const only = list<number>(input.lineNos).map(num).filter(Boolean);
-      if (Array.isArray(input.lineNos) && !only.length) return fail(400, "Pick at least one line.");
+      const t = loc(req);
+      if (Array.isArray(input.lineNos) && !only.length) return fail(400, m.api_sourcing_pick_line({}, t));
       const plan = await planRfqs(req, c, mode, only);
       if (plan.drafts.length) plans.set(c.id, plan);
       else plans.delete(c.id);
       takenBack.delete(c.id);
       const n = plan.drafts.length;
       const message = n
-        ? `${n} RFQ draft${n === 1 ? "" : "s"} ready — check them before sending`
+        ? m.api_sourcing_drafts_ready({ count: n }, t)
         : plan.held.length && !plan.skipped.length
-          ? `Held back until clarified: ${plan.held.map((h) => `L${h.lineNo} (${h.reason})`).join(" · ")}`
-          : "Nothing new to send — every picked line was already asked of these suppliers";
+          ? m.api_sourcing_held_back({ lines: plan.held.map((h) => `L${h.lineNo} (${h.reason})`).join(" · ") }, t)
+          : m.api_sourcing_nothing_new({}, t);
       return json({ ...plan, message });
     }),
   },
@@ -1999,7 +2154,8 @@ export const sourcingEndpoints: Endpoint[] = [
       const c = await caseOr404(req);
       const reference = str((await body(req)).reference);
       const plan = plans.get(c.id);
-      if (!plan?.drafts.some((d) => d.reference === reference)) return fail(404, "That draft is no longer there.");
+      if (!plan?.drafts.some((d) => d.reference === reference))
+        return fail(404, m.api_sourcing_draft_gone({}, loc(req)));
       const drafts = plan.drafts.filter((d) => d.reference !== reference);
       if (drafts.length) plans.set(c.id, { ...plan, drafts });
       else plans.delete(c.id);
@@ -2015,11 +2171,11 @@ export const sourcingEndpoints: Endpoint[] = [
       const c = await caseOr404(req);
       const kept = takenBack.get(c.id);
       if (!kept || (plans.get(c.id) ?? null) !== kept.after)
-        return fail(409, "The drafts have changed since (drafted again or sent) — there is nothing to put back.");
+        return fail(409, m.api_sourcing_drafts_changed({}, loc(req)));
       plans.set(c.id, kept.before);
       takenBack.delete(c.id);
       const n = kept.before.drafts.length;
-      return json({ plan: kept.before, message: `${n} RFQ draft${n === 1 ? "" : "s"} back — nothing was sent` });
+      return json({ plan: kept.before, message: m.api_sourcing_drafts_back({ count: n }, loc(req)) });
     }),
   },
   {
@@ -2045,7 +2201,8 @@ export const sourcingEndpoints: Endpoint[] = [
       const kept = plans.get(c.id);
       const given = list<Json>(input.drafts);
       const drafts: Json[] = given.length ? given : ((kept?.drafts ?? []) as unknown as Json[]);
-      if (!drafts.length) return fail(400, "Nothing to send — draft the RFQs first.");
+      const t = loc(req);
+      if (!drafts.length) return fail(400, m.api_sourcing_nothing_to_send({}, t));
       const mode = str(input.mode || (given.length ? "" : kept?.mode)) === "full" ? "Full list" : "Split by category";
       const due = str(input.dueAt) || (given.length ? "" : str(kept?.dueAt)) || rfqDueAt(c);
       const sentAt = DEMO_NOW.getTime() + 5 * 60_000;
@@ -2063,7 +2220,7 @@ export const sourcingEndpoints: Endpoint[] = [
             status: "Sent",
             reminders: 0,
             nextReminderAt: iso(sentAt + REMINDER_HOURS[0] * HOUR),
-            lastEvent: "Sent (client identity removed) · reminder 1 scheduled",
+            lastEvent: m.api_sourcing_sent_event({}, t),
             anonymised: true,
             sentBy: userId(req),
             mode,
@@ -2078,7 +2235,15 @@ export const sourcingEndpoints: Endpoint[] = [
       await logActivity(req, {
         case: c.id,
         kind: "human",
-        text: `${sent.length} supplier RFQ${sent.length === 1 ? "" : "s"} sent by ${await userName(req, userId(req))} (${mode.toLowerCase()}, client identity removed): ${sent.map((r) => str(r.reference)).join(", ")}.`,
+        text: m.api_sourcing_sent_activity(
+          {
+            count: sent.length,
+            who: await userName(req, userId(req)),
+            mode: optionLabel(req, "supplier-rfqs", "mode", mode).toLowerCase(),
+            references: sent.map((r) => str(r.reference)).join(t.locale === "ar" ? "، " : ", "),
+          },
+          t,
+        ),
       });
       return json({ sent: sent.map((r) => ({ id: r.id, reference: str(r.reference) })) }, 201);
     }),
@@ -2100,7 +2265,7 @@ export const sourcingEndpoints: Endpoint[] = [
     handler: guard(async (req) => {
       const c = await caseOr404(req);
       const events = await simulateReplies(req, c);
-      if (!events.length) return fail(400, "No supplier RFQs are waiting for a reply — send RFQs first");
+      if (!events.length) return fail(400, m.api_sourcing_none_waiting({}, loc(req)));
       arrivals.set(c.id, { at: Date.now(), events });
       return json({ events });
     }),
@@ -2110,8 +2275,9 @@ export const sourcingEndpoints: Endpoint[] = [
     method: "post",
     handler: guard(async (req) => {
       const r = await byId(req, "supplier-rfqs", str(req.routeParams?.id));
-      if (!r) return fail(404, "Supplier RFQ not found.");
-      if (!OPEN_RFQ.includes(str(r.status))) return fail(400, "Reminders stop once a supplier has answered.");
+      const t = loc(req);
+      if (!r) return fail(404, m.api_sourcing_rfq_not_found({}, t));
+      if (!OPEN_RFQ.includes(str(r.status))) return fail(400, m.api_sourcing_reminders_stop({}, t));
       return json({ event: await remind(req, r) });
     }),
   },

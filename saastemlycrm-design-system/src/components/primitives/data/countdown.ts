@@ -3,6 +3,7 @@ import { customElement, property, state } from "lit/decorators.js";
 import { keyed } from "lit/directives/keyed.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { MINUTE_MS, timeLeft } from "../../base/countdown.ts";
+import { m } from "../../../i18n/index.ts";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { iconSvg } from "../media/icon.ts";
@@ -114,7 +115,7 @@ export class UiCountdown extends LightElement {
     const t = this.#clock();
     const passed = this.items.filter((x) => Date.parse(x.due) < t && !this.#overdue.has(x.due + x.label));
     for (const x of passed) this.#overdue.add(x.due + x.label);
-    if (passed.length) this._said = passed.map((x) => `${x.label} is overdue`).join(". ");
+    if (passed.length) this._said = passed.map((x) => m.countdown_overdue({ what: x.label })).join(" ");
     this._tick++;
   };
 

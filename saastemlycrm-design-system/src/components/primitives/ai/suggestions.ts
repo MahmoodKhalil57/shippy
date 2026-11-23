@@ -4,6 +4,7 @@ import { customElement, property } from "lit/decorators.js";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { button } from "../actions/button.ts";
+import { m } from "../../../i18n/index.ts";
 
 /**
  * Suggestions: one-click prompts the person can send without typing.
@@ -34,7 +35,7 @@ export class UiSuggestions extends LightElement {
   @property({ type: Boolean }) disabled = false;
 
   render() {
-    return html`<div class=${suggestions({ wrap: this.wrap })} role="group" aria-label="Suggestions">
+    return html`<div class=${suggestions({ wrap: this.wrap })} role="group" aria-label=${m.suggestions_label()}>
       ${this.items.map(
         (value) =>
           html`<button

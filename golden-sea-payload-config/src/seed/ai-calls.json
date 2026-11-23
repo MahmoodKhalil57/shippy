@@ -3,7 +3,10 @@
     "id": "ai-001",
     "at": "2026-11-17T08:43:10.000Z",
     "task": "Read an attachment",
-    "subject": "WhatsApp photo of a gasket label",
+    "subject": {
+      "en": "WhatsApp photo of a gasket label",
+      "ar": "صورة واتساب لملصق حشية"
+    },
     "values": 3,
     "seconds": 6.2,
     "model": "Demo stub (no live AI)",
@@ -15,7 +18,10 @@
     "id": "ai-002",
     "at": "2026-11-17T08:42:30.000Z",
     "task": "Read an attachment",
-    "subject": "RFQ_AuroraCrest.xlsx · 18 lines",
+    "subject": {
+      "en": "RFQ_AuroraCrest.xlsx · 18 lines",
+      "ar": "RFQ_AuroraCrest.xlsx · 18 بندًا"
+    },
     "values": 54,
     "seconds": 4.8,
     "model": "Demo stub (no live AI)",
@@ -27,7 +33,10 @@
     "id": "ai-003",
     "at": "2026-11-17T08:42:00.000Z",
     "task": "Read an email",
-    "subject": "RFQ email from Helios Bulk Carriers, MV Aurora Crest",
+    "subject": {
+      "en": "RFQ email from Helios Bulk Carriers, MV Aurora Crest",
+      "ar": "بريد طلب عرض من Helios Bulk Carriers، MV Aurora Crest"
+    },
     "values": 22,
     "seconds": 3.1,
     "model": "Demo stub (no live AI)",
@@ -40,7 +49,10 @@
     "id": "ai-004",
     "at": "2026-11-17T07:00:00.000Z",
     "task": "Write the briefing",
-    "subject": "07:00 briefing for Karim Balbaa from 214 live records",
+    "subject": {
+      "en": "07:00 briefing for Karim Balbaa from 214 live records",
+      "ar": "ملخص الساعة 07:00 لكريم بلباع من 214 سجلًا حيًا"
+    },
     "values": 214,
     "seconds": 9.4,
     "model": "Demo stub (no live AI)",
@@ -50,7 +62,10 @@
     "id": "ai-005",
     "at": "2026-11-17T06:58:00.000Z",
     "task": "Write the briefing",
-    "subject": "07:00 briefing for Mohamed Helmy from 188 live records",
+    "subject": {
+      "en": "07:00 briefing for Mohamed Helmy from 188 live records",
+      "ar": "ملخص الساعة 07:00 لمحمد حلمي من 188 سجلًا حيًا"
+    },
     "values": 188,
     "seconds": 8.7,
     "model": "Demo stub (no live AI)",
@@ -60,7 +75,10 @@
     "id": "ai-006",
     "at": "2026-11-16T16:20:00.000Z",
     "task": "Match a reply",
-    "subject": "Delta Marine reply matched to GS-SRFQ-0142-A by reference",
+    "subject": {
+      "en": "Delta Marine reply matched to GS-SRFQ-0142-A by reference",
+      "ar": "رد Delta Marine طوبق مع GS-SRFQ-0142-A بالمرجع"
+    },
     "values": 1,
     "seconds": 0.9,
     "model": "Demo stub (no live AI)",
@@ -72,7 +90,10 @@
     "id": "ai-007",
     "at": "2026-11-16T15:24:00.000Z",
     "task": "Draft a handover",
-    "subject": "Handover note for GS-RFQ-0135 to Soaad Amer",
+    "subject": {
+      "en": "Handover note for GS-RFQ-0135 to Soaad Amer",
+      "ar": "مذكرة تسليم GS-RFQ-0135 إلى سعاد عامر"
+    },
     "values": 7,
     "seconds": 2.4,
     "model": "Demo stub (no live AI)",
@@ -84,7 +105,10 @@
     "id": "ai-008",
     "at": "2026-11-16T15:05:00.000Z",
     "task": "Check an offer",
-    "subject": "Offer v1 from Delta Marine: Loctite 242 offered, 243 asked",
+    "subject": {
+      "en": "Offer v1 from Delta Marine: Loctite 242 offered, 243 asked",
+      "ar": "العرض v1 من Delta Marine: عُرض Loctite 242 والمطلوب 243"
+    },
     "values": 12,
     "seconds": 2.6,
     "model": "Demo stub (no live AI)",
@@ -97,7 +121,10 @@
     "id": "ai-009",
     "at": "2026-11-16T14:40:00.000Z",
     "task": "Check an offer",
-    "subject": "Offer for contact cleaner: 4 months shelf life left, 6 asked",
+    "subject": {
+      "en": "Offer for contact cleaner: 4 months shelf life left, 6 asked",
+      "ar": "عرض منظف الملامسات: يتبقى 4 أشهر من الصلاحية، والمطلوب 6"
+    },
     "values": 9,
     "seconds": 2.2,
     "model": "Demo stub (no live AI)",
@@ -110,7 +137,10 @@
     "id": "ai-010",
     "at": "2026-11-16T11:12:00.000Z",
     "task": "Answer a question",
-    "subject": "What is the status of Aurora Crest?",
+    "subject": {
+      "en": "What is the status of Aurora Crest?",
+      "ar": "ما حالة Aurora Crest؟"
+    },
     "values": 6,
     "seconds": 1.4,
     "model": "Demo stub (no live AI)",
@@ -121,7 +151,10 @@
     "id": "ai-011",
     "at": "2026-11-16T10:30:00.000Z",
     "task": "Read an email",
-    "subject": "Customer PO 88412 from Nordvik Ship Management",
+    "subject": {
+      "en": "Customer PO 88412 from Nordvik Ship Management",
+      "ar": "أمر شراء العميل 88412 من Nordvik Ship Management"
+    },
     "values": 15,
     "seconds": 2.9,
     "model": "Demo stub (no live AI)",
@@ -134,7 +167,10 @@
     "id": "ai-012",
     "at": "2026-11-15T14:22:00.000Z",
     "task": "Read an attachment",
-    "subject": "Polar Bay requisition scan, 2 pages",
+    "subject": {
+      "en": "Polar Bay requisition scan, 2 pages",
+      "ar": "مسح ضوئي لطلب توريد Polar Bay، صفحتان"
+    },
     "values": 11,
     "seconds": 7.5,
     "model": "Demo stub (no live AI)",
@@ -145,7 +181,10 @@
     "id": "ai-013",
     "at": "2026-11-15T13:10:00.000Z",
     "task": "Draft a reminder",
-    "subject": "Second reminder to Port Said Welding for GS-SRFQ-0142-E",
+    "subject": {
+      "en": "Second reminder to Port Said Welding for GS-SRFQ-0142-E",
+      "ar": "التذكير الثاني إلى Port Said Welding بشأن GS-SRFQ-0142-E"
+    },
     "values": 1,
     "seconds": 1.1,
     "model": "Demo stub (no live AI)",
@@ -157,7 +196,10 @@
     "id": "ai-014",
     "at": "2026-11-15T09:20:00.000Z",
     "task": "Answer a question",
-    "subject": "Which open quotes fall under the minimum margin?",
+    "subject": {
+      "en": "Which open quotes fall under the minimum margin?",
+      "ar": "أي العروض المفتوحة تقل عن الحد الأدنى للهامش؟"
+    },
     "values": 4,
     "seconds": 1.8,
     "model": "Demo stub (no live AI)",
@@ -167,7 +209,10 @@
     "id": "ai-015",
     "at": "2026-11-14T12:05:40.000Z",
     "task": "Read an attachment",
-    "subject": "Corallo_stores.pdf · 9 lines",
+    "subject": {
+      "en": "Corallo_stores.pdf · 9 lines",
+      "ar": "Corallo_stores.pdf · 9 بنود"
+    },
     "values": 27,
     "seconds": 5.6,
     "model": "Demo stub (no live AI)",
@@ -180,7 +225,10 @@
     "id": "ai-016",
     "at": "2026-11-14T12:05:00.000Z",
     "task": "Read an email",
-    "subject": "RFQ email from Mare Nostrum Shipping, MV Corallo",
+    "subject": {
+      "en": "RFQ email from Mare Nostrum Shipping, MV Corallo",
+      "ar": "بريد طلب عرض من Mare Nostrum Shipping، MV Corallo"
+    },
     "values": 19,
     "seconds": 3.3,
     "model": "Demo stub (no live AI)",
@@ -193,7 +241,10 @@
     "id": "ai-017",
     "at": "2026-11-13T15:30:00.000Z",
     "task": "Match a reply",
-    "subject": "Horizon Trading reply, subject changed, matched by reference",
+    "subject": {
+      "en": "Horizon Trading reply, subject changed, matched by reference",
+      "ar": "رد Horizon Trading، تغيّر الموضوع، طوبق بالمرجع"
+    },
     "values": 1,
     "seconds": 1.2,
     "model": "Demo stub (no live AI)",
@@ -205,7 +256,10 @@
     "id": "ai-018",
     "at": "2026-11-13T08:15:00.000Z",
     "task": "Read an email",
-    "subject": "Newsletter from a chandlery supplier",
+    "subject": {
+      "en": "Newsletter from a chandlery supplier",
+      "ar": "نشرة بريدية من مورّد مستلزمات سفن"
+    },
     "values": 0,
     "seconds": 0.8,
     "model": "Demo stub (no live AI)",
@@ -217,7 +271,10 @@
     "id": "ai-019",
     "at": "2026-11-12T10:40:00.000Z",
     "task": "Check an offer",
-    "subject": "Offer from Gulf Star: pack of 10 against 12 asked",
+    "subject": {
+      "en": "Offer from Gulf Star: pack of 10 against 12 asked",
+      "ar": "عرض من Gulf Star: عبوة 10 مقابل 12 مطلوبة"
+    },
     "values": 8,
     "seconds": 2.1,
     "model": "Demo stub (no live AI)",
@@ -230,7 +287,10 @@
     "id": "ai-020",
     "at": "2026-11-11T16:00:00.000Z",
     "task": "Answer a question",
-    "subject": "Who owes us money this week?",
+    "subject": {
+      "en": "Who owes us money this week?",
+      "ar": "من يدين لنا بالمال هذا الأسبوع؟"
+    },
     "values": 5,
     "seconds": 1.6,
     "model": "Demo stub (no live AI)",
@@ -240,7 +300,10 @@
     "id": "ai-021",
     "at": "2026-11-10T09:05:00.000Z",
     "task": "Read an email",
-    "subject": "RFQ email from Atlas Tankers, MT Atlas Pearl",
+    "subject": {
+      "en": "RFQ email from Atlas Tankers, MT Atlas Pearl",
+      "ar": "بريد طلب عرض من Atlas Tankers، MT Atlas Pearl"
+    },
     "values": 17,
     "seconds": 2.7,
     "model": "Demo stub (no live AI)",
@@ -253,7 +316,10 @@
     "id": "ai-022",
     "at": "2026-11-06T11:30:00.000Z",
     "task": "Read an email",
-    "subject": "RFQ email from Delta Offshore Services, rig support",
+    "subject": {
+      "en": "RFQ email from Delta Offshore Services, rig support",
+      "ar": "بريد طلب عرض من Delta Offshore Services، دعم الحفار"
+    },
     "values": 21,
     "seconds": 3.4,
     "model": "Demo stub (no live AI)",
@@ -266,9 +332,12 @@
     "id": "ai-023",
     "at": "2026-11-04T09:50:00.000Z",
     "task": "Draft a reminder",
-    "subject": "Collection reminder for INV/2026/0402",
+    "subject": {
+      "en": "Collection reminder for INV/2026/0402",
+      "ar": "تذكير تحصيل للفاتورة INV/2026/0402"
+    },
     "values": 1,
-    "seconds": 1.0,
+    "seconds": 1,
     "model": "Demo stub (no live AI)",
     "outcome": "Confirmed by a person",
     "case": "gs-rfq-0131",
@@ -278,7 +347,10 @@
     "id": "ai-024",
     "at": "2026-11-03T08:10:00.000Z",
     "task": "Read an email",
-    "subject": "RFQ email from Nordvik Ship Management, MV Nordic Tern",
+    "subject": {
+      "en": "RFQ email from Nordvik Ship Management, MV Nordic Tern",
+      "ar": "بريد طلب عرض من Nordvik Ship Management، MV Nordic Tern"
+    },
     "values": 16,
     "seconds": 2.8,
     "model": "Demo stub (no live AI)",
@@ -291,7 +363,10 @@
     "id": "ai-025",
     "at": "2026-11-17T09:49:00.000Z",
     "task": "Read an email",
-    "subject": "RFQ email from Helios Bulk Carriers, MV Helios Star",
+    "subject": {
+      "en": "RFQ email from Helios Bulk Carriers, MV Helios Star",
+      "ar": "بريد طلب عرض من Helios Bulk Carriers، MV Helios Star"
+    },
     "values": 13,
     "seconds": 2.9,
     "model": "Demo stub (no live AI)",

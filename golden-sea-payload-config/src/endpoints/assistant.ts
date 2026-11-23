@@ -1,6 +1,7 @@
 import type { Endpoint, PayloadRequest } from "payload";
 import type { Doc } from "saastemlycrm-design-system/contracts";
-import { history as H } from "./history.ts";
+import { m } from "../i18n/paraglide/messages.js";
+import { history as H, historyLabel } from "./history.ts";
 import { caseProfit } from "./profit.ts";
 import {
   DAY,
@@ -16,12 +17,15 @@ import {
   fmtDay,
   fmtTime,
   idOf,
+  type Lang,
+  langOf,
   meOf,
   money,
   nameOf,
   num,
   pct,
   relative,
+  optionLabel,
   str,
   unauthorized,
 } from "./insights-shared.ts";
@@ -76,13 +80,48 @@ export const SUGGESTIONS = [
   "How is the growth pipeline?",
   "What's our margin this month?",
 ];
+/** The suggestions in a language, in the order of SUGGESTIONS (the last is about margin). */
+const suggestions = (o: { locale: Lang }) => [
+  m.api_assistant_suggest_status({}, o),
+  m.api_assistant_suggest_approvals({}, o),
+  m.api_assistant_suggest_owes({}, o),
+  m.api_assistant_suggest_late_suppliers({}, o),
+  m.api_assistant_suggest_pipeline({}, o),
+  m.api_assistant_suggest_margin({}, o),
+];
+
+/**
+ * How the assistant writes in the request's language: Paraglide's options, an option's label and
+ * money, all in that language.
+ */
+interface Words {
+  lang: Lang;
+  o: { locale: Lang };
+  opt: (collection: string, path: string, value: unknown) => string;
+  money: (currency: string, n: number) => string;
+  egp: (n: number) => string;
+}
+const wordsOf = (req: PayloadRequest): Words => {
+  const lang = langOf(req);
+  return {
+    lang,
+    o: { locale: lang },
+    opt: (collection, path, value) => optionLabel(req, collection, path, value),
+    money: (currency, n) => money(currency, n, 0, lang),
+    egp: (n) => egp(n, lang),
+  };
+};
 
 const LIVE_END = ["Closed — settled", "Lost", "Expired"];
 /** Stages before the quotation goes out (where the quote deadline matters). */
 const PRE_QUOTE = /New|Validating|Sourcing|Awaiting supplier|Comparing|corrected|approval|Revision/;
+/** The list separator of a language. */
+const sep = (t: Words) => (t.lang === "ar" ? "؛ " : "; ");
 /** The first few, then "and N more". */
-const some = (xs: string[], n = 3) =>
-  xs.length > n ? `${xs.slice(0, n).join("; ")} and ${xs.length - n} more` : xs.join("; ");
+const some = (t: Words, xs: string[], n = 3) =>
+  xs.length > n
+    ? m.api_assistant_and_more({ list: xs.slice(0, n).join(sep(t)), more: xs.length - n }, t.o)
+    : xs.join(sep(t));
 
 interface World {
   cases: Doc[];
@@ -114,16 +153,18 @@ async function world(req: PayloadRequest): Promise<World> {
         "receipts",
       ].map((c) => all(req, c)),
     );
-  const fx = (await req.payload.findGlobal({ slug: "fx-rates" as never }).catch(() => ({}))) as Record<string, unknown>;
+  const fx = (await req.payload
+    .findGlobal({ locale: req.locale, slug: "fx-rates" as never })
+    .catch(() => ({}))) as Record<string, unknown>;
   return { cases, approvals, rfqs, invoices, bills, suppliers, opportunities, exceptions, users, receipts, fx };
 }
 
 /** "USD 35,600 + EUR 7,040 + EGP 663,500". */
-const totalsText = (invoices: Doc[]) => {
+const totalsText = (t: Words, invoices: Doc[]) => {
   const totals = new Map<string, number>();
   for (const i of invoices)
     totals.set(str(i.currency) || "USD", (totals.get(str(i.currency) || "USD") ?? 0) + balance(i));
-  return [...totals].map(([cur, n]) => money(cur, n)).join(" + ");
+  return [...totals].map(([cur, n]) => t.money(cur, n)).join(" + ");
 };
 const caseSource = (c: Doc): Source => ({ label: str(c.caseId), href: docHref("cases", c.id) });
 const pending = (w: World) =>
@@ -173,44 +214,84 @@ export async function briefing(req: PayloadRequest, refresh = false): Promise<Br
   const role = str(me.role);
   const money$ = MONEY_ROLES.includes(role);
   const w = await world(req);
+  const t = wordsOf(req);
+  const { o } = t;
   const items: BriefingItem[] = [];
 
   const due = dueSoon(w);
   if (due.length)
     items.push({
       tone: "error",
-      text: `${due.length} quote${due.length === 1 ? "" : "s"} must go out by tomorrow: ${due
-        .map(
-          (c) =>
-            `${str(c.vessel)} (${str(c.caseId)}) ${relative(new Date(str(c.deadline)))}${c.blocker ? ` — ${str(c.blocker).toLowerCase()}` : ""}`,
-        )
-        .join("; ")}.`,
+      text: m.api_assistant_quotes_due(
+        {
+          count: due.length,
+          list: due
+            .map((c) =>
+              m.api_assistant_quote_due_item(
+                {
+                  vessel: str(c.vessel),
+                  caseId: str(c.caseId),
+                  when: relative(new Date(str(c.deadline)), t.lang),
+                  hasBlocker: c.blocker ? "yes" : "no",
+                  blocker: str(c.blocker).toLowerCase(),
+                },
+                o,
+              ),
+            )
+            .join(sep(t)),
+        },
+        o,
+      ),
       sources: due.map(caseSource),
     });
   const silent = silentRfqs(w);
   if (silent.length)
     items.push({
       tone: "warning",
-      text: `${silent.length} supplier${silent.length === 1 ? " hasn't" : "s haven't"} replied in time: ${silent
-        .map(
-          (r) =>
-            `${nameOf(r.supplier)} on ${str(r.reference)}${num(r.reminders) ? ` (${num(r.reminders)} reminder${num(r.reminders) === 1 ? "" : "s"} sent)` : ""}`,
-        )
-        .join("; ")}. Reminders run automatically; escalations go to the case owner.`,
+      text: m.api_assistant_suppliers_silent(
+        {
+          count: silent.length,
+          list: silent
+            .map((r) =>
+              m.api_assistant_silent_item(
+                { supplier: nameOf(r.supplier), reference: str(r.reference), reminders: num(r.reminders) },
+                o,
+              ),
+            )
+            .join(sep(t)),
+        },
+        o,
+      ),
       sources: silent.map((r) => ({ label: str(r.reference), href: docHref("supplier-rfqs", r.id) })),
     });
   const late = lateReceipts(w);
   if (late.length && role !== "sales")
     items.push({
       tone: "warning",
-      text: `${late.length} supplier deliver${late.length === 1 ? "y came" : "ies came"} in short: ${some(
-        late.map(
-          (r) =>
-            `PO ${str((r.purchaseOrder as Doc | undefined)?.number)} line ${num(r.lineNo)}, ${num(r.received)} of ${num(r.ordered)}${r.backorderDate ? ` — rest promised ${fmtDay(new Date(str(r.backorderDate)))}` : ""}`,
-        ),
-      )}. The bills stay on hold until the quantities match.`,
+      text: m.api_assistant_deliveries_short(
+        {
+          count: late.length,
+          list: some(
+            t,
+            late.map((r) =>
+              m.api_assistant_short_item(
+                {
+                  po: str((r.purchaseOrder as Doc | undefined)?.number),
+                  line: num(r.lineNo),
+                  received: num(r.received),
+                  ordered: num(r.ordered),
+                  hasPromise: r.backorderDate ? "yes" : "no",
+                  promised: r.backorderDate ? fmtDay(new Date(str(r.backorderDate)), t.lang) : "",
+                },
+                o,
+              ),
+            ),
+          ),
+        },
+        o,
+      ),
       sources: late.map((r) => ({
-        label: `Receipt PO ${str((r.purchaseOrder as Doc | undefined)?.number)}`,
+        label: m.api_assistant_receipt_po({ po: str((r.purchaseOrder as Doc | undefined)?.number) }, o),
         href: docHref("receipts", r.id),
       })),
     });
@@ -218,7 +299,14 @@ export async function briefing(req: PayloadRequest, refresh = false): Promise<Br
   for (const c of mismatch)
     items.push({
       tone: "error",
-      text: `The customer PO on ${str(c.caseId)} (${str(c.vessel)}) differs from the approved quote: ${str(c.blocker || "commitment blocked until it matches")}.`,
+      text: m.api_assistant_po_mismatch(
+        {
+          caseId: str(c.caseId),
+          vessel: str(c.vessel),
+          blocker: str(c.blocker) || m.api_assistant_commitment_blocked({}, o),
+        },
+        o,
+      ),
       sources: [caseSource(c)],
     });
   const ap = pending(w);
@@ -227,10 +315,27 @@ export async function briefing(req: PayloadRequest, refresh = false): Promise<Br
     items.push({
       tone: forMe.length ? "warning" : "info",
       text: forMe.length
-        ? `${forMe.length} approval${forMe.length === 1 ? " waits" : "s wait"} for you: ${some(forMe.map((a) => str(a.title)))}.`
-        : `${ap.length} item${ap.length === 1 ? " is" : "s are"} awaiting approval (${[...new Set(ap.map((a) => str(a.type)))].join(", ")}).`,
+        ? m.api_assistant_approvals_for_you(
+            {
+              count: forMe.length,
+              list: some(
+                t,
+                forMe.map((a) => str(a.title)),
+              ),
+            },
+            o,
+          )
+        : m.api_assistant_items_awaiting_approval(
+            {
+              count: ap.length,
+              types: [...new Set(ap.map((a) => t.opt("approvals", "type", a.type)))].join(
+                t.lang === "ar" ? "، " : ", ",
+              ),
+            },
+            o,
+          ),
       sources: (forMe.length ? forMe : ap).map((a) => ({
-        label: str(a.type || a.title),
+        label: a.type ? t.opt("approvals", "type", a.type) : str(a.title),
         href: docHref("approvals", a.id),
       })),
     });
@@ -239,8 +344,15 @@ export async function briefing(req: PayloadRequest, refresh = false): Promise<Br
   if (rate && active && money$)
     items.push({
       tone: "warning",
-      text: `USD moved from ${active.toFixed(2)} to ${num(rate.egpPerUnit).toFixed(2)} EGP (${pct(((num(rate.egpPerUnit) - active) / active) * 100)}). The new rate waits for approval; open quotations are re-checked against the 15% minimum margin once it's active.`,
-      sources: [{ label: "FX rates", href: link.global("fx-rates") }],
+      text: m.api_assistant_fx_moved(
+        {
+          from: active.toFixed(2),
+          to: num(rate.egpPerUnit).toFixed(2),
+          change: pct(((num(rate.egpPerUnit) - active) / active) * 100),
+        },
+        o,
+      ),
+      sources: [{ label: m.api_assistant_fx_rates({}, o), href: link.global("fx-rates") }],
     });
   const rec = receivable(w);
   if (rec.length && role !== "sales") {
@@ -251,10 +363,19 @@ export async function briefing(req: PayloadRequest, refresh = false): Promise<Br
       const d = i.dueDate ? new Date(str(i.dueDate)) : undefined;
       return d && d >= NOW && d.getTime() - NOW.getTime() < 7 * DAY;
     });
-    const line = (i: Doc) => `${nameOf(i.customer)} ${money(str(i.currency) || "USD", balance(i))} (${str(i.number)})`;
+    const line = (i: Doc) =>
+      `${nameOf(i.customer)} ${t.money(str(i.currency) || "USD", balance(i))} (${str(i.number)})`;
     items.push({
       tone: overdue.length ? "warning" : "info",
-      text: `Collections: ${totalsText(rec)} open on ${rec.length} invoices.${week.length ? ` Due this week: ${some(week.map(line))}.` : ""}${overdue.length ? ` Overdue: ${some(overdue.map(line))}.` : " Nothing overdue."}`,
+      text: [
+        m.api_assistant_collections({ totals: totalsText(t, rec), count: rec.length }, o),
+        week.length ? m.api_assistant_due_this_week({ list: some(t, week.map(line)) }, o) : "",
+        overdue.length
+          ? m.api_assistant_overdue({ list: some(t, overdue.map(line)) }, o)
+          : m.api_assistant_nothing_overdue({}, o),
+      ]
+        .filter(Boolean)
+        .join(" "),
       sources: [...week, ...overdue].map((i) => ({ label: str(i.number), href: docHref("invoices", i.id) })),
     });
   }
@@ -262,30 +383,45 @@ export async function briefing(req: PayloadRequest, refresh = false): Promise<Br
   if (held.length && money$)
     items.push({
       tone: "warning",
-      text: `${held.length} supplier bill${held.length === 1 ? " is" : "s are"} on hold after the three-way match: ${held.map((b) => `${str(b.billNumber)} (${str(b.holdReason)})`).join("; ")}.`,
+      text: m.api_assistant_bills_on_hold(
+        { count: held.length, list: held.map((b) => `${str(b.billNumber)} (${str(b.holdReason)})`).join(sep(t)) },
+        o,
+      ),
       sources: held.map((b) => ({ label: str(b.billNumber), href: docHref("supplier-bills", b.id) })),
     });
   const ex = w.exceptions.filter((x) => x.status === "Open");
   if (ex.length)
     items.push({
       tone: "warning",
-      text: `${ex.length} integration exception${ex.length === 1 ? "" : "s"} need${ex.length === 1 ? "s" : ""} a look: ${ex.map((x) => `${str(x.source)} — ${str(x.summary)}`).join("; ")}. Safe retry is available.`,
-      sources: ex.map((x) => ({ label: str(x.source), href: docHref("integration-exceptions", x.id) })),
+      text: m.api_assistant_exceptions(
+        {
+          count: ex.length,
+          list: ex
+            .map((x) => `${t.opt("integration-exceptions", "source", x.source)} — ${str(x.summary)}`)
+            .join(sep(t)),
+        },
+        o,
+      ),
+      sources: ex.map((x) => ({
+        label: t.opt("integration-exceptions", "source", x.source),
+        href: docHref("integration-exceptions", x.id),
+      })),
     });
   if (money$) {
     const gpE = H.gpExpectedK.at(-1) ?? 0;
     const gpA = H.gpActualK.at(-1) ?? 0;
     items.push({
       tone: "info",
-      text: `November gross profit: EGP ${gpE}k expected at quotation, EGP ${gpA}k actual so far as costs are billed.`,
-      sources: [{ label: "Control room", href: "/control-room" }],
+      text: m.api_assistant_november_gp({ expected: gpE, actual: gpA }, o),
+      sources: [{ label: m.api_assistant_control_room({}, o), href: "/control-room" }],
     });
   }
 
-  const name = first(str(me.name) || "there");
-  const greeting = `Good morning ${name}.`;
+  const greeting = str(me.name)
+    ? m.api_assistant_good_morning({ name: first(str(me.name)) }, o)
+    : m.api_assistant_good_morning_there({}, o);
   const summary = [greeting, "", ...items.map((i) => `• ${i.text}`)].join("\n");
-  const at = refresh ? fmtTime(new Date()) : "07:00";
+  const at = refresh ? fmtTime(new Date(), t.lang) : "07:00";
   return {
     at,
     greeting,
@@ -338,43 +474,96 @@ async function answerCase(req: PayloadRequest, w: World, c: Doc, role: string): 
   );
   const approvals = pending(w).filter((a) => idOf(a.case) === c.id);
   const invoices = w.invoices.filter((i) => idOf(i.case) === c.id);
+  const t = wordsOf(req);
+  const { o } = t;
+  const comma = t.lang === "ar" ? "، " : ", ";
+  const etaText = eta ? m.api_assistant_eta({ port: str(c.port), day: fmtDay(eta, t.lang) }, o) : "";
   const points = [
-    `Stage: ${str(c.stage)}${c.wait ? ` (${str(c.wait).toLowerCase()})` : ""} · owner ${userName(w, c.owner)}`,
-    `Next: ${str(c.nextAction)}${c.blocker ? ` · blocker: ${str(c.blocker)}` : ""}`,
+    m.api_assistant_case_stage(
+      {
+        stage: t.opt("cases", "stage", c.stage),
+        hasWait: c.wait ? "yes" : "no",
+        wait: t.opt("cases", "wait", c.wait).toLowerCase(),
+        owner: userName(w, c.owner),
+      },
+      o,
+    ),
+    m.api_assistant_case_next(
+      { next: str(c.nextAction), hasBlocker: c.blocker ? "yes" : "no", blocker: str(c.blocker) },
+      o,
+    ),
     deadline && PRE_QUOTE.test(str(c.stage))
-      ? `Quote deadline ${fmtDay(deadline)} ${fmtTime(deadline)} (${relative(deadline)})${eta ? ` · ETA ${str(c.port)} ${fmtDay(eta)}` : ""}`
-      : eta
-        ? `ETA ${str(c.port)} ${fmtDay(eta)}`
-        : "",
+      ? m.api_assistant_case_deadline(
+          {
+            day: fmtDay(deadline, t.lang),
+            time: fmtTime(deadline, t.lang),
+            when: relative(deadline, t.lang),
+            hasEta: eta ? "yes" : "no",
+            eta: etaText,
+          },
+          o,
+        )
+      : etaText,
     total
-      ? `Lines: ${num(lines?.ready)} of ${total} ready${num(lines?.blocked) ? `, ${num(lines?.blocked)} blocked` : ""}`
+      ? m.api_assistant_case_lines(
+          {
+            ready: num(lines?.ready),
+            total,
+            blocked: num(lines?.blocked),
+            hasBlocked: num(lines?.blocked) ? "yes" : "no",
+          },
+          o,
+        )
       : "",
     waiting.length
-      ? `Waiting on ${waiting.map((r) => nameOf(r.supplier)).join(", ")} (${waiting.map((r) => str(r.status).toLowerCase()).join(", ")})`
+      ? m.api_assistant_case_waiting_on(
+          {
+            suppliers: waiting.map((r) => nameOf(r.supplier)).join(comma),
+            statuses: waiting.map((r) => t.opt("supplier-rfqs", "status", r.status).toLowerCase()).join(comma),
+          },
+          o,
+        )
       : "",
-    approvals.length ? `Approval pending: ${approvals.map((a) => str(a.title)).join("; ")}` : "",
-    ...invoices.map(
-      (i) => `Invoice ${str(i.number)}: ${str(i.status)}, ${money(str(i.currency) || "USD", balance(i))} open`,
+    approvals.length
+      ? m.api_assistant_case_approval_pending({ titles: approvals.map((a) => str(a.title)).join(sep(t)) }, o)
+      : "",
+    ...invoices.map((i) =>
+      m.api_assistant_case_invoice(
+        {
+          number: str(i.number),
+          status: t.opt("invoices", "status", i.status),
+          amount: t.money(str(i.currency) || "USD", balance(i)),
+        },
+        o,
+      ),
     ),
   ].filter(Boolean);
   const sources: Source[] = [
     caseSource(c),
     ...waiting.map((r) => ({ label: str(r.reference), href: docHref("supplier-rfqs", r.id) })),
-    ...approvals.map((a) => ({ label: str(a.type), href: docHref("approvals", a.id) })),
+    ...approvals.map((a) => ({ label: t.opt("approvals", "type", a.type), href: docHref("approvals", a.id) })),
     ...invoices.map((i) => ({ label: str(i.number), href: docHref("invoices", i.id) })),
   ];
   if (MONEY_ROLES.includes(role) && /Invoiced|Delivering|Closed/.test(str(c.stage))) {
     const p = await caseProfit(req, c.id);
     if (p?.costed) {
       points.push(
-        `Gross profit ${egp(p.actual.profit)} (${pct(p.actual.margin)}) against ${egp(p.expected.profit)} expected (${pct(p.expected.margin)})`,
+        m.api_assistant_case_gp(
+          {
+            actual: t.egp(p.actual.profit),
+            actualMargin: pct(p.actual.margin),
+            expected: t.egp(p.expected.profit),
+            expectedMargin: pct(p.expected.margin),
+          },
+          o,
+        ),
       );
-      sources.push({ label: "Profit & close", href: `${docHref("cases", c.id)}/profit` });
+      sources.push({ label: m.api_assistant_profit_and_close({}, o), href: `${docHref("cases", c.id)}/profit` });
     }
   }
   return {
     intent: "case",
-    answer: `${str(c.caseId)} · ${str(c.vessel)} (${nameOf(c.customer)}): ${str(c.stage)}.`,
+    answer: `${str(c.caseId)} · ${str(c.vessel)} (${nameOf(c.customer)}): ${t.opt("cases", "stage", c.stage)}.`,
     points,
     sources,
   };
@@ -385,16 +574,20 @@ export async function ask(req: PayloadRequest, question: string): Promise<Answer
   const role = str(me.role);
   const q = question.toLowerCase().trim();
   const w = await world(req);
+  const t = wordsOf(req);
+  const { o } = t;
+  const comma = t.lang === "ar" ? "، " : ", ";
   const reply = (a: Omit<Answer, "question">): Answer => ({ question, ...a });
 
-  // Margin, profit and cost questions first: Sales never gets an answer to those.
-  if (has(q, "margin", "profit", "cost", "markup", " gp", /^gp\b/, "earn")) {
+  // Margin, profit and cost questions first: Sales never gets an answer to those. Questions are
+  // matched in English and in Arabic.
+  if (has(q, "margin", "profit", "cost", "markup", " gp", /^gp\b/, "earn", "هامش", "ربح", "أرباح", "تكلف", "تكاليف")) {
     if (role === "sales")
       return reply({
         intent: "refused",
         refused: true,
-        answer: "I can't share costs, margins or profit with the Sales role.",
-        points: ["Ask about a case's status, approvals, deadlines, suppliers or the growth pipeline instead."],
+        answer: m.api_assistant_refused({}, o),
+        points: [m.api_assistant_refused_hint({}, o)],
         sources: [],
       });
     const c = findCase(w, q);
@@ -403,56 +596,118 @@ export async function ask(req: PayloadRequest, question: string): Promise<Answer
       if (p?.costed)
         return reply({
           intent: "margin",
-          answer: `${p.caseId} (${p.vessel}): actual gross profit ${egp(p.actual.profit)}, ${pct(p.actual.margin)} margin, against ${egp(p.expected.profit)} (${pct(p.expected.margin)}) expected at quotation.`,
+          answer: m.api_assistant_case_margin(
+            {
+              caseId: p.caseId,
+              vessel: p.vessel,
+              actual: t.egp(p.actual.profit),
+              actualMargin: pct(p.actual.margin),
+              expected: t.egp(p.expected.profit),
+              expectedMargin: pct(p.expected.margin),
+            },
+            o,
+          ),
           points: [
             ...p.lines
               .filter((l) => l.actual !== undefined && Math.abs(l.actual - l.expected) >= 1)
-              .map((l) => `${l.label}: ${egp(l.expected)} → ${egp(l.actual!)}${l.note ? ` (${l.note})` : ""}`),
-            p.fxTotal ? `FX on receipts: ${p.fxTotal > 0 ? "+" : "−"}${egp(Math.abs(p.fxTotal))}` : "",
+              .map((l) => `${l.label}: ${t.egp(l.expected)} → ${t.egp(l.actual!)}${l.note ? ` (${l.note})` : ""}`),
+            p.fxTotal
+              ? m.api_assistant_fx_on_receipts(
+                  { amount: `${p.fxTotal > 0 ? "+" : "−"}${t.egp(Math.abs(p.fxTotal))}` },
+                  o,
+                )
+              : "",
           ].filter(Boolean),
-          sources: [{ label: `${p.caseId} profit & close`, href: `${docHref("cases", p.id)}/profit` }],
+          sources: [
+            {
+              label: m.api_assistant_case_profit_and_close({ caseId: p.caseId }, o),
+              href: `${docHref("cases", p.id)}/profit`,
+            },
+          ],
         });
     }
     const months = H.months;
     const e = H.gpExpectedK.at(-1) ?? 0;
     const a = H.gpActualK.at(-1) ?? 0;
-    const low = H.marginByStore.filter(([, m]) => m < 20);
+    const low = H.marginByStore.filter(([, v]) => v < 20);
     const settled = await caseProfit(req, "gs-rfq-0131");
+    const stores = (rows: [string, number][]) =>
+      rows.map(([s, v]) => `${historyLabel(s, t.lang)} ${pct(v)}`).join(comma);
     return reply({
       intent: "margin",
-      answer: `${months.at(-1)}: gross profit EGP ${e}k expected at quotation, EGP ${a}k actual so far — the gap closes as November's costs are billed.`,
+      answer: m.api_assistant_month_gp({ month: historyLabel(months.at(-1)!, t.lang), expected: e, actual: a }, o),
       points: [
-        `Margin by store, last 90 days: ${H.marginByStore.map(([s, m]) => `${s} ${pct(m)}`).join(", ")} (minimum 15%).`,
-        low.length ? `Lowest: ${low.map(([s, m]) => `${s} ${pct(m)}`).join(", ")}.` : "",
+        m.api_assistant_margin_by_store({ list: stores(H.marginByStore) }, o),
+        low.length ? m.api_assistant_lowest({ list: stores(low) }, o) : "",
         settled?.costed
-          ? `${settled.caseId}: ${pct(settled.actual.margin)} actual vs ${pct(settled.expected.margin)} expected — the launch cost more after the ETA moved at short notice.`
+          ? m.api_assistant_settled_margin(
+              { caseId: settled.caseId, actual: pct(settled.actual.margin), expected: pct(settled.expected.margin) },
+              o,
+            )
           : "",
       ].filter(Boolean),
       sources: [
-        { label: "Control room", href: "/control-room" },
+        { label: m.api_assistant_control_room({}, o), href: "/control-room" },
         ...(settled?.costed
-          ? [{ label: `${settled.caseId} profit & close`, href: `${docHref("cases", settled.id)}/profit` }]
+          ? [
+              {
+                label: m.api_assistant_case_profit_and_close({ caseId: settled.caseId }, o),
+                href: `${docHref("cases", settled.id)}/profit`,
+              },
+            ]
           : []),
       ],
     });
   }
 
-  if (has(q, "approv", "sign off", "sign-off", "waiting for me", "decision")) {
+  if (has(q, "approv", "sign off", "sign-off", "waiting for me", "decision", "موافق", "اعتماد", "قرار")) {
     const ap = pending(w);
     return reply({
       intent: "approvals",
       answer: ap.length
-        ? `${ap.length} approval${ap.length === 1 ? " is" : "s are"} waiting.`
-        : "Nothing is waiting for approval.",
-      points: ap.map(
-        (a) =>
-          `${str(a.title)} — ${str(a.type)}, from ${userName(w, a.requestedBy)} · approvers ${((a.approvers as unknown[] | undefined) ?? []).map((u) => first(userName(w, u))).join(" + ")}${a.twoPerson ? " (two-person rule)" : ""}`,
+        ? m.api_assistant_approvals_waiting({ count: ap.length }, o)
+        : m.api_assistant_nothing_waiting_approval({}, o),
+      points: ap.map((a) =>
+        m.api_assistant_approval_item(
+          {
+            title: str(a.title),
+            type: t.opt("approvals", "type", a.type),
+            from: userName(w, a.requestedBy),
+            approvers: ((a.approvers as unknown[] | undefined) ?? []).map((u) => first(userName(w, u))).join(" + "),
+            twoPerson: a.twoPerson ? "yes" : "no",
+          },
+          o,
+        ),
       ),
-      sources: ap.map((a) => ({ label: str(a.type), href: docHref("approvals", a.id) })),
+      sources: ap.map((a) => ({ label: t.opt("approvals", "type", a.type), href: docHref("approvals", a.id) })),
     });
   }
 
-  if (has(q, "owe", "cash", "receivable", "collect", "invoice", "paid", "payment", "debt", "overdue")) {
+  if (
+    has(
+      q,
+      "owe",
+      "cash",
+      "receivable",
+      "collect",
+      "invoice",
+      "paid",
+      "payment",
+      "debt",
+      "overdue",
+      "يدين",
+      "ندين",
+      "مدين",
+      "مستحق",
+      "تحصيل",
+      "فاتور",
+      "سداد",
+      "دفع",
+      "سيولة",
+      "نقد",
+      "دين",
+    )
+  ) {
     const rec = receivable(w).sort((x, y) => str(x.dueDate).localeCompare(str(y.dueDate)));
     const overdue = rec.filter((i) => i.dueDate && new Date(str(i.dueDate)) < NOW);
     const shown = rec.slice(0, 6);
@@ -462,17 +717,36 @@ export async function ask(req: PayloadRequest, question: string): Promise<Answer
     return reply({
       intent: "cash",
       answer: rec.length
-        ? `Customers owe ${totalsText(rec)} on ${rec.length} open invoice${rec.length === 1 ? "" : "s"}${overdue.length ? `; ${overdue.length} overdue` : ""}.`
-        : "No customer invoice has an open balance.",
+        ? m.api_assistant_customers_owe({ totals: totalsText(t, rec), count: rec.length, overdue: overdue.length }, o)
+        : m.api_assistant_no_open_balance({}, o),
       points: [
-        ...shown.map(
-          (i) =>
-            `${nameOf(i.customer)}: ${money(str(i.currency) || "USD", balance(i))} on ${str(i.number)}${i.dueDate ? `, ${new Date(str(i.dueDate)) < NOW ? "overdue since" : "due"} ${fmtDay(new Date(str(i.dueDate)))}` : ""}${num(i.paid) ? ` (${money(str(i.currency) || "USD", num(i.paid))} received)` : ""}`,
+        ...shown.map((i) =>
+          m.api_assistant_owe_item(
+            {
+              customer: nameOf(i.customer),
+              amount: t.money(str(i.currency) || "USD", balance(i)),
+              number: str(i.number),
+              due: !i.dueDate ? "none" : new Date(str(i.dueDate)) < NOW ? "overdue" : "due",
+              day: i.dueDate ? fmtDay(new Date(str(i.dueDate)), t.lang) : "",
+              hasPaid: num(i.paid) ? "yes" : "no",
+              paid: t.money(str(i.currency) || "USD", num(i.paid)),
+            },
+            o,
+          ),
         ),
-        rec.length > shown.length ? `…and ${rec.length - shown.length} more due later.` : "",
-        ...bills.map(
-          (b) =>
-            `We owe ${nameOf(b.supplier)} ${money(str(b.currency) || "EGP", num(b.amount))} on bill ${str(b.billNumber)} (${str(b.status)}${b.holdReason ? `: ${str(b.holdReason)}` : ""})`,
+        rec.length > shown.length ? m.api_assistant_more_due_later({ count: rec.length - shown.length }, o) : "",
+        ...bills.map((b) =>
+          m.api_assistant_we_owe(
+            {
+              supplier: nameOf(b.supplier),
+              amount: t.money(str(b.currency) || "EGP", num(b.amount)),
+              bill: str(b.billNumber),
+              status: t.opt("supplier-bills", "status", b.status),
+              hasReason: b.holdReason ? "yes" : "no",
+              reason: str(b.holdReason),
+            },
+            o,
+          ),
         ),
       ].filter(Boolean),
       sources: [
@@ -482,7 +756,26 @@ export async function ask(req: PayloadRequest, question: string): Promise<Answer
     });
   }
 
-  if (has(q, "supplier", "vendor", "late", "slow", "reply", "replied", "respond")) {
+  if (
+    has(
+      q,
+      "supplier",
+      "vendor",
+      "late",
+      "slow",
+      "reply",
+      "replied",
+      "respond",
+      "مورد",
+      "مورّد",
+      "متأخر",
+      "تأخر",
+      "بطيء",
+      "يرد",
+      "الرد",
+      "ردود",
+    )
+  ) {
     const named = w.suppliers.find((s) =>
       str(s.name)
         .toLowerCase()
@@ -501,26 +794,57 @@ export async function ask(req: PayloadRequest, question: string): Promise<Answer
     return reply({
       intent: "suppliers",
       answer: named
-        ? `${str(named.name)}: replies in ${num(named.replyHrs) || "—"} h on average, ${named.onTime ? `${num(named.onTime)}% on time` : "no deliveries yet"}${named.status === "New" ? " — new supplier, never ordered from" : ""}.`
-        : `${late.length} deliver${late.length === 1 ? "y is" : "ies are"} late or short, and ${waiting.length} supplier RFQ${waiting.length === 1 ? " is" : "s are"} waiting for a reply.`,
+        ? m.api_assistant_supplier_named(
+            {
+              name: str(named.name),
+              hours: num(named.replyHrs) || "—",
+              hasOnTime: named.onTime ? "yes" : "no",
+              onTime: num(named.onTime),
+              isNew: named.status === "New" ? "yes" : "no",
+            },
+            o,
+          )
+        : m.api_assistant_suppliers_summary({ late: late.length, waiting: waiting.length }, o),
       points: [
-        ...late.map(
-          (r) =>
-            `${sName(poSupplier(r))} — ${str((r.purchaseOrder as Doc | undefined)?.number)} line ${num(r.lineNo)}: ${num(r.received)} of ${num(r.ordered)} received${r.claim ? ` · ${str(r.claim)}` : r.backorderDate ? ` · rest promised ${fmtDay(new Date(str(r.backorderDate)))}` : ""}`,
+        ...late.map((r) =>
+          m.api_assistant_late_item(
+            {
+              supplier: sName(poSupplier(r)),
+              po: str((r.purchaseOrder as Doc | undefined)?.number),
+              line: num(r.lineNo),
+              received: num(r.received),
+              ordered: num(r.ordered),
+              extra: r.claim ? "claim" : r.backorderDate ? "promised" : "none",
+              claim: str(r.claim),
+              promised: r.backorderDate ? fmtDay(new Date(str(r.backorderDate)), t.lang) : "",
+            },
+            o,
+          ),
         ),
-        ...waiting.map(
-          (r) =>
-            `${nameOf(r.supplier)} — ${str(r.reference)} ${str(r.status).toLowerCase()}${r.dueAt ? `, due ${relative(new Date(str(r.dueAt)))}` : ""}${num(r.reminders) ? ` (${num(r.reminders)} reminder${num(r.reminders) === 1 ? "" : "s"})` : ""}`,
+        ...waiting.map((r) =>
+          m.api_assistant_waiting_item(
+            {
+              supplier: nameOf(r.supplier),
+              reference: str(r.reference),
+              status: t.opt("supplier-rfqs", "status", r.status).toLowerCase(),
+              hasDue: r.dueAt ? "yes" : "no",
+              due: r.dueAt ? relative(new Date(str(r.dueAt)), t.lang) : "",
+              reminders: num(r.reminders),
+            },
+            o,
+          ),
         ),
         ...(named
           ? []
           : ranked
               .slice(0, 2)
-              .map((s) => `Least reliable: ${str(s.name)} ${num(s.onTime)}% on time, ${num(s.replyHrs)} h replies`)),
+              .map((s) =>
+                m.api_assistant_least_reliable({ name: str(s.name), onTime: num(s.onTime), hours: num(s.replyHrs) }, o),
+              )),
       ],
       sources: [
         ...late.map((r) => ({
-          label: `PO ${str((r.purchaseOrder as Doc | undefined)?.number)}`,
+          label: m.api_assistant_po({ po: str((r.purchaseOrder as Doc | undefined)?.number) }, o),
           href: docHref("receipts", r.id),
         })),
         ...waiting.map((r) => ({ label: str(r.reference), href: docHref("supplier-rfqs", r.id) })),
@@ -530,7 +854,28 @@ export async function ask(req: PayloadRequest, question: string): Promise<Answer
   }
 
   if (
-    has(q, "pipeline", "growth", "prospect", "opportunit", "lead", "registration", "win rate", "conversion", "sales")
+    has(
+      q,
+      "pipeline",
+      "growth",
+      "prospect",
+      "opportunit",
+      "lead",
+      "registration",
+      "win rate",
+      "conversion",
+      "sales",
+      "مسار",
+      "نمو",
+      "النمو",
+      "فرص",
+      "فرصة",
+      "محتمل",
+      "تسجيل",
+      "نسبة الفوز",
+      "تحويل",
+      "مبيعات",
+    )
   ) {
     const open = w.opportunities.filter((o) => o.stage !== "Closed");
     const noNext = open.filter((o) => !o.nextStep && o.stage !== "Active account");
@@ -538,22 +883,43 @@ export async function ask(req: PayloadRequest, question: string): Promise<Answer
     const won = H.won.reduce((s, v) => s + v, 0);
     return reply({
       intent: "pipeline",
-      answer: `${open.length} growth opportunities open; ${inquiries} inquiries and ${won} wins in the last 12 weeks (${Math.round((won / inquiries) * 100)}% by count, ${H.conversion.at(-1)}% by value this month).`,
+      answer: m.api_assistant_pipeline(
+        {
+          open: open.length,
+          inquiries,
+          won,
+          byCount: Math.round((won / inquiries) * 100),
+          byValue: H.conversion.at(-1)!,
+        },
+        o,
+      ),
       points: [
-        ...open.map(
-          (o) =>
-            `${str(o.name)} — ${str(o.stage)}${o.estimatedValue ? `, ${str(o.estimatedValue)}` : ""}${o.nextStep ? ` · next: ${str(o.nextStep)}${o.nextStepDue ? ` (${fmtDay(new Date(str(o.nextStepDue)))})` : ""}` : " · no next step planned"}`,
+        ...open.map((p) =>
+          m.api_assistant_opportunity_item(
+            {
+              name: str(p.name),
+              stage: t.opt("opportunities", "stage", p.stage),
+              hasValue: p.estimatedValue ? "yes" : "no",
+              value: str(p.estimatedValue),
+              next: !p.nextStep ? "none" : p.nextStepDue ? "dated" : "yes",
+              step: str(p.nextStep),
+              due: p.nextStepDue ? fmtDay(new Date(str(p.nextStepDue)), t.lang) : "",
+            },
+            o,
+          ),
         ),
-        noNext.length ? `Plan a next step or close: ${noNext.map((o) => str(o.name)).join(", ")}.` : "",
+        noNext.length ? m.api_assistant_plan_next_step({ names: noNext.map((p) => str(p.name)).join(comma) }, o) : "",
       ].filter(Boolean),
       sources: [
-        { label: "Growth board", href: "/growth" },
-        ...open.map((o) => ({ label: str(o.name), href: docHref("opportunities", o.id) })),
+        { label: m.api_assistant_growth_board({}, o), href: "/growth" },
+        ...open.map((p) => ({ label: str(p.name), href: docHref("opportunities", p.id) })),
       ],
     });
   }
 
-  if (has(q, "due", "deadline", "today", "urgent", "risk", "blocked")) {
+  if (
+    has(q, "due", "deadline", "today", "urgent", "risk", "blocked", "موعد", "مواعيد", "اليوم", "عاجل", "خطر", "متوقف")
+  ) {
     const live = w.cases.filter((c) => !LIVE_END.includes(str(c.stage)));
     const risky = live
       .filter((c) => dueSoon(w).includes(c) || c.tone === "danger" || c.tone === "warn" || c.urgent)
@@ -561,11 +927,20 @@ export async function ask(req: PayloadRequest, question: string): Promise<Answer
     return reply({
       intent: "deadlines",
       answer: risky.length
-        ? `${risky.length} live case${risky.length === 1 ? " needs" : "s need"} attention.`
-        : "No live case is at risk.",
-      points: risky.map(
-        (c) =>
-          `${str(c.caseId)} ${str(c.vessel)} — ${str(c.stage)}, deadline ${relative(new Date(str(c.deadline)))}${c.blocker ? ` · ${str(c.blocker)}` : ""}`,
+        ? m.api_assistant_cases_need_attention({ count: risky.length }, o)
+        : m.api_assistant_no_case_at_risk({}, o),
+      points: risky.map((c) =>
+        m.api_assistant_risky_item(
+          {
+            caseId: str(c.caseId),
+            vessel: str(c.vessel),
+            stage: t.opt("cases", "stage", c.stage),
+            deadline: relative(new Date(str(c.deadline)), t.lang),
+            hasBlocker: c.blocker ? "yes" : "no",
+            blocker: str(c.blocker),
+          },
+          o,
+        ),
       ),
       sources: risky.map(caseSource),
     });
@@ -576,8 +951,7 @@ export async function ask(req: PayloadRequest, question: string): Promise<Answer
 
   return reply({
     intent: "help",
-    answer:
-      "I answer from every case, quote, approval, invoice and supplier record in the platform. Ask about a vessel or case number, approvals, who owes us money, suppliers, deadlines or the growth pipeline.",
+    answer: m.api_assistant_help({}, o),
     points: [],
     sources: [],
   });
@@ -593,7 +967,7 @@ export const assistantEndpoints: Endpoint[] = [
     path: "/briefing",
     method: "get",
     handler: async (req) => {
-      if (!meOf(req)) return unauthorized();
+      if (!meOf(req)) return unauthorized(langOf(req));
       const q = (req.query ?? {}) as Record<string, unknown>;
       const again = summarised.get(String(meOf(req)!.id));
       const b = await briefing(req, Boolean(q.refresh));
@@ -605,24 +979,31 @@ export const assistantEndpoints: Endpoint[] = [
     path: "/briefing/refresh",
     method: "post",
     handler: async (req) => {
-      if (!meOf(req)) return unauthorized();
+      const o = { locale: langOf(req) };
+      if (!meOf(req)) return unauthorized(o.locale);
       const b = await briefing(req, true);
       summarised.set(String(meOf(req)!.id), b.at);
       await logAiCall(req, {
         task: "Write the briefing",
-        subject: `Briefing from ${b.read} live records`,
+        subject: m.api_assistant_briefing_subject({ count: b.read }, o),
         values: b.read,
       });
-      return Response.json({ ok: true, at: b.at, message: `Summarised again at ${b.at} from ${b.read} live records.` });
+      return Response.json({
+        ok: true,
+        at: b.at,
+        message: m.api_assistant_summarised_again({ at: b.at, count: b.read }, o),
+      });
     },
   },
   {
     path: "/ask",
     method: "post",
     handler: async (req) => {
-      if (!meOf(req)) return unauthorized();
+      const o = { locale: langOf(req) };
+      if (!meOf(req)) return unauthorized(o.locale);
       const question = str((await body(req)).question).slice(0, 500);
-      if (!question.trim()) return Response.json({ errors: [{ message: "Ask a question." }] }, { status: 400 });
+      if (!question.trim())
+        return Response.json({ errors: [{ message: m.api_assistant_ask_a_question({}, o) }] }, { status: 400 });
       const a = await ask(req, question);
       await logAiCall(req, {
         task: "Answer a question",
@@ -638,9 +1019,10 @@ export const assistantEndpoints: Endpoint[] = [
     method: "get",
     handler: async (req) => {
       const me = meOf(req);
-      if (!me) return unauthorized();
+      const o = { locale: langOf(req) };
+      if (!me) return unauthorized(o.locale);
       return Response.json({
-        suggestions: SUGGESTIONS.filter((s) => str(me.role) !== "sales" || !/margin/i.test(s)),
+        suggestions: suggestions(o).filter((_, i) => str(me.role) !== "sales" || !/margin/i.test(SUGGESTIONS[i]!)),
       });
     },
   },

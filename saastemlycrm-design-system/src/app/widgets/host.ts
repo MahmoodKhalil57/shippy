@@ -1,4 +1,5 @@
 import { html, nothing } from "lit";
+import { localizeConfig } from "../../i18n/index.ts";
 import { drawInTurn } from "./paint-queue.ts";
 import { yieldToMain } from "../../components/base/work-queue.ts";
 import { customElement, property, state } from "lit/decorators.js";
@@ -58,6 +59,7 @@ import { compact, insert, putAt, type Box, type Spot } from "../../components/ba
 import { tileH, tileW } from "../../components/base/tiles.ts";
 import type { TileDrag } from "../../components/primitives/containers/tile.ts";
 import { preferences, StoreController } from "../../stores/index.ts";
+import { intl, m } from "../../i18n/index.ts";
 import { inCard, renderBlocks, type ViewContext } from "./registry.ts";
 import { miniBlocks, miniFigure, miniOpen, miniRows } from "./mini.ts";
 import type { Action, UndoCall, ViewBlock, ViewHeader } from "./schema.ts";
@@ -103,7 +105,9 @@ export async function loadSource(
 ): Promise<unknown> {
   if ("all" in s)
     return Object.fromEntries(await Promise.all(Object.entries(s.all).map(async ([k, x]) => [k, await nested(x)])));
-  if ("endpoint" in s) return api.get(s.endpoint, s.query);
+  // An endpoint may hand back text from the config as written (an action's `{ en, ar }` label):
+  // read in the page's language, like the config itself (`localizeConfig`).
+  if ("endpoint" in s) return localizeConfig(await api.get(s.endpoint, s.query));
   if ("find" in s)
     return api.find(s.find, {
       where: s.where as never,
@@ -191,7 +195,7 @@ export interface PinRef {
 function viewPage(view: string): { page: WidgetPage; path: string; title: string } | undefined {
   if (view === "dashboard") {
     const page = componentOf(dashboardView()?.Component)?.props.page as WidgetPage | undefined;
-    return page && { page, path: "/", title: "Dashboard" };
+    return page && { page, path: "/", title: m.widget_dashboard() };
   }
   const v = rootViews().find((r) => r.key === view);
   const page = v && (componentOf(v.Component)?.props.page as WidgetPage | undefined);
@@ -488,7 +492,7 @@ export class AppWidgets extends LightElement {
     try {
       r = await api.call<ActionReply | null>(a.call.method ?? "POST", a.call.path, { ...a.call.body, ...values });
     } catch (e) {
-      const msg = (e as Error).message || "That didn't work.";
+      const msg = (e as Error).message || m.widget_failed();
       if (this.pending) this.failed = msg;
       else toast(msg, "error");
       return;
@@ -498,7 +502,8 @@ export class AppWidgets extends LightElement {
     this.pending = null;
     const undo = undoOf(r, a);
     const message = doneText(r, a, !!undo);
-    if (message) toast(message, "success", undo && { label: "Undo", undo: true, onClick: () => void this.#undo(undo) });
+    if (message)
+      toast(message, "success", undo && { label: m.widget_undo(), undo: true, onClick: () => void this.#undo(undo) });
     if (a.reply && typeof r?.href === "string") {
       // Another page draws itself; the same page (only its parameters changed) reloads.
       const same = new URL(r.href, location.href).pathname === location.pathname;
@@ -517,9 +522,9 @@ export class AppWidgets extends LightElement {
   async #undo(u: UndoCall) {
     try {
       const r = await api.call<ActionReply | null>(u.method ?? "POST", u.path, u.body ?? {});
-      toast(u.done ?? (typeof r?.message === "string" && r.message ? r.message : "Undone"));
+      toast(u.done ?? (typeof r?.message === "string" && r.message ? r.message : m.widget_undone()));
     } catch (e) {
-      toast((e as Error).message || "That couldn't be undone.", "error");
+      toast((e as Error).message || m.widget_undo_failed(), "error");
     }
     for (const host of this.isConnected ? [this] : document.querySelectorAll("app-widgets")) void host.refresh();
   }
@@ -545,7 +550,7 @@ export class AppWidgets extends LightElement {
       (f) => f.required && (this.draft[f.name] === undefined || this.draft[f.name] === ""),
     );
     if (missing.length) {
-      this.failed = `Fill in ${missing.map((f) => f.label ?? f.name).join(", ")}.`;
+      this.failed = m.widget_fill_in({ fields: intl.list().format(missing.map((f) => f.label ?? f.name)) });
       return;
     }
     void this.#call(a, this.draft);
@@ -594,11 +599,11 @@ export class AppWidgets extends LightElement {
           a?.extract
             ? html`<ui-ai-extract
                 pickable
-                use-label="Fill in"
+                .useLabel=${m.widget_fill_in_button()}
                 .source=${a.extract.source ?? "paste"}
                 .label=${a.extract.label}
                 .what=${a.extract.what}
-                .placeholder=${a.extract.placeholder ?? "Paste the message here…"}
+                .placeholder=${a.extract.placeholder ?? m.widget_paste_placeholder()}
                 .fields=${a.extract.fields}
                 @ui-select=${(e: CustomEvent<{ values: Record<string, string | number | null> }>) => {
                   const next = { ...this.draft };
@@ -741,7 +746,7 @@ export class AppWidgets extends LightElement {
             tile(k, size, w);
             out[out.length - 1]!.content = got?.refused
               ? html`<ui-tile .size=${size} .heading=${w.title ?? ""} ?bare=${!w.title}
-                  ><ui-alert tone="info">${w.denied ?? "You don't have access to this."}</ui-alert></ui-tile
+                  ><ui-alert tone="info">${w.denied ?? m.widget_denied()}</ui-alert></ui-tile
                 >`
               : html`<ui-tile
                   .size=${size}
@@ -751,7 +756,7 @@ export class AppWidgets extends LightElement {
                   .kind=${w.skeleton}
                   loading
                 ></ui-tile>`;
-            if (!w.title && w.each!.slots) this.#labels.set(k, slot);
+            if (!w.title && w.each!.slots) this.#labels.set(k, w.each!.name?.(slot, this.scope) ?? slot);
           });
           return;
         }
@@ -763,7 +768,7 @@ export class AppWidgets extends LightElement {
           this.#sources.set(k, { base: key, item: t.key });
           tile(k, size, t.widget as Widget);
           // An untitled item (a figure) is named by its key (the figure's label) on its handles.
-          if (!t.widget.title) this.#labels.set(k, t.key);
+          if (!t.widget.title) this.#labels.set(k, w.each!.name?.(t.key, this.scope) ?? t.key);
         });
         return;
       }
@@ -802,7 +807,7 @@ export class AppWidgets extends LightElement {
             size: "full" as const,
             rows: 2,
             drop: true,
-            content: "Keep it here",
+            content: m.widget_host_keep_here(),
           },
           ...tiles,
         ]
@@ -864,7 +869,7 @@ export class AppWidgets extends LightElement {
     const tiles = shown.map((it, i) => {
       const arrange: TileArrange = {
         key: it.key,
-        label: this.#labels.get(it.key) || "tile",
+        label: this.#labels.get(it.key) || m.widget_host_tile(),
         bounds: this.#bounds.get(it.key),
         first: i === 0,
         last: i === shown.length - 1,
@@ -916,19 +921,23 @@ export class AppWidgets extends LightElement {
           ${
             hidden.size
               ? html`<ui-button size="xs" variant="text" @click=${() => this.#keep((m) => ({ ...m, hidden: [] }))}
-                  >Show ${hidden.size} hidden ${hidden.size === 1 ? "tile" : "tiles"}</ui-button
+                  >${m.widget_host_show_hidden({ count: hidden.size })}</ui-button
                 >`
               : nothing
           }
           ${
             // Only when it would move something: a gap some tile could move up into.
             Object.keys(mine.pins ?? {}).length && this._gaps
-              ? html`<ui-button size="xs" variant="text" @click=${() => this.#compact()}>Compact</ui-button>`
+              ? html`<ui-button size="xs" variant="text" @click=${() => this.#compact()}
+                  >${m.widget_host_compact()}</ui-button
+                >`
               : nothing
           }
           ${
             arranged
-              ? html`<ui-button size="xs" variant="text" @click=${() => this.#reset()}>Reset layout</ui-button>`
+              ? html`<ui-button size="xs" variant="text" @click=${() => this.#reset()}
+                  >${m.widget_host_reset_layout()}</ui-button
+                >`
               : nothing
           }
         </ui-flex>`,
@@ -1187,7 +1196,7 @@ export class AppArrange extends LightElement {
       this.#from = undefined;
       a.cancel();
       from.board?.drop();
-      if (phase === "end" && from.ref && from.out.pin(from.ref)) toast(`${a.label} is in your widgets`);
+      if (phase === "end" && from.ref && from.out.pin(from.ref)) toast(m.widget_host_kept({ name: a.label }));
       return;
     }
     // Let go before its target settled: it still goes where the pointer aims.
@@ -1587,7 +1596,7 @@ export class AppWidget extends LightElement {
               size="xs"
               variant="text"
               href=${dashboardPath("collections", list!.collection)}
-              >All</ui-button
+              >${m.widget_host_all()}</ui-button
             >`
           : nothing
       }${body}</ui-tile
@@ -1655,7 +1664,7 @@ export class AppWidget extends LightElement {
     const blocks =
       figure ??
       (this.mini && this.state === "ready" && !cut.length && this.open
-        ? miniOpen(this.open, w.title ?? "its screen")
+        ? miniOpen(this.open, w.title ?? m.widget_host_its_screen())
         : cut);
     const title = figure ? undefined : w.title;
     // Every widget is a tile; a titled one is a surface its content knows it's in (cards become
@@ -1665,9 +1674,9 @@ export class AppWidget extends LightElement {
       this.state === "loading"
         ? nothing
         : this.state === "denied"
-          ? html`<ui-alert tone="info">${w.denied ?? "You don't have access to this."}</ui-alert>`
+          ? html`<ui-alert tone="info">${w.denied ?? m.widget_denied()}</ui-alert>`
           : this.state === "error"
-            ? html`<ui-alert tone="error" heading="This couldn't load">${this.message}</ui-alert>`
+            ? html`<ui-alert tone="error" .heading=${m.widget_load_failed()}>${this.message}</ui-alert>`
             : renderBlocks(blocks, ctx);
     const head = this.state === "ready" ? w.head?.(this.data as never, scope) : undefined;
     // A mini version: its title and count, no subhead, tags or actions.

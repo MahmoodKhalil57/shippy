@@ -6,6 +6,7 @@ import { booleanAttribute, rcva } from "../../base/variants.ts";
 import { iconButton } from "../actions/icon-button.ts";
 import { fixed, inset, row, rowFill, stack, text } from "../layout/algebra.ts";
 import { iconSvg, type IconName } from "../media/icon.ts";
+import { m } from "../../../i18n/index.ts";
 
 /**
  * Alert: an inline message about the thing it sits beside — a warning before an action, why
@@ -98,7 +99,7 @@ export class UiAlert extends LightElement {
                       ? html`<button
                           type="button"
                           class=${iconButton({ size: "xs" })}
-                          aria-label="Dismiss"
+                          aria-label=${m.alert_dismiss()}
                           @click=${this._dismiss}
                         >
                           ${iconSvg("x", { size: "sm" })}

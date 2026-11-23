@@ -1,5 +1,6 @@
 import type { DocumentSpec } from "../../components/base/document-spec.ts";
 import type { IconName } from "../../components/primitives/media/icon-names.ts";
+import { intl, m } from "../../i18n/index.ts";
 /**
  * The block vocabulary: what a widget draws, as plain data.
  *
@@ -24,22 +25,28 @@ export interface NumberFormat {
 
 export function formatNumber(v: number, f: NumberFormat = {}): string {
   const d = f.decimals;
+  // Digits the language's way (Latin in Arabic too), units and currency in its words and order.
+  const fixed = (n: number, places: number) =>
+    intl.number({ minimumFractionDigits: places, maximumFractionDigits: places, useGrouping: false }).format(n);
   switch (f.unit) {
     case "pct":
-      return `${v.toFixed(d ?? 1)}%`;
+      return m.number_pct({ value: fixed(v, d ?? 1) });
     case "days":
-      return `${v.toFixed(d ?? 1)} d`;
+      return m.number_days({ value: fixed(v, d ?? 1) });
     case "hours":
-      return `${v.toFixed(d ?? 1)} h`;
+      return m.number_hours({ value: fixed(v, d ?? 1) });
     case "minutes":
-      return `${Math.round(v)} min`;
+      return m.number_minutes({ value: fixed(Math.round(v), 0) });
     case "money": {
-      const cur = f.currency ? `${f.currency} ` : "";
-      if (f.compact) return `${cur}${(v / 1000).toFixed(d ?? (Math.abs(v) < 10_000 ? 1 : 0))}k`;
-      return `${cur}${v.toLocaleString("en-US", { minimumFractionDigits: d ?? 0, maximumFractionDigits: d ?? 0 })}`;
+      if (f.compact) {
+        const amount = fixed(v / 1000, d ?? (Math.abs(v) < 10_000 ? 1 : 0));
+        return f.currency ? m.number_money_compact({ currency: f.currency, amount }) : m.number_thousands({ amount });
+      }
+      const amount = intl.number({ minimumFractionDigits: d ?? 0, maximumFractionDigits: d ?? 0 }).format(v);
+      return f.currency ? m.number_money({ currency: f.currency, amount }) : amount;
     }
     default:
-      return d === undefined ? Math.round(v).toLocaleString("en-US") : v.toFixed(d);
+      return d === undefined ? intl.number({ maximumFractionDigits: 0 }).format(Math.round(v)) : fixed(v, d);
   }
 }
 

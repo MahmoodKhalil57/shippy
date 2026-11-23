@@ -15,8 +15,22 @@
     <meta name="openai-model" content="aibrowser" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <title>Dashboard</title>
-    <!-- Apply the saved theme and colour scheme (ui-appearance) before the first paint. -->
+    <!-- Apply the saved language (its direction) and the saved theme and colour scheme
+         (ui-appearance) before the first paint. -->
     <script>
+      // The language as the app's runtime reads it (saastemlycrm-design-system/vite/i18n.ts): the
+      // saved choice, else the browser's first language the app has, else English. Arabic runs
+      // right to left from the first frame, so nothing is laid out twice.
+      try {
+        const languages = ["en", "ar"];
+        let language = localStorage.getItem("ui-language");
+        if (!languages.includes(language))
+          language =
+            (navigator.languages || []).map((l) => l.toLowerCase().split("-")[0]).find((l) => languages.includes(l)) ||
+            "en";
+        document.documentElement.lang = language;
+        document.documentElement.dir = language === "ar" ? "rtl" : "ltr";
+      } catch {}
       try {
         const theme = localStorage.getItem("ui-theme");
         if (theme === "dark" || theme === "light") document.documentElement.dataset.theme = theme;

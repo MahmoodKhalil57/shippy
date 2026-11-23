@@ -11,6 +11,7 @@ import {
   rfqs,
   waitingRfqs,
 } from "../queries/sourcing.ts";
+import { m } from "../i18n/paraglide/messages.js";
 
 /**
  * Case tab "Supplier RFQs": the case's lines go out to suppliers (split by category or as the
@@ -38,15 +39,15 @@ export const caseRfqs = widgets({
       metrics: {
         collection: "supplier-rfqs",
         items: [
-          { label: "Supplier RFQs", where: caseSupplierRfqs, note: "From 1 customer RFQ", main: true },
-          { label: "Replied", where: repliedRfqs, note: "Offers captured automatically", tone: "success" },
+          { label: m.page_rfqs_supplier_rfqs(), where: caseSupplierRfqs, note: m.page_rfqs_from_one(), main: true },
+          { label: m.page_rfqs_replied(), where: repliedRfqs, note: m.page_rfqs_replied_note(), tone: "success" },
           {
-            label: "Waiting",
+            label: m.page_rfqs_waiting(),
             where: waitingRfqs,
-            note: "Reminders scheduled",
+            note: m.page_rfqs_waiting_note(),
             tone: { some: "warning", none: "success" },
           },
-          { label: "Declined · no response", where: closedRfqs, note: "Two reminders, then the owner is alerted" },
+          { label: m.page_rfqs_closed(), where: closedRfqs, note: m.page_rfqs_closed_note() },
         ],
       },
     },
@@ -54,8 +55,8 @@ export const caseRfqs = widgets({
     // the ones waiting for a person with the collection's decisions ("Confirm offer", a "Link to…"
     // per candidate case, "Not related").
     {
-      title: "Replies matched",
-      subhead: "Matched by reference, thread and sender — even when the supplier changed the subject.",
+      title: m.page_rfqs_matched_title(),
+      subhead: m.page_rfqs_matched_subhead(),
       size: "s",
       collection: {
         collection: "intake-messages",
@@ -67,8 +68,8 @@ export const caseRfqs = widgets({
       },
     },
     {
-      title: "Needs a person",
-      subhead: "Anything the AI isn't sure of waits here — nothing uncertain is applied on its own.",
+      title: m.page_rfqs_review_title(),
+      subhead: m.page_rfqs_review_subhead(),
       size: "s",
       head: () => ({ countTone: "warning" }),
       records: {
@@ -80,7 +81,7 @@ export const caseRfqs = widgets({
         tags: ["match.confidencePct"],
         notes: "match.basis",
         notice: "uncertain",
-        empty: "Nothing waiting for a person.",
+        empty: m.page_rfqs_review_empty(),
       },
     },
     list.each({
@@ -89,7 +90,7 @@ export const caseRfqs = widgets({
       skeleton: "list",
       // One new supplier is what a case usually brings; more share its tile, behind "Show all".
       tiles: 1,
-      empty: { heading: "No new suppliers from replies yet." },
+      empty: { heading: m.page_rfqs_no_new_suppliers() },
       items: (d) => d.newSuppliers,
       key: (s: fmt.NewSupplier) => s.id,
       title: (s: fmt.NewSupplier) => s.name,
@@ -98,8 +99,8 @@ export const caseRfqs = widgets({
     // Every supplier RFQ of the case (the collection's own records: its status tones, where its
     // reminders stand, "Remind now" while it waits), with the presenter's "Simulate replies".
     {
-      title: "Supplier RFQs",
-      subhead: "Each supplier sees only the lines they can quote — never the client, the vessel or the client's files.",
+      title: m.page_rfqs_supplier_rfqs(),
+      subhead: m.page_rfqs_list_subhead(),
       size: "l",
       head: () => ({ actions: [simulateReplies] }),
       records: {
@@ -109,19 +110,19 @@ export const caseRfqs = widgets({
         limit: 50,
         columns: ["reference", "supplier", "lineNos", "sentAt", "status", "reminderState", "lastEvent"],
         supporting: { supplier: "category", sentAt: "dueAt" },
-        labels: { lineNos: "Lines", sentAt: "Sent · due" },
-        empty: "No supplier RFQs yet — draft them below.",
+        labels: { lineNos: m.page_rfqs_lines(), sentAt: m.page_rfqs_sent_due() },
+        empty: m.page_rfqs_list_empty(),
       },
     },
     timeline({
-      title: "Replies arriving",
+      title: m.page_rfqs_arrivals_title(),
       size: "m",
       data: rfqs,
-      empty: { when: (d) => !d.arrivals.length, heading: "No supplier replies yet." },
+      empty: { when: (d) => !d.arrivals.length, heading: m.page_rfqs_no_replies() },
       format: fmt.replyArrivals,
     }),
     text({
-      title: "Reminders and escalation",
+      title: m.page_rfqs_reminders_title(),
       size: "m",
       data: rfqs,
       format: fmt.reminderRule,
@@ -131,26 +132,26 @@ export const caseRfqs = widgets({
       size: "m",
       // Usually one supplier is still being chased; any others share its tile, behind "Show all".
       tiles: 1,
-      empty: { heading: "No supplier is being chased." },
+      empty: { heading: m.page_rfqs_none_chased() },
       items: (d) => d.rfqs.filter(fmt.chased),
       key: (r: CaseRfqRow) => `${r.id}-reminders`,
       title: (r: CaseRfqRow) => `${r.supplier.name} · ${r.reference}`,
       format: fmt.reminderSchedule,
     }),
     list({
-      title: "Draft supplier RFQs",
+      title: m.page_rfqs_draft_title(),
       size: "m",
       data: rfqs,
       format: fmt.rfqLines,
     }),
     list({
-      title: "Drafted supplier RFQs",
+      title: m.page_rfqs_drafted_title(),
       size: "l",
       data: rfqs,
       empty: {
         when: (d) => !d.plan?.drafts.length,
-        heading: "No drafts waiting to be sent.",
-        description: "Draft RFQs keeps them here to check before they go out.",
+        heading: m.page_rfqs_no_drafts(),
+        description: m.page_rfqs_no_drafts_description(),
       },
       format: fmt.rfqDrafts,
     }),
@@ -159,7 +160,7 @@ export const caseRfqs = widgets({
       size: "l",
       // The first draft's email; the others follow it in the same tile, behind "Show all".
       tiles: 1,
-      empty: { heading: "No draft emails to preview." },
+      empty: { heading: m.page_rfqs_no_previews() },
       items: (d) => d.plan?.drafts ?? [],
       key: (r: RfqDraft) => `${r.reference}-preview`,
       title: (r: RfqDraft) => `${r.supplierName} · ${r.reference}`,

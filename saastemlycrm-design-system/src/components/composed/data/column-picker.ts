@@ -9,6 +9,7 @@ import "../../primitives/layout/flex.ts";
 import "../../primitives/actions/button-group.ts";
 import "../../primitives/media/icon.ts";
 import "../../primitives/typography/text.ts";
+import { m } from "../../../i18n/index.ts";
 
 /**
  * Column picker: which of a data table's columns show, and in what order. A "Columns" button
@@ -80,15 +81,15 @@ export class UiColumnPicker extends LightElement {
       align="end"
       trigger-variant="text"
       trigger-size="xs"
-      .label=${`Columns (${shown} of ${this.columns.length} shown)`}
+      .label=${m.column_picker_label({ shown, total: this.columns.length })}
     >
-      <span slot="trigger"><ui-icon name="columns" size="sm"></ui-icon> Columns</span>
+      <span slot="trigger"><ui-icon name="columns" size="sm"></ui-icon> ${m.column_picker_columns()}</span>
       <ui-flex justify="between" align="center" gap="2">
-        <ui-text variant="title-sm">Columns</ui-text>
+        <ui-text variant="title-sm">${m.column_picker_columns()}</ui-text>
         ${
           changed
             ? html`<ui-button size="xs" variant="text" @click=${() => this._emit([...this.defaults], [], true)}
-                >Reset</ui-button
+                >${m.column_picker_reset()}</ui-button
               >`
             : nothing
         }
@@ -116,7 +117,7 @@ export class UiColumnPicker extends LightElement {
                         icon="arrow-up"
                         size="xs"
                         shape="square"
-                        .label=${`Move ${typeof c.label === "string" ? c.label : c.key} earlier`}
+                        .label=${m.column_picker_move_earlier({ name: typeof c.label === "string" ? c.label : c.key })}
                         ?disabled=${i <= first}
                         @click=${() => this._move(i, -1)}
                       ></ui-icon-button>
@@ -124,7 +125,7 @@ export class UiColumnPicker extends LightElement {
                         icon="arrow-down"
                         size="xs"
                         shape="square"
-                        .label=${`Move ${typeof c.label === "string" ? c.label : c.key} later`}
+                        .label=${m.column_picker_move_later({ name: typeof c.label === "string" ? c.label : c.key })}
                         ?disabled=${i === this.columns.length - 1}
                         @click=${() => this._move(i, 1)}
                       ></ui-icon-button>`
@@ -136,15 +137,15 @@ export class UiColumnPicker extends LightElement {
         this.density === undefined
           ? nothing
           : html`<ui-flex direction="col" gap="2">
-              <ui-text variant="label-md" color="muted">Row height</ui-text>
+              <ui-text variant="label-md" color="muted">${m.column_picker_row_height()}</ui-text>
               <ui-button-group
-                label="Row height"
+                .label=${m.column_picker_row_height()}
                 size="xs"
                 .value=${this.density}
                 .options=${[
-                  { value: "0", label: "Default" },
-                  { value: "-1", label: "Compact" },
-                  { value: "-2", label: "Dense" },
+                  { value: "0", label: m.column_picker_density_default() },
+                  { value: "-1", label: m.column_picker_density_compact() },
+                  { value: "-2", label: m.column_picker_density_dense() },
                 ]}
                 @ui-change=${(e: CustomEvent<{ value: string }>) => this._density(e.detail.value as "0" | "-1" | "-2")}
               ></ui-button-group>

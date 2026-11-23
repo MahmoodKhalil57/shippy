@@ -10,6 +10,9 @@ import { tiles } from "../layout/algebra.ts";
 import { fieldsetField, type FieldsetVariants } from "./fieldset.ts";
 import { label as labelRecipe } from "./label.ts";
 
+/** Typed text that may be in either direction: the field takes the direction of what is typed. */
+const TYPED_TEXT = new Set<TextInputType>(["text", "email", "password", "search", "url", "tel"]);
+
 /**
  * Text Input: Simple input field.
  *
@@ -200,6 +203,7 @@ export class UiTextInput extends LightElement {
         name=${ifDefined(this.name)}
         .value=${live(this.value)}
         placeholder=${ifDefined(this.placeholder)}
+        dir=${TYPED_TEXT.has(this.type) ? "auto" : nothing}
         ?disabled=${this.disabled}
         ?required=${this.required}
         ?readonly=${this.readonly}

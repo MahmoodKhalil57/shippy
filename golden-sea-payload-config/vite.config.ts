@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { recommended } from "saastemlycrm-design-system/lint";
-import { designSystem } from "saastemlycrm-design-system/vite";
+import { designSystem, i18n, localeText, STATIC_LOCALE } from "saastemlycrm-design-system/vite";
 import mockBackend from "mock-runner/vite";
 import { defineConfig, type Plugin } from "vite-plus";
 
@@ -45,9 +46,16 @@ export default defineConfig(({ command, isPreview }) => ({
   // The base lives here, not as a `--base` flag: Git Bash rewrites `/shippy/` on a command line
   // into a Windows path ("C:/Program Files/Git/shippy/"), which broke every asset URL once.
   base: command === "build" || isPreview ? "/shippy/" : "/",
+  // A build in one language (`I18N_LOCALE=ar`): its messages are only that language's.
+  define: process.env.I18N_LOCALE ? { [STATIC_LOCALE]: JSON.stringify(process.env.I18N_LOCALE) } : {},
   plugins: [
-    // The design system: component stylesheets, Tailwind, cascade layers, icons.
+    // The design system: component stylesheets, Tailwind, cascade layers, icons, its text.
     ...designSystem(),
+    // This project's own interface text (messages/*.json into src/i18n/paraglide), the same way.
+    i18n(fileURLToPath(new URL(".", import.meta.url))),
+    // A build in one language (`I18N_LOCALE`, build-locales.ts): the config's `{ en, ar }` keeps
+    // only that language's words in the page (the backend's worker keeps both).
+    localeText(process.env.I18N_LOCALE, ["en", "ar"], /\/golden-sea-payload-config\/src\/.*\.ts$/),
     // The backend: a service worker serving this config's REST API from IndexedDB. Its own bundle
     // carries the same minification and legal banner as the app's (set in its build).
     ...mockBackend({ config: "./src/config.ts", seed: "./src/seed.ts", banner: license }),
@@ -55,7 +63,8 @@ export default defineConfig(({ command, isPreview }) => ({
   ],
   build: {
     outDir: "../docs",
-    emptyOutDir: true,
+    // build-locales.ts builds one language after another into it: the second adds its files.
+    emptyOutDir: !process.env.I18N_APPEND,
     // Make the production hardening explicit so a default can't silently regress: oxc minifies
     // and mangles identifiers, tree-shakes dead code, and the banner (a legal notice) is kept on
     // every emitted chunk. Property names stay (Payload field names, Lit attributes and JSON keys
@@ -65,11 +74,13 @@ export default defineConfig(({ command, isPreview }) => ({
     rollupOptions: { output: { postBanner: license } },
   },
   fmt: {
-    ignorePatterns: ["bun.lock"],
+    // src/i18n/paraglide: compiled from messages/*.json (saastemlycrm-design-system/vite/i18n.ts).
+    ignorePatterns: ["bun.lock", "src/i18n/paraglide/**", "project.inlang/cache/**"],
     printWidth: 120,
     sortPackageJson: true,
   },
   lint: {
+    ignorePatterns: ["src/i18n/paraglide/**", "project.inlang/cache/**"],
     // The design system's rules for a project (saastemlycrm-design-system/lint): the import
     // boundary, pure widgets, endpoints that return data, and the block conventions.
     jsPlugins: [

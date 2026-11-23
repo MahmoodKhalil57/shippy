@@ -3,6 +3,7 @@ import "../../../components/index.ts";
 import { actionBar, cell, tag } from "../blocks.ts";
 import { defineBlock, renderBlock, type ViewContext } from "../registry.ts";
 import type { Entry, Tag } from "../schema.ts";
+import { m } from "../../../i18n/index.ts";
 
 /**
  * `entries`: a set of like things, each with the same anatomy (schema.ts `Entry`). The screen
@@ -92,8 +93,7 @@ const row = (e: Entry, ctx: ViewContext) =>
   </ui-flex>`;
 
 defineBlock("entries", (b, ctx) => {
-  if (!b.items.length)
-    return html`<ui-text variant="body-md" color="muted">${b.empty ?? "Nothing here yet."}</ui-text>`;
+  if (!b.items.length) return html`<ui-text variant="body-md" color="muted">${b.empty ?? m.widget_empty()}</ui-text>`;
   if (ctx.inCard)
     return html`<ui-flex direction="col" gap="4"
       >${b.items.map((e, i) => html`${i ? html`<ui-divider></ui-divider>` : nothing}${row(e, ctx)}`)}</ui-flex

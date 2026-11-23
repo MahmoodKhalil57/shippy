@@ -1,7 +1,8 @@
-import type { KindData, Tone, WidgetScope } from "saastemlycrm-design-system/contracts";
+import { formatNumber, type KindData, type Tone, type WidgetScope } from "saastemlycrm-design-system/contracts";
 import type { IntegrationsView } from "../endpoints/platform.ts";
+import { m } from "../i18n/paraglide/messages.js";
 import * as link from "../links.ts";
-import { formatDate } from "./index.ts";
+import { count, formatDate } from "./index.ts";
 
 /**
  * What the integrations page shows beyond the integrations global's rows (its mailboxes and
@@ -27,8 +28,8 @@ export interface MigrationPart {
   status?: string;
 }
 
-const count = new Intl.NumberFormat("en-GB");
-const pct = (n: number, of: number) => (of ? Math.round((n / of) * 100) : 0);
+/** A part of a whole as a whole percentage ("45%"). */
+const pct = (n: number, of: number) => formatNumber(of ? Math.round((n / of) * 100) : 0, { unit: "pct", decimals: 0 });
 
 /**
  * Moving off Odoo, as a whole: how many of its records are in the platform and how many a person
@@ -42,29 +43,29 @@ export const migration = ({ migration: parts = [] }: IntegrationsGlobal): KindDa
   return {
     items: [
       {
-        label: "Moved into the platform",
+        label: m.integrations_moved_label(),
         value: sum("moved"),
         max: all || 1,
-        valueText: `${pct(sum("moved"), all)}%`,
-        note: `${count.format(sum("moved"))} of ${count.format(all)} records`,
+        valueText: pct(sum("moved"), all),
+        note: m.integrations_moved_note({ n: all, moved: count(sum("moved")), all: count(all) }),
       },
       {
-        label: "Checked against Odoo",
+        label: m.integrations_checked_label(),
         value: sum("checked"),
         max: all || 1,
-        valueText: `${pct(sum("checked"), all)}%`,
-        note: `${count.format(sum("checked"))} records checked by a person`,
+        valueText: pct(sum("checked"), all),
+        note: m.integrations_checked_note({ n: sum("checked"), checked: count(sum("checked")) }),
       },
       {
-        label: "Parts done",
+        label: m.integrations_parts_label(),
         value: done,
         max: parts.length || 1,
         tone: ready ? "success" : undefined,
-        valueText: `${done} of ${parts.length}`,
-        note: ready ? "Ready to switch Odoo off" : "Odoo stays on until every part is done",
+        valueText: m.integrations_parts_value({ done: count(done), total: count(parts.length) }),
+        note: ready ? m.integrations_ready() : m.integrations_stays_on(),
       },
     ],
-    note: "Odoo keeps running beside the platform while its data moves. Nothing in Odoo is changed or deleted.",
+    note: m.integrations_migration_note(),
   };
 };
 
@@ -72,12 +73,12 @@ export const migration = ({ migration: parts = [] }: IntegrationsGlobal): KindDa
 export const str = (v: unknown) => (typeof v === "string" || typeof v === "number" ? String(v) : "");
 
 /** A count of records, as the import cards show it. */
-export const figure = (v: unknown) => Number(v ?? 0).toLocaleString("en-US");
+export const figure = (v: unknown) => count(Number(v ?? 0));
 
-/** The languages the platform runs in. */
-export const LANG = [
+/** The languages the platform runs in, each named in its own language. */
+export const languageOptions = () => [
   { label: "English", value: "en" },
-  { label: "العربية (Arabic)", value: "ar" },
+  { label: m.integrations_lang_ar(), value: "ar" },
 ];
 
 /**
@@ -90,25 +91,29 @@ export const acknowledgement = ({ ack: a }: IntegrationsView, { params }: Widget
   return {
     choice: {
       param: "lang",
-      label: "Preview language",
+      label: m.integrations_preview_language(),
       value: lang,
+      // Each language is named in its own language.
       options: [
         { value: "en", label: "English" },
         { value: "ar", label: "العربية" },
       ],
     },
     tags: [
-      { label: `${a.status} v${a.version} · ${a.approvedBy}`, tone: "success" },
-      { label: "Sent once per thread" },
-      { label: "Never to internal senders" },
+      {
+        label: m.integrations_ack_status({ status: a.status, version: a.version, approvedBy: a.approvedBy }),
+        tone: "success",
+      },
+      { label: m.integrations_once_per_thread() },
+      { label: m.integrations_never_internal() },
     ],
-    meta: [`From: Golden Sea <${a.from}>`, `To: ${a.to}`],
+    meta: [m.integrations_ack_from({ from: a.from }), m.integrations_ack_to({ to: a.to })],
     subject: t.subject,
     body: t.body,
     dir: lang === "ar" ? "rtl" : "ltr",
     lang,
-    note: "Example for GS-RFQ-0142. Wording, recipients and trigger were approved by management; changing them needs a new approval.",
-    actions: [{ label: "All message templates", href: link.global("message-templates") }],
+    note: m.integrations_ack_note(),
+    actions: [{ label: m.integrations_all_templates(), href: link.global("message-templates") }],
   };
 };
 
@@ -123,16 +128,20 @@ const importItem = (label: string, v: unknown, note: string, tone?: Tone) => ({
  * exceptions, confidential mail), over the window in its subhead. Nothing is imported before approval.
  */
 export const emailImport = ({ emailImport: i = {} }: IntegrationsGlobal): KindData<"details"> => ({
-  head: { subhead: `${str(i.days)} days`, tags: [{ label: str(i.status), tone: "info" }] },
+  head: {
+    subhead: m.integrations_import_days({ n: Number(i.days) || 0, days: str(i.days) }),
+    tags: [{ label: str(i.status), tone: "info" }],
+  },
   items: [
-    importItem("Emails scanned", i.scanned, "sales@, purchasing@, Gmail"),
-    importItem("RFQ threads", i.rfqThreads, "become historical cases"),
-    importItem("Likely duplicates", i.duplicates, "linked, not re-created"),
-    importItem("Exceptions", i.exceptions, "unreadable attachments", "warning"),
-    importItem("Flagged confidential", i.confidential, "excluded unless approved", "error"),
+    // The mailboxes are addresses, the same in any language.
+    importItem(m.integrations_emails_scanned(), i.scanned, "sales@, purchasing@, Gmail"),
+    importItem(m.integrations_rfq_threads(), i.rfqThreads, m.integrations_rfq_threads_note()),
+    importItem(m.integrations_duplicates(), i.duplicates, m.integrations_duplicates_note()),
+    importItem(m.integrations_exceptions(), i.exceptions, m.integrations_exceptions_note(), "warning"),
+    importItem(m.integrations_confidential(), i.confidential, m.integrations_confidential_note(), "error"),
   ],
-  note: "Dry run first; nothing is imported before approval, and no acknowledgements or reminders are sent for historical mail.",
-  actions: [{ label: "Open inbox history", href: "/inbox-history" }],
+  note: m.integrations_import_note(),
+  actions: [{ label: m.integrations_open_inbox_history(), href: "/inbox-history" }],
 });
 
 /**
@@ -141,26 +150,27 @@ export const emailImport = ({ emailImport: i = {} }: IntegrationsGlobal): KindDa
  */
 export const languages = (d: IntegrationsView): KindData<"settings"> => {
   const call = (body: Record<string, unknown>) => ({ path: "/integrations/language", body });
+  const options = languageOptions();
+  const documentsIn = { en: m.integrations_documents_en, ar: m.integrations_documents_ar };
   return {
-    note: [
-      "The whole platform runs in English and Arabic: acknowledgements, quotations and invoices go out in the customer's language.",
-      ...(d.canSettings ? [] : ["Company settings are changed by management."]),
-    ].join("\n"),
+    note: [m.integrations_languages_note(), ...(d.canSettings ? [] : [m.integrations_settings_by_management()])].join(
+      "\n",
+    ),
     items: [
       {
-        label: "Company default",
+        label: m.integrations_company_default(),
         value: d.language.default,
-        options: LANG,
+        options,
         disabled: !d.canSettings,
         call: call({ field: "default" }),
       },
-      ...LANG.map((l) => ({
-        label: `Customer documents in ${l.label}`,
+      ...options.map((l) => ({
+        label: documentsIn[l.value as "en" | "ar"](),
         value: d.language.documents.includes(l.value),
         disabled: !d.canSettings,
         call: call({ field: "documents", lang: l.value }),
       })),
-      { label: "Your language", value: d.myLanguage, options: LANG, call: call({ field: "mine" }) },
+      { label: m.integrations_your_language(), value: d.myLanguage, options, call: call({ field: "mine" }) },
     ],
   };
 };
@@ -175,20 +185,23 @@ export const backups = ({ backups: b = {} }: IntegrationsGlobal, { user }: Widge
   return {
     layout: "inline",
     items: [
-      { label: "Schedule", value: str(b.schedule) },
-      { label: "Copies", value: `${str(b.locations)} locations · kept ${str(b.retentionDays)} days` },
-      { label: "Last backup", value: when(b.lastBackupAt) },
-      { label: "Restore last tested", value: when(b.restoreTestedAt) },
-      { label: "Staging copy", value: when(b.stagingRefreshedAt) },
+      { label: m.integrations_schedule(), value: str(b.schedule) },
+      {
+        label: m.integrations_copies(),
+        value: m.integrations_copies_value({ locations: str(b.locations), days: str(b.retentionDays) }),
+      },
+      { label: m.integrations_last_backup(), value: when(b.lastBackupAt) },
+      { label: m.integrations_restore_tested(), value: when(b.restoreTestedAt) },
+      { label: m.integrations_staging_copy(), value: when(b.stagingRefreshedAt) },
     ],
-    note: "The staging copy is where changes are tried before they reach your team; email sending and integrations are switched off there. Your data is always yours: export everything at any time.",
+    note: m.integrations_backups_note(),
     actions: [
       {
-        label: "Refresh staging copy",
+        label: m.integrations_refresh_staging(),
         call: { path: "/integrations/staging" },
         disabled: !management,
-        reason: management ? undefined : "Only management refreshes staging.",
-        done: "Staging copy refreshed from last night's backup",
+        reason: management ? undefined : m.integrations_refresh_staging_reason(),
+        done: m.integrations_refresh_staging_done(),
       },
     ],
   };

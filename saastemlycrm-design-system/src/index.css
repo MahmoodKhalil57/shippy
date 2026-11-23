@@ -57,6 +57,15 @@
     display: none;
   }
 
+  /* Arabic joins its letters: tracking (the type scale's, `tracking-*`) pulls a word apart, so
+     there is none in it. `!important` in this early layer outranks every utility's tracking (an
+     important declaration in an earlier layer wins). `:lang()` matches every element in Arabic
+     (the language is inherited), and not an English part marked `lang="en"` inside it. A one-time
+     code's input keeps its own: daisyUI's `.otp` spaces its digits into their boxes with it. */
+  :lang(ar):not(.otp > input) {
+    letter-spacing: 0 !important;
+  }
+
   body {
     min-width: 320px;
     min-height: 100svh;

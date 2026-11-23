@@ -1,4 +1,5 @@
 import type { Action } from "saastemlycrm-design-system/contracts";
+import { m } from "../i18n/paraglide/messages.js";
 
 /**
  * The presenter's "Simulate replies" on a case's supplier RFQs (POST /api/case-rfqs/:id/simulate-replies,
@@ -7,9 +8,9 @@ import type { Action } from "saastemlycrm-design-system/contracts";
  * (../collections/sourcing.ts).
  */
 export const simulateReplies: Action = {
-  label: "Simulate replies",
+  label: m.action_rfqs_simulate(),
   icon: "sync",
   main: true,
   call: { path: "/case-rfqs/$doc.id/simulate-replies" },
-  done: "Supplier replies are in — offers are on the Compare tab",
+  done: m.action_rfqs_simulated(),
 };

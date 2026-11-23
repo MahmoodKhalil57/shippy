@@ -1,4 +1,10 @@
-import type { Action, CollectionAction, CollectionSettings } from "saastemlycrm-design-system/contracts";
+import {
+  isLocalized,
+  localize,
+  type Action,
+  type CollectionAction,
+  type CollectionSettings,
+} from "saastemlycrm-design-system/contracts";
 import { matches } from "saastemlycrm-design-system/payload";
 import type { CollectionConfig } from "payload";
 
@@ -17,6 +23,8 @@ function filled<T>(value: T, values: Record<string, unknown>): T {
   const part = new RegExp(String.raw`\$(${roots})(?:\.(\w+(?:\.\w+)*))?`, "g");
   const get = (root: string, path?: string) => (path ? at(values[root], path) : values[root]);
   const walk = (v: unknown): unknown => {
+    // Text given per language, read in English as the tests' dashboard is (`localizeConfig`).
+    if (isLocalized(v)) return walk(localize(v, "en"));
     if (typeof v === "string") {
       const m = whole.exec(v);
       if (m) return get(m[1]!, m[2]);

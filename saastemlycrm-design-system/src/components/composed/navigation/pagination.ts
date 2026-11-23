@@ -7,6 +7,7 @@ import "../../primitives/actions/button.ts";
 import "../../primitives/layout/join.ts";
 import "../../primitives/media/icon.ts";
 import { pageSlots, type PageSlot } from "../../base/page-slots.ts";
+import { m } from "../../../i18n/index.ts";
 
 /**
  * Pagination: Group of buttons for moving between related content.
@@ -61,7 +62,7 @@ export class UiPagination extends LightElement {
   @property({ attribute: "next-label" }) nextLabel = "";
   /** Radio group name (radio mode). */
   @property() name = uid("page");
-  @property() label = "Pagination";
+  @property() label = m.pagination_label();
 
   /** The numbers don't fit: show the current page of the total between the arrows. */
   @state() private _narrow = false;
@@ -124,12 +125,11 @@ export class UiPagination extends LightElement {
 
   private _arrow(dir: -1 | 1) {
     const text = dir < 0 ? this.prevLabel : this.nextLabel;
-    // Right to left, previous points right.
-    const back = dir < 0 !== (this.closest("[dir]")?.getAttribute("dir") === "rtl");
-    const icon = html`<ui-icon name=${back ? "chevron-left" : "chevron-right"} size="sm"></ui-icon>`;
+    // Chevrons mirror in right to left (icon.ts), so previous points right there.
+    const icon = html`<ui-icon name=${dir < 0 ? "chevron-left" : "chevron-right"} size="sm"></ui-icon>`;
     return this._button(text || icon, {
       disabled: dir < 0 ? this.page <= 1 : this.page >= this.total,
-      label: dir < 0 ? "Previous page" : "Next page",
+      label: dir < 0 ? m.pagination_previous() : m.pagination_next(),
       onClick: () => this.go(this.page + dir),
     });
   }
@@ -163,7 +163,7 @@ export class UiPagination extends LightElement {
         ${this._button(`${this.page} / ${Math.max(1, this.total)}`, {
           active: true,
           current: "page",
-          label: `Page ${this.page} of ${Math.max(1, this.total)}`,
+          label: m.pagination_page_of({ page: this.page, total: Math.max(1, this.total) }),
         })}
         ${this._arrow(1)}
       </ui-join>`;
@@ -173,7 +173,7 @@ export class UiPagination extends LightElement {
       ${this.pages().map((p) =>
         typeof p === "object"
           ? this._button("…", {
-              label: `Pages ${p.from} to ${p.to}`,
+              label: m.pagination_pages_range({ from: p.from, to: p.to }),
               onClick: () => this.go(Math.round((p.from + p.to) / 2)),
             })
           : this._button(p, {

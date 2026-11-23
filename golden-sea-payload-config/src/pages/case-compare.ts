@@ -2,6 +2,7 @@ import { actions, custom, list, message, table, text, widgets } from "saastemlyc
 import type { CmpLine } from "../endpoints/commercial.ts";
 import * as fmt from "../format/commercial.ts";
 import { compare } from "../queries/commercial.ts";
+import { m } from "../i18n/paraglide/messages.js";
 
 /**
  * Case tab "Compare offers": every offer checked against the customer's original line,
@@ -23,7 +24,7 @@ export const caseCompare = widgets({
     actions({
       size: "full",
       data: compare,
-      empty: { when: (c) => !c.lines.length, heading: "No requested lines to compare yet." },
+      empty: { when: (c) => !c.lines.length, heading: m.page_compare_no_lines() },
       format: fmt.compareBy,
     }),
     // Refused for Sales (supplier costs). A tile per requested line: six, as a case's RFQ usually
@@ -32,11 +33,11 @@ export const caseCompare = widgets({
       data: compare,
       size: "l",
       tiles: 6,
-      empty: { heading: "No more requested lines on this case." },
+      empty: { heading: m.page_compare_no_more_lines() },
       skeleton: "table",
       items: (c) => c.lines,
       key: (l: CmpLine) => `L${l.lineNo}`,
-      title: (l: CmpLine) => `L${l.lineNo} · ${l.description}`,
+      title: (l: CmpLine) => m.page_compare_line_title({ line: l.lineNo, description: l.description }),
       format: fmt.lineOffers,
     }),
     // A tile per line with offers (most of a case's lines have some by the time they're compared).
@@ -44,10 +45,10 @@ export const caseCompare = widgets({
       data: compare,
       size: "s",
       tiles: 4,
-      empty: { heading: "No more lines with offers to check." },
+      empty: { heading: m.page_compare_no_more_checks() },
       items: (c) => c.lines.filter((l) => fmt.currentOffers(l).length),
       key: (l: CmpLine) => `L${l.lineNo}-check`,
-      title: (l: CmpLine) => `Offer check · L${l.lineNo} · ${l.description}`,
+      title: (l: CmpLine) => m.page_compare_check_title({ line: l.lineNo, description: l.description }),
       format: fmt.offerCheck,
     }),
     // Usually one line still waits on a supplier; more go in the same tile.
@@ -55,10 +56,10 @@ export const caseCompare = widgets({
       data: compare,
       size: "s",
       tiles: 1,
-      empty: { heading: "No line is waiting on a supplier's offer." },
+      empty: { heading: m.page_compare_no_waiting() },
       items: (c) => c.lines.filter((l) => l.others.length),
       key: (l: CmpLine) => `L${l.lineNo}-others`,
-      title: (l: CmpLine) => `Asked, no offer · L${l.lineNo} · ${l.description}`,
+      title: (l: CmpLine) => m.page_compare_others_title({ line: l.lineNo, description: l.description }),
       format: fmt.askedNoOffer,
     }),
     // Usually one offer to correct; more go in the same tile.
@@ -66,14 +67,15 @@ export const caseCompare = widgets({
       data: compare,
       size: "m",
       tiles: 1,
-      empty: { heading: "No offers need a correction request." },
+      empty: { heading: m.page_compare_no_corrections() },
       items: fmt.corrections,
       key: (x: fmt.Correction) => `${x.offer.id}-correction`,
-      title: (x: fmt.Correction) => `Correction request · ${x.offer.supplier} v${x.offer.version}`,
+      title: (x: fmt.Correction) =>
+        m.page_compare_correction_title({ supplier: x.offer.supplier, version: x.offer.version }),
       format: fmt.correctionRequest,
     }),
     actions({
-      title: "Next step",
+      title: m.page_compare_next_step(),
       size: "s",
       skeleton: "text",
       data: compare,
@@ -81,11 +83,10 @@ export const caseCompare = widgets({
     }),
     // Sales sees why the comparison is hidden instead (supplier costs).
     text({
-      title: "How offers are compared",
+      title: m.page_compare_how_title(),
       size: "s",
       skeleton: "text",
-      denied:
-        "Costs and margins are hidden for your role. Supplier offers carry supplier costs, so Sales sees the selling prices on the quotation instead. Supply chain, finance and management compare offers.",
+      denied: m.page_compare_denied(),
       data: compare,
       format: fmt.howCompared,
     }),

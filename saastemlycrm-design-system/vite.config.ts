@@ -4,12 +4,13 @@ import { defineConfig } from "vite-plus";
 // `designSystem()` from "saastemlycrm-design-system/vite".
 export default defineConfig({
   fmt: {
-    ignorePatterns: ["dist/**", "bun.lock"],
+    // src/i18n/paraglide: compiled from messages/*.json (vite/i18n.ts).
+    ignorePatterns: ["dist/**", "bun.lock", "src/i18n/paraglide/**", "project.inlang/cache/**"],
     printWidth: 120,
     sortPackageJson: true,
   },
   lint: {
-    ignorePatterns: ["dist/**"],
+    ignorePatterns: ["dist/**", "src/i18n/paraglide/**", "project.inlang/cache/**"],
     jsPlugins: [
       { name: "vite-plus", specifier: "vite-plus/oxlint-plugin" },
       // Its own rules (./lint).

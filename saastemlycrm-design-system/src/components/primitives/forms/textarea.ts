@@ -146,6 +146,7 @@ export class UiTextarea extends LightElement {
       name=${ifDefined(this.name)}
       .value=${live(this.value)}
       placeholder=${ifDefined(this.placeholder)}
+      dir="auto"
       rows=${ifDefined(this.rows)}
       minlength=${ifDefined(this.minlength)}
       maxlength=${ifDefined(this.maxlength)}

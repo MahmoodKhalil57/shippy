@@ -8,6 +8,7 @@ import { toast } from "../../shared.ts";
 import { action as actionButton } from "../blocks.ts";
 import { defineBlock, type ViewContext } from "../registry.ts";
 import type { ViewBlocks } from "../schema.ts";
+import { intl, m } from "../../../i18n/index.ts";
 
 /**
  * `attach`: an action that needs a file as evidence (a signed note, a scan, a photo). Its dialog
@@ -56,8 +57,8 @@ export class AppAttach extends LightElement {
     const missing = this._missing;
     if (missing.file || missing.fields.length) {
       this.failed = missing.file
-        ? `Attach ${s.file.legend.toLowerCase()}.`
-        : `Fill in ${missing.fields.map((f) => f.label ?? f.name).join(", ")}.`;
+        ? m.widget_attach({ what: s.file.legend.toLowerCase() })
+        : m.widget_fill_in({ fields: intl.list().format(missing.fields.map((f) => f.label ?? f.name)) });
       return;
     }
     this.busy = true;
@@ -69,7 +70,7 @@ export class AppAttach extends LightElement {
       if (s.done) toast(s.done);
       this.ctx.reload();
     } catch (e) {
-      this.failed = (e as Error).message || "That didn't work.";
+      this.failed = (e as Error).message || m.widget_failed();
     } finally {
       this.busy = false;
     }
@@ -145,7 +146,7 @@ export class AppAttach extends LightElement {
               ? html`<ui-ai-extract
                   source="file"
                   pickable
-                  use-label="Fill in"
+                  .useLabel=${m.widget_fill_in_button()}
                   .label=${s.extract.label}
                   .what=${s.extract.what}
                   .fields=${s.extract.fields}

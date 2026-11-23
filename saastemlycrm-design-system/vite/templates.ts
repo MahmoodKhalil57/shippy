@@ -401,3 +401,103 @@ export function valueImports(source: string, filename: string): { from: string; 
   });
   return out;
 }
+
+/** Attributes and properties whose value people read or hear (a label, a heading, a hint…). */
+const TEXT_ATTRS =
+  /^\.?(aria-label|aria-description|aria-roledescription|aria-valuetext|label|title|placeholder|alt|heading|subhead|subtitle|description|supporting|eyebrow|text|tooltip|caption|hint|empty|summary|trigger-label|triggerLabel|confirm-label|confirmLabel|cancel-label|cancelLabel|action-label|actionLabel|message)$/;
+
+/** Words: two letters running (an entity such as `&times;` or a token such as `md` aside). */
+const WORDS = /[A-Za-z]{2,}/;
+
+/**
+ * Text written into Lit templates in English rather than taken from the catalog (`m.*()`):
+ * words between tags, static values of the attributes people read (`label="Save"`,
+ * `aria-label="Close"`), and string literals bound to them (`.label=${"Save"}`). One entry per
+ * use, with its line. Code, comments and styles inside a template are skipped.
+ */
+export function literalTexts(source: string, filename: string): { line: number; text: string }[] {
+  const { program } = parseSync(filename, source);
+  const out: { line: number; text: string }[] = [];
+  const lineOf = (offset: number) => source.slice(0, offset).split("\n").length;
+  walk(program, (node) => {
+    if (node.type !== "TaggedTemplateExpression") return;
+    const tag = node.tag as AstNode;
+    if (tag.type !== "Identifier" || tag.name !== "html") return;
+    const quasi = node.quasi as AstNode;
+    const quasis = quasi.quasis as AstNode[];
+    const expressions = quasi.expressions as AstNode[];
+    // Where the parser is between quasis: in a tag (and which attribute it is writing), in a
+    // comment, or in text.
+    let state: "text" | "tag" | "comment" | "style" = "text";
+    let attr = "";
+    quasis.forEach((q, i) => {
+      const raw = (q.value as { raw: string }).raw;
+      const start = (q.start as number) ?? 0;
+      let textRun = "";
+      let runAt = 0;
+      const flush = () => {
+        const t = textRun.replace(/&[a-z]+;/gi, " ").trim();
+        if (WORDS.test(t)) out.push({ line: lineOf(start + runAt), text: t });
+        textRun = "";
+      };
+      for (let j = 0; j < raw.length; j++) {
+        const c = raw[j]!;
+        if (state === "comment") {
+          if (raw.startsWith("-->", j)) {
+            state = "text";
+            j += 2;
+          }
+          continue;
+        }
+        if (state === "style") {
+          if (raw.startsWith("</style", j)) state = "tag";
+          continue;
+        }
+        if (state === "text") {
+          if (raw.startsWith("<!--", j)) {
+            flush();
+            state = "comment";
+            j += 3;
+          } else if (c === "<") {
+            flush();
+            state = raw.startsWith("<style", j) ? "style" : "tag";
+          } else {
+            if (!textRun) runAt = j;
+            textRun += c;
+          }
+          continue;
+        }
+        // In a tag: a static attribute value people read.
+        const m = /^([.?@]?[\w-]+)\s*=\s*"([^"$]*)"/.exec(raw.slice(j));
+        if (m) {
+          // Words, not a token: a space or a capital (`label="Save"`, not `text="ok"`-style ids).
+          const v = m[2]!.trim();
+          if (TEXT_ATTRS.test(m[1]!) && WORDS.test(v) && (/\s/.test(v) || /^[A-Z]/.test(v)))
+            out.push({ line: lineOf(start + j), text: v });
+          j += m[0].length - 1;
+          continue;
+        }
+        const open = /^([.?@]?[\w-]+)\s*=\s*"?$/.exec(raw.slice(j));
+        if (open) {
+          attr = open[1]!;
+          break;
+        }
+        if (c === ">") state = "text";
+      }
+      if (state === "text") flush();
+      // The expression after this quasi: a string literal bound to an attribute people read.
+      const e = expressions[i];
+      if (e && state === "tag" && TEXT_ATTRS.test(attr)) {
+        const v =
+          e.type === "Literal"
+            ? e.value
+            : e.type === "TemplateLiteral" && !(e.expressions as AstNode[]).length
+              ? ((e.quasis as AstNode[])[0]!.value as { cooked: string }).cooked
+              : undefined;
+        if (typeof v === "string" && WORDS.test(v)) out.push({ line: lineOf((e.start as number) ?? 0), text: v });
+      }
+      attr = "";
+    });
+  });
+  return out;
+}

@@ -7,6 +7,7 @@ import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { button } from "../actions/button.ts";
 import { iconSvg } from "../media/icon.ts";
+import { m } from "../../../i18n/index.ts";
 import { badge, type BadgeVariants } from "../data/badge.ts";
 import { skeleton } from "../feedback/skeleton.ts";
 import {
@@ -301,7 +302,7 @@ export class UiTile extends LightElement {
             aria-expanded=${this._open ? "true" : "false"}
             @click=${this._toggle}
           >
-            ${this._open ? "Show less" : "Show all"}
+            ${this._open ? m.tile_show_less() : m.tile_show_all()}
           </button>`
         : nothing;
     const surface = this.emphasis ? card({ variant: null, size: "sm", class: tileEmphasis() }) : card({ size: "sm" });
@@ -590,8 +591,8 @@ export class UiTileArrange extends LightElement {
         type="button"
         class=${tileGrip()}
         data-grip
-        aria-label=${this.label ? `Move ${this.label}` : "Move"}
-        title="Drag to move. Click for more. Arrow keys: earlier or later. Delete: hide."
+        aria-label=${this.label ? m.tile_move_named({ name: this.label }) : m.tile_move()}
+        title=${m.tile_move_hint()}
         aria-haspopup="menu"
         @click=${this.#click}
         @pointerdown=${(e: PointerEvent) => this.#down("move", e)}
@@ -606,8 +607,8 @@ export class UiTileArrange extends LightElement {
           ? html`<button
               type="button"
               class=${tileResize()}
-              aria-label=${this.label ? `Resize ${this.label}` : "Resize"}
-              title="Drag to resize. Arrow keys: a tile at a time."
+              aria-label=${this.label ? m.tile_resize_named({ name: this.label }) : m.tile_resize()}
+              title=${m.tile_resize_hint()}
               @pointerdown=${(e: PointerEvent) => this.#down("resize", e)}
               @pointermove=${this.#move}
               @pointerup=${(e: PointerEvent) => this.#end(e, "end")}
@@ -627,14 +628,14 @@ export class UiTileArrange extends LightElement {
         <button
           type="button"
           role="menuitem"
-          aria-label=${this.label ? `Remove ${this.label}` : "Remove"}
+          aria-label=${this.label ? m.tile_remove_named({ name: this.label }) : m.tile_remove()}
           class=${tileMenuItem()}
           @click=${(e: Event) => {
             ((e.currentTarget as HTMLElement).parentElement as HTMLElement).hidePopover();
             this.dispatchEvent(new CustomEvent("ui-hide", { bubbles: true }));
           }}
         >
-          ${iconSvg("trash", { size: "sm" })}<span class=${tileMenuLabel()}>Remove</span>
+          ${iconSvg("trash", { size: "sm" })}<span class=${tileMenuLabel()}>${m.tile_remove()}</span>
         </button>
       </div>
     </div>`;

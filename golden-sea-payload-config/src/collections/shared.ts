@@ -2,6 +2,35 @@ import type { Access, CollectionConfig, Field, PayloadRequest } from "payload";
 
 /** Shared vocabulary and access rules for the sourcing-desk data model. */
 
+/** A text people read, in each language (Payload's `{ en, ar }`), or one string. */
+export type Words = string | { en: string; ar: string };
+
+/**
+ * Select options from their values: each labelled in English (the value itself) and in Arabic
+ * (`ar`, keyed by value). Throws for a value with no Arabic, so a list is never half translated.
+ */
+export const choices = (values: readonly string[], ar: Record<string, string>) =>
+  values.map((value) => {
+    if (!ar[value]) throw new Error(`choices: no Arabic label for "${value}"`);
+    return { value, label: { en: value, ar: ar[value] } };
+  });
+
+/**
+ * Payload's `{ en, ar }` where a type still says `string`: Payload's select, relationship and
+ * date placeholders, and the contracts' action, navigation and view words. The object is passed
+ * unchanged: the dashboard reads it in the page's language as it starts (`localizeConfig`) and
+ * `fieldProblems` checks both languages.
+ */
+export const words = (text: { en: string; ar: string }): string => text as unknown as string;
+
+/** A string, or `{ en, ar }` passed as one (`words`). */
+export const asText = (text: Words): string => (typeof text === "string" ? text : words(text));
+
+/** Of a text in each language, the one the request reads in (Payload's `req.locale`, else English). */
+export const inLanguage = (req: { locale?: unknown } | undefined, words: { en: string; ar: string }): string =>
+  req?.locale === "ar" ? words.ar : words.en;
+
+/** The roles, labelled in English (what endpoints show); `ROLE_OPTIONS` labels them in both languages. */
 export const ROLES = [
   { label: "Supply chain & customer service", value: "supply-chain" },
   { label: "Management approver", value: "management" },
@@ -11,10 +40,33 @@ export const ROLES = [
   { label: "Office admin", value: "office-admin" },
 ];
 export type Role = (typeof ROLES)[number]["value"];
+const ROLE_AR: Record<string, string> = {
+  "supply-chain": "سلسلة التوريد وخدمة العملاء",
+  management: "معتمد الإدارة",
+  sales: "المبيعات",
+  operations: "العمليات والمالية",
+  "finance-director": "المدير المالي",
+  "office-admin": "إدارة المكتب",
+};
+/** The roles as select options, labelled in English and Arabic. */
+export const ROLE_OPTIONS = ROLES.map((r) => ({ value: r.value, label: { en: r.label, ar: ROLE_AR[r.value]! } }));
 
 export const CURRENCIES = ["EGP", "USD", "EUR"];
 export const PORTS = ["Port Said", "Suez", "Damietta", "Alexandria", "Abu Qir", "Dekheila", "Offshore"];
+export const PORT_OPTIONS = choices(PORTS, {
+  "Port Said": "بورسعيد",
+  Suez: "السويس",
+  Damietta: "دمياط",
+  Alexandria: "الإسكندرية",
+  "Abu Qir": "أبو قير",
+  Dekheila: "الدخيلة",
+  Offshore: "أوفشور",
+});
 export const WAREHOUSES = ["Cairo (6th October)", "Alexandria"];
+export const WAREHOUSE_OPTIONS = choices(WAREHOUSES, {
+  "Cairo (6th October)": "القاهرة (6 أكتوبر)",
+  Alexandria: "الإسكندرية",
+});
 
 /** Golden Sea's stores (product categories) plus the older sourcing categories used by existing records. */
 export const STORES = [
@@ -28,13 +80,38 @@ export const STORES = [
   "Provision stores",
   "Bond stores",
 ];
+export const STORE_OPTIONS = choices(STORES, {
+  "Engine stores": "مستلزمات المحركات",
+  "Deck stores": "مستلزمات سطح السفينة",
+  "Cabin stores": "مستلزمات الكبائن",
+  "Electrical stores": "المستلزمات الكهربائية",
+  "Safety stores": "مستلزمات السلامة",
+  "Medicine stores": "الأدوية",
+  "Stationery stores": "القرطاسية",
+  "Provision stores": "المؤن",
+  "Bond stores": "مستلزمات الإيداع الجمركي",
+});
 
 export const UNITS = ["pcs", "EA", "kg", "ltr", "L", "m", "set", "roll", "pack", "can", "drum", "carton"];
+export const UNIT_OPTIONS = choices(UNITS, {
+  pcs: "قطعة",
+  EA: "وحدة (EA)",
+  kg: "كجم",
+  ltr: "لتر",
+  L: "لتر (L)",
+  m: "م",
+  set: "طقم",
+  roll: "لفة",
+  pack: "عبوة",
+  can: "علبة",
+  drum: "برميل",
+  carton: "كرتونة",
+});
 
 export const CASE_TYPES = [
-  { label: "Stores / provisions RFQ", value: "rfq" },
-  { label: "Spare-parts clearance", value: "service" },
-  { label: "Held stores", value: "held" },
+  { label: { en: "Stores / provisions RFQ", ar: "طلب عرض مستلزمات / مؤن" }, value: "rfq" },
+  { label: { en: "Spare-parts clearance", ar: "تخليص قطع غيار" }, value: "service" },
+  { label: { en: "Held stores", ar: "مستلزمات محتجزة" }, value: "held" },
 ];
 
 export const SUPPLIER_RFQ_STATUSES = [
@@ -48,6 +125,17 @@ export const SUPPLIER_RFQ_STATUSES = [
   "Declined",
   "No response",
 ];
+export const SUPPLIER_RFQ_STATUS_OPTIONS = choices(SUPPLIER_RFQ_STATUSES, {
+  Draft: "مسودة",
+  Sent: "مُرسل",
+  "Awaiting reply": "بانتظار الرد",
+  "Partial reply": "رد جزئي",
+  "Clarification needed": "يحتاج توضيحًا",
+  Replied: "تم الرد",
+  "Revised offer received": "وصل عرض معدّل",
+  Declined: "اعتذر",
+  "No response": "لا استجابة",
+});
 
 export const QUOTE_DECISIONS = [
   "Quotation prepared",
@@ -60,12 +148,35 @@ export const QUOTE_DECISIONS = [
   "Expired",
   "On hold",
 ];
+/** The quotation decisions and "Partially won" (a case's customer decision), in both languages. */
+export const QUOTE_DECISION_OPTIONS = choices([...QUOTE_DECISIONS, "Partially won"], {
+  "Quotation prepared": "أُعدّ عرض السعر",
+  "Awaiting management approval": "بانتظار موافقة الإدارة",
+  Submitted: "مقدَّم",
+  "Awaiting customer decision": "بانتظار قرار العميل",
+  "Revision requested": "طُلبت مراجعة",
+  Won: "فوز",
+  Lost: "خسارة",
+  Expired: "منتهي",
+  "On hold": "معلّق",
+  "Partially won": "فوز جزئي",
+});
 
+/** The contact rules, labelled in English (what endpoints show); `CONTACT_RULE_OPTIONS` labels them in both languages. */
 export const CONTACT_RULES = [
   { label: "Follow-ups allowed", value: "allowed" },
   { label: "Max one follow-up per quotation", value: "one-follow-up" },
   { label: "Do not chase — internal reminders only", value: "do-not-chase" },
 ];
+const CONTACT_RULE_AR: Record<string, string> = {
+  allowed: "المتابعات مسموحة",
+  "one-follow-up": "متابعة واحدة كحد أقصى لكل عرض سعر",
+  "do-not-chase": "عدم المتابعة — تذكيرات داخلية فقط",
+};
+export const CONTACT_RULE_OPTIONS = CONTACT_RULES.map((r) => ({
+  value: r.value,
+  label: { en: r.label, ar: CONTACT_RULE_AR[r.value]! },
+}));
 
 /* ---------------------------------------------------------------- access */
 
@@ -138,7 +249,11 @@ export async function fxRates(req: PayloadRequest): Promise<Record<string, numbe
   ctx.fx ??= (async () => {
     const out: Record<string, number> = { EGP: 1, USD: 48.6, EUR: 52.9 };
     try {
-      const g = (await req.payload.findGlobal({ slug: "fx-rates" as never, depth: 0 } as never)) as {
+      const g = (await req.payload.findGlobal({
+        locale: req.locale,
+        slug: "fx-rates" as never,
+        depth: 0,
+      } as never)) as {
         rates?: { currency?: string; egpPerUnit?: number; status?: string }[];
       };
       for (const r of g.rates ?? [])
@@ -173,12 +288,12 @@ export async function related(
 
 /** What a reusable field tells the person filling it in (its hint and placeholder), when not the default. */
 export interface FieldWords {
-  hint?: string;
-  placeholder?: string;
+  hint?: Words;
+  placeholder?: Words;
 }
 
 /** An amount and its currency, side by side; `words` for the amount (the currency's are fixed). */
-export const money = (name: string, label?: string, extra: Partial<Field> = {}, words: FieldWords = {}): Field =>
+export const money = (name: string, label?: Words, extra: Partial<Field> = {}, words: FieldWords = {}): Field =>
   ({
     type: "row",
     fields: [
@@ -188,39 +303,56 @@ export const money = (name: string, label?: string, extra: Partial<Field> = {}, 
         label: label ?? name,
         min: 0,
         admin: {
-          description: words.hint ?? "The amount, before VAT; its currency is beside it.",
-          placeholder: words.placeholder ?? "e.g. 12,500",
+          description: words.hint ?? {
+            en: "The amount, before VAT; its currency is beside it.",
+            ar: "المبلغ قبل ضريبة القيمة المضافة؛ وعملته بجانبه.",
+          },
+          placeholder: words.placeholder ?? { en: "e.g. 12,500", ar: "مثال: 12,500" },
         },
       },
       {
         name: `${name}Currency`,
         type: "select",
-        label: "Currency",
+        label: { en: "Currency", ar: "العملة" },
         options: CURRENCIES,
         defaultValue: "EGP",
-        admin: { description: "The currency the amount is in.", placeholder: "EGP" },
+        admin: {
+          description: { en: "The currency the amount is in.", ar: "العملة التي بها المبلغ." },
+          placeholder: { en: "EGP", ar: "EGP" },
+        },
       },
     ],
     ...extra,
   }) as Field;
 
-export const evidence = (name = "evidence", label = "Evidence", words: FieldWords = {}): Field => ({
+export const evidence = (
+  name = "evidence",
+  label: Words = { en: "Evidence", ar: "الإثبات" },
+  words: FieldWords = {},
+): Field => ({
   name,
   type: "upload",
   relationTo: "media",
   label,
-  admin: { description: words.hint ?? "A photo, scan or PDF that backs this up." },
+  admin: {
+    description: words.hint ?? {
+      en: "A photo, scan or PDF that backs this up.",
+      ar: "صورة أو مسح ضوئي أو ملف PDF يثبت ذلك.",
+    },
+  },
 });
 
-export const caseRef = (required = true, words: FieldWords = {}): Field => ({
+export const caseRef = (required = true, text: FieldWords = {}): Field => ({
   name: "case",
   type: "relationship",
+  label: { en: "Case", ar: "الملف" },
   relationTo: "cases",
   required,
   index: true,
   admin: {
-    description: words.hint ?? "The customer case this belongs to.",
-    placeholder: words.placeholder ?? "e.g. GS-RFQ-0142",
+    description: text.hint ?? { en: "The customer case this belongs to.", ar: "ملف العميل الذي يتبعه هذا." },
+    // Payload types a relationship's placeholder as a string.
+    placeholder: asText(text.placeholder ?? { en: "e.g. GS-RFQ-0142", ar: "مثال: GS-RFQ-0142" }),
   },
 });
 
@@ -229,7 +361,12 @@ export const autoNumber =
   (collection: string, field: string, prefix: string) =>
   async ({ data, operation, req }: { data?: Record<string, unknown>; operation: string; req: PayloadRequest }) => {
     if (operation !== "create" || !data || data[field]) return data;
-    const { docs } = await req.payload.find({ collection: collection as never, limit: 0, depth: 0 });
+    const { docs } = await req.payload.find({
+      locale: req.locale,
+      collection: collection as never,
+      limit: 0,
+      depth: 0,
+    });
     // The running number is what follows the prefix (`INV/2026/0412` → 412), not every digit.
     const last = Math.max(
       0,
@@ -241,14 +378,18 @@ export const autoNumber =
     return { ...data, [field]: `${prefix}${String(last + 1).padStart(4, "0")}` };
   };
 
-/** Records an activity on the related case (the demo's case timeline / audit log). */
+/**
+ * Records an activity on the related case (the demo's case timeline / audit log). Its `text` is
+ * localized: a string is written as the English text, `{ en, ar }` in both languages.
+ */
 export async function logActivity(
   req: PayloadRequest,
-  entry: { case?: string | null; kind?: "auto" | "human" | "alert"; text: string; entity?: string },
+  entry: { case?: string | null; kind?: "auto" | "human" | "alert"; text: Words; entity?: string },
 ) {
   try {
     await req.payload.create({
       collection: "activities" as never,
+      locale: typeof entry.text === "string" ? "en" : "all",
       data: {
         case: entry.case ?? undefined,
         kind: entry.kind ?? (req.user ? "human" : "auto"),
@@ -283,6 +424,8 @@ export async function logAiCall(
   try {
     await req.payload.create({
       collection: "ai-calls" as never,
+      // The subject is localized; the endpoints write it in English.
+      locale: "en",
       data: {
         at: new Date().toISOString(),
         task: entry.task,

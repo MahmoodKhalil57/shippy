@@ -14,6 +14,7 @@ import * as shapes from "../format/visuals.ts";
 import { visuals } from "../queries/visuals.ts";
 import type { BankChange } from "../endpoints/cash.ts";
 import * as fmt from "../format/cash.ts";
+import { dateFormat } from "../format/index.ts";
 import * as link from "../links.ts";
 import { paymentApprovals } from "../queries/approvals.ts";
 import {
@@ -25,6 +26,7 @@ import {
   payables,
   paymentsToApprove,
 } from "../queries/cash.ts";
+import { m } from "../i18n/paraglide/messages.js";
 
 /**
  * Root view "Receivables & payables" (/cash): what customers owe (ageing by customer, collection
@@ -33,18 +35,23 @@ import {
  * the two-person bank-detail change with its call-back check, and cash in vs out for the next
  * 8 weeks. Each widget is a design-system kind given a query and a formatter (../format/cash.ts).
  */
+/** The demo's day (`TODAY`, ../collections/shared.ts) in the interface's language: "Tue 17 Nov". */
+const demoDay = () =>
+  dateFormat({ weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }).format(
+    new Date("2026-11-17T09:30:00.000Z"),
+  );
+
 /** Payables, the cash forecast's outflows and bank-detail changes are never for Sales. */
 const notSales = (s: WidgetScope) => s.user.role !== "sales";
 
 export const cashPage = widgets({
   header: {
-    eyebrow: "Finance · Tue 17 Nov",
-    heading: "Receivables & payables",
-    subtitle:
-      "What customers owe, what we owe suppliers, and what needs a decision. Money moves only in the bank — here people approve and record it.",
+    eyebrow: m.page_cash_eyebrow({ day: demoDay() }),
+    heading: m.page_cash_heading(),
+    subtitle: m.page_cash_subtitle(),
     actions: [
-      { label: "Approvals queue", href: "/approvals" },
-      { label: "All invoices", href: link.list("invoices") },
+      { label: m.page_cash_approvals_queue(), href: "/approvals" },
+      { label: m.page_cash_all_invoices(), href: link.list("invoices") },
     ],
   },
   // The position with the two things to act on beside it, the two charts, then the tables.
@@ -52,18 +59,18 @@ export const cashPage = widgets({
     // The money at a glance: who owes the most (sized by it), the next 8 weeks' cash as a bridge,
     // and the month's due dates.
     treemap({
-      title: "Who owes us",
+      title: m.page_cash_who_owes(),
       size: "m",
       rows: 6,
       maxRows: 7,
       skeleton: "chart",
       data: visuals,
       visible: shapes.seesMoney,
-      empty: { when: (v) => !v.receivables.length, heading: "No open receivables." },
+      empty: { when: (v) => !v.receivables.length, heading: m.page_cash_no_receivables() },
       format: shapes.receivablesMap,
     }),
     waterfall({
-      title: "Cash, next 8 weeks",
+      title: m.page_cash_next_weeks(),
       size: "m",
       rows: 6,
       maxRows: 7,
@@ -73,7 +80,7 @@ export const cashPage = widgets({
       format: fmt.bridge,
     }),
     month({
-      title: "Due this month",
+      title: m.page_cash_due_month(),
       size: "s",
       rows: 7,
       maxRows: 8,
@@ -87,13 +94,18 @@ export const cashPage = widgets({
       metrics: {
         collection: "invoices",
         items: [
-          { label: "Receivables", sum: "balanceUsd", where: openInvoices, note: "Open invoices · USD equivalent" },
           {
-            label: "Overdue",
+            label: m.page_cash_receivables(),
+            sum: "balanceUsd",
+            where: openInvoices,
+            note: m.page_cash_receivables_note(),
+          },
+          {
+            label: m.page_cash_overdue(),
             sum: "balanceUsd",
             where: overdueInvoices,
             tone: { some: "error", none: "success" },
-            note: "Past their due date · USD equivalent",
+            note: m.page_cash_overdue_note(),
           },
         ],
       },
@@ -105,10 +117,10 @@ export const cashPage = widgets({
         collection: "approvals",
         items: [
           {
-            label: "Payments to approve",
+            label: m.page_cash_payments_to_approve(),
             where: paymentsToApprove,
             tone: { some: "warning", none: "success" },
-            note: "Financial Director or CEO",
+            note: m.page_cash_fd_or_ceo(),
           },
         ],
       },
@@ -121,13 +133,13 @@ export const cashPage = widgets({
         collection: "purchase-orders",
         items: [
           {
-            label: "Payables",
+            label: m.page_cash_payables(),
             sum: "payable.balanceEgp",
             where: payablePurchaseOrders,
             keep: openPayables,
-            note: "Open supplier balances · EGP equivalent",
+            note: m.page_cash_payables_note(),
           },
-          { label: "Supplier balances open", where: payablePurchaseOrders, keep: openPayables },
+          { label: m.page_cash_supplier_balances(), where: payablePurchaseOrders, keep: openPayables },
         ],
       },
     },
@@ -139,7 +151,7 @@ export const cashPage = widgets({
       format: fmt.position,
     }),
     text({
-      title: "Match a remittance",
+      title: m.page_cash_remittance(),
       size: "s",
       data: cash,
       format: fmt.remittance,
@@ -147,10 +159,9 @@ export const cashPage = widgets({
     // The approvals collection's own: each request's PO and amount (`payment`), how far it has got,
     // and its actions (Approve / Return for an approver, Record payment for finance once approved).
     {
-      title: "Payments needing approval",
+      title: m.page_cash_payments_title(),
       size: "s",
-      subhead:
-        "Every supplier payment needs the Financial Director or the CEO. Once approved, finance pays in the bank and records it here with the bank reference.",
+      subhead: m.page_cash_payments_subhead(),
       visible: notSales,
       records: {
         collection: "approvals",
@@ -163,19 +174,19 @@ export const cashPage = widgets({
         tags: ["type", "rule"],
         facts: ["payment.purchaseOrder", "payment.amount", "payment.kind", "progress"],
         text: "detail",
-        empty: "No payments waiting for approval.",
+        empty: m.page_cash_no_payments(),
       },
     },
     {
-      title: "Receivables ageing by customer",
-      subhead: "Open balances in USD equivalent at today's rates, by days past due.",
+      title: m.page_cash_ageing_title(),
+      subhead: m.page_cash_ageing_subhead(),
       size: "m",
       breakdown: { collection: "invoices", where: openInvoices, by: "customer", stack: "ageBucket", sum: "balanceUsd" },
     },
     chart({
-      title: "Cash in vs out — next 8 weeks",
+      title: m.page_cash_in_out(),
       // Its subhead comes with the data; this line holds its place while it loads.
-      subhead: "EGP thousands, by week",
+      subhead: m.page_cash_in_out_subhead(),
       size: "m",
       skeleton: "chart",
       data: cash,
@@ -187,11 +198,11 @@ export const cashPage = widgets({
       visible: notSales,
       // One change at a time is the usual case; another would share its tile, behind "Show all".
       tiles: 1,
-      empty: { heading: "No bank-detail changes in progress." },
+      empty: { heading: m.page_cash_no_bank_changes() },
       items: (d) => d.bankChanges,
       key: (b: BankChange) => b.id,
       title: (b: BankChange) => b.title,
-      subhead: () => "Two-person check: Finance and the CEO, after a call-back on the number on file.",
+      subhead: () => m.page_cash_bank_change_subhead(),
       format: fmt.bankChange,
     }),
     details.each({
@@ -199,14 +210,14 @@ export const cashPage = widgets({
       size: "s",
       visible: notSales,
       tiles: 1,
-      empty: { heading: "No bank-detail change requested." },
+      empty: { heading: m.page_cash_no_bank_request() },
       items: (d) => d.bankChanges.filter((b) => b.request),
       key: (b: BankChange) => `${b.id}-request`,
-      title: (b: BankChange) => `${b.supplierName}: requested change`,
+      title: (b: BankChange) => m.page_cash_requested_change({ supplier: b.supplierName }),
       format: fmt.bankChangeRequest,
     }),
     {
-      title: "Ageing buckets by customer",
+      title: m.page_cash_buckets_title(),
       size: "l",
       breakdown: {
         collection: "invoices",
@@ -219,9 +230,8 @@ export const cashPage = widgets({
     },
     // Each invoice's reminder follows its customer's contact rule (the invoices' own actions).
     {
-      title: "Collections — open invoices",
-      subhead:
-        "Reminders follow each customer's contact rule: “do not chase” accounts get an internal reminder only; for the others the AI drafts the email and a person reviews and sends it.",
+      title: m.page_cash_collections_title(),
+      subhead: m.page_cash_collections_subhead(),
       size: "l",
       records: {
         collection: "invoices",
@@ -230,16 +240,15 @@ export const cashPage = widgets({
         limit: 50,
         columns: ["number", "balance", "dueDate", "customer.contactRule", "eInvoice.status"],
         supporting: { number: "customer", balance: "amount", dueDate: "ageBucket" },
-        labels: { "eInvoice.status": "E-invoice" },
-        empty: "No open invoices.",
+        labels: { "eInvoice.status": m.page_cash_e_invoice() },
+        empty: m.page_cash_no_open_invoices(),
       },
     },
     // What we owe on each supplier PO (its own `payable`: the supplier links to the case's order
     // tab, a hold reads in red) and its action: request payment approval.
     {
-      title: "Supplier payables",
-      subhead:
-        "Deposits paid against pro formas, balances due on delivery, and bills held when PO, receipt and bill don't match.",
+      title: m.page_cash_payables_title(),
+      subhead: m.page_cash_payables_subhead(),
       size: "l",
       visible: notSales,
       records: {
@@ -260,13 +269,13 @@ export const cashPage = widgets({
         ],
         supporting: { "payable.supplier": "payable.ref", "payable.stage": "payable.note" },
         labels: { "payable.next": "" },
-        empty: "Nothing owed to suppliers.",
+        empty: m.page_cash_nothing_owed(),
       },
     },
     // The open invoices as cards (balance large, age and due date under it) and the bills falling
     // due on their month.
     {
-      title: "Open invoices",
+      title: m.page_cash_open_invoices(),
       size: "l",
       rows: 12,
       minRows: 8,
@@ -280,7 +289,7 @@ export const cashPage = widgets({
       },
     },
     {
-      title: "Supplier bills by due date",
+      title: m.page_cash_bills_by_due(),
       size: "s",
       rows: 10,
       minRows: 8,

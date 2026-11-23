@@ -8,6 +8,7 @@ import { floating, floatingHeight, inset, pad, row, scrollRoom, stack, text } fr
 import { auditContrast, type ContrastIssue } from "../../base/contrast.ts";
 import { auditProminence, type ProminenceIssue } from "../../base/prominence.ts";
 import { auditLayers, type LayoutIssue } from "../../base/layout.ts";
+import { intl, m } from "../../../i18n/index.ts";
 
 export { auditContrast, type ContrastIssue } from "../../base/contrast.ts";
 export { auditLayers, auditLayout, type LayoutIssue } from "../../base/layout.ts";
@@ -64,6 +65,14 @@ export const contrastAuditSwatch = rcva("size-4 shrink-0 rounded-full ring-1 rin
 export const contrastAuditButton = rcva("btn btn-xs max-w-full", {
   variants: { kind: { ghost: "btn-ghost", primary: "btn-primary" } },
 });
+
+/** A layout problem's name, in the interface's language. */
+const KIND: Record<LayoutIssue["kind"], () => string> = {
+  escapes: () => m.contrast_audit_kind_escapes(),
+  squeezed: () => m.contrast_audit_kind_squeezed(),
+  cramped: () => m.contrast_audit_kind_cramped(),
+  "page-scroll": () => m.contrast_audit_kind_page_scroll(),
+};
 
 /**
  * @example <ui-contrast-audit></ui-contrast-audit>  <!-- once, near the app root -->
@@ -156,6 +165,9 @@ export class UiContrastAudit extends LightElement {
   }
 
   render() {
+    const ratio = (v: number, digits: number) =>
+      intl.number({ minimumFractionDigits: digits, maximumFractionDigits: digits }).format(v);
+    const kind = (k: LayoutIssue["kind"]) => KIND[k]();
     const issues = this.issues;
     if (!issues) return nothing;
     void this._tick;
@@ -163,44 +175,56 @@ export class UiContrastAudit extends LightElement {
     const prominent = this.prominence.flatMap((p) => p.buttons);
     return html`${issues
         .slice(0, 200)
-        .map((issue, i) => this._box(issue.element, "contrast", `${issue.ratio.toFixed(1)}:1`, i === this.selected))}
-      ${prominent.map((b) => this._box(b, "prominence", "filled"))}
-      ${this.layout.map((l) => this._box(l.element, "layout", l.kind))}
-      <div class=${contrastAuditPanel()} role="dialog" aria-label="Contrast audit">
+        .map((issue, i) =>
+          this._box(
+            issue.element,
+            "contrast",
+            m.contrast_audit_ratio({ ratio: ratio(issue.ratio, 1) }),
+            i === this.selected,
+          ),
+        )}
+      ${prominent.map((b) => this._box(b, "prominence", m.contrast_audit_filled()))}
+      ${this.layout.map((l) => this._box(l.element, "layout", kind(l.kind)))}
+      <div class=${contrastAuditPanel()} role="dialog" aria-label=${m.contrast_audit_title()}>
         <div class=${contrastAuditHead()}>
           <div>
-            <div class=${contrastAuditTitle()}>Contrast audit</div>
+            <div class=${contrastAuditTitle()}>${m.contrast_audit_title()}</div>
             <div class=${contrastAuditSummary()}>
               ${
                 issues.length
-                  ? `${issues.length} text ${issues.length === 1 ? "element fails" : "elements fail"} WCAG AA${overImage ? ` · ${overImage} over the background image` : ""}`
-                  : "Everything on screen passes WCAG AA (4.5:1, large text 3:1)."
+                  ? overImage
+                    ? m.contrast_audit_fails_over_image({ count: issues.length, overImage })
+                    : m.contrast_audit_fails({ count: issues.length })
+                  : m.contrast_audit_passes()
               }
               ${
                 this.prominence.length
-                  ? html`<br />${this.prominence
-                        .map(
-                          (p) =>
-                            `${p.buttons.length} filled buttons on ${p.surface.matches("main") ? "the page" : "a dialog"}`,
-                        )
-                        .join(" · ")}:
-                      keep one or two, make the rest tonal (variant="soft").`
+                  ? html`<br />${m.contrast_audit_prominence({
+                        places: intl
+                          .list({ type: "unit" })
+                          .format(
+                            this.prominence.map((p) =>
+                              p.surface.matches("main")
+                                ? m.contrast_audit_filled_on_page({ count: p.buttons.length })
+                                : m.contrast_audit_filled_on_dialog({ count: p.buttons.length }),
+                            ),
+                          ),
+                      })}`
                   : nothing
               }
               ${
                 this.layout.length
-                  ? html`<br />${this.layout.length} layout ${this.layout.length === 1 ? "problem" : "problems"} at
-                      ${innerWidth}px: let it wrap or shrink.`
+                  ? html`<br />${m.contrast_audit_layout({ count: this.layout.length, px: innerWidth })}`
                   : nothing
               }
             </div>
           </div>
           <div>
             <button type="button" class=${contrastAuditButton({ kind: "ghost" })} @click=${() => this.run()}>
-              Re-run
+              ${m.contrast_audit_rerun()}
             </button>
             <button type="button" class=${contrastAuditButton({ kind: "primary" })} @click=${() => this.close()}>
-              Close
+              ${m.contrast_audit_close()}
             </button>
           </div>
         </div>
@@ -213,7 +237,7 @@ export class UiContrastAudit extends LightElement {
                 title=${l.detail}
                 @click=${() => l.element.scrollIntoView({ block: "center", behavior: "smooth" })}
               >
-                <span class=${contrastAuditRatio({ kind: "layout" })}>${l.kind}</span>
+                <span class=${contrastAuditRatio({ kind: "layout" })}>${kind(l.kind)}</span>
                 <span class=${contrastAuditText()}>${l.detail} · ${l.element.textContent?.trim().slice(0, 60)}</span>
               </button>`,
           )}
@@ -222,10 +246,10 @@ export class UiContrastAudit extends LightElement {
               html`<button
                 type="button"
                 class=${contrastAuditItem()}
-                title="A filled button: keep one or two per screen"
+                title=${m.contrast_audit_filled_hint()}
                 @click=${() => b.scrollIntoView({ block: "center", behavior: "smooth" })}
               >
-                <span class=${contrastAuditRatio({ kind: "prominence" })}>filled</span>
+                <span class=${contrastAuditRatio({ kind: "prominence" })}>${m.contrast_audit_filled()}</span>
                 <span class=${contrastAuditText()}>${b.textContent?.trim() || b.getAttribute("aria-label")}</span>
               </button>`,
           )}
@@ -234,10 +258,10 @@ export class UiContrastAudit extends LightElement {
               html`<button
                 type="button"
                 class=${contrastAuditItem()}
-                title=${`${issue.color} on ${issue.background} — needs ${issue.required}:1`}
+                title=${m.contrast_audit_issue({ color: issue.color, background: issue.background, required: issue.required })}
                 @click=${() => this._show(i)}
               >
-                <span class=${contrastAuditRatio()}>${issue.ratio.toFixed(2)}</span>
+                <span class=${contrastAuditRatio()}>${ratio(issue.ratio, 2)}</span>
                 <span class=${contrastAuditSwatch()} style=${styleMap({ "--swatch": issue.background })}></span>
                 <span class=${contrastAuditSwatch()} style=${styleMap({ "--swatch": issue.color })}></span>
                 <span class=${contrastAuditText()}>${issue.text}</span>

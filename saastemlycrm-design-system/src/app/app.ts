@@ -40,10 +40,17 @@ import {
   toast,
   userSlug,
   type Route,
+  collectionOf,
   componentOf,
   dashboardView,
+  dataFields,
+  fieldsOf,
 } from "./shared.ts";
 import { loadSite, resetSite, site } from "./site.ts";
+import { followLanguage, keepLanguage, m, savedLanguage } from "../i18n/index.ts";
+
+/** A message split at its one placeholder, so the input can be marked up (`<strong>`) in its place. */
+const around = (say: (input: string) => string) => say("\u0000").split("\u0000") as [string, string];
 
 /**
  * Which of M3's transition patterns moving from one page to another is (`ui-app-shell`'s
@@ -162,8 +169,25 @@ export class DashboardApp extends LightElement {
     }
   }
 
+  /** Stops keeping language choices on the previous person's record. */
+  #keepLanguage?: () => void;
+
   private async _refresh() {
     this.user = (await api.me(userSlug)).user;
+    // A person's language goes with them when the project's people have a `language` field: a
+    // browser where nobody chose one follows theirs as they sign in; one where a language was
+    // chosen keeps it and puts it on their record; a choice made here is kept there too.
+    this.#keepLanguage?.();
+    this.#keepLanguage = undefined;
+    const people = collectionOf(userSlug);
+    const user = this.user;
+    if (user && people && dataFields(fieldsOf(people)).some((f) => f.name === "language")) {
+      const saved = savedLanguage();
+      if (!saved && followLanguage(user.language)) return;
+      if (saved && user.language !== saved)
+        void api.update(userSlug, user.id, { language: saved }).catch(() => undefined);
+      this.#keepLanguage = keepLanguage((l) => api.update(userSlug, user.id, { language: l }));
+    }
     // The brand (and, signed in, the assistant) come from the project's data.
     resetSite();
     await loadSite();
@@ -190,7 +214,7 @@ export class DashboardApp extends LightElement {
     access: () => this.access,
     title: () => this._title(),
     navigation: () => [
-      { label: "Home", items: [{ label: "Dashboard", href: dashboardPath() }] },
+      { label: m.app_nav_home(), items: [{ label: m.app_nav_dashboard(), href: dashboardPath() }] },
       ...this._groups().map((g) => ({
         label: g.label,
         items: g.items.map((i) => ({ label: text(i.label), href: i.href })),
@@ -227,7 +251,7 @@ export class DashboardApp extends LightElement {
     } else if (this.user && open) navigate(dashboardPath(), true);
     else if (this.user && this.route.name === "address" && this.route.to)
       navigate(`${DASHBOARD_ROUTE}${this.route.to}`, true);
-    document.title = `${this._title()} ${config.admin?.meta?.titleSuffix ?? "· Dashboard"}`;
+    document.title = `${this._title()} ${config.admin?.meta?.titleSuffix ?? m.app_title_suffix()}`;
   }
 
   private _title() {
@@ -236,8 +260,14 @@ export class DashboardApp extends LightElement {
       const v = rootViews().find((x) => x.key === r.key);
       return v ? titleOfView(v) : humanize(r.key);
     }
-    if (r.name === "address") return "Not found";
-    return humanize(r.name);
+    if (r.name === "address" || r.name === "not-found") return m.app_title_not_found();
+    const titles: Record<string, () => string> = {
+      dashboard: () => m.app_nav_dashboard(),
+      login: () => m.app_title_login(),
+      "create-first-user": () => m.app_title_create_first_user(),
+      account: () => m.app_title_account(),
+    };
+    return titles[r.name]?.() ?? humanize(r.name);
   }
 
   /** Guided tours: sign in as a seeded user by id (a tour step's `as`). */
@@ -260,10 +290,10 @@ export class DashboardApp extends LightElement {
     try {
       // Signing in replaces the session; no logout first, so a failure leaves you signed in.
       await api.login(userSlug, u.email, u.password);
-      toast(`Signed in as ${u.name ?? u.email} (${roleLabel(u.role)})`, "info");
+      toast(m.app_switched_user({ name: u.name ?? u.email, role: roleLabel(u.role) }), "info");
       await this._refresh();
     } catch (e) {
-      toast(`Couldn't switch to ${u.name ?? u.email}: ${(e as Error).message}`, "error");
+      toast(m.app_switch_user_failed({ name: u.name ?? u.email, error: (e as Error).message }), "error");
     }
   }
 
@@ -302,9 +332,9 @@ export class DashboardApp extends LightElement {
         trigger-variant="text"
         trigger-shape="round"
         trigger-spaced="false"
-        .label=${`Switch user (demo) — signed in as ${text(this.user.name ?? this.user.email)}`}
+        .label=${m.app_switch_user_label({ name: text(this.user.name ?? this.user.email) })}
         .heading=${html`<ui-flex align="center" justify="between" gap="2"
-          >Switch user <ui-tag tone="primary">Demo</ui-tag></ui-flex
+          >${m.app_switch_user_heading()} <ui-tag tone="primary">${m.app_demo_tag()}</ui-tag></ui-flex
         >`}
       >
         <ui-avatar slot="trigger" size="xs" .initials=${initials(this.user)}></ui-avatar>
@@ -335,7 +365,7 @@ export class DashboardApp extends LightElement {
 
   private async _logout() {
     await api.logout(userSlug);
-    toast("You have been logged out.", "info");
+    toast(m.app_logged_out(), "info");
     await this._refresh();
   }
 
@@ -382,7 +412,8 @@ export class DashboardApp extends LightElement {
     const name = groupIcon(label);
     return attention
       ? html`<ui-indicator
-          ><ui-badge slot="item" dot tone="warning" label="Needs attention"></ui-badge><ui-icon name=${name}></ui-icon
+          ><ui-badge slot="item" dot tone="warning" label=${m.app_needs_attention()}></ui-badge
+          ><ui-icon name=${name}></ui-icon
         ></ui-indicator>`
       : this._icon(name);
   }
@@ -400,7 +431,7 @@ export class DashboardApp extends LightElement {
    */
   private _nav(): { menu: MenuItem[]; rail: MenuItem[] } {
     const dashboard: MenuItem = {
-      label: "Dashboard",
+      label: m.app_nav_dashboard(),
       icon: this._icon("home"),
       href: dashboardPath(),
       active: this.route.name === "dashboard",
@@ -463,7 +494,7 @@ export class DashboardApp extends LightElement {
         const comp = componentOf(view.Component);
         return (
           (comp && viewElement(comp.tag, { ...comp.props, params: r.params, access, user: this.user! })) ??
-          html`<ui-alert tone="info" heading=${titleOfView(view)}>This screen is loading.</ui-alert>`
+          html`<ui-alert tone="info" heading=${titleOfView(view)}>${m.app_view_loading()}</ui-alert>`
         );
       }
       case "account":
@@ -475,10 +506,10 @@ export class DashboardApp extends LightElement {
       default:
         return html`<ui-empty-state
           icon="compass"
-          heading="Nothing found"
-          description="There's no dashboard page at this address."
+          heading=${m.app_not_found_heading()}
+          description=${m.app_not_found_description()}
         >
-          <ui-button slot="actions" href=${dashboardPath()} color="primary">Back to the dashboard</ui-button>
+          <ui-button slot="actions" href=${dashboardPath()} color="primary">${m.app_not_found_back()}</ui-button>
         </ui-empty-state>`;
     }
   }
@@ -486,7 +517,7 @@ export class DashboardApp extends LightElement {
   render() {
     if (this.failure) {
       return html`<ui-container padding-x="4" padding-y="12">
-        <ui-alert tone="error" heading="The mock backend couldn't start" .description=${this.failure}></ui-alert>
+        <ui-alert tone="error" heading=${m.app_backend_failed()} .description=${this.failure}></ui-alert>
       </ui-container>`;
     }
     if (!this.ready) {
@@ -506,8 +537,8 @@ export class DashboardApp extends LightElement {
     const user = this.user;
     const initials = text(user.initials ?? user.email ?? "?").slice(0, 2);
     const profile: MenuItem[] = [
-      { label: "Account", href: dashboardPath("account"), active: this.route.name === "account" },
-      { label: "Log out", value: "logout" },
+      { label: m.app_title_account(), href: dashboardPath("account"), active: this.route.name === "account" },
+      { label: m.app_log_out(), value: "logout" },
     ];
     // `navOpen` mirrors the frame (the shell decides it from the window's room and from
     // `navExpanded`, what the person chose for the navigation); `asideOpen` is the side panel as
@@ -521,7 +552,7 @@ export class DashboardApp extends LightElement {
         brand-href=${dashboardPath()}
         .navExpanded=${navExpanded}
         ?aside-open=${asideOpen}
-        aside-label="Side panel"
+        aside-label=${m.app_side_panel()}
         @dashboard-attention=${(e: CustomEvent<Attention>) => (this.attention = e.detail)}
         @ui-change=${(e: CustomEvent<{ nav: boolean; aside: boolean; expanded?: boolean }>) => {
           // Only the shell's own change: `ui-change` from anything inside it (the theme toggle,
@@ -547,6 +578,7 @@ export class DashboardApp extends LightElement {
         ></ui-appearance>
         <ui-appearance slot="actions" kind="scheme" persist></ui-appearance>
         <ui-appearance slot="actions" kind="theme" persist></ui-appearance>
+        <ui-appearance slot="actions" kind="language"></ui-appearance>
         <ui-dropdown
           slot="actions"
           align="end"
@@ -581,7 +613,9 @@ export class DashboardApp extends LightElement {
         ${
           site().branding.poweredBy
             ? html`<ui-text slot="footer" variant="body-sm" color="muted"
-                >This Demo Powered by <strong>${site().branding.poweredBy}</strong></ui-text
+                >${around((name) => m.app_powered_by({ name }))[0]}<strong
+                  ><bdi>${site().branding.poweredBy}</bdi></strong
+                >${around((name) => m.app_powered_by({ name }))[1]}</ui-text
               >`
             : nothing
         }

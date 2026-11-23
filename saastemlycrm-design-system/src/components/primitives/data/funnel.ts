@@ -1,6 +1,7 @@
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
+import { intl, m } from "../../../i18n/index.ts";
 import { LightElement } from "../../base/light-element.ts";
 import { motion } from "../../base/motion-queue.ts";
 import { rcva } from "../../base/variants.ts";
@@ -49,7 +50,8 @@ export interface FunnelStage {
   href?: string;
 }
 
-const pct = (a: number, b: number) => (b > 0 ? `${Math.round((a / b) * 100)}%` : "—");
+const pct = (a: number, b: number) =>
+  b > 0 ? intl.number({ style: "percent", maximumFractionDigits: 0 }).format(a / b) : "—";
 
 /**
  * @example <ui-funnel label="Quote funnel" .stages=${[{ label: "Inquiries", value: 150 }, { label: "Quoted", value: 116 }, { label: "Won", value: 42 }]}></ui-funnel>
@@ -60,7 +62,7 @@ export class UiFunnel extends LightElement {
   /** The whole funnel, for screen readers. */
   @property() label = "";
   /** What a step's share says after it ("went on", "quoted"). */
-  @property() step = "went on";
+  @property() step = m.funnel_step_went_on();
   @state() private _active = -1;
   #revealed = false;
 
@@ -85,7 +87,7 @@ export class UiFunnel extends LightElement {
       ${
         s.length > 1
           ? html`<p class=${funnelCaption()}>
-              ${pct(last, first)} of ${s[0]!.label.toLowerCase()} reach ${s.at(-1)!.label.toLowerCase()}
+              ${m.funnel_caption({ share: pct(last, first), from: s[0]!.label.toLowerCase(), to: s.at(-1)!.label.toLowerCase() })}
             </p>`
           : nothing
       }
@@ -127,7 +129,9 @@ export class UiFunnel extends LightElement {
             }
             ${
               i < s.length - 1
-                ? html`<span class=${funnelStep()}>↓ ${pct(s[i + 1]!.value, x.value)} ${this.step}</span>`
+                ? html`<span class=${funnelStep()}
+                    >↓ ${m.funnel_step({ share: pct(s[i + 1]!.value, x.value), step: this.step })}</span
+                  >`
                 : nothing
             }
           </li>`;

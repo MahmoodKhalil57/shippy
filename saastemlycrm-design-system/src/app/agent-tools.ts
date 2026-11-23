@@ -39,6 +39,8 @@ import type { ViewBlock } from "./widgets/schema.ts";
 import { blocksText, headerText } from "./widgets/text.ts";
 import { eachTiles, type Source, type WidgetPage, type WidgetScope } from "./widgets/widget.ts";
 import { loadGuide, loadTours, site } from "./site.ts";
+import { intl, m } from "../i18n/index.ts";
+import { fold } from "./command-search.ts";
 
 /**
  * The dashboard's WebMCP tools (registered by `<dashboard-app>` through src/agent/webmcp.ts): an
@@ -419,20 +421,23 @@ function matchEndpoint(method: string, path: string) {
 
 /* ---------------------------------------------------------------- finding a page by name */
 
-/** Lower-case words only: "/Collections/Purchase-Orders " → "collections purchase orders". */
+/**
+ * Lower-case words only: "/Collections/Purchase-Orders " → "collections purchase orders"; Arabic
+ * folded as the command palette folds it (`fold`: no tashkeel, one alef…).
+ */
 const words = (s: string) =>
-  s
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
+  fold(s)
+    .text.replace(/[^\p{L}\p{N}]+/gu, " ")
     .trim();
 const singular = (w: string) => w.replace(/ies$/, "y").replace(/(?<!s)s$/, "");
 const same = (a: string, b: string) =>
   a === b || a.split(" ").map(singular).join(" ") === b.split(" ").map(singular).join(" ");
 
-/** Words around a page's name in a request ("go to the invoices page"). */
-const FILLER = new Set(
-  "go to open show me take the a an my page screen view please navigate visit bring up list of all".split(" "),
-);
+/** Words around a page's name in a request ("go to the invoices page", "افتح صفحة الفواتير"), folded. */
+const FILLER = new Set([
+  ..."go to open show me take the a an my page screen view please navigate visit bring up list of all".split(" "),
+  ...words("افتح اذهب إلى انتقل خذني اعرض لي صفحة شاشة من فضلك قائمة كل").split(" "),
+]);
 const request = (s: string) =>
   words(s)
     .split(" ")
@@ -464,11 +469,15 @@ interface PageEntry {
 function pageIndex(host: AgentHost): PageEntry[] {
   const pages: PageEntry[] = [
     {
-      label: "Dashboard",
+      label: m.app_nav_dashboard(),
       path: dashboardPath(),
-      names: ["home", "dashboard", "index", "start", "my day", "main page"],
+      names: ["home", "dashboard", "index", "start", "my day", "main page", m.app_nav_dashboard(), m.app_nav_home()],
     },
-    { label: "Account", path: dashboardPath("account"), names: ["account", "my account", "profile", "me"] },
+    {
+      label: m.app_title_account(),
+      path: dashboardPath("account"),
+      names: ["account", "my account", "profile", "me", m.app_title_account()],
+    },
   ];
   for (const g of host.navigation())
     for (const i of g.items)
@@ -571,7 +580,7 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
   const always: AgentTool[] = [
     {
       name: "get_screen",
-      title: "What's on screen",
+      title: m.agent_tool_get_screen(),
       description:
         "What the user is looking at right now, as data: the page (URL, title, kind), who is signed in and their role, and the content the screen is drawn from (the list's rows, the record and its tab, the screen's data, the settings…), plus whether the side columns are open. Start here.",
       inputSchema: schema({}),
@@ -580,7 +589,7 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
     },
     {
       name: "list_demo_users",
-      title: "Demo users",
+      title: m.agent_tool_list_demo_users(),
       description: "The demo's people, one per role, that switch_user can sign in as.",
       inputSchema: schema({}),
       annotations: READ,
@@ -594,7 +603,7 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
     },
     {
       name: "switch_user",
-      title: "Switch user (demo)",
+      title: m.agent_tool_switch_user(),
       description:
         "Sign in as another demo user (an id from list_demo_users), to see the platform as that role sees it. Every screen, list and tool then shows what that person may see and do.",
       inputSchema: schema({ id: { type: "string", description: "Demo user id, from list_demo_users" } }, ["id"]),
@@ -612,7 +621,7 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
     ...simpleTools(host),
     {
       name: "list_pages",
-      title: "Pages",
+      title: m.agent_tool_list_pages(),
       description:
         "Every page the user can open, grouped as in the navigation (paths for navigate), plus the tabs of records that have them (e.g. a record's Overview, History…).",
       inputSchema: schema({}),
@@ -636,7 +645,7 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
     },
     {
       name: "navigate",
-      title: "Go to a page",
+      title: m.agent_tool_navigate(),
       description:
         'Open a page in the app, as clicking a link would. Give a path (e.g. /collections/invoices) or simply what the person called it: a page or screen name ("home", "invoices", "approvals"), or a record and optionally its tab ("ORD-0136", "ORD-0142 history"). Returns the new screen (as get_screen).',
       inputSchema: schema({ path: { type: "string", description: "A path, or the page / record the person named" } }, [
@@ -645,13 +654,13 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
       execute: async ({ path }) => {
         const to = await resolvePage(str(path), host);
         navigate(to);
-        await new Promise((r) => setTimeout(r, 50));
+        await new Promise(requestAnimationFrame);
         return screen(host);
       },
     },
     {
       name: "set_layout",
-      title: "Open or close a side column",
+      title: m.agent_tool_set_layout(),
       description:
         "Open or close the navigation column (nav) or the side panel (aside: notifications, bookmarks, widgets, tours).",
       inputSchema: schema({ panel: { type: "string", enum: ["nav", "aside"] }, open: { type: "boolean" } }, [
@@ -665,7 +674,7 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
     },
     {
       name: "get_appearance",
-      title: "Appearance",
+      title: m.agent_tool_get_appearance(),
       description: "The theme (system, dark, light), colour scheme and background image, each with its choices.",
       inputSchema: schema({}),
       annotations: READ,
@@ -673,7 +682,7 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
     },
     {
       name: "set_appearance",
-      title: "Change appearance",
+      title: m.agent_tool_set_appearance(),
       description: "Change the theme, colour scheme or background image (an id from get_appearance's choices).",
       inputSchema: schema(
         { kind: { type: "string", enum: ["theme", "scheme", "background"] }, id: { type: "string" } },
@@ -688,7 +697,7 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
     },
     {
       name: "check_accessibility",
-      title: "Check colour contrast",
+      title: m.agent_tool_check_accessibility(),
       description:
         "Check every text on screen against WCAG AA contrast (4.5:1, large text 3:1), including text over the background image. Returns the failures, worst first.",
       inputSchema: schema({}),
@@ -712,7 +721,7 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
     },
     {
       name: "describe_schema",
-      title: "Data model",
+      title: m.agent_tool_describe_schema(),
       description:
         "The platform's data model: every collection (records) and global (settings) the user can read — slug, labels, group, description, fields (types, options, relations) — and what the user may do with each (create, update, delete). Pass `collection` for one in full.",
       inputSchema: schema({ collection: { type: "string", description: "Optional: one collection slug, in full" } }),
@@ -756,7 +765,7 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
     },
     {
       name: "find_documents",
-      title: "Find records",
+      title: m.agent_tool_find_documents(),
       description:
         "Query a collection (Payload REST, as the signed-in user): filter with `where`, `sort` by a field (prefix - for descending), page through. Returns the records (depth 0: relations as ids) and the total.",
       inputSchema: schema(
@@ -784,7 +793,7 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
     },
     {
       name: "count_documents",
-      title: "Count records",
+      title: m.agent_tool_count_documents(),
       description: "How many records of a collection match `where` (all of them without it).",
       inputSchema: schema({ collection: { type: "string" }, where: whereSchema }, ["collection"]),
       annotations: READ,
@@ -793,7 +802,7 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
     },
     {
       name: "get_document",
-      title: "Read a record",
+      title: m.agent_tool_get_document(),
       description: "One record in full, with its relations one level deep, and the path that opens it.",
       inputSchema: schema({ collection: { type: "string" }, id: { type: "string" } }, ["collection", "id"]),
       annotations: { ...READ, untrustedContentHint: true },
@@ -805,7 +814,7 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
     },
     {
       name: "create_document",
-      title: "Create a record",
+      title: m.agent_tool_create_document(),
       description:
         "Create a record (fields as in describe_schema). Validation, hooks and access rules apply as in the app.",
       inputSchema: schema({ collection: { type: "string" }, data: { type: "object" } }, ["collection", "data"]),
@@ -814,7 +823,7 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
     },
     {
       name: "update_document",
-      title: "Update a record",
+      title: m.agent_tool_update_document(),
       description: "Change some fields of a record (only the fields given). Validation, hooks and access rules apply.",
       inputSchema: schema({ collection: { type: "string" }, id: { type: "string" }, data: { type: "object" } }, [
         "collection",
@@ -827,7 +836,7 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
     },
     {
       name: "delete_document",
-      title: "Delete a record",
+      title: m.agent_tool_delete_document(),
       description: "Delete a record. This can't be undone.",
       inputSchema: schema({ collection: { type: "string" }, id: { type: "string" } }, ["collection", "id"]),
       annotations: ACT,
@@ -835,7 +844,7 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
     },
     {
       name: "get_settings",
-      title: "Read settings",
+      title: m.agent_tool_get_settings(),
       description: "A global (settings document, e.g. a pricing policy): slugs from describe_schema.",
       inputSchema: schema({ global: { type: "string" } }, ["global"]),
       annotations: READ,
@@ -846,7 +855,7 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
     },
     {
       name: "update_settings",
-      title: "Change settings",
+      title: m.agent_tool_update_settings(),
       description: "Change some fields of a global (settings document).",
       inputSchema: schema({ global: { type: "string" }, data: { type: "object" } }, ["global", "data"]),
       annotations: ACT,
@@ -857,7 +866,7 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
     },
     {
       name: "list_workflows",
-      title: "Workflows",
+      title: m.agent_tool_list_workflows(),
       description:
         "The platform's workflow endpoints behind its screens (what each screen's buttons do), as METHOD and path with :params. GETs read a screen's data; POSTs perform its actions. Use with call_workflow.",
       inputSchema: schema({}),
@@ -866,7 +875,7 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
     },
     {
       name: "call_workflow",
-      title: "Run a workflow",
+      title: m.agent_tool_call_workflow(),
       description:
         "Call a workflow endpoint from list_workflows (fill the :params). GET reads data; POST performs the action the matching button would (sending, approving, creating orders…), with the same access rules. When a reply has `undo` ({ path, body }), that is the POST that takes the action back while it still can be (what the screen's Undo sends); a reply without one can't be undone.",
       inputSchema: schema(
@@ -887,7 +896,7 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
     },
     {
       name: "ask_assistant",
-      title: "Ask the records",
+      title: m.agent_tool_ask_assistant(),
       description:
         "Ask the platform's own assistant a question about the business (a record's status, what's waiting for approval, who owes money, deadlines). It answers from the live records, as the signed-in user may see them, and cites them.",
       inputSchema: schema({ question: { type: "string" } }, ["question"]),
@@ -896,7 +905,7 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
     },
     {
       name: "get_my_work",
-      title: "My work",
+      title: m.agent_tool_get_my_work(),
       description:
         "The side panel's counters for the signed-in user's role (what they steer by, e.g. decisions waiting for them, invoices to collect) with counts, and their unread notifications.",
       inputSchema: schema({}),
@@ -933,14 +942,14 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
     },
     {
       name: "mark_notification_read",
-      title: "Mark notification read",
+      title: m.agent_tool_mark_notification_read(),
       description: "Mark one of the user's notifications (id from get_my_work) as read.",
       inputSchema: schema({ id: { type: "string" } }, ["id"]),
       execute: async ({ id }) => api.update("notifications", str(id), { read: true }),
     },
     {
       name: "get_bookmarks",
-      title: "Bookmarks",
+      title: m.agent_tool_get_bookmarks(),
       description: "The user's bookmarked pages.",
       inputSchema: schema({}),
       annotations: READ,
@@ -951,7 +960,7 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
     },
     {
       name: "toggle_bookmark",
-      title: "Bookmark a page",
+      title: m.agent_tool_toggle_bookmark(),
       description: "Add a page to the user's bookmarks, or remove it if it's there (default: the current page).",
       inputSchema: schema({ path: { type: "string" }, label: { type: "string" } }),
       execute: async ({ path, label }) => {
@@ -961,7 +970,7 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
     },
     {
       name: "list_tours",
-      title: "Guided tours",
+      title: m.agent_tool_list_tours(),
       description: "The guided tours of the platform (some switch between users to show how roles work together).",
       inputSchema: schema({}),
       annotations: READ,
@@ -977,7 +986,7 @@ export function dashboardTools(host: AgentHost): AgentTool[] {
     },
     {
       name: "start_tour",
-      title: "Start a tour",
+      title: m.agent_tool_start_tour(),
       description:
         "Start a guided tour for the user (an id from list_tours). It walks them through the screens with coachmarks.",
       inputSchema: schema({ id: { type: "string" } }, ["id"]),
@@ -1008,28 +1017,39 @@ const line = (...parts: unknown[]) =>
 async function screenText(host: AgentHost): Promise<string> {
   const route = pageOf(parseRoute(location.pathname, location.search));
   const user = host.user();
-  const out = [
-    `Page: ${host.title()} (${location.pathname})`,
-    user ? `Signed in as ${text(user.name ?? user.email)} — ${roleLabel(text(user.role))}` : "Signed out",
+  const out: string[] = [
+    m.agent_screen_page({ title: host.title(), path: location.pathname }),
+    user
+      ? m.agent_screen_signed_in({ name: text(user.name ?? user.email), role: roleLabel(text(user.role)) })
+      : m.agent_screen_signed_out(),
   ];
   const c = (await screenContent(route, host).catch(() => ({}))) as Record<string, unknown>;
-  if (c.description) out.push(`About this page: ${str(c.description)}`);
+  if (c.description) out.push(m.agent_screen_about({ description: str(c.description) }));
   if (route.name === "dashboard") out.push(await myDayText(user));
   else if (route.name === "list") {
     const rows = (c.rows as Record<string, unknown>[] | undefined) ?? [];
     out.push(
-      `A list of ${str(c.label)}: ${typeof c.totalDocs === "number" ? c.totalDocs : rows.length} in all. First ones:`,
+      m.agent_screen_list({
+        label: str(c.label),
+        count: typeof c.totalDocs === "number" ? c.totalDocs : rows.length,
+      }),
     );
     for (const r of rows.slice(0, 8)) out.push(`- ${line(...Object.values(r).slice(1, 6))}`);
   } else if (route.name === "edit") {
     const doc = (c.document ?? {}) as Record<string, unknown>;
     const col = collectionOf(route.slug)!;
-    out.push(`A ${labels(col).singular.toLowerCase()}: ${titleOf(col, doc as Doc)}`);
+    out.push(m.agent_screen_record({ singular: labels(col).singular.toLowerCase(), title: titleOf(col, doc as Doc) }));
     for (const f of columnsOf(col).slice(0, 8)) out.push(`- ${text(f.label ?? f.name)}: ${cellText(f, doc[f.name!])}`);
     out.push(...(await recordText(route.slug, route.id, user, route.tab, 700)));
-    out.push(`Tabs: ${((c.tabs as { label: string }[] | undefined) ?? []).map((t) => t.label).join(", ")}`);
-  } else if (route.name === "view") out.push(`A screen: ${str(c.title)}.`);
-  else if (route.name === "global") out.push(`Settings: ${str(c.label)}.`);
+    out.push(
+      m.agent_screen_tabs({
+        tabs: intl
+          .list({ type: "unit" })
+          .format(((c.tabs as { label: string }[] | undefined) ?? []).map((t) => t.label)),
+      }),
+    );
+  } else if (route.name === "view") out.push(m.agent_screen_view({ title: str(c.title) }));
+  else if (route.name === "global") out.push(m.agent_screen_settings({ label: str(c.label) }));
   return clip(out.join("\n"));
 }
 
@@ -1040,7 +1060,7 @@ async function screenText(host: AgentHost): Promise<string> {
 async function myDayText(user: Doc | null): Promise<string> {
   let lines = await widgetText(dashboardView()?.Component, user);
   if (!lines.length) lines = await pageText({ widgets: settings.aside ?? [] }, user);
-  return clip(lines.join("\n") || "Nothing on the home page for this person.");
+  return clip(lines.join("\n") || m.agent_my_day_empty());
 }
 
 /** The collection people ask "the status of …" about: the `assistant` global's `mainRecord`, else the first with tabs. */
@@ -1070,7 +1090,7 @@ async function recordStatusText(query: string, host: AgentHost): Promise<string>
         .filter((f) => f.name !== title)
         .map((f) => `- ${text(f.label ?? f.name)}: ${cellText(f, doc[f.name!])}`),
       ...(await recordText(hit.slug, hit.id, host.user())),
-      `Page: ${hit.path}`,
+      m.agent_record_page({ path: hit.path }),
     ].join("\n"),
   );
 }
@@ -1145,7 +1165,7 @@ function simpleTools(host: AgentHost): AgentTool[] {
   return [
     {
       name: "what_is_on_screen",
-      title: "What's on screen",
+      title: m.agent_tool_what_is_on_screen(),
       description:
         "What the person is looking at now, in a few lines: the page, who they are, and the main things on it.",
       inputSchema: schema({}),
@@ -1155,20 +1175,20 @@ function simpleTools(host: AgentHost): AgentTool[] {
     },
     {
       name: "open_page",
-      title: "Open a page",
+      title: m.agent_tool_open_page(),
       description:
         'Open a page for the person. "page" is what they called it: "home", "invoices", "approvals", or a record number like "ORD-0142" (add a tab: "ORD-0142 history").',
       inputSchema: schema({ page: { type: "string", description: "The page or record the person named" } }, ["page"]),
       simple: true,
       execute: async ({ page }) => {
         navigate(await resolvePage(str(page), host));
-        await new Promise((r) => setTimeout(r, 50));
-        return `Opened: ${host.title()} (${location.pathname}).`;
+        await new Promise(requestAnimationFrame);
+        return m.agent_opened({ title: host.title(), path: location.pathname });
       },
     },
     {
       name: "my_day",
-      title: "My day",
+      title: m.agent_tool_my_day(),
       description:
         "What's waiting for the signed-in person today, as their home page shows it: their key figures, their queue and their lists.",
       inputSchema: schema({}),
@@ -1178,7 +1198,7 @@ function simpleTools(host: AgentHost): AgentTool[] {
     },
     {
       name: "record_status",
-      title: "Record status",
+      title: m.agent_tool_record_status(),
       description:
         'Where a record stands: its main fields and what its pages say (stage, owner, deadline, next action, what blocks it…). "record" is its number or a name the person used for it.',
       inputSchema: schema({ record: { type: "string", description: "A record number or name" } }, ["record"]),
@@ -1188,7 +1208,7 @@ function simpleTools(host: AgentHost): AgentTool[] {
     },
     {
       name: "find",
-      title: "Find",
+      title: m.agent_tool_find(),
       description:
         "Find records by what the person typed: a record number or a name (a customer, a company, a person…). Returns the matches with the page each opens.",
       inputSchema: schema({ query: { type: "string" } }, ["query"]),
@@ -1198,12 +1218,12 @@ function simpleTools(host: AgentHost): AgentTool[] {
         const hits = await findRecords(str(query), host);
         return hits.length
           ? hits.map((h) => `- ${h.title} (${h.kind}) → ${h.path}`).join("\n")
-          : `Nothing matches "${str(query)}".`;
+          : m.agent_find_nothing({ query: str(query) });
       },
     },
     {
       name: "ask_records",
-      title: "Ask the records",
+      title: m.agent_tool_ask_records(),
       description:
         "Business questions answered from the live records: what's waiting for approval, who owes us money, what's late, deadlines, totals and trends.",
       inputSchema: schema({ question: { type: "string" } }, ["question"]),
@@ -1215,7 +1235,11 @@ function simpleTools(host: AgentHost): AgentTool[] {
           [
             a.answer,
             ...a.points.map((p) => `- ${p}`),
-            a.sources.length ? `Sources: ${a.sources.map((s) => `${s.label} (${s.href})`).join(", ")}` : "",
+            a.sources.length
+              ? m.agent_sources({
+                  sources: intl.list({ type: "unit" }).format(a.sources.map((s) => `${s.label} (${s.href})`)),
+                })
+              : "",
           ]
             .filter(Boolean)
             .join("\n"),
@@ -1224,7 +1248,7 @@ function simpleTools(host: AgentHost): AgentTool[] {
     },
     {
       name: "platform_guide",
-      title: "Platform guide",
+      title: m.agent_tool_platform_guide(),
       description:
         'How the platform works and where things are: "topic" like "approvals", "how to add a customer", "invoices".',
       inputSchema: schema({ topic: { type: "string" } }, ["topic"]),

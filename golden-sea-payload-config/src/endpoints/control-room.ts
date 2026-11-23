@@ -1,7 +1,8 @@
 import type { Endpoint } from "payload";
 import type { Doc } from "saastemlycrm-design-system/contracts";
-import { history as H, inquiriesDaily } from "./history.ts";
-import { MONEY_ROLES, NOW, all, meOf, num, str, unauthorized } from "./insights-shared.ts";
+import { m } from "../i18n/paraglide/messages.js";
+import { history as H, historyLabel, inquiriesDaily } from "./history.ts";
+import { type Lang, MONEY_ROLES, NOW, all, langOf, meOf, num, str, unauthorized } from "./insights-shared.ts";
 import * as link from "../links.ts";
 
 /**
@@ -19,10 +20,10 @@ import * as link from "../links.ts";
 
 export type Unit = "count" | "days" | "minutes" | "usd-k" | "egp-k" | "pct";
 export type Period = "4w" | "12w" | "6m";
-const PERIODS: { value: Period; label: string }[] = [
-  { value: "4w", label: "Last 4 weeks" },
-  { value: "12w", label: "Last 12 weeks" },
-  { value: "6m", label: "Last 6 months" },
+const PERIODS: { value: Period; label: (o: { locale: Lang }) => string }[] = [
+  { value: "4w", label: (o) => m.api_control_room_last_4_weeks({}, o) },
+  { value: "12w", label: (o) => m.api_control_room_last_12_weeks({}, o) },
+  { value: "6m", label: (o) => m.api_control_room_last_6_months({}, o) },
 ];
 
 export interface CrTile {
@@ -95,18 +96,24 @@ export function controlRoom(
   period: Period,
   role: string,
   data: { cases: Doc[]; invoices: Doc[]; rfqs: Doc[] },
+  lang: Lang = "en",
 ): ControlRoom {
+  const o = { locale: lang };
+  const t = (label: string) => historyLabel(label, lang);
+  const ts = (labels: string[]) => labels.map(t);
   const money = MONEY_ROLES.includes(role);
   const nw = period === "4w" ? 4 : 12;
   const nm = period === "4w" ? 2 : period === "12w" ? 3 : 6;
   const wk = <T>(a: T[]) => a.slice(-nw);
   const mo = <T>(a: T[]) => a.slice(-nm);
-  const weeks = wk(H.weeks);
-  const months = mo(H.months);
+  const weeks = ts(wk(H.weeks));
+  const months = ts(mo(H.months));
   /** The trend charts' ranges, in points: weeks and months of history. */
   const WEEKS = [4, 8, 12];
   const MONTHS = [3, 6];
-  const label = PERIODS.find((p) => p.value === period)!.label.toLowerCase();
+  const label = PERIODS.find((p) => p.value === period)!
+    .label(o)
+    .toLowerCase();
 
   const live = data.cases.filter((c) => !LIVE_END.includes(str(c.stage)));
   const waitingSuppliers = live.filter((c) => c.wait === "Awaiting supplier").length;
@@ -120,51 +127,62 @@ export function controlRoom(
 
   const tiles: CrTile[] = [
     {
-      label: "Open RFQs",
+      label: m.api_control_room_open_rfqs({}, o),
       value: String(live.length),
-      note: `${live.filter((c) => c.urgent || c.tone === "danger").length} blocked or urgent`,
+      note: m.api_control_room_blocked_or_urgent(
+        { count: live.filter((c) => c.urgent || c.tone === "danger").length },
+        o,
+      ),
       href: link.list("cases"),
       trend: { labels: weeks, values: wk(H.inquiries), unit: "count" },
     },
     {
-      label: "Avg time to quote",
-      value: `${(H.turnaround.at(-1) ?? 0).toFixed(1)} d`,
-      note: `was ${H.turnaround[0]} d in September · target 1 d`,
+      label: m.api_control_room_avg_time_to_quote({}, o),
+      value: m.api_control_room_days({ n: (H.turnaround.at(-1) ?? 0).toFixed(1) }, o),
+      note: m.api_control_room_turnaround_note({ was: H.turnaround[0]! }, o),
       tone: "success",
       trend: { labels: weeks, values: wk(H.turnaround), unit: "days" },
     },
     {
-      label: "Win rate",
+      label: m.api_control_room_win_rate({}, o),
       value: `${Math.round((won / Math.max(1, quoted)) * 100)}%`,
-      note: `${won} won of ${quoted} quoted, ${label}`,
+      note: m.api_control_room_won_of_quoted({ won, quoted, period: label }, o),
       trend: { labels: months, values: mo(H.conversion), unit: "pct" },
     },
     {
-      label: "Waiting on suppliers",
+      label: m.api_control_room_waiting_on_suppliers({}, o),
       value: String(waitingSuppliers),
-      note: `${rfqsOpen.length} supplier RFQ${rfqsOpen.length === 1 ? "" : "s"} without a full reply`,
+      note: m.api_control_room_rfqs_without_reply({ count: rfqsOpen.length }, o),
       tone: waitingSuppliers ? "warning" : undefined,
       href: link.list("supplier-rfqs"),
-      trend: { labels: H.weeks.slice(-nw), values: wk(H.waitTrend["Awaiting supplier"] ?? []), unit: "count" },
+      trend: { labels: ts(H.weeks.slice(-nw)), values: wk(H.waitTrend["Awaiting supplier"] ?? []), unit: "count" },
     },
   ];
   if (money)
     tiles.push(
       {
-        label: `Gross profit ${H.months.at(-1)}`,
-        value: `EGP ${H.gpActualK.at(-1)}k`,
-        note: `actual so far · EGP ${H.gpExpectedK.at(-1)}k expected at quotation`,
+        label: m.api_control_room_gross_profit_month({ month: t(H.months.at(-1)!) }, o),
+        value: m.api_control_room_thousands({ currency: "EGP", n: H.gpActualK.at(-1)! }, o),
+        note: m.api_control_room_gp_note(
+          { expected: m.api_control_room_thousands({ currency: "EGP", n: H.gpExpectedK.at(-1)! }, o) },
+          o,
+        ),
         trend: { labels: months, values: mo(H.gpActualK), unit: "egp-k" },
       },
       {
-        label: "Receivables open",
-        value: `USD ${(usdOpen / 1000).toFixed(1)}k`,
-        note: `${receivable.length} open invoice${receivable.length === 1 ? "" : "s"}`,
+        label: m.api_control_room_receivables_open({}, o),
+        value: m.api_control_room_thousands({ currency: "USD", n: (usdOpen / 1000).toFixed(1) }, o),
+        note: m.api_control_room_open_invoices({ count: receivable.length }, o),
         href: link.list("invoices"),
         ...(() => {
           const overdue = receivable.filter((i) => i.dueDate && new Date(str(i.dueDate)) < NOW).length;
           return receivable.length
-            ? { share: { value: overdue / receivable.length, text: `${overdue} of ${receivable.length} overdue` } }
+            ? {
+                share: {
+                  value: overdue / receivable.length,
+                  text: m.api_control_room_overdue_of({ overdue, total: receivable.length }, o),
+                },
+              }
             : {};
         })(),
       },
@@ -173,105 +191,105 @@ export function controlRoom(
   const sections: CrSection[] = [
     {
       id: "pipeline",
-      title: "Pipeline & conversion",
-      sub: "Inquiries to wins, and why we lose",
+      title: m.api_control_room_pipeline_title({}, o),
+      sub: m.api_control_room_pipeline_sub({}, o),
       widgets: [
         {
           kind: "chart",
-          title: "Inquiries, quotes and wins",
-          sub: "RFQ cases per week of receipt",
+          title: m.api_control_room_inquiries_chart_title({}, o),
+          sub: m.api_control_room_inquiries_chart_sub({}, o),
           type: "line",
           unit: "count",
-          labels: H.weeks,
+          labels: ts(H.weeks),
           grain: "week",
           ranges: WEEKS,
           series: [
-            { name: "Inquiries", values: H.inquiries },
-            { name: "Quoted", values: H.quoted },
-            { name: "Won", values: H.won },
+            { name: m.api_control_room_inquiries({}, o), values: H.inquiries },
+            { name: m.api_control_room_quoted({}, o), values: H.quoted },
+            { name: m.api_control_room_won({}, o), values: H.won },
           ],
         },
         {
           kind: "chart",
-          title: "Value won per month",
-          sub: "Customer POs incl. partial awards",
+          title: m.api_control_room_value_won_title({}, o),
+          sub: m.api_control_room_value_won_sub({}, o),
           type: "bars",
           unit: "usd-k",
-          labels: H.months,
+          labels: ts(H.months),
           grain: "month",
           ranges: MONTHS,
-          series: [{ name: "Value won", values: H.wonValueK }],
+          series: [{ name: m.api_control_room_value_won({}, o), values: H.wonValueK }],
           highlightLast: true,
         },
         {
           kind: "chart",
-          title: "Conversion by value",
-          sub: "Value of POs ÷ value quoted, by month the RFQ arrived (November still open)",
+          title: m.api_control_room_conversion_title({}, o),
+          sub: m.api_control_room_conversion_sub({}, o),
           type: "line",
           unit: "pct",
-          labels: H.months,
+          labels: ts(H.months),
           grain: "month",
           ranges: MONTHS,
-          series: [{ name: "Conversion", values: H.conversion }],
+          series: [{ name: m.api_control_room_conversion({}, o), values: H.conversion }],
           target: 35,
-          targetLabel: "Target 35%",
+          targetLabel: m.api_control_room_target_35({}, o),
         },
         {
           kind: "ranked",
-          title: "Conversion funnel",
-          sub: "Last 90 days, each step counted once",
+          title: m.api_control_room_funnel_title({}, o),
+          sub: m.api_control_room_funnel_sub({}, o),
           unit: "count",
-          rows: H.funnel.map(([l, v]) => ({ label: l, value: v })),
+          rows: H.funnel.map(([l, v]) => ({ label: t(l), value: v })),
         },
         {
           kind: "ranked",
-          title: "Why we lose",
-          sub: "Lost cases by recorded reason, last 90 days",
+          title: m.api_control_room_lost_title({}, o),
+          sub: m.api_control_room_lost_sub({}, o),
           unit: "count",
-          rows: H.lostReasons.map(([l, v]) => ({ label: l, value: v })),
+          rows: H.lostReasons.map(([l, v]) => ({ label: t(l), value: v })),
         },
       ],
     },
     {
       id: "speed",
-      title: "Speed & workload",
-      sub: "How fast we answer, and who carries the load",
+      title: m.api_control_room_speed_title({}, o),
+      sub: m.api_control_room_speed_sub({}, o),
       widgets: [
         {
           kind: "chart",
-          title: "Quote turnaround",
-          sub: "Median days from RFQ received to quote sent",
+          title: m.api_control_room_turnaround_title({}, o),
+          sub: m.api_control_room_turnaround_sub({}, o),
           type: "line",
           unit: "days",
-          labels: H.weeks,
+          labels: ts(H.weeks),
           grain: "week",
           ranges: WEEKS,
-          series: [{ name: "Median days", values: H.turnaround }],
+          series: [{ name: m.api_control_room_median_days({}, o), values: H.turnaround }],
           target: 1,
-          targetLabel: "Target 1 d",
+          targetLabel: m.api_control_room_target_1_day({}, o),
         },
         {
           kind: "chart",
-          title: "Acknowledgement time",
-          sub: "Median minutes to acknowledge an RFQ — automation live since 6 Oct",
+          title: m.api_control_room_ack_title({}, o),
+          sub: m.api_control_room_ack_sub({}, o),
           type: "bars",
           unit: "minutes",
-          labels: H.weeks,
+          labels: ts(H.weeks),
           grain: "week",
           ranges: WEEKS,
-          series: [{ name: "Minutes", values: H.ackMinutes }],
+          series: [{ name: m.api_control_room_minutes({}, o), values: H.ackMinutes }],
           highlightLast: true,
         },
         {
           kind: "chart",
-          title: "Out-of-hours requests",
-          sub: "RFQs outside Sun–Thu 08:00–17:00, routed to the on-duty person",
+          title: m.api_control_room_after_hours_title({}, o),
+          sub: m.api_control_room_after_hours_sub({}, o),
           type: "bars",
           unit: "count",
-          labels: H.weeks,
+          labels: ts(H.weeks),
           grain: "week",
           ranges: WEEKS,
-          series: [{ name: "Out-of-hours RFQs", values: H.afterHours }],
+          series: [{ name: m.api_control_room_after_hours({}, o), values: H.afterHours }],
           highlightLast: true,
         },
       ],
@@ -284,98 +302,103 @@ export function controlRoom(
       value: sum(buckets),
       note:
         buckets[2] || buckets[3]
-          ? `USD ${(buckets[2]! + buckets[3]!).toFixed(1)}k over 30 days`
-          : "nothing over 30 days",
+          ? m.api_control_room_over_30_days(
+              {
+                amount: m.api_control_room_thousands({ currency: "USD", n: (buckets[2]! + buckets[3]!).toFixed(1) }, o),
+              },
+              o,
+            )
+          : m.api_control_room_nothing_over_30_days({}, o),
     }));
     sections.push({
       id: "money",
-      title: "Profit & cash",
-      sub: "Management and finance only",
+      title: m.api_control_room_money_title({}, o),
+      sub: m.api_control_room_money_sub({}, o),
       widgets: [
         {
           kind: "chart",
-          title: "Gross profit: expected vs actual",
-          sub: "Actual replaces estimates as costs are billed (November in progress)",
+          title: m.api_control_room_gp_title({}, o),
+          sub: m.api_control_room_gp_sub({}, o),
           type: "line",
           unit: "egp-k",
-          labels: H.months,
+          labels: ts(H.months),
           grain: "month",
           ranges: MONTHS,
           series: [
-            { name: "Expected at quotation", values: H.gpExpectedK },
-            { name: "Actual", values: H.gpActualK },
+            { name: m.api_control_room_expected_at_quotation({}, o), values: H.gpExpectedK },
+            { name: m.api_control_room_actual({}, o), values: H.gpActualK },
           ],
         },
         {
           kind: "ranked",
-          title: "Margin by store",
-          sub: "Actual gross margin, last 90 days · minimum 15%",
+          title: m.api_control_room_margin_store_title({}, o),
+          sub: m.api_control_room_margin_store_sub({}, o),
           unit: "pct",
           minimum: 15,
-          rows: H.marginByStore.map(([l, v]) => ({ label: l, value: v })),
+          rows: H.marginByStore.map(([l, v]) => ({ label: t(l), value: v })),
         },
         {
           kind: "chart",
-          title: "Sales by source",
-          sub: "Agency pricelists and own stock carry more margin than buying to order",
+          title: m.api_control_room_sales_source_title({}, o),
+          sub: m.api_control_room_sales_source_sub({}, o),
           type: "line",
           stacked: true,
           unit: "egp-k",
-          labels: H.months,
+          labels: ts(H.months),
           grain: "month",
           ranges: MONTHS,
-          series: H.sourceKeys.map((k) => ({ name: k, values: H.sourceByMonth[k] ?? [] })),
+          series: H.sourceKeys.map((k) => ({ name: t(k), values: H.sourceByMonth[k] ?? [] })),
         },
         {
           kind: "ranked",
-          title: "Margin by source",
-          sub: "Gross margin, last 90 days · minimum 15%",
+          title: m.api_control_room_margin_source_title({}, o),
+          sub: m.api_control_room_margin_source_sub({}, o),
           unit: "pct",
           minimum: 15,
-          rows: H.sourceMargin.map(([l, v]) => ({ label: l, value: v })),
+          rows: H.sourceMargin.map(([l, v]) => ({ label: t(l), value: v })),
         },
         {
           kind: "chart",
-          title: "Receivables ageing",
-          sub: "All customers, by days past due",
+          title: m.api_control_room_ageing_title({}, o),
+          sub: m.api_control_room_ageing_sub({}, o),
           type: "bars",
           unit: "usd-k",
-          labels: H.ageingKeys,
-          series: [{ name: "Receivables", values: H.ageing }],
+          labels: ts(H.ageingKeys),
+          series: [{ name: m.api_control_room_receivables({}, o), values: H.ageing }],
         },
         {
           kind: "ranked",
-          title: "Receivables by customer",
-          sub: "Open balances, all ages",
+          title: m.api_control_room_receivables_customer_title({}, o),
+          sub: m.api_control_room_receivables_customer_sub({}, o),
           unit: "usd-k",
           rows: byCustomer.sort((a, b) => b.value - a.value),
         },
         {
           kind: "chart",
-          title: "Cash in vs cash out",
-          sub: "Expected customer receipts and committed supplier payments, next 8 weeks",
+          title: m.api_control_room_cash_title({}, o),
+          sub: m.api_control_room_cash_sub({}, o),
           type: "line",
           unit: "egp-k",
-          labels: H.cashWeeks,
+          labels: ts(H.cashWeeks),
           series: [
-            { name: "Receipts", values: H.receiptsK },
-            { name: "Payments", values: H.paymentsK },
+            { name: m.api_control_room_receipts({}, o), values: H.receiptsK },
+            { name: m.api_control_room_payments({}, o), values: H.paymentsK },
           ],
         },
       ],
     });
   }
 
-  const deliveryWeeks = H.weeks.slice(-6);
+  const deliveryWeeks = ts(H.weeks.slice(-6));
   sections.push({
     id: "delivery",
-    title: "Delivery & suppliers",
-    sub: "Who delivers on time, and how fast they answer",
+    title: m.api_control_room_delivery_title({}, o),
+    sub: m.api_control_room_delivery_sub({}, o),
     widgets: [
       {
         kind: "chart",
-        title: "Deliveries by outcome",
-        sub: "Deliveries to vessels per week",
+        title: m.api_control_room_deliveries_title({}, o),
+        sub: m.api_control_room_deliveries_sub({}, o),
         type: "bars",
         stacked: true,
         unit: "count",
@@ -383,7 +406,7 @@ export function controlRoom(
         grain: "week",
         ranges: [4, 6],
         series: Object.entries(H.deliveryOutcomes).map(([name, values]) => ({
-          name,
+          name: t(name),
           values: values.slice(-deliveryWeeks.length),
         })),
       },
@@ -392,12 +415,12 @@ export function controlRoom(
 
   const visuals: ControlRoom["visuals"] = {
     funnel: [
-      { label: "Inquiries", value: sum(wk(H.inquiries)) },
-      { label: "Quoted", value: sum(wk(H.quoted)) },
-      { label: "Won", value: sum(wk(H.won)) },
+      { label: m.api_control_room_inquiries({}, o), value: sum(wk(H.inquiries)) },
+      { label: m.api_control_room_quoted({}, o), value: sum(wk(H.quoted)) },
+      { label: m.api_control_room_won({}, o), value: sum(wk(H.won)) },
     ],
-    lost: H.lostReasons.map(([label, value]) => ({ label, value })),
-    ageing: money ? H.ageingKeys.map((label, i) => ({ label, value: H.ageing[i]! })) : [],
+    lost: H.lostReasons.map(([label, value]) => ({ label: t(label), value })),
+    ageing: money ? H.ageingKeys.map((label, i) => ({ label: t(label), value: H.ageing[i]! })) : [],
     days: inquiriesDaily(NOW),
   };
   return { period, money, tiles, sections, visuals };
@@ -409,13 +432,13 @@ export const controlRoomEndpoints: Endpoint[] = [
     method: "get",
     handler: async (req) => {
       const me = meOf(req);
-      if (!me) return unauthorized();
+      if (!me) return unauthorized(langOf(req));
       const q = (req.query ?? {}) as Record<string, unknown>;
       const period = (PERIODS.some((p) => p.value === q.period) ? q.period : "12w") as Period;
       const [cases, invoices, rfqs] = await Promise.all(
         ["cases", "invoices", "supplier-rfqs"].map((c) => all(req, c, 0)),
       );
-      return Response.json(controlRoom(period, str(me.role), { cases, invoices, rfqs }));
+      return Response.json(controlRoom(period, str(me.role), { cases, invoices, rfqs }, langOf(req)));
     },
   },
 ];

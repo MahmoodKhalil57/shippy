@@ -3,6 +3,7 @@ import { customElement, property } from "lit/decorators.js";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { row, rowEnd } from "../layout/algebra.ts";
+import { inlineStep } from "../../base/reading.ts";
 
 /**
  * Toolbar: the row of controls that acts on the content below it: filters, view, sort,
@@ -34,7 +35,9 @@ export class UiToolbar extends LightElement {
   @property() label = "";
 
   private _onKey(e: KeyboardEvent) {
-    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    // Left and right follow the reading direction.
+    const step = inlineStep(e.key, this);
+    if (!step) return;
     const from = e.target as HTMLElement;
     if (from.closest("input, select, textarea, [role=radiogroup], [role=menu], [role=listbox], [popover]")) return;
     const items = [...this.querySelectorAll<HTMLElement>("button, a[href]")].filter(
@@ -45,8 +48,6 @@ export class UiToolbar extends LightElement {
     );
     const i = items.indexOf(from);
     if (i < 0) return;
-    const rtl = getComputedStyle(this).direction === "rtl";
-    const step = (e.key === "ArrowRight") !== rtl ? 1 : -1;
     const next = items[(i + step + items.length) % items.length];
     if (next) {
       e.preventDefault();

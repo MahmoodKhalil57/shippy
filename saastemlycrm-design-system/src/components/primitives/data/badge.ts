@@ -1,6 +1,7 @@
 import type { VariantProps } from "class-variance-authority";
 import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import { m } from "../../../i18n/index.ts";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { inlineRow } from "../layout/algebra.ts";
@@ -76,7 +77,7 @@ export class UiBadge extends LightElement {
       return html`<span
         class=${badge({ kind: "dot", tone: this.tone })}
         role="img"
-        aria-label=${this.label ?? this.tone ?? "status"}
+        aria-label=${this.label ?? m.badge_status()}
       ></span>`;
     const n = this.count;
     if (n === undefined || !Number.isFinite(n) || (n === 0 && !this.showZero)) return nothing;

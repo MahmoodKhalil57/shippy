@@ -1,13 +1,24 @@
 import type { CollectionConfig } from "payload";
-import { CURRENCIES, STORES, UNITS, WAREHOUSES, costVisible, deskAccess, isManagement, management } from "./shared.ts";
+import {
+  CURRENCIES,
+  STORE_OPTIONS,
+  UNIT_OPTIONS,
+  WAREHOUSE_OPTIONS,
+  costVisible,
+  deskAccess,
+  isManagement,
+  management,
+  words,
+} from "./shared.ts";
 
 /** The product catalogue: Golden Sea's stores by IMPA series, with aliases so any customer wording finds the item. */
 export const Products: CollectionConfig = {
   slug: "products",
+  labels: { singular: { en: "Product", ar: "منتج" }, plural: { en: "Products", ar: "المنتجات" } },
   admin: {
     useAsTitle: "name",
     defaultColumns: ["name", "store", "brand", "impa", "unit"],
-    group: "Catalogue",
+    group: { en: "Catalogue", ar: "الكتالوج" },
     listSearchableFields: ["name", "impa", "issa", "oemPartNo"],
   },
   access: deskAccess,
@@ -16,30 +27,42 @@ export const Products: CollectionConfig = {
       type: "tabs",
       tabs: [
         {
-          label: "Product",
+          label: { en: "Product", ar: "المنتج" },
           fields: [
             {
               name: "name",
               type: "text",
+              label: { en: "Name", ar: "الاسم" },
+              localized: true,
               required: true,
               admin: {
-                description: "The product name as stocked and quoted.",
-                placeholder: "e.g. Welding electrode E6013, 3.2 mm",
+                description: { en: "The product name as stocked and quoted.", ar: "اسم المنتج كما يُخزَّن ويُسعَّر." },
+                placeholder: { en: "e.g. Welding electrode E6013, 3.2 mm", ar: "مثال: قطب لحام E6013، 3.2 مم" },
               },
             },
             {
               name: "aliases",
               type: "array",
-              labels: { singular: "Alias", plural: "Aliases" },
-              admin: { description: "Other names customers use, so any wording finds the item." },
+              label: { en: "Aliases", ar: "الأسماء البديلة" },
+              labels: { singular: { en: "Alias", ar: "اسم بديل" }, plural: { en: "Aliases", ar: "الأسماء البديلة" } },
+              admin: {
+                description: {
+                  en: "Other names customers use, so any wording finds the item.",
+                  ar: "أسماء أخرى يستخدمها العملاء، ليُعثر على الصنف بأي صياغة.",
+                },
+              },
               fields: [
                 {
                   name: "alias",
                   type: "text",
+                  label: { en: "Alias", ar: "الاسم البديل" },
                   required: true,
                   admin: {
-                    description: "One alternative name a customer might type.",
-                    placeholder: "e.g. Loctite blue",
+                    description: {
+                      en: "One alternative name a customer might type.",
+                      ar: "اسم بديل واحد قد يكتبه العميل.",
+                    },
+                    placeholder: { en: "e.g. Loctite blue", ar: "مثال: لوكتايت أزرق" },
                   },
                 },
               ],
@@ -50,15 +73,25 @@ export const Products: CollectionConfig = {
                 {
                   name: "store",
                   type: "select",
-                  options: STORES,
+                  label: { en: "Store", ar: "القسم" },
+                  options: STORE_OPTIONS,
                   required: true,
-                  admin: { description: "The ship store section the item belongs to.", placeholder: "Pick a store" },
+                  admin: {
+                    description: {
+                      en: "The ship store section the item belongs to.",
+                      ar: "قسم مستلزمات السفينة الذي ينتمي إليه الصنف.",
+                    },
+                    placeholder: words({ en: "Pick a store", ar: "اختر قسمًا" }),
+                  },
                 },
                 {
                   name: "impaSeries",
                   type: "text",
-                  label: "IMPA series / section",
-                  admin: { description: "IMPA series the item is filed under.", placeholder: "e.g. 23 Welding" },
+                  label: { en: "IMPA series / section", ar: "سلسلة / قسم IMPA" },
+                  admin: {
+                    description: { en: "IMPA series the item is filed under.", ar: "سلسلة IMPA المصنّف تحتها الصنف." },
+                    placeholder: { en: "e.g. 23 Welding", ar: "مثال: 23 لحام" },
+                  },
                 },
               ],
             },
@@ -68,13 +101,20 @@ export const Products: CollectionConfig = {
                 {
                   name: "brand",
                   type: "text",
-                  admin: { description: "The maker or brand.", placeholder: "e.g. ESAB" },
+                  label: { en: "Brand", ar: "العلامة التجارية" },
+                  admin: {
+                    description: { en: "The maker or brand.", ar: "الشركة المصنّعة أو العلامة التجارية." },
+                    placeholder: { en: "e.g. ESAB", ar: "مثال: ESAB" },
+                  },
                 },
                 {
                   name: "oemPartNo",
                   type: "text",
-                  label: "OEM part no.",
-                  admin: { description: "The maker's own part number.", placeholder: "e.g. OK 46.00" },
+                  label: { en: "OEM part no.", ar: "رقم قطعة المصنّع" },
+                  admin: {
+                    description: { en: "The maker's own part number.", ar: "رقم القطعة الخاص بالمصنّع." },
+                    placeholder: { en: "e.g. OK 46.00", ar: "مثال: OK 46.00" },
+                  },
                 },
               ],
             },
@@ -84,52 +124,95 @@ export const Products: CollectionConfig = {
                 {
                   name: "impa",
                   type: "text",
-                  label: "IMPA",
+                  label: { en: "IMPA", ar: "IMPA" },
                   index: true,
-                  admin: { description: "Six-digit IMPA code vessels order by.", placeholder: "e.g. 232101" },
+                  admin: {
+                    description: {
+                      en: "Six-digit IMPA code vessels order by.",
+                      ar: "رمز IMPA من ستة أرقام تطلب به السفن.",
+                    },
+                    placeholder: { en: "e.g. 232101", ar: "مثال: 232101" },
+                  },
                 },
                 {
                   name: "issa",
                   type: "text",
-                  label: "ISSA",
-                  admin: { description: "ISSA code, where the customer uses it.", placeholder: "e.g. 54.011.02" },
+                  label: { en: "ISSA", ar: "ISSA" },
+                  admin: {
+                    description: { en: "ISSA code, where the customer uses it.", ar: "رمز ISSA، حين يستخدمه العميل." },
+                    placeholder: { en: "e.g. 54.011.02", ar: "مثال: 54.011.02" },
+                  },
                 },
                 {
                   name: "hsCode",
                   type: "text",
-                  label: "HS code",
-                  admin: { description: "Customs tariff code used for import and duty.", placeholder: "e.g. 8311.10" },
+                  label: { en: "HS code", ar: "رمز النظام المنسّق (HS)" },
+                  admin: {
+                    description: {
+                      en: "Customs tariff code used for import and duty.",
+                      ar: "رمز التعريفة الجمركية للاستيراد والرسوم.",
+                    },
+                    placeholder: { en: "e.g. 8311.10", ar: "مثال: 8311.10" },
+                  },
                 },
               ],
             },
             {
               name: "specification",
               type: "textarea",
+              label: { en: "Specification", ar: "المواصفات" },
+              localized: true,
               admin: {
-                description: "Size, grade, standard and anything a buyer must match.",
-                placeholder: "e.g. AWS E6013, 3.2 mm x 350 mm, 5 kg pack",
+                description: {
+                  en: "Size, grade, standard and anything a buyer must match.",
+                  ar: "المقاس والدرجة والمعيار وكل ما يجب أن يطابقه المشتري.",
+                },
+                placeholder: {
+                  en: "e.g. AWS E6013, 3.2 mm x 350 mm, 5 kg pack",
+                  ar: "مثال: AWS E6013، 3.2 × 350 مم، عبوة 5 كجم",
+                },
               },
             },
           ],
         },
         {
-          label: "Units & packs",
+          label: { en: "Units & packs", ar: "الوحدات والعبوات" },
           fields: [
             {
               name: "unit",
               type: "select",
-              options: UNITS,
+              options: UNIT_OPTIONS,
               required: true,
               defaultValue: "EA",
-              label: "Base unit",
-              admin: { description: "The smallest unit stock and prices are counted in.", placeholder: "e.g. EA" },
+              label: { en: "Base unit", ar: "الوحدة الأساسية" },
+              admin: {
+                description: {
+                  en: "The smallest unit stock and prices are counted in.",
+                  ar: "أصغر وحدة يُعدّ بها المخزون والأسعار.",
+                },
+                placeholder: words({ en: "e.g. EA", ar: "مثال: EA" }),
+              },
             },
             {
               name: "packs",
               type: "array",
-              labels: { singular: "Pack size", plural: "Pack sizes" },
-              admin: { description: "Pack sizes and their base units, to compare offers." },
-              custom: { about: "Lets 200 cans of 250 ml match 100 cans of 500 ml: both are 50 L in base units." },
+              label: { en: "Packs", ar: "العبوات" },
+              labels: {
+                singular: { en: "Pack size", ar: "حجم العبوة" },
+                plural: { en: "Pack sizes", ar: "أحجام العبوات" },
+              },
+              admin: {
+                description: {
+                  en: "Pack sizes and their base units, to compare offers.",
+                  ar: "أحجام العبوات ووحداتها الأساسية، لمقارنة العروض.",
+                },
+              },
+              custom: {
+                about: {
+                  en: "Lets 200 cans of 250 ml match 100 cans of 500 ml: both are 50 L in base units.",
+                  ar: "يجعل 200 علبة سعة 250 مل تطابق 100 علبة سعة 500 مل: كلاهما 50 لترًا بالوحدات الأساسية.",
+                },
+              },
               fields: [
                 {
                   type: "row",
@@ -137,16 +220,27 @@ export const Products: CollectionConfig = {
                     {
                       name: "label",
                       type: "text",
+                      label: { en: "Label", ar: "التسمية" },
+                      localized: true,
                       required: true,
-                      admin: { description: "How the pack is sold.", placeholder: "e.g. Can 250 ml" },
+                      admin: {
+                        description: { en: "How the pack is sold.", ar: "طريقة بيع العبوة." },
+                        placeholder: { en: "e.g. Can 250 ml", ar: "مثال: علبة 250 مل" },
+                      },
                     },
                     {
                       name: "baseQty",
                       type: "number",
                       required: true,
                       min: 0,
-                      label: "Base units per pack",
-                      admin: { description: "How many base units one pack holds.", placeholder: "e.g. 0.25" },
+                      label: { en: "Base units per pack", ar: "الوحدات الأساسية في كل عبوة" },
+                      admin: {
+                        description: {
+                          en: "How many base units one pack holds.",
+                          ar: "عدد الوحدات الأساسية في العبوة الواحدة.",
+                        },
+                        placeholder: { en: "e.g. 0.25", ar: "مثال: 0.25" },
+                      },
                     },
                   ],
                 },
@@ -155,24 +249,31 @@ export const Products: CollectionConfig = {
           ],
         },
         {
-          label: "Compliance",
+          label: { en: "Compliance", ar: "المطابقة" },
           fields: [
             {
               name: "certificates",
               type: "select",
+              label: { en: "Certificates", ar: "الشهادات" },
               hasMany: true,
-              admin: { description: "Documents that must come with this item.", placeholder: "e.g. Mill certificate" },
+              admin: {
+                description: {
+                  en: "Documents that must come with this item.",
+                  ar: "المستندات التي يجب أن ترافق هذا الصنف.",
+                },
+                placeholder: words({ en: "e.g. Mill certificate", ar: "مثال: شهادة المصنع" }),
+              },
               options: [
-                "SDS",
-                "TDS",
-                "Mill certificate",
-                "EN 397",
-                "EN ISO 11612",
-                "MED / SOLAS",
-                "Test certificate",
-                "Health certificate",
-                "Halal",
-                "Customs bond release",
+                { value: "SDS", label: { en: "SDS", ar: "SDS" } },
+                { value: "TDS", label: { en: "TDS", ar: "TDS" } },
+                { value: "Mill certificate", label: { en: "Mill certificate", ar: "شهادة المصنع" } },
+                { value: "EN 397", label: { en: "EN 397", ar: "EN 397" } },
+                { value: "EN ISO 11612", label: { en: "EN ISO 11612", ar: "EN ISO 11612" } },
+                { value: "MED / SOLAS", label: { en: "MED / SOLAS", ar: "MED / SOLAS" } },
+                { value: "Test certificate", label: { en: "Test certificate", ar: "شهادة اختبار" } },
+                { value: "Health certificate", label: { en: "Health certificate", ar: "شهادة صحية" } },
+                { value: "Halal", label: { en: "Halal", ar: "حلال" } },
+                { value: "Customs bond release", label: { en: "Customs bond release", ar: "إفراج من الإيداع الجمركي" } },
               ],
             },
             {
@@ -182,15 +283,27 @@ export const Products: CollectionConfig = {
                   name: "shelfLifeMonths",
                   type: "number",
                   min: 0,
-                  label: "Shelf life (months)",
-                  admin: { description: "Months the item lasts from manufacture.", placeholder: "e.g. 24" },
+                  label: { en: "Shelf life (months)", ar: "مدة الصلاحية (أشهر)" },
+                  admin: {
+                    description: {
+                      en: "Months the item lasts from manufacture.",
+                      ar: "عدد أشهر صلاحية الصنف من تاريخ التصنيع.",
+                    },
+                    placeholder: { en: "e.g. 24", ar: "مثال: 24" },
+                  },
                 },
                 {
                   name: "minShelfLifeMonths",
                   type: "number",
                   min: 0,
-                  label: "Min. at delivery (months)",
-                  admin: { description: "Shelf life the vessel requires on arrival.", placeholder: "e.g. 12" },
+                  label: { en: "Min. at delivery (months)", ar: "الحد الأدنى عند التسليم (أشهر)" },
+                  admin: {
+                    description: {
+                      en: "Shelf life the vessel requires on arrival.",
+                      ar: "مدة الصلاحية التي تشترطها السفينة عند الوصول.",
+                    },
+                    placeholder: { en: "e.g. 12", ar: "مثال: 12" },
+                  },
                 },
               ],
             },
@@ -200,23 +313,38 @@ export const Products: CollectionConfig = {
                 {
                   name: "coldChain",
                   type: "checkbox",
-                  label: "Cold chain (reefer)",
+                  label: { en: "Cold chain (reefer)", ar: "سلسلة التبريد" },
                   defaultValue: false,
-                  admin: { description: "Tick when it must travel and stay chilled." },
+                  admin: {
+                    description: {
+                      en: "Tick when it must travel and stay chilled.",
+                      ar: "حدّد عندما يجب نقله وحفظه مبرّدًا.",
+                    },
+                  },
                 },
                 {
                   name: "bonded",
                   type: "checkbox",
-                  label: "Bond store (customs)",
+                  label: { en: "Bond store (customs)", ar: "مخزن الإيداع الجمركي" },
                   defaultValue: false,
-                  admin: { description: "Tick when it ships from the customs bond store." },
+                  admin: {
+                    description: {
+                      en: "Tick when it ships from the customs bond store.",
+                      ar: "حدّد عندما يُشحن من مخزن الإيداع الجمركي.",
+                    },
+                  },
                 },
                 {
                   name: "licensed",
                   type: "checkbox",
-                  label: "Licensed (medicine)",
+                  label: { en: "Licensed (medicine)", ar: "مرخّص (أدوية)" },
                   defaultValue: false,
-                  admin: { description: "Tick when a licence is needed to supply it." },
+                  admin: {
+                    description: {
+                      en: "Tick when a licence is needed to supply it.",
+                      ar: "حدّد عندما يلزم ترخيص لتوريده.",
+                    },
+                  },
                 },
               ],
             },
@@ -227,19 +355,30 @@ export const Products: CollectionConfig = {
     {
       name: "agency",
       type: "relationship",
+      label: { en: "Agency", ar: "الوكالة" },
       relationTo: "suppliers",
       filterOptions: { kind: { equals: "agency" } },
       admin: {
         position: "sidebar",
-        description: "Agency principal whose pricelist prices this item.",
-        placeholder: "e.g. Vecom Marine",
+        description: {
+          en: "Agency principal whose pricelist prices this item.",
+          ar: "الوكيل الأصلي الذي تحدد قائمة أسعاره سعر هذا الصنف.",
+        },
+        placeholder: words({ en: "e.g. Vecom Marine", ar: "مثال: Vecom Marine" }),
       },
     },
     {
       name: "active",
       type: "checkbox",
+      label: { en: "Active", ar: "نشط" },
       defaultValue: true,
-      admin: { position: "sidebar", description: "Untick to stop offering it on new quotations." },
+      admin: {
+        position: "sidebar",
+        description: {
+          en: "Untick to stop offering it on new quotations.",
+          ar: "ألغِ التحديد لإيقاف عرضه في عروض الأسعار الجديدة.",
+        },
+      },
     },
   ],
 };
@@ -247,11 +386,14 @@ export const Products: CollectionConfig = {
 /** Every dated price ever quoted — kept even when nothing was ordered. */
 export const SupplierPrices: CollectionConfig = {
   slug: "supplier-prices",
-  labels: { singular: "Supplier price", plural: "Supplier prices" },
+  labels: {
+    singular: { en: "Supplier price", ar: "سعر مورّد" },
+    plural: { en: "Supplier prices", ar: "أسعار الموردين" },
+  },
   admin: {
     useAsTitle: "label",
     defaultColumns: ["product", "supplier", "price", "currency", "quotedAt", "validUntil", "source"],
-    group: "Catalogue",
+    group: { en: "Catalogue", ar: "الكتالوج" },
   },
   defaultSort: "-quotedAt",
   access: { ...deskAccess, read: ({ req }) => Boolean(req.user) && req.user?.role !== "sales" },
@@ -269,31 +411,43 @@ export const SupplierPrices: CollectionConfig = {
     ],
   },
   fields: [
-    { name: "label", type: "text", admin: { hidden: true } },
+    { name: "label", type: "text", label: { en: "Label", ar: "التسمية" }, admin: { hidden: true } },
     {
       type: "row",
       fields: [
         {
           name: "product",
           type: "relationship",
+          label: { en: "Product", ar: "المنتج" },
           relationTo: "products",
-          admin: { description: "The catalogue item this price is for.", placeholder: "Search products" },
+          admin: {
+            description: { en: "The catalogue item this price is for.", ar: "صنف الكتالوج الذي يخصه هذا السعر." },
+            placeholder: words({ en: "Search products", ar: "ابحث في المنتجات" }),
+          },
         },
         {
           name: "supplier",
           type: "relationship",
+          label: { en: "Supplier", ar: "المورّد" },
           relationTo: "suppliers",
           required: true,
-          admin: { description: "Who quoted the price.", placeholder: "e.g. Port Said Welding Co." },
+          admin: {
+            description: { en: "Who quoted the price.", ar: "من قدّم السعر." },
+            placeholder: words({ en: "e.g. Port Said Welding Co.", ar: "مثال: Port Said Welding Co." }),
+          },
         },
       ],
     },
     {
       name: "description",
       type: "text",
+      label: { en: "Description", ar: "الوصف" },
       admin: {
-        description: "Supplier's own wording when not matched to a product.",
-        placeholder: "e.g. Electrode 3.2 mm, 5 kg box",
+        description: {
+          en: "Supplier's own wording when not matched to a product.",
+          ar: "صياغة المورّد نفسه عندما لا يُطابَق بمنتج.",
+        },
+        placeholder: { en: "e.g. Electrode 3.2 mm, 5 kg box", ar: "مثال: قطب 3.2 مم، صندوق 5 كجم" },
       },
     },
     {
@@ -302,24 +456,35 @@ export const SupplierPrices: CollectionConfig = {
         {
           name: "price",
           type: "number",
+          label: { en: "Price", ar: "السعر" },
           required: true,
           min: 0,
-          admin: { description: "The supplier's price for one unit or pack.", placeholder: "e.g. 18.50" },
+          admin: {
+            description: { en: "The supplier's price for one unit or pack.", ar: "سعر المورّد للوحدة أو العبوة." },
+            placeholder: { en: "e.g. 18.50", ar: "مثال: 18.50" },
+          },
         },
         {
           name: "currency",
           type: "select",
+          label: { en: "Currency", ar: "العملة" },
           options: CURRENCIES,
           required: true,
           defaultValue: "EGP",
-          admin: { description: "Currency the supplier quoted in.", placeholder: "e.g. EGP" },
+          admin: {
+            description: { en: "Currency the supplier quoted in.", ar: "العملة التي سعّر بها المورّد." },
+            placeholder: words({ en: "e.g. EGP", ar: "مثال: EGP" }),
+          },
         },
         {
           name: "per",
           type: "text",
-          label: "Per (unit / pack)",
+          label: { en: "Per (unit / pack)", ar: "لكل (وحدة / عبوة)" },
           defaultValue: "EA",
-          admin: { description: "What one price covers.", placeholder: "e.g. kg" },
+          admin: {
+            description: { en: "What one price covers.", ar: "ما يغطيه السعر الواحد." },
+            placeholder: { en: "e.g. kg", ar: "مثال: كجم" },
+          },
         },
       ],
     },
@@ -329,10 +494,18 @@ export const SupplierPrices: CollectionConfig = {
         {
           name: "quotedAt",
           type: "date",
+          label: { en: "Quoted At", ar: "تاريخ التسعير" },
           required: true,
-          admin: { description: "The day the supplier gave this price." },
+          admin: {
+            description: { en: "The day the supplier gave this price.", ar: "اليوم الذي قدّم فيه المورّد هذا السعر." },
+          },
         },
-        { name: "validUntil", type: "date", admin: { description: "Last day the supplier honours it." } },
+        {
+          name: "validUntil",
+          type: "date",
+          label: { en: "Valid Until", ar: "ساري حتى" },
+          admin: { description: { en: "Last day the supplier honours it.", ar: "آخر يوم يلتزم فيه المورّد بالسعر." } },
+        },
       ],
     },
     {
@@ -341,21 +514,36 @@ export const SupplierPrices: CollectionConfig = {
         {
           name: "source",
           type: "select",
-          options: ["Case offer", "Email reply", "WhatsApp / phone", "Purchase order", "Agency pricelist"],
+          label: { en: "Source", ar: "المصدر" },
+          options: [
+            { value: "Case offer", label: { en: "Case offer", ar: "عرض ملف" } },
+            { value: "Email reply", label: { en: "Email reply", ar: "رد بالبريد" } },
+            { value: "WhatsApp / phone", label: { en: "WhatsApp / phone", ar: "WhatsApp / هاتف" } },
+            { value: "Purchase order", label: { en: "Purchase order", ar: "أمر شراء" } },
+            { value: "Agency pricelist", label: { en: "Agency pricelist", ar: "قائمة أسعار وكالة" } },
+          ],
           required: true,
-          admin: { description: "How we got the price.", placeholder: "e.g. Email reply" },
+          admin: {
+            description: { en: "How we got the price.", ar: "كيف حصلنا على السعر." },
+            placeholder: words({ en: "e.g. Email reply", ar: "مثال: رد بالبريد" }),
+          },
         },
         {
           name: "case",
           type: "relationship",
+          label: { en: "Case", ar: "الملف" },
           relationTo: "cases",
-          admin: { description: "The customer case it was asked for.", placeholder: "e.g. GS-RFQ-0142" },
+          admin: {
+            description: { en: "The customer case it was asked for.", ar: "ملف العميل الذي طُلب السعر من أجله." },
+            placeholder: words({ en: "e.g. GS-RFQ-0142", ar: "مثال: GS-RFQ-0142" }),
+          },
         },
         {
           name: "ordered",
           type: "checkbox",
+          label: { en: "Ordered", ar: "تم الطلب" },
           defaultValue: false,
-          admin: { description: "Tick when we bought at this price." },
+          admin: { description: { en: "Tick when we bought at this price.", ar: "حدّد عندما اشترينا بهذا السعر." } },
         },
       ],
     },
@@ -365,10 +553,11 @@ export const SupplierPrices: CollectionConfig = {
 /** Agency principals' price lists (Vecom, Lalizas, Lukoil, Marichem…), versioned and approved. */
 export const Pricelists: CollectionConfig = {
   slug: "pricelists",
+  labels: { singular: { en: "Pricelist", ar: "قائمة أسعار" }, plural: { en: "Pricelists", ar: "قوائم الأسعار" } },
   admin: {
     useAsTitle: "title",
     defaultColumns: ["title", "principal", "currency", "discountPct", "validUntil", "status"],
-    group: "Catalogue",
+    group: { en: "Catalogue", ar: "الكتالوج" },
   },
   access: {
     read: ({ req }) => Boolean(req.user),
@@ -380,18 +569,27 @@ export const Pricelists: CollectionConfig = {
     {
       name: "title",
       type: "text",
+      label: { en: "Title", ar: "العنوان" },
+      localized: true,
       required: true,
       admin: {
-        description: "Principal and period, so versions are easy to tell apart.",
-        placeholder: "e.g. Vecom 2026 price list",
+        description: {
+          en: "Principal and period, so versions are easy to tell apart.",
+          ar: "الوكيل والفترة، ليسهل التمييز بين الإصدارات.",
+        },
+        placeholder: { en: "e.g. Vecom 2026 price list", ar: "مثال: قائمة أسعار Vecom 2026" },
       },
     },
     {
       name: "principal",
       type: "relationship",
+      label: { en: "Principal", ar: "الشركة الأم" },
       relationTo: "suppliers",
       required: true,
-      admin: { description: "The agency principal who issued the list.", placeholder: "e.g. Vecom Marine" },
+      admin: {
+        description: { en: "The agency principal who issued the list.", ar: "الوكيل الأصلي الذي أصدر القائمة." },
+        placeholder: words({ en: "e.g. Vecom Marine", ar: "مثال: Vecom Marine" }),
+      },
       filterOptions: { kind: { equals: "agency" } },
     },
     {
@@ -400,46 +598,67 @@ export const Pricelists: CollectionConfig = {
         {
           name: "currency",
           type: "select",
+          label: { en: "Currency", ar: "العملة" },
           options: CURRENCIES,
           required: true,
-          admin: { description: "Currency the list prices are in.", placeholder: "e.g. EUR" },
+          admin: {
+            description: { en: "Currency the list prices are in.", ar: "عملة أسعار القائمة." },
+            placeholder: words({ en: "e.g. EUR", ar: "مثال: EUR" }),
+          },
         },
         {
           name: "discountPct",
           type: "number",
-          label: "Agency discount %",
+          label: { en: "Agency discount %", ar: "خصم الوكالة %" },
           min: 0,
           max: 100,
-          admin: { description: "Our discount off list price.", placeholder: "e.g. 20" },
+          admin: {
+            description: { en: "Our discount off list price.", ar: "خصمنا من سعر القائمة." },
+            placeholder: { en: "e.g. 20", ar: "مثال: 20" },
+          },
         },
         {
           name: "leadDays",
           type: "number",
-          label: "Import lead time (days)",
+          label: { en: "Import lead time (days)", ar: "مدة توريد الاستيراد (أيام)" },
           min: 0,
-          admin: { description: "Days from order to arrival in Egypt.", placeholder: "e.g. 21" },
+          admin: {
+            description: { en: "Days from order to arrival in Egypt.", ar: "الأيام من الطلب حتى الوصول إلى مصر." },
+            placeholder: { en: "e.g. 21", ar: "مثال: 21" },
+          },
         },
       ],
     },
     {
       type: "row",
       fields: [
-        { name: "validFrom", type: "date", admin: { description: "First day the list applies." } },
-        { name: "validUntil", type: "date", admin: { description: "Last day the list applies." } },
+        {
+          name: "validFrom",
+          type: "date",
+          label: { en: "Valid From", ar: "ساري من" },
+          admin: { description: { en: "First day the list applies.", ar: "أول يوم تسري فيه القائمة." } },
+        },
+        {
+          name: "validUntil",
+          type: "date",
+          label: { en: "Valid Until", ar: "ساري حتى" },
+          admin: { description: { en: "Last day the list applies.", ar: "آخر يوم تسري فيه القائمة." } },
+        },
       ],
     },
     {
       name: "file",
       type: "upload",
       relationTo: "media",
-      label: "Source file (XLSX / CSV / PDF)",
-      admin: { description: "The list as the principal sent it." },
+      label: { en: "Source file (XLSX / CSV / PDF)", ar: "الملف المصدر (XLSX / CSV / PDF)" },
+      admin: { description: { en: "The list as the principal sent it.", ar: "القائمة كما أرسلها الوكيل." } },
     },
     {
       name: "items",
       type: "array",
-      labels: { singular: "Item", plural: "Items" },
-      admin: { description: "Each product on the list with its list price." },
+      label: { en: "Items", ar: "البنود" },
+      labels: { singular: { en: "Item", ar: "صنف" }, plural: { en: "Items", ar: "الأصناف" } },
+      admin: { description: { en: "Each product on the list with its list price.", ar: "كل منتج في القائمة بسعره." } },
       fields: [
         {
           type: "row",
@@ -447,21 +666,32 @@ export const Pricelists: CollectionConfig = {
             {
               name: "product",
               type: "relationship",
+              label: { en: "Product", ar: "المنتج" },
               relationTo: "products",
-              admin: { description: "The catalogue item this line prices.", placeholder: "Search products" },
+              admin: {
+                description: { en: "The catalogue item this line prices.", ar: "صنف الكتالوج الذي يسعّره هذا البند." },
+                placeholder: words({ en: "Search products", ar: "ابحث في المنتجات" }),
+              },
             },
             {
               name: "code",
               type: "text",
-              label: "Principal code",
-              admin: { description: "The principal's own code for it.", placeholder: "e.g. VC-10452" },
+              label: { en: "Principal code", ar: "رمز الوكيل" },
+              admin: {
+                description: { en: "The principal's own code for it.", ar: "الرمز الخاص بالوكيل لهذا الصنف." },
+                placeholder: { en: "e.g. VC-10452", ar: "مثال: VC-10452" },
+              },
             },
             {
               name: "listPrice",
               type: "number",
+              label: { en: "List Price", ar: "سعر القائمة" },
               min: 0,
               required: true,
-              admin: { description: "Price before our agency discount.", placeholder: "e.g. 120.00" },
+              admin: {
+                description: { en: "Price before our agency discount.", ar: "السعر قبل خصم الوكالة." },
+                placeholder: { en: "e.g. 120.00", ar: "مثال: 120.00" },
+              },
             },
           ],
         },
@@ -470,13 +700,22 @@ export const Pricelists: CollectionConfig = {
     {
       name: "status",
       type: "select",
+      label: { en: "Status", ar: "الحالة" },
       defaultValue: "Draft",
-      options: ["Draft", "Approved", "Superseded", "Expired"],
+      options: [
+        { value: "Draft", label: { en: "Draft", ar: "مسودة" } },
+        { value: "Approved", label: { en: "Approved", ar: "معتمد" } },
+        { value: "Superseded", label: { en: "Superseded", ar: "مُستبدَل" } },
+        { value: "Expired", label: { en: "Expired", ar: "منتهي" } },
+      ],
       access: { update: isManagement },
       admin: {
         position: "sidebar",
-        description: "Only approved pricelists price lines automatically.",
-        placeholder: "Pick a status",
+        description: {
+          en: "Only approved pricelists price lines automatically.",
+          ar: "قوائم الأسعار المعتمدة وحدها تسعّر البنود تلقائيًا.",
+        },
+        placeholder: words({ en: "Pick a status", ar: "اختر حالة" }),
       },
     },
   ],
@@ -485,11 +724,11 @@ export const Pricelists: CollectionConfig = {
 /** Own stock per warehouse, with lots and expiry (FIFO). */
 export const Stock: CollectionConfig = {
   slug: "stock",
-  labels: { singular: "Stock item", plural: "Stock" },
+  labels: { singular: { en: "Stock item", ar: "صنف مخزون" }, plural: { en: "Stock", ar: "المخزون" } },
   admin: {
     useAsTitle: "label",
     defaultColumns: ["product", "warehouse", "onHand", "reserved", "available"],
-    group: "Catalogue",
+    group: { en: "Catalogue", ar: "الكتالوج" },
   },
   access: deskAccess,
   hooks: {
@@ -509,29 +748,40 @@ export const Stock: CollectionConfig = {
     ],
   },
   fields: [
-    { name: "label", type: "text", admin: { hidden: true } },
+    { name: "label", type: "text", label: { en: "Label", ar: "التسمية" }, admin: { hidden: true } },
     {
       type: "row",
       fields: [
         {
           name: "product",
           type: "relationship",
+          label: { en: "Product", ar: "المنتج" },
           relationTo: "products",
           required: true,
-          admin: { description: "The catalogue item held.", placeholder: "Search products" },
+          admin: {
+            description: { en: "The catalogue item held.", ar: "صنف الكتالوج المحفوظ." },
+            placeholder: words({ en: "Search products", ar: "ابحث في المنتجات" }),
+          },
         },
         {
           name: "warehouse",
           type: "select",
-          options: WAREHOUSES,
+          label: { en: "Warehouse", ar: "المستودع" },
+          options: WAREHOUSE_OPTIONS,
           required: true,
-          admin: { description: "Which warehouse holds it.", placeholder: "e.g. Alexandria" },
+          admin: {
+            description: { en: "Which warehouse holds it.", ar: "المستودع الذي يحفظه." },
+            placeholder: words({ en: "e.g. Alexandria", ar: "مثال: الإسكندرية" }),
+          },
         },
         {
           name: "bin",
           type: "text",
-          label: "Location / bin",
-          admin: { description: "Shelf or bin where it sits.", placeholder: "e.g. A-03-2" },
+          label: { en: "Location / bin", ar: "الموقع / الرف" },
+          admin: {
+            description: { en: "Shelf or bin where it sits.", ar: "الرف أو الخانة التي يوجد فيها." },
+            placeholder: { en: "e.g. A-03-2", ar: "مثال: A-03-2" },
+          },
         },
       ],
     },
@@ -541,38 +791,62 @@ export const Stock: CollectionConfig = {
         {
           name: "onHand",
           type: "number",
+          label: { en: "On Hand", ar: "المتوفر" },
           min: 0,
           defaultValue: 0,
-          admin: { description: "Units physically in the warehouse; the lots add up to it.", placeholder: "e.g. 120" },
+          admin: {
+            description: {
+              en: "Units physically in the warehouse; the lots add up to it.",
+              ar: "الوحدات الموجودة فعليًا في المستودع؛ مجموع الدفعات يساويها.",
+            },
+            placeholder: { en: "e.g. 120", ar: "مثال: 120" },
+          },
         },
         {
           name: "reserved",
           type: "number",
+          label: { en: "Reserved", ar: "المحجوز" },
           min: 0,
           defaultValue: 0,
-          admin: { description: "Units promised to cases and not yet shipped.", placeholder: "e.g. 20" },
+          admin: {
+            description: {
+              en: "Units promised to cases and not yet shipped.",
+              ar: "الوحدات المحجوزة لملفات ولم تُشحن بعد.",
+            },
+            placeholder: { en: "e.g. 20", ar: "مثال: 20" },
+          },
         },
         {
           name: "available",
           type: "number",
+          label: { en: "Available", ar: "المتاح" },
           min: 0,
-          admin: { readOnly: true, description: "On hand minus reserved." },
+          admin: { readOnly: true, description: { en: "On hand minus reserved.", ar: "المتاح ناقص المحجوز." } },
         },
       ],
     },
     {
       name: "avgCostEGP",
       type: "number",
-      label: "Average cost (EGP)",
+      label: { en: "Average cost (EGP)", ar: "متوسط التكلفة (EGP)" },
       min: 0,
       access: { read: costVisible },
-      admin: { description: "What one unit cost us on average, in EGP.", placeholder: "e.g. 42.80" },
+      admin: {
+        description: { en: "What one unit cost us on average, in EGP.", ar: "متوسط تكلفة الوحدة علينا بالجنيه." },
+        placeholder: { en: "e.g. 42.80", ar: "مثال: 42.80" },
+      },
     },
     {
       name: "lots",
       type: "array",
-      labels: { singular: "Lot", plural: "Lots" },
-      admin: { description: "Batches with their expiry, issued oldest first." },
+      label: { en: "Lots", ar: "الدفعات" },
+      labels: { singular: { en: "Lot", ar: "دفعة" }, plural: { en: "Lots", ar: "الدفعات" } },
+      admin: {
+        description: {
+          en: "Batches with their expiry, issued oldest first.",
+          ar: "الدفعات بتواريخ انتهائها، يُصرف الأقدم أولًا.",
+        },
+      },
       fields: [
         {
           type: "row",
@@ -580,16 +854,31 @@ export const Stock: CollectionConfig = {
             {
               name: "lot",
               type: "text",
+              label: { en: "Lot", ar: "الدفعة" },
               required: true,
-              admin: { description: "Batch number from the label.", placeholder: "e.g. LT-2511-04" },
+              admin: {
+                description: { en: "Batch number from the label.", ar: "رقم الدفعة من الملصق." },
+                placeholder: { en: "e.g. LT-2511-04", ar: "مثال: LT-2511-04" },
+              },
             },
-            { name: "expiry", type: "date", admin: { description: "Expiry date printed on the batch." } },
+            {
+              name: "expiry",
+              type: "date",
+              label: { en: "Expiry", ar: "تاريخ الانتهاء" },
+              admin: {
+                description: { en: "Expiry date printed on the batch.", ar: "تاريخ الانتهاء المطبوع على الدفعة." },
+              },
+            },
             {
               name: "qty",
               type: "number",
+              label: { en: "Qty", ar: "الكمية" },
               min: 0,
               required: true,
-              admin: { description: "Units left in this batch.", placeholder: "e.g. 60" },
+              admin: {
+                description: { en: "Units left in this batch.", ar: "الوحدات المتبقية في هذه الدفعة." },
+                placeholder: { en: "e.g. 60", ar: "مثال: 60" },
+              },
             },
           ],
         },
@@ -598,11 +887,12 @@ export const Stock: CollectionConfig = {
     {
       name: "heldFor",
       type: "relationship",
+      label: { en: "Held For", ar: "محجوز لـ" },
       relationTo: "cases",
       admin: {
         position: "sidebar",
-        description: "Held stores reserved for a vessel's case.",
-        placeholder: "e.g. GS-RFQ-0142",
+        description: { en: "Held stores reserved for a vessel's case.", ar: "مستلزمات محتجزة مخصصة لملف سفينة." },
+        placeholder: words({ en: "e.g. GS-RFQ-0142", ar: "مثال: GS-RFQ-0142" }),
       },
     },
   ],

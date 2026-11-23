@@ -2,6 +2,8 @@ import type { VariantProps } from "class-variance-authority";
 import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { clampColumnWidth, COLUMN_MAX_WIDTH, COLUMN_MIN_WIDTH, moveColumn, orderColumns } from "../../base/columns.ts";
+import { formatInt, m } from "../../../i18n/index.ts";
+import { isRtl } from "../../base/reading.ts";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
 import { button } from "../actions/button.ts";
@@ -430,7 +432,7 @@ export class UiTable extends LightElement {
   }
 
   private get _rtl() {
-    return getComputedStyle(this).direction === "rtl";
+    return isRtl(this);
   }
 
   private _name(c: TableColumn) {
@@ -462,7 +464,7 @@ export class UiTable extends LightElement {
         to,
       ),
     );
-    this._announce = `${this._name(c)} moved to column ${place + 1} of ${this._columns.length}`;
+    this._announce = m.table_column_moved({ column: this._name(c), place: place + 1, total: this._columns.length });
   }
 
   /** Ctrl + Shift + ← / → on a sortable header moves its column one place, keeping the focus on it. */
@@ -565,7 +567,7 @@ export class UiTable extends LightElement {
     this._lastX = x;
     const tx = x - table.getBoundingClientRect().left;
     const rtl = this._rtl;
-    const passed = this._geom.mids.filter((m) => (rtl ? m > tx : m < tx)).length;
+    const passed = this._geom.mids.filter((mid) => (rtl ? mid > tx : mid < tx)).length;
     this._drag = { ...this._drag, dx: tx - this._geom.x0, target: Math.max(this._geom.fixed, passed) };
   }
 
@@ -663,7 +665,7 @@ export class UiTable extends LightElement {
     const from = this.columnWidths[c.key] ?? this._th(c.key)?.getBoundingClientRect().width ?? 160;
     const width = clampColumnWidth(from + (e.shiftKey ? 48 : 8) * (e.key === grow ? 1 : -1));
     this._emitColumns(undefined, { ...this.columnWidths, [c.key]: width });
-    this._announce = `${this._name(c)} ${width} pixels wide`;
+    this._announce = m.table_column_width({ column: this._name(c), width });
   }
 
   /** Back to fitting its content. */
@@ -671,7 +673,7 @@ export class UiTable extends LightElement {
     if (this.columnWidths[c.key] === undefined) return;
     const { [c.key]: _, ...rest } = this.columnWidths;
     this._emitColumns(undefined, rest);
-    this._announce = `${this._name(c)} fits its content`;
+    this._announce = m.table_column_fit({ column: this._name(c) });
   }
 
   private get _sorts() {
@@ -731,11 +733,11 @@ export class UiTable extends LightElement {
             role="separator"
             tabindex="0"
             aria-orientation="vertical"
-            aria-label=${`Resize ${this._name(c)} column`}
+            aria-label=${m.table_resize_column({ column: this._name(c) })}
             aria-valuemin=${COLUMN_MIN_WIDTH}
             aria-valuemax=${COLUMN_MAX_WIDTH}
             aria-valuenow=${this.columnWidths[c.key] ?? nothing}
-            title="Drag to resize · double-click to fit"
+            title=${m.table_resize_hint()}
             class=${tableResize({ last, active: this._resizing === c.key })}
             @pointerdown=${(e: PointerEvent) => this._startResize(e, c)}
             @keydown=${(e: KeyboardEvent) => this._resizeKey(e, c)}
@@ -767,11 +769,7 @@ export class UiTable extends LightElement {
       <button
         type="button"
         class=${tableSort({ align: c.align })}
-        title=${
-          live && this.reorderable && !c.fixed
-            ? "Sort (Shift-click to sort by several columns). Drag or Ctrl+Shift+← / → to move"
-            : "Sort (Shift-click to sort by several columns)"
-        }
+        title=${live && this.reorderable && !c.fixed ? m.table_sort_move_hint() : m.table_sort_hint()}
         @click=${(e: MouseEvent) => this._sortBy(path, e.shiftKey)}
         @keydown=${(e: KeyboardEvent) => live && this._moveKey(e, c)}
       >
@@ -779,7 +777,7 @@ export class UiTable extends LightElement {
         <span class=${tableSortIcon({ state })} aria-hidden="true"
           >${iconSvg(state === "none" ? "unfold" : "arrow-up", { size: "sm" })}</span
         >
-        ${sorts.length > 1 && at >= 0 ? html`<span class=${tableSortOrder()}>${at + 1}</span>` : nothing}
+        ${sorts.length > 1 && at >= 0 ? html`<span class=${tableSortOrder()}>${formatInt(at + 1)}</span>` : nothing}
       </button>
       ${resize}${mark}
     </th>`;
@@ -808,7 +806,7 @@ export class UiTable extends LightElement {
                       <input
                         type="checkbox"
                         class="checkbox"
-                        aria-label="Select all"
+                        aria-label=${m.table_select_all()}
                         .checked=${total > 0 && this.selected.length === total}
                         @change=${(e: Event) => this._toggleAll((e.target as HTMLInputElement).checked)}
                       />
@@ -869,7 +867,7 @@ export class UiTable extends LightElement {
                 <input
                   type="checkbox"
                   class="checkbox"
-                  aria-label=${`Select row ${index + 1}`}
+                  aria-label=${m.table_select_row({ row: index + 1 })}
                   .checked=${this.selected.includes(index)}
                   @click=${(e: Event) => e.stopPropagation()}
                   @change=${(e: Event) => this._toggle(index, (e.target as HTMLInputElement).checked)}
@@ -878,7 +876,7 @@ export class UiTable extends LightElement {
             </th>`
           : nothing
       }
-      ${this.indexColumn ? html`<th>${index + 1}</th>` : nothing} ${this._columns.map(cell)}
+      ${this.indexColumn ? html`<th>${formatInt(index + 1)}</th>` : nothing} ${this._columns.map(cell)}
     </tr>`;
   }
 

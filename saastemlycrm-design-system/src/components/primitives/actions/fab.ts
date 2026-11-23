@@ -6,6 +6,7 @@ import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { floating, floatingHeight, inset, row, stack } from "../layout/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
+import { m } from "../../../i18n/index.ts";
 import { iconButton } from "./icon-button.ts";
 
 /**
@@ -122,7 +123,7 @@ export class UiFab extends LightElement {
           <button
             type="button"
             class=${iconButton({ size: "xs" })}
-            aria-label="Close"
+            aria-label=${m.fab_close()}
             @click=${() => this._toggle(false)}
           >
             ${iconSvg("x", { size: "sm" })}

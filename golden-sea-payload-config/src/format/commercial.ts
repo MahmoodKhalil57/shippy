@@ -1,13 +1,14 @@
-import type {
-  Action,
-  Cell,
-  Doc,
-  DocumentSpec,
-  Figure,
-  KindData,
-  Row,
-  Tone,
-  WidgetScope,
+import {
+  formatNumber,
+  type Action,
+  type Cell,
+  type Doc,
+  type DocumentSpec,
+  type Figure,
+  type KindData,
+  type Row,
+  type Tone,
+  type WidgetScope,
 } from "saastemlycrm-design-system/contracts";
 import type {
   CmpLine,
@@ -18,39 +19,47 @@ import type {
   Pricing,
   QuoteView,
 } from "../endpoints/commercial.ts";
+import { m } from "../i18n/paraglide/messages.js";
 import * as link from "../links.ts";
+import { count, dateFormat, money, numberFormat } from "./index.ts";
 
 /**
  * The commercial side of a case, read for the widgets that show it: its offers compared (with the
  * AI-drafted correction requests), its pricing, and a quotation as the customer receives it, with
  * its approvals, versions and decision. Pure: data in (../endpoints/commercial.ts's answers), what
  * a kind draws out. First the formats they share: EGP rounded to the pound, amounts in the
- * supplier's or the quote's currency, percentages and short dates.
+ * supplier's or the quote's currency, percentages and short dates, in the interface's language.
  */
 
-export const egp = (n: number) => `EGP ${Math.round(n).toLocaleString("en-US")}`;
+export const egp = (n: number) => money(Math.round(n), "EGP");
 export const amount = (n: number, d = 2) =>
-  n.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+  numberFormat({ minimumFractionDigits: d, maximumFractionDigits: d }).format(n);
 /** An amount in its currency: EGP rounded, any other with `d` decimals. */
 export const priced = (n: number, currency: string, d = 2) =>
-  currency === "EGP" ? egp(n) : `${currency} ${amount(n, d)}`;
-export const pct = (n: number) => `${n.toFixed(1)}%`;
+  currency === "EGP" ? egp(n) : m.index_money({ currency, amount: amount(n, d) });
+/** A landed-cost charge's status in words; the stored value stays as it is. */
+const CHARGE_STATUS: Record<string, () => string> = {
+  Estimate: m.commercial_charge_estimate,
+  Confirmed: m.commercial_charge_confirmed,
+  Actual: m.commercial_charge_actual,
+};
+export const pct = (n: number) => formatNumber(n, { unit: "pct", decimals: 1 });
 /** "17 Nov" (with the time: "17 Nov, 09:30"), in UTC. */
 export const shortDay = (iso: string, time = false) =>
   iso
-    ? new Date(iso).toLocaleString("en-GB", {
+    ? dateFormat({
         day: "numeric",
         month: "short",
         ...(time ? { hour: "2-digit", minute: "2-digit" } : {}),
         timeZone: "UTC",
-      })
+      }).format(new Date(iso))
     : "—";
 
 /** How a case's shared charges (launch, freight, bank charges…) are spread over its lines. */
-export const ALLOCATION = [
-  { label: "By line value", value: "value" },
-  { label: "By quantity", value: "qty" },
-  { label: "Equal per line", value: "lines" },
+export const allocation = () => [
+  { label: m.commercial_allocation_value(), value: "value" },
+  { label: m.commercial_allocation_qty(), value: "qty" },
+  { label: m.commercial_allocation_lines(), value: "lines" },
 ];
 
 /* ------------------------------------------------------------------ shared */
@@ -59,12 +68,12 @@ type Option = { value: string; label: string };
 
 /**
  * A tile that is only a choice of a screen parameter (`param`): its options from the data, the
- * current one from the URL (`fallback` until one is chosen).
+ * current one from the URL (`fallback` until one is chosen). `label` gives its words.
  */
 export const paramChoice =
-  <T>(param: string, label: string, options: (d: T) => Option[], fallback: string) =>
+  <T>(param: string, label: () => string, options: (d: T) => Option[], fallback: string) =>
   (d: T, { params }: WidgetScope): KindData<"actions"> => ({
-    choice: { param, label, value: params[param] ?? fallback, options: options(d) },
+    choice: { param, label: label(), value: params[param] ?? fallback, options: options(d) },
     items: [],
   });
 
@@ -74,7 +83,7 @@ export const checkMarks = (flags: { text: string; tone: Tone }[], ok: string): {
 
 /** An email someone reads before it goes: who it's to, its subject and body. */
 export const email = (to: string, subject: string, body: string): KindData<"message"> => ({
-  meta: [`To: ${to}`],
+  meta: [m.commercial_email_to({ to })],
   subject,
   body,
 });
@@ -90,15 +99,15 @@ export const quoteLink = (id: string, label: string): Action => ({
 type Mode = "unit" | "landed";
 const modeOf = (params: Record<string, string>): Mode => (params.by === "landed" ? "landed" : "unit");
 const metric = (o: CmpOffer, mode: Mode) => (mode === "unit" ? o.unitPerBase : o.landedPerBase);
+/** An offer as it's named: its supplier and version. */
+const offerName = (o: CmpOffer) => m.commercial_offer_version({ supplier: o.supplier, version: o.version });
 
-const BEST = "This is the best-fit choice. A reason is optional.";
-const NOT_BEST = "Not the best-fit offer: give a reason. It's kept on the case and shown to the approver.";
 const reason = (required: boolean) => ({
   type: "textarea",
   name: "reason",
-  label: "Reason",
+  label: m.commercial_reason(),
   required,
-  admin: { placeholder: "e.g. Delta is our approved helmet supplier; Nile only has 10 in stock" },
+  admin: { placeholder: m.commercial_reason_placeholder() },
 });
 
 /**
@@ -111,26 +120,31 @@ function selectOne(base: string, line: CmpLine, o: CmpOffer, sole: boolean): Act
   const call = { path: `${base}/select`, body: { lineNo: line.lineNo, parts: [{ offer: o.id, qty: line.qty }] } };
   if (best)
     return {
-      label: sole ? "Selected" : "Select",
+      label: sole ? m.commercial_selected() : m.commercial_select(),
       disabled: sole,
       call,
-      done: `Line ${line.lineNo}: ${o.supplier} selected (best fit)`,
+      done: m.commercial_select_done_best({ line: line.lineNo, supplier: o.supplier }),
     };
   return {
-    label: sole ? "Selected" : "Select",
+    label: sole ? m.commercial_selected() : m.commercial_select(),
     disabled: sole,
     call,
     confirm: {
-      heading: `Line ${line.lineNo}: select offer`,
+      heading: m.commercial_select_heading({ line: line.lineNo }),
       text: [
-        `${line.description} · requested ${line.requested}`,
-        `${o.supplier} v${o.version} × ${line.qty} ${line.unit} · ${egp(o.landedPerBase * line.baseQty)} landed`,
-        best ? BEST : NOT_BEST,
+        m.commercial_line_requested({ description: line.description, requested: line.requested }),
+        m.commercial_select_offer_line({
+          offer: offerName(o),
+          qty: line.qty,
+          unit: line.unit,
+          landed: egp(o.landedPerBase * line.baseQty),
+        }),
+        best ? m.commercial_reason_best() : m.commercial_reason_not_best(),
       ].join("\n"),
-      label: "Save selection",
+      label: m.commercial_save_selection(),
     },
     fields: [reason(!best)],
-    done: `Line ${line.lineNo}: selection saved to the case.`,
+    done: m.commercial_selection_saved({ line: line.lineNo }),
   };
 }
 
@@ -141,15 +155,13 @@ function split(base: string, line: CmpLine, label: string, parts: CmpPart[], bes
     label,
     call: { path: `${base}/split`, body: { lineNo: line.lineNo, offers: parts.map((p) => p.offer) } },
     confirm: {
-      heading: `Line ${line.lineNo}: split sourcing`,
+      heading: m.commercial_split_heading({ line: line.lineNo }),
       text: [
-        `${line.description} · requested ${line.requested}`,
-        `The quantities add up to ${line.qty} ${line.unit}.`,
-        best
-          ? BEST
-          : "If this isn't the recommended split, give a reason: it's kept on the case and shown to the approver.",
+        m.commercial_line_requested({ description: line.description, requested: line.requested }),
+        m.commercial_split_adds_up({ qty: line.qty, unit: line.unit }),
+        best ? m.commercial_reason_best() : m.commercial_split_reason(),
       ].join("\n"),
-      label: "Save selection",
+      label: m.commercial_save_selection(),
     },
     fields: [
       ...parts.map((p, i) => {
@@ -157,17 +169,23 @@ function split(base: string, line: CmpLine, label: string, parts: CmpPart[], bes
         return {
           type: "number",
           name: `q${i}`,
-          label: `Quantity from ${o.supplier}`,
+          label: m.commercial_quantity_from({ supplier: o.supplier }),
           min: 0,
           defaultValue: p.qty,
           admin: {
-            description: `${o.supplier} v${o.version} · ${amount(o.landedPerBase)} EGP / ${line.baseUnit} landed · up to ${Math.floor(o.baseQty / per)} ${line.unit}`,
+            description: m.commercial_split_part_note({
+              offer: offerName(o),
+              landed: amount(o.landedPerBase),
+              baseUnit: line.baseUnit,
+              max: Math.floor(o.baseQty / per),
+              unit: line.unit,
+            }),
           },
         };
       }),
       reason(false),
     ],
-    done: `Line ${line.lineNo}: selection saved to the case.`,
+    done: m.commercial_selection_saved({ line: line.lineNo }),
   };
 }
 
@@ -180,14 +198,22 @@ function offerRows(base: string, line: CmpLine, mode: Mode): Row[] {
     const isSelected = selected.has(o.id);
     const sole = selected.size === 1 && isSelected;
     const tags = [
-      ...(o.kind === "stock" ? [{ label: "Own stock", tone: "success" as const }] : []),
-      ...(o.kind === "agency" ? [{ label: "Agency", tone: "info" as const }] : []),
-      ...(o.id === line.best ? [{ label: "Best fit", tone: "success" as const }] : []),
+      ...(o.kind === "stock" ? [{ label: m.commercial_tag_own_stock(), tone: "success" as const }] : []),
+      ...(o.kind === "agency" ? [{ label: m.commercial_tag_agency(), tone: "info" as const }] : []),
+      ...(o.id === line.best ? [{ label: m.commercial_tag_best_fit(), tone: "success" as const }] : []),
       ...(mode === "unit" && o.id === line.cheapestUnit && o.id !== line.best
-        ? [{ label: "Cheapest unit price", tone: "warning" as const }]
+        ? [{ label: m.commercial_tag_cheapest_unit(), tone: "warning" as const }]
         : []),
       ...(isSelected
-        ? [{ label: `Selected${selected.size > 1 ? ` × ${selected.get(o.id)}` : ""}`, tone: "primary" as const }]
+        ? [
+            {
+              label:
+                selected.size > 1
+                  ? m.commercial_selected_qty({ qty: selected.get(o.id) ?? 0 })
+                  : m.commercial_selected(),
+              tone: "primary" as const,
+            },
+          ]
         : []),
     ];
     const actions: Action[] = [];
@@ -195,49 +221,57 @@ function offerRows(base: string, line: CmpLine, mode: Mode): Row[] {
     const accepted = o.needsAcceptance && isSelected && line.selection.customerAccepted;
     if (o.needsAcceptance && isSelected && !line.selection.customerAccepted)
       actions.push({
-        label: "Record customer acceptance",
+        label: m.commercial_record_acceptance(),
         call: { path: `${base}/accept`, body: { lineNo: line.lineNo } },
         confirm: {
-          heading: "Record customer acceptance",
-          text: `Line ${line.lineNo} uses an alternative pack. The quotation can only show it as accepted with the customer's written confirmation.`,
-          label: "Record acceptance",
+          heading: m.commercial_record_acceptance(),
+          text: m.commercial_acceptance_text({ line: line.lineNo }),
+          label: m.commercial_record_acceptance_confirm(),
         },
         fields: [
           {
             type: "textarea",
             name: "note",
-            label: "Evidence",
+            label: m.commercial_evidence(),
             required: true,
-            defaultValue: "Customer email 17 Nov 10:12 — “500 ml cans OK”, attached",
+            defaultValue: m.commercial_evidence_default(),
           },
         ],
-        done: `Line ${line.lineNo}: customer acceptance recorded.`,
+        done: m.commercial_acceptance_done({ line: line.lineNo }),
       });
     const leadLate = o.flags.some((f) => f.type === "Lead time vs ETA" && f.tone === "error");
     const checks: Cell = {
       text: "",
-      marks: checkMarks(o.flags, "No issues"),
-      tags: accepted ? [{ label: "Customer accepted in writing", tone: "success" }] : undefined,
+      marks: checkMarks(o.flags, m.commercial_no_issues()),
+      tags: accepted ? [{ label: m.commercial_accepted_in_writing(), tone: "success" }] : undefined,
       actions: actions.length ? actions : undefined,
     };
+    const coverage = count(Math.round(o.coverage * 100));
+    const terms = o.terms || "—";
     return {
-      supplier: { text: `${o.supplier} v${o.version}`, strong: !o.superseded, tags },
+      supplier: { text: offerName(o), strong: !o.superseded, tags },
       note: o.supplierNote,
       offered: o.offered,
       coverage: {
-        text: `${Math.round(o.coverage * 100)}% of requested${o.expiry ? ` · exp. ${o.expiry}` : ""}`,
+        text: o.expiry
+          ? m.commercial_coverage_expiry({ pct: coverage, expiry: o.expiry })
+          : m.commercial_coverage({ pct: coverage }),
         tone: o.coverage < 1 ? "warning" : undefined,
       },
       price: priced(o.price, o.currency),
-      priceNote: `per ${o.per} · total ${egp(o.goodsEGP)}`,
+      priceNote: m.commercial_price_note({ per: o.per, total: egp(o.goodsEGP) }),
       metric: { text: amount(metric(o, mode)), strong: true, tone: rank === 0 && !o.blocked ? "success" : undefined },
       metricNote:
         mode === "landed"
-          ? `${o.freightEGP ? `+ ${egp(o.freightEGP)}` : "no freight"} · ${o.freightNote}`
-          : `landed ${amount(o.landedPerBase)}`,
-      lead: { text: `${o.leadDays} d`, tone: leadLate ? "error" : undefined },
-      ready: `ready ${shortDay(o.readyBy)}`,
-      terms: `${o.validUntil ? `Valid to ${shortDay(o.validUntil)}` : "No expiry"} · ${o.terms || "—"}`,
+          ? o.freightEGP
+            ? m.commercial_metric_freight({ freight: egp(o.freightEGP), note: o.freightNote })
+            : m.commercial_metric_no_freight({ note: o.freightNote })
+          : m.commercial_metric_landed({ amount: amount(o.landedPerBase) }),
+      lead: { text: m.commercial_lead_days({ days: o.leadDays }), tone: leadLate ? "error" : undefined },
+      ready: m.commercial_ready({ day: shortDay(o.readyBy) }),
+      terms: o.validUntil
+        ? m.commercial_terms_valid({ day: shortDay(o.validUntil), terms })
+        : m.commercial_terms_no_expiry({ terms }),
       basis: o.basis,
       checks,
     };
@@ -250,19 +284,26 @@ function recommendation(line: CmpLine) {
   if (line.split)
     return {
       tone: "success" as const,
-      heading: "Recommendation · Suggested",
-      text: `Split sourcing: ${line.split.text} — ${egp(line.split.costEGP)} landed${
-        line.split.savesEGP ? `, saves ${egp(line.split.savesEGP)} vs the best single supplier` : ""
-      }, all before ETA.`,
+      heading: m.commercial_recommendation_heading(),
+      text: line.split.savesEGP
+        ? m.commercial_recommendation_split_saves({
+            split: line.split.text,
+            cost: egp(line.split.costEGP),
+            saves: egp(line.split.savesEGP),
+          })
+        : m.commercial_recommendation_split({ split: line.split.text, cost: egp(line.split.costEGP) }),
     };
   if (best)
     return {
       tone: "success" as const,
-      heading: "Recommendation · Suggested",
-      text: `${best.supplier} v${best.version}: ${amount(best.landedPerBase)} EGP / ${line.baseUnit} landed — lowest cost on board among offers that pass every check.`,
+      heading: m.commercial_recommendation_heading(),
+      text: m.commercial_recommendation_best({
+        offer: offerName(best),
+        landed: amount(best.landedPerBase),
+        baseUnit: line.baseUnit,
+      }),
     };
-  if (line.offers.length)
-    return { tone: "warning" as const, text: "No offer passes every check yet — no recommendation." };
+  if (line.offers.length) return { tone: "warning" as const, text: m.commercial_no_recommendation() };
   return null;
 }
 
@@ -272,10 +313,10 @@ function recommendation(line: CmpLine) {
  */
 export const compareBy = paramChoice<CompareWithDrafts>(
   "by",
-  "Compare by",
+  () => m.commercial_compare_by(),
   () => [
-    { value: "unit", label: "Unit price" },
-    { value: "landed", label: "Landed cost" },
+    { value: "unit", label: m.commercial_unit_price() },
+    { value: "landed", label: m.commercial_landed_cost() },
   ],
   "unit",
 );
@@ -294,52 +335,51 @@ export const lineOffers = (line: CmpLine, c: CompareWithDrafts, { params }: Widg
   const selected = line.selection.parts.map((p) => `${name(p.offer)} × ${p.qty}`).join(" + ");
   const open = line.offers.filter((o) => !o.blocked);
   const recommended = recommendation(line);
+  const inferred = line.selection.inferred ? "yes" : "no";
   return {
     head: { tags: [{ label: line.status, tone: line.statusTone }] },
     note: [
-      `Requested: ${line.requested} · ${line.rules}`,
+      m.commercial_requested_rules({ requested: line.requested, rules: line.rules }),
       selected
-        ? `Selected: ${selected}${line.selection.reason ? ` · ${line.selection.reason}` : ""}${
-            line.selection.inferred ? " (from the line status)" : ""
-          }`
+        ? line.selection.reason
+          ? m.commercial_selected_note_reason({ selected, reason: line.selection.reason, inferred })
+          : m.commercial_selected_note({ selected, inferred })
         : "",
     ]
       .filter(Boolean)
       .join("\n"),
     alerts: [
       ...(line.missing
-        ? [
-            {
-              tone: "warning" as const,
-              text: `Not sent to suppliers yet: ${line.missing}. Waiting for the customer's answer.`,
-            },
-          ]
+        ? [{ tone: "warning" as const, text: m.commercial_not_sent_yet({ missing: line.missing }) }]
         : []),
       ...(recommended ? [recommended] : []),
     ],
-    empty: "No offers yet.",
+    empty: m.commercial_no_offers(),
     columns: [
-      { key: "supplier", label: "Supplier", supporting: "note" },
-      { key: "offered", label: "Offered", supporting: "coverage" },
-      { key: "price", label: "Price (as offered)", supporting: "priceNote" },
+      { key: "supplier", label: m.commercial_col_supplier(), supporting: "note" },
+      { key: "offered", label: m.commercial_col_offered(), supporting: "coverage" },
+      { key: "price", label: m.commercial_col_price_offered(), supporting: "priceNote" },
       {
         key: "metric",
-        label: mode === "unit" ? `Unit price · EGP / ${line.baseUnit}` : `Landed · EGP / ${line.baseUnit}`,
+        label:
+          mode === "unit"
+            ? m.commercial_col_unit_price({ unit: line.baseUnit })
+            : m.commercial_col_landed_per({ unit: line.baseUnit }),
         supporting: "metricNote",
       },
-      { key: "lead", label: "Lead", supporting: "ready" },
-      { key: "terms", label: "Valid · terms · basis", supporting: "basis" },
-      { key: "checks", label: "Checks" },
+      { key: "lead", label: m.commercial_col_lead(), supporting: "ready" },
+      { key: "terms", label: m.commercial_col_terms(), supporting: "basis" },
+      { key: "checks", label: m.commercial_col_checks() },
     ],
     rows: offerRows(base, line, mode),
     actions:
       line.split || open.length > 1
         ? [
-            ...(line.split ? [split(base, line, "Use suggested split", line.split.parts, true)] : []),
+            ...(line.split ? [split(base, line, m.commercial_use_split(), line.split.parts, true)] : []),
             split(
               base,
               line,
-              "Split across suppliers…",
+              m.commercial_split_across(),
               open.map((o) => ({ offer: o.id, qty: line.split?.parts.find((p) => p.offer === o.id)?.qty ?? 0 })),
               false,
             ),
@@ -361,18 +401,23 @@ export const offerCheck = (line: CmpLine): KindData<"custom"> => {
     element: "ui-ai-check",
     key: `L${line.lineNo}`,
     props: {
-      label: "Check offers against the request",
+      label: m.commercial_check_offers(),
       text: [
-        `Requested: ${line.description} — ${line.requested}. Rules: ${line.rules}.`,
-        ...offers.map(
-          (o, i) => `Offer ${i + 1} from ${o.supplier}: ${o.offered}. Supplier note: ${o.supplierNote || "none"}.`,
+        m.commercial_check_requested({ description: line.description, requested: line.requested, rules: line.rules }),
+        ...offers.map((o, i) =>
+          m.commercial_check_offer({
+            n: i + 1,
+            supplier: o.supplier,
+            offered: o.offered,
+            note: o.supplierNote || m.commercial_none(),
+          }),
         ),
       ].join("\n"),
       questions: offers.map((o, i) => ({
         id: `offer${i + 1}`,
-        prompt: `Does offer ${i + 1} (${o.supplier}) match the requested item: the same product, brand or an approved equivalent, unit and pack size?`,
-        yes: `${o.supplier}: matches the request`,
-        no: `${o.supplier}: may differ from the request — check`,
+        prompt: m.commercial_check_question({ n: i + 1, supplier: o.supplier }),
+        yes: m.commercial_check_yes({ supplier: o.supplier }),
+        no: m.commercial_check_no({ supplier: o.supplier }),
       })),
     },
   };
@@ -407,36 +452,36 @@ export const corrections = (c: CompareWithDrafts): Correction[] =>
 export const correctionRequest = ({ offer: o, draft: d }: Correction, c: CompareWithDrafts): KindData<"message"> => ({
   head: {
     tags: [
-      { label: "AI draft", tone: "primary", icon: "sparkles" },
+      { label: m.commercial_tag_ai_draft(), tone: "primary", icon: "sparkles" },
       { label: d.status, tone: d.sent ? "success" : "warning" },
     ],
   },
-  note: "The client is never named to the supplier. v1 stays on the case for audit; only a corrected version can be priced.",
+  note: m.commercial_correction_note(),
   ...email(d.to, d.subject, d.body),
   assist: true,
   actions: d.sent
     ? undefined
     : [
         {
-          label: "Send to supplier",
+          label: m.commercial_send_to_supplier(),
           main: true,
           call: {
             path: `/commercial/cases/${encodeURIComponent(c.id)}/correction`,
             body: { offer: o.id, send: true },
           },
           confirm: {
-            heading: "Send the correction request?",
-            text: `To ${d.to}: “${d.subject}”.`,
-            label: "Send to supplier",
+            heading: m.commercial_send_correction_heading(),
+            text: m.commercial_send_correction_text({ to: d.to, subject: d.subject }),
+            label: m.commercial_send_to_supplier(),
           },
-          done: "Correction request sent. The offer stays blocked until a corrected version arrives.",
+          done: m.commercial_correction_sent(),
         },
       ],
 });
 
 /** Once the offers are selected, the case moves on to pricing. */
 export const toPricing = (c: { id: string }): KindData<"actions"> => ({
-  items: [{ label: "Continue to pricing", main: true, href: link.doc("cases", c.id, "pricing") }],
+  items: [{ label: m.commercial_continue_pricing(), main: true, href: link.doc("cases", c.id, "pricing") }],
 });
 
 /**
@@ -447,18 +492,21 @@ export const howCompared = (c: CompareWithDrafts): KindData<"text"> => {
   const selected = c.lines.filter((l) => l.selection.parts.length).length;
   return {
     muted: true,
-    text: `Each offer is checked against the original line and normalised to the requested base unit (EA / L / kg) in EGP at the approved FX rate, keeping the supplier's own units and currency. Landed cost adds the freight to ${c.port} (lane rates, import costs for agency lines). AI suggests matches and deviations; technical equivalence is a person's decision.`,
+    text: m.commercial_how_compared({ port: c.port }),
     tags: [
       { label: c.fxLabel, tone: "info" },
-      { label: `ETA ${shortDay(c.eta)} · ${c.daysToEta} days` },
-      { label: `${selected} of ${c.lines.length} lines selected`, tone: selected ? "success" : undefined },
+      { label: m.commercial_eta_days({ day: shortDay(c.eta), days: c.daysToEta }) },
+      {
+        label: m.commercial_lines_selected({ selected, total: c.lines.length }),
+        tone: selected ? "success" : undefined,
+      },
     ],
   };
 };
 
 /* ------------------------------------------------------------- the pricing */
 
-/** The pricing figures' labels, one tile each, in order (`pricingFigures`). */
+/** The pricing figures' keys, one tile each, in order (`pricingFigures`); `pricingFigureName` gives their words. */
 export const PRICING_FIGURES = [
   "Landed cost (priced lines)",
   "Selling total (excl. VAT)",
@@ -466,54 +514,83 @@ export const PRICING_FIGURES = [
   "Recoverable input VAT",
   "Lines priced",
 ] as const;
+type PricingFigure = (typeof PRICING_FIGURES)[number];
+
+/** A pricing figure's words in the interface's language. */
+export const pricingFigureName = (key: PricingFigure): string =>
+  ({
+    "Landed cost (priced lines)": m.commercial_fig_landed,
+    "Selling total (excl. VAT)": m.commercial_fig_selling,
+    "Expected gross profit": m.commercial_fig_expected_profit,
+    "Recoverable input VAT": m.commercial_fig_input_vat,
+    "Lines priced": m.commercial_fig_lines_priced,
+  })[key]();
 
 /**
  * The case's price at a glance: landed cost, selling total, expected gross profit (red below
  * zero, amber under the policy minimum), recoverable input VAT and how many lines are priced, each
  * against its whole or target; until a line is priced, only how many lines are.
  */
-export const pricingFigures = (P: Pricing): Figure<(typeof PRICING_FIGURES)[number]>[] => {
+export const pricingFigures = (P: Pricing): Figure<PricingFigure>[] => {
   const t = P.totals;
   const estimates = P.charges.filter((c) => c.status === "Estimate").length;
   const lines = P.rows.length + P.unpriced.length;
   const linesPriced: Figure<"Lines priced"> = {
-    label: "Lines priced",
+    key: "Lines priced",
+    label: pricingFigureName("Lines priced"),
     value: `${P.rows.length} / ${lines}`,
-    share: { value: lines ? P.rows.length / lines : 0, text: lines ? "of the lines" : "no lines requested yet" },
-    note: P.unpriced.length ? `${P.unpriced.length} to follow as a revision` : "all lines priced",
+    share: {
+      value: lines ? P.rows.length / lines : 0,
+      text: lines ? m.commercial_of_the_lines() : m.commercial_no_lines_yet(),
+    },
+    note: P.unpriced.length ? m.commercial_to_follow({ count: P.unpriced.length }) : m.commercial_all_lines_priced(),
   };
   // Nothing priced yet: only the lines (the others would all read zero, so they show "—").
   if (!t.landedEGP) return [linesPriced];
+  const fx = amount(P.fx, 2);
   return [
     {
-      label: "Landed cost (priced lines)",
+      key: "Landed cost (priced lines)",
+      label: pricingFigureName("Landed cost (priced lines)"),
       value: egp(t.landedEGP),
-      note: `incl. ${egp(P.chargesEGP)} shared charges · ${estimates ? `${estimates} estimate` : "all confirmed"}`,
-      share: t.sellEGP ? { value: t.landedEGP / t.sellEGP, text: "of the selling price" } : undefined,
+      note: estimates
+        ? m.commercial_landed_note_estimates({ charges: egp(P.chargesEGP), count: estimates })
+        : m.commercial_landed_note_confirmed({ charges: egp(P.chargesEGP) }),
+      share: t.sellEGP ? { value: t.landedEGP / t.sellEGP, text: m.commercial_of_selling_price() } : undefined,
     },
     {
-      label: "Selling total (excl. VAT)",
+      key: "Selling total (excl. VAT)",
+      label: pricingFigureName("Selling total (excl. VAT)"),
       value: priced(t.sellQuote, P.currency, 0),
-      note: `${egp(t.sellEGP)} at ${P.currency}/EGP ${P.fx.toFixed(2)}${P.discountPct ? ` · after ${P.discountPct}% discount` : ""}`,
+      note: P.discountPct
+        ? m.commercial_sell_note_discount({
+            sell: egp(t.sellEGP),
+            currency: P.currency,
+            fx,
+            discount: P.discountPct,
+          })
+        : m.commercial_sell_note({ sell: egp(t.sellEGP), currency: P.currency, fx }),
       share: t.sellEGP
-        ? { value: Math.max(0, t.profitEGP) / t.sellEGP, text: `${pct(t.marginPct)} of it is profit` }
+        ? { value: Math.max(0, t.profitEGP) / t.sellEGP, text: m.commercial_profit_share({ pct: pct(t.marginPct) }) }
         : undefined,
     },
     {
-      label: "Expected gross profit",
+      key: "Expected gross profit",
+      label: pricingFigureName("Expected gross profit"),
       value: egp(t.profitEGP),
-      note: `Margin ${pct(t.marginPct)} · markup ${pct(t.markupPct)}`,
+      note: m.commercial_margin_markup({ margin: pct(t.marginPct), markup: pct(t.markupPct) }),
       tone: t.profitEGP < 0 ? "error" : t.marginPct < P.policy.minPct ? "warning" : "success",
       share: {
         value: Math.max(0, t.marginPct) / P.policy.targetPct,
-        text: `margin against the ${P.policy.targetPct}% target`,
+        text: m.commercial_margin_vs_target({ target: P.policy.targetPct }),
       },
     },
     {
-      label: "Recoverable input VAT",
+      key: "Recoverable input VAT",
+      label: pricingFigureName("Recoverable input VAT"),
       value: egp(t.inputVatEGP),
-      note: "14% on local supplier bills — excluded from cost",
-      share: t.landedEGP ? { value: t.inputVatEGP / t.landedEGP, text: "on top of landed cost" } : undefined,
+      note: m.commercial_vat_note(),
+      share: t.landedEGP ? { value: t.inputVatEGP / t.landedEGP, text: m.commercial_on_top_landed() } : undefined,
     },
     linesPriced,
   ];
@@ -524,33 +601,43 @@ export const pricingFigures = (P: Pricing): Figure<(typeof PRICING_FIGURES)[numb
  * which carries the selling prices only.
  */
 export const pricingForSales = ({ docs }: { docs: Doc[] }): KindData<"actions"> => ({
-  note: "Soaad Amer (Sales) sees selling prices on the quotation; supplier costs, landed costs and margins are restricted to supply chain, finance and management.",
-  items: docs[0] ? [quoteLink(docs[0].id, "View quotation")] : [],
+  note: m.commercial_sales_note(),
+  items: docs[0] ? [quoteLink(docs[0].id, m.commercial_view_quotation())] : [],
 });
 
-/** The margin and markup figures' labels, one tile each, in order (`marginVsMarkup`). */
+/** The margin and markup figures' keys, one tile each, in order (`marginVsMarkup`); `marginFigureName` gives their words. */
 export const MARGIN_FIGURES = ["Margin = profit ÷ selling price", "Markup = profit ÷ landed cost"] as const;
+type MarginFigure = (typeof MARGIN_FIGURES)[number];
+
+/** A margin figure's words in the interface's language. */
+export const marginFigureName = (key: MarginFigure): string =>
+  key === "Margin = profit ÷ selling price" ? m.commercial_fig_margin() : m.commercial_fig_markup();
 
 /**
  * The same profit read two ways, each a figure of its own: margin (on the selling price, what the
  * policy is set on) and markup (on landed cost), so nobody prices "cost + 25%" thinking it is a
  * 25% margin. Until a line is priced, both show "—".
  */
-export const marginVsMarkup = (P: Pricing): Figure<(typeof MARGIN_FIGURES)[number]>[] => {
+export const marginVsMarkup = (P: Pricing): Figure<MarginFigure>[] => {
   const t = P.totals;
   if (!t.landedEGP) return [];
   return [
     {
-      label: "Margin = profit ÷ selling price",
+      key: "Margin = profit ÷ selling price",
+      label: marginFigureName("Margin = profit ÷ selling price"),
       value: pct(t.marginPct),
-      note: `${egp(t.profitEGP)} ÷ ${egp(t.sellEGP)} · the policy is set on margin`,
-      share: { value: Math.max(0, t.marginPct) / 100, text: `policy target ${P.policy.targetPct}%` },
+      note: m.commercial_margin_note({ profit: egp(t.profitEGP), sell: egp(t.sellEGP) }),
+      share: {
+        value: Math.max(0, t.marginPct) / 100,
+        text: m.commercial_policy_target({ target: P.policy.targetPct }),
+      },
     },
     {
-      label: "Markup = profit ÷ landed cost",
+      key: "Markup = profit ÷ landed cost",
+      label: marginFigureName("Markup = profit ÷ landed cost"),
       value: pct(t.markupPct),
-      note: `${egp(t.profitEGP)} ÷ ${egp(t.landedEGP)} · a 25% margin is a 33.3% markup`,
-      share: { value: Math.max(0, t.markupPct) / 100, text: "on top of landed cost" },
+      note: m.commercial_markup_note({ profit: egp(t.profitEGP), landed: egp(t.landedEGP) }),
+      share: { value: Math.max(0, t.markupPct) / 100, text: m.commercial_on_top_landed() },
     },
   ];
 };
@@ -564,7 +651,7 @@ const flagTone = (x: string) => (/negative|expired|misses/i.test(x) ? ("error" a
 export const policyChecks = (P: Pricing): KindData<"list"> => ({
   items: P.exceptions.length
     ? P.exceptions.map((x) => ({ headline: x, dot: flagTone(x) }))
-    : [{ headline: "Within policy.", dot: "success" as const }],
+    : [{ headline: m.commercial_within_policy(), dot: "success" as const }],
 });
 
 /**
@@ -577,48 +664,53 @@ export const pricingApproval = (P: Pricing): KindData<"actions"> => {
   const a = P.approval;
   const pending = Boolean(a && !["Approved", "Rejected"].includes(a.status));
   const request: Action = {
-    label: "Request approval",
+    label: m.commercial_request_approval(),
     main: true,
     disabled: pending || !P.rows.length,
     call: { path: `/commercial/cases/${encodeURIComponent(P.id)}/request-approval` },
     confirm: {
-      heading: "Request approval",
+      heading: m.commercial_request_approval(),
       text: [
-        `Creates the customer quotation (${P.rows.length} priced lines, ${priced(P.totals.sellQuote, P.currency)} excl. VAT, margin ${pct(P.totals.marginPct)}) and a ${P.approvalType} approval for Karim Balbaa. Nothing is sent to the customer until it's approved and someone sends it.`,
+        m.commercial_request_approval_text({
+          lines: P.rows.length,
+          sell: priced(P.totals.sellQuote, P.currency),
+          margin: pct(P.totals.marginPct),
+          type: P.approvalType,
+        }),
         ...P.exceptions.map((x) => `• ${x}`),
       ].join("\n"),
-      label: "Request approval",
+      label: m.commercial_request_approval(),
     },
     fields: [
       {
         type: "textarea",
         name: "note",
-        label: "Note for the approver",
-        admin: { placeholder: "e.g. Helmets split to make the ETA; launch estimate confirmed tomorrow" },
+        label: m.commercial_note_for_approver(),
+        admin: { placeholder: m.commercial_note_approver_placeholder() },
       },
     ],
-    done: "Approval requested from Karim Balbaa. He decides in Approvals.",
+    done: m.commercial_approval_requested_done(),
   };
   return {
-    note: `Rule: every customer quotation, discounts above ${P.policy.maxDiscountPct}% and margin exceptions go to Karim Balbaa. Exceptions travel with the request.`,
+    note: m.commercial_approval_rule({ max: P.policy.maxDiscountPct }),
     alerts: [
       P.exceptions.length
         ? {
             tone: "warning" as const,
-            text: `${P.exceptions.length} exception${P.exceptions.length === 1 ? "" : "s"} — shown to the approver as “${P.approvalType}”.`,
+            text: m.commercial_exceptions({ count: P.exceptions.length, type: P.approvalType }),
           }
-        : { tone: "success" as const, text: "No exceptions — standard approval." },
+        : { tone: "success" as const, text: m.commercial_no_exceptions() },
       ...(a?.status === "Approved"
-        ? [{ tone: "success" as const, text: `${q?.number} approved — ready to send.` }]
+        ? [{ tone: "success" as const, text: m.commercial_quote_approved({ number: String(q?.number) }) }]
         : a?.status === "Rejected"
-          ? [{ tone: "error" as const, text: `${q?.number} was returned. Adjust the pricing and request again.` }]
+          ? [{ tone: "error" as const, text: m.commercial_quote_returned({ number: String(q?.number) }) }]
           : pending
-            ? [{ tone: "info" as const, text: `${a!.title} · ${a!.status}. Karim Balbaa decides in Approvals.` }]
+            ? [{ tone: "info" as const, text: m.commercial_approval_pending({ title: a!.title, status: a!.status }) }]
             : []),
     ],
     items: [
-      ...(q ? [quoteLink(q.id, `Preview ${q.number}`)] : []),
-      ...(pending ? [{ label: "Open approvals", href: "/approvals" }] : []),
+      ...(q ? [quoteLink(q.id, m.commercial_preview_quote({ number: q.number }))] : []),
+      ...(pending ? [{ label: m.commercial_open_approvals(), href: "/approvals" }] : []),
       request,
     ],
   };
@@ -629,8 +721,13 @@ export const pricingApproval = (P: Pricing): KindData<"actions"> => {
  * margin, under the pricing policy (target, minimum, the discount that needs approval).
  */
 export const pricingLevers = (P: Pricing): KindData<"form"> => ({
-  head: { actions: [{ label: "Pricing policy", href: link.global("pricing-policy") }] },
-  note: `Policy: target ${P.policy.targetPct}%, minimum ${P.policy.minPct}% (per store where set), discounts above ${P.policy.maxDiscountPct}% need approval. ${P.fxLabel}.`,
+  head: { actions: [{ label: m.commercial_pricing_policy(), href: link.global("pricing-policy") }] },
+  note: m.commercial_policy_note({
+    target: P.policy.targetPct,
+    min: P.policy.minPct,
+    max: P.policy.maxDiscountPct,
+    fx: P.fxLabel,
+  }),
   save: { path: `/commercial/cases/${encodeURIComponent(P.id)}/pricing` },
   value: {
     allocation: P.allocation,
@@ -642,14 +739,14 @@ export const pricingLevers = (P: Pricing): KindData<"form"> => ({
       type: "row",
       name: "settings",
       fields: [
-        { type: "select", name: "allocation", label: "Shared charges allocated", options: ALLOCATION },
-        { type: "number", name: "discountPct", label: "Customer discount %", min: 0, max: 20 },
+        { type: "select", name: "allocation", label: m.commercial_shared_allocated(), options: allocation() },
+        { type: "number", name: "discountPct", label: m.commercial_customer_discount(), min: 0, max: 20 },
       ],
     },
     {
       type: "group",
       name: "margins",
-      label: "Margin % per line",
+      label: m.commercial_margin_per_line(),
       fields: [
         {
           type: "row",
@@ -657,10 +754,10 @@ export const pricingLevers = (P: Pricing): KindData<"form"> => ({
           fields: P.rows.map((r) => ({
             type: "number",
             name: String(r.lineNo),
-            label: `Margin for line ${r.lineNo}`,
+            label: m.commercial_margin_for_line({ line: r.lineNo }),
             min: -50,
             max: 90,
-            admin: { description: `target ${r.targetPct}% · min ${r.minPct}%` },
+            admin: { description: m.commercial_target_min({ target: r.targetPct, min: r.minPct }) },
           })),
         },
       ],
@@ -678,20 +775,20 @@ export const linePricing = (P: Pricing): KindData<"table"> => {
   return {
     note: P.unpriced.length
       ? P.unpriced
-          .map((u) => `L${u.lineNo} · ${u.description} — ${u.status}: no cost yet, excluded from this version.`)
+          .map((u) => m.commercial_unpriced_line({ line: u.lineNo, description: u.description, status: u.status }))
           .join("\n")
       : undefined,
     columns: [
       { key: "lineNo", label: "#" },
-      { key: "description", label: "Line · selected supplier(s)", supporting: "sourcing" },
-      { key: "cost", label: "Supplier cost", align: "end" },
-      { key: "alloc", label: "+ Shared", align: "end" },
-      { key: "landed", label: "Landed", align: "end" },
-      { key: "margin", label: "Margin %", align: "end", supporting: "policy" },
-      { key: "markup", label: "Markup", align: "end" },
-      { key: "sell", label: `Sell (${cur})`, align: "end", supporting: "sellEGP" },
-      { key: "unit", label: `Unit (${cur})`, align: "end", supporting: "qty" },
-      { key: "checks", label: "Checks" },
+      { key: "description", label: m.commercial_col_line_supplier(), supporting: "sourcing" },
+      { key: "cost", label: m.commercial_supplier_cost(), align: "end" },
+      { key: "alloc", label: m.commercial_col_plus_shared(), align: "end" },
+      { key: "landed", label: m.commercial_col_landed(), align: "end" },
+      { key: "margin", label: m.commercial_col_margin_pct(), align: "end", supporting: "policy" },
+      { key: "markup", label: m.commercial_col_markup(), align: "end" },
+      { key: "sell", label: m.commercial_col_sell({ currency: cur }), align: "end", supporting: "sellEGP" },
+      { key: "unit", label: m.commercial_col_unit({ currency: cur }), align: "end", supporting: "qty" },
+      { key: "checks", label: m.commercial_col_checks() },
     ],
     rows: P.rows.map((r): Row => ({
       lineNo: `L${r.lineNo}`,
@@ -702,7 +799,7 @@ export const linePricing = (P: Pricing): KindData<"table"> => {
       landed: { text: egp(r.landedEGP), strong: true },
       margin: pct(r.marginPct),
       policy: {
-        text: `target ${r.targetPct}% · min ${r.minPct}%`,
+        text: m.commercial_target_min({ target: r.targetPct, min: r.minPct }),
         tone: r.marginPct < r.minPct ? "warning" : undefined,
       },
       markup: pct(r.markupPct),
@@ -710,22 +807,22 @@ export const linePricing = (P: Pricing): KindData<"table"> => {
       sellEGP: egp(r.sellEGP),
       unit: amount(r.unitQuote),
       qty: `× ${r.quoteQty} ${r.quoteUnit}`,
-      checks: { text: "", marks: checkMarks(r.checks, "OK") },
+      checks: { text: "", marks: checkMarks(r.checks, m.commercial_ok()) },
     })),
   };
 };
 
 /** Each line's selling price stacked from what makes it: supplier cost, shared charges, gross profit. */
 export const priceBuildUp = (P: Pricing): KindData<"chart"> => ({
-  label: "Price build-up per line",
+  label: m.commercial_price_build_up(),
   chart: {
     kind: "bars",
     stacked: true,
     labels: P.rows.map((r) => `L${r.lineNo}`),
     series: [
-      { name: "Supplier cost", values: P.rows.map((r) => Math.round(r.costEGP)) },
-      { name: "Shared charges", values: P.rows.map((r) => Math.round(r.allocEGP)) },
-      { name: "Gross profit", values: P.rows.map((r) => Math.max(0, Math.round(r.profitEGP))) },
+      { name: m.commercial_supplier_cost(), values: P.rows.map((r) => Math.round(r.costEGP)) },
+      { name: m.commercial_shared_charges(), values: P.rows.map((r) => Math.round(r.allocEGP)) },
+      { name: m.commercial_gross_profit(), values: P.rows.map((r) => Math.max(0, Math.round(r.profitEGP))) },
     ],
     format: { unit: "money", currency: "EGP" },
   },
@@ -736,27 +833,28 @@ export const priceBuildUp = (P: Pricing): KindData<"chart"> => ({
  * are marked until actuals replace them at close. VAT is expected at 0% for a vessel in transit.
  */
 export const sharedCharges = (P: Pricing): KindData<"table"> => ({
-  note: [
-    `Allocated ${ALLOCATION.find((a) => a.value === P.allocation)?.label.toLowerCase()}. Estimates are marked; actuals replace them at close.`,
-    "VAT: supply to a foreign vessel in transit is expected at 0% — finance confirms. The quotation shows prices excl. VAT.",
-  ].join("\n"),
+  note: [m.commercial_charges_allocated({ allocation: P.allocation }), m.commercial_charges_vat()].join("\n"),
   totals: true,
   columns: [
-    { key: "label", label: "Charge" },
-    { key: "status", label: "Status" },
-    { key: "amount", label: "Amount", align: "end" },
+    { key: "label", label: m.commercial_col_charge() },
+    { key: "status", label: m.commercial_col_status() },
+    { key: "amount", label: m.commercial_col_amount(), align: "end" },
   ],
   rows: [
     ...P.charges.map((c): Row => ({
       label: c.label,
       status: {
-        text: c.status,
+        // The status's words; the value stays as stored.
+        text: CHARGE_STATUS[c.status]?.() ?? c.status,
         tag: true,
         tone: c.status === "Estimate" ? "warning" : c.status === "Confirmed" ? "success" : "neutral",
       },
       amount: { text: egp(c.amountEGP), strong: true },
     })),
-    { label: { text: "Total shared", strong: true }, amount: { text: egp(P.chargesEGP), strong: true } },
+    {
+      label: { text: m.commercial_total_shared(), strong: true },
+      amount: { text: egp(P.chargesEGP), strong: true },
+    },
   ],
 });
 
@@ -781,23 +879,23 @@ export const portalCheck = (v: QuoteView): KindData<"table"> => {
   const rows = portalRows(v);
   const diffs = rows.filter((r) => !r.matches);
   return {
-    head: { tags: [{ label: "AI check", tone: "primary", icon: "sparkles" }] },
-    note: "For customers who buy through a procurement portal: upload the confirmation screenshot and the AI compares it with the approved quotation. The submission is complete only when every field matches.",
+    head: { tags: [{ label: m.commercial_tag_ai_check(), tone: "primary", icon: "sparkles" }] },
+    note: m.commercial_portal_note(),
     alerts: rows.length
       ? [
           diffs.length
             ? {
                 tone: "warning" as const,
-                text: `Not marked complete: ${diffs.map((r) => r.field.toLowerCase()).join(", ")} differ. Correct it in the portal or record the customer's agreement.`,
+                text: m.commercial_portal_diffs({ fields: diffs.map((r) => r.field.toLowerCase()).join(", ") }),
               }
-            : { tone: "success" as const, text: "All fields match — submission complete." },
+            : { tone: "success" as const, text: m.commercial_portal_all_match() },
         ]
       : undefined,
-    empty: "No screenshot compared yet.",
+    empty: m.commercial_portal_empty(),
     columns: [
-      { key: "field", label: "Field" },
-      { key: "portal", label: "Portal" },
-      { key: "quote", label: "Approved quote" },
+      { key: "field", label: m.commercial_col_field() },
+      { key: "portal", label: m.commercial_col_portal() },
+      { key: "quote", label: m.commercial_col_approved_quote() },
       { key: "matches", label: "" },
     ],
     rows: rows.map((r) => ({
@@ -805,12 +903,12 @@ export const portalCheck = (v: QuoteView): KindData<"table"> => {
       portal: r.portal,
       quote: r.quote,
       matches: r.matches
-        ? { text: "Match", tone: "success" as const, tag: true as const }
-        : { text: "Difference", tone: "error" as const, tag: true as const },
+        ? { text: m.commercial_match(), tone: "success" as const, tag: true as const }
+        : { text: m.commercial_difference(), tone: "error" as const, tag: true as const },
     })),
     actions: [
       {
-        label: rows.length ? "Check again" : "Upload screenshot & compare",
+        label: rows.length ? m.commercial_check_again() : m.commercial_upload_compare(),
         call: { path: "/commercial/quotations/$doc.id/portal-check" },
       },
     ],
@@ -823,7 +921,7 @@ export const portalCheck = (v: QuoteView): KindData<"table"> => {
  */
 export const quoteCurrency = paramChoice<QuoteView>(
   "currency",
-  "Currency",
+  () => m.commercial_currency(),
   (v) => [
     { value: "quote", label: String(v.quotation.currency) },
     { value: "EGP", label: "EGP" },
@@ -831,8 +929,24 @@ export const quoteCurrency = paramChoice<QuoteView>(
   "quote",
 );
 
-const STEPS = ["Prepared", "Approval requested", "Approved", "Sent"];
+/** A quotation's steps before the customer's decision, in order. */
+const steps = () => [
+  m.commercial_step_prepared(),
+  m.commercial_step_approval_requested(),
+  m.commercial_step_approved(),
+  m.commercial_step_sent(),
+];
+/** The customer's decisions: the stored values (their words: `decisionWords`). */
 const DECISIONS = ["Won", "Partially won", "Revision requested", "Lost"];
+const decisionWords = (decision: string) =>
+  (
+    {
+      Won: m.commercial_decision_won,
+      "Partially won": m.commercial_decision_partially_won,
+      "Revision requested": m.commercial_decision_revision_requested,
+      Lost: m.commercial_decision_lost,
+    } as Record<string, () => string>
+  )[decision]?.() ?? decision;
 const WRITING = "formal shorter proofread translate";
 
 const meOf = (user: WidgetScope["user"]) => (typeof user.name === "string" ? user.name : "");
@@ -844,87 +958,97 @@ function quoteActions(v: QuoteView, me: string): Action[] {
   const out: Action[] = [];
   if (v.can.requestApproval)
     out.push({
-      label: "Request approval",
+      label: m.commercial_request_approval(),
       main: true,
       call: { path: `${data}/request-approval` },
-      done: "Approval requested from Karim Balbaa.",
+      done: m.commercial_approval_requested_short(),
     });
   if (v.can.approve && v.approvalId) {
     const decide = `/commercial/approvals/${encodeURIComponent(v.approvalId)}/decide`;
     out.push(
       {
-        label: "Return",
+        label: m.commercial_return(),
         tone: "error",
         call: { path: decide, body: { decision: "Reject" } },
         confirm: {
-          heading: `Return ${q.number}`,
-          text: `Return ${q.number} to the preparer. A reason is required and goes on the case timeline.`,
-          label: "Return",
+          heading: m.commercial_return_heading({ number: q.number }),
+          text: m.commercial_return_text({ number: q.number }),
+          label: m.commercial_return(),
           tone: "error",
         },
         fields: [
           {
             type: "textarea",
             name: "reason",
-            label: "Reason",
+            label: m.commercial_reason(),
             required: true,
-            admin: { placeholder: "e.g. Re-check line 3 — margin too thin for a new supplier" },
+            admin: { placeholder: m.commercial_return_placeholder() },
           },
         ],
         assist: { field: "reason", tools: WRITING },
-        done: "Returned to the preparer with your reason.",
+        done: m.commercial_returned_done(),
       },
       // Approving is internal and can be withdrawn until the quotation is sent: no dialog, the
       // snackbar offers Undo (the endpoint's `undo`). Sending is the step that asks first.
       {
-        label: "Approve",
+        label: m.commercial_approve(),
         main: true,
         call: { path: decide, body: { decision: "Approve" } },
-        done: `Approved ${q.number} — it can be sent`,
+        done: m.commercial_approved_done({ number: q.number }),
       },
     );
   }
   if (v.can.send) {
     const portal = Boolean(v.case.portal && /portal/i.test(v.case.portal) && !/Nordvik/.test(v.case.customer));
     out.push({
-      label: "Send to customer",
+      label: m.commercial_send_to_customer(),
       main: true,
       call: { path: `${own}/send`, body: { to: v.case.email } },
       confirm: {
-        heading: `Send ${q.number}`,
+        heading: m.commercial_send_heading({ number: q.number }),
         text: [
-          "AI draft · Nothing is sent until you confirm.",
+          m.commercial_send_ai_draft(),
           "",
-          `Email from Odoo — To: ${v.case.email || "customer"} · Subject: Quotation ${q.number} — ${v.case.vessel} — ref. ${v.case.customerRef} · Attachment: ${q.number}.pdf`,
-          `Customer portal — enter the quotation in ${v.case.portal || "the customer's portal"}, then upload the confirmation screenshot below — the submission is only complete when it matches the approved quote.`,
+          m.commercial_send_email_line({
+            to: v.case.email || m.commercial_customer(),
+            number: q.number,
+            vessel: v.case.vessel,
+            ref: v.case.customerRef,
+          }),
+          m.commercial_send_portal_line({ portal: v.case.portal || m.commercial_customers_portal() }),
         ].join("\n"),
-        label: "Send",
+        label: m.commercial_send(),
       },
       fields: [
         {
           type: "radio",
           name: "method",
-          label: "Submission method",
+          label: m.commercial_submission_method(),
           defaultValue: portal ? "portal" : "email",
           options: [
-            { value: "email", label: "Email from Odoo" },
-            { value: "portal", label: "Customer portal" },
+            { value: "email", label: m.commercial_email_from_odoo() },
+            { value: "portal", label: m.commercial_customer_portal() },
           ],
         },
         {
           type: "textarea",
           name: "message",
-          label: "Message",
+          label: m.commercial_message(),
           admin: { rows: 9 },
           defaultValue: [
-            `Dear ${v.case.attention},`,
+            m.commercial_letter_dear({ name: v.case.attention }),
             "",
-            `Please find attached our quotation ${q.number} for ${v.case.vessel} (your ref. ${v.case.customerRef || "—"}), delivery on board at ${v.case.port}.`,
-            `Valid until ${shortDay(String(q.validUntil ?? ""))}. Prices exclude VAT.`,
+            m.commercial_letter_body({
+              number: q.number,
+              vessel: v.case.vessel,
+              ref: v.case.customerRef || "—",
+              port: v.case.port,
+            }),
+            m.commercial_letter_valid({ day: shortDay(String(q.validUntil ?? "")) }),
             "",
-            "Best regards,",
+            m.commercial_letter_regards(),
             me,
-            "Golden Sea for Trading & Marketing",
+            m.commercial_letter_company(),
           ].join("\n"),
         },
       ],
@@ -934,26 +1058,26 @@ function quoteActions(v: QuoteView, me: string): Action[] {
   }
   if (v.can.decide)
     out.push({
-      label: "Record customer decision",
+      label: m.commercial_record_decision(),
       call: { path: `${own}/decision` },
       confirm: {
-        heading: "Customer decision",
-        text: `The customer's decision on ${q.number}. No response never means lost.`,
-        label: "Record",
+        heading: m.commercial_customer_decision(),
+        text: m.commercial_decision_text({ number: q.number }),
+        label: m.commercial_record(),
       },
       fields: [
         {
           type: "radio",
           name: "decision",
-          label: "Decision",
+          label: m.commercial_decision(),
           defaultValue: "Won",
-          options: DECISIONS.map((d) => ({ value: d, label: d })),
+          options: DECISIONS.map((d) => ({ value: d, label: decisionWords(d) })),
         },
         {
           type: "textarea",
           name: "note",
-          label: "Note (the lost reason, if lost)",
-          admin: { placeholder: "e.g. PO NSM-PO-77231 received for lines 1–3" },
+          label: m.commercial_decision_note_label(),
+          admin: { placeholder: m.commercial_decision_placeholder() },
         },
       ],
       assist: { field: "note", tools: WRITING },
@@ -961,25 +1085,28 @@ function quoteActions(v: QuoteView, me: string): Action[] {
     });
   if (v.can.revise)
     out.push({
-      label: "Create revision",
+      label: m.commercial_create_revision(),
       call: { path: `${own}/revise` },
       confirm: {
-        heading: `Revise ${q.number}`,
-        text: `Creates version ${(v.quotation.versions?.at(-1)?.version ?? 1) + 1} as a draft with the same lines; ${q.number} is kept for audit and marked superseded.`,
-        label: "Create revision",
+        heading: m.commercial_revise_heading({ number: q.number }),
+        text: m.commercial_revise_text({
+          version: (v.quotation.versions?.at(-1)?.version ?? 1) + 1,
+          number: q.number,
+        }),
+        label: m.commercial_create_revision(),
       },
       fields: [
         {
           type: "textarea",
           name: "reason",
-          label: "What changes",
-          admin: { placeholder: "e.g. Customer asked for ESAB on line 1" },
+          label: m.commercial_what_changes(),
+          admin: { placeholder: m.commercial_revise_placeholder() },
         },
       ],
       assist: { field: "reason", tools: WRITING },
       reply: true,
     });
-  out.push({ label: "Print", print: true });
+  out.push({ label: m.commercial_print(), print: true });
   return out;
 }
 
@@ -992,7 +1119,10 @@ function quoteActions(v: QuoteView, me: string): Action[] {
 export const quoteDecision = (v: QuoteView, { user }: WidgetScope): KindData<"steps"> => {
   const q = v.quotation;
   const sub = q.submission;
-  const said = [q.decision, sub?.submittedAt ? `sent ${shortDay(sub.submittedAt, true)} via ${sub.method}` : ""]
+  const said = [
+    q.decision ? decisionWords(q.decision) : "",
+    sub?.submittedAt ? m.commercial_sent_via({ when: shortDay(sub.submittedAt, true), method: sub.method ?? "" }) : "",
+  ]
     .filter(Boolean)
     .join(" · ");
   const why = v.why.approve && v.approvalId && !v.can.approve ? v.why.approve : "";
@@ -1001,7 +1131,10 @@ export const quoteDecision = (v: QuoteView, { user }: WidgetScope): KindData<"st
     tags: [{ label: q.number, tone: "primary" }, { label: q.status }],
     note: [said, why].filter(Boolean).join("\n") || undefined,
     current: v.step,
-    items: [...STEPS.map((label) => ({ label })), { label: v.step === 4 ? v.stepLabel : "Customer decision" }],
+    items: [
+      ...steps().map((label) => ({ label })),
+      { label: v.step === 4 ? v.stepLabel : m.commercial_customer_decision() },
+    ],
   };
 };
 
@@ -1015,92 +1148,39 @@ interface QuoteLine {
   unitPrice?: number;
 }
 
-/** The customer-facing wording, in both languages. */
-const T = {
-  en: {
-    title: "QUOTATION",
-    no: "Quotation No.",
-    ref: "Your ref",
-    date: "Date",
-    client: "Client Information",
-    company: "Company",
-    attention: "Attention",
-    vessel: "Vessel",
-    port: "Delivery port",
-    intro: "We are pleased to furnish our quotation as below:",
-    s: "S.",
-    part: "Part Number",
-    desc: "Description",
-    uom: "UOM",
-    qty: "QTY",
-    price: (c: string) => `Price/${c}`,
-    total: (c: string) => `Total/${c}`,
-    grand: (c: string) => `Total in ${c}`,
-    discount: (p: number) => `Less discount ${p}%`,
-    remarks: "Remarks:",
-    delivery: (port: string, eta: string) => `Delivery: on board at ${port} on arrival (${eta}).`,
-    vat: "Prices are exclusive of Value Added Tax (VAT).",
-    qtyRule: "QTY in the quote can’t be reduced; prices are based on the QTY listed.",
-    valid: (d: string) => `Valid until ${d}; may be renewed thereafter upon mutual agreement.`,
-    pay: (t: string) => `Payment terms: ${t}.`,
-    wish: "Wish our offer wins your approvals ☺",
-    prepared: "Prepared by",
-    approved: "Approved by",
-    issuer: "GOLDEN SEA",
-    brand: "FOR TRADING & MARKETING · EST. 2011",
-    draft: (v: number) => `DRAFT — not yet approved. Will be issued as version ${v}.`,
-  },
-  ar: {
-    title: "عرض سعر",
-    no: "رقم العرض",
-    ref: "مرجعكم",
-    date: "التاريخ",
-    client: "بيانات العميل",
-    company: "الشركة",
-    attention: "عناية",
-    vessel: "السفينة",
-    port: "ميناء التسليم",
-    intro: "يسعدنا أن نقدم لكم عرض أسعارنا كما يلي:",
-    s: "م",
-    part: "رقم القطعة",
-    desc: "الوصف",
-    uom: "الوحدة",
-    qty: "الكمية",
-    price: (c: string) => `السعر/${c}`,
-    total: (c: string) => `الإجمالي/${c}`,
-    grand: (c: string) => `الإجمالي بال${c}`,
-    discount: (p: number) => `خصم ${p}%`,
-    remarks: "ملاحظات:",
-    delivery: (port: string, eta: string) => `التسليم: على متن السفينة في ${port} عند الوصول (${eta}).`,
-    vat: "الأسعار لا تشمل ضريبة القيمة المضافة.",
-    qtyRule: "لا يمكن تخفيض الكميات الواردة في العرض، والأسعار مبنية على الكميات المذكورة.",
-    valid: (d: string) => `العرض سارٍ حتى ${d}، ويمكن تجديده بعد ذلك باتفاق الطرفين.`,
-    pay: (t: string) => `شروط الدفع: ${t}.`,
-    wish: "نتمنى أن ينال عرضنا موافقتكم ☺",
-    prepared: "أعدّه",
-    approved: "اعتمده",
-    issuer: "GOLDEN SEA",
-    brand: "للتجارة والتسويق · تأسست 2011",
-    draft: (v: number) => `مسودة — لم تُعتمد بعد. ستصدر كنسخة ${v}.`,
-  },
-};
-
-/** The customer's copy as a printable document (`document` kind), in its language and currency. */
+/**
+ * The customer's copy as a printable document (`document` kind), in its language and currency.
+ * Its words, dates and amounts are in the copy's language (`lang`), whatever the interface's.
+ */
 function paper(v: QuoteView, lang: Lang, egpOn: boolean): DocumentSpec {
   const q = v.quotation;
-  const t = T[lang];
-  const day = shortDay;
+  const locale = { locale: lang };
+  const tag = lang === "ar" ? "ar-u-nu-latn" : "en-GB";
+  const day = (iso: string, time = false) =>
+    iso
+      ? new Intl.DateTimeFormat(tag, {
+          day: "numeric",
+          month: "short",
+          ...(time ? { hour: "2-digit", minute: "2-digit" } : {}),
+          timeZone: "UTC",
+        }).format(new Date(iso))
+      : "—";
   const cur = egpOn ? "EGP" : String(q.currency ?? "USD");
   const rate = egpOn ? v.fx : 1;
   const d = egpOn ? 0 : 2;
+  const fmt = (n: number, places = d) =>
+    new Intl.NumberFormat(lang === "ar" ? "ar-u-nu-latn" : "en-US", {
+      minimumFractionDigits: places,
+      maximumFractionDigits: places,
+    }).format(n);
   const lines = ((q.lines as QuoteLine[] | undefined) ?? []).map((l, i) => ({
     s: String(i + 1).padStart(2, "0"),
     partNo: l.partNo ?? "",
     description: l.description ?? "",
     unit: l.unit ?? "",
     qty: String(l.qty ?? ""),
-    price: amount((l.unitPrice ?? 0) * rate, d),
-    total: amount((l.qty ?? 0) * (l.unitPrice ?? 0) * rate, d),
+    price: fmt((l.unitPrice ?? 0) * rate),
+    total: fmt((l.qty ?? 0) * (l.unitPrice ?? 0) * rate),
     sum: (l.qty ?? 0) * (l.unitPrice ?? 0) * rate,
   }));
   const gross = lines.reduce((s, l) => s + l.sum, 0);
@@ -1113,60 +1193,78 @@ function paper(v: QuoteView, lang: Lang, egpOn: boolean): DocumentSpec {
     lang,
     dir: lang === "ar" ? "rtl" : "ltr",
     notices: [
-      ...(draft ? [{ tone: "warning" as const, text: t.draft(Number(q.version) || 1) }] : []),
+      ...(draft
+        ? [{ tone: "warning" as const, text: m.commercial_paper_draft({ version: Number(q.version) || 1 }, locale) }]
+        : []),
       ...(q.status === "Superseded"
-        ? [{ tone: "info" as const, text: "Superseded — kept for audit. Not valid for ordering." }]
+        ? [{ tone: "info" as const, text: m.commercial_paper_superseded({}, locale) }]
         : []),
     ],
-    issuer: { name: t.issuer, tagline: t.brand },
-    title: t.title,
+    // The company's name stays in Latin letters in both languages.
+    issuer: { name: "GOLDEN SEA", tagline: m.commercial_paper_brand({}, locale) },
+    title: m.commercial_paper_title({}, locale),
     meta: [
-      { text: `${t.no}: ${q.number}`, accent: true },
-      { text: `${t.ref}: ${v.case.customerRef || "—"}` },
-      { text: `${t.date}: ${ymd}`, accent: true },
+      { text: m.commercial_paper_no({ number: q.number }, locale), accent: true },
+      { text: m.commercial_paper_ref({ ref: v.case.customerRef || "—" }, locale) },
+      { text: m.commercial_paper_date({ date: ymd }, locale), accent: true },
     ],
     party: {
-      title: t.client,
+      title: m.commercial_paper_client({}, locale),
       rows: [
-        { label: t.company, value: v.case.customer },
-        { label: t.attention, value: `${v.case.attention}${v.case.email ? ` · ${v.case.email}` : ""}` },
-        { label: t.vessel, value: `${v.case.vessel}${v.case.imo ? ` (IMO ${v.case.imo})` : ""}` },
-        { label: t.port, value: `${v.case.port} · ETA ${day(v.case.eta, true)}` },
+        { label: m.commercial_paper_company({}, locale), value: v.case.customer },
+        {
+          label: m.commercial_paper_attention({}, locale),
+          value: `${v.case.attention}${v.case.email ? ` · ${v.case.email}` : ""}`,
+        },
+        {
+          label: m.commercial_paper_vessel({}, locale),
+          value: `${v.case.vessel}${v.case.imo ? ` (IMO ${v.case.imo})` : ""}`,
+        },
+        {
+          label: m.commercial_paper_port({}, locale),
+          value: m.commercial_paper_port_eta({ port: v.case.port, eta: day(v.case.eta, true) }, locale),
+        },
       ],
     },
-    intro: t.intro,
+    intro: m.commercial_paper_intro({}, locale),
     columns: [
-      { key: "s", label: t.s },
-      { key: "partNo", label: t.part },
-      { key: "description", label: t.desc, ltr: true },
-      { key: "unit", label: t.uom, upper: true },
-      { key: "qty", label: t.qty },
-      { key: "price", label: t.price(cur) },
-      { key: "total", label: t.total(cur) },
+      { key: "s", label: m.commercial_paper_s({}, locale) },
+      { key: "partNo", label: m.commercial_paper_part({}, locale) },
+      { key: "description", label: m.commercial_paper_desc({}, locale), ltr: true },
+      { key: "unit", label: m.commercial_paper_uom({}, locale), upper: true },
+      { key: "qty", label: m.commercial_paper_qty({}, locale) },
+      { key: "price", label: m.commercial_paper_price({ currency: cur }, locale) },
+      { key: "total", label: m.commercial_paper_total({ currency: cur }, locale) },
     ],
     lines: lines.map(({ sum: _sum, ...l }) => l),
-    adjustments: discount ? [{ label: t.discount(discount), value: `− ${amount(gross - total, d)}` }] : [],
-    total: { label: `${t.grand(cur)} (excl. VAT)`, value: amount(total, d) },
+    adjustments: discount
+      ? [{ label: m.commercial_paper_discount({ pct: discount }, locale), value: `− ${fmt(gross - total)}` }]
+      : [],
+    total: { label: m.commercial_paper_grand({ currency: cur }, locale), value: fmt(total) },
     totalNote: egpOn
-      ? `Converted at ${q.currency}/EGP ${v.fx.toFixed(2)} (approved rate on the quotation).`
+      ? m.commercial_paper_converted({ currency: String(q.currency), fx: fmt(v.fx, 2) }, locale)
       : undefined,
     notes: {
-      title: t.remarks,
+      title: m.commercial_paper_remarks({}, locale),
       items: [
-        t.delivery(v.case.port, day(v.case.eta)),
-        t.vat,
-        t.qtyRule,
-        t.valid(day(String(q.validUntil ?? ""))),
-        t.pay(String(q.paymentTerms ?? "—")),
+        m.commercial_paper_delivery({ port: v.case.port, eta: day(v.case.eta) }, locale),
+        m.commercial_paper_vat({}, locale),
+        m.commercial_paper_qty_rule({}, locale),
+        m.commercial_paper_valid({ day: day(String(q.validUntil ?? "")) }, locale),
+        m.commercial_paper_pay({ terms: String(q.paymentTerms ?? "—") }, locale),
         ...(q.remarks ? String(q.remarks).split("\n") : []),
       ],
-      closing: t.wish,
+      closing: m.commercial_paper_wish({}, locale),
     },
     footer: {
-      start: `${t.prepared}: ${v.preparedBy || "—"}${v.approvedBy ? ` · ${t.approved}: ${v.approvedBy}` : ""}`,
-      end: v.approvedBy ? `${v.approvedBy} — authorised signature` : "Signature on approval",
+      start: v.approvedBy
+        ? m.commercial_paper_prepared_approved({ prepared: v.preparedBy || "—", approved: v.approvedBy }, locale)
+        : m.commercial_paper_prepared({ prepared: v.preparedBy || "—" }, locale),
+      end: v.approvedBy
+        ? m.commercial_paper_signature({ name: v.approvedBy }, locale)
+        : m.commercial_paper_signature_pending({}, locale),
     },
-    contact: ["+20 10 0000 0000 · Sales@goldensea.com.eg", "6th of October City, Giza Governorate · demo document"],
+    contact: ["+20 10 0000 0000 · Sales@goldensea.com.eg", m.commercial_paper_address({}, locale)],
   };
 }
 
@@ -1180,8 +1278,9 @@ export const customerCopy = (v: QuoteView, { params }: WidgetScope): KindData<"d
   return {
     choice: {
       param: "lang",
-      label: "Language",
+      label: m.commercial_language(),
       value: lang,
+      // Each language named in itself.
       options: [
         { value: "en", label: "English" },
         { value: "ar", label: "العربية" },

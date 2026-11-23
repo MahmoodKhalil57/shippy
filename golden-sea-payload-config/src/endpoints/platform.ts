@@ -1,10 +1,13 @@
 import type { Endpoint, PayloadRequest } from "payload";
 import type { Doc } from "saastemlycrm-design-system/contracts";
 import { HANDOVER_ROLES, bucketOf, lineCounts, mayReassign, type LineBucket } from "../collections/cases.ts";
-import { CONTACT_RULES, ROLES, logAiCall } from "../collections/shared.ts";
+import { CONTACT_RULE_OPTIONS, ROLE_OPTIONS, logAiCall } from "../collections/shared.ts";
 import { PERMISSIONS } from "../globals/index.ts";
 import { DEMO_NOW } from "./home.ts";
 import * as link from "../links.ts";
+import { m } from "../i18n/paraglide/messages.js";
+import { type Lang, intlLocale, langOf, optionLabel } from "./insights-shared.ts";
+import { inArabic } from "./platform-ar.ts";
 
 /**
  * Root endpoints for the platform & trust screens: the case overview (lifecycle, line progress,
@@ -30,6 +33,7 @@ const DAY = 86_400_000;
 
 async function all(req: Req, collection: string, where?: Record<string, unknown>) {
   const r = await req.payload.find({
+    locale: req.locale,
     collection: collection as never,
     pagination: false,
     depth: 0,
@@ -59,11 +63,18 @@ async function people(req: Req) {
 }
 
 const CAIRO = "Africa/Cairo";
-const fmtDay = (d: Date) =>
-  d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: CAIRO });
-const fmtTime = (d: Date) => d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: CAIRO });
-const fmtWhen = (d: Date) => `${fmtDay(d)} ${fmtTime(d)}`;
-const roleLabel = (r: string) => ROLES.find((x) => x.value === r)?.label ?? (r === "system" ? "System mailbox" : r);
+const fmtDay = (d: Date, lang: Lang = "en") =>
+  d.toLocaleDateString(intlLocale(lang), { weekday: "short", day: "numeric", month: "short", timeZone: CAIRO });
+const fmtTime = (d: Date, lang: Lang = "en") =>
+  d.toLocaleTimeString(intlLocale(lang), { hour: "2-digit", minute: "2-digit", timeZone: CAIRO });
+const fmtWhen = (d: Date, lang: Lang = "en") => `${fmtDay(d, lang)} ${fmtTime(d, lang)}`;
+const roleLabel = (r: string, lang: Lang = "en") =>
+  ROLE_OPTIONS.find((x) => x.value === r)?.label[lang] ??
+  (r === "system" ? m.api_platform_system_mailbox({}, { locale: lang }) : r);
+/** The request's language, as Paraglide's options. */
+const loc = (req: Req) => ({ locale: langOf(req) });
+/** A value of this file's fixed text (LIFECYCLE, PLAN, the scenarios) in a language. */
+const fixed = <T>(value: T, lang: Lang): T => (lang === "ar" ? inArabic(value) : value);
 
 async function log(
   req: Req,
@@ -220,6 +231,7 @@ const lineNos = (v: unknown) =>
 
 export async function overview(req: Req, id: string): Promise<CaseOverview | null> {
   const c = (await req.payload.findByID({
+    locale: req.locale,
     collection: "cases",
     id,
     depth: 0,
@@ -227,6 +239,8 @@ export async function overview(req: Req, id: string): Promise<CaseOverview | nul
   } as never)) as Doc | null;
   if (!c) return null;
   const user = me(req);
+  const t = loc(req);
+  const lang = t.locale;
   const { users, name, person } = await people(req);
   const [customer, activities, tasks, pos, receipts, deliveries, invoices] = await Promise.all([
     req.payload
@@ -268,7 +282,17 @@ export async function overview(req: Req, id: string): Promise<CaseOverview | nul
     receivedQty.set(n, cur);
     if (r.qc && r.qc !== "OK")
       notes.push(
-        `Line ${n}: ${str(r.qc).toLowerCase()} — ${str(r.received)} of ${str(r.ordered)} received${r.backorderDate ? `, rest due ${fmtDay(new Date(str(r.backorderDate)))}` : ""}`,
+        m.api_platform_receipt_note(
+          {
+            line: n,
+            qc: optionLabel(req, "receipts", "qc", r.qc).toLowerCase(),
+            received: str(r.received),
+            ordered: str(r.ordered),
+            hasRest: r.backorderDate ? "yes" : "no",
+            rest: r.backorderDate ? fmtDay(new Date(str(r.backorderDate)), lang) : "",
+          },
+          t,
+        ),
       );
   }
   const received = new Set(
@@ -280,7 +304,12 @@ export async function overview(req: Req, id: string): Promise<CaseOverview | nul
     for (const l of (d.lines as { lineNo?: number; qty?: number }[] | undefined) ?? [])
       if (done) deliveredQty.set(Number(l.lineNo), (deliveredQty.get(Number(l.lineNo)) ?? 0) + (Number(l.qty) || 0));
     if (!done && d.status !== "Cancelled")
-      notes.push(`${str(d.number)} ${str(d.status).toLowerCase()} — not counted as delivered until confirmed`);
+      notes.push(
+        m.api_platform_delivery_note(
+          { number: str(d.number), status: optionLabel(req, "deliveries", "status", d.status).toLowerCase() },
+          t,
+        ),
+      );
   }
   const need = (n: number) => Math.max(orderedQty.get(n) ?? 0, receivedQty.get(n)?.ordered ?? 0, 1);
   const delivered = new Set([...deliveredQty].filter(([n, q]) => q >= need(n)).map(([n]) => n));
@@ -301,7 +330,7 @@ export async function overview(req: Req, id: string): Promise<CaseOverview | nul
       id: str(customer?.id),
       name: str(customer?.name) || str(idOf(c.customer)),
       contactRule,
-      contactRuleLabel: CONTACT_RULES.find((r) => r.value === contactRule)?.label ?? contactRule,
+      contactRuleLabel: CONTACT_RULE_OPTIONS.find((r) => r.value === contactRule)?.label[lang] ?? contactRule,
       strict: contactRule === "do-not-chase",
     },
     vessel: str(c.vessel),
@@ -309,10 +338,18 @@ export async function overview(req: Req, id: string): Promise<CaseOverview | nul
     eta: str(c.eta) || undefined,
     deadline: str(c.deadline) || undefined,
     deadlineText: deadline
-      ? `${fmtWhen(deadline)}${deadline < DEMO_NOW ? " (passed)" : deadline.getTime() - DEMO_NOW.getTime() < DAY ? " (within 24 h)" : ""}`
+      ? deadline < DEMO_NOW
+        ? m.api_platform_deadline_passed({ when: fmtWhen(deadline, lang) }, t)
+        : deadline.getTime() - DEMO_NOW.getTime() < DAY
+          ? m.api_platform_deadline_within_24h({ when: fmtWhen(deadline, lang) }, t)
+          : fmtWhen(deadline, lang)
       : "—",
     stage,
-    steps: LIFECYCLE.map(([label, detail, phase]) => ({ label, detail, phase })),
+    steps: LIFECYCLE.map(([label, detail, phase]) => ({
+      label: fixed(label, lang),
+      detail: fixed(detail, lang),
+      phase,
+    })),
     current,
     halted: stage === "Lost" || stage === "Expired" ? "lost" : stage === "On hold" ? "paused" : "",
     lines,
@@ -331,7 +368,7 @@ export async function overview(req: Req, id: string): Promise<CaseOverview | nul
     backup: person(c.backup),
     clarifications: ((c.clarifications as Doc[] | undefined) ?? []).map((q) => ({
       lineNo: typeof q.lineNo === "number" ? q.lineNo : undefined,
-      to: str(q.to) || "Customer",
+      to: str(q.to) || m.api_platform_customer({}, t),
       via: str(q.via),
       question: str(q.question),
       askedAt: str(q.askedAt) || undefined,
@@ -352,7 +389,7 @@ export async function overview(req: Req, id: string): Promise<CaseOverview | nul
         rule: str(t.createdByRule),
         stop: str(t.stopCondition),
       })),
-    timeline: activities.map((a) => timelineEntry(a, name)).sort((a, b) => b.at.localeCompare(a.at)),
+    timeline: activities.map((a) => timelineEntry(a, name, lang)).sort((a, b) => b.at.localeCompare(a.at)),
     canReassign: mayReassign(c, user),
     team: users
       .filter((u) => HANDOVER_ROLES.includes(str(u.role)))
@@ -360,41 +397,76 @@ export async function overview(req: Req, id: string): Promise<CaseOverview | nul
   };
 }
 
-const timelineEntry = (a: Doc, name: (v: unknown) => string): TimelineEntry => ({
+const timelineEntry = (a: Doc, name: (v: unknown) => string, lang: Lang = "en"): TimelineEntry => ({
   id: a.id,
   at: str(a.at),
   kind: (["auto", "human", "alert"].includes(str(a.kind)) ? str(a.kind) : "auto") as TimelineEntry["kind"],
   text: str(a.text),
-  actor: a.actor ? name(a.actor) : a.kind === "human" ? "—" : "System",
+  actor: a.actor ? name(a.actor) : a.kind === "human" ? "—" : m.api_platform_system({}, { locale: lang }),
   rule: str(a.rule),
   entity: str(a.entity),
 });
 
 /** The AI-drafted handover summary (deterministic stub): what the next owner must know. */
-export function handoverDraft(o: CaseOverview, to: string) {
+export function handoverDraft(o: CaseOverview, to: string, lang: Lang = "en") {
+  const t = { locale: lang };
   const open = o.clarifications.filter((q) => q.open);
   const parts = [
-    `Handover — ${o.caseId} for ${to}`,
-    `${o.customer.name} · ${o.vessel}${o.port ? `, ${o.port}` : ""}${o.eta ? `, ETA ${fmtDay(new Date(o.eta))}` : ""}. Stage: ${o.stage}. Quote due ${o.deadlineText}.`,
-    `Lines: ${o.lines.ready} ready, ${o.lines.waiting} waiting, ${o.lines.blocked} blocked, ${o.lines.noOffer} without offer (of ${o.lines.total}).`,
-    `Next: ${o.next}.${o.blocker ? ` Blocker: ${o.blocker}.` : ""}`,
-    ...open.map((q) => `Open question${q.lineNo ? ` (line ${q.lineNo})` : ""} to ${q.to.toLowerCase()}: ${q.question}`),
-    ...o.tasks.map((t) => `Task: ${t.title}${t.due ? ` — due ${fmtWhen(new Date(t.due))}` : ""}.`),
-    `Customer contact rule: ${o.customer.contactRuleLabel}.`,
+    m.api_platform_handover_title({ caseId: o.caseId, to }, t),
+    m.api_platform_handover_case(
+      {
+        customer: o.customer.name,
+        vessel: o.vessel,
+        hasPort: o.port ? "yes" : "no",
+        port: o.port,
+        hasEta: o.eta ? "yes" : "no",
+        eta: o.eta ? fmtDay(new Date(o.eta), lang) : "",
+        stage: o.stage,
+        due: o.deadlineText,
+      },
+      t,
+    ),
+    m.api_platform_handover_lines(
+      {
+        ready: o.lines.ready,
+        waiting: o.lines.waiting,
+        blocked: o.lines.blocked,
+        noOffer: o.lines.noOffer,
+        total: o.lines.total,
+      },
+      t,
+    ),
+    m.api_platform_handover_next({ next: o.next, hasBlocker: o.blocker ? "yes" : "no", blocker: o.blocker }, t),
+    ...open.map((q) =>
+      m.api_platform_handover_question(
+        { hasLine: q.lineNo ? "yes" : "no", line: q.lineNo ?? "", to: q.to.toLowerCase(), question: q.question },
+        t,
+      ),
+    ),
+    ...o.tasks.map((k) =>
+      m.api_platform_handover_task(
+        { title: k.title, hasDue: k.due ? "yes" : "no", due: k.due ? fmtWhen(new Date(k.due), lang) : "" },
+        t,
+      ),
+    ),
+    m.api_platform_handover_contact_rule({ rule: o.customer.contactRuleLabel }, t),
     ...o.lines.rows
       .filter((r) => r.confidence !== undefined && r.confidence < 0.85)
-      .map(
-        (r) => `Check line ${r.lineNo} (${r.description}): AI read it at ${Math.round((r.confidence ?? 0) * 100)}%.`,
+      .map((r) =>
+        m.api_platform_handover_check_line(
+          { line: r.lineNo, description: r.description, pct: Math.round((r.confidence ?? 0) * 100) },
+          t,
+        ),
       ),
   ];
   return {
     draft: parts.join("\n"),
     confidence: 0.92,
     sources: [
-      "Case record",
-      `${o.clarifications.length} clarification${o.clarifications.length === 1 ? "" : "s"}`,
-      `${o.tasks.length} open task${o.tasks.length === 1 ? "" : "s"}`,
-      `${o.timeline.length} timeline entries`,
+      m.api_platform_case_record({}, t),
+      m.api_platform_clarifications({ count: o.clarifications.length }, t),
+      m.api_platform_open_tasks({ count: o.tasks.length }, t),
+      m.api_platform_timeline_entries({ count: o.timeline.length }, t),
     ],
   };
 }
@@ -403,9 +475,10 @@ const caseOverviewGet: Endpoint = {
   path: "/case-overview/:id",
   method: "get",
   handler: async (req) => {
-    if (!req.user) return deny("Please sign in.", 401);
+    const t = loc(req);
+    if (!req.user) return deny(m.api_platform_sign_in({}, t), 401);
     const o = await overview(req, str(req.routeParams?.id));
-    return o ? json(o) : deny("Case not found.", 404);
+    return o ? json(o) : deny(m.api_platform_case_not_found({}, t), 404);
   },
 };
 
@@ -413,21 +486,22 @@ const handover: Endpoint = {
   path: "/case-overview/:id/handover",
   method: "post",
   handler: async (req) => {
-    if (!req.user) return deny("Please sign in.", 401);
+    const t = loc(req);
+    if (!req.user) return deny(m.api_platform_sign_in({}, t), 401);
     const o = await overview(req, str(req.routeParams?.id));
-    if (!o) return deny("Case not found.", 404);
-    if (!o.canReassign) return deny("Only the owner, the backup, the supply-chain desk or management can reassign.");
+    if (!o) return deny(m.api_platform_case_not_found({}, t), 404);
+    if (!o.canReassign) return deny(m.api_platform_only_owner_reassigns({}, t));
     const { to } = await body(req);
     const target = o.team.find((p) => p.id === to);
-    if (!target) return deny("Pick someone on the desk to hand over to.", 400);
+    if (!target) return deny(m.api_platform_pick_someone({}, t), 400);
     // A draft for a person to edit: logged, never applied without them.
     await logAiCall(req, {
       task: "Draft a handover",
-      subject: `Handover note for ${o.caseId} to ${target.name}`,
+      subject: m.api_platform_handover_subject({ caseId: o.caseId, to: target.name }, t),
       case: o.id,
       outcome: "Waiting for review",
     });
-    return json(handoverDraft(o, target.name));
+    return json(handoverDraft(o, target.name, t.locale));
   },
 };
 
@@ -435,16 +509,18 @@ const reassign: Endpoint = {
   path: "/case-overview/:id/reassign",
   method: "post",
   handler: async (req) => {
-    if (!req.user) return deny("Please sign in.", 401);
+    const t = loc(req);
+    if (!req.user) return deny(m.api_platform_sign_in({}, t), 401);
     const id = str(req.routeParams?.id);
     const o = await overview(req, id);
-    if (!o) return deny("Case not found.", 404);
-    if (!o.canReassign) return deny("Only the owner, the backup, the supply-chain desk or management can reassign.");
+    if (!o) return deny(m.api_platform_case_not_found({}, t), 404);
+    if (!o.canReassign) return deny(m.api_platform_only_owner_reassigns({}, t));
     const { to, note, backup } = await body(req);
     const target = o.team.find((p) => p.id === to);
-    if (!target) return deny("Pick someone on the desk to hand over to.", 400);
-    if (target.id === o.owner?.id) return deny(`${target.name} already owns ${o.caseId}.`, 400);
-    if (!str(note).trim()) return deny("A handover note is required.", 400);
+    if (!target) return deny(m.api_platform_pick_someone({}, t), 400);
+    if (target.id === o.owner?.id)
+      return deny(m.api_platform_already_owns({ name: target.name, caseId: o.caseId }, t), 400);
+    if (!str(note).trim()) return deny(m.api_platform_note_required({}, t), 400);
     const previous = o.owner;
     // The case hook logs "Reassigned to …" with the note on the timeline.
     await req.payload.update({
@@ -472,22 +548,22 @@ const reassign: Endpoint = {
     // Open tasks of the previous owner on this case move with it.
     let moved = 0;
     if (previous)
-      for (const t of await all(req, "tasks", { case: { equals: id }, owner: { equals: previous.id } }))
-        if ((t.status ?? "Open") === "Open") {
-          await req.payload.update({ collection: "tasks", id: t.id, data: { owner: target.id } as never, req });
+      for (const k of await all(req, "tasks", { case: { equals: id }, owner: { equals: previous.id } }))
+        if ((k.status ?? "Open") === "Open") {
+          await req.payload.update({ collection: "tasks", id: k.id, data: { owner: target.id } as never, req });
           moved++;
         }
     await notify(req, target.id, {
       kind: "Update",
-      title: `You now own ${o.caseId}`,
-      detail: `Handover from ${str(me(req)?.name)}${moved ? ` · ${moved} open task${moved === 1 ? "" : "s"} moved to you` : ""}`,
+      title: m.api_platform_you_now_own({ caseId: o.caseId }, t),
+      detail: m.api_platform_handover_from({ name: str(me(req)?.name), moved }, t),
       href: link.doc("cases", id, "overview"),
     });
     return json({
       ok: true,
       owner: target,
       movedTasks: moved,
-      message: `${o.caseId} handed over to ${target.name}${moved ? ` · ${moved} open task${moved === 1 ? "" : "s"} moved` : ""} · note logged on the timeline`,
+      message: m.api_platform_handed_over({ caseId: o.caseId, name: target.name, moved }, t),
     });
   },
 };
@@ -515,9 +591,10 @@ const automations: Endpoint = {
   path: "/automations",
   method: "get",
   handler: async (req) => {
-    if (!req.user) return deny("Please sign in.", 401);
+    const t = loc(req);
+    if (!req.user) return deny(m.api_platform_sign_in({}, t), 401);
     const [rulesGlobal, exceptions, messages, cases] = await Promise.all([
-      req.payload.findGlobal({ slug: "automation-rules", depth: 0 } as never),
+      req.payload.findGlobal({ locale: req.locale, slug: "automation-rules", depth: 0 } as never),
       all(req, "integration-exceptions"),
       all(req, "intake-messages"),
       all(req, "cases"),
@@ -530,19 +607,26 @@ const automations: Endpoint = {
         .map((x) => ({
           id: x.id,
           kind: "exception" as const,
-          title: `${str(x.source)}: ${str(x.summary)}`,
+          title: `${optionLabel(req, "integration-exceptions", "source", x.source)}: ${str(x.summary)}`,
           detail: str(x.impact),
           href: link.doc("integration-exceptions", x.id),
         })),
       ...messages
-        .filter((m) => m.status === "Needs review")
-        .map((m) => ({
-          id: m.id,
+        .filter((msg) => msg.status === "Needs review")
+        .map((msg) => ({
+          id: msg.id,
           kind: "message" as const,
-          title: `${str(m.fromName || m.from)}: ${str(m.subject)}`,
-          detail: `Uncertain match (${str(m.classification) || "unclassified"}) — waiting for a person in the inbox`,
+          title: `${str(msg.fromName || msg.from)}: ${str(msg.subject)}`,
+          detail: m.api_platform_uncertain_match(
+            {
+              classification: msg.classification
+                ? optionLabel(req, "intake-messages", "classification", msg.classification)
+                : m.api_platform_unclassified({}, t),
+            },
+            t,
+          ),
           href: "/inbox",
-          confidence: typeof m.matchConfidence === "number" ? m.matchConfidence : undefined,
+          confidence: typeof msg.matchConfidence === "number" ? msg.matchConfidence : undefined,
         })),
       ...cases.flatMap((c) =>
         ((c.items as Doc[] | undefined) ?? [])
@@ -550,8 +634,11 @@ const automations: Endpoint = {
           .map((l) => ({
             id: `${c.id}#${str(l.lineNo)}`,
             kind: "line" as const,
-            title: `${str(c.caseId)} line ${str(l.lineNo)}: ${str(l.description)}`,
-            detail: str(l.missing) || "Low extraction confidence",
+            title: m.api_platform_case_line(
+              { caseId: str(c.caseId), line: str(l.lineNo), description: str(l.description) },
+              t,
+            ),
+            detail: str(l.missing) || m.api_platform_low_confidence({}, t),
             href: link.doc("cases", c.id, "overview"),
             confidence: l.confidence as number,
           })),
@@ -578,18 +665,23 @@ const DONE = ["Resolved", "Auto-resolved", "Ignored"];
  */
 export async function safeRetry(req: Req, id: string) {
   const x = (await req.payload.findByID({
+    locale: req.locale,
     collection: "integration-exceptions",
     id,
     depth: 0,
     disableErrors: true,
   } as never)) as Doc | null;
-  if (!x) return { status: 404, message: "Exception not found." };
+  const t = loc(req);
+  if (!x) return { status: 404, message: m.api_platform_exception_not_found({}, t) };
   const key = str(x.idempotencyKey);
   if (DONE.includes(str(x.status)))
     return {
       status: 200,
       alreadyDone: true,
-      message: `Already ${str(x.status).toLowerCase()} — key ${key || "—"} checked, nothing re-run or re-sent.`,
+      message: m.api_platform_already_done(
+        { status: optionLabel(req, "integration-exceptions", "status", x.status).toLowerCase(), key: key || "—" },
+        t,
+      ),
     };
   const detail = (x.payload as Record<string, unknown> | undefined) ?? {};
   let message: string;
@@ -597,8 +689,8 @@ export async function safeRetry(req: Req, id: string) {
     const account = key.slice("mailbox:".length);
     const pending = Number(detail.pending ?? (str(x.impact).match(/\d+/)?.[0] || 0));
     const linked = Number(detail.alreadyLinked ?? 0);
-    message = `Re-checked ${key}: ${pending} messages waiting, ${linked} already imported → ${pending - linked} imported. No duplicate cases or acknowledgements.`;
-    const g = await req.payload.findGlobal({ slug: "integrations", depth: 0 } as never);
+    message = m.api_platform_mailbox_rechecked({ key, pending, linked, imported: pending - linked }, t);
+    const g = await req.payload.findGlobal({ locale: req.locale, slug: "integrations", depth: 0 } as never);
     const connections = ((g.connections as Record<string, unknown>[] | undefined) ?? []).map((c) =>
       c.account === account
         ? {
@@ -607,7 +699,7 @@ export async function safeRetry(req: Req, id: string) {
             lastSyncAt: new Date().toISOString(),
             tokenExpiresAt: new Date(Date.now() + 90 * DAY).toISOString(),
             emailsImported: (Number(c.emailsImported) || 0) + pending - linked,
-            notes: "Reconnected — waiting emails imported once each",
+            notes: m.api_platform_reconnected_note({}, t),
           }
         : c,
     );
@@ -615,11 +707,11 @@ export async function safeRetry(req: Req, id: string) {
   } else if (key.startsWith("invoice:")) {
     const no = key.slice("invoice:".length);
     message = detail.submitted
-      ? `Re-checked ${key}: already accepted by the tax authority — not submitted again.`
-      : `Re-checked ${key}: not yet accepted by the tax authority → signed and submitted once. Status: Valid.`;
+      ? m.api_platform_invoice_already_accepted({ key }, t)
+      : m.api_platform_invoice_submitted_once({ key }, t);
     if (!detail.submitted) detail.submitted = true;
     detail.invoice = no;
-  } else message = `Re-checked ${key || "the record"}: step re-run once.`;
+  } else message = m.api_platform_step_rerun({ key: key || m.api_platform_the_record({}, t) }, t);
   await req.payload.update({
     collection: "integration-exceptions",
     id,
@@ -629,13 +721,13 @@ export async function safeRetry(req: Req, id: string) {
       lastRetryAt: new Date().toISOString(),
       resolvedBy: me(req)?.id,
       payload: detail,
-      impact: `${str(x.impact)} — resolved by safe retry`,
+      impact: m.api_platform_resolved_by_retry({ impact: str(x.impact) }, t),
     } as never,
   });
   await log(req, {
     kind: "auto",
     rule: "Safe retry",
-    text: `${str(x.source)}: ${str(x.summary)}. ${message}`,
+    text: `${optionLabel(req, "integration-exceptions", "source", x.source)}: ${str(x.summary)}. ${message}`,
     entity: `integration-exceptions/${id}`,
   });
   return { status: 200, alreadyDone: false, message };
@@ -645,10 +737,14 @@ const retry: Endpoint = {
   path: "/automations/retry/:id",
   method: "post",
   handler: async (req) => {
-    if (!req.user) return deny("Please sign in.", 401);
+    const t = loc(req);
+    if (!req.user) return deny(m.api_platform_sign_in({}, t), 401);
     const r = await safeRetry(req, str(req.routeParams?.id));
     if (r.status !== 200) return deny(r.message, r.status);
-    return json({ ...r, message: r.alreadyDone ? r.message : `Retried safely — ${r.message}` });
+    return json({
+      ...r,
+      message: r.alreadyDone ? r.message : m.api_platform_retried_safely({ message: r.message }, t),
+    });
   },
 };
 
@@ -658,25 +754,29 @@ const ruleSwitch: Endpoint = {
   path: "/automations/rule",
   method: "post",
   handler: async (req) => {
-    if (!req.user) return deny("Please sign in.", 401);
-    if (str(me(req)?.role) !== "management") return deny("Management can pause or enable rules.");
+    const t = loc(req);
+    if (!req.user) return deny(m.api_platform_sign_in({}, t), 401);
+    if (str(me(req)?.role) !== "management") return deny(m.api_platform_management_rules({}, t));
     const b = await body(req);
     const enabled = b.value === true;
-    const g = await req.payload.findGlobal({ slug: "automation-rules", depth: 0 } as never);
+    const g = await req.payload.findGlobal({ locale: req.locale, slug: "automation-rules", depth: 0 } as never);
     const list = (g.rules as Record<string, unknown>[] | undefined) ?? [];
     const rule = list.find((r) => r.id === str(b.id));
-    if (!rule) return deny("Rule not found.", 404);
+    if (!rule) return deny(m.api_platform_rule_not_found({}, t), 404);
     const was = rule.enabled !== false;
     const rules = list.map((r) => (r === rule ? { ...r, enabled } : r));
     await req.payload.updateGlobal({ slug: "automation-rules", data: { rules }, req, overrideAccess: false } as never);
     await log(req, {
       kind: "human",
-      text: `${enabled ? "Enabled" : "Paused"} automation “${str(rule.name)}”.`,
+      text: (enabled ? m.api_platform_rule_enabled_activity : m.api_platform_rule_paused_activity)(
+        { name: str(rule.name) },
+        t,
+      ),
       entity: "globals/automation-rules",
     });
     return json({
       ok: true,
-      message: `${str(rule.name)} ${enabled ? "enabled" : "paused"} (logged)`,
+      message: (enabled ? m.api_platform_rule_enabled : m.api_platform_rule_paused)({ name: str(rule.name) }, t),
       undo: { path: "/automations/rule", body: { id: rule.id, value: was } },
     });
   },
@@ -686,15 +786,17 @@ const reviewed: Endpoint = {
   path: "/automations/review/:id",
   method: "post",
   handler: async (req) => {
-    if (!req.user) return deny("Please sign in.", 401);
+    const t = loc(req);
+    if (!req.user) return deny(m.api_platform_sign_in({}, t), 401);
     const id = str(req.routeParams?.id);
     const x = (await req.payload.findByID({
+      locale: req.locale,
       collection: "integration-exceptions",
       id,
       depth: 0,
       disableErrors: true,
     } as never)) as Doc | null;
-    if (!x) return deny("Exception not found.", 404);
+    if (!x) return deny(m.api_platform_exception_not_found({}, t), 404);
     if (x.status !== "Waiting for review") return json({ ok: true, alreadyDone: true });
     const { note } = await body(req);
     await req.payload.update({
@@ -704,7 +806,10 @@ const reviewed: Endpoint = {
     });
     await log(req, {
       kind: "human",
-      text: `Reviewed: ${str(x.summary)}.${str(note) ? ` ${str(note)}` : " Fields confirmed by a person."}`,
+      text: m.api_platform_reviewed_activity(
+        { summary: str(x.summary), hasNote: str(note) ? "yes" : "no", note: str(note) },
+        t,
+      ),
       entity: `integration-exceptions/${id}`,
     });
     return json({ ok: true });
@@ -740,21 +845,22 @@ export interface Routing {
 /** Who an urgent RFQ arriving at `at` goes to. */
 export async function routeUrgent(req: Req, at: Date): Promise<Routing> {
   const [roster, { person }] = await Promise.all([
-    req.payload.findGlobal({ slug: "on-call-roster", depth: 0 } as never),
+    req.payload.findGlobal({ locale: req.locale, slug: "on-call-roster", depth: 0 } as never),
     people(req),
   ]);
   const escalate = Number(roster.escalateAfterMinutes) || 15;
   const senior = ((roster.seniorContacts as { user?: unknown }[] | undefined) ?? [])
     .map((s) => person(s.user))
     .filter((p): p is Person => !!p);
-  const base = { at: at.toISOString(), atText: fmtWhen(at), senior, escalateAfterMinutes: escalate };
+  const t = loc(req);
+  const base = { at: at.toISOString(), atText: fmtWhen(at, t.locale), senior, escalateAfterMinutes: escalate };
   if (inOfficeHours(at))
     return {
       ...base,
       inHours: true,
       routedTo: null,
       backup: null,
-      reason: "Office hours (Sun–Thu 08:00–17:00 Cairo): the case owner picks it up by the assignment rule.",
+      reason: m.api_platform_office_hours_reason({}, t),
     };
   const shift = ((roster.shifts as Record<string, unknown>[] | undefined) ?? []).find(
     (s) => new Date(str(s.from)) <= at && at < new Date(str(s.to)),
@@ -765,14 +871,14 @@ export async function routeUrgent(req: Req, at: Date): Promise<Routing> {
       inHours: false,
       routedTo: senior[0] ?? null,
       backup: senior[1] ?? null,
-      reason: "Outside office hours and no shift on the roster: straight to the senior call list.",
+      reason: m.api_platform_no_shift_reason({}, t),
     };
   return {
     ...base,
     inHours: false,
     routedTo: person(shift.user),
     backup: person(shift.backup),
-    reason: `Outside office hours: WhatsApp / SMS to the on-duty person; the backup after ${escalate} min, then senior contacts.`,
+    reason: m.api_platform_on_duty_reason({ minutes: escalate }, t),
   };
 }
 
@@ -790,9 +896,10 @@ const roles: Endpoint = {
   path: "/roles",
   method: "get",
   handler: async (req) => {
-    if (!req.user) return deny("Please sign in.", 401);
+    const t = loc(req);
+    if (!req.user) return deny(m.api_platform_sign_in({}, t), 401);
     const [approvalRules, { users, person }] = await Promise.all([
-      req.payload.findGlobal({ slug: "approval-rules", depth: 0 } as never),
+      req.payload.findGlobal({ locale: req.locale, slug: "approval-rules", depth: 0 } as never),
       people(req),
     ]);
     // Live checks: the matrix is enforced by the access rules, not just written down.
@@ -814,17 +921,31 @@ const roles: Endpoint = {
     );
     const bankApprovers = ((bank?.approvers as unknown[] | undefined) ?? []).map((u) => idOf(u));
     const view: RolesView = {
-      permissions: PERMISSIONS.map((p) => ({ ...p })),
+      permissions: PERMISSIONS.map((p) =>
+        t.locale === "ar" ? { ...p, label: p.ar.label, enforced: fixed(p.enforced, "ar") } : { ...p },
+      ),
       checks: [
         {
-          label: "Sales never sees supplier costs",
+          label: m.api_platform_check_sales_costs({}, t),
           pass: hidden,
-          detail: `Read an offer as ${str(sales?.name) || "Sales"}: the price field is ${hidden ? "removed by field access" : "visible"}.`,
+          detail: m.api_platform_check_sales_costs_detail(
+            { name: str(sales?.name) || m.api_platform_sales({}, t), hidden: hidden ? "yes" : "no" },
+            t,
+          ),
         },
         {
-          label: "Bank-detail changes need two people (Finance + CEO)",
+          label: m.api_platform_check_bank_two_people({}, t),
           pass: bank?.twoPerson === true && bankApprovers.includes("kb") && bankApprovers.includes("mh"),
-          detail: `Approval rule “${str(bank?.type) || "Bank detail change"}”: two-person ${bank?.twoPerson ? "on" : "off"}, approvers ${bankApprovers.map((u) => person(u)?.name ?? u).join(" and ")}.`,
+          detail: m.api_platform_check_bank_detail(
+            {
+              type: bank?.type
+                ? optionLabel(req, "approvals", "type", bank.type)
+                : m.api_platform_bank_detail_change({}, t),
+              on: bank?.twoPerson ? "yes" : "no",
+              approvers: bankApprovers.map((u) => person(u)?.name ?? u).join(t.locale === "ar" ? " و" : " and "),
+            },
+            t,
+          ),
         },
       ],
     };
@@ -836,22 +957,29 @@ const route: Endpoint = {
   path: "/on-call/route",
   method: "post",
   handler: async (req) => {
-    if (!req.user) return deny("Please sign in.", 401);
+    const t = loc(req);
+    if (!req.user) return deny(m.api_platform_sign_in({}, t), 401);
     const { at, simulate } = await body(req);
     const when = new Date(str(at) || DEMO_NOW.toISOString());
-    if (Number.isNaN(when.getTime())) return deny("Give a valid time.", 400);
+    if (Number.isNaN(when.getTime())) return deny(m.api_platform_valid_time({}, t), 400);
     const r = await routeUrgent(req, when);
     if (simulate && r.routedTo) {
       await notify(req, r.routedTo.id, {
         kind: "Alert",
-        title: `Urgent RFQ after hours — you're on call (${r.atText})`,
-        detail: `Simulated from /roles · acknowledge within ${r.escalateAfterMinutes} min, then ${r.backup?.name ?? "senior contacts"} is alerted`,
+        title: m.api_platform_on_call_title({ at: r.atText }, t),
+        detail: m.api_platform_on_call_detail(
+          { minutes: r.escalateAfterMinutes, next: r.backup?.name ?? m.api_platform_senior_contacts({}, t) },
+          t,
+        ),
         href: "/roles",
       });
       await log(req, {
         kind: "alert",
         rule: "After-hours & weekend RFQ",
-        text: `Simulated urgent RFQ at ${r.atText}: alert sent to on-duty ${r.routedTo.name}${r.backup ? `, backup ${r.backup.name}` : ""}.`,
+        text: m.api_platform_simulated_activity(
+          { at: r.atText, name: r.routedTo.name, hasBackup: r.backup ? "yes" : "no", backup: r.backup?.name ?? "" },
+          t,
+        ),
       });
     }
     return json(r);
@@ -863,7 +991,7 @@ const routeAt: Endpoint = {
   path: "/on-call/route",
   method: "get",
   handler: async (req) => {
-    if (!req.user) return deny("Please sign in.", 401);
+    if (!req.user) return deny(m.api_platform_sign_in({}, loc(req)), 401);
     const at = new Date(str(req.query?.at) || DEMO_NOW.toISOString());
     return json(await routeUrgent(req, Number.isNaN(at.getTime()) ? DEMO_NOW : at));
   },
@@ -875,22 +1003,23 @@ const permission: Endpoint = {
   path: "/roles/permission",
   method: "post",
   handler: async (req) => {
-    if (!req.user) return deny("Please sign in.", 401);
-    if (str(me(req)?.role) !== "management") return deny("Only management edits permissions.");
+    const t = loc(req);
+    if (!req.user) return deny(m.api_platform_sign_in({}, t), 401);
+    if (str(me(req)?.role) !== "management") return deny(m.api_platform_management_permissions({}, t));
     const b = await body(req);
     const role = str(b.role);
-    const settings = await req.payload.findGlobal({ slug: "settings", depth: 0 } as never);
+    const settings = await req.payload.findGlobal({ locale: req.locale, slug: "settings", depth: 0 } as never);
     const list = (settings.permissions as Record<string, unknown>[] | undefined) ?? [];
     const row = list.find((r) => r.role === role);
-    if (!row) return deny("Role not found.", 404);
+    if (!row) return deny(m.api_platform_role_not_found({}, t), 404);
     const keys = PERMISSIONS.map((p) => p.key).filter((k) => typeof b[k] === "boolean");
-    if (!keys.length) return deny("Unknown permission.", 400);
+    if (!keys.length) return deny(m.api_platform_unknown_permission({}, t), 400);
     const was = Object.fromEntries(keys.map((k) => [k, row[k] === true]));
     const permissions = list.map((r) => (r === row ? { ...r, ...Object.fromEntries(keys.map((k) => [k, b[k]])) } : r));
     await req.payload.updateGlobal({ slug: "settings", data: { permissions }, req, overrideAccess: false } as never);
     await log(req, {
       kind: "human",
-      text: `Updated the ${roleLabel(role)} permissions in the roles & permissions matrix.`,
+      text: m.api_platform_permissions_activity({ role: roleLabel(role, t.locale) }, t),
       entity: "globals/settings",
     });
     return json({ ok: true, undo: { path: "/roles/permission", body: { role, ...was } } });
@@ -903,16 +1032,16 @@ const rosterSave: Endpoint = {
   path: "/roles/roster",
   method: "post",
   handler: async (req) => {
-    if (!req.user) return deny("Please sign in.", 401);
-    if (!["management", "office-admin"].includes(str(me(req)?.role)))
-      return deny("Management and the office manager edit the roster.");
+    const t = loc(req);
+    if (!req.user) return deny(m.api_platform_sign_in({}, t), 401);
+    if (!["management", "office-admin"].includes(str(me(req)?.role))) return deny(m.api_platform_roster_editors({}, t));
     const b = await body(req);
-    const roster = await req.payload.findGlobal({ slug: "on-call-roster", depth: 0 } as never);
+    const roster = await req.payload.findGlobal({ locale: req.locale, slug: "on-call-roster", depth: 0 } as never);
     const list = (roster.shifts as Record<string, unknown>[] | undefined) ?? [];
     const shift = list.find((s) => s.id === str(b.id));
-    if (!shift) return deny("Shift not found.", 404);
+    if (!shift) return deny(m.api_platform_shift_not_found({}, t), 404);
     const user = idOf(b.user);
-    if (!user) return deny("Pick who is on duty.", 400);
+    if (!user) return deny(m.api_platform_pick_on_duty({}, t), 400);
     const shifts = list.map((s) => (s === shift ? { ...s, user, backup: idOf(b.backup) || null } : s));
     await req.payload.updateGlobal({
       slug: "on-call-roster",
@@ -920,7 +1049,7 @@ const rosterSave: Endpoint = {
       req,
       overrideAccess: false,
     } as never);
-    await log(req, { kind: "human", text: "Updated the on-call roster.", entity: "globals/on-call-roster" });
+    await log(req, { kind: "human", text: m.api_platform_roster_activity({}, t), entity: "globals/on-call-roster" });
     return json({
       ok: true,
       undo: {
@@ -960,15 +1089,16 @@ const integrations: Endpoint = {
   path: "/integrations/status",
   method: "get",
   handler: async (req) => {
-    if (!req.user) return deny("Please sign in.", 401);
+    if (!req.user) return deny(m.api_platform_sign_in({}, loc(req)), 401);
     const [templates, settings, { name }] = await Promise.all([
-      req.payload.findGlobal({ slug: "message-templates", depth: 0 } as never),
-      req.payload.findGlobal({ slug: "settings", depth: 0 } as never),
+      req.payload.findGlobal({ locale: req.locale, slug: "message-templates", depth: 0 } as never),
+      req.payload.findGlobal({ locale: req.locale, slug: "settings", depth: 0 } as never),
       people(req),
     ]);
     const ack =
       ((templates.templates as Record<string, unknown>[] | undefined) ?? []).find((t) => t.key === "rfq-ack") ?? {};
     const c = (await req.payload.findByID({
+      locale: req.locale,
       collection: "cases",
       id: "gs-rfq-0142",
       depth: 0,
@@ -989,7 +1119,10 @@ const integrations: Endpoint = {
     const view: IntegrationsView = {
       ack: {
         en: { subject: fill(str(ack.subject), vars), body: fill(str(ack.body), vars) },
-        ar: { subject: fill(str(ack.subjectAr), vars), body: fill(str(ack.bodyAr), vars) },
+        ar: {
+          subject: fill(str(ack.subjectAr), { ...vars, dueAt: fmtWhen(deadline, "ar") }),
+          body: fill(str(ack.bodyAr), { ...vars, dueAt: fmtWhen(deadline, "ar") }),
+        },
         version: Number(ack.version) || 1,
         status: str(ack.status),
         approvedBy: name(ack.approvedBy),
@@ -1012,14 +1145,15 @@ const reconnect: Endpoint = {
   path: "/integrations/reconnect",
   method: "post",
   handler: async (req) => {
-    if (!req.user) return deny("Please sign in.", 401);
+    const t = loc(req);
+    if (!req.user) return deny(m.api_platform_sign_in({}, t), 401);
     if (!["management", "operations", "office-admin"].includes(str(me(req)?.role)))
-      return deny("Management, operations or the office manager reconnect mailboxes.");
+      return deny(m.api_platform_reconnect_roles({}, t));
     const { id } = await body(req);
-    const g = await req.payload.findGlobal({ slug: "integrations", depth: 0 } as never);
+    const g = await req.payload.findGlobal({ locale: req.locale, slug: "integrations", depth: 0 } as never);
     const list = (g.connections as Record<string, unknown>[] | undefined) ?? [];
     const conn = list.find((c) => c.id === str(id));
-    if (!conn) return deny("Connection not found.", 404);
+    if (!conn) return deny(m.api_platform_connection_not_found({}, t), 404);
     // A mailbox with a failed sync: the safe retry imports what was waiting, once.
     const exceptions = await all(req, "integration-exceptions", {
       idempotencyKey: { equals: `mailbox:${str(conn.account)}` },
@@ -1027,7 +1161,10 @@ const reconnect: Endpoint = {
     const open = exceptions.find((x) => !DONE.includes(str(x.status)));
     if (open) {
       const r = await safeRetry(req, open.id);
-      return json({ ok: true, message: `Reconnected ${str(conn.account)}. ${r.message}` });
+      return json({
+        ok: true,
+        message: m.api_platform_reconnected_with({ account: str(conn.account), message: r.message }, t),
+      });
     }
     const connections = list.map((c) =>
       c === conn
@@ -1042,10 +1179,10 @@ const reconnect: Endpoint = {
     await req.payload.updateGlobal({ slug: "integrations", data: { connections } as never });
     await log(req, {
       kind: "human",
-      text: `Reconnected ${str(conn.kind)} ${str(conn.account)}.`,
+      text: m.api_platform_reconnected_activity({ kind: str(conn.kind), account: str(conn.account) }, t),
       entity: "globals/integrations",
     });
-    return json({ ok: true, message: `Reconnected ${str(conn.account)}.` });
+    return json({ ok: true, message: m.api_platform_reconnected({ account: str(conn.account) }, t) });
   },
 };
 
@@ -1053,9 +1190,10 @@ const staging: Endpoint = {
   path: "/integrations/staging",
   method: "post",
   handler: async (req) => {
-    if (!req.user) return deny("Please sign in.", 401);
-    if (str(me(req)?.role) !== "management") return deny("Only management refreshes the staging copy.");
-    const g = await req.payload.findGlobal({ slug: "integrations", depth: 0 } as never);
+    const t = loc(req);
+    if (!req.user) return deny(m.api_platform_sign_in({}, t), 401);
+    if (str(me(req)?.role) !== "management") return deny(m.api_platform_staging_management({}, t));
+    const g = await req.payload.findGlobal({ locale: req.locale, slug: "integrations", depth: 0 } as never);
     const at = new Date().toISOString();
     await req.payload.updateGlobal({
       slug: "integrations",
@@ -1063,7 +1201,7 @@ const staging: Endpoint = {
     });
     await log(req, {
       kind: "human",
-      text: "Staging copy refreshed from last night's backup (emails and integrations disabled on staging).",
+      text: m.api_platform_staging_activity({}, t),
       entity: "globals/integrations",
     });
     return json({ ok: true, stagingRefreshedAt: at });
@@ -1076,7 +1214,8 @@ const language: Endpoint = {
   method: "post",
   handler: async (req) => {
     const user = me(req);
-    if (!user) return deny("Please sign in.", 401);
+    const t = loc(req);
+    if (!user) return deny(m.api_platform_sign_in({}, t), 401);
     const b = await body(req);
     const value = b.value;
     if (b.field === "mine") {
@@ -1090,24 +1229,21 @@ const language: Endpoint = {
       } as never);
       return json({
         ok: true,
-        message:
-          lang === "ar"
-            ? "Your dashboard language: Arabic (applies after go-live translation)"
-            : "Your dashboard language: English",
+        message: lang === "ar" ? m.api_platform_my_language_ar({}, t) : m.api_platform_my_language_en({}, t),
       });
     }
-    if (str(user.role) !== "management") return deny("Company settings are changed by management.");
+    if (str(user.role) !== "management") return deny(m.api_platform_settings_management({}, t));
     let data: Record<string, unknown>;
     if (b.field === "default") data = { defaultLanguage: value === "ar" ? "ar" : "en" };
     else if (b.field === "documents") {
-      const settings = await req.payload.findGlobal({ slug: "settings", depth: 0 } as never);
+      const settings = await req.payload.findGlobal({ locale: req.locale, slug: "settings", depth: 0 } as never);
       const docs = ((settings.documentLanguages as string[] | undefined) ?? ["en"]).map(str);
       const l = str(b.lang);
       const next = value === true ? [...new Set([...docs, l])] : docs.filter((x) => x !== l);
       data = { documentLanguages: next.length ? next : ["en"] };
-    } else return deny("Unknown setting.", 400);
+    } else return deny(m.api_platform_unknown_setting({}, t), 400);
     await req.payload.updateGlobal({ slug: "settings", data, req, overrideAccess: false } as never);
-    return json({ ok: true, message: "Language settings saved" });
+    return json({ ok: true, message: m.api_platform_language_saved({}, t) });
   },
 };
 
@@ -1490,6 +1626,7 @@ async function acceptance(req: Req): Promise<AcceptanceTest[]> {
   const atlas = customers.find((c) => c.id === "atlas");
   const settled = cases.find((c) => c.stage === "Closed — settled");
   const inv = invoices.find((i) => idOf(i.case) === "gs-rfq-0131");
+  const o = loc(req);
   const t = (
     no: number,
     scenario: string,
@@ -1497,8 +1634,16 @@ async function acceptance(req: Req): Promise<AcceptanceTest[]> {
     href: string,
     pass: boolean,
     check: string,
-    pending = "Not yet shown",
-  ): AcceptanceTest => ({ no, scenario, evidence, href, pass, status: pass ? "Pass" : pending, check });
+    pending = m.api_platform_not_yet_shown({}, o),
+  ): AcceptanceTest => ({
+    no,
+    scenario: fixed(scenario, o.locale),
+    evidence: fixed(evidence, o.locale),
+    href,
+    pass,
+    status: pass ? m.api_platform_pass({}, o) : pending,
+    check,
+  });
   return [
     t(
       1,
@@ -1509,7 +1654,7 @@ async function acceptance(req: Req): Promise<AcceptanceTest[]> {
         items.length > 1 &&
         !!idOf(c142.owner) &&
         acts("gs-rfq-0142").some((a) => a.rule === "RFQ acknowledgement"),
-      `${str(c142?.caseId)}: ${items.length} lines, owner set, acknowledgement logged once`,
+      m.api_platform_acc_1({ caseId: str(c142?.caseId), lines: items.length }, o),
     ),
     t(
       2,
@@ -1518,7 +1663,7 @@ async function acceptance(req: Req): Promise<AcceptanceTest[]> {
       link.doc("cases", "gs-rfq-0142", "compare"),
       acts("gs-rfq-0142").some((a) => a.kind === "alert" && /offered/.test(str(a.text))) &&
         rfqs.some((r) => idOf(r.case) === "gs-rfq-0142" && r.status === "Revised offer received"),
-      "Deviation alert logged; revised offer received as a new version",
+      m.api_platform_acc_2({}, o),
     ),
     t(
       3,
@@ -1526,7 +1671,10 @@ async function acceptance(req: Req): Promise<AcceptanceTest[]> {
       "200 × 250 ml and 100 × 500 ml both equal 50 L; totals compare correctly. Written customer acceptance required.",
       link.doc("cases", "gs-rfq-0142", "compare"),
       !!l3 && Number(l3.qty) * Number(l3.packSize) === 50,
-      `Line 3: ${str(l3?.qty)} × ${str(l3?.packSize)} L = ${Number(l3?.qty) * Number(l3?.packSize)} L`,
+      m.api_platform_acc_3(
+        { qty: str(l3?.qty), pack: str(l3?.packSize), total: Number(l3?.qty) * Number(l3?.packSize) },
+        o,
+      ),
     ),
     t(
       4,
@@ -1536,7 +1684,7 @@ async function acceptance(req: Req): Promise<AcceptanceTest[]> {
       atlas?.contactRule === "do-not-chase" &&
         tasks.some((x) => idOf(x.case) === "gs-rfq-0139" && x.internalOnly === true) &&
         caseById("gs-rfq-0139")?.stage === "Awaiting customer decision",
-      "Atlas Tankers: do not chase · internal reminder only",
+      m.api_platform_acc_4({}, o),
     ),
     t(
       5,
@@ -1545,7 +1693,7 @@ async function acceptance(req: Req): Promise<AcceptanceTest[]> {
       link.doc("cases", "gs-rfq-0136", "order"),
       caseById("gs-rfq-0136")?.stage === "Won — PO mismatch" ||
         acts("gs-rfq-0136").some((a) => a.rule === "Customer PO check"),
-      "GS-RFQ-0136: PO mismatch blocks the sales order",
+      m.api_platform_acc_5({}, o),
     ),
     t(
       6,
@@ -1553,7 +1701,7 @@ async function acceptance(req: Req): Promise<AcceptanceTest[]> {
       "One order supports two scheduled deliveries; stock, expiry, remaining quantity, billing and balances remain accurate.",
       link.doc("cases", "gs-rfq-0133", "delivery"),
       deliveries.filter((d) => idOf(d.case) === "gs-rfq-0133").length >= 2,
-      `GS-RFQ-0133: ${deliveries.filter((d) => idOf(d.case) === "gs-rfq-0133").length} deliveries on one order`,
+      m.api_platform_acc_6({ count: deliveries.filter((d) => idOf(d.case) === "gs-rfq-0133").length }, o),
     ),
     t(
       7,
@@ -1561,7 +1709,7 @@ async function acceptance(req: Req): Promise<AcceptanceTest[]> {
       "Separate payable and receivable balances, authorized payment steps and overdue reminders are visible.",
       "/cash",
       approvals.some((a) => /deposit/i.test(str(a.type))) && !!inv && Number(inv.paid) > 0,
-      "Deposit waits for approval; GS-RFQ-0131 invoice partially paid",
+      m.api_platform_acc_7({}, o),
     ),
     t(
       8,
@@ -1569,7 +1717,7 @@ async function acceptance(req: Req): Promise<AcceptanceTest[]> {
       "Affected delivery tasks are updated and escalated with a clear owner and next action.",
       link.doc("cases", "gs-rfq-0133", "delivery"),
       activities.some((a) => a.rule === "ETA change") && activities.some((a) => a.rule === "Escalate no response"),
-      "ETA change re-planned tasks; no-response escalation logged",
+      m.api_platform_acc_8({}, o),
     ),
     t(
       9,
@@ -1577,7 +1725,7 @@ async function acceptance(req: Req): Promise<AcceptanceTest[]> {
       "No duplicate case, bill or outgoing message; exception appears and can be safely retried.",
       "/automations",
       exceptions.some((x) => x.status === "Auto-resolved") && exceptions.every((x) => !!x.idempotencyKey),
-      "Duplicate auto-resolved; every exception carries an idempotency key",
+      m.api_platform_acc_9({}, o),
     ),
     t(
       10,
@@ -1585,8 +1733,8 @@ async function acceptance(req: Req): Promise<AcceptanceTest[]> {
       "Signed delivery evidence, invoices, actual costs, profit and residual balances reconcile.",
       link.doc("cases", "gs-rfq-0131", "profit"),
       !!settled,
-      settled ? `${str(settled.caseId)} closed and settled` : "GS-RFQ-0131 closes once its balance is collected",
-      "Runs at settlement",
+      settled ? m.api_platform_acc_10_settled({ caseId: str(settled.caseId) }, o) : m.api_platform_acc_10_open({}, o),
+      m.api_platform_runs_at_settlement({}, o),
     ),
   ];
 }
@@ -1595,8 +1743,12 @@ const project: Endpoint = {
   path: "/project",
   method: "get",
   handler: async (req) => {
-    if (!req.user) return deny("Please sign in.", 401);
-    const view: ProjectView = { ...PLAN, acceptance: await acceptance(req), checkedAt: new Date().toISOString() };
+    if (!req.user) return deny(m.api_platform_sign_in({}, loc(req)), 401);
+    const view: ProjectView = {
+      ...fixed(PLAN, langOf(req)),
+      acceptance: await acceptance(req),
+      checkedAt: new Date().toISOString(),
+    };
     return json(view);
   },
 };

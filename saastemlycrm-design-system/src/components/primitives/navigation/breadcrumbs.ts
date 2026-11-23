@@ -4,6 +4,7 @@ import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { inlineRow, text } from "../layout/algebra.ts";
+import { m } from "../../../i18n/index.ts";
 
 /**
  * Breadcrumbs: Helps users navigate the website.
@@ -16,6 +17,7 @@ import { inlineRow, text } from "../layout/algebra.ts";
  * inside itself: as a flex item it is capped at the row, `max-w-full`) instead of daisyUI's horizontal scrolling, and without daisyUI's 4px
  * outdent (which cancels its own padding): in a column sized to its content the outdent made the
  * trail 4px too wide for its box, so it always showed a scrollbar and clipped the last crumb. `width="xs"` gives the docs "max-width" example.
+ * daisyUI turns its separators round under `[dir=rtl]` (the page is laid out right to left in Arabic).
  */
 export const breadcrumbs = rcva(
   `${text.label} breadcrumbs ms-0 overflow-visible [&>ul]:flex-wrap [&>ul]:ps-0 [&>ul]:whitespace-normal [&>ul>li]:max-w-full [&>ul>li]:[overflow-wrap:break-word]`,
@@ -65,7 +67,7 @@ export class UiBreadcrumbs extends LightElement {
   @property({ attribute: false }) items: BreadcrumbItem[] = [];
   @property() size: BreadcrumbsVariants["size"] = "sm";
   @property() width: BreadcrumbsVariants["width"];
-  @property() label = "Breadcrumb";
+  @property() label = m.breadcrumbs_label();
 
   render() {
     const last = this.items.length - 1;

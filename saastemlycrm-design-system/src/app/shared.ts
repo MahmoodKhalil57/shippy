@@ -10,6 +10,7 @@ import { parse } from "qs-esm";
 import { matchPath, pathParams, placeOf, placesOf, viewWidgets, type Places } from "./widgets/places.ts";
 import { formatNumber } from "./widgets/schema.ts";
 import { setToday } from "./widgets/widget.ts";
+import { intl, m } from "../i18n/index.ts";
 
 /** Shared helpers for the dashboard (src/app). */
 
@@ -78,7 +79,7 @@ export const useAsTitle = (c: CollectionConfig) => c.admin?.useAsTitle ?? "id";
 export function titleOf(c: CollectionConfig, doc: Doc | Record<string, unknown> | null | undefined): string {
   if (!doc) return "";
   const v = doc[useAsTitle(c)];
-  return v == null || v === "" ? text(doc.id ?? "Untitled") : text(v);
+  return v == null || v === "" ? text(doc.id ?? m.shared_untitled()) : text(v);
 }
 
 /** Columns for the list view: `admin.defaultColumns`, else the title and the next few simple fields. */
@@ -94,27 +95,22 @@ export function columnsOf(c: CollectionConfig): FieldLike[] {
   return [byName.get(title) ?? pseudo(title), ...simple.slice(0, 3), pseudo("updatedAt")];
 }
 
-const dateFmt = new Intl.DateTimeFormat("en-GB", {
+const DATE_TIME: Intl.DateTimeFormatOptions = {
   day: "2-digit",
   month: "short",
   year: "numeric",
   hour: "2-digit",
   minute: "2-digit",
-});
-const dayFmt = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-const dayUtcFmt = new Intl.DateTimeFormat("en-GB", {
-  day: "2-digit",
-  month: "short",
-  year: "numeric",
-  timeZone: "UTC",
-});
+};
+const DAY: Intl.DateTimeFormatOptions = { day: "2-digit", month: "short", year: "numeric" };
+const DAY_UTC: Intl.DateTimeFormatOptions = { ...DAY, timeZone: "UTC" };
 /** A date for display; a date with no time of day (midnight) shows as just the day. */
 export const formatDate = (v: unknown) => {
   if (typeof v !== "string" || !v) return "";
   const d = new Date(v);
   // A date with no time of day (stored as midnight UTC, as a day-only picker saves it): the day.
-  if (d.getUTCHours() === 0 && d.getUTCMinutes() === 0) return dayUtcFmt.format(d);
-  return d.getHours() === 0 && d.getMinutes() === 0 ? dayFmt.format(d) : dateFmt.format(d);
+  if (d.getUTCHours() === 0 && d.getUTCMinutes() === 0) return intl.date(DAY_UTC).format(d);
+  return intl.date(d.getHours() === 0 && d.getMinutes() === 0 ? DAY : DATE_TIME).format(d);
 };
 
 /** Plain-text cell value for a field. */
@@ -124,7 +120,7 @@ export const formatDate = (v: unknown) => {
  */
 export function numberText(f: FieldLike, v: number, doc?: Record<string, unknown>): string {
   const n = f.custom?.number;
-  if (!n) return v.toLocaleString("en-US");
+  if (!n) return intl.number().format(v);
   const currency = n.currencyField ? text(doc?.[n.currencyField]) || undefined : n.currency;
   return formatNumber(v, { ...n, currency });
 }
@@ -147,12 +143,12 @@ export function cellText(f: FieldLike, v: unknown, doc?: Record<string, unknown>
     case "date":
       return formatDate(v);
     case "checkbox":
-      return v ? "Yes" : "No";
+      return v ? m.shared_yes() : m.shared_no();
     case "number":
       return typeof v === "number" ? numberText(f, v, doc) : text(v);
     case "array":
     case "blocks":
-      return Array.isArray(v) ? `${v.length} ${v.length === 1 ? "row" : "rows"}` : "—";
+      return Array.isArray(v) ? m.shared_rows({ count: v.length }) : "—";
     case "group":
     case "json":
       return JSON.stringify(v);
@@ -270,7 +266,8 @@ export const addressOf = (href: string) => placeOf(href, places());
 
 /**
  * A view's navigation link: what it says, or for `auto` its collection's group and plural label
- * (a global's: Configuration and its label), from the first collection or global widget on it.
+ * (a global's: its group, else Configuration, and its label), from the first collection or global
+ * widget on it.
  */
 export function navOf(v: { nav?: RootView["nav"]; Component?: unknown; path: string }) {
   if (v.nav !== "auto") return v.nav;
@@ -278,7 +275,11 @@ export function navOf(v: { nav?: RootView["nav"]; Component?: unknown; path: str
     const c = w.collection ? collectionOf(w.collection.collection) : undefined;
     if (c) return { group: groupOf(c), label: labels(c).plural };
     const g = w.global ? globalOf(w.global.global) : undefined;
-    if (g) return { group: "Configuration", label: globalLabel(g) };
+    if (g)
+      return {
+        group: typeof g.admin?.group === "string" ? g.admin.group : m.shared_configuration(),
+        label: globalLabel(g),
+      };
   }
   return undefined;
 }
@@ -350,7 +351,7 @@ export async function toggleBookmark(b: Bookmark) {
     if (existing?.id) await api.delete("bookmarks", existing.id);
     else await api.create("bookmarks", { href: b.href, label: b.label });
   } catch (e) {
-    toast(`Couldn't update bookmarks: ${(e as Error).message}`, "error");
+    toast(m.shared_bookmarks_failed({ error: (e as Error).message }), "error");
   }
   await loadBookmarks();
 }
@@ -362,7 +363,8 @@ export const groupIcon = (group: string): IconName =>
   ((settings.nav?.groups ?? []).find((g) => g.label === group)?.icon as IconName | undefined) ?? "grid";
 
 /** A collection's group (`admin.group`), as shown in the navigation. */
-export const groupOf = (c: CollectionConfig) => (typeof c.admin?.group === "string" ? c.admin.group : "Collections");
+export const groupOf = (c: CollectionConfig) =>
+  typeof c.admin?.group === "string" ? c.admin.group : m.shared_collections();
 
 /** A collection's dashboard settings (its `custom`: board, card fields, steps, summary). */
 export const collectionSettings = (c: CollectionConfig | GlobalConfig): CollectionSettings =>
@@ -372,9 +374,13 @@ export const collectionSettings = (c: CollectionConfig | GlobalConfig): Collecti
 export const isToned = (f: FieldLike) =>
   f.type === "select" && !f.hasMany && (!!f.custom?.tones || /status|stage/i.test(f.name ?? ""));
 
-/** A select value's tag tone: the field's `custom.tones`, else read from the label's words. */
+/** A select value's tag tone: the field's `custom.tones`, else read from the label's words, else the value's. */
 export const toneOf = (f: FieldLike, value: unknown, label: string): Tone =>
-  (f.custom?.tones?.[String(value)] as Tone | undefined) ?? statusColor(label);
+  (f.custom?.tones?.[String(value)] as Tone | undefined) ??
+  statusTone(label) ??
+  // A label in another language (Arabic): the value's own words (`in_progress`, `on-hold`).
+  statusTone((typeof value === "string" ? value : "").replace(/[-_]/g, " ")) ??
+  "neutral";
 
 /** Status words by tone, checked in this order: ended, problem, waiting, in progress, done. */
 const STATUS_WORDS: [Tone, string[]][] = [
@@ -469,6 +475,11 @@ const patternsOf = () =>
  * "on board", "customs") with `admin.custom.statusWords`; a select field's `custom.tones` wins.
  */
 export function statusColor(status = ""): Tone {
+  return statusTone(status) ?? "neutral";
+}
+
+/** The tone a status's words name, if any. */
+function statusTone(status: string): Tone | undefined {
   for (const [tone, re] of patternsOf()) if (re.test(status)) return tone;
-  return "neutral";
+  return undefined;
 }

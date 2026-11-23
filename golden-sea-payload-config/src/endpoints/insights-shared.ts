@@ -1,5 +1,6 @@
 import type { PayloadRequest } from "payload";
 import type { Doc } from "saastemlycrm-design-system/contracts";
+import { m } from "../i18n/paraglide/messages.js";
 
 /**
  * Small helpers shared by the insights endpoints (profit & close, control room, briefing,
@@ -37,21 +38,55 @@ export const first = (name: string) => name.split(" ")[0] ?? name;
 export const href = (...parts: string[]) => `/${parts.join("/")}`;
 export const docHref = (collection: string, id: string) => href("collections", collection, id);
 
-export const fmtDay = (d: Date) => d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
-export const fmtTime = (d: Date) =>
-  d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
+/** The language an endpoint answers in: the request's `?locale=`, else English. */
+export type Lang = "en" | "ar";
+export const langOf = (req: PayloadRequest): Lang => (req.locale === "ar" ? "ar" : "en");
+/** The `Intl` locale for a language: Arabic writes Latin digits; English keeps the code's own. */
+export const intlLocale = (lang: Lang, en = "en-GB") => (lang === "ar" ? "ar-u-nu-latn" : en);
+
+/**
+ * An option's label in a language, from the select field at `path` (`status`, or through groups
+ * and arrays: `registration.status`) of `collection` in the running config
+ * (`req.payload.config`). English keeps the stored value, as the endpoints always wrote it; Arabic
+ * reads the option's `{ en, ar }` label, else the value.
+ */
+export function optionLabel(req: PayloadRequest, collection: string, path: string, value: unknown): string {
+  const v = str(value);
+  if (langOf(req) === "en" || !v) return v;
+  type F = { name?: string; options?: unknown[]; fields?: F[]; tabs?: F[] };
+  // Unnamed containers (rows, collapsibles, unnamed tabs) don't add a level to a path.
+  const flat = (fields: F[] | undefined): F[] =>
+    (fields ?? []).flatMap((f) => (f.name ? [f] : flat(f.fields ?? f.tabs)));
+  const config = (req.payload as unknown as { config?: { collections?: { slug: string; fields?: F[] }[] } }).config;
+  let field: F | undefined = { fields: config?.collections?.find((c) => c.slug === collection)?.fields };
+  for (const name of path.split(".")) field = flat(field?.fields).find((f) => f.name === name);
+  for (const o of field?.options ?? []) {
+    if (!o || typeof o !== "object" || (o as { value?: unknown }).value !== v) continue;
+    const label = (o as { label?: unknown }).label;
+    return (label && typeof label === "object" ? str((label as Record<string, unknown>).ar) : "") || v;
+  }
+  return v;
+}
+
+export const fmtDay = (d: Date, lang: Lang = "en") =>
+  d.toLocaleDateString(intlLocale(lang), { day: "numeric", month: "short", timeZone: "UTC" });
+export const fmtTime = (d: Date, lang: Lang = "en") =>
+  d.toLocaleTimeString(intlLocale(lang), { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
 /** "today 14:00", "tomorrow", "in 3 days", "2 days overdue". */
-export const relative = (d: Date) => {
+export const relative = (d: Date, lang: Lang = "en") => {
   const days = Math.floor(d.getTime() / DAY) - Math.floor(NOW.getTime() / DAY);
-  if (days === 0) return d < NOW ? `overdue since ${fmtTime(d)}` : `today ${fmtTime(d)}`;
-  if (days === 1) return `tomorrow ${fmtTime(d)}`;
-  if (days > 1) return `in ${days} days`;
-  return `${-days} day${days === -1 ? "" : "s"} overdue`;
+  const o = { locale: lang };
+  const time = fmtTime(d, lang);
+  if (days === 0)
+    return d < NOW ? m.api_insights_shared_overdue_since({ time }, o) : m.api_insights_shared_today_at({ time }, o);
+  if (days === 1) return m.api_insights_shared_tomorrow_at({ time }, o);
+  if (days > 1) return m.api_insights_shared_in_days({ days }, o);
+  return m.api_insights_shared_days_overdue({ days: -days }, o);
 };
 
-export const money = (currency: string, n: number, digits = 0) =>
-  `${currency} ${n.toLocaleString("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits })}`;
-export const egp = (n: number) => money("EGP", Math.round(n));
+export const money = (currency: string, n: number, digits = 0, lang: Lang = "en") =>
+  `${currency} ${n.toLocaleString(intlLocale(lang, "en-US"), { minimumFractionDigits: digits, maximumFractionDigits: digits })}`;
+export const egp = (n: number, lang: Lang = "en") => money("EGP", Math.round(n), 0, lang);
 export const signed = (n: number, fmt: (n: number) => string) =>
   n > 0 ? `+${fmt(n)}` : n < 0 ? `−${fmt(-n)}` : fmt(0);
 export const pct = (n: number) => `${n.toFixed(1)}%`;
@@ -62,12 +97,12 @@ export const MONEY_ROLES = ["management", "finance-director", "operations"];
 export const FINANCE_ROLES = ["management", "finance-director", "operations"];
 
 export async function all(req: PayloadRequest, collection: string, depth = 1) {
-  const r = await req.payload.find({ collection: collection as never, pagination: false, depth });
+  const r = await req.payload.find({ locale: req.locale, collection: collection as never, pagination: false, depth });
   return r.docs as unknown as Doc[];
 }
 
 export const fail = (status: number, message: string) => Response.json({ errors: [{ message }] }, { status });
-export const unauthorized = () => fail(401, "You are not allowed to perform this action.");
+export const unauthorized = (lang: Lang = "en") => fail(401, m.api_insights_shared_not_allowed({}, { locale: lang }));
 
 /** The signed-in user, or null. */
 export const meOf = (req: PayloadRequest) => (req.user as unknown as Me | null) ?? null;
@@ -83,9 +118,9 @@ export async function body(req: PayloadRequest): Promise<Record<string, unknown>
 }
 
 /** "17 Nov 2026, 09:30" (UTC, like the rest of the demo). */
-export const formatDateTime = (iso: string) => {
+export const formatDateTime = (iso: string, lang: Lang = "en") => {
   const d = new Date(iso);
   return Number.isNaN(d.getTime())
     ? iso
-    : `${d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })}, ${fmtTime(d)}`;
+    : `${d.toLocaleDateString(intlLocale(lang), { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })}, ${fmtTime(d, lang)}`;
 };

@@ -1,11 +1,12 @@
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
+import { formatInt, m } from "../../../i18n/index.ts";
 import { LightElement } from "../../base/light-element.ts";
 import { motion } from "../../base/motion-queue.ts";
 import { rcva } from "../../base/variants.ts";
 import { fixed, fixedWidth, row, rowFill, rowGrow, rowLine, stack, text, tiles } from "../layout/algebra.ts";
-import { cellCounts, foldParts, percentOf, type Slot } from "./visual-math.ts";
+import { cellCounts, foldParts, percentOf, percentText, type Slot } from "./visual-math.ts";
 
 /**
  * Waffle: a share as a hundred cells (ten by ten), each cell one percent of the whole: "38 of
@@ -153,13 +154,13 @@ export class UiWaffle extends LightElement {
     const many = !!this.parts?.length;
     const sum = drawn.reduce((t, p) => t + p.value, 0);
     const whole = Math.max(sum, this.max) || 1;
-    const share = (v: number) => `${percentOf(v, whole) ?? 0}%`;
+    const share = (v: number) => percentText(percentOf(v, whole) ?? 0);
     // Which part each cell belongs to, in reading order (-1: not filled).
     const owner: number[] = drawn.flatMap((p, i) => Array.from({ length: p.cells }, () => i));
     while (owner.length < CELLS) owner.push(-1);
     const active = drawn[this._active];
     const value = active
-      ? (active.valueText ?? String(active.value))
+      ? (active.valueText ?? formatInt(active.value))
       : many
         ? this.valueText || share(sum)
         : this.valueText || share(this.value);
@@ -192,11 +193,15 @@ export class UiWaffle extends LightElement {
               class=${waffleGrid()}
               role="meter"
               tabindex="0"
-              aria-label=${this.label || this.caption || "Share"}
+              aria-label=${this.label || this.caption || m.waffle_label()}
               aria-valuenow=${this.value}
               aria-valuemin="0"
               aria-valuemax=${this.max}
-              aria-valuetext=${`${this.valueText || share(this.value)}${this.caption ? ` ${this.caption}` : ""}`}
+              aria-valuetext=${
+                this.caption
+                  ? m.waffle_reading({ value: this.valueText || share(this.value), caption: this.caption })
+                  : this.valueText || share(this.value)
+              }
               @pointerleave=${() => this.#set(-1)}
               @focus=${() => this.#set(0)}
               @blur=${() => this.#set(-1)}
@@ -215,7 +220,7 @@ export class UiWaffle extends LightElement {
                 ${drawn.map((p, i) => {
                   const body = html`<span class=${waffleDot({ slot: p.slot })}></span>
                     <span class=${waffleLabel()}>${p.label}</span>
-                    <span class=${waffleAmount()}>${p.valueText ?? String(p.value)}</span>
+                    <span class=${waffleAmount()}>${p.valueText ?? formatInt(p.value)}</span>
                     <span class=${waffleShare()}>${share(p.value)}</span>`;
                   const cls = waffleItem({ dim: this._active >= 0 && this._active !== i, link: !!p.href });
                   const on = () => this.#set(i);

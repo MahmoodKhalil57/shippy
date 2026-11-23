@@ -2,6 +2,7 @@ import { actions, assists, details, message, table, text, tiles, widgets } from 
 import { simulations } from "../actions/inbox.ts";
 import * as fmt from "../format/inbox.ts";
 import { RFQ_KINDS, inbox, liveMessages, messagesToReview, message as open, openMessage } from "../queries/inbox.ts";
+import { m } from "../i18n/paraglide/messages.js";
 
 /**
  * Inbox (`/inbox`): every channel in one list — Outlook and Gmail mailboxes, the website
@@ -21,9 +22,9 @@ export const inboxPage = widgets({
   params: { show: fmt.SHOWS.all, order: fmt.ORDERS.time, message: "" },
   // The demo's "Simulate…" buttons: a new RFQ email, a forwarded copy, a supplier's reply.
   header: {
-    eyebrow: "Sourcing desk · intake",
-    heading: "Inbox",
-    subtitle: "Every channel in one inbox. AI reads emails, files and photos into a draft case; people decide.",
+    eyebrow: m.page_inbox_eyebrow(),
+    heading: m.page_inbox_heading(),
+    subtitle: m.page_inbox_subtitle(),
     actions: simulations,
   },
   // Master–detail: the message list beside the reading pane, then the side cards, then the open
@@ -43,7 +44,7 @@ export const inboxPage = widgets({
       format: fmt.messageFilters,
     }),
     {
-      title: "Messages",
+      title: m.page_inbox_messages(),
       // With the filters above it, as tall as the message beside them, so the row is one block.
       rows: 13,
       size: "s",
@@ -57,13 +58,13 @@ export const inboxPage = widgets({
         layout: "list",
         select: { param: "message" },
         actions: false,
-        empty: "No messages match this filter.",
+        empty: m.page_inbox_no_match_filter(),
       },
     },
     message({
-      title: "Original message",
+      title: m.page_inbox_original(),
       // Its subhead comes with the data; this line holds its place while it loads.
-      subhead: "The message as it arrived",
+      subhead: m.page_inbox_original_subhead(),
       // The message itself, as tall as the list beside it.
       rows: 15,
       // `m`: beside the message list (`s`) on a 3-lane board, master and detail together. Always
@@ -75,35 +76,39 @@ export const inboxPage = widgets({
     }),
     // Short reads beside the message, each a few assists.
     assists({
-      title: "What this message is",
+      title: m.page_inbox_what_is(),
       rows: 3,
       size: "s",
       skeleton: "text",
       data: open,
-      empty: { when: ({ d }) => !d.message?.body, heading: "No text to read in this message." },
+      empty: { when: ({ d }) => !d.message?.body, heading: m.page_inbox_no_text() },
       format: fmt.messageAssists(fmt.kindAssists),
     }),
     assists({
-      title: "Warnings in this message",
+      title: m.page_inbox_warnings(),
       rows: 3,
       size: "s",
       skeleton: "text",
       data: open,
-      empty: { when: ({ d }) => !d.message?.body, heading: "No text to check for warnings." },
+      empty: { when: ({ d }) => !d.message?.body, heading: m.page_inbox_no_warnings_text() },
       format: fmt.messageAssists(fmt.flagAssists),
     }),
     assists({
-      title: "Offer details and replies",
+      title: m.page_inbox_offer_details(),
       rows: 3,
       size: "s",
       skeleton: "text",
       data: open,
-      empty: { when: ({ d }) => !d.message, heading: "No message open.", description: "Pick a message in the list." },
+      empty: {
+        when: ({ d }) => !d.message,
+        heading: m.page_inbox_no_message(),
+        description: m.page_inbox_pick_message(),
+      },
       format: fmt.messageAssists(fmt.offerAssists),
     }),
     {
-      title: "Review queue",
-      subhead: "Matches below 85% confidence are never linked automatically — a person picks the case.",
+      title: m.page_inbox_review_title(),
+      subhead: m.page_inbox_review_subhead(),
       // A few matches to look at.
       rows: 5,
       size: "s",
@@ -117,11 +122,11 @@ export const inboxPage = widgets({
         dot: "status",
         select: { param: "message" },
         actions: false,
-        empty: "Nothing waiting for review. Every reply is matched.",
+        empty: m.page_inbox_review_empty(),
       },
     },
     text({
-      title: "Connected channels",
+      title: m.page_inbox_channels(),
       size: "s",
       skeleton: "text",
       data: inbox,
@@ -131,21 +136,20 @@ export const inboxPage = widgets({
     // the case (or open the one made), match a reply (or where its match stands), or what became of
     // it. One tile for all of them.
     text({
-      title: "Next step",
+      title: m.page_inbox_next_step(),
       size: "m",
       rows: 3,
       skeleton: "text",
       data: open,
-      empty: { when: (o) => !fmt.nextStep(o), heading: "No next step for this message." },
+      empty: { when: (o) => !fmt.nextStep(o), heading: m.page_inbox_no_next_step() },
       format: fmt.nextStep,
     }),
     // A reply's match, when a person decides it or it's decided: an uncertain one, a duplicate or a
     // matched reply, why it matched and the collection's actions (a "Link to…" per candidate case,
     // "Not related"; the case's links).
     {
-      title: "Reply match",
-      subhead:
-        "Why it matched and who decided. Below 85% a person picks the case; a duplicate stays with the message already in.",
+      title: m.page_inbox_match_title(),
+      subhead: m.page_inbox_match_subhead(),
       size: "m",
       records: {
         collection: "intake-messages",
@@ -160,61 +164,61 @@ export const inboxPage = widgets({
         tags: ["match.confidencePct"],
         notes: "match.basis",
         notice: "uncertain",
-        empty: "No match to show. A new request is read into a draft case, and a new reply is matched first.",
+        empty: m.page_inbox_match_empty(),
       },
     },
     // The draft case an RFQ is read into.
     tiles({
-      title: "Draft case",
+      title: m.page_inbox_draft_case(),
       size: "m",
       skeleton: "text",
       data: open,
       empty: {
         when: ({ d }) => !fmt.draft(d),
-        heading: "No draft case for this message.",
-        description: "Only a request for quotation is read into one.",
+        heading: m.page_inbox_no_draft(),
+        description: m.page_inbox_no_draft_description(),
       },
       format: fmt.draftHeader,
     }),
     details({
-      title: "Owner, backup and deadline",
+      title: m.page_inbox_assignment(),
       size: "s",
       skeleton: "text",
       data: open,
       empty: {
         when: ({ d }) => !fmt.draft(d),
-        heading: "No owner suggested yet.",
-        description: "The assignment rules suggest one once a request is read into a draft case.",
+        heading: m.page_inbox_no_owner(),
+        description: m.page_inbox_no_owner_description(),
       },
       format: fmt.draftAssignment,
     }),
     table({
-      title: "Draft lines",
+      title: m.page_inbox_draft_lines(),
       size: "l",
       skeleton: "table",
       data: open,
-      empty: { when: ({ d }) => !fmt.draft(d)?.lines.length, heading: "No draft lines for this message." },
+      empty: { when: ({ d }) => !fmt.draft(d)?.lines.length, heading: m.page_inbox_no_draft_lines() },
       format: fmt.draftLines,
     }),
     // What's missing or unclear, over the clarification request drafted for it.
     message({
-      title: "Missing or unclear",
+      title: m.page_inbox_missing(),
       size: "l",
       rows: 4,
       skeleton: "text",
       data: open,
-      empty: { when: ({ d }) => !fmt.draft(d)?.missing.length, heading: "Nothing to clarify with the sender." },
+      empty: { when: ({ d }) => !fmt.draft(d)?.missing.length, heading: m.page_inbox_nothing_clarify() },
       format: fmt.clarification,
     }),
     message({
-      title: "Acknowledgement draft",
+      title: m.page_inbox_ack(),
       size: "l",
       skeleton: "text",
       data: open,
       empty: {
         when: ({ d }) => !fmt.draft(d),
-        heading: "No acknowledgement for this message.",
-        description: "A new request gets one, from the approved template.",
+        heading: m.page_inbox_no_ack(),
+        description: m.page_inbox_no_ack_description(),
       },
       format: fmt.acknowledgement,
     }),

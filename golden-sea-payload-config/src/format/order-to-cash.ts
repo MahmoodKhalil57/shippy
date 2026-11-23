@@ -3,6 +3,7 @@ import { caseDeliveryPath, etaAction } from "../actions/case-delivery.ts";
 import { caseOrderPath, readPo } from "../actions/case-order.ts";
 import type { Check } from "../endpoints/operations.ts";
 import type { CaseOps, OpsDelivery, OpsPO } from "../endpoints/order-to-cash.ts";
+import { m } from "../i18n/paraglide/messages.js";
 import { dayTime, person, statusTone } from "./index.ts";
 
 /**
@@ -21,13 +22,26 @@ import { dayTime, person, statusTone } from "./index.ts";
 /** A case line as the tables name it: "L3 · Hydraulic oil". */
 export const lineLabel = (l: { lineNo: number; description: string }) => `L${l.lineNo} · ${l.description}`;
 
-const plural = (n: number, one: string, many = `${one}es`) => (n === 1 ? one : many);
+/** A PO check's line as the tables name it: "L3", or "Header" for the PO's terms. */
+const lineRef = (lineNo: number) => (lineNo ? m.order_to_cash_line_ref({ line: lineNo }) : m.order_to_cash_header());
 
 /* ------------------------------------------------------------------------- the order at a glance */
 
-/** The order at a glance's figures, in order ("Supplier bills" only for those who see costs). */
+/**
+ * The order at a glance's figures, in order ("Supplier bills" only for those who see costs): each
+ * tile's key, its words in `orderFigureName`.
+ */
 export const ORDER_FIGURES = ["Customer PO", "Supplier POs confirmed", "Received", "Supplier bills"] as const;
 export type OrderFigure = (typeof ORDER_FIGURES)[number];
+
+/** An order figure's words in the interface's language. */
+export const orderFigureName = (key: OrderFigure): string =>
+  ({
+    "Customer PO": m.order_to_cash_figure_customer_po,
+    "Supplier POs confirmed": m.order_to_cash_figure_supplier_pos_confirmed,
+    Received: m.order_to_cash_figure_received,
+    "Supplier bills": m.order_to_cash_figure_supplier_bills,
+  })[key]();
 
 /**
  * The order at a glance: the customer's PO check, supplier POs confirmed, units received, and
@@ -41,38 +55,48 @@ export const orderFigures = (d: CaseOps): Figure<OrderFigure>[] => {
   const held = d.bills.filter((b) => b.status === "On hold").length;
   return [
     {
-      label: "Customer PO",
-      value: po ? po.status : d.orderConfirmed ? "Validated" : "Not received",
+      key: "Customer PO",
+      label: orderFigureName("Customer PO"),
+      value: po ? po.status : d.orderConfirmed ? m.order_to_cash_po_validated() : m.order_to_cash_po_not_received(),
       note: po
-        ? `${po.number} vs ${po.quotation}`
+        ? m.order_to_cash_po_vs_quotation({ po: po.number, quotation: po.quotation })
         : d.orderConfirmed
-          ? "Sales order confirmed"
-          : "Waiting for the customer's order",
+          ? m.order_to_cash_sales_order_confirmed()
+          : m.order_to_cash_waiting_customer_order(),
       tone: po ? (po.status === "Validated" ? "success" : "error") : d.orderConfirmed ? "success" : undefined,
     },
     {
-      label: "Supplier POs confirmed",
-      value: `${confirmed.length} of ${d.purchaseOrders.length}`,
-      note: d.purchaseOrders.length ? "Re-checked before confirming" : "Prepared when the sales order is confirmed",
+      key: "Supplier POs confirmed",
+      label: orderFigureName("Supplier POs confirmed"),
+      value: m.order_to_cash_n_of_total({ n: confirmed.length, total: d.purchaseOrders.length }),
+      note: d.purchaseOrders.length ? m.order_to_cash_pos_rechecked() : m.order_to_cash_pos_prepared_later(),
       share: d.purchaseOrders.length
-        ? { value: confirmed.length / d.purchaseOrders.length, text: "confirmed" }
+        ? { value: confirmed.length / d.purchaseOrders.length, text: m.order_to_cash_share_confirmed() }
         : undefined,
     },
     {
-      label: "Received",
-      value: ordered ? `${received} of ${ordered}` : "—",
-      note: ordered && received < ordered ? `${ordered - received} on backorder` : "Units across all receipts",
-      share: ordered ? { value: received / ordered, text: "of the units ordered" } : undefined,
+      key: "Received",
+      label: orderFigureName("Received"),
+      value: ordered ? m.order_to_cash_n_of_total({ n: received, total: ordered }) : "—",
+      note:
+        ordered && received < ordered
+          ? m.order_to_cash_on_backorder({ count: ordered - received })
+          : m.order_to_cash_units_across_receipts(),
+      share: ordered ? { value: received / ordered, text: m.order_to_cash_share_of_units_ordered() } : undefined,
       tone: ordered && received < ordered ? "warning" : undefined,
     },
     ...(d.canSeeCosts
       ? [
           {
-            label: "Supplier bills" as const,
+            key: "Supplier bills" as const,
+            label: orderFigureName("Supplier bills"),
             value: `${d.bills.length}`,
-            note: held ? `${held} on hold — 3-way match` : "Matched to PO and receipt",
+            note: held ? m.order_to_cash_bills_on_hold({ count: held }) : m.order_to_cash_bills_matched(),
             share: d.bills.length
-              ? { value: (d.bills.length - held) / d.bills.length, text: `${d.bills.length - held} matched` }
+              ? {
+                  value: (d.bills.length - held) / d.bills.length,
+                  text: m.order_to_cash_share_matched({ count: d.bills.length - held }),
+                }
               : undefined,
             tone: held ? ("error" as const) : undefined,
           },
@@ -91,6 +115,14 @@ export const unorderedLines = (d: CaseOps) => {
   return d.lines.filter((l) => !onPo.has(l.lineNo));
 };
 
+/** An unawarded line's outcome (a stored value) in the interface's language; others as stored. */
+const outcomeWords = (outcome: string) =>
+  outcome === "Closed"
+    ? m.order_to_cash_outcome_closed()
+    : outcome === "Open — revision to follow"
+      ? m.order_to_cash_outcome_open_revision()
+      : outcome;
+
 /**
  * Quoted lines the customer didn't order, each kept open for a revision or closed with a reason:
  * a partly awarded case never shows as complete.
@@ -102,7 +134,7 @@ export const partialAward = (d: CaseOps): KindData<"list"> => {
     body: { po: po.id, lineNo, outcome, ...(reason ? { reason } : {}) },
   });
   return {
-    note: "Quoted lines the customer didn't order: they stay open for a revision or close with a reason — a partly awarded case never shows as complete.",
+    note: m.order_to_cash_partial_award_note(),
     items: unorderedLines(d).map((l) => {
       const u = po.unawarded.find((x) => x.lineNo === l.lineNo);
       const actions: Action[] =
@@ -113,39 +145,43 @@ export const partialAward = (d: CaseOps): KindData<"list"> => {
                 ? []
                 : [
                     {
-                      label: "Keep open",
+                      label: m.order_to_cash_keep_open(),
                       call: award(l.lineNo, "Open — revision to follow", "Revision to follow"),
-                      done: `Line ${l.lineNo}: kept open for a revision.`,
+                      done: m.order_to_cash_kept_open_done({ line: l.lineNo }),
                     },
                   ]),
               {
-                label: "Close with reason",
+                label: m.order_to_cash_close_with_reason(),
                 call: award(l.lineNo, "Closed"),
-                prompt: `Close line ${l.lineNo} (not awarded)`,
+                prompt: m.order_to_cash_close_line_prompt({ line: l.lineNo }),
                 fields: [
                   {
                     type: "textarea",
                     name: "reason",
-                    label: "Reason (kept on the case)",
+                    label: m.order_to_cash_reason_label(),
                     required: true,
                     admin: {
-                      placeholder: "e.g. Vessel bought it locally",
-                      description: `L${l.lineNo} · ${l.description}. Common: Vessel bought it locally · Customer cancelled the item · Price not accepted`,
+                      placeholder: m.order_to_cash_reason_placeholder(),
+                      description: m.order_to_cash_reason_hint({ line: l.lineNo, description: l.description }),
                     },
                   },
                 ],
-                done: `Line ${l.lineNo}: closed with reason.`,
+                done: m.order_to_cash_closed_done({ line: l.lineNo }),
               },
             ];
       return {
         headline: lineLabel(l),
-        supporting: u ? `${u.outcome}${u.reason ? ` — ${u.reason}` : ""}` : "Not on the customer's PO — decide",
+        supporting: u
+          ? u.reason
+            ? m.order_to_cash_outcome_with_reason({ outcome: outcomeWords(u.outcome), reason: u.reason })
+            : outcomeWords(u.outcome)
+          : m.order_to_cash_not_on_po_decide(),
         tags: [
           u
             ? u.outcome === "Closed"
-              ? { label: "Closed", tone: "neutral" as const }
-              : { label: "Open — revision to follow", tone: "warning" as const }
-            : { label: "Undecided", tone: "error" as const },
+              ? { label: m.order_to_cash_outcome_closed(), tone: "neutral" as const }
+              : { label: m.order_to_cash_outcome_open_revision(), tone: "warning" as const }
+            : { label: m.order_to_cash_undecided(), tone: "error" as const },
         ],
         actions,
       };
@@ -168,12 +204,12 @@ const customerPoPending = (d: CaseOps): NonNullable<KindData<"table">["alerts"]>
   d.orderConfirmed
     ? {
         tone: "success",
-        text: "The customer's PO was checked against the approved quotation and validated — the sales order is confirmed.",
+        text: m.order_to_cash_po_checked_validated(),
       }
     : {
         tone: "info",
-        heading: "Nordvik's purchase order has just arrived by email.",
-        text: "The AI reads it and checks every line and commercial term against the quotation version it refers to. Nothing is committed until a person resolves each mismatch.",
+        heading: m.order_to_cash_po_arrived_heading(),
+        text: m.order_to_cash_po_arrived_text(),
         actions: [readPo],
       };
 
@@ -191,60 +227,65 @@ export const customerPoCheck = (d: CaseOps): KindData<"table"> => {
           alerts: [customerPoPending(d)],
           columns: [],
           rows: [],
-          empty: d.orderConfirmed
-            ? "Checked and validated when the sales order was confirmed."
-            : "Each line and term is checked here once the PO is read.",
+          empty: d.orderConfirmed ? m.order_to_cash_po_empty_confirmed() : m.order_to_cash_po_empty_read(),
         }
       : {
           columns: [],
           rows: [],
-          empty: "No customer PO yet. When it arrives it is checked here against the approved quotation version.",
+          empty: m.order_to_cash_po_empty_none(),
         };
   const blocked = po.status !== "Validated";
   const rows: Row[] = po.checks.map((c) => ({
-    line: { text: c.lineNo ? `L${c.lineNo}` : "Header", strong: true },
+    line: { text: lineRef(c.lineNo), strong: true },
     field: c.field,
     po: c.po,
     quote: c.quote,
     result: c.matches
-      ? { text: "Match", tone: "success", tag: true }
+      ? { text: m.order_to_cash_result_match(), tone: "success", tag: true }
       : c.resolution
-        ? { text: "Amendment recorded", tone: "success", tag: true }
-        : { text: "Mismatch", tone: "error", tag: true },
-    note: c.resolution ? `${c.resolution}${c.evidence ? " · evidence attached" : ""}` : "",
+        ? { text: m.order_to_cash_result_amendment(), tone: "success", tag: true }
+        : { text: m.order_to_cash_result_mismatch(), tone: "error", tag: true },
+    note: c.resolution
+      ? c.evidence
+        ? m.order_to_cash_resolution_evidence({ resolution: c.resolution })
+        : c.resolution
+      : "",
   }));
   return {
     head: {
-      subhead: `${po.number} · received ${dayTime(po.receivedAt)} · matched to ${po.quotation} · billing entity ${po.billingEntity ?? "—"}`,
-      tags: [{ label: po.status, tone: statusTone(po.status) }, { label: "AI check · 96%" }],
-      actions: [{ ...readPo, label: "Re-run PO check" }],
+      subhead: m.order_to_cash_po_subhead({
+        number: po.number,
+        received: dayTime(po.receivedAt),
+        quotation: po.quotation,
+        entity: po.billingEntity ?? "—",
+      }),
+      tags: [{ label: po.status, tone: statusTone(po.status) }, { label: m.order_to_cash_ai_check_tag() }],
+      actions: [{ ...readPo, label: m.order_to_cash_rerun_po_check() }],
     },
     columns: [
-      { key: "line", label: "Line" },
-      { key: "field", label: "Checked" },
-      { key: "po", label: "Customer PO" },
-      { key: "quote", label: `Quotation ${po.quotation}` },
-      { key: "result", label: "Result", supporting: "note" },
+      { key: "line", label: m.order_to_cash_col_line() },
+      { key: "field", label: m.order_to_cash_col_checked() },
+      { key: "po", label: m.order_to_cash_col_customer_po() },
+      { key: "quote", label: m.order_to_cash_col_quotation({ quotation: po.quotation }) },
+      { key: "result", label: m.order_to_cash_col_result(), supporting: "note" },
     ],
     rows,
     alerts: [
       blocked
         ? {
             tone: "error",
-            text: `Commitment blocked: ${po.openMismatches} ${plural(po.openMismatches, "mismatch")} need the customer's written agreement (or an approved exception) before the sales order and supplier POs.`,
+            text: m.order_to_cash_commitment_blocked({ count: po.openMismatches }),
           }
         : {
             tone: "success",
-            text: d.orderConfirmed
-              ? "PO validated — sales order confirmed. Supplier POs follow below."
-              : "PO validated — every mismatch has written customer agreement.",
+            text: d.orderConfirmed ? m.order_to_cash_po_validated_confirmed() : m.order_to_cash_po_validated_agreed(),
           },
     ],
     actions: d.orderConfirmed
       ? []
       : [
           {
-            label: "Confirm sales order & prepare supplier POs",
+            label: m.order_to_cash_confirm_sales_order(),
             main: true,
             disabled: blocked,
             call: { path: `${caseOrderPath}/confirm-order` },
@@ -268,40 +309,45 @@ export const openMismatches = (d: CaseOps): OpenMismatch[] =>
 export const customerAmendment = ({ c, i }: OpenMismatch, d: CaseOps): KindData<"attach"> => {
   const po = d.customerPo!;
   return {
-    action: { label: "Record amendment" },
-    text: `${c.lineNo ? `L${c.lineNo}` : "Header"} · ${c.field}`,
-    heading: `Record customer amendment — line ${c.lineNo || "header"}`,
-    intro: `${c.field} — PO: ${c.po} · Quotation: ${c.quote}`,
+    action: { label: m.order_to_cash_record_amendment() },
+    text: m.order_to_cash_mismatch_text({ line: lineRef(c.lineNo), field: c.field }),
+    heading: c.lineNo
+      ? m.order_to_cash_amendment_heading_line({ line: c.lineNo })
+      : m.order_to_cash_amendment_heading_header(),
+    intro: m.order_to_cash_amendment_intro({ field: c.field, po: c.po, quote: c.quote }),
     fields: [
       {
         type: "textarea",
         name: "resolution",
-        label: "Customer's written agreement",
+        label: m.order_to_cash_agreement_label(),
         required: true,
         defaultValue: c.suggestion ?? "",
         admin: {
-          description: c.suggestion
-            ? "AI draft from the customer's email — check it before recording"
-            : "Who agreed, when and what",
+          description: c.suggestion ? m.order_to_cash_agreement_hint_ai() : m.order_to_cash_agreement_hint(),
         },
       },
     ],
     file: {
       name: "evidence",
-      legend: "Evidence (email or signed amendment)",
-      hint: "Optional in the demo — a copy of the customer's email is attached if you skip this",
+      legend: m.order_to_cash_evidence_legend(),
+      hint: m.order_to_cash_evidence_hint(),
       upload: {
         collection: "media",
         data: { alt: `${po.number} amendment, line ${c.lineNo}`, kind: "Customer PO" },
       },
       sample: {
         filename: `${po.number}-amendment-L${c.lineNo}.pdf`,
-        lines: ["From: purchasing (customer)", `Re: ${po.number} line ${c.lineNo}`, "{resolution}"],
+        // `{resolution}` stays a placeholder: the sample is filled with the form's value.
+        lines: [
+          m.order_to_cash_sample_from(),
+          m.order_to_cash_sample_re({ number: po.number, line: c.lineNo }),
+          "{resolution}",
+        ],
       },
     },
     call: { path: "/operations/po-amend", body: { po: po.id, index: i } },
-    confirmLabel: "Record amendment & lift block",
-    done: `Amendment recorded on line ${c.lineNo} — evidence attached.`,
+    confirmLabel: m.order_to_cash_amendment_confirm(),
+    done: m.order_to_cash_amendment_done({ line: c.lineNo }),
   };
 };
 
@@ -315,31 +361,36 @@ export const customerPoAiCheck = (d: CaseOps): KindData<"custom"> => {
     element: "ui-ai-check",
     key: `po-${po.number}`,
     props: {
-      label: "Second look with AI",
+      label: m.order_to_cash_ai_second_look(),
       text: po.checks
-        .map(
-          (c) =>
-            `${c.lineNo > 0 ? `Line ${c.lineNo}` : "Terms"} · ${c.field}: PO says "${c.po}", quotation ${po.quotation} says "${c.quote}"`,
+        .map((c) =>
+          m.order_to_cash_ai_check_line({
+            what: c.lineNo > 0 ? m.order_to_cash_ai_line({ line: c.lineNo }) : m.order_to_cash_ai_terms(),
+            field: c.field,
+            po: c.po,
+            quotation: po.quotation,
+            quote: c.quote,
+          }),
         )
         .join("\n"),
       questions: [
         {
           id: "prices",
-          prompt: "Are the prices on the customer's PO the same as on the quotation?",
-          yes: "Prices match the quotation",
-          no: "A price differs from the quotation",
+          prompt: m.order_to_cash_q_prices(),
+          yes: m.order_to_cash_q_prices_yes(),
+          no: m.order_to_cash_q_prices_no(),
         },
         {
           id: "items",
-          prompt: "Are the items and quantities on the PO the same as on the quotation?",
-          yes: "Items and quantities match",
-          no: "An item or quantity differs",
+          prompt: m.order_to_cash_q_items(),
+          yes: m.order_to_cash_q_items_yes(),
+          no: m.order_to_cash_q_items_no(),
         },
         {
           id: "terms",
-          prompt: "Do the PO's commercial terms (payment, delivery, validity) match the quotation?",
-          yes: "Terms match",
-          no: "A term differs",
+          prompt: m.order_to_cash_q_terms(),
+          yes: m.order_to_cash_q_terms_yes(),
+          no: m.order_to_cash_q_terms_no(),
         },
       ],
     },
@@ -357,13 +408,13 @@ export const purchaseOrdersToConfirm = (d: CaseOps): OpsPO[] =>
   d.canSeeCosts ? d.purchaseOrders.filter((p) => ["Draft", "Awaiting approval"].includes(p.status)) : [];
 
 /** A supplier PO's re-check tile's title, the same before and after the re-check. */
-export const recheckTitle = (p: OpsPO) => `Re-check before confirming ${p.number}`;
+export const recheckTitle = (p: OpsPO) => m.order_to_cash_recheck_title({ number: p.number });
 
 /** What a supplier PO's re-check compares, before and after it runs. */
-const recheckColumns = [
-  { key: "item", label: "Item" },
-  { key: "atQuotation", label: "At quotation" },
-  { key: "now", label: "Now" },
+const recheckColumns = () => [
+  { key: "item", label: m.order_to_cash_col_item() },
+  { key: "atQuotation", label: m.order_to_cash_col_at_quotation() },
+  { key: "now", label: m.order_to_cash_col_now() },
   { key: "ok", label: "" },
 ];
 
@@ -373,16 +424,16 @@ const recheckColumns = [
  */
 const recheckRequest = (p: OpsPO): KindData<"table"> => ({
   head: { tags: [{ label: p.status, tone: statusTone(p.status) }] },
-  note: `${p.number} · ${p.supplierName}: price, availability, FX and lead time are re-checked with the supplier before it is confirmed.`,
-  columns: recheckColumns,
+  note: m.order_to_cash_recheck_note({ number: p.number, supplier: p.supplierName }),
+  columns: recheckColumns(),
   rows: [],
-  empty: "Not re-checked yet.",
+  empty: m.order_to_cash_not_rechecked(),
   actions: [
     {
-      label: "Re-check & confirm",
+      label: m.order_to_cash_recheck_confirm(),
       main: true,
       call: { path: "/operations/po-recheck", body: { po: p.id } },
-      done: `Re-checked price, availability, FX and lead time with ${p.supplierName}.`,
+      done: m.order_to_cash_recheck_done({ supplier: p.supplierName }),
     },
   ],
 });
@@ -395,7 +446,7 @@ const recheckResult = (p: OpsPO, d: CaseOps): KindData<"table"> => {
   const changed = p.recheck.filter((r) => r.ok === false);
   const decide: Action = d.isManagement
     ? {
-        label: `Approve & confirm ${p.number}`,
+        label: m.order_to_cash_approve_confirm({ number: p.number }),
         main: true,
         call: {
           method: "PATCH",
@@ -404,33 +455,38 @@ const recheckResult = (p: OpsPO, d: CaseOps): KindData<"table"> => {
         },
         // Outward and not reversible (the supplier receives the order): it asks first, no Undo.
         confirm: {
-          heading: `Confirm ${p.number}?`,
-          text: `${p.number} goes to ${p.supplierName} as a confirmed order. That can't be undone here.`,
-          label: "Confirm & send",
+          heading: m.order_to_cash_confirm_heading({ number: p.number }),
+          text: m.order_to_cash_confirm_text({ number: p.number, supplier: p.supplierName }),
+          label: m.order_to_cash_confirm_send(),
         },
-        done: `${p.number} confirmed — sent to ${p.supplierName}.`,
+        done: m.order_to_cash_confirmed_done({ number: p.number, supplier: p.supplierName }),
       }
     : {
-        label: "Ask Karim Balbaa to approve",
+        label: m.order_to_cash_ask_approval(),
         main: true,
         call: { path: `${caseOrderPath}/ask-approval`, body: { po: p.id } },
-        done: `Approval requested from Karim Balbaa for ${p.number}.`,
+        done: m.order_to_cash_ask_approval_done({ number: p.number }),
       };
   return {
     head: { tags: [{ label: p.status, tone: statusTone(p.status) }] },
-    note: d.isManagement ? undefined : "Supplier POs are confirmed by Karim Balbaa (management).",
-    columns: recheckColumns,
+    note: d.isManagement ? undefined : m.order_to_cash_confirmed_by_management(),
+    columns: recheckColumns(),
     rows: p.recheck.map((r) => ({
       item: r.item,
       atQuotation: r.atQuotation,
       now: r.now,
-      ok: r.ok === false ? { text: "Changed", tone: "warning", tag: true } : { text: "OK", tone: "success", tag: true },
+      ok:
+        r.ok === false
+          ? { text: m.order_to_cash_changed(), tone: "warning", tag: true }
+          : { text: m.order_to_cash_ok(), tone: "success", tag: true },
     })),
     alerts: changed.length
       ? [
           {
             tone: "warning",
-            text: `${changed.map((c) => `${c.item}: ${c.now}`).join(" · ")} — the shortfall is scheduled as a backorder (the customer promise stays as agreed).`,
+            text: m.order_to_cash_shortfall_backorder({
+              changes: changed.map((c) => m.order_to_cash_change_line({ item: c.item, now: c.now ?? "" })).join(" · "),
+            }),
           },
         ]
       : [],
@@ -461,12 +517,10 @@ export const replanNotice = (d: CaseOps): KindData<"alert"> => {
   if (eta)
     return {
       tone: "warning",
-      heading: `Re-planned after the agent's ETA change — escalated to ${person(d.case.owner)} and Karim Balbaa`,
-      text: `${dayTime(eta.at)} · ${eta.text}`,
+      heading: m.order_to_cash_replan_heading({ owner: person(d.case.owner) }),
+      text: m.order_to_cash_replan_text({ at: dayTime(eta.at), text: eta.text }),
     };
-  return d.case.blocker
-    ? { tone: "info", text: d.case.blocker }
-    : { tone: "success", text: "On plan: no ETA change from the agent and nothing blocking the delivery." };
+  return d.case.blocker ? { tone: "info", text: d.case.blocker } : { tone: "success", text: m.order_to_cash_on_plan() };
 };
 
 /**
@@ -477,26 +531,34 @@ export const deliveryPlan = (d: CaseOps): KindData<"details"> => {
   const next = nextDrop(d);
   if (!next)
     return {
-      note: "No delivery planned yet — the plan is created once supplier POs are confirmed and goods are due.",
+      note: m.order_to_cash_no_plan(),
       items: [],
     };
   const eta = etaAction(d);
   const p = next.plan;
   return {
     head: {
-      tags: [{ label: `Drop ${next.drop} of ${d.deliveries.length} · ${next.status}`, tone: statusTone(next.status) }],
+      tags: [
+        {
+          label: m.order_to_cash_drop_tag({ drop: next.drop, total: d.deliveries.length, status: next.status }),
+          tone: statusTone(next.status),
+        },
+      ],
       actions: eta ? [eta] : [],
     },
-    note: "Supplier promises and the customer promise are tracked separately; an ETA change moves every open drop, booking and task, and alerts the owner.",
+    note: m.order_to_cash_plan_note(),
     items: [
-      { label: "Port · place", value: `${d.case.port ?? "—"} · ${next.place}` },
-      { label: "Vessel ETA", value: dayTime(d.case.eta) },
-      { label: "Agent / delivery contact", value: d.case.agent || "—" },
-      { label: "Truck & boarding staff", value: `${p.vehicle ?? "—"} · ${p.boardingStaff ?? "—"}` },
-      { label: "Launch / boat", value: p.launch ?? "—" },
-      { label: "Goods ready", value: dayTime(p.readyAt) },
-      { label: "Planned on board", value: dayTime(next.plannedAt) },
-      { label: "Clearance", value: p.clearance ?? "—" },
+      { label: m.order_to_cash_port_place(), value: m.order_to_cash_pair({ a: d.case.port ?? "—", b: next.place }) },
+      { label: m.order_to_cash_vessel_eta(), value: dayTime(d.case.eta) },
+      { label: m.order_to_cash_agent_contact(), value: d.case.agent || "—" },
+      {
+        label: m.order_to_cash_truck_staff(),
+        value: m.order_to_cash_pair({ a: p.vehicle ?? "—", b: p.boardingStaff ?? "—" }),
+      },
+      { label: m.order_to_cash_launch_boat(), value: p.launch ?? "—" },
+      { label: m.order_to_cash_goods_ready(), value: dayTime(p.readyAt) },
+      { label: m.order_to_cash_planned_on_board(), value: dayTime(next.plannedAt) },
+      { label: m.order_to_cash_clearance(), value: p.clearance ?? "—" },
     ],
   };
 };
@@ -512,11 +574,11 @@ export const preDispatchChecks = (d: CaseOps): KindData<"actions"> => {
   const openApprovals = d.purchaseOrders.some((x) => x.status === "Awaiting approval");
   const goodsReady = d.backorders.every((b) => !next.lines.some((l) => l.lineNo === b.lineNo) || !b.late);
   const checks: [string, boolean][] = [
-    ["Goods ready & labelled per line", goodsReady],
-    ["Documents: delivery note, packing list, SDS, certificates", true],
-    ["Ship-stores declaration", Boolean(p.clearance)],
-    ["Transport booked (truck, launch)", Boolean(p.vehicle && p.launch && !/to be confirmed/i.test(p.launch))],
-    ["No open approval on the order", !openApprovals],
+    [m.order_to_cash_check_goods_ready(), goodsReady],
+    [m.order_to_cash_check_documents(), true],
+    [m.order_to_cash_check_ship_stores(), Boolean(p.clearance)],
+    [m.order_to_cash_check_transport(), Boolean(p.vehicle && p.launch && !/to be confirmed/i.test(p.launch))],
+    [m.order_to_cash_check_no_approval(), !openApprovals],
   ];
   return {
     head: { subhead: next.number },
@@ -532,88 +594,116 @@ export const preDispatchChecks = (d: CaseOps): KindData<"actions"> => {
 /** One drop: what goes, when and where, dispatch and receipt, and the proof that closes it. */
 function dropEntry(d: CaseOps, x: OpsDelivery): Entry {
   const done = delivered(x);
-  const signedBy = `Chief Officer, ${d.case.vessel || "vessel"}`;
+  const signedBy = m.order_to_cash_signed_by_default({ vessel: d.case.vessel || m.order_to_cash_vessel() });
   return {
     id: x.id,
-    heading: `Drop ${x.drop} · ${x.number}`,
+    heading: m.order_to_cash_drop_heading({ drop: x.drop, number: x.number }),
     meta: [dayTime(x.plannedAt), x.place],
     status: { label: x.status, tone: statusTone(x.status) },
-    text: x.lines.map((l) => `L${l.lineNo} · ${l.qty} × ${l.description}${l.lot ? ` · lot ${l.lot}` : ""}`).join("\n"),
+    text: x.lines
+      .map((l) =>
+        l.lot
+          ? m.order_to_cash_drop_line_lot({ line: l.lineNo, qty: l.qty, description: l.description, lot: l.lot })
+          : m.order_to_cash_drop_line({ line: l.lineNo, qty: l.qty, description: l.description }),
+      )
+      .join("\n"),
     facts: [
       {
-        label: "Dispatch",
+        label: m.order_to_cash_dispatch(),
         value: x.dispatchedAt
-          ? { text: `Dispatched ${dayTime(x.dispatchedAt)}`, tone: "success" }
-          : { text: "Not dispatched yet", tone: "neutral" },
+          ? { text: m.order_to_cash_dispatched_at({ at: dayTime(x.dispatchedAt) }), tone: "success" }
+          : { text: m.order_to_cash_not_dispatched(), tone: "neutral" },
       },
       {
-        label: "Receipt",
+        label: m.order_to_cash_receipt(),
         value: done
           ? {
-              text: `Signed by ${x.confirmedBy ?? "vessel"} · ${dayTime(x.confirmedAt)}${x.proof ? " · signed delivery note on file" : ""}`,
+              text: (x.proof ? m.order_to_cash_signed_by_at_proof : m.order_to_cash_signed_by_at)({
+                by: x.confirmedBy ?? m.order_to_cash_vessel(),
+                at: dayTime(x.confirmedAt),
+              }),
               tone: "success",
             }
-          : { text: "Confirmed receipt pending — signed delivery note required", tone: "warning" },
+          : { text: m.order_to_cash_receipt_pending(), tone: "warning" },
       },
-      ...(x.shortages ? [{ label: "Shortages", value: { text: x.shortages, tone: "warning" as const } }] : []),
-      ...(x.invoice ? [{ label: "Invoiced", value: x.invoice }] : []),
+      ...(x.shortages
+        ? [{ label: m.order_to_cash_shortages(), value: { text: x.shortages, tone: "warning" as const } }]
+        : []),
+      ...(x.invoice ? [{ label: m.order_to_cash_invoiced(), value: x.invoice }] : []),
     ],
     attach:
       !done && x.status !== "Cancelled"
         ? {
-            action: { label: "Confirm delivery…", main: !!x.dispatchedAt },
-            heading: `Confirm ${x.number} delivered`,
-            intro: `${x.lines.map((l) => `L${l.lineNo} × ${l.qty}`).join(" · ")} — ${x.place}`,
+            action: { label: m.order_to_cash_confirm_delivery(), main: !!x.dispatchedAt },
+            heading: m.order_to_cash_confirm_delivered_heading({ number: x.number }),
+            intro: m.order_to_cash_intro({
+              lines: x.lines.map((l) => m.order_to_cash_intro_line({ line: l.lineNo, qty: l.qty })).join(" · "),
+              place: x.place,
+            }),
             file: {
               name: "proof",
-              legend: "Signed delivery note or photo (required)",
+              legend: m.order_to_cash_proof_legend(),
               accept: "image/*,application/pdf",
-              hint: "Photo of the stamped note from the vessel, or the scanned PDF",
+              hint: m.order_to_cash_proof_hint(),
               required: true,
               upload: { collection: "media", data: { alt: `${x.number} signed`, kind: "Delivery note / POD" } },
               sample: {
-                label: "Use the sample scan from the boarding officer",
+                label: m.order_to_cash_sample_scan(),
                 filename: `${x.number}-signed.pdf`,
-                lines: [`Delivery note ${x.number}`, "Received on board — {signedBy}"],
+                // `{signedBy}` stays a placeholder: the sample is filled with the form's value.
+                lines: [
+                  m.order_to_cash_sample_note({ number: x.number }),
+                  m.order_to_cash_sample_received({ signedBy: "{signedBy}" }),
+                ],
               },
             },
             fields: [
-              { type: "text", name: "signedBy", label: "Signed by (vessel)", required: true, defaultValue: signedBy },
+              {
+                type: "text",
+                name: "signedBy",
+                label: m.order_to_cash_signed_by_vessel(),
+                required: true,
+                defaultValue: signedBy,
+              },
               {
                 type: "textarea",
                 name: "shortages",
-                label: "Shortages or damage noted on board",
+                label: m.order_to_cash_shortages_label(),
                 defaultValue: "",
-                admin: { description: "Optional — becomes a claim" },
+                admin: { description: m.order_to_cash_shortages_hint() },
               },
             ],
-            dictate: { label: "Dictate shortages or damage", field: "shortages" },
+            dictate: { label: m.order_to_cash_dictate(), field: "shortages" },
             extract: {
-              label: "Read the signed note from a photo",
+              label: m.order_to_cash_read_note(),
               what: "signed delivery note or receipt from a ship",
               fields: [
-                { id: "signedBy", label: "Signed by", hint: "name and rank of the officer who signed" },
-                { id: "date", label: "Date" },
-                { id: "vessel", label: "Vessel" },
+                {
+                  id: "signedBy",
+                  label: m.order_to_cash_x_signed_by(),
+                  hint: "name and rank of the officer who signed",
+                },
+                { id: "date", label: m.order_to_cash_x_date() },
+                { id: "vessel", label: m.order_to_cash_x_vessel() },
                 {
                   id: "remarks",
-                  label: "Shortages or damage noted",
+                  label: m.order_to_cash_x_remarks(),
                   hint: "anything written about missing or damaged items",
                 },
               ],
               into: { signedBy: { field: "signedBy" }, remarks: { field: "shortages", append: true } },
             },
-            missing: "No evidence, no “Delivered”: attach the signed note first.",
+            missing: m.order_to_cash_missing_proof(),
             call: { path: "/operations/confirm-delivery", body: { delivery: x.id } },
-            confirmLabel: "Confirm delivered",
-            done: `${x.number} delivered — signed delivery note on file.`,
+            confirmLabel: m.order_to_cash_confirm_delivered(),
+            done: m.order_to_cash_delivered_done({ number: x.number }),
           }
         : undefined,
     actions:
       done && !x.invoice && d.canFinance
         ? [
             {
-              label: "Invoice delivered quantities",
+              label: m.order_to_cash_invoice_delivered(),
               call: { path: `${caseDeliveryPath}/invoice`, body: { delivery: x.id } },
               reply: true,
             },
@@ -628,6 +718,15 @@ function dropEntry(d: CaseOps, x: OpsDelivery): Entry {
  * be invoiced (delivered quantities only).
  */
 export const dropEntries = (d: CaseOps): KindData<"entries"> => ({
-  head: { tags: [{ label: `${d.deliveries.filter(delivered).length} of ${d.deliveries.length} delivered` }] },
+  head: {
+    tags: [
+      {
+        label: m.order_to_cash_delivered_count({
+          n: d.deliveries.filter(delivered).length,
+          total: d.deliveries.length,
+        }),
+      },
+    ],
+  },
   items: d.deliveries.map((x) => dropEntry(d, x)),
 });

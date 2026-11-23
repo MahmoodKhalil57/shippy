@@ -1,6 +1,8 @@
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
+import { formatInt, m } from "../../../i18n/index.ts";
+import { isRtl } from "../../base/reading.ts";
 import { LightElement } from "../../base/light-element.ts";
 import { motion } from "../../base/motion-queue.ts";
 import { heightOf, median, paddedExtent, position, quadrantOf, sizeStep } from "../../base/quadrant.ts";
@@ -88,7 +90,7 @@ export interface QuadrantPoint {
   size?: number;
 }
 
-const num = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
+const num = (n: number) => formatInt(n, { maximumFractionDigits: 1 });
 
 /**
  * @example <ui-quadrant label="Suppliers" x-label="On-time %" y-label="Reply hours" invert-y .quadrants=${["Reliable but slow", "Reliable & fast", "Unreliable & slow", "Fast but unreliable"]} .points=${[{ label: "Brightway", x: 96, y: 3 }, …]}></ui-quadrant>
@@ -146,7 +148,7 @@ export class UiQuadrant extends LightElement {
     const focused = marks.indexOf(document.activeElement as HTMLElement);
     if (!order.length || focused < 0) return;
     const at = order.indexOf(focused);
-    const rtl = getComputedStyle(this).direction === "rtl";
+    const rtl = isRtl(this);
     const step: Record<string, number> = {
       ArrowLeft: rtl ? 1 : -1,
       ArrowRight: rtl ? -1 : 1,
@@ -172,11 +174,11 @@ export class UiQuadrant extends LightElement {
     const yd = this.yDomain ?? paddedExtent(ys);
     const most = Math.max(0, ...p.map((d) => d.size ?? 0));
     const caps = this.quadrants;
-    const x = (v: number) => `${this.xLabel ? `${this.xLabel} ` : ""}${num(v)}`;
-    const y = (v: number) => `${this.yLabel ? `${this.yLabel} ` : ""}${num(v)}`;
+    const x = (v: number) => (this.xLabel ? m.quadrant_measure({ measure: this.xLabel, value: num(v) }) : num(v));
+    const y = (v: number) => (this.yLabel ? m.quadrant_measure({ measure: this.yLabel, value: num(v) }) : num(v));
     const read = (d: QuadrantPoint) => [d.label, x(d.x), y(d.y), d.valueText].filter(Boolean).join(" · ");
     const on = p[this._active];
-    const readout = on ? read(on) : p.length ? `Split at ${x(xMid)} · ${y(yMid)}` : "";
+    const readout = on ? read(on) : p.length ? m.quadrant_split({ x: x(xMid), y: y(yMid) }) : "";
     return html`<div class=${quadrant()}>
       ${this.yLabel ? html`<span class=${quadrantYLabel()} aria-hidden="true">${this.yLabel}</span>` : nothing}
       <ul
@@ -200,7 +202,7 @@ export class UiQuadrant extends LightElement {
         }
         ${p.map((d, i) => {
           const q = quadrantOf(d.x, d.y, xMid, yMid, this.invertY);
-          const name = `${read(d)}${caps?.[q] ? `, ${caps[q]}` : ""}`;
+          const name = caps?.[q] ? m.quadrant_point({ point: read(d), quadrant: caps[q] }) : read(d);
           const cls = quadrantMark({
             dim: this._active >= 0 && this._active !== i,
             on: this._active === i,
@@ -246,7 +248,7 @@ export class UiQuadrant extends LightElement {
       </ul>
       <div class=${quadrantFoot()}>
         <p class=${quadrantReadout()} aria-live="polite">${readout}</p>
-        ${this.xLabel ? html`<span class=${quadrantXLabel()} aria-hidden="true">${this.xLabel} →</span>` : nothing}
+        ${this.xLabel ? html`<span class=${quadrantXLabel()} aria-hidden="true">${m.quadrant_x_axis({ measure: this.xLabel })}</span>` : nothing}
       </div>
     </div>`;
   }

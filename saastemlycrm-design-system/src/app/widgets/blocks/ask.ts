@@ -2,6 +2,7 @@ import { html } from "lit";
 import { api } from "../../../api/client.ts";
 import type { AskAnswer } from "../schema.ts";
 import { defineBlock } from "../registry.ts";
+import { m } from "../../../i18n/index.ts";
 
 /**
  * Questions answered from the records, drawn by `<ui-ask>` (src/components/composed/ai/ask.ts):
@@ -28,9 +29,9 @@ defineBlock("ask", (b) => {
     .loadSuggestions=${s && !Array.isArray(s) ? () => suggestionsFrom(s.endpoint) : undefined}
     .question=${b.question ?? ""}
     .name=${b.name ?? "Assistant"}
-    .placeholder=${b.placeholder ?? "Ask a question…"}
+    .placeholder=${b.placeholder ?? m.widget_ask_placeholder()}
     .intro=${b.intro ?? ""}
-    .reading=${b.reading ?? "Reading the records…"}
+    .reading=${b.reading ?? m.widget_ask_reading()}
     .footnote=${b.footnote ?? ""}
   ></ui-ask>`;
 });

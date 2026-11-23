@@ -50,7 +50,15 @@ A real deployment (Payload on D1 and Workers) replaces it.
   (Golden Sea's, in `golden-sea-payload-config`) adds the plugin and calls `startMockBackend()`.
 - **Seed:** loaded from the app's `seedModules` on first run; seed documents and globals added
   later are written into existing browsers once. `/api/_mock/export|import|reset` snapshot or reset.
-- **Not emulated:** drafts/versions, localization, `richText` (plain text), querying through
+- **Localization** (`src/mock/runtime/locales.ts`): Payload's `localization` and `localized: true`
+  fields, stored `{ en, ar }` per field. A request's `locale` (`?locale=`, `req.locale`, a Local API
+  call's `locale`) reads each localized field in that locale, falling back to `fallback-locale` or
+  the default locale; `locale=all` reads and writes every locale's values (the seed is written
+  so). `where` and `sort` match the values in the request's locale; hooks and validation see the
+  document in it; a write sets that locale's value and keeps the others (a field not sent keeps
+  all of them). Custom endpoints get `req.locale`. A seed that gains languages later gives them to
+  documents a browser already loaded, where people haven't changed the text (`withSeedLocales`).
+- **Not emulated:** drafts/versions, `richText` (plain text), querying through
   relationships (`author.name`), login with username, email flows, GraphQL.
 - **Tests** (`tests/`): the engine and REST API only (`rest.test.ts`: query syntax, select,
   populate, joins, access, auth, validation, hooks, endpoints, uploads, globals, export/reset,

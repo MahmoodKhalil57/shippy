@@ -11,13 +11,19 @@
     "lines": [
       {
         "lineNo": 1,
-        "description": "Coverall FR, assorted sizes",
+        "description": {
+          "en": "Coverall FR, assorted sizes",
+          "ar": "أفرول مقاوم للهب، مقاسات متنوعة"
+        },
         "qty": 40,
         "unitPrice": 1150
       },
       {
         "lineNo": 2,
-        "description": "Safety gloves, leather palm",
+        "description": {
+          "en": "Safety gloves, leather palm",
+          "ar": "قفازات سلامة، براحة جلدية"
+        },
         "qty": 200,
         "unitPrice": 252
       }
@@ -40,17 +46,38 @@
     "lines": [
       {
         "lineNo": 3,
-        "description": "Safety helmet EN 397, white",
+        "description": {
+          "en": "Safety helmet EN 397, white",
+          "ar": "خوذة سلامة EN 397، بيضاء"
+        },
         "qty": 10,
         "unitPrice": 340,
         "scheduledFor": "2026-11-12T00:00:00.000Z"
       }
     ],
     "recheck": [
-      { "item": "Nile Safety helmet price", "atQuotation": "EGP 340", "now": "EGP 340", "ok": true },
-      { "item": "Availability", "atQuotation": "10 pcs", "now": "10 pcs promised 12 Nov", "ok": true }
+      {
+        "item": {
+          "en": "Nile Safety helmet price",
+          "ar": "سعر خوذة Nile Safety"
+        },
+        "atQuotation": "EGP 340",
+        "now": "EGP 340",
+        "ok": true
+      },
+      {
+        "item": {
+          "en": "Availability",
+          "ar": "التوفر"
+        },
+        "atQuotation": "10 pcs",
+        "now": "10 pcs promised 12 Nov",
+        "ok": true
+      }
     ],
-    "supplierSide": { "acknowledgedAt": "2026-11-08T00:00:00.000Z" }
+    "supplierSide": {
+      "acknowledgedAt": "2026-11-08T00:00:00.000Z"
+    }
   },
   {
     "id": "po-0416",
@@ -64,15 +91,34 @@
     "lines": [
       {
         "lineNo": 4,
-        "description": "Hydraulic oil ISO VG 68, 208 L drum",
+        "description": {
+          "en": "Hydraulic oil ISO VG 68, 208 L drum",
+          "ar": "زيت هيدروليك ISO VG 68، برميل 208 لتر"
+        },
         "qty": 6,
         "unitPrice": 19800,
         "scheduledFor": "2026-11-14T00:00:00.000Z"
       }
     ],
     "recheck": [
-      { "item": "Suez Industrial drum price", "atQuotation": "EGP 19,800", "now": "EGP 19,800", "ok": true },
-      { "item": "Drop-ship to Abu Qir base", "atQuotation": "14 Nov", "now": "14 Nov 07:00", "ok": true }
+      {
+        "item": {
+          "en": "Suez Industrial drum price",
+          "ar": "سعر برميل Suez Industrial"
+        },
+        "atQuotation": "EGP 19,800",
+        "now": "EGP 19,800",
+        "ok": true
+      },
+      {
+        "item": {
+          "en": "Drop-ship to Abu Qir base",
+          "ar": "شحن مباشر إلى قاعدة أبو قير"
+        },
+        "atQuotation": "14 Nov",
+        "now": "14 Nov 07:00",
+        "ok": true
+      }
     ],
     "supplierSide": {
       "acknowledgedAt": "2026-11-09T00:00:00.000Z",
@@ -94,25 +140,37 @@
     "lines": [
       {
         "lineNo": 1,
-        "description": "Fuel injection valve nozzle, aux. engine Yanmar 6EY18ALW",
+        "description": {
+          "en": "Fuel injection valve nozzle, aux. engine Yanmar 6EY18ALW",
+          "ar": "فوهة صمام حقن الوقود، محرك مساعد Yanmar 6EY18ALW"
+        },
         "qty": 6,
         "unitPrice": 14500
       },
       {
         "lineNo": 2,
-        "description": "Piston ring set (one cylinder), Yanmar 6EY18ALW",
+        "description": {
+          "en": "Piston ring set (one cylinder), Yanmar 6EY18ALW",
+          "ar": "طقم شنابر مكبس (أسطوانة واحدة)، Yanmar 6EY18ALW"
+        },
         "qty": 6,
         "unitPrice": 18500
       },
       {
         "lineNo": 3,
-        "description": "Turbocharger overhaul kit, MAN NR20/S",
+        "description": {
+          "en": "Turbocharger overhaul kit, MAN NR20/S",
+          "ar": "طقم عَمرة شاحن توربيني، MAN NR20/S"
+        },
         "qty": 1,
         "unitPrice": 309920
       },
       {
         "lineNo": 4,
-        "description": "Safety helmet EN 397, white, with chin strap",
+        "description": {
+          "en": "Safety helmet EN 397, white, with chin strap",
+          "ar": "خوذة سلامة EN 397، بيضاء، بحزام ذقن"
+        },
         "qty": 12,
         "unitPrice": 340
       }

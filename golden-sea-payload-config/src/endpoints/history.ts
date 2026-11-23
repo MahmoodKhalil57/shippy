@@ -1,3 +1,6 @@
+import { m } from "../i18n/paraglide/messages.js";
+import { type Lang, intlLocale } from "./insights-shared.ts";
+
 /**
  * Trend history behind the role dashboards (GET /api/home): weekly and monthly series that a
  * real deployment reads from its reporting tables. Illustrative figures for the demo; today's
@@ -114,6 +117,64 @@ export const history = {
     Late: [1, 0, 1, 1, 0, 1],
   } as Record<string, number[]>,
 };
+
+/** The history's words in Arabic (its English is the label itself). */
+const WORDS: Record<string, (i: object, o: { locale: Lang }) => string> = {
+  Price: m.api_history_price,
+  "Lead time": m.api_history_lead_time,
+  "No supplier": m.api_history_no_supplier,
+  Cancelled: m.api_history_cancelled,
+  "Late quote": m.api_history_late_quote,
+  "Not due": m.api_history_not_due,
+  "1–30 d": m.api_history_age_1_30,
+  "31–60 d": m.api_history_age_31_60,
+  "60+ d": m.api_history_age_60_plus,
+  "Awaiting supplier": m.api_history_awaiting_supplier,
+  "Awaiting corrected offer": m.api_history_awaiting_corrected_offer,
+  "Awaiting internal approval": m.api_history_awaiting_internal_approval,
+  "Awaiting customer decision": m.api_history_awaiting_customer_decision,
+  "Awaiting delivery or payment": m.api_history_awaiting_delivery_or_payment,
+  "Inquiries received": m.api_history_inquiries_received,
+  Validated: m.api_history_validated,
+  "Sent to suppliers": m.api_history_sent_to_suppliers,
+  Quoted: m.api_history_quoted,
+  "Won (full or partial)": m.api_history_won_full_or_partial,
+  "Provision stores": m.api_history_provision_stores,
+  "Safety stores": m.api_history_safety_stores,
+  "Cabin stores": m.api_history_cabin_stores,
+  "Deck stores": m.api_history_deck_stores,
+  "Engine stores": m.api_history_engine_stores,
+  "Electrical stores": m.api_history_electrical_stores,
+  "Spare-parts clearance (fees)": m.api_history_spare_parts_clearance,
+  "Agency pricelist": m.api_history_agency_pricelist,
+  "Own stock": m.api_history_own_stock,
+  "Bought to order": m.api_history_bought_to_order,
+  "On time": m.api_history_on_time,
+  Partial: m.api_history_partial,
+  Late: m.api_history_late,
+};
+
+/**
+ * A label of the history in a language: its words translated, a week ("1 Sep") or a month ("Jun")
+ * written with the language's month names. English is the label as it is.
+ */
+export function historyLabel(label: string, lang: Lang): string {
+  if (lang === "en") return label;
+  const word = WORDS[label];
+  if (word) return word({}, { locale: lang });
+  if (/^\d{1,2} [A-Z][a-z]{2}$/.test(label))
+    return new Date(Date.parse(`${label} 2026 UTC`)).toLocaleDateString(intlLocale(lang), {
+      day: "numeric",
+      month: "short",
+      timeZone: "UTC",
+    });
+  if (/^[A-Z][a-z]{2}$/.test(label))
+    return new Date(Date.parse(`1 ${label} 2026 UTC`)).toLocaleDateString(intlLocale(lang), {
+      month: "short",
+      timeZone: "UTC",
+    });
+  return label;
+}
 
 /**
  * Inquiries per day for the 12 weeks to today (illustrative, like the series above): each week's

@@ -9,9 +9,15 @@
  *   receivables. A project adds its own words (`admin.custom.search.synonyms`), passed as
  *   `synonyms`.
  *
+ * Arabic matches as people type it: the query and the text are both folded (`fold`): case
+ * ignored, tashkeel and tatweel dropped, hamza forms of alef as alef, alef maqsura as yaa, taa
+ * marbuta as haa; ranges still point into the original text. The thesaurus has Arabic words
+ * beside the English ones, and a leading "ال" is not part of a word's stem.
+ *
  * Runs in the browser over an index the palette builds when it opens (no server needed). A real
  * deployment could swap `semanticScore` for embeddings without changing the palette.
  */
+import { intl } from "../i18n/index.ts";
 
 export type EntryKind = "action" | "page" | "record";
 
@@ -44,12 +50,43 @@ export interface SearchHit {
 
 // ---------------------------------------------------------------- words
 
-const WORD = /[\p{L}\p{N}]+/gu;
-export const words = (text: string) => text.toLowerCase().match(WORD) ?? [];
+/** Tashkeel (U+064B–U+065F), the superscript alef (U+0670) and tatweel (U+0640): dropped. */
+const DROPPED = /[ً-ٰٟـ]/;
+/** Letters written more than one way, as one. */
+const SAME: Record<string, string> = { أ: "ا", إ: "ا", آ: "ا", ٱ: "ا", ى: "ي", ة: "ه" };
 
-/** A light English stemmer: enough to match "invoices" / "invoicing" / "invoiced" to "invoice". */
+/**
+ * Text as search compares it: lower case, Arabic folded (see above). `at[i]` is where the folded
+ * text's `i`th character came from in `text` (`at[length]` is `text.length`), so a match in the
+ * folded text maps back to the original's characters.
+ */
+export function fold(text: string): { text: string; at: number[] } {
+  let out = "";
+  const at: number[] = [];
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i]!;
+    if (DROPPED.test(ch)) continue;
+    const f = SAME[ch] ?? ch.toLowerCase();
+    for (let k = 0; k < f.length; k++) at.push(i);
+    out += f;
+  }
+  at.push(text.length);
+  return { text: out, at };
+}
+
+/** A range of folded text as a range of the original: up to the next kept character, so a letter's marks stay with it. */
+const unfold = (at: number[], [a, b]: Range): Range => [at[a]!, at[b]!];
+
+const WORD = /[\p{L}\p{N}]+/gu;
+export const words = (text: string) => fold(text).text.match(WORD) ?? [];
+
+/**
+ * A light stemmer: enough to match "invoices" / "invoicing" / "invoiced" to "invoice"; in Arabic,
+ * a leading "ال" ("the") goes ("الفواتير" → "فواتير").
+ */
 export function stem(word: string): string {
-  let w = word.toLowerCase();
+  let w = fold(word).text;
+  if (/^[؀-ۿ]/.test(w)) return w.length >= 5 && w.startsWith("ال") ? w.slice(2) : w;
   if (w.length <= 3) return w;
   for (const [suffix, repl] of [
     ["ies", "y"],
@@ -66,8 +103,35 @@ export function stem(word: string): string {
   return w.replace(/e$/, "");
 }
 
+/** Arabic words for the thesaurus, each list joining the English group of its first word. */
+const ARABIC: string[][] = [
+  ["invoice", "فاتورة", "فواتير", "مطالبة", "مستحقات", "ذمم"],
+  ["payment", "دفع", "دفعة", "مدفوعات", "سداد", "تحويل", "نقد"],
+  ["supplier", "مورد", "موردين", "موردون", "بائع", "مصنع"],
+  ["customer", "عميل", "عملاء", "زبون", "مشتري", "شركة", "شركات"],
+  ["quotation", "عرض", "عروض", "تسعير", "سعر", "أسعار"],
+  ["request", "طلب", "طلبات", "استفسار"],
+  ["purchase", "شراء", "مشتريات", "أمر", "أوامر"],
+  ["delivery", "توصيل", "تسليم", "شحن", "شحنة", "شحنات"],
+  ["stock", "مخزون", "مستودع", "مخزن", "بضاعة"],
+  ["product", "منتج", "منتجات", "صنف", "أصناف", "قطعة", "معدات"],
+  ["task", "مهمة", "مهام", "تذكير", "متابعة"],
+  ["approval", "اعتماد", "موافقة", "صلاحية"],
+  ["user", "مستخدم", "مستخدمين", "فريق", "موظف", "موظفين", "حساب"],
+  ["setting", "إعدادات", "إعداد", "تهيئة", "خيارات"],
+  ["report", "تقرير", "تقارير", "لوحة", "مؤشر", "مؤشرات", "رسم"],
+  ["exception", "خطأ", "مشكلة", "تنبيه", "تحذير"],
+  ["message", "رسالة", "رسائل", "بريد", "محادثة"],
+  ["create", "إنشاء", "جديد", "إضافة", "أضف"],
+  ["opportunity", "فرصة", "فرص", "صفقة", "صفقات"],
+  ["deadline", "موعد", "متأخر", "عاجل", "مستحق"],
+  ["bookmark", "مفضلة", "إشارة", "حفظ", "تثبيت"],
+  ["logout", "تسجيل الخروج", "خروج"],
+  ["contrast", "تباين", "ألوان", "وصول", "تخطيط"],
+];
+
 /** Business thesaurus: words in a group mean (roughly) the same thing. */
-const THESAURUS: string[][] = [
+const ENGLISH: string[][] = [
   ["invoice", "bill", "billing", "receivable", "owed", "owe", "debtor", "collection"],
   ["payment", "pay", "paid", "remittance", "settle", "settlement", "transfer", "money", "cash"],
   ["supplier", "vendor", "seller", "manufacturer", "maker"],
@@ -93,6 +157,11 @@ const THESAURUS: string[][] = [
   ["bookmark", "favourite", "favorite", "save", "pin"],
   ["logout", "signout", "exit", "leave"],
   ["mock", "seed", "demo", "data", "backup", "export", "import", "reset"],
+];
+/** The groups, each with its Arabic words (a list whose first word heads no group is a group of its own). */
+const THESAURUS: string[][] = [
+  ...ENGLISH.map((g) => [...g, ...(ARABIC.find(([head]) => head === g[0])?.slice(1) ?? [])]),
+  ...ARABIC.filter(([head]) => !ENGLISH.some((g) => g[0] === head)),
 ];
 /** Each word's stem → the stems it's related to, from the thesaurus plus a project's groups. */
 function relatedMap(extra: string[][] = []) {
@@ -140,7 +209,13 @@ const isWordStart = (text: string, i: number) => i === 0 || !/[\p{L}\p{N}]/u.tes
 
 /** How well one query token matches `text`; the ranges it covers. */
 function matchToken(token: string, text: string): { score: number; ranges: Range[] } | null {
-  const lower = text.toLowerCase();
+  const { text: lower, at: origin } = fold(text);
+  const found = matchFolded(token, lower);
+  return found && { score: found.score, ranges: found.ranges.map((r) => unfold(origin, r)) };
+}
+
+/** `matchToken` on folded text (ranges in it). */
+function matchFolded(token: string, lower: string): { score: number; ranges: Range[] } | null {
   // 1. substring, preferring one at a word start
   let at = -1;
   for (let i = lower.indexOf(token); i !== -1; i = lower.indexOf(token, i + 1)) {
@@ -299,7 +374,9 @@ export function search(entries: SearchEntry[], query: string, limit = 40, synony
       related: !literal,
     });
   }
-  return hits.sort((a, b) => b.score - a.score || a.entry.title.localeCompare(b.entry.title)).slice(0, limit);
+  return hits
+    .sort((a, b) => b.score - a.score || intl.collator().compare(a.entry.title, b.entry.title))
+    .slice(0, limit);
 }
 
 /** Splits a title into plain and matched parts, for highlighting. */

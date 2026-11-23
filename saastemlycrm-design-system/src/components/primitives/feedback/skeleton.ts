@@ -5,6 +5,7 @@ import { repeat } from "lit/directives/repeat.js";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
 import { row, stack } from "../layout/algebra.ts";
+import { m } from "../../../i18n/index.ts";
 
 /**
  * Skeleton: Shows a loading state for a component.
@@ -81,7 +82,7 @@ export class UiSkeleton extends LightElement {
       return html`<span class=${skeleton({ text: true, shape: null })} aria-busy="true">${this.content}</span>`;
     }
     if (this.template === "circle") {
-      return html`<div class=${skeletonStack({ width: "52" })} aria-busy="true" aria-label="Loading">
+      return html`<div class=${skeletonStack({ width: "52" })} aria-busy="true" aria-label=${m.skeleton_loading()}>
         <div class=${skeletonRow()}>
           ${this._block({ shape: "circle" })}
           <div class=${skeletonStack()}>
@@ -92,14 +93,14 @@ export class UiSkeleton extends LightElement {
       </div>`;
     }
     if (this.template === "rectangle") {
-      return html`<div class=${skeletonStack({ width: "52" })} aria-busy="true" aria-label="Loading">
+      return html`<div class=${skeletonStack({ width: "52" })} aria-busy="true" aria-label=${m.skeleton_loading()}>
         ${this._block({ shape: "block" })} ${this._block({ shape: "line", width: "28" })}
         ${this._block({ shape: "line" })} ${this._block({ shape: "line" })}
       </div>`;
     }
     if (this.lines > 1) {
       const rows = Array.from({ length: this.lines }, (_, i) => i);
-      return html`<div class=${skeletonStack()} aria-busy="true" aria-label="Loading">
+      return html`<div class=${skeletonStack()} aria-busy="true" aria-label=${m.skeleton_loading()}>
         ${repeat(
           rows,
           (i) => i,
@@ -115,7 +116,7 @@ export class UiSkeleton extends LightElement {
     return html`<div
       class=${skeleton({ shape: this.shape, width: this.width, height: this.height, text: this.text })}
       aria-busy="true"
-      aria-label="Loading"
+      aria-label=${m.skeleton_loading()}
     ></div>`;
   }
 }

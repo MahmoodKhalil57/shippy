@@ -1,6 +1,7 @@
 import type { TileSize } from "../../components/base/board.ts";
 import type { Query } from "./kinds.ts";
 import type { Action, Stat, Tag, Tone, ViewBlock, ViewHeader } from "./schema.ts";
+import { m } from "../../i18n/index.ts";
 
 /**
  * Widgets: how a project describes its screens next to its collections and globals.
@@ -440,6 +441,8 @@ export interface EachSpec<T, I = any> {
    */
   slots?(scope: WidgetScope): readonly string[];
   slotOf?(item: I, index: number): string;
+  /** A tile's name in words, where its slot is a key (a figure's label in the interface's language). */
+  name?(slot: string, scope: WidgetScope): string;
   /** What a named tile with no item draws (a figure's label with no value), else `empty`'s words. */
   vacant?(slot: string, scope: WidgetScope): ViewBlock | ViewBlock[];
   items(data: T, scope: WidgetScope): I[];
@@ -561,8 +564,13 @@ export function fill<T>(value: T, scope: WidgetScope): T {
 /** A widget that draws its data with `render`. */
 export type DrawingWidget<T = unknown> = Extract<Widget<T>, { render(data: T, scope: WidgetScope): unknown }>;
 
-/** A figure under one of a `figures` widget's labels (`labels`): its formatter returns these. */
-export type Figure<L extends string> = Stat & { label: L };
+/**
+ * A figure under one of a `figures` widget's tiles (`labels`): its formatter returns these. Its
+ * tile is its `key` when it has one (a stable id, its words in `label` in the interface's
+ * language), else its `label`. Translated figures have keys: a tile keyed by its words would
+ * lose its place on the board (its size, its spot) when the language changes.
+ */
+export type Figure<L extends string> = Stat & ({ key: L } | { label: L; key?: undefined });
 
 /** A strip of figures from one source (`figures`). */
 export type FiguresSpec<T, L extends string = string> = Omit<
@@ -574,10 +582,13 @@ export type FiguresSpec<T, L extends string = string> = Omit<
   /** The query that feeds them. */
   data?: Query<T>;
   /**
-   * The figures' labels, in order: one tile each, its key on the board, decided before the data
-   * (fixed, or from who is looking). A figure the data has no value for shows its label and "-".
+   * The figures' tiles, in order: one each, its key on the board, decided before the data (fixed,
+   * or from who is looking). A figure the data has no value for shows its name and "-". Keys are
+   * the figures' `key`s when they have one (then `name` gives each key's words), else their labels.
    */
   labels: readonly L[] | ((scope: WidgetScope) => readonly L[]);
+  /** A key's words (its label in the interface's language), when the figures have keys. */
+  name?(key: L): string;
   /** The figures, each under one of `labels`. */
   format(data: T, scope: WidgetScope): Figure<L>[];
 };
@@ -594,8 +605,11 @@ export function figures<T, L extends string = string>({
   format: of,
   data,
   labels,
+  name,
   ...w
 }: FiguresSpec<T, L>): Widget<T> {
+  const words = (slot: string) => name?.(slot as L) ?? slot;
+  const keyOf = (f: Stat & { key?: string }) => f.key ?? f.label;
   const named = (scope: WidgetScope) => (typeof labels === "function" ? labels(scope) : labels);
   // A tile one row high draws the figure on one line.
   const size = w.rows === 1 ? "sm" : "md";
@@ -608,10 +622,11 @@ export function figures<T, L extends string = string>({
     each: {
       tiles: (scope: WidgetScope) => named(scope).length,
       slots: named,
-      slotOf: (f: Stat) => f.label,
-      vacant: (label: string) => ({ type: "stats", size, items: [{ label, value: "\u2014" }] }),
+      slotOf: (f: Stat & { key?: string }) => keyOf(f),
+      name: words,
+      vacant: (slot: string) => ({ type: "stats", size, items: [{ label: words(slot), value: "\u2014" }] }),
       items: (data: T, scope: WidgetScope) => of(data, scope),
-      key: (f: Stat, i: number) => f.label || String(i),
+      key: (f: Stat & { key?: string }, i: number) => keyOf(f) || String(i),
       title: () => "",
       render: (f: Stat) => ({ type: "stats", size, items: [f] }),
     },
@@ -760,7 +775,7 @@ export function eachTiles<T>(w: Widget<T>, data: T, scope: WidgetScope): { key: 
       // Its empty state, which is its own heading (under the widget's title, if it has one).
       const words: ViewBlock = {
         type: "empty",
-        heading: w.empty?.heading ?? "Nothing here yet.",
+        heading: w.empty?.heading ?? m.widget_empty(),
         description: w.empty?.description,
       };
       return {
@@ -791,7 +806,7 @@ export function eachTiles<T>(w: Widget<T>, data: T, scope: WidgetScope): { key: 
             ? [
                 {
                   type: "card",
-                  heading: `${more.length} more`,
+                  heading: m.widget_more_heading({ count: more.length }),
                   blocks: more.flatMap((item, i): ViewBlock[] => [
                     ...(i ? [{ type: "divider" } as ViewBlock] : []),
                     { type: "heading", text: e.title(item, index(item)) },

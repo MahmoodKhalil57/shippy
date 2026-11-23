@@ -1,6 +1,7 @@
 import { custom, gauges, steps, widgets } from "saastemlycrm-design-system/contracts";
 import * as fmt from "../format/case-overview.ts";
 import { caseOverview as overview } from "../queries/case-overview.ts";
+import { m } from "../i18n/paraglide/messages.js";
 
 /**
  * Case tab "Overview": the case at a glance. Where it is on the 16-step flow, how far each line
@@ -26,9 +27,9 @@ export const caseOverview = widgets({
   // in one column), the line status with the rest of them beside it, then the logs.
   widgets: [
     steps({
-      title: "Lifecycle — first email to last payment",
+      title: m.page_overview_lifecycle_title(),
       // Its subhead comes with the data; this line holds its place while it loads.
-      subhead: "Where the case is now",
+      subhead: m.page_overview_lifecycle_subhead(),
       // Across the screen: the steps read as one strip.
       size: "full",
       data: overview,
@@ -37,7 +38,7 @@ export const caseOverview = widgets({
     // The case's own fields: what's next, what blocks it, when the quote is due (`due` counts
     // from the demo's day), the vessel and the value (never shown to Sales: the field's access).
     {
-      title: "Next action",
+      title: m.page_overview_next_action(),
       size: "s",
       fields: {
         fields: ["nextAction", "blocker", "deadline", "due", "vesselPort", "eta", "customerRef", "value"],
@@ -48,10 +49,10 @@ export const caseOverview = widgets({
     // Each line on its own: how many are ready, waiting, blocked or without an offer, each a bar of
     // all of them. A case with some lines ready is that share done, never "done" until every line is.
     {
-      title: "Line progress",
-      subhead: "Each line moves on its own. A case is never “done” until every line is.",
+      title: m.page_overview_line_progress(),
+      subhead: m.page_overview_line_progress_subhead(),
       size: "s",
-      empty: { when: (d) => !(d as { lineCount?: unknown }).lineCount, heading: "No lines on this case yet." },
+      empty: { when: (d) => !(d as { lineCount?: unknown }).lineCount, heading: m.page_overview_no_lines() },
       fields: {
         fields: [
           "lineCount.readyPct",
@@ -66,19 +67,19 @@ export const caseOverview = widgets({
     // Who owns the case and backs them up, with the cases collection's "Reassign" (to whoever may
     // hand it over: the AI drafts the note, a person edits and confirms it).
     {
-      title: "Owner & backup",
+      title: m.page_overview_owner_backup(),
       size: "s",
       fields: { fields: ["owner", "backup"] },
     },
     {
-      title: "Last handover note",
+      title: m.page_overview_handover_title(),
       size: "s",
-      empty: { when: (d) => !(d as { handoverNote?: string }).handoverNote, heading: "No handover on this case yet." },
+      empty: { when: (d) => !(d as { handoverNote?: string }).handoverNote, heading: m.page_overview_no_handover() },
       fields: { fields: ["handoverNote"], actions: false },
     },
     // The case's open tasks, soonest due first.
     {
-      title: "Open tasks",
+      title: m.page_overview_open_tasks(),
       size: "s",
       collection: {
         collection: "tasks",
@@ -91,52 +92,50 @@ export const caseOverview = widgets({
     },
     // Every line of the case with its status and, where the AI read it, how sure it was.
     {
-      title: "Line status",
+      title: m.page_overview_line_status(),
       size: "l",
       records: {
         doc: true,
         field: "items",
         columns: ["lineNo", "description", "status", "aiRead"],
-        labels: { lineNo: "#", description: "Line" },
-        empty: "No lines on this case yet.",
+        labels: { lineNo: "#", description: m.page_overview_line() },
+        empty: m.page_overview_no_lines(),
       },
     },
     gauges({
-      title: "After the order",
+      title: m.page_overview_after_order(),
       size: "s",
       data: overview,
-      empty: { when: ({ fulfilment: f }) => !f.started, heading: "Nothing ordered on this case yet." },
+      empty: { when: ({ fulfilment: f }) => !f.started, heading: m.page_overview_nothing_ordered() },
       format: fmt.fulfilment,
     }),
     // The customer's contact rule, read through the case, and what it means: strict customers get
     // internal reminders only.
     {
-      title: "Customer contact rule",
+      title: m.page_overview_contact_rule(),
       size: "s",
       fields: { fields: ["customer", "customer.contactRule", "customer.contactNote"], actions: false },
     },
     // Questions and answers per line, to the customer, a supplier or internal: clear lines keep
     // moving while one waits.
     {
-      title: "Clarifications log",
-      subhead:
-        "Questions and answers per line, to the customer, a supplier or internal. Clear lines keep moving while one waits.",
+      title: m.page_overview_clarifications_title(),
+      subhead: m.page_overview_clarifications_subhead(),
       size: "l",
       records: {
         doc: true,
         field: "clarifications",
         columns: ["lineNo", "to", "question", "reply"],
         supporting: { to: "via", question: "askedBy", reply: "answeredAt" },
-        labels: { lineNo: "Line", to: "To · via" },
-        empty: "No clarifications on this case.",
+        labels: { lineNo: m.page_overview_line(), to: m.page_overview_to_via() },
+        empty: m.page_overview_no_clarifications(),
       },
     },
     // The case's audit trail, newest first: every automatic step names the rule that fired, every
     // human step the person (the activities' own `byline`).
     {
-      title: "Activity timeline — audit trail",
-      subhead:
-        "Every automatic step names the rule that fired; every human step names the person. Nothing is edited after the fact.",
+      title: m.page_overview_timeline_title(),
+      subhead: m.page_overview_timeline_subhead(),
       size: "m",
       collection: {
         collection: "activities",
@@ -148,7 +147,7 @@ export const caseOverview = widgets({
       },
     },
     custom({
-      title: "Case summary",
+      title: m.page_overview_summary(),
       size: "s",
       data: overview,
       format: fmt.timelineSummary,

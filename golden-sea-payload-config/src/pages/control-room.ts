@@ -21,6 +21,7 @@ import type { CrChart, CrRanked } from "../endpoints/control-room.ts";
 import * as fmt from "../format/control-room.ts";
 import { LIVE } from "../queries/cases.ts";
 import { briefing, room } from "../queries/control-room.ts";
+import { m } from "../i18n/paraglide/messages.js";
 
 /** The suppliers who deliver (not our own stock). */
 const SUPPLIERS = { kind: { not_equals: "own-stock" } };
@@ -54,18 +55,18 @@ export const controlRoom = widgets({
   header: header({ data: room, format: fmt.roomHeader }),
   // The figures, the briefing beside "Ask", the trend charts two a row, the rankings, then the tables.
   widgets: [
-    figures({ data: room, labels: fmt.roomFigureLabels, format: fmt.roomFigures }),
+    figures({ data: room, labels: fmt.roomFigureLabels, name: fmt.roomFigureName, format: fmt.roomFigures }),
     text({
-      title: "07:00 · daily AI briefing",
+      title: m.page_room_briefing(),
       size: "s",
       skeleton: "text",
       data: briefing,
       format: fmt.briefing,
     }),
-    ask({ title: "Ask Golden Sea", size: "m", rows: 6, maxRows: 8, format: fmt.askGoldenSea }),
+    ask({ title: m.page_room_ask(), size: "m", rows: 6, maxRows: 8, format: fmt.askGoldenSea }),
     // The targets and the two speeds the desk is judged on, at a glance.
     bullet({
-      title: "Targets",
+      title: m.page_room_targets(),
       size: "s",
       rows: 8,
       maxRows: 8,
@@ -74,7 +75,7 @@ export const controlRoom = widgets({
       format: shapes.targets,
     }),
     dial({
-      title: "Quote turnaround",
+      title: m.page_room_turnaround(),
       size: "s",
       rows: 4,
       maxRows: 5,
@@ -83,7 +84,7 @@ export const controlRoom = widgets({
       format: shapes.turnaroundDial,
     }),
     dial({
-      title: "Time to acknowledge",
+      title: m.page_room_ack(),
       size: "s",
       rows: 4,
       maxRows: 5,
@@ -93,7 +94,7 @@ export const controlRoom = widgets({
     }),
     // What the live cases wait on: the cases themselves, grouped by `wait`, as one bar (no code).
     {
-      title: "What live cases wait on",
+      title: m.page_room_waits(),
       size: "m",
       rows: 4,
       maxRows: 5,
@@ -101,7 +102,7 @@ export const controlRoom = widgets({
     },
     // How the pipeline converts, why it leaks, and how busy each day has been: shapes to read at a glance.
     funnel({
-      title: "Quote funnel",
+      title: m.page_room_funnel(),
       size: "s",
       rows: 6,
       maxRows: 6,
@@ -110,7 +111,7 @@ export const controlRoom = widgets({
       format: fmt.quoteFunnel,
     }),
     ring({
-      title: "Why quotes were lost",
+      title: m.page_room_lost(),
       size: "s",
       rows: 4,
       maxRows: 4,
@@ -119,7 +120,7 @@ export const controlRoom = widgets({
       format: fmt.lostRing,
     }),
     heatmap({
-      title: "Inquiries per day",
+      title: m.page_room_inquiries(),
       size: "m",
       rows: 5,
       maxRows: 5,
@@ -128,14 +129,14 @@ export const controlRoom = widgets({
       format: fmt.inquiryDays,
     }),
     ring({
-      title: "Receivables by age",
+      title: m.page_room_receivables_age(),
       size: "s",
       rows: 4,
       maxRows: 4,
       skeleton: "list",
       data: room,
       visible: shapes.seesMoney,
-      empty: { when: (d) => !d.visuals.ageing.length, heading: "No open receivables." },
+      empty: { when: (d) => !d.visuals.ageing.length, heading: m.page_room_no_receivables() },
       format: fmt.ageingRing,
     }),
     chart.each({
@@ -143,7 +144,7 @@ export const controlRoom = widgets({
       skeleton: "chart",
       data: room,
       tiles: fmt.roomChartTiles,
-      empty: { heading: "No trend to show." },
+      empty: { heading: m.page_room_no_trend() },
       items: fmt.roomCharts,
       key: (w: CrChart) => w.title,
       title: (w: CrChart) => w.title,
@@ -155,7 +156,7 @@ export const controlRoom = widgets({
       skeleton: "list",
       data: room,
       tiles: fmt.roomRankingTiles,
-      empty: { heading: "No ranking to show." },
+      empty: { heading: m.page_room_no_ranking() },
       items: fmt.roomRankings,
       key: (r: CrRanked) => r.title,
       title: (r: CrRanked) => r.title,
@@ -164,8 +165,8 @@ export const controlRoom = widgets({
     }),
     // Who carries the load: every live case by its owner, the busiest first.
     {
-      title: "Live cases per owner",
-      subhead: "Every live case has an owner, a deadline and a next action",
+      title: m.page_room_per_owner(),
+      subhead: m.page_room_per_owner_subhead(),
       size: "s",
       rows: 4,
       maxRows: 4,
@@ -173,7 +174,7 @@ export const controlRoom = widgets({
       breakdown: { collection: "cases", where: LIVE, by: "owner", as: "ring" },
     },
     text({
-      title: "Profit & cash",
+      title: m.page_room_profit_cash(),
       size: "s",
       skeleton: "text",
       data: room,
@@ -182,33 +183,33 @@ export const controlRoom = widgets({
     }),
     // Where the money sits and where the profit went (management and finance).
     treemap({
-      title: "Receivables by customer",
+      title: m.page_room_receivables_customer(),
       size: "m",
       rows: 6,
       maxRows: 7,
       skeleton: "chart",
       data: visuals,
       visible: shapes.seesMoney,
-      empty: { when: (v) => !v.receivables.length, heading: "No open receivables." },
+      empty: { when: (v) => !v.receivables.length, heading: m.page_room_no_receivables() },
       format: shapes.receivablesMap,
     }),
     waterfall({
-      title: "Gross profit: expected to actual",
+      title: m.page_room_gp_bridge(),
       size: "m",
       rows: 5,
       maxRows: 7,
       skeleton: "chart",
       data: visuals,
       visible: shapes.seesMoney,
-      empty: { when: (v) => !v.gp.length, heading: "No gross profit to bridge yet." },
+      empty: { when: (v) => !v.gp.length, heading: m.page_room_no_gp() },
       format: shapes.gpBridge,
     }),
     // The suppliers on two measures at once (who's reliable and fast, who's neither), and ranked by
     // on-time delivery: the suppliers collection itself, as a scatter and as a ranking, each
     // switchable to the collection's other layouts.
     {
-      title: "Suppliers: on time vs reply time",
-      subhead: "Each supplier by its on-time deliveries and how fast it replies; choose one to open it",
+      title: m.page_room_quadrant(),
+      subhead: m.page_room_quadrant_subhead(),
       size: "m",
       rows: 8,
       maxRows: 9,
@@ -223,14 +224,19 @@ export const controlRoom = widgets({
           xMid: 85,
           yMid: 24,
           invertY: true,
-          quadrants: ["Fast but late", "Reliable & fast", "Slow and late", "Reliable but slow"],
+          quadrants: [
+            m.page_room_fast_late(),
+            m.page_room_reliable_fast(),
+            m.page_room_slow_late(),
+            m.page_room_reliable_slow(),
+          ],
         },
         hide: COMPACT,
       },
     },
     {
-      title: "Suppliers by on-time delivery",
-      subhead: "Best first; reply time and open RFQs under each, from the live records",
+      title: m.page_room_ontime(),
+      subhead: m.page_room_ontime_subhead(),
       size: "m",
       rows: 8,
       maxRows: 12,
@@ -245,7 +251,7 @@ export const controlRoom = widgets({
     },
     // The live cases as cards (stage, value, owner) and the deliveries on their month.
     {
-      title: "Live cases",
+      title: m.page_room_live_cases(),
       size: "l",
       rows: 12,
       minRows: 8,
@@ -259,7 +265,7 @@ export const controlRoom = widgets({
       },
     },
     {
-      title: "Deliveries this month",
+      title: m.page_room_deliveries(),
       size: "s",
       rows: 10,
       minRows: 8,

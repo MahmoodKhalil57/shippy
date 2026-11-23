@@ -1,6 +1,7 @@
 import { actions, alert, details, entries, widgets } from "saastemlycrm-design-system/contracts";
 import * as fmt from "../format/order-to-cash.ts";
 import { caseOpenInvoices, caseOps, caseShortfalls, ofCase } from "../queries/case-ops.ts";
+import { m } from "../i18n/paraglide/messages.js";
 
 /**
  * Case tab "Delivery & billing" (/collections/cases/<id>/delivery): the vessel delivery plan
@@ -26,28 +27,27 @@ export const caseDelivery = widgets({
       format: fmt.replanNotice,
     }),
     details({
-      title: "Vessel delivery plan",
+      title: m.page_delivery_plan_title(),
       size: "s",
       data: caseOps,
       format: fmt.deliveryPlan,
     }),
     entries({
-      title: "Drops & proof of delivery",
+      title: m.page_delivery_drops_title(),
       size: "m",
-      subhead:
-        "“Delivered” needs evidence: dispatch and confirmed receipt are separate, and a drop is confirmed only with the signed delivery note or photo from the vessel.",
+      subhead: m.page_delivery_drops_subhead(),
       skeleton: "entries",
       data: caseOps,
-      empty: { when: (d) => !d.deliveries.length, heading: "No deliveries planned yet." },
+      empty: { when: (d) => !d.deliveries.length, heading: m.page_delivery_no_drops() },
       format: fmt.dropEntries,
     }),
     actions({
-      title: "Pre-dispatch check",
+      title: m.page_delivery_check_title(),
       // Its subhead comes with the data; this line holds its place while it loads.
-      subhead: "The next drop out",
+      subhead: m.page_delivery_check_subhead(),
       size: "s",
       data: caseOps,
-      empty: { when: (d) => !fmt.nextDrop(d), heading: "No drop to dispatch yet." },
+      empty: { when: (d) => !fmt.nextDrop(d), heading: m.page_delivery_no_dispatch() },
       format: fmt.preDispatchChecks,
     }),
     // The case's invoices added up (each in the case's currency): invoiced, received, the balance.
@@ -55,28 +55,27 @@ export const caseDelivery = widgets({
       size: "s",
       empty: {
         when: (d) => !Object.values(d as Record<string, { totalDocs: number }>).some((x) => x.totalDocs),
-        heading: "No invoices on this case yet.",
+        heading: m.page_delivery_no_invoices(),
       },
       metrics: {
         collection: "invoices",
         items: [
-          { label: "Invoiced", sum: "amount", where: ofCase, note: "Delivered quantities only" },
-          { label: "Received", sum: "paid", where: ofCase, note: "Customer payments allocated" },
+          { label: m.page_delivery_invoiced(), sum: "amount", where: ofCase, note: m.page_delivery_invoiced_note() },
+          { label: m.page_delivery_received(), sum: "paid", where: ofCase, note: m.page_delivery_received_note() },
           {
-            label: "Balance",
+            label: m.page_delivery_balance(),
             sum: "balance",
             where: caseOpenInvoices,
             tone: { some: "warning", none: "success" },
-            note: "Invoices still open: $count",
+            note: m.page_delivery_balance_note(),
           },
         ],
       },
     },
     // The case's receipts short of what was ordered (each receipt's own `backorder`).
     {
-      title: "Backorders & late suppliers",
-      subhead:
-        "Receipt shortfalls become backorders with a date and an owner; a late supplier is escalated against the drop it was meant for.",
+      title: m.page_delivery_backorders_title(),
+      subhead: m.page_delivery_backorders_subhead(),
       size: "l",
       records: {
         collection: "receipts",
@@ -92,16 +91,15 @@ export const caseDelivery = widgets({
           "backorder.owner",
           "backorder.risk",
         ],
-        labels: { shortfall: "Short" },
-        empty: "No backorders on this case.",
+        labels: { shortfall: m.page_delivery_short() },
+        empty: m.page_delivery_no_backorders(),
       },
     },
     // The case's invoices with their e-invoice status and payments, and their own actions (sign &
     // submit, record a payment).
     {
-      title: "Customer invoices & payments",
-      subhead:
-        "Invoices come from signed deliveries: only delivered quantities, never the same quantity twice. Each one is signed and submitted to the Egyptian Tax Authority; a failed signature submits nothing and is safe to retry.",
+      title: m.page_delivery_invoices_title(),
+      subhead: m.page_delivery_invoices_subhead(),
       size: "l",
       records: {
         collection: "invoices",
@@ -115,8 +113,12 @@ export const caseDelivery = widgets({
           "eInvoice.status": "eInvoiceNote",
           paid: "paymentsNote",
         },
-        labels: { number: "Invoice", amount: "Amount · VAT", paid: "Paid · balance" },
-        empty: "No invoice yet. The first one is created from a delivery confirmed with a signed note.",
+        labels: {
+          number: m.page_delivery_invoice(),
+          amount: m.page_delivery_amount_vat(),
+          paid: m.page_delivery_paid_balance(),
+        },
+        empty: m.page_delivery_no_invoice(),
       },
     },
   ],

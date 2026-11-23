@@ -1,29 +1,60 @@
 import type { Access, CollectionConfig } from "payload";
-import { DAY, TODAY, computed, deskAccess, idOf, loggedIn, management, related, ruleError, scalar } from "./shared.ts";
+import {
+  DAY,
+  TODAY,
+  choices,
+  computed,
+  deskAccess,
+  idOf,
+  inLanguage,
+  loggedIn,
+  management,
+  related,
+  ruleError,
+  scalar,
+  type Words,
+  asText,
+  words,
+} from "./shared.ts";
 import { tones, type CollectionAction, type CollectionSettings } from "saastemlycrm-design-system/contracts";
 
 const clock = (d: Date) => d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
 /**
  * When something is due, against the demo's clock: "Overdue" once passed, its time today ("11:00"),
- * else its day ("Wed 18 Nov", with the time when it has one). Pure: the date in.
+ * else its day ("Wed 18 Nov", with the time when it has one); in the request's language (`req`),
+ * else English. Pure: the date in.
  */
-export function dueLabel(iso: unknown): string | null {
+export function dueLabel(iso: unknown, req?: { locale?: unknown }): string | null {
   if (typeof iso !== "string" || !iso) return null;
   const d = new Date(iso);
-  if (d < TODAY) return "Overdue";
+  if (d < TODAY) return inLanguage(req, { en: "Overdue", ar: "متأخرة" });
   const timed = d.getTime() % DAY !== 0;
-  if (Math.floor(d.getTime() / DAY) === Math.floor(TODAY.getTime() / DAY)) return timed ? clock(d) : "Today";
-  const day = d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
+  if (Math.floor(d.getTime() / DAY) === Math.floor(TODAY.getTime() / DAY))
+    return timed ? clock(d) : inLanguage(req, { en: "Today", ar: "اليوم" });
+  const day = d.toLocaleDateString(req?.locale === "ar" ? "ar-u-nu-latn" : "en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  });
   return timed ? `${day} ${clock(d)}` : day;
 }
 
-const KIND_LABEL: Record<string, string> = { auto: "Automatic", human: "Human", alert: "Alert" };
+const KIND_LABEL: Record<string, { en: string; ar: string }> = {
+  auto: { en: "Automatic", ar: "تلقائي" },
+  human: { en: "Human", ar: "بشري" },
+  alert: { en: "Alert", ar: "تنبيه" },
+};
 
 /** Case timeline + audit log: every automatic step and human decision. Append-only. */
 export const Activities: CollectionConfig = {
   slug: "activities",
-  labels: { singular: "Activity", plural: "Activity log" },
-  admin: { useAsTitle: "text", defaultColumns: ["at", "case", "kind", "text", "actor"], group: "Work" },
+  labels: { singular: { en: "Activity", ar: "نشاط" }, plural: { en: "Activity log", ar: "سجل النشاط" } },
+  admin: {
+    useAsTitle: "text",
+    defaultColumns: ["at", "case", "kind", "text", "actor"],
+    group: { en: "Work", ar: "العمل" },
+  },
   defaultSort: "-at",
   access: { read: loggedIn, create: loggedIn, update: () => false, delete: management },
   fields: [
@@ -33,38 +64,58 @@ export const Activities: CollectionConfig = {
         {
           name: "at",
           type: "date",
+          label: { en: "At", ar: "الوقت" },
           required: true,
           defaultValue: () => new Date().toISOString(),
-          admin: { date: { pickerAppearance: "dayAndTime" }, description: "When the step happened." },
+          admin: {
+            date: { pickerAppearance: "dayAndTime" },
+            description: { en: "When the step happened.", ar: "وقت حدوث الخطوة." },
+          },
         },
         {
           name: "case",
           type: "relationship",
+          label: { en: "Case", ar: "الملف" },
           relationTo: "cases",
           index: true,
-          admin: { description: "The customer case it belongs to.", placeholder: "e.g. GS-RFQ-0142" },
+          admin: {
+            description: { en: "The customer case it belongs to.", ar: "ملف العميل الذي تتبعه." },
+            placeholder: words({ en: "e.g. GS-RFQ-0142", ar: "مثال: GS-RFQ-0142" }),
+          },
         },
         {
           name: "kind",
           type: "select",
+          label: { en: "Kind", ar: "النوع" },
           options: [
-            { label: "Automatic", value: "auto" },
-            { label: "Human", value: "human" },
-            { label: "Alert", value: "alert" },
+            { label: { en: "Automatic", ar: "تلقائي" }, value: "auto" },
+            { label: { en: "Human", ar: "بشري" }, value: "human" },
+            { label: { en: "Alert", ar: "تنبيه" }, value: "alert" },
           ],
           custom: tones({ auto: "info", human: "success", alert: "warning" }),
           defaultValue: "auto",
-          admin: { description: "Whether the system, a person or a warning did it.", placeholder: "Pick a kind" },
+          admin: {
+            description: {
+              en: "Whether the system, a person or a warning did it.",
+              ar: "هل قام بها النظام أم شخص أم تحذير.",
+            },
+            placeholder: words({ en: "Pick a kind", ar: "اختر نوعًا" }),
+          },
         },
       ],
     },
     {
       name: "text",
       type: "textarea",
+      label: { en: "Text", ar: "النص" },
+      localized: true,
       required: true,
       admin: {
-        description: "What happened, in plain words.",
-        placeholder: "e.g. Reminder sent to Delta Marine for RFQ 0142.",
+        description: { en: "What happened, in plain words.", ar: "ما حدث، بكلمات بسيطة." },
+        placeholder: {
+          en: "e.g. Reminder sent to Delta Marine for RFQ 0142.",
+          ar: "مثال: أُرسل تذكير إلى Delta Marine بشأن طلب العرض 0142.",
+        },
       },
     },
     {
@@ -73,19 +124,36 @@ export const Activities: CollectionConfig = {
         {
           name: "actor",
           type: "relationship",
+          label: { en: "Actor", ar: "المنفّذ" },
           relationTo: "users",
-          admin: { description: "The person who did it; empty for automatic steps.", placeholder: "Search users" },
+          admin: {
+            description: {
+              en: "The person who did it; empty for automatic steps.",
+              ar: "الشخص الذي قام بها؛ فارغ للخطوات التلقائية.",
+            },
+            placeholder: words({ en: "Search users", ar: "ابحث في المستخدمين" }),
+          },
         },
         {
           name: "entity",
           type: "text",
-          admin: { description: "The record that changed, as collection/id.", placeholder: "e.g. suppliers/12" },
+          label: { en: "Entity", ar: "الكيان" },
+          admin: {
+            description: {
+              en: "The record that changed, as collection/id.",
+              ar: "السجل الذي تغيّر، بصيغة collection/id.",
+            },
+            placeholder: { en: "e.g. suppliers/12", ar: "مثال: suppliers/12" },
+          },
         },
         {
           name: "rule",
           type: "text",
-          label: "Automation rule",
-          admin: { description: "Set when an automation did it.", placeholder: "e.g. RFQ reminder" },
+          label: { en: "Automation rule", ar: "قاعدة أتمتة" },
+          admin: {
+            description: { en: "Set when an automation did it.", ar: "يُضبط عندما تقوم بها أتمتة." },
+            placeholder: { en: "e.g. RFQ reminder", ar: "مثال: تذكير طلب العرض" },
+          },
         },
       ],
     },
@@ -93,8 +161,11 @@ export const Activities: CollectionConfig = {
       name: "undoOf",
       type: "relationship",
       relationTo: "activities",
-      label: "Undoes",
-      admin: { description: "The earlier step this one reverses.", placeholder: "Search the activity log" },
+      label: { en: "Undoes", ar: "يلغي" },
+      admin: {
+        description: { en: "The earlier step this one reverses.", ar: "الخطوة السابقة التي تعكسها هذه الخطوة." },
+        placeholder: words({ en: "Search the activity log", ar: "ابحث في سجل النشاط" }),
+      },
     },
     // Who or what did it, in a line (never stored): "Automatic · System · rule: RFQ reminder",
     // "Human · Karim Youssef". Every automatic step names its rule, every human one the person.
@@ -102,15 +173,21 @@ export const Activities: CollectionConfig = {
       {
         name: "byline",
         type: "text",
-        label: "By",
-        admin: { condition: () => false, description: "Who or what did it, with the rule if automatic." },
+        label: { en: "By", ar: "بواسطة" },
+        admin: {
+          condition: () => false,
+          description: {
+            en: "Who or what did it, with the rule if automatic.",
+            ar: "من أو ما قام بها، مع القاعدة إن كانت تلقائية.",
+          },
+        },
       },
       async (a, req) => {
-        const kind = KIND_LABEL[scalar(a.kind)] ?? "Automatic";
+        const kind = inLanguage(req, KIND_LABEL[scalar(a.kind)] ?? KIND_LABEL.auto!);
         const actor = a.actor ? scalar((await related(req, "users", a.actor))?.name) : "";
-        return [kind, actor || (a.kind === "human" ? "" : "System"), a.rule ? `rule: ${scalar(a.rule)}` : ""]
-          .filter(Boolean)
-          .join(" · ");
+        const system = inLanguage(req, { en: "System", ar: "النظام" });
+        const rule = a.rule ? inLanguage(req, { en: `rule: ${scalar(a.rule)}`, ar: `القاعدة: ${scalar(a.rule)}` }) : "";
+        return [kind, actor || (a.kind === "human" ? "" : system), rule].filter(Boolean).join(" · ");
       },
     ),
   ],
@@ -122,8 +199,13 @@ export const Activities: CollectionConfig = {
  */
 export const Tasks: CollectionConfig = {
   slug: "tasks",
+  labels: { singular: { en: "Task", ar: "مهمة" }, plural: { en: "Tasks", ar: "المهام" } },
   custom: { list: { board: "status", cardFields: ["type", "due", "owner"] } } satisfies CollectionSettings,
-  admin: { useAsTitle: "title", defaultColumns: ["title", "type", "channel", "due", "owner", "status"], group: "Work" },
+  admin: {
+    useAsTitle: "title",
+    defaultColumns: ["title", "type", "channel", "due", "owner", "status"],
+    group: { en: "Work", ar: "العمل" },
+  },
   defaultSort: "due",
   access: deskAccess,
   hooks: {
@@ -144,10 +226,15 @@ export const Tasks: CollectionConfig = {
     {
       name: "title",
       type: "text",
+      label: { en: "Title", ar: "العنوان" },
+      localized: true,
       required: true,
       admin: {
-        description: "What has to be done, in a few words.",
-        placeholder: "e.g. Chase Delta Marine for RFQ 0142 prices",
+        description: { en: "What has to be done, in a few words.", ar: "المطلوب إنجازه، في كلمات قليلة." },
+        placeholder: {
+          en: "e.g. Chase Delta Marine for RFQ 0142 prices",
+          ar: "مثال: متابعة أسعار Delta Marine لطلب العرض 0142",
+        },
       },
     },
     {
@@ -156,29 +243,51 @@ export const Tasks: CollectionConfig = {
         {
           name: "type",
           type: "select",
+          label: { en: "Type", ar: "النوع" },
           required: true,
           options: [
-            "Supplier reminder",
-            "Customer follow-up",
-            "Internal reminder",
-            "Sales next step",
-            "Collection",
-            "Delivery task",
-            "Clarification",
+            { value: "Supplier reminder", label: { en: "Supplier reminder", ar: "تذكير مورّد" } },
+            { value: "Customer follow-up", label: { en: "Customer follow-up", ar: "متابعة عميل" } },
+            { value: "Internal reminder", label: { en: "Internal reminder", ar: "تذكير داخلي" } },
+            { value: "Sales next step", label: { en: "Sales next step", ar: "الخطوة التالية للمبيعات" } },
+            { value: "Collection", label: { en: "Collection", ar: "تحصيل" } },
+            { value: "Delivery task", label: { en: "Delivery task", ar: "مهمة تسليم" } },
+            { value: "Clarification", label: { en: "Clarification", ar: "توضيح" } },
           ],
-          admin: { description: "Decides who is contacted and how it is tracked.", placeholder: "Pick a task type" },
+          admin: {
+            description: {
+              en: "Decides who is contacted and how it is tracked.",
+              ar: "يحدد من يُتواصل معه وكيف يُتابع.",
+            },
+            placeholder: words({ en: "Pick a task type", ar: "اختر نوع المهمة" }),
+          },
         },
         {
           name: "channel",
           type: "select",
-          options: ["Email", "Call", "WhatsApp", "Site visit", "Meeting", "Internal"],
-          admin: { description: "How it will be done.", placeholder: "Pick a channel" },
+          label: { en: "Channel", ar: "القناة" },
+          options: [
+            { value: "Email", label: { en: "Email", ar: "البريد الإلكتروني" } },
+            { value: "Call", label: { en: "Call", ar: "مكالمة" } },
+            { value: "WhatsApp", label: { en: "WhatsApp", ar: "WhatsApp" } },
+            { value: "Site visit", label: { en: "Site visit", ar: "زيارة موقع" } },
+            { value: "Meeting", label: { en: "Meeting", ar: "اجتماع" } },
+            { value: "Internal", label: { en: "Internal", ar: "داخلي" } },
+          ],
+          admin: {
+            description: { en: "How it will be done.", ar: "كيف ستُنجز." },
+            placeholder: words({ en: "Pick a channel", ar: "اختر قناة" }),
+          },
         },
         {
           name: "due",
           type: "date",
+          label: { en: "Due", ar: "الاستحقاق" },
           required: true,
-          admin: { date: { pickerAppearance: "dayAndTime" }, description: "When it must be done by." },
+          admin: {
+            date: { pickerAppearance: "dayAndTime" },
+            description: { en: "When it must be done by.", ar: "موعد إنجازها النهائي." },
+          },
         },
       ],
     },
@@ -187,11 +296,15 @@ export const Tasks: CollectionConfig = {
       {
         name: "when",
         type: "text",
-        label: "When",
-        custom: { toneWhen: [{ when: { when: { equals: "Overdue" } }, tone: "error" }] },
-        admin: { position: "sidebar", description: "Overdue, a time today, or the due day." },
+        label: { en: "When", ar: "متى" },
+        // Red once overdue, as it reads in either language.
+        custom: { toneWhen: [{ when: { when: { in: ["Overdue", "متأخرة"] } }, tone: "error" }] },
+        admin: {
+          position: "sidebar",
+          description: { en: "Overdue, a time today, or the due day.", ar: "متأخرة، أو وقت اليوم، أو يوم الاستحقاق." },
+        },
       },
-      (t) => (t.status === "Open" || !t.status ? dueLabel(t.due) : null),
+      (t, req) => (t.status === "Open" || !t.status ? dueLabel(t.due, req) : null),
     ),
     {
       type: "row",
@@ -199,64 +312,101 @@ export const Tasks: CollectionConfig = {
         {
           name: "case",
           type: "relationship",
+          label: { en: "Case", ar: "الملف" },
           relationTo: "cases",
-          admin: { description: "The case this task is about.", placeholder: "e.g. GS-RFQ-0142" },
+          admin: {
+            description: { en: "The case this task is about.", ar: "الملف الذي تخصه هذه المهمة." },
+            placeholder: words({ en: "e.g. GS-RFQ-0142", ar: "مثال: GS-RFQ-0142" }),
+          },
         },
         {
           name: "customer",
           type: "relationship",
+          label: { en: "Customer", ar: "العميل" },
           relationTo: "customers",
-          admin: { description: "The customer to contact, if any.", placeholder: "Search customers" },
+          admin: {
+            description: { en: "The customer to contact, if any.", ar: "العميل المطلوب التواصل معه، إن وُجد." },
+            placeholder: words({ en: "Search customers", ar: "ابحث في العملاء" }),
+          },
         },
         {
           name: "supplier",
           type: "relationship",
+          label: { en: "Supplier", ar: "المورّد" },
           relationTo: "suppliers",
-          admin: { description: "The supplier to contact, if any.", placeholder: "Search suppliers" },
+          admin: {
+            description: { en: "The supplier to contact, if any.", ar: "المورّد المطلوب التواصل معه، إن وُجد." },
+            placeholder: words({ en: "Search suppliers", ar: "ابحث في الموردين" }),
+          },
         },
         {
           name: "opportunity",
           type: "relationship",
+          label: { en: "Opportunity", ar: "الفرصة" },
           relationTo: "opportunities",
-          admin: { description: "The sales lead this belongs to.", placeholder: "Search opportunities" },
+          admin: {
+            description: { en: "The sales lead this belongs to.", ar: "فرصة البيع التي تتبعها." },
+            placeholder: words({ en: "Search opportunities", ar: "ابحث في فرص البيع" }),
+          },
         },
       ],
     },
     {
       name: "who",
       type: "text",
-      label: "Who (person / role)",
-      admin: { description: "The person or role to reach.", placeholder: "e.g. Purchasing manager" },
+      label: { en: "Who (person / role)", ar: "من (شخص / دور)" },
+      admin: {
+        description: { en: "The person or role to reach.", ar: "الشخص أو الدور المطلوب الوصول إليه." },
+        placeholder: { en: "e.g. Purchasing manager", ar: "مثال: مدير المشتريات" },
+      },
     },
     {
       name: "goal",
       type: "text",
-      admin: { description: "What we want out of it.", placeholder: "e.g. Get a firm price by Thursday" },
+      label: { en: "Goal", ar: "الهدف" },
+      localized: true,
+      admin: {
+        description: { en: "What we want out of it.", ar: "ما نريد تحقيقه منها." },
+        placeholder: { en: "e.g. Get a firm price by Thursday", ar: "مثال: الحصول على سعر نهائي قبل الخميس" },
+      },
     },
     {
       name: "script",
       type: "textarea",
-      label: "What to say / draft",
+      localized: true,
+      label: { en: "What to say / draft", ar: "ماذا نقول / مسودة" },
       admin: {
-        description: "Talking points or a draft message.",
-        placeholder: "e.g. Ask if the quote for 40 drums of lube oil still stands.",
+        description: { en: "Talking points or a draft message.", ar: "نقاط الحديث أو مسودة رسالة." },
+        placeholder: {
+          en: "e.g. Ask if the quote for 40 drums of lube oil still stands.",
+          ar: "مثال: اسأل إن كان عرض 40 برميل زيت تشحيم لا يزال قائمًا.",
+        },
       },
     },
     {
       name: "internalOnly",
       type: "checkbox",
-      label: "Internal only (no customer contact)",
+      label: { en: "Internal only (no customer contact)", ar: "داخلي فقط (دون تواصل مع العميل)" },
       defaultValue: false,
-      admin: { description: "Tick when nobody outside Golden Sea is contacted." },
+      admin: {
+        description: {
+          en: "Tick when nobody outside Golden Sea is contacted.",
+          ar: "حدّد عندما لا يُتواصل مع أحد خارج Golden Sea.",
+        },
+      },
       custom: {
-        about: "Customers set to do not chase can only get internal tasks; customer follow-ups to them are refused.",
+        about: {
+          en: "Customers set to do not chase can only get internal tasks; customer follow-ups to them are refused.",
+          ar: "العملاء المضبوطون على «عدم المتابعة» لا تُنشأ لهم إلا مهام داخلية؛ وتُرفض متابعات العملاء لهم.",
+        },
       },
     },
     {
       name: "outcome",
       type: "group",
+      label: { en: "Outcome", ar: "النتيجة" },
       admin: {
-        description: "How it went, once done or skipped.",
+        description: { en: "How it went, once done or skipped.", ar: "كيف سارت، بعد إنجازها أو تخطيها." },
         condition: (data) => data?.status === "Done" || data?.status === "Skipped",
       },
       fields: [
@@ -266,18 +416,38 @@ export const Tasks: CollectionConfig = {
             {
               name: "result",
               type: "select",
-              options: ["Reached — positive", "Reached — call back", "No answer", "Not interested", "Sent"],
-              admin: { description: "How the contact went.", placeholder: "Pick an outcome" },
+              label: { en: "Result", ar: "النتيجة" },
+              options: [
+                { value: "Reached — positive", label: { en: "Reached — positive", ar: "تم الوصول — إيجابي" } },
+                { value: "Reached — call back", label: { en: "Reached — call back", ar: "تم الوصول — معاودة الاتصال" } },
+                { value: "No answer", label: { en: "No answer", ar: "لا رد" } },
+                { value: "Not interested", label: { en: "Not interested", ar: "غير مهتم" } },
+                { value: "Sent", label: { en: "Sent", ar: "مُرسل" } },
+              ],
+              admin: {
+                description: { en: "How the contact went.", ar: "كيف سار التواصل." },
+                placeholder: words({ en: "Pick an outcome", ar: "اختر نتيجة" }),
+              },
             },
-            { name: "nextDate", type: "date", admin: { description: "When to try again, if needed." } },
+            {
+              name: "nextDate",
+              type: "date",
+              label: { en: "Next Date", ar: "التاريخ التالي" },
+              admin: { description: { en: "When to try again, if needed.", ar: "موعد المحاولة مجددًا، إن لزم." } },
+            },
           ],
         },
         {
           name: "note",
           type: "textarea",
+          label: { en: "Note", ar: "ملاحظة" },
+          localized: true,
           admin: {
-            description: "What was said or decided.",
-            placeholder: "e.g. Left a voicemail, will call back tomorrow.",
+            description: { en: "What was said or decided.", ar: "ما قيل أو تقرر." },
+            placeholder: {
+              en: "e.g. Left a voicemail, will call back tomorrow.",
+              ar: "مثال: تُركت رسالة صوتية، سأعاود الاتصال غدًا.",
+            },
           },
         },
       ],
@@ -285,42 +455,60 @@ export const Tasks: CollectionConfig = {
     {
       name: "owner",
       type: "relationship",
+      label: { en: "Owner", ar: "المسؤول" },
       relationTo: "users",
       required: true,
-      admin: { position: "sidebar", description: "The person who has to do it.", placeholder: "Search users" },
+      admin: {
+        position: "sidebar",
+        description: { en: "The person who has to do it.", ar: "الشخص المكلّف بها." },
+        placeholder: words({ en: "Search users", ar: "ابحث في المستخدمين" }),
+      },
     },
     {
       name: "status",
       type: "select",
+      label: { en: "Status", ar: "الحالة" },
       defaultValue: "Open",
-      options: ["Open", "Done", "Skipped", "Cancelled"],
+      options: [
+        { value: "Open", label: { en: "Open", ar: "مفتوح" } },
+        { value: "Done", label: { en: "Done", ar: "تم" } },
+        { value: "Skipped", label: { en: "Skipped", ar: "تم التخطي" } },
+        { value: "Cancelled", label: { en: "Cancelled", ar: "ملغى" } },
+      ],
       custom: tones({ Open: "info", Done: "success", Skipped: "neutral", Cancelled: "neutral" }),
       admin: {
         position: "sidebar",
-        description: "Open until done, skipped or cancelled.",
-        placeholder: "Pick a status",
+        description: { en: "Open until done, skipped or cancelled.", ar: "مفتوحة حتى تُنجز أو تُتخطى أو تُلغى." },
+        placeholder: words({ en: "Pick a status", ar: "اختر حالة" }),
       },
     },
     {
       name: "createdByRule",
       type: "text",
-      admin: { position: "sidebar", readOnly: true, description: "The automation rule that created it, if any." },
+      label: { en: "Created By Rule", ar: "أنشأته قاعدة" },
+      admin: {
+        position: "sidebar",
+        readOnly: true,
+        description: { en: "The automation rule that created it, if any.", ar: "قاعدة الأتمتة التي أنشأتها، إن وُجدت." },
+      },
     },
     {
       name: "stopCondition",
       type: "text",
+      label: { en: "Stop Condition", ar: "شرط التوقف" },
+      localized: true,
       admin: {
         position: "sidebar",
-        description: "When to stop the task without doing it.",
-        placeholder: "e.g. Reply received or case closed",
+        description: { en: "When to stop the task without doing it.", ar: "متى تُوقف المهمة دون إنجازها." },
+        placeholder: { en: "e.g. Reply received or case closed", ar: "مثال: وصل الرد أو أُغلق الملف" },
       },
     },
   ],
 };
 
 /** The safe retry of an exception: the endpoint answers with what it did (the snackbar). */
-const retry = (label: string, when: Record<string, unknown>): CollectionAction => ({
-  label,
+const retry = (label: Words, when: Record<string, unknown>): CollectionAction => ({
+  label: asText(label),
   when,
   call: { path: "/automations/retry/$row.id" },
   reply: true,
@@ -329,11 +517,11 @@ const retry = (label: string, when: Record<string, unknown>): CollectionAction =
 /** Failed integrations and uncertain automation results — nothing fails silently; retries are idempotent. */
 export const IntegrationExceptions: CollectionConfig = {
   slug: "integration-exceptions",
-  labels: { singular: "Exception", plural: "Exception queue" },
+  labels: { singular: { en: "Exception", ar: "استثناء" }, plural: { en: "Exception queue", ar: "قائمة الاستثناءات" } },
   admin: {
     useAsTitle: "summary",
     defaultColumns: ["occurredAt", "source", "summary", "status", "retries"],
-    group: "Work",
+    group: { en: "Work", ar: "العمل" },
   },
   defaultSort: "-occurredAt",
   // Wherever exceptions show: a safe retry (it checks the idempotency key first, so nothing is
@@ -342,18 +530,24 @@ export const IntegrationExceptions: CollectionConfig = {
   // ../endpoints/platform.ts, which re-checks).
   custom: {
     actions: [
-      retry("Safe retry", { status: { equals: "Open" } }),
-      retry("Retry again", { status: { in: ["Resolved", "Auto-resolved", "Ignored"] } }),
+      retry({ en: "Safe retry", ar: "إعادة محاولة آمنة" }, { status: { equals: "Open" } }),
+      retry(
+        { en: "Retry again", ar: "إعادة المحاولة مجددًا" },
+        { status: { in: ["Resolved", "Auto-resolved", "Ignored"] } },
+      ),
       {
-        label: "Mark reviewed",
+        label: words({ en: "Mark reviewed", ar: "تعليم كمراجَع" }),
         when: { status: { equals: "Waiting for review" } },
         call: { path: "/automations/review/$row.id", body: {} },
         confirm: {
-          heading: "Mark as reviewed?",
-          text: "$row.source: $row.summary\nConfirm you checked the flagged fields at the source. Your name goes on the audit log; the AI's values are never applied without this.",
-          label: "Confirm reviewed",
+          heading: words({ en: "Mark as reviewed?", ar: "تعليم كمراجَع؟" }),
+          text: words({
+            en: "$row.source: $row.summary\nConfirm you checked the flagged fields at the source. Your name goes on the audit log; the AI's values are never applied without this.",
+            ar: "$row.source: $row.summary\\nأكّد أنك تحققت من الحقول المعلَّمة في المصدر. يُسجَّل اسمك في سجل التدقيق؛ ولا تُطبَّق قيم الذكاء الاصطناعي أبدًا دون ذلك.",
+          }),
+          label: words({ en: "Confirm reviewed", ar: "تأكيد المراجعة" }),
         },
-        done: "Reviewed — your name is on the audit log",
+        done: words({ en: "Reviewed — your name is on the audit log", ar: "تمت المراجعة — اسمك مسجّل في سجل التدقيق" }),
         reply: true,
       },
     ],
@@ -366,39 +560,75 @@ export const IntegrationExceptions: CollectionConfig = {
         {
           name: "occurredAt",
           type: "date",
+          label: { en: "Occurred At", ar: "تاريخ الحدوث" },
           required: true,
-          admin: { date: { pickerAppearance: "dayAndTime" }, description: "When the failure happened." },
+          admin: {
+            date: { pickerAppearance: "dayAndTime" },
+            description: { en: "When the failure happened.", ar: "وقت حدوث الإخفاق." },
+          },
         },
         {
           name: "source",
           type: "select",
+          label: { en: "Source", ar: "المصدر" },
           required: true,
-          options: ["Outlook", "Gmail", "Website form", "AI extraction", "E-invoicing", "Automation rule", "Import"],
-          admin: { description: "Which integration raised it.", placeholder: "Pick a source" },
+          options: [
+            { value: "Outlook", label: { en: "Outlook", ar: "Outlook" } },
+            { value: "Gmail", label: { en: "Gmail", ar: "Gmail" } },
+            { value: "Website form", label: { en: "Website form", ar: "نموذج الموقع" } },
+            { value: "AI extraction", label: { en: "AI extraction", ar: "الاستخراج بالذكاء الاصطناعي" } },
+            { value: "E-invoicing", label: { en: "E-invoicing", ar: "الفاتورة الإلكترونية" } },
+            { value: "Automation rule", label: { en: "Automation rule", ar: "قاعدة أتمتة" } },
+            { value: "Import", label: { en: "Import", ar: "استيراد" } },
+          ],
+          admin: {
+            description: { en: "Which integration raised it.", ar: "التكامل الذي أبلغ عنه." },
+            placeholder: words({ en: "Pick a source", ar: "اختر مصدرًا" }),
+          },
         },
       ],
     },
     {
       name: "summary",
       type: "text",
+      label: { en: "Summary", ar: "الملخص" },
+      localized: true,
       required: true,
-      admin: { description: "What went wrong, in one line.", placeholder: "e.g. Supplier offer PDF could not be read" },
+      admin: {
+        description: { en: "What went wrong, in one line.", ar: "ما الخطأ، في سطر واحد." },
+        placeholder: { en: "e.g. Supplier offer PDF could not be read", ar: "مثال: تعذّرت قراءة ملف PDF لعرض المورّد" },
+      },
     },
     {
       name: "impact",
       type: "text",
-      admin: { description: "What this blocks or delays.", placeholder: "e.g. RFQ 0142 has no comparison yet" },
+      label: { en: "Impact", ar: "الأثر" },
+      localized: true,
+      admin: {
+        description: { en: "What this blocks or delays.", ar: "ما يعيقه هذا أو يؤخره." },
+        placeholder: { en: "e.g. RFQ 0142 has no comparison yet", ar: "مثال: طلب العرض 0142 بلا مقارنة بعد" },
+      },
     },
     {
       name: "idempotencyKey",
       type: "text",
-      admin: { description: "The message or document id behind it.", placeholder: "e.g. msg-7f3a91" },
-      custom: { about: "A retry checks this id first, so nothing is created or sent twice." },
+      label: { en: "Idempotency Key", ar: "مفتاح عدم التكرار" },
+      admin: {
+        description: { en: "The message or document id behind it.", ar: "معرّف الرسالة أو المستند المرتبط." },
+        placeholder: { en: "e.g. msg-7f3a91", ar: "مثال: msg-7f3a91" },
+      },
+      custom: {
+        about: {
+          en: "A retry checks this id first, so nothing is created or sent twice.",
+          ar: "تتحقق إعادة المحاولة من هذا المعرّف أولًا، فلا يُنشأ أو يُرسل شيء مرتين.",
+        },
+      },
     },
     {
       name: "payload",
       type: "json",
-      admin: { description: "Technical detail kept for the retry." },
+      label: { en: "Payload", ar: "البيانات" },
+      admin: { description: { en: "Technical detail kept for the retry.", ar: "تفاصيل تقنية محفوظة لإعادة المحاولة." } },
     },
     {
       type: "row",
@@ -406,18 +636,34 @@ export const IntegrationExceptions: CollectionConfig = {
         {
           name: "retries",
           type: "number",
+          label: { en: "Retries", ar: "المحاولات" },
           min: 0,
           defaultValue: 0,
-          admin: { description: "How many times it was retried.", placeholder: "e.g. 0" },
+          admin: {
+            description: { en: "How many times it was retried.", ar: "عدد مرات إعادة المحاولة." },
+            placeholder: { en: "e.g. 0", ar: "مثال: 0" },
+          },
         },
-        { name: "lastRetryAt", type: "date", admin: { description: "When it was last retried." } },
+        {
+          name: "lastRetryAt",
+          type: "date",
+          label: { en: "Last Retry At", ar: "آخر إعادة محاولة" },
+          admin: { description: { en: "When it was last retried.", ar: "آخر وقت لإعادة المحاولة." } },
+        },
       ],
     },
     {
       name: "status",
       type: "select",
+      label: { en: "Status", ar: "الحالة" },
       defaultValue: "Open",
-      options: ["Open", "Waiting for review", "Resolved", "Auto-resolved", "Ignored"],
+      options: [
+        { value: "Open", label: { en: "Open", ar: "مفتوح" } },
+        { value: "Waiting for review", label: { en: "Waiting for review", ar: "بانتظار المراجعة" } },
+        { value: "Resolved", label: { en: "Resolved", ar: "تم الحل" } },
+        { value: "Auto-resolved", label: { en: "Auto-resolved", ar: "حُلّ تلقائيًا" } },
+        { value: "Ignored", label: { en: "Ignored", ar: "متجاهَل" } },
+      ],
       custom: tones({
         Open: "error",
         "Waiting for review": "warning",
@@ -427,15 +673,23 @@ export const IntegrationExceptions: CollectionConfig = {
       }),
       admin: {
         position: "sidebar",
-        description: "Open until retried, reviewed or ignored.",
-        placeholder: "Pick a status",
+        description: {
+          en: "Open until retried, reviewed or ignored.",
+          ar: "مفتوح حتى تُعاد المحاولة أو يُراجع أو يُتجاهل.",
+        },
+        placeholder: words({ en: "Pick a status", ar: "اختر حالة" }),
       },
     },
     {
       name: "resolvedBy",
       type: "relationship",
+      label: { en: "Resolved By", ar: "حلّه" },
       relationTo: "users",
-      admin: { position: "sidebar", description: "Who closed it.", placeholder: "Search users" },
+      admin: {
+        position: "sidebar",
+        description: { en: "Who closed it.", ar: "من أغلقه." },
+        placeholder: words({ en: "Search users", ar: "ابحث في المستخدمين" }),
+      },
     },
   ],
 };
@@ -460,11 +714,14 @@ export const AI_TASKS = [
  */
 export const AiCalls: CollectionConfig = {
   slug: "ai-calls",
-  labels: { singular: "AI call", plural: "AI calls" },
+  labels: {
+    singular: { en: "AI call", ar: "استدعاء ذكاء اصطناعي" },
+    plural: { en: "AI calls", ar: "استدعاءات الذكاء الاصطناعي" },
+  },
   admin: {
     useAsTitle: "subject",
     defaultColumns: ["at", "task", "subject", "case", "confidence", "outcome"],
-    group: "Work",
+    group: { en: "Work", ar: "العمل" },
   },
   defaultSort: "-at",
   access: { read: loggedIn, create: loggedIn, update: management, delete: () => false },
@@ -475,32 +732,58 @@ export const AiCalls: CollectionConfig = {
         {
           name: "at",
           type: "date",
+          label: { en: "At", ar: "الوقت" },
           required: true,
-          admin: { date: { pickerAppearance: "dayAndTime" }, description: "When the AI ran." },
+          admin: {
+            date: { pickerAppearance: "dayAndTime" },
+            description: { en: "When the AI ran.", ar: "وقت تشغيل الذكاء الاصطناعي." },
+          },
         },
         {
           name: "task",
           type: "select",
+          label: { en: "Task", ar: "المهمة" },
           required: true,
-          options: [...AI_TASKS],
-          admin: { description: "What the AI was asked to do.", placeholder: "Pick a task" },
+          options: choices(AI_TASKS, {
+            "Read an email": "قراءة بريد",
+            "Read an attachment": "قراءة مرفق",
+            "Match a reply": "مطابقة رد",
+            "Check an offer": "فحص عرض",
+            "Draft a handover": "صياغة مذكرة تسليم",
+            "Write the briefing": "كتابة الملخص",
+            "Answer a question": "الإجابة عن سؤال",
+            "Draft a reminder": "صياغة تذكير",
+          }),
+          admin: {
+            description: { en: "What the AI was asked to do.", ar: "ما طُلب من الذكاء الاصطناعي فعله." },
+            placeholder: words({ en: "Pick a task", ar: "اختر مهمة" }),
+          },
         },
       ],
     },
     {
       name: "subject",
       type: "text",
+      label: { en: "Subject", ar: "الموضوع" },
+      localized: true,
       required: true,
       admin: {
-        description: "What it read or answered, in one line.",
-        placeholder: "e.g. RFQ email from Helios Bulk, 3 attachments",
+        description: { en: "What it read or answered, in one line.", ar: "ما قرأه أو أجاب عنه، في سطر واحد." },
+        placeholder: {
+          en: "e.g. RFQ email from Helios Bulk, 3 attachments",
+          ar: "مثال: بريد طلب عرض من Helios Bulk، 3 مرفقات",
+        },
       },
     },
     {
       name: "case",
       type: "relationship",
+      label: { en: "Case", ar: "الملف" },
       relationTo: "cases",
-      admin: { description: "The case it worked on, if any.", placeholder: "Search cases" },
+      admin: {
+        description: { en: "The case it worked on, if any.", ar: "الملف الذي عمل عليه، إن وُجد." },
+        placeholder: words({ en: "Search cases", ar: "ابحث في الملفات" }),
+      },
     },
     {
       type: "row",
@@ -508,44 +791,62 @@ export const AiCalls: CollectionConfig = {
         {
           name: "confidence",
           type: "number",
+          label: { en: "Confidence", ar: "الثقة" },
           min: 0,
           max: 1,
           admin: {
             step: 0.01,
-            description: "How sure the AI was, from 0 to 1. Under 0.85 waits for a person.",
-            placeholder: "e.g. 0.92",
+            description: {
+              en: "How sure the AI was, from 0 to 1. Under 0.85 waits for a person.",
+              ar: "مدى ثقة الذكاء الاصطناعي، من 0 إلى 1. ما دون 0.85 ينتظر شخصًا.",
+            },
+            placeholder: { en: "e.g. 0.92", ar: "مثال: 0.92" },
           },
         },
         {
           name: "values",
           type: "number",
+          label: { en: "Values", ar: "القيم" },
           min: 0,
-          admin: { description: "How many values it read or wrote.", placeholder: "e.g. 14" },
+          admin: {
+            description: { en: "How many values it read or wrote.", ar: "عدد القيم التي قرأها أو كتبها." },
+            placeholder: { en: "e.g. 14", ar: "مثال: 14" },
+          },
         },
         {
           name: "seconds",
           type: "number",
+          label: { en: "Seconds", ar: "الثواني" },
           min: 0,
-          admin: { step: 0.1, description: "How long the call took.", placeholder: "e.g. 3.2" },
+          admin: {
+            step: 0.1,
+            description: { en: "How long the call took.", ar: "المدة التي استغرقها الاستدعاء." },
+            placeholder: { en: "e.g. 3.2", ar: "مثال: 3.2" },
+          },
         },
       ],
     },
     {
       name: "model",
       type: "text",
-      admin: { description: "The model and version that answered.", placeholder: "e.g. Demo stub (no live AI)" },
+      label: { en: "Model", ar: "الموديل" },
+      admin: {
+        description: { en: "The model and version that answered.", ar: "النموذج والإصدار الذي أجاب." },
+        placeholder: { en: "e.g. Demo stub (no live AI)", ar: "مثال: نموذج تجريبي (بلا ذكاء اصطناعي فعلي)" },
+      },
     },
     {
       name: "outcome",
       type: "select",
+      label: { en: "Outcome", ar: "النتيجة" },
       required: true,
       defaultValue: "Applied automatically",
       options: [
-        "Applied automatically",
-        "Confirmed by a person",
-        "Corrected by a person",
-        "Rejected",
-        "Waiting for review",
+        { value: "Applied automatically", label: { en: "Applied automatically", ar: "طُبّق تلقائيًا" } },
+        { value: "Confirmed by a person", label: { en: "Confirmed by a person", ar: "أكّده شخص" } },
+        { value: "Corrected by a person", label: { en: "Corrected by a person", ar: "صحّحه شخص" } },
+        { value: "Rejected", label: { en: "Rejected", ar: "مرفوض" } },
+        { value: "Waiting for review", label: { en: "Waiting for review", ar: "بانتظار المراجعة" } },
       ],
       custom: tones({
         "Applied automatically": "success",
@@ -556,18 +857,19 @@ export const AiCalls: CollectionConfig = {
       }),
       admin: {
         position: "sidebar",
-        description: "What happened to the result.",
-        placeholder: "Pick an outcome",
+        description: { en: "What happened to the result.", ar: "ما حدث للنتيجة." },
+        placeholder: words({ en: "Pick an outcome", ar: "اختر نتيجة" }),
       },
     },
     {
       name: "reviewedBy",
       type: "relationship",
+      label: { en: "Reviewed By", ar: "راجعه" },
       relationTo: "users",
       admin: {
         position: "sidebar",
-        description: "Who confirmed, corrected or rejected it.",
-        placeholder: "Search users",
+        description: { en: "Who confirmed, corrected or rejected it.", ar: "من أكّدها أو صحّحها أو رفضها." },
+        placeholder: words({ en: "Search users", ar: "ابحث في المستخدمين" }),
       },
     },
   ],
@@ -583,33 +885,48 @@ const own: Access = ({ req }) => (req.user ? { user: { equals: req.user.id } } :
  */
 export const Notifications: CollectionConfig = {
   slug: "notifications",
-  labels: { singular: "Notification", plural: "Notifications" },
-  admin: { useAsTitle: "title", defaultColumns: ["at", "title", "kind", "read"], group: "Work" },
+  labels: { singular: { en: "Notification", ar: "إشعار" }, plural: { en: "Notifications", ar: "الإشعارات" } },
+  admin: { useAsTitle: "title", defaultColumns: ["at", "title", "kind", "read"], group: { en: "Work", ar: "العمل" } },
   defaultSort: "-at",
   access: { read: own, create: loggedIn, update: own, delete: own },
   fields: [
     {
       name: "user",
       type: "relationship",
+      label: { en: "User", ar: "المستخدم" },
       relationTo: "users",
       required: true,
       index: true,
       defaultValue: ({ user }: { user?: { id?: string } }) => user?.id,
-      admin: { position: "sidebar", description: "The person who sees it in their bell.", placeholder: "Search users" },
+      admin: {
+        position: "sidebar",
+        description: { en: "The person who sees it in their bell.", ar: "الشخص الذي يراه في جرس الإشعارات." },
+        placeholder: words({ en: "Search users", ar: "ابحث في المستخدمين" }),
+      },
     },
     {
       name: "title",
       type: "text",
+      label: { en: "Title", ar: "العنوان" },
+      localized: true,
       required: true,
       admin: {
-        description: "The headline they read first.",
-        placeholder: "e.g. Quotation GS-Q-0142 needs your approval",
+        description: { en: "The headline they read first.", ar: "العنوان الذي يقرؤه أولًا." },
+        placeholder: {
+          en: "e.g. Quotation GS-Q-0142 needs your approval",
+          ar: "مثال: عرض السعر GS-Q-0142 يحتاج موافقتك",
+        },
       },
     },
     {
       name: "detail",
       type: "text",
-      admin: { description: "One more line of context.", placeholder: "e.g. Margin is below the approval threshold." },
+      label: { en: "Detail", ar: "التفاصيل" },
+      localized: true,
+      admin: {
+        description: { en: "One more line of context.", ar: "سطر إضافي للسياق." },
+        placeholder: { en: "e.g. Margin is below the approval threshold.", ar: "مثال: الهامش أقل من حد الموافقة." },
+      },
     },
     {
       type: "row",
@@ -617,32 +934,55 @@ export const Notifications: CollectionConfig = {
         {
           name: "kind",
           type: "select",
+          label: { en: "Kind", ar: "النوع" },
           required: true,
           defaultValue: "Update",
-          options: ["Approval", "Reply", "Reminder", "Alert", "Payment", "Update"],
+          options: [
+            { value: "Approval", label: { en: "Approval", ar: "موافقة" } },
+            { value: "Reply", label: { en: "Reply", ar: "رد" } },
+            { value: "Reminder", label: { en: "Reminder", ar: "تذكير" } },
+            { value: "Alert", label: { en: "Alert", ar: "تنبيه" } },
+            { value: "Payment", label: { en: "Payment", ar: "دفعة" } },
+            { value: "Update", label: { en: "Update", ar: "تحديث" } },
+          ],
           custom: tones({ Approval: "warning", Alert: "error", Payment: "success", Reply: "info", Reminder: "info" }),
-          admin: { description: "What sort of news it is.", placeholder: "Pick a kind" },
+          admin: {
+            description: { en: "What sort of news it is.", ar: "نوع الخبر." },
+            placeholder: words({ en: "Pick a kind", ar: "اختر نوعًا" }),
+          },
         },
         {
           name: "href",
           type: "text",
-          label: "Link",
-          admin: { description: "The dashboard page it opens.", placeholder: "e.g. /collections/cases/gs-rfq-0142" },
+          label: { en: "Link", ar: "الرابط" },
+          admin: {
+            description: { en: "The dashboard page it opens.", ar: "صفحة لوحة التحكم التي يفتحها." },
+            placeholder: { en: "e.g. /collections/cases/gs-rfq-0142", ar: "مثال: /collections/cases/gs-rfq-0142" },
+          },
         },
       ],
     },
     {
       name: "at",
       type: "date",
+      label: { en: "At", ar: "الوقت" },
       required: true,
       defaultValue: () => new Date().toISOString(),
-      admin: { position: "sidebar", date: { pickerAppearance: "dayAndTime" }, description: "When it was sent." },
+      admin: {
+        position: "sidebar",
+        date: { pickerAppearance: "dayAndTime" },
+        description: { en: "When it was sent.", ar: "وقت إرساله." },
+      },
     },
     {
       name: "read",
       type: "checkbox",
+      label: { en: "Read", ar: "مقروء" },
       defaultValue: false,
-      admin: { position: "sidebar", description: "Set once the person has opened it." },
+      admin: {
+        position: "sidebar",
+        description: { en: "Set once the person has opened it.", ar: "يُضبط بعد أن يفتحه الشخص." },
+      },
     },
   ],
 };
@@ -650,31 +990,43 @@ export const Notifications: CollectionConfig = {
 /** Per-user bookmarks (the side panel's star): pages a person keeps coming back to. */
 export const Bookmarks: CollectionConfig = {
   slug: "bookmarks",
-  labels: { singular: "Bookmark", plural: "Bookmarks" },
-  admin: { useAsTitle: "label", defaultColumns: ["label", "href"], group: "Work", hidden: true },
+  labels: { singular: { en: "Bookmark", ar: "إشارة مرجعية" }, plural: { en: "Bookmarks", ar: "الإشارات المرجعية" } },
+  admin: { useAsTitle: "label", defaultColumns: ["label", "href"], group: { en: "Work", ar: "العمل" }, hidden: true },
   defaultSort: "createdAt",
   access: { read: own, create: loggedIn, update: own, delete: own },
   fields: [
     {
       name: "user",
       type: "relationship",
+      label: { en: "User", ar: "المستخدم" },
       relationTo: "users",
       required: true,
       index: true,
       defaultValue: ({ user }: { user?: { id?: string } }) => user?.id,
-      admin: { description: "The person whose list it is in.", placeholder: "Search users" },
+      admin: {
+        description: { en: "The person whose list it is in.", ar: "الشخص الذي تخصه القائمة." },
+        placeholder: words({ en: "Search users", ar: "ابحث في المستخدمين" }),
+      },
     },
     {
       name: "label",
       type: "text",
+      label: { en: "Label", ar: "التسمية" },
       required: true,
-      admin: { description: "The name shown in the side panel.", placeholder: "e.g. Open RFQs" },
+      admin: {
+        description: { en: "The name shown in the side panel.", ar: "الاسم الظاهر في اللوحة الجانبية." },
+        placeholder: { en: "e.g. Open RFQs", ar: "مثال: طلبات العروض المفتوحة" },
+      },
     },
     {
       name: "href",
       type: "text",
+      label: { en: "Href", ar: "الرابط" },
       required: true,
-      admin: { description: "The dashboard page it opens.", placeholder: "e.g. /collections/cases" },
+      admin: {
+        description: { en: "The dashboard page it opens.", ar: "صفحة لوحة التحكم التي يفتحها." },
+        placeholder: { en: "e.g. /collections/cases", ar: "مثال: /collections/cases" },
+      },
     },
   ],
 };

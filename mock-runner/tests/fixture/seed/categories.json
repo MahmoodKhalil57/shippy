@@ -1,5 +1,11 @@
 [
-  { "id": "news", "name": "News", "kind": "topic" },
-  { "id": "guides", "name": "Guides", "kind": "topic" },
-  { "id": "weekly", "name": "Weekly", "kind": "series" }
+  {
+    "id": "news",
+    "name": "News",
+    "kind": "topic",
+    "blurb": { "en": "What happened", "ar": "ما حدث" },
+    "aliases": [{ "id": "a1", "label": { "en": "Updates", "ar": "تحديثات" } }]
+  },
+  { "id": "guides", "name": "Guides", "kind": "topic", "blurb": { "en": "How to" } },
+  { "id": "weekly", "name": "Weekly", "kind": "series", "blurb": { "en": "Every week", "ar": "كل أسبوع" } }
 ]

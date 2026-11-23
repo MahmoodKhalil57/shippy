@@ -1,4 +1,5 @@
 import type { Widget } from "saastemlycrm-design-system/contracts";
+import { m } from "../i18n/paraglide/messages.js";
 
 /**
  * The approval rules global (/globals/approval-rules), a Payload Global view: above its form, what
@@ -10,21 +11,25 @@ export const approvalRulesBefore: Widget[] = [
   // How many requests stand where under these rules (waiting, halfway through a two-person rule,
   // approved, rejected), each opening its list.
   {
-    title: "Requests under these rules",
+    title: m.page_approval_rules_requests_title(),
     size: "s",
     counts: {
       collection: "approvals",
       items: [
-        { label: "Waiting", where: { status: { equals: "Pending" } }, tone: "warning" },
-        { label: "Halfway", where: { status: { like: "Approved 1 of" } }, note: "Two-person rules" },
-        { label: "Approved", where: { status: { equals: "Approved" } }, tone: "success" },
-        { label: "Rejected", where: { status: { equals: "Rejected" } }, tone: "error" },
+        { label: m.page_approval_rules_waiting(), where: { status: { equals: "Pending" } }, tone: "warning" },
+        {
+          label: m.page_approval_rules_halfway(),
+          where: { status: { like: "Approved 1 of" } },
+          note: m.page_approval_rules_two_person(),
+        },
+        { label: m.page_approval_rules_approved(), where: { status: { equals: "Approved" } }, tone: "success" },
+        { label: m.page_approval_rules_rejected(), where: { status: { equals: "Rejected" } }, tone: "error" },
       ],
     },
   },
   // The newest requests still waiting for a decision, with a link to all of them.
   {
-    title: "Waiting for a decision",
+    title: m.page_approval_rules_waiting_title(),
     size: "s",
     collection: {
       collection: "approvals",

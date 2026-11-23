@@ -1,4 +1,4 @@
-import type { CollectionSettings } from "saastemlycrm-design-system/contracts";
+import { localize, type CollectionSettings } from "saastemlycrm-design-system/contracts";
 import { matches } from "saastemlycrm-design-system/payload";
 import { beforeEach, describe, expect, it } from "vite-plus/test";
 import { Suppliers } from "../src/collections/directory.ts";
@@ -218,7 +218,7 @@ describe("growth CRM (/api/growth)", () => {
     expect(medline.brief).toMatch(/^Plan the next step, or close the opportunity\./);
     const actions = (Opportunities.custom as CollectionSettings).actions!;
     const offered = (o: Record<string, unknown>) =>
-      actions.filter((a) => matches(o, a.when as never)).map((a) => a.label);
+      actions.filter((a) => matches(o, a.when as never)).map((a) => localize(a.label, "en"));
     expect(offered(medline)).toEqual(["Plan next step"]);
     expect(offered(byName("Gulf Star Shipping"))).toEqual(["Record outcome"]);
     // A step with what to say; the last outcome only once one is recorded (below).

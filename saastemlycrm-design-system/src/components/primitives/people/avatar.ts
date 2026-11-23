@@ -4,6 +4,7 @@ import { customElement, property } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
+import { m } from "../../../i18n/index.ts";
 
 /**
  * Avatar: Thumbnail representation of a person or business.
@@ -53,9 +54,15 @@ export const avatarImage = rcva("", {
       accent: "ring-accent ring-offset-base-100 ring-2 ring-offset-2",
       neutral: "ring-neutral ring-offset-base-100 ring-2 ring-offset-2",
     },
-    placeholder: { true: "bg-neutral text-neutral-content", false: "" },
+    placeholder: { true: "", false: "" },
+    /** Initials' colours (no picture): neutral, or the secondary container (a mark, not a person). */
+    tone: { neutral: "", secondary: "" },
   },
-  defaultVariants: { size: "xl", shape: "circle", placeholder: false },
+  compoundVariants: [
+    { placeholder: true, tone: "neutral", class: "bg-neutral text-neutral-content" },
+    { placeholder: true, tone: "secondary", class: "bg-secondary-container text-on-secondary-container" },
+  ],
+  defaultVariants: { size: "xl", shape: "circle", placeholder: false, tone: "neutral" },
 });
 
 /** Placeholder text size matched to the box size, as in the docs. */
@@ -86,6 +93,7 @@ export const avatarGroup = rcva("avatar-group", {
 });
 
 export type AvatarVariants = VariantProps<typeof avatar> & VariantProps<typeof avatarImage>;
+export type AvatarImageVariants = VariantProps<typeof avatarImage>;
 export type AvatarGroupVariants = VariantProps<typeof avatarGroup>;
 
 export interface AvatarData {
@@ -97,10 +105,13 @@ export interface AvatarData {
 }
 
 /** Render one avatar from data — shared by `ui-avatar` and `ui-avatar-group`. */
-export const avatarTemplate = (a: AvatarData, opts: Pick<AvatarVariants, "size" | "shape" | "ring"> = {}) => {
+export const avatarTemplate = (
+  a: AvatarData,
+  opts: Pick<AvatarVariants, "size" | "shape" | "ring"> & { tone?: AvatarImageVariants["tone"] } = {},
+) => {
   const placeholder = !a.src;
   return html`<div class=${avatar({ presence: a.presence, placeholder })}>
-    <div class=${avatarImage({ size: opts.size, shape: opts.shape, ring: opts.ring, placeholder })}>
+    <div class=${avatarImage({ size: opts.size, shape: opts.shape, ring: opts.ring, placeholder, tone: opts.tone })}>
       ${
         a.src
           ? html`<img src=${a.src} alt=${a.alt ?? ""} />`
@@ -128,18 +139,22 @@ export class UiAvatar extends LightElement {
   @property() size: AvatarVariants["size"];
   @property() shape: AvatarVariants["shape"];
   @property() ring: AvatarVariants["ring"];
+  /** Initials' colours: `neutral`, or `secondary` (a mark such as a language's, not a person). */
+  @property() tone: AvatarImageVariants["tone"];
 
   render() {
     if (!this.src && !this.initials && this.hasContent) {
       return html`<div class=${avatar({ presence: this.presence, placeholder: true })}>
-        <div class=${avatarImage({ size: this.size, shape: this.shape, ring: this.ring, placeholder: true })}>
+        <div
+          class=${avatarImage({ size: this.size, shape: this.shape, ring: this.ring, placeholder: true, tone: this.tone })}
+        >
           ${this.slotted()}
         </div>
       </div>`;
     }
     return avatarTemplate(
       { src: this.src, alt: this.alt, initials: this.initials, presence: this.presence },
-      { size: this.size, shape: this.shape, ring: this.ring },
+      { size: this.size, shape: this.shape, ring: this.ring, tone: this.tone },
     );
   }
 }
@@ -172,7 +187,7 @@ export class UiAvatarGroup extends LightElement {
             )
           : this.content
       }
-      ${rest > 0 ? avatarTemplate({ initials: `+${rest}`, alt: `${rest} more` }, opts) : nothing}
+      ${rest > 0 ? avatarTemplate({ initials: `+${rest}`, alt: m.avatar_more({ count: rest }) }, opts) : nothing}
     </div>`;
   }
 }

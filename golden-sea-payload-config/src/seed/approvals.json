@@ -1,10 +1,16 @@
 [
   {
     "id": "ap-margin-0137",
-    "title": "Quote v2 to Mare Nostrum — 12.4% margin (min 15%)",
+    "title": {
+      "en": "Quote v2 to Mare Nostrum — 12.4% margin (min 15%)",
+      "ar": "عرض الإصدار 2 إلى Mare Nostrum — هامش 12.4% (الحد الأدنى 15%)"
+    },
     "type": "Quotation margin exception",
     "case": "gs-rfq-0137",
-    "detail": "Customer target price on the 2 Hempel paint lines; competitor quoted EUR 395 per kit.",
+    "detail": {
+      "en": "Customer target price on the 2 Hempel paint lines; competitor quoted EUR 395 per kit.",
+      "ar": "السعر المستهدف للعميل في بندي دهان Hempel؛ عرض المنافس EUR 395 للطقم."
+    },
     "requestedBy": "sa",
     "approvers": ["kb"],
     "subject": {
@@ -14,18 +20,30 @@
   },
   {
     "id": "ap-deposit-0133",
-    "title": "50% advance to Delta Marine Stores — EGP 96,400",
+    "title": {
+      "en": "50% advance to Delta Marine Stores — EGP 96,400",
+      "ar": "مقدّم 50% إلى Delta Marine Stores — EGP 96,400"
+    },
     "type": "Supplier deposit (payment)",
     "case": "gs-rfq-0133",
-    "detail": "PO P0418 · pro forma attached · bank details unchanged since 2025.",
+    "detail": {
+      "en": "PO P0418 · pro forma attached · bank details unchanged since 2025.",
+      "ar": "أمر الشراء P0418 · الفاتورة المبدئية مرفقة · البيانات البنكية دون تغيير منذ 2025."
+    },
     "requestedBy": "ah",
     "approvers": ["kb", "mh"]
   },
   {
     "id": "ap-bank-s3",
-    "title": "Port Said Welding requests new beneficiary bank account",
+    "title": {
+      "en": "Port Said Welding requests new beneficiary bank account",
+      "ar": "Port Said Welding تطلب حسابًا بنكيًا جديدًا للمستفيد"
+    },
     "type": "Bank detail change",
-    "detail": "Call-back to the number on file required. Two-person rule.",
+    "detail": {
+      "en": "Call-back to the number on file required. Two-person rule.",
+      "ar": "يلزم الاتصال بالرقم المسجّل للتحقق. قاعدة الشخصين."
+    },
     "requestedBy": "ah",
     "approvers": ["kb", "mh"],
     "twoPerson": true,
@@ -34,24 +52,39 @@
         "user": "mh",
         "decision": "Approve",
         "at": "2026-11-17T09:10:00.000Z",
-        "reason": "Call-back done on number on file."
+        "reason": {
+          "en": "Call-back done on number on file.",
+          "ar": "تم الاتصال للتحقق على الرقم المسجّل."
+        }
       }
     ]
   },
   {
     "id": "ap-fx-usd",
-    "title": "New USD rate 48.95 (from 48.60)",
+    "title": {
+      "en": "New USD rate 48.95 (from 48.60)",
+      "ar": "سعر USD جديد 48.95 (بدلًا من 48.60)"
+    },
     "type": "Exchange rate",
-    "detail": "Affects 3 open quotations.",
+    "detail": {
+      "en": "Affects 3 open quotations.",
+      "ar": "يؤثر في 3 عروض أسعار مفتوحة."
+    },
     "requestedBy": "ah",
     "approvers": ["kb"]
   },
   {
     "id": "ap-quote-0135",
-    "title": "Quote GS-Q-0135 v2 to Delta Offshore Services — USD 4,082.00",
+    "title": {
+      "en": "Quote GS-Q-0135 v2 to Delta Offshore Services — USD 4,082.00",
+      "ar": "عرض GS-Q-0135 v2 إلى Delta Offshore Services — USD 4,082.00"
+    },
     "type": "Customer quotation",
     "case": "gs-rfq-0135",
-    "detail": "v2 with the ESAB alternative on line 1, as the customer asked (email 12 Nov).",
+    "detail": {
+      "en": "v2 with the ESAB alternative on line 1, as the customer asked (email 12 Nov).",
+      "ar": "الإصدار 2 مع بديل ESAB في البند 1، كما طلب العميل (بريد 12 نوفمبر)."
+    },
     "subject": {
       "relationTo": "quotations",
       "value": "q-0135-v2"
@@ -61,19 +94,31 @@
   },
   {
     "id": "ap-alt-0135",
-    "title": "ESAB OK 46.00 instead of Lincoln Omnia 46 (GS-RFQ-0135 line 1)",
+    "title": {
+      "en": "ESAB OK 46.00 instead of Lincoln Omnia 46 (GS-RFQ-0135 line 1)",
+      "ar": "ESAB OK 46.00 بدلًا من Lincoln Omnia 46 (GS-RFQ-0135 البند 1)"
+    },
     "type": "Alternative product (internal)",
     "case": "gs-rfq-0135",
-    "detail": "Same AWS E6013 class; mill certificate attached. Saves USD 4.60 per pack.",
+    "detail": {
+      "en": "Same AWS E6013 class; mill certificate attached. Saves USD 4.60 per pack.",
+      "ar": "نفس فئة AWS E6013؛ شهادة المصنع مرفقة. يوفّر USD 4.60 لكل عبوة."
+    },
     "requestedBy": "sa",
     "approvers": ["kb"]
   },
   {
     "id": "ap-quote-0139",
-    "title": "Quote GS-Q-0139 v1 to Atlas Tankers — USD 4,666.40",
+    "title": {
+      "en": "Quote GS-Q-0139 v1 to Atlas Tankers — USD 4,666.40",
+      "ar": "عرض GS-Q-0139 v1 إلى Atlas Tankers — USD 4,666.40"
+    },
     "type": "Customer quotation",
     "case": "gs-rfq-0139",
-    "detail": "Submission through the customer's procurement portal.",
+    "detail": {
+      "en": "Submission through the customer's procurement portal.",
+      "ar": "الإرسال عبر بوابة مشتريات العميل."
+    },
     "subject": {
       "relationTo": "quotations",
       "value": "q-0139-v1"
@@ -85,7 +130,10 @@
         "user": "kb",
         "decision": "Approve",
         "at": "2026-11-12T08:40:00.000Z",
-        "reason": "OK. Check the portal's payment terms before submitting."
+        "reason": {
+          "en": "OK. Check the portal's payment terms before submitting.",
+          "ar": "موافق. راجع شروط الدفع في البوابة قبل الإرسال."
+        }
       }
     ]
   }

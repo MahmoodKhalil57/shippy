@@ -1,6 +1,11 @@
 import type { Endpoint, PayloadRequest } from "payload";
 import { bodyOf, failWith, forward } from "./forward.ts";
 import { operationsEndpoints, type BookLine, type Check } from "./operations.ts";
+import { m } from "../i18n/paraglide/messages.js";
+import { langOf } from "./insights-shared.ts";
+
+/** The request's language, as Paraglide's options. */
+const loc = (req: PayloadRequest) => ({ locale: langOf(req) });
 
 /**
  * The actions of the case tabs "Order & purchasing" and "Delivery & billing"
@@ -125,7 +130,7 @@ export const orderToCashEndpoints: Endpoint[] = [
       if (r instanceof Response) return r;
       const open = r.doc.openMismatches ?? 0;
       return Response.json({
-        message: `${r.created ? "Customer PO read and checked" : "PO re-checked"}: ${open ? `${open} mismatch(es) block commitment` : "all lines match"}.`,
+        message: m.api_order_to_cash_po_checked({ created: r.created ? "yes" : "no", open }, loc(req)),
       });
     },
   },
@@ -136,7 +141,9 @@ export const orderToCashEndpoints: Endpoint[] = [
       const r = await operation<{ created: string[] }>(req, "confirm-order", { case: req.routeParams?.id });
       if (r instanceof Response) return r;
       return Response.json({
-        message: `Sales order confirmed${r.created.length ? ` · supplier POs ${r.created.join(", ")} prepared for re-check & approval` : ""}.`,
+        message: r.created.length
+          ? m.api_order_to_cash_order_confirmed_pos({ pos: r.created.join(", ") }, loc(req))
+          : m.api_order_to_cash_order_confirmed({}, loc(req)),
       });
     },
   },
@@ -148,17 +155,19 @@ export const orderToCashEndpoints: Endpoint[] = [
       withOps(req, async (d) => {
         const { po: poId } = await bodyOf(req);
         const po = d.purchaseOrders.find((p) => p.id === String(poId));
-        if (!po) return failWith("Purchase order not found.", 404);
+        if (!po) return failWith(m.api_order_to_cash_po_not_found({}, loc(req)), 404);
         const as = { req, overrideAccess: false };
         try {
           await req.payload.create({
             ...as,
             collection: "approvals" as never,
             data: {
-              title: `Supplier PO ${po.number} to ${po.supplierName}`,
+              title: m.api_order_to_cash_approval_title({ number: po.number, supplier: po.supplierName }, loc(req)),
               type: "Supplier PO",
               case: d.case.id,
-              detail: `PO ${po.number} · re-check done${po.recheck.some((r) => !r.ok) ? " — changes flagged" : ", no changes"}.`,
+              detail: po.recheck.some((r) => !r.ok)
+                ? m.api_order_to_cash_approval_detail_flagged({ number: po.number }, loc(req))
+                : m.api_order_to_cash_approval_detail_clean({ number: po.number }, loc(req)),
               approvers: ["kb"],
               subject: { relationTo: "purchase-orders", value: po.id },
             } as never,
@@ -172,7 +181,7 @@ export const orderToCashEndpoints: Endpoint[] = [
             collection: "notifications" as never,
             data: {
               user: "kb",
-              title: `Approve supplier PO ${po.number}`,
+              title: m.api_order_to_cash_notification_title({ number: po.number }, loc(req)),
               detail: `${po.supplierName} · ${d.case.caseId}`,
               kind: "Approval",
               href: "/approvals",
@@ -188,12 +197,12 @@ export const orderToCashEndpoints: Endpoint[] = [
     path: "/case-order/book-bill",
     method: "post",
     handler: async (req) => {
-      if (!req.user) return failWith("You are not allowed to perform this action.", 401);
+      if (!req.user) return failWith(m.api_insights_shared_not_allowed({}, loc(req)), 401);
       const { bill: id } = await bodyOf(req);
       const bill = (await req.payload
         .findByID({ collection: "supplier-bills" as never, id: String(id), depth: 0, req, overrideAccess: false })
         .catch(() => null)) as Record<string, unknown> | null;
-      if (!bill) return failWith("No supplier bill to book.", 404);
+      if (!bill) return failWith(m.api_order_to_cash_no_bill({}, loc(req)), 404);
       try {
         await req.payload.create({
           req,
@@ -208,7 +217,7 @@ export const orderToCashEndpoints: Endpoint[] = [
           } as never,
         });
       } catch (e) {
-        return failWith(`Duplicate bill blocked — ${errorText(e)}`);
+        return failWith(m.api_order_to_cash_duplicate_bill({ reason: errorText(e) }, loc(req)));
       }
       return Response.json({ ok: true });
     },
@@ -225,7 +234,7 @@ export const orderToCashEndpoints: Endpoint[] = [
       });
       if (r instanceof Response) return r;
       return Response.json({
-        message: r.message ?? `ETA updated — ${r.changed} drop(s) re-planned; owner and management alerted.`,
+        message: r.message ?? m.api_order_to_cash_eta_updated({ changed: r.changed }, loc(req)),
       });
     },
   },
@@ -240,7 +249,9 @@ export const orderToCashEndpoints: Endpoint[] = [
       const r = await operation<{ doc: { number: string } }>(req, "invoice-delivery", { delivery: b.delivery });
       if (r instanceof Response) return r;
       return Response.json({
-        message: `${r.doc.number} created from ${x?.number ?? "the delivery"} — delivered quantities only.`,
+        message: x?.number
+          ? m.api_order_to_cash_invoice_created({ number: r.doc.number, delivery: x.number }, loc(req))
+          : m.api_order_to_cash_invoice_created_from_delivery({ number: r.doc.number }, loc(req)),
       });
     },
   },

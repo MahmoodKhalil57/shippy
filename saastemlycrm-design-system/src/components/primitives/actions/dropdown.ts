@@ -9,6 +9,7 @@ import { floating, floatingHeight, floatMotion, row, stack, text } from "../layo
 import { button, type ButtonVariants } from "./button.ts";
 import { iconButton, type IconButtonVariants } from "./icon-button.ts";
 import { iconSvg, type IconName } from "../media/icon.ts";
+import { m } from "../../../i18n/index.ts";
 
 /**
  * Dropdown: Opens a menu or other element when a button is clicked.
@@ -113,7 +114,7 @@ export const dropdownIcon = rcva("h-4 w-4 stroke-current");
 
 /** Icons used as triggers in the docs (`info`: the helper dropdown). */
 export const dropdownIcons = {
-  info: iconSvg("info", {}, { label: "More info", class: dropdownIcon() }),
+  info: () => iconSvg("info", {}, { label: m.dropdown_more_info(), class: dropdownIcon() }),
 } as const;
 
 export type DropdownPanelVariants = VariantProps<typeof dropdownPanel>;
@@ -342,7 +343,7 @@ export class UiDropdown extends LightElement {
 
   private _trig() {
     if (this.hasSlotted("trigger")) return this.slotted("trigger");
-    return this.triggerIcon ? html`${dropdownIcons[this.triggerIcon]}${this.label}` : this.label;
+    return this.triggerIcon ? html`${dropdownIcons[this.triggerIcon]()}${this.label}` : this.label;
   }
 
   /** The menu's accessible name: the trigger's label. */
@@ -425,7 +426,7 @@ export class UiDropdown extends LightElement {
               <span class=${dropdownItemText()}
                 >${item.label}${item.description ? html`<span class=${dropdownItemDescription()}>${item.description}</span>` : nothing}</span
               >
-              ${item.shortcut ? html`<kbd class=${dropdownItemShortcut()}>${item.shortcut}</kbd>` : nothing}
+              ${item.shortcut ? html`<kbd class=${dropdownItemShortcut()} dir="ltr">${item.shortcut}</kbd>` : nothing}
               ${item.checked ? iconSvg("check", { size: "sm" }) : nothing}
             </a>
           </li>`,

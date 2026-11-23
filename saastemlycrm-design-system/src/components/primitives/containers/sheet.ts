@@ -7,6 +7,7 @@ import { rcva } from "../../base/variants.ts";
 import { iconButton } from "../actions/icon-button.ts";
 import { floating, floatingHeight, inset, row, rowFill, stack, text } from "../layout/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
+import { m } from "../../../i18n/index.ts";
 
 /**
  * Sheet: a panel from the end side, over the page, for one thing looked at or edited without
@@ -90,7 +91,7 @@ export class UiSheet extends LightElement {
   @property() label = "";
   @property() size: SheetVariants["size"];
   /** The close button's name. */
-  @property({ attribute: "close-label" }) closeLabel = "Close";
+  @property({ attribute: "close-label" }) closeLabel = m.sheet_close();
 
   @query("dialog") private _dialog!: HTMLDialogElement;
   /** The press started on the dialog itself (not a drag that began inside the box). */

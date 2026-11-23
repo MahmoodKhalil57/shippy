@@ -2,6 +2,7 @@ import { alert, custom, figures, gauges, list, table, widgets } from "saastemlyc
 import * as fmt from "../format/profit.ts";
 import type { CaseProfit } from "../endpoints/profit.ts";
 import { caseProfit as profit } from "../queries/case-profit.ts";
+import { m } from "../i18n/paraglide/messages.js";
 
 /**
  * Case tab "Profit & close": the profit expected when the quotation was approved against the
@@ -19,61 +20,62 @@ export const caseProfit = widgets({
     alert({
       size: "full",
       skeleton: "text",
-      denied: "Profit, costs and margins are not visible to Sales.",
+      denied: m.page_profit_denied(),
       data: profit,
       format: fmt.profitStatus,
     }),
     figures({
       data: profit,
       labels: fmt.PROFIT_FIGURES,
+      name: fmt.profitFigureName,
       format: fmt.profitFigures,
     }),
     gauges({
-      title: "Close progress",
+      title: m.page_profit_close_progress(),
       size: "s",
       data: profit,
       format: fmt.closeProgress,
     }),
     list({
-      title: "Close checklist",
+      title: m.page_profit_close_checklist(),
       size: "s",
       skeleton: "list",
       data: profit,
       format: fmt.closeChecklist,
     }),
     list({
-      title: "Claims",
+      title: m.page_profit_claims(),
       size: "s",
       skeleton: "list",
       data: profit,
-      empty: { when: notCosted, heading: "No claims before the case is costed." },
+      empty: { when: notCosted, heading: m.page_profit_no_claims() },
       format: fmt.claims,
     }),
     custom({
-      title: "Damage for a claim",
+      title: m.page_profit_damage(),
       size: "s",
       data: profit,
-      empty: { when: notCosted, heading: "No delivery to claim against yet." },
+      empty: { when: notCosted, heading: m.page_profit_no_delivery() },
       format: fmt.damageReader,
     }),
     table({
-      title: "Expected vs actual cost",
+      title: m.page_profit_cost_title(),
       size: "l",
       skeleton: "table",
       data: profit,
       empty: {
         when: notCosted,
-        heading: "No cost sheet yet.",
-        description: "Expected costs are fixed when the customer's PO is confirmed.",
+        heading: m.page_profit_no_cost_sheet(),
+        description: m.page_profit_no_cost_sheet_description(),
       },
       format: fmt.costLines,
     }),
     table({
-      title: "FX differences",
+      title: m.page_profit_fx(),
       size: "l",
       skeleton: "table",
       data: profit,
-      empty: { when: notCosted, heading: "No receipts yet." },
+      empty: { when: notCosted, heading: m.page_profit_no_receipts() },
       format: fmt.fxReceipts,
     }),
   ],

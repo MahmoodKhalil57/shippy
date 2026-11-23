@@ -1,4 +1,5 @@
 import { LIVE, mine, type Where } from "./cases.ts";
+import { m } from "../i18n/paraglide/messages.js";
 
 /**
  * The side panel's counters (../pages/aside.ts): what each role steers by, as `counts` queries
@@ -15,40 +16,40 @@ export const ROLES = ["management", "finance-director", "operations", "sales", "
 const PENDING: Where = { status: { not_in: ["Approved", "Rejected"] } };
 
 export const myDecisions: Counter = {
-  label: "Decisions waiting for me",
+  label: m.page_aside_my_decisions(),
   collection: "approvals",
   where: { and: [PENDING, { approvers: { in: ["$user.id"] } }, { "decisions.user": { not_equals: "$user.id" } }] },
-  note: "Approvals routed to you that you haven't decided",
+  note: m.page_aside_my_decisions_note(),
   tone: "warning",
 };
 export const exceptions: Counter = {
-  label: "Integration exceptions",
+  label: m.page_aside_exceptions(),
   collection: "integration-exceptions",
   where: { status: { in: ["Open", "Waiting for review"] } },
-  note: "Failed mailbox, e-invoice or AI steps waiting for a person",
+  note: m.page_aside_exceptions_note(),
   tone: "warning",
 };
 export const toCollect: Counter = {
-  label: "Invoices to collect",
+  label: m.page_aside_to_collect(),
   collection: "invoices",
   where: { status: { in: ["Open", "Partially paid", "Overdue"] } },
-  note: "Customer invoices with a balance still open",
+  note: m.page_aside_to_collect_note(),
 };
 export const bills: Counter = {
-  label: "Supplier bills",
+  label: m.page_aside_bills(),
   collection: "supplier-bills",
   where: {},
-  note: "Bills to match against the PO and goods received",
+  note: m.page_aside_bills_note(),
 };
 export const liveCases: Counter = {
-  label: "Live cases",
+  label: m.page_aside_live_cases(),
   collection: "cases",
   where: LIVE,
-  note: "Every case not yet settled, lost or expired",
+  note: m.page_aside_live_cases_note(),
 };
 export const myLiveCases: Counter = {
-  label: "My live cases",
+  label: m.page_aside_my_live_cases(),
   collection: "cases",
   where: mine(LIVE),
-  note: "Cases you own that are still open",
+  note: m.page_aside_my_live_cases_note(),
 };

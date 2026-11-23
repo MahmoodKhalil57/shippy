@@ -6,22 +6,37 @@
     "portal": "Supplier onboarding form (email)",
     "submittedAt": "2026-11-02T00:00:00.000Z",
     "status": "Under review",
-    "nextStep": "Follow up 20 Nov",
+    "nextStep": {
+      "en": "Follow up 20 Nov",
+      "ar": "المتابعة 20 نوفمبر"
+    },
     "documents": [
       {
-        "name": "Commercial register",
+        "name": {
+          "en": "Commercial register",
+          "ar": "السجل التجاري"
+        },
         "status": "Submitted"
       },
       {
-        "name": "Tax card",
+        "name": {
+          "en": "Tax card",
+          "ar": "البطاقة الضريبية"
+        },
         "status": "Submitted"
       },
       {
-        "name": "Bank letter",
+        "name": {
+          "en": "Bank letter",
+          "ar": "خطاب البنك"
+        },
         "status": "Submitted"
       },
       {
-        "name": "ISO 9001 certificate",
+        "name": {
+          "en": "ISO 9001 certificate",
+          "ar": "شهادة ISO 9001"
+        },
         "status": "Submitted"
       }
     ],
@@ -35,10 +50,16 @@
     "portal": "Customer procurement portal",
     "renewBy": "2026-06-30T00:00:00.000Z",
     "status": "Renewal overdue",
-    "nextStep": "Submit updated tax card 20 Nov",
+    "nextStep": {
+      "en": "Submit updated tax card 20 Nov",
+      "ar": "تقديم البطاقة الضريبية المحدّثة 20 نوفمبر"
+    },
     "documents": [
       {
-        "name": "Tax card (2026)",
+        "name": {
+          "en": "Tax card (2026)",
+          "ar": "البطاقة الضريبية (2026)"
+        },
         "status": "Missing"
       }
     ]
@@ -49,22 +70,37 @@
     "opportunity": "op-medline",
     "portal": "Customer procurement portal",
     "status": "Documents requested",
-    "nextStep": "Collect the insurance certificate and 2 customer references",
+    "nextStep": {
+      "en": "Collect the insurance certificate and 2 customer references",
+      "ar": "الحصول على شهادة التأمين ومرجعين من العملاء"
+    },
     "documents": [
       {
-        "name": "Commercial register",
+        "name": {
+          "en": "Commercial register",
+          "ar": "السجل التجاري"
+        },
         "status": "Ready"
       },
       {
-        "name": "Tax card",
+        "name": {
+          "en": "Tax card",
+          "ar": "البطاقة الضريبية"
+        },
         "status": "Ready"
       },
       {
-        "name": "Liability insurance certificate",
+        "name": {
+          "en": "Liability insurance certificate",
+          "ar": "شهادة تأمين المسؤولية"
+        },
         "status": "Missing"
       },
       {
-        "name": "2 customer references",
+        "name": {
+          "en": "2 customer references",
+          "ar": "مرجعان من العملاء"
+        },
         "status": "Missing"
       }
     ]
@@ -78,18 +114,30 @@
     "committeeDate": "2026-11-10T00:00:00.000Z",
     "renewBy": "2027-11-10T00:00:00.000Z",
     "status": "Approved",
-    "nextStep": "Send first price list",
+    "nextStep": {
+      "en": "Send first price list",
+      "ar": "إرسال أول قائمة أسعار"
+    },
     "documents": [
       {
-        "name": "Commercial register",
+        "name": {
+          "en": "Commercial register",
+          "ar": "السجل التجاري"
+        },
         "status": "Submitted"
       },
       {
-        "name": "Tax card",
+        "name": {
+          "en": "Tax card",
+          "ar": "البطاقة الضريبية"
+        },
         "status": "Submitted"
       },
       {
-        "name": "Bank letter",
+        "name": {
+          "en": "Bank letter",
+          "ar": "خطاب البنك"
+        },
         "status": "Submitted"
       }
     ]

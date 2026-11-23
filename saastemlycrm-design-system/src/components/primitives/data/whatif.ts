@@ -1,5 +1,6 @@
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { formatInt, m } from "../../../i18n/index.ts";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { range } from "../forms/range.ts";
@@ -127,7 +128,8 @@ export class UiWhatif extends LightElement {
     const initial = this.#initial();
     const moved = this.inputs.some((i) => values[i.key] !== initial[i.key]);
     const outputs = this.compute(values);
-    const read = (i: WhatifInput) => (i.format ? i.format(values[i.key] ?? i.value) : String(values[i.key] ?? i.value));
+    const read = (i: WhatifInput) =>
+      i.format ? i.format(values[i.key] ?? i.value) : formatInt(values[i.key] ?? i.value);
     return html`<div class=${whatif()} role="group" aria-label=${this.label || nothing}>
       <div class=${whatifInputs()}>
         ${this.inputs.map(
@@ -164,7 +166,7 @@ export class UiWhatif extends LightElement {
       </div>
       <div class=${whatifFoot()}>
         <button type="button" class=${whatifReset()} ?disabled=${!moved} @click=${() => this.#set(this.#initial())}>
-          Reset
+          ${m.whatif_reset()}
         </button>
       </div>
     </div>`;

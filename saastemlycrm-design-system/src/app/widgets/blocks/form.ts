@@ -3,6 +3,7 @@ import { api } from "../../../api/client.ts";
 import type { FieldLike } from "../../../contracts/config.ts";
 import { toast } from "../../shared.ts";
 import { defineBlock } from "../registry.ts";
+import { m } from "../../../i18n/index.ts";
 
 /**
  * Settings that apply as they are edited: a small form (Payload field configs) whose changes are
@@ -43,7 +44,7 @@ defineBlock("form", (b, ctx) => {
           await api.call(b.save.method ?? "POST", b.save.path, patch);
           ctx.reload();
         } catch (e) {
-          toast((e as Error).message || "That didn't save.", "error");
+          toast((e as Error).message || m.widget_save_failed(), "error");
         }
       }, 700),
     );

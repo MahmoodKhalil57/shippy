@@ -1,6 +1,7 @@
 import type { VariantProps } from "class-variance-authority";
 import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import { m } from "../../../i18n/index.ts";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { inlineRow, row, text } from "../layout/algebra.ts";
@@ -75,7 +76,7 @@ export class UiChip extends LightElement {
   @property({ type: Boolean }) pressable = false;
   @property({ type: Boolean }) removable = false;
   /** The ✕'s accessible name (default: "Remove"). */
-  @property({ attribute: "remove-label" }) removeLabel = "Remove";
+  @property({ attribute: "remove-label" }) removeLabel = m.chip_remove();
   @property({ type: Boolean }) disabled = false;
 
   render() {

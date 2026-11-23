@@ -1,12 +1,12 @@
 /**
  * A month as a calendar's weeks (`<ui-month>`): rows of seven, the first column the week's first
- * day (`weekStart`: 0 Sunday, 1 Monday), the days before the 1st and after the last left blank
+ * day (`weekStart`: 0 Sunday … 6 Saturday; Arabic weeks start on Saturday), the days before the 1st and after the last left blank
  * (`null`). Pure and timezone-free (UTC dates), proved for every month of 2024–2030 with both week
  * starts by tests/month.test.ts: each date appears once, in its weekday's column, in 4 to 6 rows,
  * with exactly the blanks it needs before and after.
  */
 
-export type WeekStart = 0 | 1;
+export type WeekStart = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 export interface MonthOf {
   year: number;

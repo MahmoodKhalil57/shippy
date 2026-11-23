@@ -5,6 +5,7 @@ import "../../components/index.ts";
 import { defineBlock, inCard, renderBlocks, type ViewContext } from "./registry.ts";
 import { decimalsOf } from "../../components/base/chart.ts";
 import { formatNumber, type Action, type Cell, type NumberFormat, type Tag, type ViewBlock } from "./schema.ts";
+import { locale, m } from "../../i18n/index.ts";
 
 /**
  * The built-in blocks (./schema.ts `ViewBlocks`), drawn with the design system's `ui-*`
@@ -85,7 +86,7 @@ export function actionBar(items: Action[] | undefined, ctx: ViewContext) {
   const linkRow = html`${shown.map((a) => withReason(a, ctx))}${
     more.length
       ? html`<ui-dropdown
-          label="More"
+          .label=${m.widget_blocks_more()}
           trigger-variant="text"
           trigger-size="xs"
           align="start"
@@ -329,7 +330,10 @@ defineBlock("text", (b) => {
   >`;
   return b.speak
     ? html`<ui-flex direction="col" gap="2"
-        >${text}<ui-speak .text=${b.text} .lang=${typeof b.speak === "string" ? b.speak : "en-GB"}></ui-speak
+        >${text}<ui-speak
+          .text=${b.text}
+          .lang=${typeof b.speak === "string" ? b.speak : locale() === "ar" ? "ar" : "en-GB"}
+        ></ui-speak
       ></ui-flex>`
     : text;
 });
@@ -357,7 +361,7 @@ defineBlock("table", (b, ctx) => {
         .columns=${columns}
         .rows=${b.rows}
       ></ui-table>`
-    : html`<ui-empty-state size="sm">${b.empty ?? "Nothing here yet."}</ui-empty-state>`;
+    : html`<ui-empty-state size="sm">${b.empty ?? m.widget_empty()}</ui-empty-state>`;
 });
 
 defineBlock("list", (b, ctx) =>
@@ -403,7 +407,7 @@ defineBlock("list", (b, ctx) =>
             </ui-list-item>`,
         )}
       </ui-list>`
-    : html`<ui-empty-state size="sm">${b.empty ?? "Nothing here yet."}</ui-empty-state>`,
+    : html`<ui-empty-state size="sm">${b.empty ?? m.widget_empty()}</ui-empty-state>`,
 );
 
 defineBlock(
@@ -472,7 +476,7 @@ const chartTick = (v: number, step: number, f: NumberFormat = {}) => {
 defineBlock("chart", (b) => {
   const chart = html`<ui-chart
     .kind=${b.chart.kind}
-    .label=${b.title ?? b.label ?? "Chart"}
+    .label=${b.title ?? b.label ?? m.widget_blocks_chart()}
     .labels=${b.chart.labels}
     .series=${b.chart.series}
     .format=${(v: number) => formatNumber(v, b.chart.format)}
@@ -505,7 +509,12 @@ defineBlock(
 
 defineBlock(
   "funnel",
-  (b) => html`<ui-funnel .stages=${b.stages} .label=${b.label ?? ""} .step=${b.step ?? "went on"}></ui-funnel>`,
+  (b) =>
+    html`<ui-funnel
+      .stages=${b.stages}
+      .label=${b.label ?? ""}
+      .step=${b.step ?? m.widget_blocks_funnel_step()}
+    ></ui-funnel>`,
 );
 
 defineBlock(
@@ -612,7 +621,7 @@ defineBlock(
       .month=${b.month}
       .today=${b.today}
       .events=${b.events}
-      .weekStart=${b.weekStart ?? 0}
+      .weekStart=${b.weekStart}
       .label=${b.label ?? ""}
     ></ui-month>`,
 );

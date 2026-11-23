@@ -1,3 +1,4 @@
+import { m } from "../../i18n/index.ts";
 /**
  * Layout audit: what breaks a fluid layout at the current width, on the page and in every open
  * floating layer (`auditLayers`: menus, dialogs, the helper's panel). Apple's HIG (Layout) asks to test
@@ -71,7 +72,7 @@ export function auditLayout(root: Element | null = document.querySelector("main"
     out.push({
       kind: "page-scroll",
       element: root,
-      detail: `${root.scrollWidth - root.clientWidth}px wider than the page`,
+      detail: m.layout_page_scroll({ px: root.scrollWidth - root.clientWidth }),
     });
 
   /** Elements already reported: their descendants escape with them, so say it once. */
@@ -101,7 +102,11 @@ export function auditLayout(root: Element | null = document.querySelector("main"
       if (box && !reported.has(box.el)) {
         const past = Math.max(r.right - box.rect.right, box.rect.left - r.left);
         if (past > SLACK) {
-          out.push({ kind: "escapes", element: child, detail: `${Math.round(past)}px past its ${boxName(box.el)}` });
+          out.push({
+            kind: "escapes",
+            element: child,
+            detail: m.layout_escapes({ px: Math.round(past), ...boxName(box.el) }),
+          });
           reported.add(child);
           continue;
         }
@@ -110,14 +115,14 @@ export function auditLayout(root: Element | null = document.querySelector("main"
       const truncates = s.textOverflow === "ellipsis" || s.webkitLineClamp !== "none";
       const cut = child.scrollWidth > child.clientWidth + SLACK || child.scrollHeight > child.clientHeight + SLACK;
       if (truncates && cut && (child.textContent ?? "").trim().length > 3 && r.width < MIN_TEXT_WIDTH)
-        out.push({ kind: "squeezed", element: child, detail: `squeezed to ${Math.round(r.width)}px` });
+        out.push({ kind: "squeezed", element: child, detail: m.layout_squeezed({ px: Math.round(r.width) }) });
       // Text wrapped into a sliver: its own text (not its children's) on many lines, narrow.
       // An inline element is only as wide as its longest line: measure the block it flows in.
       if (columnWidth(child, s, r) < MIN_COLUMN_WIDTH && ownText(child).length > 20) {
         const lineHeight = parseFloat(s.lineHeight) || parseFloat(s.fontSize) * 1.4;
         const lines = Math.round(r.height / lineHeight);
         if (lines >= CRAMPED_LINES && s.whiteSpace !== "nowrap")
-          out.push({ kind: "cramped", element: child, detail: `${lines} lines in ${Math.round(r.width)}px` });
+          out.push({ kind: "cramped", element: child, detail: m.layout_cramped({ lines, px: Math.round(r.width) }) });
       }
       // Inside a horizontal scroller, wider content is meant to scroll: its children start afresh.
       if (scrollsX(s)) walk(child, null);
@@ -146,13 +151,14 @@ function ownText(e: Element) {
   return t.trim();
 }
 
-/** A readable name for a box, for the audit's messages. */
-function boxName(e: Element) {
-  if (e.closest("[data-list-row]") === e) return "list row";
-  if (e.classList.contains("card") || e.closest(".card") === e) return "card";
-  if (e.matches("main")) return "page";
-  if (e.matches("dialog")) return "dialog";
-  return e.tagName.toLowerCase().startsWith("ui-") ? e.tagName.toLowerCase() : "box";
+/** What a box is, for the audit's messages (`layout_escapes`): a kind, or a component's tag name. */
+function boxName(e: Element): { box: string; name: string } {
+  const tag = e.tagName.toLowerCase();
+  if (e.closest("[data-list-row]") === e) return { box: "list_row", name: "" };
+  if (e.classList.contains("card") || e.closest(".card") === e) return { box: "card", name: "" };
+  if (e.matches("main")) return { box: "page", name: "" };
+  if (e.matches("dialog")) return { box: "dialog", name: "" };
+  return tag.startsWith("ui-") ? { box: "component", name: tag } : { box: "box", name: "" };
 }
 
 /** Open floating layers: popovers, dialogs and dialog panels (the helper's), each audited on its own. */

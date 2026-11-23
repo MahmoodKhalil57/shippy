@@ -5,6 +5,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { scrolled, scrollRoom, text } from "../layout/algebra.ts";
+import { m } from "../../../i18n/index.ts";
 
 /**
  * Steps: where something is in a fixed sequence (M3 / Apple progress through stages).
@@ -98,7 +99,7 @@ export class UiSteps extends LightElement {
         >
           <span>
             ${item.label}${item.supporting ? html`<span class=${stepsSupporting()}>${item.supporting}</span>` : nothing}
-            ${state === "skipped" ? html`<span class="sr-only">(skipped)</span>` : state === "done" ? html`<span class="sr-only">(done)</span>` : nothing}
+            ${state === "skipped" ? html`<span class="sr-only">${m.steps_skipped()}</span>` : state === "done" ? html`<span class="sr-only">${m.steps_done()}</span>` : nothing}
           </span>
         </li>`;
       })}

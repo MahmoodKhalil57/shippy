@@ -18,6 +18,7 @@ import {
 } from "../stores/index.ts";
 import type { Access } from "./app.ts";
 import { text } from "../payload/util.ts";
+import { m } from "../i18n/index.ts";
 import { collectionOf, dataFields, fieldsOf, formatDate, loadBookmarks, settings, toggleBookmark } from "./shared.ts";
 import { loadTours } from "./site.ts";
 import { fill } from "./widgets/host.ts";
@@ -25,12 +26,21 @@ import type { Widget, WidgetScope } from "./widgets/widget.ts";
 
 /** The side panel's sections, in order (ids are remembered in `preferences.asideCollapsed`). */
 export const ASIDE_SECTIONS = [
-  { id: "notifications", label: "Notifications", icon: "bell" },
-  { id: "bookmarks", label: "Bookmarks", icon: "star" },
-  { id: "widgets", label: "Widgets", icon: "grid" },
-  { id: "tours", label: "Tours", icon: "compass" },
-] as const satisfies readonly { id: string; label: string; icon: IconName }[];
+  { id: "notifications", icon: "bell" },
+  { id: "bookmarks", icon: "star" },
+  { id: "widgets", icon: "grid" },
+  { id: "tours", icon: "compass" },
+] as const satisfies readonly { id: string; icon: IconName }[];
 export type AsideSection = (typeof ASIDE_SECTIONS)[number]["id"];
+
+/** A section's name, in the interface's language. */
+export const asideLabel = (id: AsideSection): string =>
+  ({
+    notifications: m.aside_notifications,
+    bookmarks: m.aside_bookmarks,
+    widgets: m.aside_widgets,
+    tours: m.aside_tours,
+  })[id]();
 
 /** A section's icon; the bell carries the unread count, so it shows even when the section (or the panel) is closed. */
 const icon = (name: IconName, count = 0) =>
@@ -43,7 +53,7 @@ const icon = (name: IconName, count = 0) =>
 /** The side panel's rail: one icon per section (selecting one opens the panel on it). */
 export const asideRail = (unread = 0): MenuItem[] =>
   ASIDE_SECTIONS.map((s) => ({
-    label: unread && s.id === "notifications" ? `${s.label} (${unread})` : s.label,
+    label: unread && s.id === "notifications" ? m.aside_notifications_unread({ count: unread }) : asideLabel(s.id),
     icon: icon(s.icon, s.id === "notifications" ? unread : 0),
     value: s.id,
   }));
@@ -98,15 +108,15 @@ function attentionCounters(user: Doc) {
 const bookmarkKind = (href: string) => {
   const path = href.slice(href.startsWith(DASHBOARD_ROUTE) ? DASHBOARD_ROUTE.length : 0);
   return /^\/collections\/[^/]+\/[^/]+/.test(path)
-    ? "Record"
+    ? m.aside_bookmark_record()
     : path.startsWith("/collections/")
-      ? "List"
+      ? m.aside_bookmark_list()
       : path.startsWith("/globals/")
-        ? "Settings"
-        : "Screen";
+        ? m.aside_bookmark_settings()
+        : m.aside_bookmark_screen();
 };
 
-const loading: MenuItem[] = [{ label: "Loading…", disabled: true }];
+const loading = (): MenuItem[] => [{ label: m.aside_loading(), disabled: true }];
 
 /**
  * The dashboard's side panel, built like the navigation: a `<ui-menu layout="nav">` whose groups
@@ -157,7 +167,7 @@ export class DashboardAside extends LightElement {
         description: [text(n.detail), formatDate(n.at)].filter(Boolean).join(" · "),
         href: text(n.href) || undefined,
         value: `${NOTIFICATION}${n.id}`,
-        badge: read ? "Read" : text(n.kind),
+        badge: read ? m.aside_notification_read() : text(n.kind),
         badgeColor: read ? undefined : kindColor(text(n.kind)),
       };
     });
@@ -203,10 +213,10 @@ export class DashboardAside extends LightElement {
     const marks = this.#bookmarks.value.items;
     const children: Record<AsideSection, MenuItem[]> = {
       notifications: !this.loaded
-        ? loading
+        ? loading()
         : this.notifications.length
           ? this.notifications
-          : [{ label: "You're all caught up", disabled: true }],
+          : [{ label: m.aside_caught_up(), disabled: true }],
       // The section's star (its header) bookmarks this page; the list is the bookmarks themselves.
       bookmarks: marks.length
         ? marks.map((b) => ({
@@ -216,7 +226,7 @@ export class DashboardAside extends LightElement {
             href: b.href,
             active: b.href === this.path,
           }))
-        : [{ label: "Press the star to keep a page here", disabled: true }],
+        : [{ label: m.aside_bookmarks_empty(), disabled: true }],
       // The side panel's widgets (`admin.custom.aside`): the same widgets a screen has, on a board of
       // their own, arranged and remembered on their own ("aside").
       widgets: [
@@ -237,7 +247,7 @@ export class DashboardAside extends LightElement {
           card: true,
           label: t.title,
           description: t.summary,
-          badge: done ? "Done" : `${t.steps.length} steps`,
+          badge: done ? m.aside_tour_done() : m.aside_tour_steps({ count: t.steps.length }),
           badgeColor: done ? ("success" as const) : undefined,
           value: `${TOUR}${t.id}`,
           active: this.#tour.value.active === t.id,
@@ -247,12 +257,12 @@ export class DashboardAside extends LightElement {
     // Notifications show their count on the bell; bookmarks next to the label.
     const counts: Partial<Record<AsideSection, number>> = { bookmarks: marks.length };
     return ASIDE_SECTIONS.map((s) => ({
-      label: s.label,
+      label: asideLabel(s.id),
       // The bookmarks' star is filled while this page is one, and pressing it (un)bookmarks it.
       icon: icon(s.id === "bookmarks" && here ? "star-filled" : s.icon, s.id === "notifications" ? this.unread : 0),
       iconAction:
         s.id === "bookmarks"
-          ? { label: here ? "Remove this page from bookmarks" : "Bookmark this page", pressed: here }
+          ? { label: here ? m.aside_bookmark_remove() : m.aside_bookmark_add(), pressed: here }
           : undefined,
       value: s.id,
       badge: counts[s.id] || undefined,

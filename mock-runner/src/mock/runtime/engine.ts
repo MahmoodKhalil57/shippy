@@ -17,6 +17,7 @@ import {
 import { matches, paginate, sortDocs, valuesAt } from "../../payload/index.ts";
 import { applySelect, selects, type JoinQuery, type Joins, type Select } from "../../payload/index.ts";
 import type { Store } from "./store.ts";
+import { inLocale, localeRead, toStored, type LocaleRead } from "./locales.ts";
 import {
   APIError,
   clone,
@@ -33,7 +34,8 @@ import {
  * The Local API (`payload.find`, `payload.create`…) over a `Store`, following
  * Payload's semantics: access control (default: logged-in users only),
  * collection and field hooks, validation, defaults, relationship population
- * (`depth`), auth collections, upload collections and globals.
+ * (`depth`), auth collections, upload collections, globals and field localization
+ * (`locale`, ./locales.ts).
  *
  * Hooks, access functions and custom endpoints receive `req.payload` = this.
  */
@@ -52,6 +54,10 @@ export interface MockRequest {
   data?: unknown;
   json?: () => Promise<unknown>;
   formData?: () => Promise<FormData>;
+  /** Payload's `req.locale`: the locale the request reads and writes localized fields in. */
+  locale?: string;
+  /** Payload's `req.fallbackLocale`: where a missing localized value is read from (`false`: nowhere). */
+  fallbackLocale?: string | false;
 }
 
 export interface FileInput {
@@ -74,7 +80,7 @@ interface Common {
   populate?: Record<string, Select>;
   /** Payload `joins`: per join field `{ limit, page, sort, where, count }` or `false`; `false` skips them all. */
   joins?: Joins;
-  /** Payload `locale` / `fallbackLocale`: accepted; this config has no localized fields, so every locale reads the same. */
+  /** Payload `locale` (or `all`) / `fallbackLocale`: the locale localized fields are read and written in (else `req.locale`, else the default). */
   locale?: string;
   fallbackLocale?: string | false;
 }
@@ -184,7 +190,40 @@ export class Engine {
       context: { ...r.context, ...args.context },
       headers: r.headers ?? new Headers(),
       ...r,
+      // An operation's own locale wins over its request's (Payload: `locale` on a Local API call).
+      locale: args.locale ?? r.locale,
+      fallbackLocale: args.fallbackLocale ?? r.fallbackLocale,
     } as MockRequest;
+  }
+
+  /** How a request reads localized fields (undefined: the config has no `localization`). */
+  private reading(req: MockRequest): LocaleRead | undefined {
+    return localeRead(this.config.localization, req.locale, req.fallbackLocale);
+  }
+
+  /** A request's locale for validating and hooks: `all` reads as the default locale. */
+  private writing(req: MockRequest): LocaleRead | undefined {
+    const r = this.reading(req);
+    return r && r.locale === "all" ? { ...r, locale: r.defaultLocale } : r;
+  }
+
+  /** Documents matching `where` as read in the request's locale, sorted the same way (the stored documents). */
+  private select(fields: FieldLike[], docs: Doc[], req: MockRequest, where?: Where, sort?: unknown) {
+    const r = this.writing(req);
+    if (!r)
+      return sortDocs(
+        docs.filter((d) => matches(d, where)),
+        sort,
+      );
+    const stored = new Map<Doc, Doc>();
+    const views: Doc[] = [];
+    for (const d of docs) {
+      const v = inLocale(fields, d, r);
+      if (!matches(v, where)) continue;
+      stored.set(v, d);
+      views.push(v);
+    }
+    return sortDocs(views, sort).map((v) => stored.get(v)!);
   }
 
   private async hooks<T>(
@@ -319,7 +358,7 @@ export class Engine {
   /** The read pipeline every returned document goes through. */
   private async afterRead(slug: string, doc: Doc, req: MockRequest, opts: ReadOptions): Promise<Doc> {
     const c = this.collection(slug);
-    let d = clone(doc);
+    let d = inLocale(this.fields(slug), clone(doc), this.reading(req));
     d = await this.hooks(c, "beforeRead", { req, collection: c, context: req.context }, "doc", d);
     await this.readFields(this.fields(slug), d, d, {
       req,
@@ -413,11 +452,14 @@ export class Engine {
     const args = { req, operation: op, collection: c, context: req.context, originalDoc: original };
 
     const password = typeof incoming.password === "string" ? incoming.password : undefined;
-    let data = sanitize(fields, incoming);
+    // Localized fields: validated and hooked as written in the request's locale; stored per locale.
+    const r = this.writing(req);
+    const view = original && inLocale(fields, original, r);
+    let data = sanitize(fields, inLocale(fields, incoming, r));
     if (op === "create" && typeof incoming.id === "string" && incoming.id) data.id = incoming.id;
 
     data = await this.hooks(c, "beforeValidate", args, "data", data);
-    let doc = op === "create" ? data : merge(fields, original ?? {}, data);
+    let doc = op === "create" ? data : merge(fields, view ?? {}, data);
     await runFieldHooks("beforeValidate", fields, doc, { ...args, root: doc, original });
     if (op === "create") await applyDefaults(fields, doc, { user: req.user, req });
 
@@ -452,7 +494,7 @@ export class Engine {
       doc.salt ??= original.salt;
       doc.hash ??= original.hash;
     }
-    return doc;
+    return toStored(fields, doc, original, this.reading(req), incoming);
   }
 
   private async storeFile(slug: string, file: FileInput, previous?: Doc) {
@@ -504,8 +546,13 @@ export class Engine {
         ? { and: [args.where, constraint] }
         : constraint
       : args.where;
-    let docs = (await this.store.all(args.collection)).filter((d) => matches(d, where));
-    docs = sortDocs(docs, args.sort ?? c.defaultSort ?? (c.timestamps === false ? undefined : "-createdAt"));
+    const docs = this.select(
+      this.fields(args.collection),
+      await this.store.all(args.collection),
+      req,
+      where,
+      args.sort ?? c.defaultSort ?? (c.timestamps === false ? undefined : "-createdAt"),
+    );
     const page = paginate(docs, args.limit ?? 10, args.page ?? 1, args.pagination ?? true);
     const depth = args.depth ?? DEFAULT_DEPTH;
     page.docs = await Promise.all(
@@ -530,7 +577,7 @@ export class Engine {
     const override = args.overrideAccess ?? true;
     const constraint = await this.access(c, "read", req, override, { id: args.id });
     const doc = await this.store.get(args.collection, args.id);
-    if (!doc || (constraint && !matches(doc, constraint))) {
+    if (!doc || (constraint && !this.select(this.fields(args.collection), [doc], req, constraint).length)) {
       if (args.disableErrors) return null as unknown as Doc;
       throw notFound();
     }
@@ -548,7 +595,8 @@ export class Engine {
     const req = this.req(args);
     const constraint = await this.access(this.collection(args.collection), "read", req, args.overrideAccess ?? true);
     const where = constraint ? (args.where ? { and: [args.where, constraint] } : constraint) : args.where;
-    return { totalDocs: (await this.store.all(args.collection)).filter((d) => matches(d, where)).length };
+    const all = await this.store.all(args.collection);
+    return { totalDocs: this.select(this.fields(args.collection), all, req, where).length };
   }
 
   async create(args: Common & { collection: string; data: Record<string, unknown>; file?: FileInput }): Promise<Doc> {
@@ -617,7 +665,7 @@ export class Engine {
         { data: args.data },
       );
       const where = constraint ? { and: [args.where ?? {}, constraint] } : args.where;
-      const targets = (await this.store.all(args.collection)).filter((d) => matches(d, where));
+      const targets = this.select(this.fields(args.collection), await this.store.all(args.collection), req, where);
       const docs: Doc[] = [];
       const errors: { id: string; message: string }[] = [];
       for (const t of targets) {
@@ -635,7 +683,7 @@ export class Engine {
     const original = await this.store.get(args.collection, args.id);
     if (!original) throw notFound();
     const constraint = await this.access(c, "update", req, override, { id: args.id, data: args.data });
-    if (constraint && !matches(original, constraint)) throw forbidden();
+    if (constraint && !this.select(this.fields(args.collection), [original], req, constraint).length) throw forbidden();
     const data = { ...args.data };
     if (c.upload && args.file) Object.assign(data, await this.storeFile(args.collection, args.file, original));
     const previous = await this.afterRead(args.collection, original, req, { depth: 0, override: true });
@@ -681,7 +729,7 @@ export class Engine {
         args.overrideAccess ?? true,
       );
       const where = constraint ? { and: [args.where ?? {}, constraint] } : args.where;
-      const targets = (await this.store.all(args.collection)).filter((d) => matches(d, where));
+      const targets = this.select(this.fields(args.collection), await this.store.all(args.collection), req, where);
       const docs: Doc[] = [];
       const errors: { id: string; message: string }[] = [];
       for (const t of targets) {
@@ -699,7 +747,7 @@ export class Engine {
     const original = await this.store.get(args.collection, args.id);
     if (!original) throw notFound();
     const constraint = await this.access(c, "delete", req, override, { id: args.id });
-    if (constraint && !matches(original, constraint)) throw forbidden();
+    if (constraint && !this.select(this.fields(args.collection), [original], req, constraint).length) throw forbidden();
     await this.hooks(c, "beforeDelete", { req, collection: c, context: req.context }, "id", args.id);
     const read = await this.afterRead(args.collection, original, req, { depth: args.depth ?? 0, override });
     await this.store.delete(args.collection, args.id);
@@ -736,7 +784,11 @@ export class Engine {
     const override = args.overrideAccess ?? true;
     await this.access(g, "read", req, override);
     const fields = this.globalFields(args.slug);
-    let doc: Record<string, unknown> = (await this.store.getGlobal(args.slug)) ?? {};
+    let doc: Record<string, unknown> = inLocale(
+      fields,
+      (await this.store.getGlobal(args.slug)) ?? {},
+      this.reading(req),
+    );
     await applyDefaults(fields, doc, { user: req.user, req });
     doc = await this.hooks(g, "beforeRead", { req, global: g, context: req.context }, "doc", doc);
     await this.readFields(fields, doc, doc, {
@@ -766,9 +818,11 @@ export class Engine {
     const override = args.overrideAccess ?? true;
     await this.access(g, "update", req, override, { data: args.data });
     const fields = this.globalFields(args.slug);
-    const original = (await this.store.getGlobal(args.slug)) ?? {};
+    const stored = (await this.store.getGlobal(args.slug)) ?? {};
+    // Localized fields: as written in the request's locale, stored per locale (as for documents).
+    const original = inLocale(fields, stored, this.writing(req));
     const hookArgs = { req, global: g, context: req.context, originalDoc: original };
-    let data = sanitize(fields, args.data);
+    let data = sanitize(fields, inLocale(fields, args.data, this.writing(req)));
     data = await this.hooks(g, "beforeValidate", hookArgs, "data", data);
     let doc = merge(fields, original, data);
     await applyDefaults(fields, doc, { user: req.user, req });
@@ -782,7 +836,7 @@ export class Engine {
     await runFieldHooks("beforeChange", fields, doc, { ...hookArgs, root: doc, original, operation: "update" });
     doc.updatedAt = new Date().toISOString();
     doc.createdAt ??= doc.updatedAt;
-    await this.store.putGlobal(args.slug, doc);
+    await this.store.putGlobal(args.slug, toStored(fields, doc, stored, this.reading(req), args.data));
     const read = await this.findGlobal({ ...args, overrideAccess: true });
     return this.hooks(g, "afterChange", { ...hookArgs, previousDoc: original }, "doc", read);
   }

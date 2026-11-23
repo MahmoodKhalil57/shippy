@@ -1,11 +1,13 @@
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
+import { formatInt, m } from "../../../i18n/index.ts";
+import { isRtl } from "../../base/reading.ts";
 import { LightElement } from "../../base/light-element.ts";
 import { motion } from "../../base/motion-queue.ts";
 import { rcva } from "../../base/variants.ts";
 import { row, rowLine, stack, text } from "../layout/algebra.ts";
-import { bandsOf, fraction, indexAt, percentOf, type Quality } from "./visual-math.ts";
+import { bandsOf, fraction, indexAt, percentOf, percentText, type Quality } from "./visual-math.ts";
 
 /**
  * Bullet: one measure against its target, on bands of how good it is (Stephen Few's bullet graph):
@@ -51,7 +53,11 @@ export const bulletBar = rcva(
 export const bulletTarget = rcva("pointer-events-none absolute inset-y-[12%] w-0.5 rounded-full bg-on-surface");
 export const bulletReading = rcva(`${text.label} min-h-4 text-label-md tabular-nums text-on-surface-variant`);
 
-const QUALITY: Record<Quality, string> = { poor: "Poor", ok: "OK", good: "Good" };
+const QUALITY: Record<Quality, () => string> = {
+  poor: () => m.bullet_quality_poor(),
+  ok: () => m.bullet_quality_ok(),
+  good: () => m.bullet_quality_good(),
+};
 
 /**
  * @example <ui-bullet heading="Revenue" label="Revenue against plan" .value=${41} .max=${60} .target=${50} .bands=${[30, 45]} value-text="USD 41k" target-text="USD 50k"></ui-bullet>
@@ -95,19 +101,21 @@ export class UiBullet extends LightElement {
 
   /** The sentence that reads it: value of target and its share of the target (or of the range). */
   #sentence() {
-    const v = this.valueText || String(this.value);
+    const value = this.valueText || formatInt(this.value);
     if (this.target === undefined) {
       const p = percentOf(this.value - this.min, this.max - this.min);
-      return p === null ? v : `${v} · ${p}% of ${this.max}`;
+      return p === null ? value : m.bullet_reading_range({ value, share: percentText(p), max: formatInt(this.max) });
     }
-    const t = this.targetText || String(this.target);
+    const target = this.targetText || formatInt(this.target);
     const p = percentOf(this.value, this.target);
-    return p === null ? `${v} of ${t}` : `${v} of ${t} · ${p}% of target`;
+    return p === null
+      ? m.bullet_reading_of({ value, target })
+      : m.bullet_reading_target({ value, target, share: percentText(p) });
   }
 
   #point = (e: PointerEvent) => {
     const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const rtl = getComputedStyle(this).direction === "rtl";
+    const rtl = isRtl(this);
     const f = r.width > 0 ? Math.min(1, Math.max(0, (rtl ? r.right - e.clientX : e.clientX - r.left) / r.width)) : 0;
     const i = indexAt(bandsOf(this.bands ?? [], this.min, this.max, this.lowerIsBetter), f);
     if (i !== this._band) this._band = i;
@@ -117,7 +125,7 @@ export class UiBullet extends LightElement {
   #key = (e: KeyboardEvent) => {
     const n = bandsOf(this.bands ?? [], this.min, this.max, this.lowerIsBetter).length;
     if (!n) return;
-    const rtl = getComputedStyle(this).direction === "rtl";
+    const rtl = isRtl(this);
     const forward = rtl ? "ArrowLeft" : "ArrowRight";
     const back = rtl ? "ArrowRight" : "ArrowLeft";
     let next: number;
@@ -146,7 +154,7 @@ export class UiBullet extends LightElement {
         this.heading || this.valueText
           ? html`<div class=${bulletHead()} aria-hidden="true">
               <span class=${bulletHeading()}>${this.heading}</span>
-              <span class=${bulletValue()}>${this.valueText || String(this.value)}</span>
+              <span class=${bulletValue()}>${this.valueText || formatInt(this.value)}</span>
             </div>`
           : nothing
       }
@@ -154,7 +162,7 @@ export class UiBullet extends LightElement {
         class=${bulletTrack()}
         role="meter"
         tabindex="0"
-        aria-label=${this.label || this.heading || "Bullet"}
+        aria-label=${this.label || this.heading || m.bullet_label()}
         aria-valuenow=${this.value}
         aria-valuemin=${min}
         aria-valuemax=${max}
@@ -187,11 +195,16 @@ export class UiBullet extends LightElement {
       <p class=${bulletReading()} aria-live="polite">
         ${
           on
-            ? `${QUALITY[on.quality]}: ${on.low}–${on.high} · ${sentence}`
+            ? m.bullet_band({
+                quality: QUALITY[on.quality](),
+                low: formatInt(on.low),
+                high: formatInt(on.high),
+                reading: sentence,
+              })
             : this._reading
               ? sentence
               : this.target !== undefined
-                ? `Target ${this.targetText || String(this.target)}`
+                ? m.bullet_target({ target: this.targetText || formatInt(this.target) })
                 : nothing
         }
       </p>

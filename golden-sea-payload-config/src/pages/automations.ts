@@ -2,6 +2,7 @@ import { figures, list, widgets } from "saastemlycrm-design-system/contracts";
 import * as fmt from "../format/automations.ts";
 import * as link from "../links.ts";
 import { autoResolvedExceptions, automations, openExceptions } from "../queries/automations.ts";
+import { m } from "../i18n/paraglide/messages.js";
 
 /**
  * Automations & exceptions (/automations): the rule registry (trigger, owner, due, approval,
@@ -15,19 +16,23 @@ import { autoResolvedExceptions, automations, openExceptions } from "../queries/
  */
 export const automationsPage = widgets({
   header: {
-    eyebrow: "Work · automation",
-    heading: "Automations & exceptions",
-    subtitle:
-      "Every automation has a trigger, owner, due time, approval rule, retry behaviour and stop condition. Reprocessing never creates duplicates; failures land in the exception queue with a safe retry.",
+    eyebrow: m.page_automations_eyebrow(),
+    heading: m.page_automations_heading(),
+    subtitle: m.page_automations_subtitle(),
     actions: [
-      { label: "All exceptions", href: link.list("integration-exceptions") },
-      { label: "Full activity log", href: link.list("activities") },
+      { label: m.page_automations_all_exceptions(), href: link.list("integration-exceptions") },
+      { label: m.page_automations_activity_log(), href: link.list("activities") },
     ],
   },
   // The figures across the top, the review queue and what runs on its own (and what needs a person)
   // in a row, then the tables.
   widgets: [
-    figures({ data: automations, labels: fmt.AUTOMATION_FIGURES, format: fmt.automationFigures }),
+    figures({
+      data: automations,
+      labels: fmt.AUTOMATION_FIGURES,
+      name: fmt.automationFigureName,
+      format: fmt.automationFigures,
+    }),
     // The exception queue's own counts, each linking to the list.
     {
       size: "s",
@@ -35,22 +40,22 @@ export const automationsPage = widgets({
         collection: "integration-exceptions",
         items: [
           {
-            label: "Open exceptions",
+            label: m.page_automations_open_exceptions(),
             where: openExceptions,
             tone: { some: "error", none: "success" },
-            note: "nothing fails silently",
+            note: m.page_automations_nothing_silent(),
           },
           {
-            label: "Auto-resolved",
+            label: m.page_automations_auto_resolved(),
             where: autoResolvedExceptions,
             tone: "success",
-            note: "duplicates caught by idempotency key",
+            note: m.page_automations_duplicates_caught(),
           },
         ],
       },
     },
     list({
-      title: "AI review queue",
+      title: m.page_automations_review_queue(),
       size: "s",
       skeleton: "list",
       data: automations,
@@ -58,21 +63,20 @@ export const automationsPage = widgets({
     }),
     // Fixed text, no data: what runs on its own, and what waits for an authorised person.
     list({
-      title: "Runs automatically under approved rules",
+      title: m.page_automations_automatic(),
       size: "s",
       format: fmt.iconLines("bolt", fmt.AUTOMATIC),
     }),
     list({
-      title: "Prepared for an authorised person",
+      title: m.page_automations_by_people(),
       size: "s",
       format: fmt.iconLines("user", fmt.BY_PEOPLE),
     }),
     // The exception queue: what failed and what it affects, each with its safe retry (the
     // collection's actions: they check the idempotency key first).
     {
-      title: "Exception queue",
-      subhead:
-        "A retry first checks the idempotency key (message-id, invoice number, mailbox), so nothing is created, imported or sent twice. Retrying a resolved item changes nothing.",
+      title: m.page_automations_queue_title(),
+      subhead: m.page_automations_queue_subhead(),
       size: "l",
       records: {
         collection: "integration-exceptions",
@@ -80,27 +84,27 @@ export const automationsPage = widgets({
         limit: 20,
         columns: ["occurredAt", "summary", "idempotencyKey", "retries", "status"],
         supporting: { occurredAt: "source", summary: "impact" },
-        labels: { occurredAt: "When", summary: "What happened" },
+        labels: { occurredAt: m.page_automations_when(), summary: m.page_automations_what_happened() },
         more: true,
       },
     },
     // Every rule of the automation-rules global, switched on and off by management (the rows' own actions).
     {
-      title: "Rule registry",
-      subhead: "Every rule is explicit; management pauses or enables one, and each change is logged.",
+      title: m.page_automations_registry_title(),
+      subhead: m.page_automations_registry_subhead(),
       size: "l",
       records: {
         global: "automation-rules",
         field: "rules",
         columns: ["name", "trigger", "action", "owner", "approval", "retry", "stop", "state"],
         supporting: { name: "mode", action: "aiReview", owner: "due" },
-        labels: { name: "Rule", owner: "Owner · due" },
+        labels: { name: m.page_automations_rule(), owner: m.page_automations_owner_due() },
       },
     },
     // Every automatic step and human decision (the activities collection), latest first.
     {
-      title: "Audit log",
-      subhead: "Every automatic step and human decision, append-only.",
+      title: m.page_automations_audit_title(),
+      subhead: m.page_automations_audit_subhead(),
       size: "l",
       records: {
         collection: "activities",
@@ -108,14 +112,14 @@ export const automationsPage = widgets({
         limit: 40,
         columns: ["at", "kind", "text", "case"],
         supporting: { kind: "actor", text: "rule" },
-        labels: { at: "When", kind: "Who", text: "What" },
+        labels: { at: m.page_automations_when(), kind: m.page_automations_who(), text: m.page_automations_what() },
       },
     },
     // Every AI call (the ai-calls collection), latest first: what it read, how sure it was, and
     // who confirmed, corrected or rejected the result.
     {
-      title: "AI log",
-      subhead: "Every AI call: what it read, how sure it was, and the person who checked it.",
+      title: m.page_automations_ai_log_title(),
+      subhead: m.page_automations_ai_log_subhead(),
       size: "l",
       records: {
         collection: "ai-calls",
@@ -123,7 +127,7 @@ export const automationsPage = widgets({
         limit: 20,
         columns: ["at", "task", "subject", "confidence", "outcome"],
         supporting: { task: "model", subject: "case", outcome: "reviewedBy" },
-        labels: { at: "When", subject: "What it read" },
+        labels: { at: m.page_automations_when(), subject: m.page_automations_what_it_read() },
         more: true,
       },
     },

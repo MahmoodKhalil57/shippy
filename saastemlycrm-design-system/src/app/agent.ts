@@ -12,6 +12,8 @@ import type { TraceStatus } from "../components/primitives/ai/trace.ts";
 import "../components/index.ts";
 import { helper } from "../agent/identity.ts";
 import { site } from "./site.ts";
+import { m } from "../i18n/index.ts";
+import { whenIdle } from "../components/base/work-queue.ts";
 
 /**
  * The helper (bottom right; named by the project's `assistant` global): a chat with a model that sees and uses the platform only
@@ -50,24 +52,27 @@ type Item =
  * Questions to start with: the same two for everyone, then the person's role's own (the
  * `assistant` global's `roleNotes[].suggestions`), else the project's general ones, else neutral ones.
  */
-const SUGGESTIONS = ["What am I looking at?", "What's waiting for me today?"];
-const DEFAULT_SUGGESTIONS = ["What needs my approval?", "How does this page work?"];
 const suggestions = () => {
   const { roleNotes, suggestions: general } = site().assistant;
   const own = roleNotes.find((r) => r.role === agentContext()?.roleId)?.suggestions ?? [];
-  return [...SUGGESTIONS, ...(own.length ? own : general.length ? general : DEFAULT_SUGGESTIONS)];
+  const neutral = [m.agent_suggest_approvals(), m.agent_suggest_page()];
+  return [
+    m.agent_suggest_screen(),
+    m.agent_suggest_today(),
+    ...(own.length ? own : general.length ? general : neutral),
+  ];
 };
 
-const MODEL_GROUPS: ModelGroup[] = [
+const modelGroups = (): ModelGroup[] => [
   {
-    label: "OpenAI · API key",
-    models: CODEX_MODELS.filter((m) => m.id !== "aibrowser").map((m) => ({ id: m.id, label: m.label, icon: "cloud" })),
+    label: m.agent_models_cloud(),
+    models: CODEX_MODELS.filter((x) => x.id !== "aibrowser").map((x) => ({ id: x.id, label: x.label, icon: "cloud" })),
   },
   {
-    label: "On this device",
-    models: CODEX_MODELS.filter((m) => m.id === "aibrowser").map((m) => ({
-      id: m.id,
-      label: m.label,
+    label: m.agent_models_device(),
+    models: CODEX_MODELS.filter((x) => x.id === "aibrowser").map((x) => ({
+      id: x.id,
+      label: x.label,
       icon: "device",
     })),
   },
@@ -77,7 +82,7 @@ const MODEL_GROUPS: ModelGroup[] = [
 function savedModel(): string {
   try {
     const saved = localStorage.getItem("saastemly:helper-model-v2");
-    if (saved && CODEX_MODELS.some((m) => m.id === saved)) return saved;
+    if (saved && CODEX_MODELS.some((x) => x.id === saved)) return saved;
   } catch {
     /* storage unavailable */
   }
@@ -149,7 +154,7 @@ export class DashboardAgent extends LightElement {
     try {
       await useLocalModel();
     } catch (e) {
-      this.localAiError = `Couldn't load the model: ${(e as Error).message}`;
+      this.localAiError = m.agent_model_load_failed({ error: (e as Error).message });
     }
     await this._checkLocalAi();
   }
@@ -159,12 +164,8 @@ export class DashboardAgent extends LightElement {
     if (this.model !== "aibrowser" || this.localAi === "native" || this.localAi === "local") return nothing;
     return html`<ui-alert tone="info">
       <ui-flex direction="col" gap="2">
-        <ui-text variant="title-sm">Saastama-Micro-3.5 runs on this computer</ui-text>
-        <ui-text variant="body-md"
-          >This browser doesn't have Chrome's on-device AI switched on. Download the model once (about 800 MB, kept by
-          the browser — not in private windows) to use it here — nothing you type leaves this computer. Or turn on
-          Chrome's own (faster) with the steps on the login page.</ui-text
-        >
+        <ui-text variant="title-sm">${m.agent_local_heading({ model: "Saastama-Micro-3.5" })}</ui-text>
+        <ui-text variant="body-md">${m.agent_local_body()}</ui-text>
         ${this.localAiError ? html`<ui-text variant="body-sm" color="error">${this.localAiError}</ui-text>` : nothing}
         <ui-flex gap="2" align="center" wrap>
           <ui-button
@@ -172,7 +173,7 @@ export class DashboardAgent extends LightElement {
             color="primary"
             ?disabled=${this.localAi === "loading"}
             @click=${() => void this._downloadModel()}
-            >${this.localAi === "loading" ? "Loading…" : "Download the AI model (about 800 MB)"}</ui-button
+            >${this.localAi === "loading" ? m.agent_local_loading() : m.agent_local_download()}</ui-button
           >
         </ui-flex>
       </ui-flex>
@@ -184,9 +185,8 @@ export class DashboardAgent extends LightElement {
     addEventListener(AI_CHANGE, this._checkLocalAi);
     void this._checkLocalAi();
     addEventListener("agent-tools-change", this._warmUp);
-    // Once the page has settled (an idle moment), not during its first paint.
-    if ("requestIdleCallback" in window) requestIdleCallback(this._warmUp);
-    else setTimeout(this._warmUp, 1000);
+    // At background priority, after the page's first paint.
+    whenIdle(this._warmUp, this._warmUp);
   }
 
   disconnectedCallback() {
@@ -349,7 +349,7 @@ export class DashboardAgent extends LightElement {
         return html`<ui-trace-line
           icon="thinking"
           status=${item.seconds == null ? "running" : "done"}
-          .label=${item.seconds == null ? "Thinking…" : `Thought for ${item.seconds} s`}
+          .label=${item.seconds == null ? m.agent_thinking() : m.agent_thought_for({ seconds: item.seconds })}
           >${item.notes?.length ? html`<ui-markdown .text=${item.notes.join("\n\n")}></ui-markdown>` : nothing}</ui-trace-line
         >`;
       case "progress":
@@ -363,9 +363,12 @@ export class DashboardAgent extends LightElement {
         >
           <ui-markdown
             .text=${[
-              Object.keys(item.input).length ? fenced("Input", JSON.stringify(item.input, null, 1)) : "",
+              Object.keys(item.input).length ? fenced(m.agent_trace_input(), JSON.stringify(item.input, null, 1)) : "",
               item.output
-                ? fenced("Result", item.output.length > 1500 ? `${item.output.slice(0, 1500)}…` : item.output)
+                ? fenced(
+                    m.agent_trace_result(),
+                    item.output.length > 1500 ? `${item.output.slice(0, 1500)}…` : item.output,
+                  )
                 : "",
             ]
               .filter(Boolean)
@@ -405,13 +408,13 @@ export class DashboardAgent extends LightElement {
         </ui-message>`;
       case "approval":
         return html`<ui-confirmation
-          .label=${`Allow: ${item.title}?`}
-          description="The helper wants to make this change for you."
+          .label=${m.agent_allow({ action: item.title })}
+          description=${m.agent_allow_description()}
           state=${item.state}
           @ui-approve=${() => item.answer?.(true)}
           @ui-deny=${() => item.answer?.(false)}
         >
-          <ui-markdown .text=${fenced("Details", JSON.stringify(item.input, null, 1))}></ui-markdown>
+          <ui-markdown .text=${fenced(m.agent_details(), JSON.stringify(item.input, null, 1))}></ui-markdown>
         </ui-confirmation>`;
       case "error":
         return html`<ui-alert tone="error">${item.text}</ui-alert>`;
@@ -446,18 +449,15 @@ export class DashboardAgent extends LightElement {
       panel
       .open=${this.open}
       .heading=${helper()}
-      .triggerLabel=${`Open the ${helper()}`}
+      .triggerLabel=${m.agent_open({ helper: helper() })}
       @ui-toggle=${(e: CustomEvent<{ open: boolean }>) => (this.open = e.detail.open)}
     >
       <ui-icon slot="trigger" name="assistant" size="lg"></ui-icon>
       <ui-message-scroller ?busy=${this.busy} ?empty=${!this.items.length}>
         <ui-flex slot="empty" direction="col" align="center" gap="3">
           <ui-icon name="assistant" size="xl" color="primary"></ui-icon>
-          <ui-text emphasized>How can I help?</ui-text>
-          <ui-text variant="body-md" color="muted" align="center"
-            >I see the screen you're on, find records, explain what's waiting for you, take you anywhere and, with your
-            OK, do things for you.</ui-text
-          >
+          <ui-text emphasized>${m.agent_empty_heading()}</ui-text>
+          <ui-text variant="body-md" color="muted" align="center">${m.agent_empty_body()}</ui-text>
           ${this._setup()}
           <ui-suggestions
             wrap
@@ -469,7 +469,7 @@ export class DashboardAgent extends LightElement {
       </ui-message-scroller>
       <ui-prompt-input
         slot="footer"
-        placeholder=${this.busy ? "Working…" : "Ask or tell the helper…"}
+        placeholder=${this.busy ? m.agent_working() : m.agent_prompt_placeholder()}
         status=${this.busy ? "busy" : "ready"}
         .value=${this.draft}
         @input=${(e: Event) => (this.draft = (e.target as HTMLTextAreaElement).value ?? "")}
@@ -481,7 +481,7 @@ export class DashboardAgent extends LightElement {
       >
         <ui-model-selector
           slot="tools"
-          .groups=${MODEL_GROUPS}
+          .groups=${modelGroups()}
           .value=${this.model}
           ?disabled=${this.busy}
           @ui-change=${(e: CustomEvent<{ value: string }>) => this._pickModel(e.detail.value)}
@@ -489,7 +489,7 @@ export class DashboardAgent extends LightElement {
         ${
           this.items.length && !this.busy
             ? html`<ui-button slot="tools" size="xs" variant="text" @click=${() => this._restart()}
-                >New chat</ui-button
+                >${m.agent_new_chat()}</ui-button
               >`
             : nothing
         }

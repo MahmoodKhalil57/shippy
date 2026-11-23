@@ -8,7 +8,10 @@
       "lastSyncAt": "2026-11-17T09:28:00.000Z",
       "tokenExpiresAt": "2027-02-10T00:00:00.000Z",
       "emailsImported": 1840,
-      "notes": "Microsoft 365 OAuth · attachments kept on the case"
+      "notes": {
+        "en": "Microsoft 365 OAuth · attachments kept on the case",
+        "ar": "Microsoft 365 OAuth · المرفقات محفوظة على الملف"
+      }
     },
     {
       "kind": "Outlook mailbox",
@@ -18,7 +21,10 @@
       "lastSyncAt": "2026-11-17T06:10:00.000Z",
       "tokenExpiresAt": "2026-11-17T06:12:00.000Z",
       "emailsImported": 1312,
-      "notes": "12 emails waiting since 06:12 — reconnect to resume"
+      "notes": {
+        "en": "12 emails waiting since 06:12 — reconnect to resume",
+        "ar": "12 رسالة منتظرة منذ 06:12 — أعد الربط للاستئناف"
+      }
     },
     {
       "kind": "Gmail mailbox",
@@ -28,7 +34,10 @@
       "lastSyncAt": "2026-11-17T09:25:00.000Z",
       "tokenExpiresAt": "2027-05-14T00:00:00.000Z",
       "emailsImported": 406,
-      "notes": "Google OAuth · previously discussed intake, verified 14 Nov"
+      "notes": {
+        "en": "Google OAuth · previously discussed intake, verified 14 Nov",
+        "ar": "Google OAuth · الاستلام الذي نوقش سابقًا، تم التحقق 14 نوفمبر"
+      }
     },
     {
       "kind": "Website form",
@@ -36,19 +45,28 @@
       "status": "Connected",
       "lastSyncAt": "2026-11-17T06:40:00.000Z",
       "emailsImported": 37,
-      "notes": "Form creates a draft case; falls back to an email to sales@"
+      "notes": {
+        "en": "Form creates a draft case; falls back to an email to sales@",
+        "ar": "ينشئ النموذج مسودة ملف؛ وبديله بريد إلى sales@"
+      }
     },
     {
       "kind": "WhatsApp",
       "account": "+20 3 000 0000 (Golden Sea)",
       "status": "Manual",
-      "notes": "Messages logged on the case with screenshot + who logged it; WhatsApp Business API optional later"
+      "notes": {
+        "en": "Messages logged on the case with screenshot + who logged it; WhatsApp Business API optional later",
+        "ar": "تُسجَّل الرسائل على الملف مع لقطة شاشة + اسم من سجّلها؛ وWhatsApp Business API اختياري لاحقًا"
+      }
     },
     {
       "kind": "AI extraction",
       "account": "Server-side LLM with vision",
       "status": "Sandbox",
-      "notes": "Confidence on every value; every call in the audit log; drafts only"
+      "notes": {
+        "en": "Confidence on every value; every call in the audit log; drafts only",
+        "ar": "ثقة لكل قيمة؛ وكل استدعاء في سجل التدقيق؛ مسودات فقط"
+      }
     },
     {
       "kind": "E-invoicing (tax authority)",
@@ -56,7 +74,10 @@
       "status": "Sandbox",
       "lastSyncAt": "2026-11-16T18:40:00.000Z",
       "tokenExpiresAt": "2027-09-30T00:00:00.000Z",
-      "notes": "Odoo Egypt localisation · signing token set up with finance"
+      "notes": {
+        "en": "Odoo Egypt localisation · signing token set up with finance",
+        "ar": "تعريب Odoo لمصر · رمز التوقيع مُعدّ مع المالية"
+      }
     },
     {
       "kind": "Odoo",
@@ -64,13 +85,19 @@
       "status": "Staging",
       "lastSyncAt": "2026-11-17T09:00:00.000Z",
       "modules": "CRM, Sales, Purchase, Contacts, Inventory, Accounting",
-      "notes": "Odoo for the books, SaaSTEMLY for the way you work"
+      "notes": {
+        "en": "Odoo for the books, SaaSTEMLY for the way you work",
+        "ar": "Odoo للدفاتر، وSaaSTEMLY لطريقة عملكم"
+      }
     },
     {
       "kind": "Document storage",
       "account": "Odoo Documents",
       "status": "Connected",
-      "notes": "One folder per case: RFQ files, offers, certificates, proofs of delivery"
+      "notes": {
+        "en": "One folder per case: RFQ files, offers, certificates, proofs of delivery",
+        "ar": "مجلد لكل ملف: ملفات طلب العرض، والعروض، والشهادات، وإثباتات التسليم"
+      }
     }
   ],
   "emailImport": {
@@ -85,85 +112,139 @@
   },
   "migration": [
     {
-      "part": "Customers and contacts",
+      "part": {
+        "en": "Customers and contacts",
+        "ar": "العملاء وجهات الاتصال"
+      },
       "odooModel": "res.partner",
       "inOdoo": 412,
       "moved": 412,
       "checked": 412,
       "status": "Done",
-      "note": "Merged 9 duplicates with you"
+      "note": {
+        "en": "Merged 9 duplicates with you",
+        "ar": "دُمج 9 مكررات معكم"
+      }
     },
     {
-      "part": "Vessels",
+      "part": {
+        "en": "Vessels",
+        "ar": "السفن"
+      },
       "odooModel": "x_vessel",
       "inOdoo": 186,
       "moved": 186,
       "checked": 150,
       "status": "Checking",
-      "note": "36 vessels have no IMO number in Odoo"
+      "note": {
+        "en": "36 vessels have no IMO number in Odoo",
+        "ar": "36 سفينة بلا رقم IMO في Odoo"
+      }
     },
     {
-      "part": "Products and part numbers",
+      "part": {
+        "en": "Products and part numbers",
+        "ar": "المنتجات وأرقام القطع"
+      },
       "odooModel": "product.product",
       "inOdoo": 3240,
       "moved": 3240,
       "checked": 2900,
       "status": "Checking",
-      "note": "IMPA codes matched on 2,900"
+      "note": {
+        "en": "IMPA codes matched on 2,900",
+        "ar": "طوبقت رموز IMPA في 2,900"
+      }
     },
     {
-      "part": "Supplier prices",
+      "part": {
+        "en": "Supplier prices",
+        "ar": "أسعار الموردين"
+      },
       "odooModel": "product.supplierinfo",
       "inOdoo": 8912,
       "moved": 6100,
       "checked": 0,
       "status": "Moving",
-      "note": "Each price keeps its date and validity"
+      "note": {
+        "en": "Each price keeps its date and validity",
+        "ar": "يحتفظ كل سعر بتاريخه وصلاحيته"
+      }
     },
     {
-      "part": "Quotations and sales orders",
+      "part": {
+        "en": "Quotations and sales orders",
+        "ar": "عروض الأسعار وأوامر البيع"
+      },
       "odooModel": "sale.order",
       "inOdoo": 1104,
       "moved": 0,
       "checked": 0,
       "status": "Not started",
-      "note": "Phase 3, after the open cases close"
+      "note": {
+        "en": "Phase 3, after the open cases close",
+        "ar": "المرحلة 3، بعد إغلاق الملفات المفتوحة"
+      }
     },
     {
-      "part": "Purchase orders",
+      "part": {
+        "en": "Purchase orders",
+        "ar": "أوامر الشراء"
+      },
       "odooModel": "purchase.order",
       "inOdoo": 962,
       "moved": 0,
       "checked": 0,
       "status": "Not started",
-      "note": "Phase 3"
+      "note": {
+        "en": "Phase 3",
+        "ar": "المرحلة 3"
+      }
     },
     {
-      "part": "Invoices and supplier bills",
+      "part": {
+        "en": "Invoices and supplier bills",
+        "ar": "الفواتير وفواتير الموردين"
+      },
       "odooModel": "account.move",
       "inOdoo": 2388,
       "moved": 0,
       "checked": 0,
       "status": "Not started",
-      "note": "Phase 3, with e-invoice receipts"
+      "note": {
+        "en": "Phase 3, with e-invoice receipts",
+        "ar": "المرحلة 3، مع إيصالات الفواتير الإلكترونية"
+      }
     },
     {
-      "part": "Payments",
+      "part": {
+        "en": "Payments",
+        "ar": "المدفوعات"
+      },
       "odooModel": "account.payment",
       "inOdoo": 1950,
       "moved": 0,
       "checked": 0,
       "status": "Not started",
-      "note": "Phase 3"
+      "note": {
+        "en": "Phase 3",
+        "ar": "المرحلة 3"
+      }
     },
     {
-      "part": "Stock, lots and expiry",
+      "part": {
+        "en": "Stock, lots and expiry",
+        "ar": "المخزون والدفعات والصلاحية"
+      },
       "odooModel": "stock.lot",
       "inOdoo": 640,
       "moved": 0,
       "checked": 0,
       "status": "Not started",
-      "note": "Phase 3, counted on a quiet day"
+      "note": {
+        "en": "Phase 3, counted on a quiet day",
+        "ar": "المرحلة 3، تُعدّ في يوم هادئ"
+      }
     }
   ],
   "backups": {

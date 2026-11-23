@@ -1,4 +1,5 @@
 import { business, org } from "./identity.ts";
+import { intlTag, locale } from "../i18n/index.ts";
 /**
  * Chrome's built-in AI task APIs (https://developer.chrome.com/docs/ai/built-in-apis), on the
  * device: Language Detector, Translator, Summarizer, Writer, Rewriter, Proofreader, and the
@@ -73,11 +74,14 @@ function session<T>(api: BuiltInApi, options: object, onProgress?: Progress): Pr
 
 /* ---------------------------------------------------------------- language */
 
-const names = new Intl.DisplayNames(["en"], { type: "language" });
-/** "ar" → "Arabic". */
+const names = new Map<string, Intl.DisplayNames>();
+/** "ar" → "Arabic", in the interface's language ("العربية" in Arabic). */
 export const languageName = (code: string) => {
+  const tag = intlTag();
+  let n = names.get(tag);
+  if (!n) names.set(tag, (n = new Intl.DisplayNames([tag], { type: "language" })));
   try {
-    return names.of(code) ?? code;
+    return n.of(code) ?? code;
   } catch {
     return code;
   }
@@ -443,7 +447,8 @@ export async function suggest(
   const r = await promptJson<{ value?: string | number | boolean | null }>(
     `You help someone at ${business() || org()} fill in a ${what}. Suggest the most likely value for one field, ` +
       `from the rest of the form. Use what the form says; don't make up names, numbers, dates or references ` +
-      `it gives no ground for: answer ${choices ? `"${NO_ANSWER}"` : "null"} instead. Today is ${today}.${shape}`,
+      `it gives no ground for: answer ${choices ? `"${NO_ANSWER}"` : "null"} instead. Today is ${today}.${shape} ` +
+      `Write text in the language the form is written in${locale() === "ar" ? " (Arabic when unsure)" : ""}.`,
     `The form so far:\n${lines.join("\n") || "(empty)"}\n\nSuggest: ${field.label}${field.hint ? ` (${field.hint})` : ""}`,
     schema,
     onProgress,
@@ -491,7 +496,7 @@ export async function score(text: string, question: string, onProgress?: Progres
 /** Three short replies to an incoming message, for the person to pick and edit. */
 export async function quickReplies(text: string, onProgress?: Progress): Promise<string[]> {
   const r = await promptJson<{ replies?: string[] }>(
-    `You suggest replies for staff of ${org()}, ${business()}. Each reply is one or two short, polite, professional sentences. Never promise prices, dates or quantities that aren't in the message.`,
+    `You suggest replies for staff of ${org()}, ${business()}. Each reply is one or two short, polite, professional sentences, in the message's own language. Never promise prices, dates or quantities that aren't in the message.`,
     `Suggest three different short replies to this message:\n\n${text.slice(0, 2500)}`,
     {
       type: "object",
@@ -529,7 +534,10 @@ export async function decisionsReady(): Promise<boolean> {
       (await availability("DecisionModel", { questions: [{ id: "ok", type: "boolean", prompt: "Is this text?" }] })) ===
       "available"
     );
-  return supported("LanguageModel") && (await availability("LanguageModel")) === "available";
+  return (
+    supported("LanguageModel") &&
+    (await availability("LanguageModel", { expectedOutputs: [{ type: "text", languages: ["en"] }] })) === "available"
+  );
 }
 
 /** The model's JSON answer, or a plain error a person can act on (small models sometimes stray). */

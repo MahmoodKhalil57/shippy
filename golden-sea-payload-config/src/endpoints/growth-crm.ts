@@ -2,7 +2,23 @@ import type { Endpoint, PayloadRequest } from "payload";
 import type { Doc } from "saastemlycrm-design-system/contracts";
 import { GROWTH_STAGES, SALES_RESULTS } from "../collections/growth.ts";
 import { logActivity } from "../collections/shared.ts";
-import { type Tone, all, body, docHref, fail, fmtDay, idOf, meOf, num, str, unauthorized } from "./insights-shared.ts";
+import { m } from "../i18n/paraglide/messages.js";
+import {
+  type Tone,
+  all,
+  body,
+  docHref,
+  fail,
+  fmtDay,
+  idOf,
+  intlLocale,
+  langOf,
+  meOf,
+  num,
+  optionLabel,
+  str,
+  unauthorized,
+} from "./insights-shared.ts";
 
 /**
  * The growth CRM (root view /growth), kept apart from operational RFQs:
@@ -43,6 +59,7 @@ export async function growth(req: PayloadRequest): Promise<Growth> {
     ["opportunities", "customers", "vessels", "cases"].map((c) => all(req, c, 0)),
   );
   const open = opps.filter((o) => o.stage !== "Closed");
+  const o = { locale: langOf(req) };
 
   /* fleets: customers (their vessel records) and prospects (the fleet on the opportunity) */
   const suppliedVessels = new Set(cases.map((c) => str(c.vessel).toLowerCase()));
@@ -54,7 +71,18 @@ export async function growth(req: PayloadRequest): Promise<Growth> {
     fleets.push({
       company: str(c.name),
       href: docHref("customers", c.id),
-      relation: `Customer · ${str((c.registration as { status?: string } | undefined)?.status) || str(c.type)}`,
+      relation: m.api_growth_crm_customer_relation(
+        {
+          status:
+            optionLabel(
+              req,
+              "customers",
+              "registration.status",
+              (c.registration as { status?: string } | undefined)?.status,
+            ) || optionLabel(req, "customers", "type", c.type),
+        },
+        o,
+      ),
       tone: /overdue/i.test(str((c.registration as { status?: string } | undefined)?.status)) ? "warning" : "success",
       fleetSize: num(c.fleetSize) || num(opp?.fleetSize) || own.length,
       vessels: own.map((v) => ({
@@ -72,16 +100,16 @@ export async function growth(req: PayloadRequest): Promise<Growth> {
       })),
     });
   }
-  for (const o of open) {
-    if (idOf(o.customer)) continue;
-    const fleet = (o.fleet as { name?: string; imo?: string; vesselType?: string }[] | undefined) ?? [];
-    if (!fleet.length && !num(o.fleetSize)) continue;
+  for (const p of open) {
+    if (idOf(p.customer)) continue;
+    const fleet = (p.fleet as { name?: string; imo?: string; vesselType?: string }[] | undefined) ?? [];
+    if (!fleet.length && !num(p.fleetSize)) continue;
     fleets.push({
-      company: str(o.name),
-      href: docHref("opportunities", o.id),
-      relation: `Prospect · ${str(o.stage)}`,
+      company: str(p.name),
+      href: docHref("opportunities", p.id),
+      relation: m.api_growth_crm_prospect_relation({ stage: optionLabel(req, "opportunities", "stage", p.stage) }, o),
       tone: "info",
-      fleetSize: num(o.fleetSize) || fleet.length,
+      fleetSize: num(p.fleetSize) || fleet.length,
       vessels: fleet.map((v) => ({ name: str(v.name), imo: str(v.imo), type: str(v.vesselType), supplied: false })),
     });
   }
@@ -94,7 +122,7 @@ export const growthEndpoints: Endpoint[] = [
     path: "/growth",
     method: "get",
     handler: async (req) => {
-      if (!meOf(req)) return unauthorized();
+      if (!meOf(req)) return unauthorized(langOf(req));
       return Response.json(await growth(req));
     },
   },
@@ -104,25 +132,27 @@ export const growthEndpoints: Endpoint[] = [
     method: "post",
     handler: async (req) => {
       const me = meOf(req);
-      if (!me) return unauthorized();
+      const lang = langOf(req);
+      const o = { locale: lang };
+      if (!me) return unauthorized(lang);
       const id = str(req.routeParams?.id);
       const opp = (await req.payload
         .findByID({ collection: "opportunities" as never, id, depth: 0 })
         .catch(() => null)) as unknown as Doc | null;
-      if (!opp) return fail(404, "Opportunity not found.");
+      if (!opp) return fail(404, m.api_growth_crm_opportunity_not_found({}, o));
       const input = await body(req);
       const result = str(input.result);
-      if (!SALES_RESULTS.includes(result)) return fail(400, "Choose an outcome.");
+      if (!SALES_RESULTS.includes(result)) return fail(400, m.api_growth_crm_choose_outcome({}, o));
       const nextStep = str(input.nextStep).trim();
       const nextStepDue = str(input.nextStepDue);
       const stage = str(input.stage) || str(opp.stage);
-      if (!GROWTH_STAGES.includes(stage)) return fail(400, "Unknown stage.");
+      if (!GROWTH_STAGES.includes(stage)) return fail(400, m.api_growth_crm_unknown_stage({}, o));
       if (stage !== "Closed" && stage !== "Active account" && (!nextStep || !nextStepDue))
-        return fail(400, "Plan the next step and its date (or close the opportunity).");
+        return fail(400, m.api_growth_crm_plan_next_step({}, o));
       const due = nextStepDue
         ? new Date(nextStepDue.length === 10 ? `${nextStepDue}T09:00:00.000Z` : nextStepDue)
         : null;
-      if (due && Number.isNaN(due.getTime())) return fail(400, "The next step date isn't a date.");
+      if (due && Number.isNaN(due.getTime())) return fail(400, m.api_growth_crm_next_step_date_invalid({}, o));
       const at = new Date().toISOString();
       const outcomes = [
         ...((opp.outcomes as unknown[] | undefined) ?? []),
@@ -139,6 +169,9 @@ export const growthEndpoints: Endpoint[] = [
         } as never,
         req,
       });
+
+      const resultLabel = optionLabel(req, "opportunities", "outcomes.result", result);
+      const stageLabel = optionLabel(req, "opportunities", "stage", stage);
 
       // The step's open task (on the owner's follow-ups) is done; the next one is planned.
       const name = str(opp.name).toLowerCase();
@@ -163,7 +196,7 @@ export const growthEndpoints: Endpoint[] = [
         await req.payload.create({
           collection: "tasks" as never,
           data: {
-            title: `${nextStep} — ${str(opp.name)}`,
+            title: m.api_growth_crm_task_title({ step: nextStep, name: str(opp.name) }, o),
             type: "Sales next step",
             channel: str(opp.channel) || "Call",
             due: due.toISOString(),
@@ -177,15 +210,30 @@ export const growthEndpoints: Endpoint[] = [
           req,
         });
       await logActivity(req, {
-        text: `${str(opp.name)}: ${result}${input.note ? ` — ${str(input.note)}` : ""}. ${nextStep ? `Next: ${nextStep} (${due ? fmtDay(due) : ""}).` : `Stage: ${stage}.`}`,
+        text: m.api_growth_crm_activity(
+          {
+            name: str(opp.name),
+            result: resultLabel,
+            hasNote: input.note ? "yes" : "no",
+            note: str(input.note),
+            hasNext: nextStep ? "yes" : "no",
+            step: nextStep,
+            due: due ? fmtDay(due, lang) : "",
+            stage: stageLabel,
+          },
+          o,
+        ),
         entity: `opportunities/${id}`,
       });
       // `message`: what the screen says once it's saved (the action's snackbar); the screen reads
       // the opportunity and its tasks again.
       const message =
         nextStep && due
-          ? `Outcome saved — next step “${nextStep}” planned for ${due.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`
-          : `Outcome saved — ${str(opp.name)} is now “${stage}”`;
+          ? m.api_growth_crm_outcome_planned(
+              { step: nextStep, due: due.toLocaleDateString(intlLocale(lang), { day: "numeric", month: "short" }) },
+              o,
+            )
+          : m.api_growth_crm_outcome_stage({ name: str(opp.name), stage: stageLabel }, o);
       return Response.json({ ok: true, message });
     },
   },

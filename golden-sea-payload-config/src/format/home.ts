@@ -1,5 +1,6 @@
 import type { Figure, KindData, NumberFormat, ViewHeader, WidgetScope } from "saastemlycrm-design-system/contracts";
 import type { Home, HomeAgendaItem, HomeChart, HomeItem, HomeUnit, HomeWidget } from "../endpoints/home.ts";
+import { m } from "../i18n/paraglide/messages.js";
 
 /**
  * The signed-in user's day (GET /api/home, ../endpoints/home.ts), read for the widgets that show
@@ -43,6 +44,8 @@ export const homeChartCount = ({ user }: WidgetScope) => HOME_CHARTS[user.role ?
 /**
  * The figures with a trend /home sends each role, in its order (../endpoints/home.ts): one tile
  * each, decided by who is looking. Everyone without a day of their own has the sourcing desk's.
+ * They are the tiles' keys, /home's English labels (saved boards keep their tiles); `homeFigureName`
+ * gives the words.
  */
 export const HOME_FIGURES = {
   management: ["Inquiries, last 4 weeks", "Won, last 4 weeks", "Quote turnaround", "Expected gross profit, Nov"],
@@ -55,6 +58,24 @@ export const HOME_FIGURES = {
 export type HomeFigure = (typeof HOME_FIGURES)[keyof typeof HOME_FIGURES][number];
 export const homeFigureLabels = ({ user }: WidgetScope): readonly HomeFigure[] =>
   HOME_FIGURES[(user.role ?? "") as keyof typeof HOME_FIGURES] ?? HOME_FIGURES.desk;
+
+const HOME_FIGURE_NAMES: Record<HomeFigure, () => string> = {
+  "Inquiries, last 4 weeks": m.home_figure_inquiries_4_weeks,
+  "Won, last 4 weeks": m.home_figure_won_4_weeks,
+  "Quote turnaround": m.home_figure_quote_turnaround,
+  "Expected gross profit, Nov": m.home_figure_expected_gross_profit_nov,
+  Receivables: m.home_figure_receivables,
+  "Net cash, next 8 weeks": m.home_figure_net_cash_8_weeks,
+  "Deliveries in progress": m.home_figure_deliveries_in_progress,
+  "Awaiting customer decision": m.home_figure_awaiting_customer_decision,
+  "Awaiting internal approval": m.home_figure_awaiting_internal_approval,
+  "Out-of-hours RFQs": m.home_figure_out_of_hours_rfqs,
+  "Time to acknowledge": m.home_figure_time_to_acknowledge,
+  "Awaiting supplier": m.home_figure_awaiting_supplier,
+  "My quote turnaround": m.home_figure_my_quote_turnaround,
+};
+/** A home figure's words in the interface's language (a key it doesn't list is its own words). */
+export const homeFigureName = (key: HomeFigure): string => HOME_FIGURE_NAMES[key]?.() ?? key;
 
 /**
  * The home page's header: the greeting, a subtitle with the day's live numbers, the role's
@@ -71,8 +92,8 @@ export const homeHeader = ({
   heading: h.greeting,
   subtitle: h.subtitle,
   summary: {
-    label: "While you were away",
-    context: "Unread notifications for someone back at their desk at a ship chandler: say what needs them first.",
+    label: m.home_away_label(),
+    context: m.home_away_context(),
     text: n.docs.map((x) => `${String(x.kind)}: ${String(x.title)} — ${String(x.detail)}`).join("\n"),
   },
   actions: h.actions.map((a) => ({ label: a.label, href: a.href, main: a.primary })),
@@ -86,8 +107,10 @@ export const homeHeader = ({
 export const homeFigures = (h: Home): Figure<HomeFigure>[] =>
   (homePart(h, "tiles")?.tiles ?? []).map((t) => ({
     main: t.main,
-    // /home's labels are `HOME_FIGURES`' (a label it doesn't list shows in the last tile).
-    label: t.label as HomeFigure,
+    // /home's keys are `HOME_FIGURES`' (a key it doesn't list shows in the last tile); its label is
+    // already in the request's language.
+    key: t.key as HomeFigure,
+    label: t.label,
     value: t.value,
     note: t.note,
     tone: t.tone === "success" || t.tone === "warning" || t.tone === "error" ? t.tone : undefined,
@@ -112,7 +135,7 @@ export const agenda = (h: Home): KindData<"list"> | null => {
           headline: i.title,
           supporting: i.sub,
           href: i.href,
-          tags: i.late ? [{ label: "Late", tone: "error" as const }] : undefined,
+          tags: i.late ? [{ label: m.home_late(), tone: "error" as const }] : undefined,
         })),
       }
     : null;

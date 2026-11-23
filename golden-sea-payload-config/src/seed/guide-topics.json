@@ -1,68 +1,134 @@
 [
   {
     "id": "guide-1",
-    "topic": "The flow of a case",
+    "topic": {
+      "en": "The flow of a case",
+      "ar": "مسار الملف"
+    },
     "keywords": "case flow rfq process stages lifecycle how it works",
-    "text": "Every customer RFQ is one case, from the first email to the last payment: intake (the inbox reads the RFQ) → supplier RFQs → offers compared → pricing → quotation approved and sent → customer PO checked → supplier POs → delivery to the vessel → invoice → payment → close. Lines can move in stages; a case only completes when every line does. Each case has an owner, a deadline and a next action."
+    "text": {
+      "en": "Every customer RFQ is one case, from the first email to the last payment: intake (the inbox reads the RFQ) → supplier RFQs → offers compared → pricing → quotation approved and sent → customer PO checked → supplier POs → delivery to the vessel → invoice → payment → close. Lines can move in stages; a case only completes when every line does. Each case has an owner, a deadline and a next action.",
+      "ar": "كل طلب عرض من عميل ملف واحد، من أول بريد حتى آخر دفعة: الاستلام (يقرأ صندوق الوارد الطلب) ← طلبات عروض الموردين ← مقارنة العروض ← التسعير ← اعتماد عرض السعر وإرساله ← فحص أمر شراء العميل ← أوامر شراء الموردين ← التسليم إلى السفينة ← الفاتورة ← الدفع ← الإغلاق. يمكن أن تتقدم البنود على مراحل؛ ولا يكتمل الملف إلا باكتمال كل بنوده. لكل ملف مالك وموعد نهائي وإجراء تالٍ."
+    }
   },
   {
     "id": "guide-2",
-    "topic": "The inbox",
+    "topic": {
+      "en": "The inbox",
+      "ar": "صندوق الوارد"
+    },
     "keywords": "inbox email whatsapp message intake new rfq read extract",
-    "text": "Inbox (Sourcing desk → Inbox): every mailbox and WhatsApp in one list. Open a message and use \"Read it into a draft case\": AI reads the email and attachments into a draft with a confidence per field; low-confidence values go to review. A person creates the case. Translate, Catch me up, and Read a photo or voice note help with each message."
+    "text": {
+      "en": "Inbox (Sourcing desk → Inbox): every mailbox and WhatsApp in one list. Open a message and use \"Read it into a draft case\": AI reads the email and attachments into a draft with a confidence per field; low-confidence values go to review. A person creates the case. Translate, Catch me up, and Read a photo or voice note help with each message.",
+      "ar": "صندوق الوارد (مكتب التوريد ← صندوق الوارد): كل صناديق البريد وواتساب في قائمة واحدة. افتح رسالة واستخدم «اقرأها في مسودة ملف»: يقرأ الذكاء الاصطناعي البريد والمرفقات في مسودة مع ثقة لكل حقل؛ وتذهب القيم منخفضة الثقة إلى المراجعة. ينشئ شخص الملف. وتساعد «ترجم» و«لخّص لي» و«اقرأ صورة أو رسالة صوتية» في كل رسالة."
+    }
   },
   {
     "id": "guide-3",
-    "topic": "Supplier RFQs and reminders",
+    "topic": {
+      "en": "Supplier RFQs and reminders",
+      "ar": "طلبات عروض الموردين والتذكيرات"
+    },
     "keywords": "supplier rfq request quote reminder late chase reply",
-    "text": "On a case's Supplier RFQs tab: draft RFQs per supplier (the client's name is always removed), send them, and track replies. Reminders go after 24 h and 48 h, then the case owner is alerted. \"Remind now\" sends one by hand. Replies are matched even when the subject changes."
+    "text": {
+      "en": "On a case's Supplier RFQs tab: draft RFQs per supplier (the client's name is always removed), send them, and track replies. Reminders go after 24 h and 48 h, then the case owner is alerted. \"Remind now\" sends one by hand. Replies are matched even when the subject changes.",
+      "ar": "في تبويب طلبات عروض الموردين بالملف: صُغ طلبات العروض لكل مورّد (يُحذف اسم العميل دائمًا)، وأرسلها، وتابع الردود. تُرسل التذكيرات بعد 24 و48 ساعة، ثم يُنبَّه مالك الملف. «ذكّر الآن» يرسل تذكيرًا يدويًا. وتُطابق الردود حتى لو تغيّر الموضوع."
+    }
   },
   {
     "id": "guide-4",
-    "topic": "Comparing offers",
+    "topic": {
+      "en": "Comparing offers",
+      "ar": "مقارنة العروض"
+    },
     "keywords": "compare offers best price deviation select split supplier",
-    "text": "On a case's Compare offers tab: each offer is checked against the requested line (brand, unit, pack size) and normalised to the base unit, with landed cost in EGP. Deviations are flagged; the best fit is recommended; a person selects. A wrong offer gets a correction request to the supplier."
+    "text": {
+      "en": "On a case's Compare offers tab: each offer is checked against the requested line (brand, unit, pack size) and normalised to the base unit, with landed cost in EGP. Deviations are flagged; the best fit is recommended; a person selects. A wrong offer gets a correction request to the supplier.",
+      "ar": "في تبويب مقارنة العروض بالملف: يُفحص كل عرض مقابل البند المطلوب (العلامة، الوحدة، حجم العبوة) ويُوحَّد إلى الوحدة الأساسية، مع التكلفة الواصلة بالجنيه. تُعلَّم الانحرافات؛ ويُوصى بالأنسب؛ ويختار شخص. والعرض الخاطئ يتلقى طلب تصحيح إلى المورّد."
+    }
   },
   {
     "id": "guide-5",
-    "topic": "Pricing and quotations",
+    "topic": {
+      "en": "Pricing and quotations",
+      "ar": "التسعير وعروض الأسعار"
+    },
     "keywords": "price pricing margin quotation quote send approve version",
-    "text": "On a case's Pricing tab, prices follow the pricing policy and FX rates. Below-policy margins need approval. The quotation (EGP or USD, English or Arabic) is previewed, approved, then sent; every change is a new version. Sales never sees costs or margins."
+    "text": {
+      "en": "On a case's Pricing tab, prices follow the pricing policy and FX rates. Below-policy margins need approval. The quotation (EGP or USD, English or Arabic) is previewed, approved, then sent; every change is a new version. Sales never sees costs or margins.",
+      "ar": "في تبويب التسعير بالملف، تتبع الأسعار سياسة التسعير وأسعار الصرف. الهوامش الأقل من السياسة تحتاج موافقة. يُعاين عرض السعر (بالجنيه أو الدولار، بالإنجليزية أو العربية)، ثم يُعتمد، ثم يُرسل؛ وكل تغيير إصدار جديد. لا ترى المبيعات التكاليف أو الهوامش أبدًا."
+    }
   },
   {
     "id": "guide-6",
-    "topic": "Approvals",
+    "topic": {
+      "en": "Approvals",
+      "ar": "الموافقات"
+    },
     "keywords": "approval approve reject decide two-person margin exception payment bank",
-    "text": "Approvals queue (Commercial → Approvals queue): every request that needs a named person — margin exceptions, quotations, payments, alternative items, bank-detail changes (two people: Finance and the CEO). Approve, or return with a reason; decisions are recorded under your name."
+    "text": {
+      "en": "Approvals queue (Commercial → Approvals queue): every request that needs a named person — margin exceptions, quotations, payments, alternative items, bank-detail changes (two people: Finance and the CEO). Approve, or return with a reason; decisions are recorded under your name.",
+      "ar": "قائمة الموافقات (التجاري ← قائمة الموافقات): كل طلب يحتاج شخصًا محددًا — استثناءات الهامش، وعروض الأسعار، والمدفوعات، والأصناف البديلة، وتغييرات البيانات البنكية (شخصان: المالية والرئيس التنفيذي). وافق، أو أعِد مع ذكر السبب؛ وتُسجَّل القرارات باسمك."
+    }
   },
   {
     "id": "guide-7",
-    "topic": "Customer PO and orders",
+    "topic": {
+      "en": "Customer PO and orders",
+      "ar": "أمر شراء العميل والطلبات"
+    },
     "keywords": "customer po purchase order mismatch amendment order confirm supplier po",
-    "text": "On a case's Order & purchasing tab: the customer's PO is checked line by line against the approved quotation; any mismatch blocks commitment until the customer agrees in writing. Then the sales order is confirmed and supplier POs are prepared, re-checked and approved."
+    "text": {
+      "en": "On a case's Order & purchasing tab: the customer's PO is checked line by line against the approved quotation; any mismatch blocks commitment until the customer agrees in writing. Then the sales order is confirmed and supplier POs are prepared, re-checked and approved.",
+      "ar": "في تبويب الطلب والمشتريات بالملف: يُفحص أمر شراء العميل بندًا بندًا مقابل عرض السعر المعتمد؛ وأي عدم تطابق يوقف الالتزام حتى يوافق العميل كتابيًا. ثم يُؤكَّد أمر البيع وتُعدّ أوامر شراء الموردين وتُراجع وتُعتمد."
+    }
   },
   {
     "id": "guide-8",
-    "topic": "Delivery",
+    "topic": {
+      "en": "Delivery",
+      "ar": "التسليم"
+    },
     "keywords": "delivery vessel eta port proof signed note shortage damage",
-    "text": "On a case's Delivery tab: drop-ship or warehouse routes, ETA changes, the port agent, and proof of delivery (the signed note). Shortages or damage noted on board become claims."
+    "text": {
+      "en": "On a case's Delivery tab: drop-ship or warehouse routes, ETA changes, the port agent, and proof of delivery (the signed note). Shortages or damage noted on board become claims.",
+      "ar": "في تبويب التسليم بالملف: الشحن المباشر أو عبر المستودع، وتغييرات موعد الوصول، والوكيل البحري، وإثبات التسليم (الإذن الموقّع). يتحول النقص أو التلف المسجّل على متن السفينة إلى مطالبات."
+    }
   },
   {
     "id": "guide-9",
-    "topic": "Invoices and collection",
+    "topic": {
+      "en": "Invoices and collection",
+      "ar": "الفواتير والتحصيل"
+    },
     "keywords": "invoice payment owe overdue collect reminder receivable payable e-invoice cash",
-    "text": "Finance → Receivables & payables: what customers owe (by age) and what we owe suppliers. \"Draft reminder\" writes a collection email that respects each customer's contact rule; a person reviews and sends it. Invoices are issued from delivery, with Egyptian e-invoicing."
+    "text": {
+      "en": "Finance → Receivables & payables: what customers owe (by age) and what we owe suppliers. \"Draft reminder\" writes a collection email that respects each customer's contact rule; a person reviews and sends it. Invoices are issued from delivery, with Egyptian e-invoicing.",
+      "ar": "المالية ← المستحقات والمدفوعات: ما يدين به العملاء (حسب العمر) وما ندين به للموردين. «صُغ تذكيرًا» يكتب بريد تحصيل يحترم قاعدة التواصل لكل عميل؛ ويراجعه شخص ويرسله. تصدر الفواتير من التسليم، مع الفاتورة الإلكترونية المصرية."
+    }
   },
   {
     "id": "guide-10",
-    "topic": "Insights",
+    "topic": {
+      "en": "Insights",
+      "ar": "التحليلات"
+    },
     "keywords": "dashboard control room briefing profit report kpi management",
-    "text": "Insights → Control room: the business live, with a 07:00 AI briefing. Each case's Profit tab shows actual against expected profit, FX differences and claims; a case closes only when everything reconciles."
+    "text": {
+      "en": "Insights → Control room: the business live, with a 07:00 AI briefing. Each case's Profit tab shows actual against expected profit, FX differences and claims; a case closes only when everything reconciles.",
+      "ar": "التحليلات ← غرفة التحكم: العمل مباشرةً، مع ملخص بالذكاء الاصطناعي الساعة 07:00. يعرض تبويب الربح في كل ملف الربح الفعلي مقابل المتوقع وفروق الصرف والمطالبات؛ ولا يُغلق الملف إلا عندما يتطابق كل شيء."
+    }
   },
   {
     "id": "guide-11",
-    "topic": "Finding things",
+    "topic": {
+      "en": "Finding things",
+      "ar": "العثور على الأشياء"
+    },
     "keywords": "search find where look up record command palette",
-    "text": "Press Ctrl+K (or /) for the search palette: pages, actions and records. Bookmarks, notifications, widgets and guided tours are in the side panel on the right."
+    "text": {
+      "en": "Press Ctrl+K (or /) for the search palette: pages, actions and records. Bookmarks, notifications, widgets and guided tours are in the side panel on the right.",
+      "ar": "اضغط Ctrl+K (أو /) لفتح لوحة البحث: الصفحات والإجراءات والسجلات. الإشارات المرجعية والإشعارات والأدوات والجولات الإرشادية في اللوحة الجانبية على اليمين."
+    }
   }
 ]

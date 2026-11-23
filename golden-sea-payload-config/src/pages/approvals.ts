@@ -1,6 +1,7 @@
 import { widgets, type RecordsSpec } from "saastemlycrm-design-system/contracts";
 import * as link from "../links.ts";
 import { decidedApprovals, openApprovals } from "../queries/approvals.ts";
+import { m } from "../i18n/paraglide/messages.js";
 
 /**
  * Approvals (/approvals): everything that needs an authorised person — quotations, margin
@@ -40,17 +41,16 @@ const entry = (
 
 export const approvalsPage = widgets({
   header: {
-    eyebrow: "Approvals",
-    heading: "Decisions that need a named person",
-    subtitle:
-      "Every quotation, margin exception, payment, alternative item, bank-detail change and FX rate needs a named person. AI never approves.",
-    actions: [{ label: "Approval rules", href: link.global("approval-rules") }],
+    eyebrow: m.page_approvals_eyebrow(),
+    heading: m.page_approvals_heading(),
+    subtitle: m.page_approvals_subtitle(),
+    actions: [{ label: m.page_approvals_rules(), href: link.global("approval-rules") }],
   },
   // The figures, then the queue's three parts: the same entries, each of a different slice.
   widgets: [
     // What kinds of decision are waiting, as one bar (each opening its list).
     {
-      title: "What's waiting, by kind",
+      title: m.page_approvals_by_kind(),
       size: "m",
       rows: 4,
       maxRows: 5,
@@ -62,49 +62,49 @@ export const approvalsPage = widgets({
         collection: "approvals",
         items: [
           {
-            label: "Waiting for you",
+            label: m.page_approvals_waiting_for_you(),
             where: openApprovals,
             keep: { canDecide: { equals: true } },
-            note: "You are a listed approver",
+            note: m.page_approvals_listed_approver(),
             tone: { some: "warning", none: "success" },
             main: true,
           },
           {
-            label: "Waiting for others",
+            label: m.page_approvals_waiting_for_others(),
             where: openApprovals,
             keep: { canDecide: { equals: false } },
-            note: "You can see the evidence, not decide",
+            note: m.page_approvals_see_not_decide(),
           },
           {
-            label: "Two-person requests",
+            label: m.page_approvals_two_person(),
             where: { ...openApprovals, twoPerson: { equals: true } },
-            note: "Finance + CEO",
+            note: m.page_approvals_finance_ceo(),
           },
-          { label: "Decided", where: decidedApprovals, note: "Kept with the record for audit" },
+          { label: m.page_approvals_decided(), where: decidedApprovals, note: m.page_approvals_kept_for_audit() },
         ],
       },
     },
     {
-      title: "Waiting for you",
-      subhead: "Approve or return with a reason. Your decision is recorded under your name.",
+      title: m.page_approvals_waiting_for_you(),
+      subhead: m.page_approvals_yours_subhead(),
       size: "m",
-      records: entry({ canDecide: { equals: true } }, openApprovals, "Nothing needs your decision right now."),
+      records: entry({ canDecide: { equals: true } }, openApprovals, m.page_approvals_yours_empty()),
     },
     {
-      title: "Waiting for others",
-      subhead: "Requests you can follow but not decide — each card says who can.",
+      title: m.page_approvals_waiting_for_others(),
+      subhead: m.page_approvals_others_subhead(),
       size: "m",
-      records: entry({ canDecide: { equals: false } }, openApprovals, "No other open requests.", "why"),
+      records: entry({ canDecide: { equals: false } }, openApprovals, m.page_approvals_others_empty(), "why"),
     },
     {
-      title: "Recently decided",
-      subhead: "Approved and returned requests, with who decided and why.",
+      title: m.page_approvals_recent_title(),
+      subhead: m.page_approvals_recent_subhead(),
       size: "m",
-      records: entry(undefined, decidedApprovals, "No decisions yet."),
+      records: entry(undefined, decidedApprovals, m.page_approvals_recent_empty()),
     },
     // Every approval, pending first, as rich rows (switchable to cards or a table).
     {
-      title: "All approvals",
+      title: m.page_approvals_all(),
       size: "full",
       rows: 10,
       minRows: 6,

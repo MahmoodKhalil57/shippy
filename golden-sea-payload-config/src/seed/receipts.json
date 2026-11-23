@@ -35,7 +35,10 @@
     "lot": "NS-H-2611",
     "expiry": "2031-10-01T00:00:00.000Z",
     "qc": "Short",
-    "claim": "Supplier late: 2 pcs promised 12 Nov, now 22 Nov",
+    "claim": {
+      "en": "Supplier late: 2 pcs promised 12 Nov, now 22 Nov",
+      "ar": "تأخر المورّد: قطعتان كان موعدهما 12 نوفمبر، والآن 22 نوفمبر"
+    },
     "backorderDate": "2026-11-22T00:00:00.000Z"
   },
   {

@@ -4,6 +4,8 @@ import { idOf, logActivity } from "../collections/shared.ts";
 import type { Doc } from "saastemlycrm-design-system/contracts";
 import { DEMO_NOW } from "./home.ts";
 import { BANK_REQUESTS } from "./operations.ts";
+import { m } from "../i18n/paraglide/messages.js";
+import { type Lang, intlLocale, langOf, optionLabel } from "./insights-shared.ts";
 
 /**
  * Root endpoints for: Offer comparison, pricing, quotations, approvals. Registered in ./index.ts.
@@ -41,16 +43,18 @@ const VAT = 0.14;
 const str = (v: unknown) => (typeof v === "string" || typeof v === "number" ? String(v) : "");
 const num = (v: unknown, d = 0) => (typeof v === "number" && Number.isFinite(v) ? v : d);
 const round = (n: number, d = 2) => Math.round(n * 10 ** d) / 10 ** d;
-const fmtDay = (v: unknown) =>
-  v ? new Date(str(v)).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" }) : "";
-const egp = (n: number) => `EGP ${Math.round(n).toLocaleString("en-US")}`;
+const fmtDay = (v: unknown, lang: Lang = "en") =>
+  v ? new Date(str(v)).toLocaleDateString(intlLocale(lang), { day: "numeric", month: "short", timeZone: "UTC" }) : "";
+const egp = (n: number, lang: Lang = "en") => `EGP ${Math.round(n).toLocaleString(intlLocale(lang, "en-US"))}`;
+/** The request's language, as Paraglide's options. */
+const loc = (req: PayloadRequest) => ({ locale: langOf(req) });
 const dayIndex = (d: Date) => Math.floor(d.getTime() / DAY);
 
 const fail = (status: number, message: string) => Response.json({ errors: [{ message }] }, { status });
 type User = Doc & { name?: string; role?: string };
 const userOf = (req: PayloadRequest) => req.user as unknown as User | null;
 const roleOf = (req: PayloadRequest) => str(userOf(req)?.role);
-const SALES_HIDDEN = "Costs and margins are hidden for your role.";
+const salesHidden = (req: PayloadRequest) => m.api_commercial_sales_hidden({}, loc(req));
 
 async function body(req: PayloadRequest): Promise<Record<string, unknown>> {
   try {
@@ -62,6 +66,7 @@ async function body(req: PayloadRequest): Promise<Record<string, unknown>> {
 
 async function all(req: PayloadRequest, collection: string, where?: Record<string, unknown>): Promise<Doc[]> {
   const r = await req.payload.find({
+    locale: req.locale,
     collection: collection as never,
     where: where as never,
     pagination: false,
@@ -71,7 +76,9 @@ async function all(req: PayloadRequest, collection: string, where?: Record<strin
 }
 const byId = (docs: Doc[]) => new Map(docs.map((d) => [d.id, d]));
 const one = (req: PayloadRequest, collection: string, id: string) =>
-  req.payload.findByID({ collection: collection as never, id, depth: 0 }).catch(() => null) as Promise<Doc | null>;
+  req.payload
+    .findByID({ locale: req.locale, collection: collection as never, id, depth: 0 })
+    .catch(() => null) as Promise<Doc | null>;
 const update = (req: PayloadRequest, collection: string, id: string, data: Record<string, unknown>) =>
   req.payload.update({
     collection: collection as never,
@@ -92,8 +99,8 @@ const create = (req: PayloadRequest, collection: string, data: Record<string, un
 const handle =
   (fn: (req: PayloadRequest) => Promise<Response>, opts: { costs?: boolean } = {}) =>
   async (req: PayloadRequest) => {
-    if (!req.user) return fail(401, "You are not allowed to perform this action.");
-    if (opts.costs && roleOf(req) === "sales") return fail(403, SALES_HIDDEN);
+    if (!req.user) return fail(401, m.api_insights_shared_not_allowed({}, loc(req)));
+    if (opts.costs && roleOf(req) === "sales") return fail(403, salesHidden(req));
     try {
       return await fn(req);
     } catch (e) {
@@ -114,13 +121,15 @@ interface Rate {
   approvedBy?: string;
 }
 async function fxRates(req: PayloadRequest) {
-  const g = (await req.payload.findGlobal({ slug: "fx-rates" as never, depth: 0 })) as { rates?: Rate[] };
+  const g = (await req.payload.findGlobal({ locale: req.locale, slug: "fx-rates" as never, depth: 0 })) as {
+    rates?: Rate[];
+  };
   const rates = g.rates ?? [];
   const fx: Record<string, number> = { EGP: 1 };
   for (const r of rates) if (r.status === "Active" && r.currency) fx[r.currency] = num(r.egpPerUnit, 1);
   fx.USD ??= 48.6;
   fx.EUR ??= 52.9;
-  return { fx, rates, label: `Approved FX · USD/EGP ${fx.USD.toFixed(2)} · EUR/EGP ${fx.EUR.toFixed(2)}` };
+  return { fx, rates, label: m.api_commercial_fx_label({ usd: fx.USD.toFixed(2), eur: fx.EUR.toFixed(2) }, loc(req)) };
 }
 
 interface Policy {
@@ -131,7 +140,7 @@ interface Policy {
   byStore?: { store?: string; targetPct?: number; minPct?: number; maxDiscountPct?: number }[];
 }
 const policyOf = async (req: PayloadRequest) =>
-  (await req.payload.findGlobal({ slug: "pricing-policy" as never, depth: 0 })) as Policy;
+  (await req.payload.findGlobal({ locale: req.locale, slug: "pricing-policy" as never, depth: 0 })) as Policy;
 
 interface Rule {
   type?: string;
@@ -140,7 +149,9 @@ interface Rule {
   note?: string;
 }
 async function ruleFor(req: PayloadRequest, type: string): Promise<Rule> {
-  const g = (await req.payload.findGlobal({ slug: "approval-rules" as never, depth: 0 })) as { rules?: Rule[] };
+  const g = (await req.payload.findGlobal({ locale: req.locale, slug: "approval-rules" as never, depth: 0 })) as {
+    rules?: Rule[];
+  };
   const rule = g.rules?.find((r) => r.type === type);
   return {
     type,
@@ -180,6 +191,9 @@ interface Item {
 
 interface Ctx {
   req: PayloadRequest;
+  /** The request's language, and Paraglide's options for it. */
+  lang: Lang;
+  o: { locale: Lang };
   c: Doc;
   items: Item[];
   offers: Doc[];
@@ -208,6 +222,8 @@ export async function load(req: PayloadRequest, caseId: string): Promise<Ctx | n
   const eta = c.eta ? new Date(str(c.eta)) : new Date(DEMO_NOW.getTime() + 7 * DAY);
   return {
     req,
+    lang: langOf(req),
+    o: loc(req),
     c,
     items: ((c.items as Item[] | undefined) ?? []).slice().sort((a, b) => a.lineNo - b.lineNo),
     offers,
@@ -363,7 +379,9 @@ function rawOffers(ctx: Ctx, item: Item): RawOffer[] {
         supplierId: "GS",
         version: 1,
         superseded: false,
-        offered: `${num(s.available)} on hand · ${str(s.warehouse)} ${str(s.bin)}`.trim(),
+        offered: m
+          .api_commercial_on_hand({ n: num(s.available), place: `${str(s.warehouse)} ${str(s.bin)}` }, ctx.o)
+          .trim(),
         price: num(s.avgCostEGP),
         currency: "EGP",
         discountPct: 0,
@@ -373,7 +391,7 @@ function rawOffers(ctx: Ctx, item: Item): RawOffer[] {
         leadDays: 1,
         validUntil: "",
         expiry: lots[0]?.expiry ? str(lots[0].expiry).slice(0, 7) : "",
-        terms: "Own stock (average cost)",
+        terms: m.api_commercial_own_stock_terms({}, ctx.o),
         basis: `Ex-stock ${str(s.warehouse).split(" ")[0]}`,
         compliance: "Confirmed",
         deviations: [],
@@ -405,7 +423,7 @@ function rawOffers(ctx: Ctx, item: Item): RawOffer[] {
       leadDays: num(pl.leadDays, 10),
       validUntil: str(pl.validUntil),
       expiry: "",
-      terms: "Agency terms",
+      terms: m.api_commercial_agency_terms({}, ctx.o),
       basis: "Import",
       compliance: "Confirmed",
       deviations: [],
@@ -416,15 +434,22 @@ function rawOffers(ctx: Ctx, item: Item): RawOffer[] {
 
 function freightOf(ctx: Ctx, o: RawOffer, sup: Doc | undefined, goodsEGP: number) {
   const port = str(ctx.c.port) || "Port Said";
-  if (o.freightEGP !== undefined) return { egp: o.freightEGP, note: "Freight as quoted" };
+  const t = ctx.o;
+  if (o.freightEGP !== undefined) return { egp: o.freightEGP, note: m.api_commercial_freight_as_quoted({}, t) };
   if (o.kind === "agency")
-    return { egp: round(goodsEGP * IMPORT_PCT, 0), note: "Import freight, duty & clearance (est. 18%)" };
+    return { egp: round(goodsEGP * IMPORT_PCT, 0), note: m.api_commercial_import_freight({}, t) };
   if (/^delivered/i.test(o.basis) || (!o.basis && o.kind === "supplier"))
-    return { egp: 0, note: o.basis || "Delivered (as quoted)" };
+    return { egp: 0, note: o.basis || m.api_commercial_delivered_as_quoted({}, t) };
   const origin = /ex-?(?:stock|works)\s+([A-Za-z ]+)/i.exec(o.basis)?.[1]?.trim() ?? str(sup?.city);
-  if (origin === port) return { egp: 250, note: `Local truck in ${port}` };
-  const who = o.kind === "stock" ? "Golden Sea truck" : "Truck";
-  return { egp: LANE_EGP[origin] ?? 1500, note: `${who} ${origin || "supplier"} → ${port}` };
+  if (origin === port) return { egp: 250, note: m.api_commercial_local_truck({ port }, t) };
+  const from = origin || m.api_commercial_supplier_word({}, t);
+  return {
+    egp: LANE_EGP[origin] ?? 1500,
+    note:
+      o.kind === "stock"
+        ? m.api_commercial_gs_truck_lane({ from, port }, t)
+        : m.api_commercial_truck_lane({ from, port }, t),
+  };
 }
 
 const monthsUntil = (yyyyMm: string) => {
@@ -458,30 +483,45 @@ function evalOffer(ctx: Ctx, item: Item, o: RawOffer, all: RawOffer[]): CmpOffer
 
   for (const d of o.deviations) {
     const tone = SEVERITY_TONE[str(d.severity)] ?? "warning";
-    flags.push({ tone, text: `${str(d.type)}: ${str(d.detail)}`, type: str(d.type) });
+    flags.push({
+      tone,
+      text: `${optionLabel(ctx.req, "offers", "deviations.type", d.type)}: ${str(d.detail)}`,
+      type: str(d.type),
+    });
     if (d.severity === "Blocks use") blocked = true;
     if (d.severity === "Needs customer acceptance") needsAcceptance = true;
   }
   const correctedBy = all.find((x) => x.supersedes === o.id);
   if (o.superseded) {
     blocked = true;
-    flags.push({ tone: "neutral", text: `Superseded by v${correctedBy?.version ?? o.version + 1} — kept for audit` });
+    flags.push({
+      tone: "neutral",
+      text: m.api_commercial_superseded_by({ version: correctedBy?.version ?? o.version + 1 }, ctx.o),
+    });
   }
   if (o.supersedes) {
     const prev = all.find((x) => x.id === o.supersedes);
-    const was = prev?.deviations[0]?.type ? ` (${prev.deviations[0].type?.toLowerCase()})` : "";
-    flags.push({ tone: "success", text: `Corrected v${o.version}: replaces v${prev?.version ?? o.version - 1}${was}` });
+    const was = prev?.deviations[0]?.type
+      ? optionLabel(ctx.req, "offers", "deviations.type", prev.deviations[0].type).toLowerCase()
+      : "";
+    flags.push({
+      tone: "success",
+      text: m.api_commercial_corrected_version(
+        { version: o.version, replaces: prev?.version ?? o.version - 1, hasWas: was ? "yes" : "no", was },
+        ctx.o,
+      ),
+    });
   }
   if (o.compliance === "Rejected" && !blocked) {
     blocked = true;
-    flags.push({ tone: "error", text: "Rejected on technical check" });
+    flags.push({ tone: "error", text: m.api_commercial_rejected_technical({}, ctx.o) });
   }
   // Exact brand / part requested: anything else is blocked from pricing.
   if (item.exactBrand && o.offered && item.partNo && !o.offered.includes(item.partNo) && !has("Wrong brand / part")) {
     blocked = true;
     flags.push({
       tone: "error",
-      text: `Wrong brand / part: ${item.brand ?? ""} ${item.partNo} only`,
+      text: m.api_commercial_wrong_part({ brand: item.brand ?? "", partNo: item.partNo }, ctx.o),
       type: "Wrong brand / part",
     });
   }
@@ -490,7 +530,10 @@ function evalOffer(ctx: Ctx, item: Item, o: RawOffer, all: RawOffer[]): CmpOffer
     needsAcceptance = true;
     flags.push({
       tone: "warning",
-      text: `Pack size: ${o.packLabel || `${o.packs} × ${o.packSize}`} instead of ${item.qty} × ${item.packSize} — written customer acceptance needed`,
+      text: m.api_commercial_pack_size(
+        { offered: o.packLabel || `${o.packs} × ${o.packSize}`, requested: `${item.qty} × ${item.packSize}` },
+        ctx.o,
+      ),
       type: "Pack size",
     });
   }
@@ -501,7 +544,7 @@ function evalOffer(ctx: Ctx, item: Item, o: RawOffer, all: RawOffer[]): CmpOffer
   if (shelfShort && !has("Shelf life"))
     flags.push({
       tone: "warning",
-      text: `Shelf life: ${left} months left, vessel asked for ${need}`,
+      text: m.api_commercial_shelf_life({ left, need }, ctx.o),
       type: "Shelf life",
     });
   // Lead time against the vessel's ETA (once the ETA has passed the goods have gone on board, so
@@ -510,17 +553,17 @@ function evalOffer(ctx: Ctx, item: Item, o: RawOffer, all: RawOffer[]): CmpOffer
     blocked = true;
     flags.push({
       tone: "error",
-      text: `Lead time ${o.leadDays} d misses vessel ETA ${fmtDay(ctx.c.eta)}`,
+      text: m.api_commercial_lead_time_misses({ days: o.leadDays, eta: fmtDay(ctx.c.eta, ctx.lang) }, ctx.o),
       type: "Lead time vs ETA",
     });
   } else if (o.leadDays === ctx.daysToEta && !has("Lead time vs ETA"))
-    flags.push({ tone: "warning", text: "Tight: ready on the ETA day", type: "Lead time vs ETA" });
+    flags.push({ tone: "warning", text: m.api_commercial_tight_eta({}, ctx.o), type: "Lead time vs ETA" });
   // Validity.
   if (o.validUntil && new Date(o.validUntil) < DEMO_NOW && !has("Expired validity")) {
     blocked = true;
     flags.push({
       tone: "error",
-      text: `Expired validity: offer ended ${fmtDay(o.validUntil)} — reconfirm`,
+      text: m.api_commercial_expired_validity({ day: fmtDay(o.validUntil, ctx.lang) }, ctx.o),
       type: "Expired validity",
     });
   }
@@ -528,22 +571,25 @@ function evalOffer(ctx: Ctx, item: Item, o: RawOffer, all: RawOffer[]): CmpOffer
   if (baseQty < reqBase && !has("Quantity shortfall"))
     flags.push({
       tone: "warning",
-      text: `Quantity shortfall: covers ${Math.round((baseQty / reqBase) * 100)}% of the request`,
+      text: m.api_commercial_quantity_shortfall({ pct: Math.round((baseQty / reqBase) * 100) }, ctx.o),
       type: "Quantity shortfall",
     });
   const newSupplier = sup?.status === "New";
   if (newSupplier)
-    flags.push({ tone: "info", text: `New supplier · no delivery history · ${str(sup?.terms) || "terms tbc"}` });
+    flags.push({
+      tone: "info",
+      text: m.api_commercial_new_supplier({ terms: str(sup?.terms) || m.api_commercial_terms_tbc({}, ctx.o) }, ctx.o),
+    });
   if (o.kind === "stock")
     flags.push({
       tone: "success",
-      text: `Own stock${o.note ? ` (lot ${o.note})` : ""} — reserve now, Golden Sea truck`,
+      text: m.api_commercial_own_stock_flag({ hasLot: o.note ? "yes" : "no", lot: o.note ?? "" }, ctx.o),
     });
-  if (o.kind === "agency") flags.push({ tone: "info", text: "Agency pricelist — priced instantly, no supplier RFQ" });
+  if (o.kind === "agency") flags.push({ tone: "info", text: m.api_commercial_agency_flag({}, ctx.o) });
   if (o.currency !== "EGP")
     flags.push({
       tone: "neutral",
-      text: `Converted at approved FX ${o.currency}/EGP ${(ctx.fx[o.currency] ?? 1).toFixed(2)}`,
+      text: m.api_commercial_converted_fx({ currency: o.currency, rate: (ctx.fx[o.currency] ?? 1).toFixed(2) }, ctx.o),
     });
 
   const leadDate = new Date(DEMO_NOW.getTime() + o.leadDays * DAY).toISOString();
@@ -553,8 +599,10 @@ function evalOffer(ctx: Ctx, item: Item, o: RawOffer, all: RawOffer[]): CmpOffer
     supplier: str(sup?.name) || o.supplierId,
     supplierNote: sup
       ? [
-          sup.onTime ? `On-time ${num(sup.onTime)}%` : "No delivery history",
-          sup.replyHrs ? `replies ~${num(sup.replyHrs)} h` : "",
+          sup.onTime
+            ? m.api_commercial_on_time({ pct: num(sup.onTime) }, ctx.o)
+            : m.api_commercial_no_delivery_history({}, ctx.o),
+          sup.replyHrs ? m.api_commercial_replies_in({ hours: num(sup.replyHrs) }, ctx.o) : "",
           str(sup.city),
         ]
           .filter(Boolean)
@@ -568,7 +616,7 @@ function evalOffer(ctx: Ctx, item: Item, o: RawOffer, all: RawOffer[]): CmpOffer
       `${o.packs} × ${o.packSize === 1 ? item.unit : `${o.packSize} ${baseUnitOf(ctx, item)}`}`,
     price: o.price,
     currency: o.currency,
-    per: o.packSize === 1 ? baseUnitOf(ctx, item) : "pack",
+    per: o.packSize === 1 ? baseUnitOf(ctx, item) : m.api_commercial_pack({}, ctx.o),
     baseQty,
     coverage: reqBase ? baseQty / reqBase : 0,
     goodsEGP: round(goodsEGP),
@@ -678,14 +726,22 @@ function compareLine(ctx: Ctx, item: Item): CmpLine {
       others.push({
         supplier: name,
         status: "Missing item",
-        note: "Supplier did not quote this line (partial reply) — follow-up drafted",
+        note: m.api_commercial_missing_item_note({}, ctx.o),
         tone: "error",
       });
-    else others.push({ supplier: name, status, note: str(r.lastEvent) || `Due ${fmtDay(r.dueAt)}`, tone: "warning" });
+    else
+      others.push({
+        supplier: name,
+        status,
+        note: str(r.lastEvent) || m.api_commercial_due_day({ day: fmtDay(r.dueAt, ctx.lang) }, ctx.o),
+        tone: "warning",
+      });
   }
 
   const status = str(item.status) || (offers.length ? "Ready to select" : "Not sourced");
-  const exact = item.exactBrand ? `${item.brand ?? ""} ${item.partNo ?? ""} only`.trim() : "alternatives allowed";
+  const exact = item.exactBrand
+    ? m.api_commercial_exact_only({ part: `${item.brand ?? ""} ${item.partNo ?? ""}`.trim() }, ctx.o)
+    : m.api_commercial_alternatives_allowed({}, ctx.o);
   const unitBase = baseUnitOf(ctx, item);
   return {
     lineNo: item.lineNo,
@@ -820,6 +876,7 @@ const CHARGE_STATUSES = ["Estimate", "Confirmed", "Not applicable"];
 
 export async function pricing(ctx: Ctx): Promise<Pricing> {
   const req = ctx.req;
+  const t = ctx.o;
   const cmp = compare(ctx);
   const policy = await policyOf(req);
   const p = (ctx.c.pricing as Record<string, unknown> | undefined) ?? {};
@@ -877,26 +934,26 @@ export async function pricing(ctx: Ctx): Promise<Pricing> {
     const quoteUnit = item.unit;
     const sellQuote = sell / rate;
     const checks: Flag[] = [];
-    if (marginPct <= 0) checks.push({ tone: "error", text: "Negative / zero profit" });
+    if (marginPct <= 0) checks.push({ tone: "error", text: m.api_commercial_negative_profit({}, t) });
     else if (marginPct < minPct)
-      checks.push({ tone: "warning", text: `Below ${minPct}% minimum margin — approval exception`, type: "below-min" });
+      checks.push({ tone: "warning", text: m.api_commercial_below_min({ min: minPct }, t), type: "below-min" });
     for (const x of parts) {
       for (const f of x.o.flags) {
         if (f.type === "Lead time vs ETA" && f.tone === "error")
-          checks.push({ tone: "error", text: "Supplier lead time misses ETA" });
-        if (f.type === "Expired validity") checks.push({ tone: "error", text: "Supplier price expired — reconfirm" });
-        if (f.type === "Shelf life")
-          checks.push({ tone: "warning", text: "Shelf life below the vessel's requirement" });
+          checks.push({ tone: "error", text: m.api_commercial_lead_time_misses_eta({}, t) });
+        if (f.type === "Expired validity") checks.push({ tone: "error", text: m.api_commercial_price_expired({}, t) });
+        if (f.type === "Shelf life") checks.push({ tone: "warning", text: m.api_commercial_shelf_life_below({}, t) });
       }
-      if (x.o.newSupplier) checks.push({ tone: "info", text: `Advance payment exposure: ${x.o.supplier}` });
+      if (x.o.newSupplier)
+        checks.push({ tone: "info", text: m.api_commercial_advance_payment({ supplier: x.o.supplier }, t) });
     }
     if (alt && !accepted)
-      checks.push({ tone: "warning", text: "Pending customer acceptance — alternative pack", type: "alternative" });
-    if (alt && accepted) checks.push({ tone: "success", text: "Alternative pack accepted by the customer in writing" });
+      checks.push({ tone: "warning", text: m.api_commercial_pending_acceptance({}, t), type: "alternative" });
+    if (alt && accepted) checks.push({ tone: "success", text: m.api_commercial_alternative_accepted({}, t) });
     if (parts.length > 1)
       checks.push({
         tone: "info",
-        text: `Split sourcing: ${parts.map((x) => `${x.o.supplier} × ${x.qty}`).join(" + ")}`,
+        text: m.api_commercial_split_sourcing({ parts: parts.map((x) => `${x.o.supplier} × ${x.qty}`).join(" + ") }, t),
       });
     const ready = Math.max(...parts.map((x) => x.o.leadDays));
     return {
@@ -906,7 +963,7 @@ export async function pricing(ctx: Ctx): Promise<Pricing> {
       sourcing: parts
         .map(
           (x) =>
-            `${x.o.supplier}${x.o.version > 1 ? ` v${x.o.version}` : ""} · ${x.o.currency} ${x.o.price.toLocaleString("en-US")} · ${x.o.leadDays} d`,
+            `${x.o.supplier}${x.o.version > 1 ? ` v${x.o.version}` : ""} · ${x.o.currency} ${x.o.price.toLocaleString(intlLocale(ctx.lang, "en-US"))} · ${m.api_commercial_days_short({ n: x.o.leadDays }, t)}`,
         )
         .join(" + "),
       costEGP: round(cost),
@@ -923,10 +980,20 @@ export async function pricing(ctx: Ctx): Promise<Pricing> {
       quoteQty,
       quoteUnit,
       quoteDescription: alt
-        ? `${item.description} — supplied as ${altPack?.packLabel ? str(altPack.packLabel) : "alternative pack"} (alternative pack${accepted ? ", accepted" : ""})`
+        ? m.api_commercial_supplied_as(
+            {
+              description: item.description,
+              pack: altPack?.packLabel ? str(altPack.packLabel) : m.api_commercial_alternative_pack({}, t),
+              accepted: accepted ? "yes" : "no",
+            },
+            t,
+          )
         : item.description,
       partNo: item.partNo && item.partNo !== "local" ? item.partNo : item.impa ? `IMPA ${item.impa}` : "",
-      lead: ready <= ctx.daysToEta || ctx.daysToEta < 0 ? "On arrival" : `${ready} days`,
+      lead:
+        ready <= ctx.daysToEta || ctx.daysToEta < 0
+          ? m.api_commercial_on_arrival({}, t)
+          : m.api_commercial_lead_days({ n: ready }, t),
       alternative: Boolean(alt),
       accepted,
       inputVatEGP: round(
@@ -947,13 +1014,19 @@ export async function pricing(ctx: Ctx): Promise<Pricing> {
   for (const r of rows)
     for (const c of r.checks)
       if (c.tone === "error" || c.tone === "warning") exceptions.push(`L${r.lineNo}: ${c.text}`);
-  if (rows.length && marginPct < min) exceptions.push(`Quote margin ${marginPct}% is below the ${min}% minimum`);
+  if (rows.length && marginPct < min)
+    exceptions.push(m.api_commercial_quote_margin_below({ margin: marginPct, min }, t));
   if (discountPct > maxDiscount)
-    exceptions.push(`Customer discount ${discountPct}% is above ${maxDiscount}% without approval`);
+    exceptions.push(m.api_commercial_discount_above({ discount: discountPct, max: maxDiscount }, t));
   for (const c of charges.filter((c) => c.status === "Estimate"))
-    exceptions.push(`Shared charge is an estimate: ${c.label} (${egp(c.amountEGP)})`);
+    exceptions.push(m.api_commercial_charge_estimate({ label: c.label, amount: egp(c.amountEGP, ctx.lang) }, t));
   if (unpriced.length)
-    exceptions.push(`Lines ${unpriced.map((u) => u.lineNo).join(", ")} excluded — to follow in a revised quotation`);
+    exceptions.push(
+      m.api_commercial_lines_excluded(
+        { lines: unpriced.map((u) => u.lineNo).join(ctx.lang === "ar" ? "، " : ", ") },
+        t,
+      ),
+    );
   const belowMin = rows.some((r) => r.marginPct < r.minPct) || (rows.length > 0 && marginPct < min);
 
   // The quotation and approval in flight, if any.
@@ -1026,10 +1099,17 @@ async function requestQuoteApproval(
   q: Doc,
   opts: { type?: string; exceptions?: string[]; note?: string } = {},
 ) {
+  const t = loc(req);
   if (!["Draft", "Returned"].includes(str(q.status)))
-    throw Object.assign(new Error(`${str(q.number)} is ${str(q.status).toLowerCase()} — nothing to request.`), {
-      status: 400,
-    });
+    throw Object.assign(
+      new Error(
+        m.api_commercial_nothing_to_request(
+          { number: str(q.number), status: optionLabel(req, "quotations", "status", q.status).toLowerCase() },
+          t,
+        ),
+      ),
+      { status: 400 },
+    );
   const open = (await approvalsFor(req, q)).find(OPEN_APPROVAL);
   if (open) return { approval: open, quotation: q };
   const c = await one(req, "cases", str(idOf(q.case)));
@@ -1044,16 +1124,24 @@ async function requestQuoteApproval(
       : "Customer quotation");
   const rule = await ruleFor(req, type);
   const exceptions = opts.exceptions ?? (internal.exceptions ? [internal.exceptions] : []);
-  const total = `${str(q.currency)} ${num(q.totalExVat).toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
-  const margin = typeof internal.marginPct === "number" ? ` — ${internal.marginPct}% margin` : "";
+  const total = `${str(q.currency)} ${num(q.totalExVat).toLocaleString(intlLocale(t.locale, "en-US"), { maximumFractionDigits: 2 })}`;
   const approval = await create(req, "approvals", {
     title:
       type === "Quotation margin exception"
-        ? `Quote ${str(q.number)} to ${str(customer?.name)}${margin} (min ${min}%)`
-        : `Quote ${str(q.number)} to ${str(customer?.name)} — ${total}`,
+        ? m.api_commercial_approval_title_margin(
+            {
+              number: str(q.number),
+              customer: str(customer?.name),
+              hasMargin: typeof internal.marginPct === "number" ? "yes" : "no",
+              margin: internal.marginPct ?? "",
+              min,
+            },
+            t,
+          )
+        : m.api_commercial_approval_title({ number: str(q.number), customer: str(customer?.name), total }, t),
     type,
     case: idOf(q.case),
-    detail: [opts.note, ...exceptions].filter(Boolean).join("\n") || "No exceptions — standard approval.",
+    detail: [opts.note, ...exceptions].filter(Boolean).join("\n") || m.api_commercial_no_exceptions({}, t),
     subject: { relationTo: "quotations", value: q.id },
     requestedBy: userOf(req)?.id,
     approvers: rule.approvers,
@@ -1068,7 +1156,7 @@ async function requestQuoteApproval(
       stage: "Awaiting management approval",
       wait: "Awaiting internal approval",
       decision: "Awaiting management approval",
-      nextAction: `Karim Balbaa: approve ${str(q.number)}`,
+      nextAction: m.api_commercial_karim_approve({ number: str(q.number) }, t),
     });
   return { approval, quotation };
 }
@@ -1158,14 +1246,16 @@ async function quoteView(req: PayloadRequest, id: string): Promise<QuoteView | n
               ? 4
               : 0
             : 0;
-  const stepLabel = step === 4 ? decision : "Customer decision";
+  const t = loc(req);
+  const stepLabel =
+    step === 4 ? optionLabel(req, "quotations", "decision", decision) : m.api_commercial_customer_decision({}, t);
   return {
     quotation: { ...q, internal: undefined } as unknown as QuoteDoc,
     case: {
       id: str(c?.id),
       caseId: str(c?.caseId),
       customer: str(customer?.name),
-      attention: contacts[0]?.name ?? "Purchasing department",
+      attention: contacts[0]?.name ?? m.api_commercial_purchasing_department({}, t),
       email: contacts[0]?.email ?? str(customer?.contactEmail),
       customerRef: str(c?.customerRef),
       vessel: str(c?.vessel),
@@ -1192,9 +1282,9 @@ async function quoteView(req: PayloadRequest, id: string): Promise<QuoteView | n
           ? ""
           : open.why
         : status === "Approved"
-          ? "Approved."
-          : "No approval requested yet.",
-      send: status === "Approved" ? "" : "Only an approved version can be sent.",
+          ? m.api_commercial_approved_dot({}, t)
+          : m.api_commercial_no_approval_requested({}, t),
+      send: status === "Approved" ? "" : m.api_commercial_only_approved_sent({}, t),
     },
     preparedBy: str(names.get(idOf(q.preparedBy) ?? "")?.name),
     approvedBy: str(names.get(idOf(q.approvedBy) ?? "")?.name),
@@ -1216,10 +1306,11 @@ const readApproval = (req: PayloadRequest, id: string) =>
 
 /** Records the signed-in approver's decision; when it's final, applies it to the record behind it. */
 async function decide(req: PayloadRequest, id: string, decision: "Approve" | "Reject", reason: string) {
+  const t = loc(req);
   const a = await one(req, "approvals", id);
-  if (!a) throw Object.assign(new Error("Approval not found."), { status: 404 });
+  if (!a) throw Object.assign(new Error(m.api_commercial_approval_not_found({}, t)), { status: 404 });
   if (decision === "Reject" && !reason.trim())
-    throw Object.assign(new Error("Give a reason when returning a request."), { status: 400 });
+    throw Object.assign(new Error(m.api_commercial_give_return_reason({}, t)), { status: 400 });
   const decisions = ((a.decisions as Record<string, unknown>[] | undefined) ?? []).map((d) => ({
     ...d,
     user: idOf(d.user),
@@ -1243,10 +1334,15 @@ async function decide(req: PayloadRequest, id: string, decision: "Approve" | "Re
           approvedBy: me?.id,
           decision: "Quotation prepared",
         });
-        await update(req, "cases", caseId, { nextAction: `Send ${str(q.number)} to the customer`, wait: null });
+        await update(req, "cases", caseId, {
+          nextAction: m.api_commercial_send_to_customer({ number: str(q.number) }, t),
+          wait: null,
+        });
       } else {
         await update(req, "quotations", q.id, { status: "Returned", decision: "Quotation prepared" });
-        await update(req, "cases", caseId, { nextAction: `Revise pricing — returned by ${str(me?.name)}: ${reason}` });
+        await update(req, "cases", caseId, {
+          nextAction: m.api_commercial_revise_pricing({ name: str(me?.name), reason }, t),
+        });
       }
     }
   } else if (type === "Exchange rate") {
@@ -1264,7 +1360,16 @@ async function decide(req: PayloadRequest, id: string, decision: "Approve" | "Re
   }
   await logActivity(req, {
     case: caseId,
-    text: `${str(me?.name)} ${status === "Approved" ? "approved" : "returned"} “${str(a.title)}”${reason ? `: ${reason}` : ""}.`,
+    text: m.api_commercial_decided_activity(
+      {
+        name: str(me?.name),
+        approved: status === "Approved" ? "yes" : "no",
+        title: str(a.title),
+        hasReason: reason ? "yes" : "no",
+        reason,
+      },
+      t,
+    ),
     entity: `approvals/${id}`,
   });
   return updated;
@@ -1291,37 +1396,44 @@ async function decidedQuotation(req: PayloadRequest, a: Doc): Promise<Doc | null
  * confirmed. An exchange rate is in use the moment it's approved, so that decision stands.
  */
 async function withdrawBlock(req: PayloadRequest, a: Doc): Promise<string> {
+  const t = loc(req);
   const me = userOf(req);
   const decisions = decisionsOf(a);
   const last = decisions.at(-1);
-  if (!decisions.some((d) => d.user === me?.id)) return "You have no decision on this request to withdraw.";
-  if (last?.user !== me?.id) return "Someone decided after you — the request has moved on.";
+  if (!decisions.some((d) => d.user === me?.id)) return m.api_commercial_no_decision_to_withdraw({}, t);
+  if (last?.user !== me?.id) return m.api_commercial_someone_decided_after({}, t);
   if (!FINAL.includes(str(a.status))) return "";
   const type = str(a.type);
-  if (type === "Exchange rate") return "An exchange-rate decision takes effect at once — propose a new rate instead.";
+  if (type === "Exchange rate") return m.api_commercial_fx_decision_stands({}, t);
   if (/quotation|discount/i.test(type)) {
     const q = await decidedQuotation(req, a);
     // An older request that names no quotation: what its decision moved can't be told, so it stands.
-    if (!q) return "This request doesn't name its quotation — the decision can't be withdrawn.";
+    if (!q) return m.api_commercial_no_quotation_named({}, t);
     const left = a.status === "Approved" ? "Approved" : "Returned";
     if (q.status !== left)
-      return `${str(q.number)} is already ${str(q.status).toLowerCase()} — the decision can't be withdrawn.`;
+      return m.api_commercial_already_cant_withdraw(
+        { number: str(q.number), status: optionLabel(req, "quotations", "status", q.status).toLowerCase() },
+        t,
+      );
   }
   if (/deposit|payment/i.test(type)) {
     const paid = await all(req, "payments", { approval: { equals: a.id } });
-    if (paid.length) return "The payment is already recorded — the decision can't be withdrawn.";
+    if (paid.length) return m.api_commercial_payment_recorded_cant_withdraw({}, t);
   }
   if (type === "Bank detail change") {
     const request = BANK_REQUESTS[a.id];
     const supplier = request ? await one(req, "suppliers", request.supplier) : null;
     const bank = (supplier?.bank as { iban?: string; verified?: boolean } | undefined) ?? {};
     if (request && bank.verified && bank.iban === request.requested.iban)
-      return "The new bank details are already applied — the decision can't be withdrawn.";
+      return m.api_commercial_bank_applied_cant_withdraw({}, t);
   }
   if (type === "Supplier PO") {
     const po = subjectOf(a) ? await one(req, "purchase-orders", str(subjectOf(a))) : null;
     if (po && !["Draft", "Awaiting approval"].includes(str(po.status)))
-      return `${str(po.number)} is already ${str(po.status).toLowerCase()} — the decision can't be withdrawn.`;
+      return m.api_commercial_already_cant_withdraw(
+        { number: str(po.number), status: optionLabel(req, "purchase-orders", "status", po.status).toLowerCase() },
+        t,
+      );
   }
   return "";
 }
@@ -1341,8 +1453,9 @@ export async function withdrawal(
 
 /** Takes the signed-in approver's own decision back and puts what it had released back in the queue. */
 async function withdraw(req: PayloadRequest, id: string) {
+  const t = loc(req);
   const a = await one(req, "approvals", id);
-  if (!a) throw Object.assign(new Error("Approval not found."), { status: 404 });
+  if (!a) throw Object.assign(new Error(m.api_commercial_approval_not_found({}, t)), { status: 404 });
   const blocked = await withdrawBlock(req, a);
   if (blocked) throw Object.assign(new Error(blocked), { status: 409 });
   const me = userOf(req);
@@ -1368,12 +1481,15 @@ async function withdraw(req: PayloadRequest, id: string) {
     if (caseId)
       await update(req, "cases", caseId, {
         wait: "Awaiting internal approval",
-        nextAction: `Karim Balbaa: approve ${str(q.number)}`,
+        nextAction: m.api_commercial_karim_approve({ number: str(q.number) }, t),
       });
   }
   await logActivity(req, {
     case: caseId,
-    text: `${str(me?.name)} withdrew their ${mine.decision === "Approve" ? "approval" : "return"} of “${str(a.title)}” — it is waiting for a decision again.`,
+    text: m.api_commercial_withdrew_activity(
+      { name: str(me?.name), approval: mine.decision === "Approve" ? "yes" : "no", title: str(a.title) },
+      t,
+    ),
     entity: `approvals/${id}`,
   });
   return updated;
@@ -1396,27 +1512,45 @@ function correctionDraft(ctx: Ctx, offer: Doc): CorrectionDraft {
   const rfq = ctx.rfqs.find((r) => idOf(r.supplier) === idOf(offer.supplier));
   const dev = ((offer.deviations as { type?: string; detail?: string }[]) ?? [])[0];
   const corrected = ctx.offers.find((o) => idOf(o.supersedes) === offer.id);
+  const t = ctx.o;
+  const contact = str(sup?.contact).split("·")[0].trim();
   return {
-    to: `${str(sup?.name)} <${str(sup?.contact).split("·")[0].trim() || "sales"}>`,
-    subject: `${str(rfq?.reference) || "Our RFQ"} — line ${num(offer.lineNo)}: please correct your offer`,
+    to: `${str(sup?.name)} <${contact || "sales"}>`,
+    subject: m.api_commercial_correction_subject(
+      { rfq: str(rfq?.reference) || m.api_commercial_our_rfq({}, t), line: num(offer.lineNo) },
+      t,
+    ),
     body: [
-      `Dear ${str(sup?.contact).split("·")[0].trim() || "colleagues"},`,
+      contact ? m.api_commercial_dear({ name: contact }, t) : m.api_commercial_dear_colleagues({}, t),
       "",
-      `Thank you for your offer. On line ${num(offer.lineNo)} we asked for ${item?.brand ?? ""} ${item?.partNo ?? item?.description ?? ""} (exact part — no alternatives).`.replace(
-        /\s+/g,
-        " ",
-      ),
-      `Your offer: ${str(offer.offeredDescription) || "different item"}. ${dev?.detail ?? ""}`.trim(),
+      m
+        .api_commercial_correction_asked(
+          {
+            line: num(offer.lineNo),
+            part: `${item?.brand ?? ""} ${item?.partNo ?? item?.description ?? ""}`,
+          },
+          t,
+        )
+        .replace(/\s+/g, " "),
+      m
+        .api_commercial_your_offer(
+          {
+            offered: str(offer.offeredDescription) || m.api_commercial_different_item({}, t),
+            detail: dev?.detail ?? "",
+          },
+          t,
+        )
+        .trim(),
       "",
-      "Please send a corrected offer for the requested part, with price, availability and lead time to Port Said.",
+      m.api_commercial_correction_please({}, t),
       "",
-      "Best regards,",
+      m.api_commercial_best_regards({}, t),
       str(userOf(ctx.req)?.name),
       "Golden Sea for Trading & Marketing",
     ].join("\n"),
     status: corrected
-      ? `Sent 16 Nov · corrected v${num(corrected.version, 2)} received and in use`
-      : "Draft — not sent",
+      ? m.api_commercial_correction_sent_status({ version: num(corrected.version, 2) }, t)
+      : m.api_commercial_draft_not_sent({}, t),
     sent: Boolean(corrected),
   };
 }
@@ -1445,7 +1579,7 @@ export const commercialEndpoints: Endpoint[] = [
     handler: handle(
       async (req) => {
         const ctx = await load(req, caseParam(req));
-        if (!ctx) return fail(404, "Case not found.");
+        if (!ctx) return fail(404, m.api_commercial_case_not_found({}, loc(req)));
         return Response.json(withDrafts(ctx, compare(ctx)));
       },
       { costs: true },
@@ -1472,28 +1606,44 @@ export const commercialEndpoints: Endpoint[] = [
     handler: handle(
       async (req) => {
         const ctx = await load(req, caseParam(req));
-        if (!ctx) return fail(404, "Case not found.");
+        if (!ctx) return fail(404, m.api_commercial_case_not_found({}, loc(req)));
         const b = await body(req);
         const lineNo = num(b.lineNo);
         const item = ctx.items.find((i) => i.lineNo === lineNo);
-        if (!item) return fail(404, `Line ${lineNo} not found.`);
+        if (!item) return fail(404, m.api_commercial_line_not_found({ line: lineNo }, loc(req)));
         const line = compareLine(ctx, item);
         const wanted = ((b.parts as CmpPart[] | undefined) ?? []).filter((p) => num(p.qty) > 0);
-        if (!wanted.length) return fail(400, "Choose at least one offer.");
+        const t = ctx.o;
+        if (!wanted.length) return fail(400, m.api_commercial_choose_offer({}, t));
         for (const p of wanted) {
           const o = line.offers.find((x) => x.id === p.offer);
-          if (!o) return fail(400, `Offer ${p.offer} is not on line ${lineNo}.`);
+          if (!o) return fail(400, m.api_commercial_offer_not_on_line({ offer: p.offer, line: lineNo }, t));
           if (o.blocked)
             return fail(
               400,
-              `${o.supplier} v${o.version} is blocked from pricing: ${o.flags.find((f) => f.tone === "error" || f.tone === "neutral")?.text ?? "deviation"}.`,
+              m.api_commercial_offer_blocked(
+                {
+                  supplier: o.supplier,
+                  version: o.version,
+                  reason:
+                    o.flags.find((f) => f.tone === "error" || f.tone === "neutral")?.text ??
+                    m.api_commercial_deviation({}, t),
+                },
+                t,
+              ),
             );
           if (num(p.qty) * (item.packSize || 1) > o.baseQty + 1e-9)
-            return fail(400, `${o.supplier} offers only ${o.baseQty / (item.packSize || 1)} ${item.unit}.`);
+            return fail(
+              400,
+              m.api_commercial_offers_only(
+                { supplier: o.supplier, qty: o.baseQty / (item.packSize || 1), unit: item.unit },
+                t,
+              ),
+            );
         }
         const total = wanted.reduce((s, p) => s + num(p.qty), 0);
         if (total < item.qty)
-          return fail(400, `Selected ${total} of ${item.qty} ${item.unit} — split the rest to another offer.`);
+          return fail(400, m.api_commercial_selected_of({ total, qty: item.qty, unit: item.unit }, t));
         const isBest =
           (wanted.length === 1 && wanted[0].offer === line.best) ||
           (wanted.length > 1 &&
@@ -1501,8 +1651,7 @@ export const commercialEndpoints: Endpoint[] = [
             line.split.parts.length === wanted.length &&
             line.split.parts.every((s) => wanted.some((w) => w.offer === s.offer && num(w.qty) === s.qty)));
         const reason = str(b.reason).trim();
-        if (!isBest && !reason)
-          return fail(400, "Give a reason: this isn't the best-fit offer (kept for the approver).");
+        if (!isBest && !reason) return fail(400, m.api_commercial_give_reason_not_best({}, t));
         // What the line was before, for the Undo (`…/select-undo`).
         const was = { status: item.status ?? null, selection: item.selection ?? null };
         const parts: CmpPart[] = [];
@@ -1530,7 +1679,9 @@ export const commercialEndpoints: Endpoint[] = [
             splitQty: parts.length > 1 ? parts.map((p) => ({ offer: p.offer, qty: p.qty })) : [],
             reason:
               reason ||
-              (parts.length > 1 ? `Split sourcing: ${line.split?.text ?? ""}` : "Best-fit offer (landed cost)"),
+              (parts.length > 1
+                ? m.api_commercial_split_sourcing({ parts: line.split?.text ?? "" }, t)
+                : m.api_commercial_best_fit_reason({}, t)),
             customerAccepted: accepted,
           },
         }));
@@ -1539,7 +1690,10 @@ export const commercialEndpoints: Endpoint[] = [
           .join(" + ");
         await logActivity(req, {
           case: ctx.c.id,
-          text: `L${lineNo}: selected ${names}${reason ? ` — ${reason}` : " (best fit)"}.`,
+          text: m.api_commercial_selected_activity(
+            { line: lineNo, names, hasReason: reason ? "yes" : "no", reason },
+            t,
+          ),
           entity: `cases/${ctx.c.id}`,
         });
         const fresh = await load(req, ctx.c.id);
@@ -1564,22 +1718,29 @@ export const commercialEndpoints: Endpoint[] = [
     handler: handle(
       async (req) => {
         const ctx = await load(req, caseParam(req));
-        if (!ctx) return fail(404, "Case not found.");
+        if (!ctx) return fail(404, m.api_commercial_case_not_found({}, loc(req)));
         const b = await body(req);
         const lineNo = num(b.lineNo);
         const item = ctx.items.find((i) => i.lineNo === lineNo);
-        if (!item) return fail(404, `Line ${lineNo} not found.`);
+        if (!item) return fail(404, m.api_commercial_line_not_found({ line: lineNo }, loc(req)));
+        const t = ctx.o;
         const now = (item.selection?.offers ?? []).map((o) => str(idOf(o)));
         const then = (Array.isArray(b.offers) ? b.offers : []).map(str);
         if (!then.length || now.length !== then.length || now.some((o, i) => o !== then[i]))
-          return fail(409, `Line ${lineNo} has been selected again since — nothing to take back.`);
+          return fail(409, m.api_commercial_selected_again({ line: lineNo }, t));
         const quoted = (await all(req, "quotations", { case: { equals: ctx.c.id } })).find((q) =>
           ["Awaiting approval", "Approved", "Submitted"].includes(str(q.status)),
         );
         if (quoted)
           return fail(
             409,
-            `${str(quoted.number)} is ${str(quoted.status).toLowerCase()} with this selection — revise the quotation instead.`,
+            m.api_commercial_quoted_with_selection(
+              {
+                number: str(quoted.number),
+                status: optionLabel(req, "quotations", "status", quoted.status).toLowerCase(),
+              },
+              t,
+            ),
           );
         const was = (b.was && typeof b.was === "object" ? b.was : {}) as {
           status?: unknown;
@@ -1587,7 +1748,7 @@ export const commercialEndpoints: Endpoint[] = [
         };
         const onLine = new Set(ctx.offers.filter((o) => num(o.lineNo) === lineNo).map((o) => o.id));
         const back = (was.selection?.offers ?? []).map((o) => str(idOf(o)));
-        if (back.some((o) => !onLine.has(o))) return fail(400, `That isn't a selection of line ${lineNo}.`);
+        if (back.some((o) => !onLine.has(o))) return fail(400, m.api_commercial_not_a_selection({ line: lineNo }, t));
         const items = ctx.items.map((i) =>
           i.lineNo === lineNo
             ? {
@@ -1608,11 +1769,14 @@ export const commercialEndpoints: Endpoint[] = [
         });
         await logActivity(req, {
           case: ctx.c.id,
-          text: `L${lineNo}: selection taken back by ${str(userOf(req)?.name)}${back.length ? " — the earlier selection applies again" : ""}.`,
+          text: m.api_commercial_taken_back_activity(
+            { line: lineNo, name: str(userOf(req)?.name), earlier: back.length ? "yes" : "no" },
+            t,
+          ),
           entity: `cases/${ctx.c.id}`,
         });
         const fresh = await load(req, ctx.c.id);
-        return Response.json({ ...compare(fresh!), message: `Line ${lineNo}: selection taken back` });
+        return Response.json({ ...compare(fresh!), message: m.api_commercial_taken_back({ line: lineNo }, t) });
       },
       { costs: true },
     ),
@@ -1623,13 +1787,13 @@ export const commercialEndpoints: Endpoint[] = [
     handler: handle(
       async (req) => {
         const ctx = await load(req, caseParam(req));
-        if (!ctx) return fail(404, "Case not found.");
+        if (!ctx) return fail(404, m.api_commercial_case_not_found({}, loc(req)));
         const b = await body(req);
         const lineNo = num(b.lineNo);
         const item = ctx.items.find((i) => i.lineNo === lineNo);
-        if (!item) return fail(404, `Line ${lineNo} not found.`);
+        if (!item) return fail(404, m.api_commercial_line_not_found({ line: lineNo }, loc(req)));
         const line = compareLine(ctx, item);
-        if (!line.selection.parts.length) return fail(400, "Select the alternative offer first.");
+        if (!line.selection.parts.length) return fail(400, m.api_commercial_select_alternative_first({}, ctx.o));
         const parts = line.selection.parts;
         await saveItem(ctx, lineNo, (i) => ({
           ...i,
@@ -1642,7 +1806,10 @@ export const commercialEndpoints: Endpoint[] = [
         }));
         await logActivity(req, {
           case: ctx.c.id,
-          text: `L${lineNo}: customer accepted the alternative pack in writing${b.note ? ` (${str(b.note)})` : ""}.`,
+          text: m.api_commercial_accepted_activity(
+            { line: lineNo, hasNote: b.note ? "yes" : "no", note: str(b.note) },
+            ctx.o,
+          ),
         });
         return Response.json(compare((await load(req, ctx.c.id))!));
       },
@@ -1655,10 +1822,10 @@ export const commercialEndpoints: Endpoint[] = [
     handler: handle(
       async (req) => {
         const ctx = await load(req, caseParam(req));
-        if (!ctx) return fail(404, "Case not found.");
+        if (!ctx) return fail(404, m.api_commercial_case_not_found({}, loc(req)));
         const b = await body(req);
         const offer = ctx.offers.find((o) => o.id === str(b.offer));
-        if (!offer) return fail(404, "Offer not found.");
+        if (!offer) return fail(404, m.api_commercial_offer_not_found({}, ctx.o));
         const sup = ctx.suppliers.get(idOf(offer.supplier) ?? "");
         const corrected = ctx.offers.find((o) => idOf(o.supersedes) === offer.id);
         const draft = correctionDraft(ctx, offer);
@@ -1666,9 +1833,12 @@ export const commercialEndpoints: Endpoint[] = [
           await update(req, "offers", offer.id, { compliance: "Awaiting corrected offer" });
           await logActivity(req, {
             case: ctx.c.id,
-            text: `Correction request sent to ${str(sup?.name)} for line ${num(offer.lineNo)} (confirmed by ${str(userOf(req)?.name)}).`,
+            text: m.api_commercial_correction_sent_activity(
+              { supplier: str(sup?.name), line: num(offer.lineNo), name: str(userOf(req)?.name) },
+              ctx.o,
+            ),
           });
-          return Response.json({ ...draft, status: "Sent — awaiting corrected offer", sent: true });
+          return Response.json({ ...draft, status: m.api_commercial_sent_awaiting_corrected({}, ctx.o), sent: true });
         }
         return Response.json(draft);
       },
@@ -1681,7 +1851,7 @@ export const commercialEndpoints: Endpoint[] = [
     handler: handle(
       async (req) => {
         const ctx = await load(req, caseParam(req));
-        if (!ctx) return fail(404, "Case not found.");
+        if (!ctx) return fail(404, m.api_commercial_case_not_found({}, loc(req)));
         return Response.json(await pricing(ctx));
       },
       { costs: true },
@@ -1693,7 +1863,7 @@ export const commercialEndpoints: Endpoint[] = [
     handler: handle(
       async (req) => {
         const ctx = await load(req, caseParam(req));
-        if (!ctx) return fail(404, "Case not found.");
+        if (!ctx) return fail(404, m.api_commercial_case_not_found({}, loc(req)));
         const b = await body(req);
         const p = { ...(ctx.c.pricing as Record<string, unknown> | undefined) };
         if (typeof b.allocation === "string" && ["value", "qty", "lines"].includes(b.allocation))
@@ -1717,16 +1887,17 @@ export const commercialEndpoints: Endpoint[] = [
     handler: handle(
       async (req) => {
         const ctx = await load(req, caseParam(req));
-        if (!ctx) return fail(404, "Case not found.");
+        if (!ctx) return fail(404, m.api_commercial_case_not_found({}, loc(req)));
         const b = await body(req);
         const P = await pricing(ctx);
-        if (!P.rows.length) return fail(400, "Select offers for at least one line first.");
+        const t = ctx.o;
+        if (!P.rows.length) return fail(400, m.api_commercial_select_offers_first({}, t));
         const quotes = (await all(req, "quotations", { case: { equals: ctx.c.id } })).sort(
           (a, b2) => num(b2.version) - num(a.version),
         );
         const latest = quotes[0];
         if (latest?.status === "Awaiting approval")
-          return fail(400, `${str(latest.number)} is already awaiting approval.`);
+          return fail(400, m.api_commercial_already_awaiting({ number: str(latest.number) }, t));
         const lines = P.rows.map((r) => ({
           lineNo: r.lineNo,
           partNo: r.partNo,
@@ -1749,7 +1920,10 @@ export const commercialEndpoints: Endpoint[] = [
             exceptions: P.exceptions.join("; "),
           },
           remarks: P.unpriced.length
-            ? `Items ${P.unpriced.map((u) => u.lineNo).join(", ")} of your request will follow in a revised quotation.`
+            ? m.api_commercial_items_follow(
+                { lines: P.unpriced.map((u) => u.lineNo).join(ctx.lang === "ar" ? "، " : ", ") },
+                t,
+              )
             : "",
         };
         let q: Doc;
@@ -1764,8 +1938,9 @@ export const commercialEndpoints: Endpoint[] = [
             decision: "Quotation prepared",
             preparedBy: userOf(req)?.id,
             validUntil: new Date(DEMO_NOW.getTime() + 7 * DAY).toISOString(),
-            paymentTerms: str(latest?.paymentTerms) || "90 days from invoice date",
-            deliveryTerms: str(latest?.deliveryTerms) || `On board at ${str(ctx.c.port)} on arrival`,
+            paymentTerms: str(latest?.paymentTerms) || m.api_commercial_payment_terms_default({}, t),
+            deliveryTerms:
+              str(latest?.deliveryTerms) || m.api_commercial_delivery_terms_default({ port: str(ctx.c.port) }, t),
           });
           if (latest && latest.status !== "Superseded")
             await update(req, "quotations", latest.id, { status: "Superseded" });
@@ -1777,7 +1952,14 @@ export const commercialEndpoints: Endpoint[] = [
         });
         await logActivity(req, {
           case: ctx.c.id,
-          text: `${str(userOf(req)?.name)} requested approval of ${str(q.number)} (${P.approvalType.toLowerCase()}).`,
+          text: m.api_commercial_requested_activity(
+            {
+              name: str(userOf(req)?.name),
+              number: str(q.number),
+              type: optionLabel(req, "approvals", "type", P.approvalType).toLowerCase(),
+            },
+            t,
+          ),
         });
         return Response.json({ approval: out.approval, quotation: out.quotation });
       },
@@ -1789,7 +1971,7 @@ export const commercialEndpoints: Endpoint[] = [
     method: "get",
     handler: handle(async (req) => {
       const v = await quoteView(req, str(req.routeParams?.id));
-      return v ? Response.json(v) : fail(404, "Quotation not found.");
+      return v ? Response.json(v) : fail(404, m.api_commercial_quotation_not_found({}, loc(req)));
     }),
   },
   {
@@ -1799,15 +1981,16 @@ export const commercialEndpoints: Endpoint[] = [
       const id = str(req.routeParams?.id);
       const action = str(req.routeParams?.action);
       const q = await one(req, "quotations", id);
-      if (!q) return fail(404, "Quotation not found.");
+      if (!q) return fail(404, m.api_commercial_quotation_not_found({}, loc(req)));
       const b = await body(req);
       const me = userOf(req);
+      const t = loc(req);
       const caseId = str(idOf(q.case));
       if (action === "request-approval") {
-        if (roleOf(req) === "sales" && /margin/i.test(str(b.type))) return fail(403, SALES_HIDDEN);
+        if (roleOf(req) === "sales" && /margin/i.test(str(b.type))) return fail(403, salesHidden(req));
         await requestQuoteApproval(req, q, { note: str(b.note) });
       } else if (action === "send") {
-        if (q.status !== "Approved") return fail(400, "Only an approved version can be sent to the customer.");
+        if (q.status !== "Approved") return fail(400, m.api_commercial_only_approved_to_customer({}, t));
         const portal = b.method === "portal";
         await update(req, "quotations", id, {
           status: "Submitted",
@@ -1823,17 +2006,26 @@ export const commercialEndpoints: Endpoint[] = [
           stage: "Awaiting customer decision",
           wait: "Awaiting customer decision",
           decision: "Awaiting customer decision",
-          nextAction: `Follow up ${str(q.number)} in 2 days (internal reminder)`,
+          nextAction: m.api_commercial_follow_up_2_days({ number: str(q.number) }, t),
         });
         await logActivity(req, {
           case: caseId,
           text: portal
-            ? `${str(q.number)} entered in the customer's procurement portal by ${str(me?.name)}.`
-            : `${str(q.number)} emailed to ${str(b.to) || "the customer"} — draft confirmed by ${str(me?.name)}.`,
+            ? m.api_commercial_portal_activity({ number: str(q.number), name: str(me?.name) }, t)
+            : m.api_commercial_emailed_activity(
+                { number: str(q.number), to: str(b.to) || m.api_commercial_the_customer({}, t), name: str(me?.name) },
+                t,
+              ),
         });
       } else if (action === "revise") {
         if (!["Approved", "Submitted", "Returned"].includes(str(q.status)))
-          return fail(400, `${str(q.number)} is ${str(q.status).toLowerCase()} — revise the latest version instead.`);
+          return fail(
+            400,
+            m.api_commercial_revise_latest(
+              { number: str(q.number), status: optionLabel(req, "quotations", "status", q.status).toLowerCase() },
+              t,
+            ),
+          );
         const {
           id: _id,
           number: _n,
@@ -1852,7 +2044,9 @@ export const commercialEndpoints: Endpoint[] = [
           status: "Draft",
           decision: "Quotation prepared",
           preparedBy: me?.id,
-          remarks: [str(q.remarks), b.reason ? `Revision: ${str(b.reason)}` : ""].filter(Boolean).join("\n"),
+          remarks: [str(q.remarks), b.reason ? m.api_commercial_revision_remark({ reason: str(b.reason) }, t) : ""]
+            .filter(Boolean)
+            .join("\n"),
         });
         await update(req, "quotations", id, {
           status: "Superseded",
@@ -1862,13 +2056,13 @@ export const commercialEndpoints: Endpoint[] = [
           await update(req, "cases", caseId, { stage: "Revision requested", decision: "Revision requested" });
         await logActivity(req, {
           case: caseId,
-          text: `${str(next.number)} created from ${str(q.number)} (kept for audit).`,
+          text: m.api_commercial_revised_activity({ next: str(next.number), from: str(q.number) }, t),
         });
         return Response.json({ id: next.id, view: await quoteView(req, next.id) });
       } else if (action === "decision") {
         const decision = str(b.decision);
-        if (!DECISIONS.includes(decision)) return fail(400, "Unknown decision.");
-        if (q.status !== "Submitted") return fail(400, "Record the customer's decision on the version they received.");
+        if (!DECISIONS.includes(decision)) return fail(400, m.api_commercial_unknown_decision({}, t));
+        if (q.status !== "Submitted") return fail(400, m.api_commercial_decision_on_received({}, t));
         if (decision === "Revision requested") {
           await update(req, "quotations", id, { decision });
           await update(req, "cases", caseId, { stage: "Revision requested", decision, wait: null });
@@ -1877,36 +2071,67 @@ export const commercialEndpoints: Endpoint[] = [
           await update(req, "cases", caseId, {
             decision,
             ...(decision === "Lost"
-              ? { stage: "Lost", lostReason: str(b.note) || "Not given", tone: "neutral" }
+              ? { stage: "Lost", lostReason: str(b.note) || m.api_commercial_not_given({}, t), tone: "neutral" }
               : { stage: "Won — sales order confirmed", wait: null, tone: "ok" }),
             nextAction:
               decision === "Lost"
-                ? "Closed — lost"
+                ? m.api_commercial_closed_lost({}, t)
                 : decision === "Partially won"
-                  ? "Check customer PO against the quote (partial award)"
-                  : "Check customer PO against the quote",
+                  ? m.api_commercial_check_po_partial({}, t)
+                  : m.api_commercial_check_po({}, t),
           });
         }
         await logActivity(req, {
           case: caseId,
-          text: `Customer decision on ${str(q.number)}: ${decision}${b.note ? ` — ${str(b.note)}` : ""}.`,
+          text: m.api_commercial_decision_activity(
+            {
+              number: str(q.number),
+              decision: optionLabel(req, "quotations", "decision", decision),
+              hasNote: b.note ? "yes" : "no",
+              note: str(b.note),
+            },
+            t,
+          ),
         });
       } else if (action === "portal-check") {
         // AI stub: reads the portal screenshot and compares it with the approved quotation.
         const sub = (q.submission as Record<string, unknown> | undefined) ?? {};
-        const total = num(q.totalExVat).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const total = num(q.totalExVat).toLocaleString(intlLocale(t.locale, "en-US"), {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        });
         const rows = [
-          { field: "Quotation no.", portal: str(q.number), quote: str(q.number), matches: true },
-          { field: "Currency", portal: str(q.currency), quote: str(q.currency), matches: true },
-          { field: "Total (excl. VAT)", portal: total, quote: total, matches: true },
           {
-            field: "Line count",
+            field: m.api_commercial_field_quotation_no({}, t),
+            portal: str(q.number),
+            quote: str(q.number),
+            matches: true,
+          },
+          {
+            field: m.api_commercial_field_currency({}, t),
+            portal: str(q.currency),
+            quote: str(q.currency),
+            matches: true,
+          },
+          { field: m.api_commercial_field_total({}, t), portal: total, quote: total, matches: true },
+          {
+            field: m.api_commercial_field_line_count({}, t),
             portal: String(((q.lines as unknown[]) ?? []).length),
             quote: String(((q.lines as unknown[]) ?? []).length),
             matches: true,
           },
-          { field: "Validity", portal: fmtDay(q.validUntil), quote: fmtDay(q.validUntil), matches: true },
-          { field: "Payment terms", portal: "60 days (portal default)", quote: str(q.paymentTerms), matches: false },
+          {
+            field: m.api_commercial_field_validity({}, t),
+            portal: fmtDay(q.validUntil, t.locale),
+            quote: fmtDay(q.validUntil, t.locale),
+            matches: true,
+          },
+          {
+            field: m.api_commercial_field_payment_terms({}, t),
+            portal: m.api_commercial_portal_default_terms({}, t),
+            quote: str(q.paymentTerms),
+            matches: false,
+          },
         ];
         await update(req, "quotations", id, {
           submission: { ...sub, method: "Customer procurement portal", portalCheck: rows },
@@ -1914,10 +2139,10 @@ export const commercialEndpoints: Endpoint[] = [
         await logActivity(req, {
           case: caseId,
           kind: "auto",
-          text: `AI compared the portal screenshot with ${str(q.number)}: 1 difference (payment terms). Submission not marked complete.`,
+          text: m.api_commercial_portal_check_activity({ number: str(q.number) }, t),
         });
         return Response.json({ rows, view: await quoteView(req, id) });
-      } else return fail(404, "Unknown action.");
+      } else return fail(404, m.api_commercial_unknown_action({}, t));
       return Response.json(await quoteView(req, id));
     }),
   },
@@ -1927,16 +2152,17 @@ export const commercialEndpoints: Endpoint[] = [
     handler: handle(async (req) => {
       const b = await body(req);
       const decision = b.decision === "Reject" ? "Reject" : b.decision === "Approve" ? "Approve" : null;
-      if (!decision) return fail(400, "Decision must be Approve or Reject.");
+      const t = loc(req);
+      if (!decision) return fail(400, m.api_commercial_decision_must_be({}, t));
       const doc = await decide(req, str(req.routeParams?.id), decision, str(b.reason));
       const c = await readApproval(req, doc.id);
       // `message`: what the approvals screen says once it's recorded (the action's snackbar).
       const message =
         c.status === "Approved"
-          ? `Approved: ${str(c.title)}`
+          ? m.api_commercial_approved_title({ title: str(c.title) }, t)
           : c.status === "Rejected"
-            ? `Returned: ${str(c.title)}`
-            : `Your approval is recorded — ${c.progress}.`;
+            ? m.api_commercial_returned_title({ title: str(c.title) }, t)
+            : m.api_commercial_approval_recorded({ progress: str(c.progress) }, t);
       // `undo`: how to take it back while nothing is built on it (null once it can't be).
       return Response.json({ ...c, message, undo: await withdrawal(req, doc.id) });
     }),
@@ -1948,7 +2174,7 @@ export const commercialEndpoints: Endpoint[] = [
     handler: handle(async (req) => {
       const doc = await withdraw(req, str(req.routeParams?.id));
       const c = await readApproval(req, doc.id);
-      return Response.json({ ...c, message: `Decision withdrawn — ${str(c.title)} is waiting again` });
+      return Response.json({ ...c, message: m.api_commercial_decision_withdrawn({ title: str(c.title) }, loc(req)) });
     }),
   },
 ];

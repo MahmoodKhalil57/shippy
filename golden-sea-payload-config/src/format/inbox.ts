@@ -8,9 +8,12 @@ import type {
   ViewBlocks,
   WidgetScope,
 } from "saastemlycrm-design-system/contracts";
+import { formatNumber } from "saastemlycrm-design-system/contracts";
 import { createAction, notRelated, path } from "../actions/inbox.ts";
 import type { InboxDetail, InboxMessage, InboxPayload } from "../endpoints/sourcing.ts";
+import { m as t } from "../i18n/paraglide/messages.js";
 import * as link from "../links.ts";
+import { dateFormat } from "./index.ts";
 
 /**
  * The inbox, read for the widgets that show it (../pages/inbox.ts): the message list's filters and
@@ -27,21 +30,20 @@ export type Open = { d: InboxDetail };
 /** The open message beside the people a case can be given to (the users collection). */
 export type OpenWithPeople = Open & { users: { docs: { id: string; name?: unknown }[] } };
 
-const TIME = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
-const DAY = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", timeZone: "UTC" });
-const FULL = new Intl.DateTimeFormat("en-GB", {
+const TIME: Intl.DateTimeFormatOptions = { hour: "2-digit", minute: "2-digit", timeZone: "UTC" };
+const DAY: Intl.DateTimeFormatOptions = { day: "2-digit", month: "short", timeZone: "UTC" };
+const FULL: Intl.DateTimeFormatOptions = {
   weekday: "short",
   day: "2-digit",
   month: "short",
   hour: "2-digit",
   minute: "2-digit",
   timeZone: "UTC",
-});
+};
 /** Today's messages by their time, older ones by their day (the demo is set on 17 Nov). */
-export const when = (v: string) =>
-  v ? (v.startsWith("2026-11-17") ? TIME.format(new Date(v)) : DAY.format(new Date(v))) : "";
-export const full = (v: string) => (v ? FULL.format(new Date(v)) : "");
-export const pct = (c: number) => `${Math.round(c * 100)}%`;
+export const when = (v: string) => (v ? dateFormat(v.startsWith("2026-11-17") ? TIME : DAY).format(new Date(v)) : "");
+export const full = (v: string) => (v ? dateFormat(FULL).format(new Date(v)) : "");
+export const pct = (c: number) => formatNumber(Math.round(c * 100), { unit: "pct", decimals: 0 });
 const confTone = (c: number): Tone => (c >= 0.85 ? "success" : c >= 0.6 ? "warning" : "error");
 /** A confidence as a tag: green from 85%, amber from 60%, red under. */
 export const conf = (c: number): Tag => ({ label: pct(c), tone: confTone(c) });
@@ -64,27 +66,33 @@ export type Assist = Omit<ViewBlocks["custom"], "type"> & { key: string };
 
 /** The acknowledgement's template, and who sends it: the owner by hand, or the system once. */
 export const acknowledgementNote = (a: { template: string; manual: boolean }) =>
-  `Template: ${a.template}. ${a.manual ? "WhatsApp / form source: the owner sends it — the system never messages the customer by itself here." : "Sent once from the approved template — never twice, even if the email is re-processed."}`;
+  a.manual ? t.inbox_ack_note_manual({ template: a.template }) : t.inbox_ack_note_once({ template: a.template });
 
-/** What an incoming message can be, for the on-device category suggestion. */
-const MESSAGE_KINDS = [
-  "New RFQ",
-  "Supplier offer or reply",
-  "Customer PO or order",
-  "Invoice or payment query",
-  "Delivery or logistics",
-  "Complaint",
-  "Other",
+/**
+ * What an incoming message can be, for the on-device category suggestion (shown as the
+ * suggestion, so in the interface's language).
+ */
+const messageKinds = () => [
+  t.inbox_kind_rfq(),
+  t.inbox_kind_offer(),
+  t.inbox_kind_order(),
+  t.inbox_kind_invoice(),
+  t.inbox_kind_delivery(),
+  t.inbox_kind_complaint(),
+  t.inbox_kind_other(),
 ];
 
-/** What a supplier's reply can tell us, for "Pull out the offer details" (on the device). */
-const OFFER_FIELDS = [
-  { id: "item", label: "Item offered", hint: "product, brand and part number" },
-  { id: "price", label: "Unit price", type: "number" },
-  { id: "currency", label: "Currency" },
-  { id: "pack", label: "Unit / pack size" },
-  { id: "leadTime", label: "Lead time" },
-  { id: "validity", label: "Valid until" },
+/**
+ * What a supplier's reply can tell us, for "Pull out the offer details" (on the device). The
+ * labels are shown; a hint guides the on-device model, so it stays in English like the prompts.
+ */
+const offerFields = () => [
+  { id: "item", label: t.inbox_offer_item(), hint: "product, brand and part number" },
+  { id: "price", label: t.inbox_offer_price(), type: "number" },
+  { id: "currency", label: t.inbox_offer_currency() },
+  { id: "pack", label: t.inbox_offer_pack() },
+  { id: "leadTime", label: t.inbox_offer_lead_time() },
+  { id: "validity", label: t.inbox_offer_validity() },
 ];
 
 /** What the message is: its language and its kind. */
@@ -97,7 +105,7 @@ export function kindAssists(m: InboxMessage | null): Assist[] {
       key: "kind",
       props: {
         text: `${m.subject}\n\n${m.body}`,
-        options: MESSAGE_KINDS,
+        options: messageKinds(),
         what: "incoming emails and messages to a ship chandler",
       },
     },
@@ -114,9 +122,9 @@ export function flagAssists(m: InboxMessage | null): Assist[] {
       props: {
         text: m.body,
         tone: "error",
-        heading: "Asks to change bank or payment details",
+        heading: t.inbox_flag_bank(),
         question: "Does this message ask to change bank account, IBAN or payment details?",
-        note: "Don't act on it from the email: a bank-detail change needs two people (Finance and the CEO) and a call-back on the number already on file.",
+        note: t.inbox_flag_bank_note(),
       },
     },
     {
@@ -125,9 +133,9 @@ export function flagAssists(m: InboxMessage | null): Assist[] {
       props: {
         text: m.body,
         tone: "info",
-        heading: "Looks like an automatic reply",
+        heading: t.inbox_flag_auto_reply(),
         question: "Is this an automatic reply (out of office, auto-acknowledgement) rather than a written answer?",
-        note: "It doesn't answer the request — supplier reminders keep running.",
+        note: t.inbox_flag_auto_reply_note(),
       },
     },
     {
@@ -136,9 +144,9 @@ export function flagAssists(m: InboxMessage | null): Assist[] {
       props: {
         text: m.body,
         tone: "warning",
-        heading: "The sender can't supply",
+        heading: t.inbox_flag_cannot_supply(),
         question: "Does the sender say they cannot supply, quote or deliver the requested items?",
-        note: "Look for another supplier for these lines before the deadline.",
+        note: t.inbox_flag_cannot_supply_note(),
       },
     },
   ];
@@ -156,9 +164,9 @@ export function offerAssists(m: InboxMessage | null): Assist[] {
             props: {
               text: m.body,
               source: "text",
-              label: "Pull out the offer details",
+              label: t.inbox_offer_extract(),
               what: "supplier offer or reply to a ship chandler",
-              fields: OFFER_FIELDS,
+              fields: offerFields(),
             },
           },
           { element: "ui-ai-replies" as const, key: "replies", props: { text: m.body } },
@@ -196,22 +204,25 @@ export const messageFilters = (d: InboxPayload, { params }: WidgetScope): KindDa
   choice: [
     {
       param: "show",
-      label: "Show messages",
+      label: t.inbox_show(),
       value: params.show ?? SHOWS.all,
       options: [
-        { value: SHOWS.all, label: "All" },
-        { value: SHOWS.new, label: "New" },
-        { value: SHOWS.review, label: d.stats.review ? `Needs review · ${d.stats.review}` : "Needs review" },
-        { value: SHOWS.linked, label: "Linked" },
+        { value: SHOWS.all, label: t.inbox_show_all() },
+        { value: SHOWS.new, label: t.inbox_show_new() },
+        {
+          value: SHOWS.review,
+          label: d.stats.review ? t.inbox_show_review_count({ count: d.stats.review }) : t.inbox_show_review(),
+        },
+        { value: SHOWS.linked, label: t.inbox_show_linked() },
       ],
     },
     {
       param: "order",
-      label: "Order",
+      label: t.inbox_order(),
       value: params.order ?? ORDERS.time,
       options: [
-        { value: ORDERS.time, label: "Newest first" },
-        { value: ORDERS.urgency, label: "Most urgent first" },
+        { value: ORDERS.time, label: t.inbox_order_newest() },
+        { value: ORDERS.urgency, label: t.inbox_order_urgent() },
       ],
     },
   ],
@@ -221,11 +232,15 @@ export const messageFilters = (d: InboxPayload, { params }: WidgetScope): KindDa
 /** The mailboxes, form and WhatsApp the inbox reads, each with its state, and today's figures. */
 export const connectedChannels = (d: InboxPayload): KindData<"text"> => ({
   tags: d.connections.map((c) => ({
-    label: `${c.kind.replace(" mailbox", "")} · ${c.account} — ${c.status}`,
+    label: t.inbox_channel({ kind: c.kind.replace(" mailbox", ""), account: c.account, status: c.status }),
     tone: channelTone(c.status),
   })),
   muted: true,
-  text: `Processed today: ${d.stats.processedToday} · duplicates suppressed: ${d.stats.duplicates} · waiting for a person: ${d.stats.review}`,
+  text: t.inbox_today({
+    processed: d.stats.processedToday,
+    duplicates: d.stats.duplicates,
+    review: d.stats.review,
+  }),
 });
 
 /* -------- the open message */
@@ -236,16 +251,16 @@ export const connectedChannels = (d: InboxPayload): KindData<"text"> => ({
  */
 export const originalMessage = ({ d }: Open): KindData<"message"> => {
   const m = d.message;
-  if (!m) return { subject: "Pick a message in the list.", body: "" };
+  if (!m) return { subject: t.inbox_pick_message(), body: "" };
   return {
     head: {
-      tags: [{ label: "Kept as received" }],
-      subhead: `Message id ${m.messageId} · re-processing the same message never creates a second case or acknowledgement.`,
+      tags: [{ label: t.inbox_kept_as_received() }],
+      subhead: t.inbox_message_id({ id: m.messageId }),
     },
     tags: m.files.map((f) => ({ label: f.note ? `${f.name} · ${f.note}` : f.name, icon: "file" as const })),
-    meta: [`From: ${m.fromName} <${m.from}>`, `Via: ${m.via} · ${full(m.receivedAt)}`],
+    meta: [t.inbox_from({ name: m.fromName, email: m.from }), t.inbox_via({ via: m.via, when: full(m.receivedAt) })],
     subject: m.subject,
-    body: m.body || "(no text)",
+    body: m.body || t.inbox_no_text(),
     assist: !!m.body,
   };
 };
@@ -278,8 +293,8 @@ export const extractPrompt = ({ d }: Open): KindData<"text"> => {
   const m = d.message!;
   return {
     muted: true,
-    text: `The AI reads the email${m.files.length ? " and every attachment (Excel, PDF, Word, photos)" : ""} into a draft: customer, vessel, IMO, port, ETA, deadline and lines with IMPA / ISSA, part numbers and a confidence for every value. Nothing is created until you confirm.`,
-    actions: [{ label: "Extract with AI", icon: "sparkles", main: true, call: { path: path(m.id, "extract") } }],
+    text: m.files.length ? t.inbox_extract_text_files() : t.inbox_extract_text(),
+    actions: [{ label: t.inbox_extract(), icon: "sparkles", main: true, call: { path: path(m.id, "extract") } }],
   };
 };
 
@@ -289,19 +304,24 @@ export const extractPrompt = ({ d }: Open): KindData<"text"> => {
  */
 export const messageOutcome = ({ d }: Open): KindData<"text"> => {
   const m = d.message!;
-  const settled = { muted: true, text: "Nothing more to do with this message." };
+  const settled = { muted: true, text: t.inbox_nothing_more() };
   if (!d.rfq)
     return {
       ...settled,
-      alerts: [{ tone: "info", text: `Marked not related${m.match?.reviewedBy ? ` by ${m.match.reviewedBy}` : ""}.` }],
+      alerts: [
+        {
+          tone: "info",
+          text: m.match?.reviewedBy ? t.inbox_not_related_by({ by: m.match.reviewedBy }) : t.inbox_not_related(),
+        },
+      ],
     };
   return m.createdCase
     ? {
         ...settled,
-        alerts: [{ tone: "success", text: `Case ${m.createdCase.caseId} was created from this message.` }],
-        actions: [{ label: "Open case", href: link.doc("cases", m.createdCase.id) }],
+        alerts: [{ tone: "success", text: t.inbox_case_was_created({ caseId: m.createdCase.caseId }) }],
+        actions: [{ label: t.inbox_open_case(), href: link.doc("cases", m.createdCase.id) }],
       }
-    : { ...settled, alerts: [{ tone: "info", text: "Marked “not an RFQ”." }] };
+    : { ...settled, alerts: [{ tone: "info", text: t.inbox_not_rfq() }] };
 };
 
 /**
@@ -310,9 +330,9 @@ export const messageOutcome = ({ d }: Open): KindData<"text"> => {
  */
 export const matchPrompt = ({ d }: Open): KindData<"text"> => ({
   muted: true,
-  text: "Replies are matched by their supplier-RFQ reference even when the subject changes; forwards by their files. Below 85% a person decides.",
+  text: t.inbox_match_text(),
   actions: [
-    { label: "Match reply", icon: "sparkles", main: true, call: { path: path(d.message!.id, "match") }, reply: true },
+    { label: t.inbox_match(), icon: "sparkles", main: true, call: { path: path(d.message!.id, "match") }, reply: true },
   ],
 });
 
@@ -325,7 +345,7 @@ const matchState = ({ d }: Open): KindData<"text"> | null => {
   if (m?.status === "Needs review")
     return {
       muted: true,
-      text: "The match is uncertain, so it isn't linked. Pick its case under Reply match, or mark it not related.",
+      text: t.inbox_match_uncertain(),
     };
   const c = m?.status === "Linked" ? m.match?.case : undefined;
   return c
@@ -334,11 +354,13 @@ const matchState = ({ d }: Open): KindData<"text"> | null => {
         alerts: [
           {
             tone: "success",
-            text: `Linked to case ${c.caseId}${m!.match!.reviewedBy ? ` by ${m!.match!.reviewedBy}` : ""}.`,
+            text: m!.match!.reviewedBy
+              ? t.inbox_linked_by({ caseId: c.caseId, by: m!.match!.reviewedBy })
+              : t.inbox_linked({ caseId: c.caseId }),
           },
         ],
-        text: "Its offer and files are on the case.",
-        actions: [{ label: "Open case", href: link.doc("cases", c.id) }],
+        text: t.inbox_linked_text(),
+        actions: [{ label: t.inbox_open_case(), href: link.doc("cases", c.id) }],
       }
     : null;
 };
@@ -370,11 +392,11 @@ export const draftHeader = ({ d }: Open): KindData<"tiles"> => {
   return {
     head: {
       tags: [
-        { label: "AI draft", tone: "primary", icon: "sparkles" },
-        ...(x.newCustomer ? [{ label: "New customer", tone: "primary" as const }] : []),
+        { label: t.inbox_ai_draft(), tone: "primary", icon: "sparkles" },
+        ...(x.newCustomer ? [{ label: t.inbox_new_customer(), tone: "primary" as const }] : []),
       ],
     },
-    note: "Low-confidence values are never applied without a person checking them.",
+    note: t.inbox_low_confidence(),
     look: "card",
     fit: "xs",
     items: x.header.map((f) => ({
@@ -390,11 +412,13 @@ export const draftHeader = ({ d }: Open): KindData<"tiles"> => {
 export const draftAssignment = ({ d }: Open): KindData<"details"> => {
   const a = d.extraction!.assignment;
   return {
-    note: `Suggested by the assignment rules: ${a.rule}.${d.message!.createdCase ? "" : " Change them when you create the case."}`,
+    note: d.message!.createdCase
+      ? t.inbox_assignment_rule({ rule: a.rule })
+      : t.inbox_assignment_rule_change({ rule: a.rule }),
     items: [
-      { label: "Owner", value: a.ownerName },
-      { label: "Backup", value: a.backupName },
-      { label: "Quote deadline", value: full(a.deadline), note: "A reminder is scheduled before it." },
+      { label: t.inbox_owner(), value: a.ownerName },
+      { label: t.inbox_backup(), value: a.backupName },
+      { label: t.inbox_quote_deadline(), value: full(a.deadline), note: t.inbox_reminder_scheduled() },
     ],
   };
 };
@@ -404,9 +428,22 @@ export const createCase = ({ d, users }: OpenWithPeople): KindData<"text"> => {
   const m = d.message!;
   const x = d.extraction!;
   const flagged = x.lines.filter((l) => l.flag).length;
-  const actions: Action[] = [notRelated(m, "Not an RFQ"), createAction(m, x, users)];
+  const actions: Action[] = [notRelated(m, t.inbox_not_an_rfq()), createAction(m, x, users)];
+  const what = {
+    customer: x.customerName,
+    lines: x.lines.length,
+    flagged,
+    owner: x.assignment.ownerName,
+  };
   return {
-    text: `${x.caseType === "service" ? "Service case" : "RFQ case"} for ${x.customerName} with ${plural(x.lines.length, "line")}${flagged ? ` (${flagged} flagged for clarification)` : ""}, owner ${x.assignment.ownerName}. The original message stays linked to it.`,
+    text:
+      x.caseType === "service"
+        ? flagged
+          ? t.inbox_create_service_flagged(what)
+          : t.inbox_create_service(what)
+        : flagged
+          ? t.inbox_create_rfq_flagged(what)
+          : t.inbox_create_rfq(what),
     actions,
   };
 };
@@ -415,12 +452,12 @@ export const createCase = ({ d, users }: OpenWithPeople): KindData<"text"> => {
 export const caseCreated = ({ d }: Open): KindData<"text"> => {
   const c = d.message!.createdCase!;
   return {
-    alerts: [{ tone: "success", text: `Case ${c.caseId} created from this message and linked to it.` }],
+    alerts: [{ tone: "success", text: t.inbox_case_created({ caseId: c.caseId }) }],
     muted: true,
-    text: "Next: send the supplier RFQs for its lines.",
+    text: t.inbox_next_rfqs(),
     actions: [
-      { label: "Send supplier RFQs", main: true, href: link.doc("cases", c.id, "rfqs") },
-      { label: "Open case", href: link.doc("cases", c.id) },
+      { label: t.inbox_send_rfqs(), main: true, href: link.doc("cases", c.id, "rfqs") },
+      { label: t.inbox_open_case(), href: link.doc("cases", c.id) },
     ],
   };
 };
@@ -432,18 +469,18 @@ export const caseCreated = ({ d }: Open): KindData<"text"> => {
 export const draftLines = ({ d }: Open): KindData<"table"> => {
   const x = d.extraction!;
   return {
-    head: { count: x.lines.length, tags: [{ label: "AI draft", tone: "primary", icon: "sparkles" }] },
+    head: { count: x.lines.length, tags: [{ label: t.inbox_ai_draft(), tone: "primary", icon: "sparkles" }] },
     alerts: x.notes.map((n) => ({ tone: "info" as const, text: n })),
     size: "sm",
     columns: [
       { key: "lineNo", label: "#" },
-      { key: "item", label: "Item", supporting: "original" },
+      { key: "item", label: t.inbox_col_item(), supporting: "original" },
       { key: "impa", label: "IMPA · ISSA", supporting: "issa" },
-      { key: "partNo", label: "Part no." },
-      { key: "qty", label: "Qty", align: "end" },
-      { key: "unit", label: "Unit" },
-      { key: "origin", label: "Source" },
-      { key: "confidence", label: "Confidence" },
+      { key: "partNo", label: t.inbox_col_part_no() },
+      { key: "qty", label: t.inbox_col_qty(), align: "end" },
+      { key: "unit", label: t.inbox_col_unit() },
+      { key: "origin", label: t.inbox_col_source() },
+      { key: "confidence", label: t.inbox_col_confidence() },
     ],
     rows: x.lines.map((l): Row => ({
       lineNo: String(l.lineNo),
@@ -467,7 +504,7 @@ export const draftLines = ({ d }: Open): KindData<"table"> => {
       confidence: {
         text: "",
         tags: [conf(l.confidence)],
-        marks: l.confidence < 0.8 ? [{ text: "Check against the original", tone: "warning" }] : undefined,
+        marks: l.confidence < 0.8 ? [{ text: t.inbox_check_original(), tone: "warning" }] : undefined,
       },
     })),
   };
@@ -482,9 +519,9 @@ export const clarification = ({ d }: Open): KindData<"message"> => {
   const x = d.extraction!;
   return {
     alerts: [{ tone: "warning", text: x.missing.join(" · ") }],
-    meta: [`To: ${m.fromName} <${m.from}>`],
-    subject: "Clarification request, drafted and not sent",
-    body: x.clarification || "No clarification request was drafted for these.",
+    meta: [t.inbox_to({ name: m.fromName, email: m.from })],
+    subject: t.inbox_clarification_subject(),
+    body: x.clarification || t.inbox_no_clarification(),
   };
 };
 
@@ -500,10 +537,10 @@ export const acknowledgement = ({ d }: Open): KindData<"message"> => {
       tags: [
         {
           label: m.acknowledgedAt
-            ? `Sent once · ${full(m.acknowledgedAt)}`
+            ? t.inbox_ack_sent({ when: full(m.acknowledgedAt) })
             : a.manual
-              ? "Send by hand"
-              : "Sent once on create",
+              ? t.inbox_ack_by_hand()
+              : t.inbox_ack_on_create(),
           tone: m.acknowledgedAt ? "success" : a.manual ? "warning" : "neutral",
         },
       ],

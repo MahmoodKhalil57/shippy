@@ -9,6 +9,7 @@ import { roleLabel } from "./demo-users.ts";
 import { navigate } from "./shared.ts";
 import type { Tour, TourStep, TourTarget } from "../contracts/config.ts";
 import { loadTours } from "./site.ts";
+import { m } from "../i18n/index.ts";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -132,7 +133,7 @@ export class DashboardTour extends LightElement {
     return html`<ui-coachmark
       open
       .target=${this.target}
-      .eyebrow=${`${t.title}${who ? ` · signed in as ${who.name ?? who.email} (${roleLabel(who.role)})` : ""}`}
+      .eyebrow=${who ? m.tour_eyebrow_signed_in({ tour: t.title, name: who.name ?? who.email, role: roleLabel(who.role) }) : t.title}
       .heading=${s.title}
       .step=${step + 1}
       .total=${t.steps.length}

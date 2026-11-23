@@ -6,6 +6,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
 import { inlineRow, stack, row, text } from "../layout/algebra.ts";
+import { isRtl } from "../../base/reading.ts";
 
 /**
  * Menu: Displays a list of links vertically or horizontally.
@@ -531,7 +532,9 @@ export class UiMenu extends LightElement {
     const rail = this.layout === "rail";
     const iconOnly = rail || (this.iconOnly && !!item.icon);
     // Icon-only items name themselves in the page's one tip (a popover: no scrolling rail clips it).
-    const tipSide = rail ? "right" : iconOnly && this.tooltip !== "none" ? this.tooltip : undefined;
+    // A tip to the side goes away from the rail: to the right, or to the left in right to left.
+    const side = rail ? "right" : iconOnly && this.tooltip !== "none" ? this.tooltip : undefined;
+    const tipSide = side === "right" && isRtl(this) ? "left" : side;
     const cls = menuLink({
       active: item.active,
       focus: item.focus,

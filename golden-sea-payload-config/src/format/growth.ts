@@ -1,5 +1,6 @@
 import type { KindData } from "saastemlycrm-design-system/contracts";
 import type { Growth } from "../endpoints/growth-crm.ts";
+import { m } from "../i18n/paraglide/messages.js";
 
 /**
  * The growth CRM's fleets per ship manager (GET /api/growth, ../endpoints/growth-crm.ts): customers'
@@ -10,18 +11,18 @@ import type { Growth } from "../endpoints/growth-crm.ts";
  */
 
 /** What the on-device reader (`ui-ai-extract`) reads from a registration document, and from where. */
-export const REGISTRATION_EXTRACT = {
+export const registrationExtract = () => ({
   source: "file",
-  label: "Read a registration document",
-  what: "company registration document (commercial register, tax card or vendor certificate)",
+  label: m.growth_extract_label(),
+  what: m.growth_extract_what(),
   fields: [
-    { id: "company", label: "Company" },
-    { id: "registration", label: "Commercial register no." },
-    { id: "tax", label: "Tax card no." },
-    { id: "issued", label: "Issued" },
-    { id: "expires", label: "Expires", hint: "the expiry or renewal date" },
+    { id: "company", label: m.growth_extract_company() },
+    { id: "registration", label: m.growth_extract_registration() },
+    { id: "tax", label: m.growth_extract_tax() },
+    { id: "issued", label: m.growth_extract_issued() },
+    { id: "expires", label: m.growth_extract_expires(), hint: m.growth_extract_expires_hint() },
   ],
-};
+});
 
 /**
  * Each ship manager's fleet: how many of its vessels are on file and how many we supply, and
@@ -31,7 +32,11 @@ export const fleets = (g: Growth): KindData<"list"> => ({
   items: g.fleets.map((f) => ({
     headline: f.company,
     href: f.href,
-    supporting: `${f.vessels.length} of ${f.fleetSize} vessels on file · ${f.vessels.filter((v) => v.supplied).length} supplied`,
+    supporting: m.growth_fleet_supporting({
+      count: f.vessels.length,
+      size: f.fleetSize,
+      supplied: f.vessels.filter((v) => v.supplied).length,
+    }),
     tags: [{ label: f.relation, tone: f.tone }],
   })),
 });
@@ -42,10 +47,10 @@ export const fleets = (g: Growth): KindData<"list"> => ({
  */
 export const fleetVessels = (g: Growth): KindData<"table"> => ({
   columns: [
-    { key: "manager", label: "Ship manager" },
-    { key: "name", label: "Vessel" },
-    { key: "imo", label: "IMO" },
-    { key: "type", label: "Type" },
+    { key: "manager", label: m.growth_column_manager() },
+    { key: "name", label: m.growth_column_vessel() },
+    { key: "imo", label: m.growth_column_imo() },
+    { key: "type", label: m.growth_column_type() },
     { key: "supplied", label: "" },
   ],
   rows: g.fleets.flatMap((f) =>
@@ -54,7 +59,11 @@ export const fleetVessels = (g: Growth): KindData<"table"> => ({
       name: v.href ? { text: v.name, href: v.href } : v.name,
       imo: v.imo ? { text: v.imo, mono: true } : null,
       type: v.type || null,
-      supplied: { text: v.supplied ? "Supplied" : "Not yet", tone: v.supplied ? "success" : "neutral", tag: true },
+      supplied: {
+        text: v.supplied ? m.growth_supplied() : m.growth_not_yet(),
+        tone: v.supplied ? "success" : "neutral",
+        tag: true,
+      },
     })),
   ),
 });
@@ -63,4 +72,7 @@ export const fleetVessels = (g: Growth): KindData<"table"> => ({
  * Reads a registration document (commercial register, tax card or vendor certificate) on this
  * device: the company, its register and tax numbers, and when it was issued and expires.
  */
-export const registrationReader = (): KindData<"custom"> => ({ element: "ui-ai-extract", props: REGISTRATION_EXTRACT });
+export const registrationReader = (): KindData<"custom"> => ({
+  element: "ui-ai-extract",
+  props: registrationExtract(),
+});

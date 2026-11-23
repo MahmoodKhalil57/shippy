@@ -2,7 +2,10 @@
   "templates": [
     {
       "key": "rfq-ack",
-      "name": "RFQ received – marine",
+      "name": {
+        "en": "RFQ received – marine",
+        "ar": "استلام طلب عرض – بحري"
+      },
       "channel": "Email",
       "subject": "We received your RFQ {{customerRef}} — {{vessel}} ({{caseId}})",
       "body": "Dear {{contact}},\n\nThank you for your request for {{vessel}} at {{port}}. It is registered with us as {{caseId}} (your reference {{customerRef}}), and {{owner}} is looking after it.\n\nWe will send our quotation by {{dueAt}}. If anything changes on board — quantities, ETA or delivery point — simply reply to this email and it will reach the same case.\n\nKind regards,\n{{owner}}\nGolden Sea for Trading & Marketing\nShip chandlers · Port Said · Suez · Alexandria · Damietta\n24/7 for urgent requests: +20 3 000 0000",
@@ -14,7 +17,10 @@
     },
     {
       "key": "supplier-rfq",
-      "name": "Supplier RFQ (anonymised)",
+      "name": {
+        "en": "Supplier RFQ (anonymised)",
+        "ar": "طلب عرض مورّد (دون هوية)"
+      },
       "channel": "Email",
       "subject": "Request for quotation {{reference}} — reply by {{dueAt}}",
       "body": "Dear {{supplierContact}},\n\nPlease quote the following lines, delivered to our {{warehouse}} warehouse:\n{{lines}}\n\nPlease state unit price and currency, pack size, lead time, validity, payment terms and include SDS / TDS where applicable.\n\nKind regards,\n{{user}}\nGolden Sea purchasing",
@@ -25,7 +31,10 @@
     },
     {
       "key": "supplier-reminder",
-      "name": "Supplier reminder",
+      "name": {
+        "en": "Supplier reminder",
+        "ar": "تذكير المورّد"
+      },
       "channel": "Email",
       "subject": "Reminder: {{reference}} due {{dueAt}}",
       "body": "Dear {{supplierContact}},\n\nA friendly reminder that our request {{reference}} is due {{dueAt}}. A partial offer is welcome.\n\nKind regards,\n{{user}}",
@@ -36,7 +45,10 @@
     },
     {
       "key": "supplier-correction",
-      "name": "Supplier correction request",
+      "name": {
+        "en": "Supplier correction request",
+        "ar": "طلب تصحيح من المورّد"
+      },
       "channel": "Email",
       "subject": "{{reference}} — please correct line {{lineNo}}",
       "body": "Dear {{supplierContact}},\n\nOn line {{lineNo}} we requested {{requested}}; your offer shows {{offered}}. Please send a corrected offer or confirm you cannot supply.\n\nKind regards,\n{{user}}",
@@ -47,7 +59,10 @@
     },
     {
       "key": "customer-follow-up",
-      "name": "Customer follow-up (quotation)",
+      "name": {
+        "en": "Customer follow-up (quotation)",
+        "ar": "متابعة العميل (عرض السعر)"
+      },
       "channel": "Email",
       "subject": "Our quotation {{quoteNo}} for {{vessel}}",
       "body": "Dear {{contact}},\n\nFollowing up on our quotation {{quoteNo}} for {{vessel}}, valid until {{validUntil}}. Happy to adjust anything before the vessel's call.\n\nKind regards,\n{{user}}",
@@ -57,7 +72,10 @@
     },
     {
       "key": "collection",
-      "name": "Collection reminder",
+      "name": {
+        "en": "Collection reminder",
+        "ar": "تذكير التحصيل"
+      },
       "channel": "Email",
       "subject": "Invoice {{invoiceNo}} — due {{dueDate}}",
       "body": "Dear {{contact}},\n\nThis is a reminder that invoice {{invoiceNo}} ({{balance}}) is due on {{dueDate}}.\n\nKind regards,\nGolden Sea finance",
@@ -66,7 +84,10 @@
     },
     {
       "key": "on-call-alert",
-      "name": "After-hours RFQ alert (on-duty)",
+      "name": {
+        "en": "After-hours RFQ alert (on-duty)",
+        "ar": "تنبيه طلب عرض بعد الدوام (للمناوب)"
+      },
       "channel": "WhatsApp",
       "body": "Urgent RFQ {{caseId}} from {{customer}} — {{vessel}}, ETA {{eta}}. Please acknowledge within 15 min.",
       "status": "Approved",

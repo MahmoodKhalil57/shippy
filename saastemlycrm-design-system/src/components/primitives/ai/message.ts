@@ -5,6 +5,7 @@ import { rcva } from "../../base/variants.ts";
 import { inlineRow, row, text } from "../layout/algebra.ts";
 import { iconButton } from "../actions/icon-button.ts";
 import { iconSvg, type IconName } from "../media/icon.ts";
+import { m } from "../../../i18n/index.ts";
 
 /**
  * Message: one turn of an AI conversation — the person's (a bubble, at the end) or the
@@ -107,14 +108,18 @@ export class UiMessage extends LightElement {
   render() {
     const actions = [
       this.copyText
-        ? this._action(this._copied ? "Copied" : "Copy", this._copied ? "check" : "copy", () => void this._copy())
+        ? this._action(
+            this._copied ? m.message_copied() : m.message_copy(),
+            this._copied ? "check" : "copy",
+            () => void this._copy(),
+          )
         : nothing,
-      this.editable ? this._action("Edit", "edit", () => this._fire("ui-edit")) : nothing,
+      this.editable ? this._action(m.message_edit(), "edit", () => this._fire("ui-edit")) : nothing,
       this.rateable
-        ? html`${this._action("Good response", "thumb-up", () => this._rate("good"), this.rating === "good")}
-          ${this._action("Bad response", "thumb-down", () => this._rate("bad"), this.rating === "bad")}`
+        ? html`${this._action(m.message_good_response(), "thumb-up", () => this._rate("good"), this.rating === "good")}
+          ${this._action(m.message_bad_response(), "thumb-down", () => this._rate("bad"), this.rating === "bad")}`
         : nothing,
-      this.retryable ? this._action("Retry", "retry", () => this._fire("ui-retry")) : nothing,
+      this.retryable ? this._action(m.message_retry(), "retry", () => this._fire("ui-retry")) : nothing,
     ];
     const hasActions = !!(this.copyText || this.editable || this.rateable || this.retryable);
     return html`<div class=${message({ from: this.from })}>

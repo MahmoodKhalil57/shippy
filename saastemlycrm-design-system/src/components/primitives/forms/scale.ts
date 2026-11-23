@@ -5,6 +5,8 @@ import { styleMap } from "lit/directives/style-map.js";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { row, rowGrow, stack, text } from "../layout/algebra.ts";
+import { inlineStep } from "../../base/reading.ts";
+import { formatInt } from "../../../i18n/index.ts";
 
 /**
  * Scale: one step of a short whole range, every step in view (an urgency 1–5, a fit 0–10).
@@ -59,10 +61,12 @@ export class UiScale extends LightElement {
 
   private _key(e: KeyboardEvent) {
     const cur = this.value ?? this.min;
+    // Left and right follow the reading direction; up is more, down is less.
+    const step = inlineStep(e.key, this) || (e.key === "ArrowUp" ? 1 : e.key === "ArrowDown" ? -1 : 0);
     const next =
-      e.key === "ArrowRight" || e.key === "ArrowUp"
+      step > 0
         ? Math.min(this.max, cur + 1)
-        : e.key === "ArrowLeft" || e.key === "ArrowDown"
+        : step < 0
           ? Math.max(this.min, cur - 1)
           : e.key === "Home"
             ? this.min
@@ -93,7 +97,7 @@ export class UiScale extends LightElement {
             ?disabled=${this.disabled}
             @click=${() => this._set(n)}
           >
-            ${n}
+            ${formatInt(n)}
           </button>`;
           return chosen ? keyed(`chosen-${n}`, step) : step;
         })}

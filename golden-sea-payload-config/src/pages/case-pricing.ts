@@ -14,6 +14,7 @@ import * as shapes from "../format/visuals.ts";
 import * as fmt from "../format/commercial.ts";
 import type { Pricing } from "../endpoints/commercial.ts";
 import { latestQuotation, pricing } from "../queries/commercial.ts";
+import { m } from "../i18n/paraglide/messages.js";
 
 /**
  * Case tab "Pricing": the selected offers become landed costs (shared charges — launch, freight,
@@ -28,14 +29,14 @@ import { latestQuotation, pricing } from "../queries/commercial.ts";
 /** Nothing priced yet: the shapes would only draw zeros, so they say so in their own boxes. */
 const NOT_PRICED = {
   when: (P: Pricing) => !P.totals.landedEGP,
-  heading: "No lines priced yet.",
-  description: "Select an offer for a line to price it.",
+  heading: m.page_pricing_not_priced(),
+  description: m.page_pricing_not_priced_description(),
 };
 
 export const casePricing = widgets({
   widgets: [
     actions({
-      title: "Costs and margins are hidden for your role",
+      title: m.page_pricing_hidden(),
       size: "s",
       skeleton: "text",
       visible: ({ user }) => user.role === "sales",
@@ -46,23 +47,25 @@ export const casePricing = widgets({
     figures({
       data: pricing,
       labels: fmt.PRICING_FIGURES,
+      name: fmt.pricingFigureName,
       format: fmt.pricingFigures,
     }),
     // Margin and markup, the same profit read two ways: a figure each.
     figures({
       data: pricing,
       labels: fmt.MARGIN_FIGURES,
+      name: fmt.marginFigureName,
       format: fmt.marginVsMarkup,
     }),
     list({
-      title: "Policy checks",
+      title: m.page_pricing_policy_checks(),
       size: "s",
       skeleton: "list",
       data: pricing,
       format: fmt.policyChecks,
     }),
     actions({
-      title: "Approval",
+      title: m.page_pricing_approval(),
       size: "s",
       skeleton: "text",
       data: pricing,
@@ -71,7 +74,7 @@ export const casePricing = widgets({
     // The margin against the policy on a dial, how the price is built as a bridge, and a live
     // what-if: move the margin, the discount or the rate and see the price and margin follow.
     dial({
-      title: "Margin vs policy",
+      title: m.page_pricing_margin_vs_policy(),
       size: "s",
       rows: 4,
       maxRows: 5,
@@ -81,7 +84,7 @@ export const casePricing = widgets({
       format: shapes.marginDial,
     }),
     waterfall({
-      title: "How the price is built",
+      title: m.page_pricing_how_built(),
       size: "m",
       rows: 5,
       maxRows: 7,
@@ -91,7 +94,7 @@ export const casePricing = widgets({
       format: shapes.priceBuildUp,
     }),
     whatif({
-      title: "What if",
+      title: m.page_pricing_what_if(),
       size: "m",
       rows: 8,
       maxRows: 9,
@@ -101,29 +104,29 @@ export const casePricing = widgets({
       format: shapes.pricingWhatIf,
     }),
     form({
-      title: "Margins and discount",
+      title: m.page_pricing_levers(),
       size: "l",
       skeleton: "card",
       data: pricing,
       format: fmt.pricingLevers,
     }),
     table({
-      title: "Line pricing",
+      title: m.page_pricing_lines(),
       size: "l",
       skeleton: "table",
       data: pricing,
       format: fmt.linePricing,
     }),
     chart({
-      title: "Price build-up per line",
-      subhead: "Supplier cost + shared charges + gross profit = selling price (EGP)",
+      title: m.page_pricing_build_up(),
+      subhead: m.page_pricing_build_up_subhead(),
       size: "m",
       skeleton: "chart",
       data: pricing,
       format: fmt.priceBuildUp,
     }),
     table({
-      title: "Shared charges",
+      title: m.page_pricing_shared_charges(),
       size: "l",
       skeleton: "table",
       data: pricing,

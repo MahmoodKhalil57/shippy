@@ -1,4 +1,5 @@
 import type { Action } from "saastemlycrm-design-system/contracts";
+import { m } from "../i18n/paraglide/messages.js";
 import { day, dayTime, person } from "../format/index.ts";
 import type { CaseOps } from "../endpoints/order-to-cash.ts";
 
@@ -33,32 +34,39 @@ export function etaAction(d: CaseOps): Action | undefined {
   const open = d.deliveries.filter((x) => !/confirmed|Cancelled|Dispatched/.test(x.status));
   const moves = [
     ...(open.length
-      ? open.map(
-          (x) =>
-            `${x.number}: on board ${dayTime(x.plannedAt)} → ${dayTime(email.eta)} · launch re-booked · truck & boarding staff re-confirmed (task for ${person(d.case.owner)})`,
+      ? open.map((x) =>
+          m.action_eta_move({
+            drop: x.number,
+            from: dayTime(x.plannedAt),
+            to: dayTime(email.eta),
+            owner: person(d.case.owner),
+          }),
         )
-      : ["No open drop to move."]),
-    ...d.backorders.map(
-      (b) =>
-        `Backorder L${b.lineNo} (${b.supplierName}, ${day(b.date)}): ${b.date && b.date > email.eta ? "still late — escalate" : "now in time for the drop"}`,
+      : [m.action_eta_no_drop()]),
+    ...d.backorders.map((b) =>
+      (b.date && b.date > email.eta ? m.action_eta_backorder_late : m.action_eta_backorder_in_time)({
+        line: b.lineNo,
+        supplier: b.supplierName,
+        date: day(b.date),
+      }),
     ),
-    `Alert to ${person(d.case.owner)} and Karim Balbaa.`,
+    m.action_eta_alert({ owner: person(d.case.owner) }),
   ];
   return {
-    label: "Agent email: ETA update",
+    label: m.action_eta_label(),
     call: { path: `${caseDeliveryPath}/eta` },
     confirm: {
-      heading: "Agent email — ETA update",
+      heading: m.action_eta_heading(),
       text: [
-        `From ${email.from} · Subject: ${email.subject}`,
+        m.action_eta_from({ from: email.from, subject: email.subject }),
         email.body,
         "",
-        `AI read · 97% · New ETA ${dayTime(email.eta)} (was ${dayTime(d.case.eta)})`,
+        m.action_eta_read({ eta: dayTime(email.eta), was: dayTime(d.case.eta) }),
         "",
-        "What moves",
+        m.action_eta_what_moves(),
         ...moves,
       ].join("\n"),
-      label: "Apply re-plan & alert",
+      label: m.action_eta_apply(),
     },
     reply: true,
   };

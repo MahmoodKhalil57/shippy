@@ -14,28 +14,40 @@
     "lines": [
       {
         "lineNo": 1,
-        "description": "Fuel injection valve nozzle, aux. engine Yanmar 6EY18ALW",
+        "description": {
+          "en": "Fuel injection valve nozzle, aux. engine Yanmar 6EY18ALW",
+          "ar": "فوهة صمام حقن الوقود، محرك مساعد Yanmar 6EY18ALW"
+        },
         "qty": 6,
         "deliveredQty": 6,
         "unitPrice": 402.17
       },
       {
         "lineNo": 2,
-        "description": "Piston ring set (one cylinder), Yanmar 6EY18ALW",
+        "description": {
+          "en": "Piston ring set (one cylinder), Yanmar 6EY18ALW",
+          "ar": "طقم شنابر مكبس (أسطوانة واحدة)، Yanmar 6EY18ALW"
+        },
         "qty": 6,
         "deliveredQty": 6,
         "unitPrice": 513.11
       },
       {
         "lineNo": 3,
-        "description": "Turbocharger overhaul kit, MAN NR20/S",
+        "description": {
+          "en": "Turbocharger overhaul kit, MAN NR20/S",
+          "ar": "طقم عَمرة شاحن توربيني، MAN NR20/S"
+        },
         "qty": 1,
         "deliveredQty": 1,
         "unitPrice": 8595.16
       },
       {
         "lineNo": 4,
-        "description": "Safety helmet EN 397, white, with chin strap",
+        "description": {
+          "en": "Safety helmet EN 397, white, with chin strap",
+          "ar": "خوذة سلامة EN 397، بيضاء، بحزام ذقن"
+        },
         "qty": 12,
         "deliveredQty": 12,
         "unitPrice": 9.43
@@ -62,13 +74,19 @@
     "lines": [
       {
         "lineNo": 1,
-        "description": "Paints & thinners — MV Corallo (DN-0127)",
+        "description": {
+          "en": "Paints & thinners — MV Corallo (DN-0127)",
+          "ar": "دهانات ومخففات — MV Corallo (DN-0127)"
+        },
         "qty": 1,
         "deliveredQty": 1,
         "unitPrice": 1840
       }
     ],
-    "billing": { "legalEntity": "Mare Nostrum Shipping S.p.A.", "taxId": "IT01234567890" },
+    "billing": {
+      "legalEntity": "Mare Nostrum Shipping S.p.A.",
+      "taxId": "IT01234567890"
+    },
     "eInvoice": {
       "status": "Not submitted",
       "error": "Signature service unreachable (16 Nov 18:40) — nothing was submitted; safe to retry."
@@ -88,13 +106,19 @@
     "lines": [
       {
         "lineNo": 1,
-        "description": "Deck & engine stores — MV Corallo (DN-0128)",
+        "description": {
+          "en": "Deck & engine stores — MV Corallo (DN-0128)",
+          "ar": "مؤن السطح والمحركات — MV Corallo (DN-0128)"
+        },
         "qty": 1,
         "deliveredQty": 1,
         "unitPrice": 5200
       }
     ],
-    "billing": { "legalEntity": "Mare Nostrum Shipping S.p.A.", "taxId": "IT01234567890" },
+    "billing": {
+      "legalEntity": "Mare Nostrum Shipping S.p.A.",
+      "taxId": "IT01234567890"
+    },
     "eInvoice": {
       "status": "Submitted",
       "uuid": "0418-7A21C9-ETA",
@@ -115,13 +139,19 @@
     "lines": [
       {
         "lineNo": 1,
-        "description": "Galley & cabin stores — DOS Falcon (DN-0129)",
+        "description": {
+          "en": "Galley & cabin stores — DOS Falcon (DN-0129)",
+          "ar": "مؤن المطبخ والكبائن — DOS Falcon (DN-0129)"
+        },
         "qty": 1,
         "deliveredQty": 1,
         "unitPrice": 98500
       }
     ],
-    "billing": { "legalEntity": "Delta Offshore Services S.A.E.", "taxId": "100-200-30" },
+    "billing": {
+      "legalEntity": "Delta Offshore Services S.A.E.",
+      "taxId": "100-200-30"
+    },
     "eInvoice": {
       "status": "Rejected",
       "submittedAt": "2026-11-15T10:05:00.000Z",
@@ -142,14 +172,24 @@
     "lines": [
       {
         "lineNo": 1,
-        "description": "Safety & PPE stores — rig resupply (DN-0126)",
+        "description": {
+          "en": "Safety & PPE stores — rig resupply (DN-0126)",
+          "ar": "مؤن السلامة ومعدات الوقاية — إعادة إمداد المنصة (DN-0126)"
+        },
         "qty": 1,
         "deliveredQty": 1,
         "unitPrice": 465000
       }
     ],
-    "billing": { "legalEntity": "Delta Offshore Services S.A.E.", "taxId": "100200300" },
-    "eInvoice": { "status": "Valid", "uuid": "0405-1C9E02-ETA", "submittedAt": "2026-08-20T09:00:00.000Z" }
+    "billing": {
+      "legalEntity": "Delta Offshore Services S.A.E.",
+      "taxId": "100200300"
+    },
+    "eInvoice": {
+      "status": "Valid",
+      "uuid": "0405-1C9E02-ETA",
+      "submittedAt": "2026-08-20T09:00:00.000Z"
+    }
   },
   {
     "id": "inv-0398",
@@ -165,15 +205,25 @@
     "lines": [
       {
         "lineNo": 1,
-        "description": "Lubricants & filters — DOS Falcon (DN-0122)",
+        "description": {
+          "en": "Lubricants & filters — DOS Falcon (DN-0122)",
+          "ar": "زيوت تشحيم وفلاتر — DOS Falcon (DN-0122)"
+        },
         "qty": 1,
         "deliveredQty": 1,
         "unitPrice": 170000
       }
     ],
     "paid": 70000,
-    "billing": { "legalEntity": "Delta Offshore Services S.A.E.", "taxId": "100200300" },
-    "eInvoice": { "status": "Valid", "uuid": "0398-4B7A11-ETA", "submittedAt": "2026-07-30T09:00:00.000Z" }
+    "billing": {
+      "legalEntity": "Delta Offshore Services S.A.E.",
+      "taxId": "100200300"
+    },
+    "eInvoice": {
+      "status": "Valid",
+      "uuid": "0398-4B7A11-ETA",
+      "submittedAt": "2026-07-30T09:00:00.000Z"
+    }
   },
   {
     "id": "inv-0401",
@@ -189,14 +239,24 @@
     "lines": [
       {
         "lineNo": 1,
-        "description": "Deck & engine stores — MV Aurora Crest (DN-0124)",
+        "description": {
+          "en": "Deck & engine stores — MV Aurora Crest (DN-0124)",
+          "ar": "مؤن السطح والمحركات — MV Aurora Crest (DN-0124)"
+        },
         "qty": 1,
         "deliveredQty": 1,
         "unitPrice": 12400
       }
     ],
-    "billing": { "legalEntity": "Nordvik Ship Management AS", "taxId": "NO999000111" },
-    "eInvoice": { "status": "Valid", "uuid": "0401-9D3F70-ETA", "submittedAt": "2026-10-10T09:00:00.000Z" }
+    "billing": {
+      "legalEntity": "Nordvik Ship Management AS",
+      "taxId": "NO999000111"
+    },
+    "eInvoice": {
+      "status": "Valid",
+      "uuid": "0401-9D3F70-ETA",
+      "submittedAt": "2026-10-10T09:00:00.000Z"
+    }
   },
   {
     "id": "inv-0396",
@@ -212,14 +272,24 @@
     "lines": [
       {
         "lineNo": 1,
-        "description": "Chemicals & cleaning stores — MV Nordic Tern (DN-0121)",
+        "description": {
+          "en": "Chemicals & cleaning stores — MV Nordic Tern (DN-0121)",
+          "ar": "مؤن الكيماويات والتنظيف — MV Nordic Tern (DN-0121)"
+        },
         "qty": 1,
         "deliveredQty": 1,
         "unitPrice": 3100
       }
     ],
-    "billing": { "legalEntity": "Nordvik Ship Management AS", "taxId": "NO999000111" },
-    "eInvoice": { "status": "Valid", "uuid": "0396-22AC51-ETA", "submittedAt": "2026-09-03T09:00:00.000Z" }
+    "billing": {
+      "legalEntity": "Nordvik Ship Management AS",
+      "taxId": "NO999000111"
+    },
+    "eInvoice": {
+      "status": "Valid",
+      "uuid": "0396-22AC51-ETA",
+      "submittedAt": "2026-09-03T09:00:00.000Z"
+    }
   },
   {
     "id": "inv-0388",
@@ -235,14 +305,24 @@
     "lines": [
       {
         "lineNo": 1,
-        "description": "Engine stores — MT Atlas Pearl (DN-0119)",
+        "description": {
+          "en": "Engine stores — MT Atlas Pearl (DN-0119)",
+          "ar": "مؤن المحركات — MT Atlas Pearl (DN-0119)"
+        },
         "qty": 1,
         "deliveredQty": 1,
         "unitPrice": 6500
       }
     ],
-    "billing": { "legalEntity": "Atlas Tankers Ltd", "taxId": "CY10123456X" },
-    "eInvoice": { "status": "Valid", "uuid": "0388-5E0B93-ETA", "submittedAt": "2026-08-18T09:00:00.000Z" }
+    "billing": {
+      "legalEntity": "Atlas Tankers Ltd",
+      "taxId": "CY10123456X"
+    },
+    "eInvoice": {
+      "status": "Valid",
+      "uuid": "0388-5E0B93-ETA",
+      "submittedAt": "2026-08-18T09:00:00.000Z"
+    }
   },
   {
     "id": "inv-0371",
@@ -258,14 +338,24 @@
     "lines": [
       {
         "lineNo": 1,
-        "description": "Cabin stores — MT Atlas Wave (DN-0112)",
+        "description": {
+          "en": "Cabin stores — MT Atlas Wave (DN-0112)",
+          "ar": "مؤن الكبائن — MT Atlas Wave (DN-0112)"
+        },
         "qty": 1,
         "deliveredQty": 1,
         "unitPrice": 1400
       }
     ],
-    "billing": { "legalEntity": "Atlas Tankers Ltd", "taxId": "CY10123456X" },
-    "eInvoice": { "status": "Valid", "uuid": "0371-0F44D8-ETA", "submittedAt": "2026-07-12T09:00:00.000Z" }
+    "billing": {
+      "legalEntity": "Atlas Tankers Ltd",
+      "taxId": "CY10123456X"
+    },
+    "eInvoice": {
+      "status": "Valid",
+      "uuid": "0371-0F44D8-ETA",
+      "submittedAt": "2026-07-12T09:00:00.000Z"
+    }
   },
   {
     "id": "inv-0409",
@@ -281,13 +371,23 @@
     "lines": [
       {
         "lineNo": 1,
-        "description": "Provisions & bond stores — MV Helios Star (DN-0125)",
+        "description": {
+          "en": "Provisions & bond stores — MV Helios Star (DN-0125)",
+          "ar": "مؤن غذائية وبضائع معفاة — MV Helios Star (DN-0125)"
+        },
         "qty": 1,
         "deliveredQty": 1,
         "unitPrice": 8000
       }
     ],
-    "billing": { "legalEntity": "Helios Bulk Carriers S.A.", "taxId": "EL099887766" },
-    "eInvoice": { "status": "Valid", "uuid": "0409-3A6C2E-ETA", "submittedAt": "2026-10-28T09:00:00.000Z" }
+    "billing": {
+      "legalEntity": "Helios Bulk Carriers S.A.",
+      "taxId": "EL099887766"
+    },
+    "eInvoice": {
+      "status": "Valid",
+      "uuid": "0409-3A6C2E-ETA",
+      "submittedAt": "2026-10-28T09:00:00.000Z"
+    }
   }
 ]

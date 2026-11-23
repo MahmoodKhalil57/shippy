@@ -1,271 +1,712 @@
 {
   "rules": [
     {
-      "name": "Create case from RFQ email",
+      "name": {
+        "en": "Create case from RFQ email",
+        "ar": "إنشاء ملف من بريد طلب العرض"
+      },
       "enabled": true,
       "mode": "auto",
       "usesAI": true,
-      "trigger": "New email to sales@ / purchasing@ classified as RFQ",
-      "action": "Create case, link email & files, extract draft lines (AI)",
+      "trigger": {
+        "en": "New email to sales@ / purchasing@ classified as RFQ",
+        "ar": "بريد جديد إلى sales@ / purchasing@ مصنّف كطلب عرض"
+      },
+      "action": {
+        "en": "Create case, link email & files, extract draft lines (AI)",
+        "ar": "إنشاء ملف، وربط البريد والملفات، واستخراج مسودات البنود (ذكاء اصطناعي)"
+      },
       "owner": "Assignment rule",
-      "due": "Ack within 30 min",
-      "approval": "None — creates drafts only",
-      "retry": "3 retries, then exception queue",
-      "stop": "Duplicate (same customer ref / attachment hash) → link instead",
+      "due": {
+        "en": "Ack within 30 min",
+        "ar": "الإشعار خلال 30 دقيقة"
+      },
+      "approval": {
+        "en": "None — creates drafts only",
+        "ar": "لا شيء — ينشئ مسودات فقط"
+      },
+      "retry": {
+        "en": "3 retries, then exception queue",
+        "ar": "3 محاولات، ثم قائمة الاستثناءات"
+      },
+      "stop": {
+        "en": "Duplicate (same customer ref / attachment hash) → link instead",
+        "ar": "مكرر (مرجع العميل نفسه / بصمة المرفقات) ← ربط بدلًا من ذلك"
+      },
       "confidenceThreshold": 0.85
     },
     {
-      "name": "RFQ acknowledgement",
+      "name": {
+        "en": "RFQ acknowledgement",
+        "ar": "إشعار استلام طلب العرض"
+      },
       "enabled": true,
       "mode": "pre-approved",
-      "trigger": "Case created from external email",
-      "action": "Send branded acknowledgement",
+      "trigger": {
+        "en": "Case created from external email",
+        "ar": "ملف أُنشئ من بريد خارجي"
+      },
+      "action": {
+        "en": "Send branded acknowledgement",
+        "ar": "إرسال إشعار استلام بهوية الشركة"
+      },
       "owner": "Case owner",
-      "due": "Immediate",
-      "approval": "Template wording, recipients & trigger approved by Karim Balbaa 10 Nov",
-      "retry": "Retry 3×, then exception",
-      "stop": "Already acknowledged in thread · internal sender · customer rule “no auto-ack”",
+      "due": {
+        "en": "Immediate",
+        "ar": "فوري"
+      },
+      "approval": {
+        "en": "Template wording, recipients & trigger approved by Karim Balbaa 10 Nov",
+        "ar": "صياغة القالب والمستلمون والمُشغِّل اعتمدها كريم بلباع في 10 نوفمبر"
+      },
+      "retry": {
+        "en": "Retry 3×, then exception",
+        "ar": "إعادة المحاولة 3 مرات، ثم استثناء"
+      },
+      "stop": {
+        "en": "Already acknowledged in thread · internal sender · customer rule “no auto-ack”",
+        "ar": "أُشعر بالاستلام في السلسلة بالفعل · مرسل داخلي · قاعدة العميل «بلا إشعار تلقائي»"
+      },
       "template": "rfq-ack"
     },
     {
-      "name": "Website quick-quote form",
+      "name": {
+        "en": "Website quick-quote form",
+        "ar": "نموذج طلب عرض سريع على الموقع"
+      },
       "enabled": true,
       "mode": "auto",
       "usesAI": true,
-      "trigger": "Website quick-quote form submitted",
-      "action": "Create draft case + contact (AI extraction of items)",
+      "trigger": {
+        "en": "Website quick-quote form submitted",
+        "ar": "أُرسل نموذج طلب العرض السريع على الموقع"
+      },
+      "action": {
+        "en": "Create draft case + contact (AI extraction of items)",
+        "ar": "إنشاء مسودة ملف + جهة اتصال (استخراج الأصناف بالذكاء الاصطناعي)"
+      },
       "owner": "Assignment rule",
-      "due": "Ack within 30 min",
-      "approval": "None — draft only",
-      "retry": "Form also emails the sales mailbox as fallback",
-      "stop": "Spam / duplicate submission",
+      "due": {
+        "en": "Ack within 30 min",
+        "ar": "الإشعار خلال 30 دقيقة"
+      },
+      "approval": {
+        "en": "None — draft only",
+        "ar": "لا شيء — مسودة فقط"
+      },
+      "retry": {
+        "en": "Form also emails the sales mailbox as fallback",
+        "ar": "يرسل النموذج أيضًا بريدًا إلى صندوق المبيعات كبديل"
+      },
+      "stop": {
+        "en": "Spam / duplicate submission",
+        "ar": "بريد مزعج / إرسال مكرر"
+      },
       "confidenceThreshold": 0.85
     },
     {
-      "name": "Assign owner",
+      "name": {
+        "en": "Assign owner",
+        "ar": "تعيين المالك"
+      },
       "enabled": true,
       "mode": "auto",
-      "trigger": "Case created",
-      "action": "Owner + backup by customer, then category rules",
+      "trigger": {
+        "en": "Case created",
+        "ar": "أُنشئ الملف"
+      },
+      "action": {
+        "en": "Owner + backup by customer, then category rules",
+        "ar": "المالك + الاحتياطي حسب العميل، ثم قواعد الفئات"
+      },
       "owner": "—",
-      "due": "—",
-      "approval": "Owner can override (logged with a handover note)",
-      "retry": "—",
-      "stop": "Manual owner set"
+      "due": {
+        "en": "—",
+        "ar": "—"
+      },
+      "approval": {
+        "en": "Owner can override (logged with a handover note)",
+        "ar": "يمكن للمالك التجاوز (يُسجَّل مع مذكرة تسليم)"
+      },
+      "retry": {
+        "en": "—",
+        "ar": "—"
+      },
+      "stop": {
+        "en": "Manual owner set",
+        "ar": "عُيّن المالك يدويًا"
+      }
     },
     {
-      "name": "After-hours & weekend RFQ",
+      "name": {
+        "en": "After-hours & weekend RFQ",
+        "ar": "طلب عرض بعد الدوام وفي العطلات"
+      },
       "enabled": true,
       "mode": "auto",
-      "trigger": "Urgent RFQ outside Sun–Thu 08:00–17:00 or vessel ETA < 24 h",
-      "action": "Alert the on-duty person by WhatsApp / SMS; senior call list next",
+      "trigger": {
+        "en": "Urgent RFQ outside Sun–Thu 08:00–17:00 or vessel ETA < 24 h",
+        "ar": "طلب عرض عاجل خارج الأحد–الخميس 08:00–17:00 أو موعد وصول السفينة أقل من 24 ساعة"
+      },
+      "action": {
+        "en": "Alert the on-duty person by WhatsApp / SMS; senior call list next",
+        "ar": "تنبيه المناوب عبر واتساب / رسالة نصية؛ ثم قائمة الاتصال بالمسؤولين"
+      },
       "owner": "On-call roster",
-      "due": "15 min",
-      "approval": "—",
-      "retry": "Escalate to the backup, then senior contacts, after 15 min",
-      "stop": "Owner acknowledges"
+      "due": {
+        "en": "15 min",
+        "ar": "15 دقيقة"
+      },
+      "approval": {
+        "en": "—",
+        "ar": "—"
+      },
+      "retry": {
+        "en": "Escalate to the backup, then senior contacts, after 15 min",
+        "ar": "التصعيد إلى الاحتياطي، ثم المسؤولين، بعد 15 دقيقة"
+      },
+      "stop": {
+        "en": "Owner acknowledges",
+        "ar": "يقرّ المالك بالاستلام"
+      }
     },
     {
-      "name": "Match supplier reply",
+      "name": {
+        "en": "Match supplier reply",
+        "ar": "مطابقة رد المورّد"
+      },
       "enabled": true,
       "mode": "auto",
       "usesAI": true,
-      "trigger": "Inbound email from supplier",
-      "action": "Match by RFQ ref / thread / sender; extract offer lines (AI)",
+      "trigger": {
+        "en": "Inbound email from supplier",
+        "ar": "بريد وارد من مورّد"
+      },
+      "action": {
+        "en": "Match by RFQ ref / thread / sender; extract offer lines (AI)",
+        "ar": "المطابقة بمرجع طلب العرض / سلسلة الرسائل / المرسل؛ واستخراج بنود العرض (ذكاء اصطناعي)"
+      },
       "owner": "Case owner",
-      "due": "—",
-      "approval": "Auto ≥ 0.85, review below · low confidence never overwrites approved values",
-      "retry": "Reprocessing is idempotent (message-id)",
-      "stop": "Matched or routed to review",
+      "due": {
+        "en": "—",
+        "ar": "—"
+      },
+      "approval": {
+        "en": "Auto ≥ 0.85, review below · low confidence never overwrites approved values",
+        "ar": "تلقائي عند ≥ 0.85، ومراجعة دون ذلك · الثقة المنخفضة لا تستبدل القيم المعتمدة أبدًا"
+      },
+      "retry": {
+        "en": "Reprocessing is idempotent (message-id)",
+        "ar": "إعادة المعالجة لا تكرر شيئًا (معرّف الرسالة)"
+      },
+      "stop": {
+        "en": "Matched or routed to review",
+        "ar": "طوبق أو أُحيل للمراجعة"
+      },
       "confidenceThreshold": 0.85
     },
     {
-      "name": "Save new supplier & prices",
+      "name": {
+        "en": "Save new supplier & prices",
+        "ar": "حفظ المورّد الجديد والأسعار"
+      },
       "enabled": true,
       "mode": "auto",
-      "trigger": "Offer from unknown sender domain",
-      "action": "Create supplier (status New), save dated product prices",
+      "trigger": {
+        "en": "Offer from unknown sender domain",
+        "ar": "عرض من نطاق مرسل غير معروف"
+      },
+      "action": {
+        "en": "Create supplier (status New), save dated product prices",
+        "ar": "إنشاء المورّد (الحالة: جديد)، وحفظ أسعار المنتجات المؤرخة"
+      },
       "owner": "Purchasing",
-      "due": "—",
-      "approval": "Approved-vendor status needs Karim Balbaa",
-      "retry": "—",
-      "stop": "Duplicate supplier (domain / phone) → merge proposal"
+      "due": {
+        "en": "—",
+        "ar": "—"
+      },
+      "approval": {
+        "en": "Approved-vendor status needs Karim Balbaa",
+        "ar": "حالة المورّد المعتمد تحتاج كريم بلباع"
+      },
+      "retry": {
+        "en": "—",
+        "ar": "—"
+      },
+      "stop": {
+        "en": "Duplicate supplier (domain / phone) → merge proposal",
+        "ar": "مورّد مكرر (النطاق / الهاتف) ← اقتراح دمج"
+      }
     },
     {
-      "name": "Agency pricelist pricing",
+      "name": {
+        "en": "Agency pricelist pricing",
+        "ar": "التسعير من قائمة أسعار الوكالة"
+      },
       "enabled": true,
       "mode": "auto",
-      "trigger": "Line matches an agency brand (Vecom, Lalizas, Lukoil, Marichem…)",
-      "action": "Price instantly from the principal's pricelist & own stock; no supplier RFQ needed",
+      "trigger": {
+        "en": "Line matches an agency brand (Vecom, Lalizas, Lukoil, Marichem…)",
+        "ar": "البند يطابق علامة وكالة (Vecom، Lalizas، Lukoil، Marichem…)"
+      },
+      "action": {
+        "en": "Price instantly from the principal's pricelist & own stock; no supplier RFQ needed",
+        "ar": "التسعير فورًا من قائمة أسعار الوكيل والمخزون الخاص؛ لا حاجة لطلب عرض مورّد"
+      },
       "owner": "Case owner",
-      "due": "Immediate",
-      "approval": "Pricelist versions approved by Karim Balbaa",
-      "retry": "—",
-      "stop": "Pricelist expired → normal RFQ"
+      "due": {
+        "en": "Immediate",
+        "ar": "فوري"
+      },
+      "approval": {
+        "en": "Pricelist versions approved by Karim Balbaa",
+        "ar": "إصدارات قوائم الأسعار يعتمدها كريم بلباع"
+      },
+      "retry": {
+        "en": "—",
+        "ar": "—"
+      },
+      "stop": {
+        "en": "Pricelist expired → normal RFQ",
+        "ar": "انتهت قائمة الأسعار ← طلب عرض عادي"
+      }
     },
     {
-      "name": "Own-stock check",
+      "name": {
+        "en": "Own-stock check",
+        "ar": "فحص المخزون الخاص"
+      },
       "enabled": true,
       "mode": "auto",
-      "trigger": "Line created",
-      "action": "Show available stock (Cairo / Alexandria) and reserve on selection",
+      "trigger": {
+        "en": "Line created",
+        "ar": "أُنشئ البند"
+      },
+      "action": {
+        "en": "Show available stock (Cairo / Alexandria) and reserve on selection",
+        "ar": "عرض المخزون المتاح (القاهرة / الإسكندرية) والحجز عند الاختيار"
+      },
       "owner": "Operations",
-      "due": "—",
-      "approval": "—",
-      "retry": "—",
-      "stop": "Stock reserved or released"
+      "due": {
+        "en": "—",
+        "ar": "—"
+      },
+      "approval": {
+        "en": "—",
+        "ar": "—"
+      },
+      "retry": {
+        "en": "—",
+        "ar": "—"
+      },
+      "stop": {
+        "en": "Stock reserved or released",
+        "ar": "حُجز المخزون أو أُفرج عنه"
+      }
     },
     {
-      "name": "Supplier reminder",
+      "name": {
+        "en": "Supplier reminder",
+        "ar": "تذكير المورّد"
+      },
       "enabled": true,
       "mode": "pre-approved",
-      "trigger": "Supplier RFQ due in 2 h with no reply",
-      "action": "Send pre-approved follow-up; 2nd reminder after 24 h",
+      "trigger": {
+        "en": "Supplier RFQ due in 2 h with no reply",
+        "ar": "طلب عرض مورّد مستحق خلال ساعتين دون رد"
+      },
+      "action": {
+        "en": "Send pre-approved follow-up; 2nd reminder after 24 h",
+        "ar": "إرسال متابعة معتمدة مسبقًا؛ والتذكير الثاني بعد 24 ساعة"
+      },
       "owner": "Case owner",
-      "due": "Per RFQ due date",
-      "approval": "Template pre-approved",
-      "retry": "—",
-      "stop": "Reply, decline, case closed, line cancelled",
+      "due": {
+        "en": "Per RFQ due date",
+        "ar": "حسب موعد استحقاق طلب العرض"
+      },
+      "approval": {
+        "en": "Template pre-approved",
+        "ar": "القالب معتمد مسبقًا"
+      },
+      "retry": {
+        "en": "—",
+        "ar": "—"
+      },
+      "stop": {
+        "en": "Reply, decline, case closed, line cancelled",
+        "ar": "رد، أو اعتذار، أو إغلاق الملف، أو إلغاء البند"
+      },
       "template": "supplier-reminder"
     },
     {
-      "name": "Escalate no response",
+      "name": {
+        "en": "Escalate no response",
+        "ar": "التصعيد عند عدم الاستجابة"
+      },
       "enabled": true,
       "mode": "auto",
-      "trigger": "2 reminders without reply",
-      "action": "Escalate to owner + daily briefing; status No response",
+      "trigger": {
+        "en": "2 reminders without reply",
+        "ar": "تذكيران دون رد"
+      },
+      "action": {
+        "en": "Escalate to owner + daily briefing; status No response",
+        "ar": "التصعيد إلى المالك + الملخص اليومي؛ الحالة: لا استجابة"
+      },
       "owner": "Case owner",
-      "due": "Next business hour",
-      "approval": "—",
-      "retry": "—",
-      "stop": "Reply received"
+      "due": {
+        "en": "Next business hour",
+        "ar": "ساعة العمل التالية"
+      },
+      "approval": {
+        "en": "—",
+        "ar": "—"
+      },
+      "retry": {
+        "en": "—",
+        "ar": "—"
+      },
+      "stop": {
+        "en": "Reply received",
+        "ar": "وصل الرد"
+      }
     },
     {
-      "name": "Offer deviation check",
+      "name": {
+        "en": "Offer deviation check",
+        "ar": "فحص انحرافات العرض"
+      },
       "enabled": true,
       "mode": "prepare",
       "usesAI": true,
-      "trigger": "Offer captured",
-      "action": "Compare to request: brand, part, qty, unit, pack, spec, validity, lead time vs ETA (AI + rules)",
+      "trigger": {
+        "en": "Offer captured",
+        "ar": "سُجّل العرض"
+      },
+      "action": {
+        "en": "Compare to request: brand, part, qty, unit, pack, spec, validity, lead time vs ETA (AI + rules)",
+        "ar": "المقارنة بالطلب: العلامة، القطعة، الكمية، الوحدة، العبوة، المواصفات، الصلاحية، مدة التوريد مقابل موعد الوصول (ذكاء اصطناعي + قواعد)"
+      },
       "owner": "Case owner",
-      "due": "—",
-      "approval": "Technical equivalence is a human decision",
-      "retry": "—",
-      "stop": "—",
+      "due": {
+        "en": "—",
+        "ar": "—"
+      },
+      "approval": {
+        "en": "Technical equivalence is a human decision",
+        "ar": "التكافؤ الفني قرار بشري"
+      },
+      "retry": {
+        "en": "—",
+        "ar": "—"
+      },
+      "stop": {
+        "en": "—",
+        "ar": "—"
+      },
       "confidenceThreshold": 0.85
     },
     {
-      "name": "Correction request draft",
+      "name": {
+        "en": "Correction request draft",
+        "ar": "مسودة طلب التصحيح"
+      },
       "enabled": true,
       "mode": "prepare",
       "usesAI": true,
-      "trigger": "Deviation flagged",
-      "action": "Draft supplier clarification without client identity",
+      "trigger": {
+        "en": "Deviation flagged",
+        "ar": "عُلّم انحراف"
+      },
+      "action": {
+        "en": "Draft supplier clarification without client identity",
+        "ar": "صياغة توضيح للمورّد دون هوية العميل"
+      },
       "owner": "Case owner",
-      "due": "Due date set on send",
-      "approval": "Owner sends",
-      "retry": "—",
-      "stop": "Corrected offer received"
+      "due": {
+        "en": "Due date set on send",
+        "ar": "يُحدَّد الاستحقاق عند الإرسال"
+      },
+      "approval": {
+        "en": "Owner sends",
+        "ar": "يرسله المالك"
+      },
+      "retry": {
+        "en": "—",
+        "ar": "—"
+      },
+      "stop": {
+        "en": "Corrected offer received",
+        "ar": "وصل العرض المصحَّح"
+      }
     },
     {
-      "name": "Margin & FX check",
+      "name": {
+        "en": "Margin & FX check",
+        "ar": "فحص الهامش وسعر الصرف"
+      },
       "enabled": true,
       "mode": "auto",
-      "trigger": "Offer selected / FX changed / cost changed",
-      "action": "Recalculate landed cost, margin and flags",
+      "trigger": {
+        "en": "Offer selected / FX changed / cost changed",
+        "ar": "اختيار عرض / تغيّر سعر الصرف / تغيّر التكلفة"
+      },
+      "action": {
+        "en": "Recalculate landed cost, margin and flags",
+        "ar": "إعادة حساب التكلفة الواصلة والهامش والتنبيهات"
+      },
       "owner": "—",
-      "due": "—",
-      "approval": "Exceptions → Karim Balbaa",
-      "retry": "—",
-      "stop": "—"
+      "due": {
+        "en": "—",
+        "ar": "—"
+      },
+      "approval": {
+        "en": "Exceptions → Karim Balbaa",
+        "ar": "الاستثناءات ← كريم بلباع"
+      },
+      "retry": {
+        "en": "—",
+        "ar": "—"
+      },
+      "stop": {
+        "en": "—",
+        "ar": "—"
+      }
     },
     {
-      "name": "Customer follow-up",
+      "name": {
+        "en": "Customer follow-up",
+        "ar": "متابعة العميل"
+      },
       "enabled": true,
       "mode": "prepare",
-      "trigger": "Quote submitted, no response in 3 days",
-      "action": "Internal reminder; customer draft only if the account allows",
+      "trigger": {
+        "en": "Quote submitted, no response in 3 days",
+        "ar": "قُدّم العرض، ولا رد خلال 3 أيام"
+      },
+      "action": {
+        "en": "Internal reminder; customer draft only if the account allows",
+        "ar": "تذكير داخلي؛ ومسودة للعميل فقط إذا سمح الحساب"
+      },
       "owner": "Case owner",
-      "due": "+3 days",
-      "approval": "Per-account contact rule",
-      "retry": "—",
-      "stop": "Response, rejection, order, closure, expiry"
+      "due": {
+        "en": "+3 days",
+        "ar": "+3 أيام"
+      },
+      "approval": {
+        "en": "Per-account contact rule",
+        "ar": "قاعدة التواصل لكل حساب"
+      },
+      "retry": {
+        "en": "—",
+        "ar": "—"
+      },
+      "stop": {
+        "en": "Response, rejection, order, closure, expiry",
+        "ar": "رد، أو رفض، أو طلب، أو إغلاق، أو انتهاء"
+      }
     },
     {
-      "name": "Customer PO check",
+      "name": {
+        "en": "Customer PO check",
+        "ar": "فحص أمر شراء العميل"
+      },
       "enabled": true,
       "mode": "prepare",
       "usesAI": true,
-      "trigger": "Customer PO received",
-      "action": "Match PO to quote version & lines (AI extraction + rules)",
+      "trigger": {
+        "en": "Customer PO received",
+        "ar": "استُلم أمر شراء العميل"
+      },
+      "action": {
+        "en": "Match PO to quote version & lines (AI extraction + rules)",
+        "ar": "مطابقة أمر الشراء مع إصدار العرض وبنوده (استخراج بالذكاء الاصطناعي + قواعد)"
+      },
       "owner": "Case owner",
-      "due": "Same day",
-      "approval": "Mismatch blocks sales-order confirmation",
-      "retry": "—",
-      "stop": "Resolved or amendment recorded",
+      "due": {
+        "en": "Same day",
+        "ar": "في اليوم نفسه"
+      },
+      "approval": {
+        "en": "Mismatch blocks sales-order confirmation",
+        "ar": "عدم التطابق يوقف تأكيد أمر البيع"
+      },
+      "retry": {
+        "en": "—",
+        "ar": "—"
+      },
+      "stop": {
+        "en": "Resolved or amendment recorded",
+        "ar": "حُلّ أو سُجّل التعديل"
+      },
       "confidenceThreshold": 0.9
     },
     {
-      "name": "ETA change",
+      "name": {
+        "en": "ETA change",
+        "ar": "تغيّر موعد الوصول"
+      },
       "enabled": true,
       "mode": "auto",
-      "trigger": "Vessel ETA updated (agent email / manual)",
-      "action": "Move delivery tasks, transport booking and supplier pickup; alert owner",
+      "trigger": {
+        "en": "Vessel ETA updated (agent email / manual)",
+        "ar": "تحديث موعد وصول السفينة (بريد الوكيل / يدويًا)"
+      },
+      "action": {
+        "en": "Move delivery tasks, transport booking and supplier pickup; alert owner",
+        "ar": "نقل مهام التسليم وحجز النقل واستلام المورّد؛ وتنبيه المالك"
+      },
       "owner": "Operations",
-      "due": "Immediate",
-      "approval": "—",
-      "retry": "—",
-      "stop": "Delivery confirmed"
+      "due": {
+        "en": "Immediate",
+        "ar": "فوري"
+      },
+      "approval": {
+        "en": "—",
+        "ar": "—"
+      },
+      "retry": {
+        "en": "—",
+        "ar": "—"
+      },
+      "stop": {
+        "en": "Delivery confirmed",
+        "ar": "تأكّد التسليم"
+      }
     },
     {
-      "name": "E-invoice submission",
+      "name": {
+        "en": "E-invoice submission",
+        "ar": "تقديم الفاتورة الإلكترونية"
+      },
       "enabled": true,
       "mode": "auto",
-      "trigger": "Invoice posted",
-      "action": "Sign and submit to the Egyptian Tax Authority; store UUID and status",
+      "trigger": {
+        "en": "Invoice posted",
+        "ar": "رُحّلت الفاتورة"
+      },
+      "action": {
+        "en": "Sign and submit to the Egyptian Tax Authority; store UUID and status",
+        "ar": "التوقيع والتقديم إلى مصلحة الضرائب المصرية؛ وحفظ UUID والحالة"
+      },
       "owner": "Finance",
-      "due": "Same day",
-      "approval": "Invoice posted by finance",
-      "retry": "Idempotent by invoice number; 3 retries, then exception",
-      "stop": "Status Valid or Rejected"
+      "due": {
+        "en": "Same day",
+        "ar": "في اليوم نفسه"
+      },
+      "approval": {
+        "en": "Invoice posted by finance",
+        "ar": "ترحّل المالية الفاتورة"
+      },
+      "retry": {
+        "en": "Idempotent by invoice number; 3 retries, then exception",
+        "ar": "لا تكرار برقم الفاتورة؛ 3 محاولات، ثم استثناء"
+      },
+      "stop": {
+        "en": "Status Valid or Rejected",
+        "ar": "الحالة صالحة أو مرفوضة"
+      }
     },
     {
-      "name": "Collections reminder",
+      "name": {
+        "en": "Collections reminder",
+        "ar": "تذكير التحصيل"
+      },
       "enabled": true,
       "mode": "prepare",
-      "trigger": "Invoice overdue / installment due in 3 days",
-      "action": "Internal reminder + collection draft",
+      "trigger": {
+        "en": "Invoice overdue / installment due in 3 days",
+        "ar": "فاتورة متأخرة / قسط مستحق خلال 3 أيام"
+      },
+      "action": {
+        "en": "Internal reminder + collection draft",
+        "ar": "تذكير داخلي + مسودة تحصيل"
+      },
       "owner": "Finance",
-      "due": "Due date",
-      "approval": "Customer contact rules",
-      "retry": "—",
-      "stop": "Payment allocated / dispute",
+      "due": {
+        "en": "Due date",
+        "ar": "تاريخ الاستحقاق"
+      },
+      "approval": {
+        "en": "Customer contact rules",
+        "ar": "قواعد التواصل مع العميل"
+      },
+      "retry": {
+        "en": "—",
+        "ar": "—"
+      },
+      "stop": {
+        "en": "Payment allocated / dispute",
+        "ar": "خُصّصت الدفعة / نزاع"
+      },
       "template": "collection"
     },
     {
-      "name": "Held stores storage charge",
+      "name": {
+        "en": "Held stores storage charge",
+        "ar": "رسوم تخزين المستلزمات المحتجزة"
+      },
       "enabled": true,
       "mode": "prepare",
-      "trigger": "Stores held for a vessel > 14 days",
-      "action": "Notify owner & draft customer note; start the storage charge",
+      "trigger": {
+        "en": "Stores held for a vessel > 14 days",
+        "ar": "مستلزمات محتجزة لسفينة أكثر من 14 يومًا"
+      },
+      "action": {
+        "en": "Notify owner & draft customer note; start the storage charge",
+        "ar": "إخطار المالك وصياغة ملاحظة للعميل؛ وبدء رسوم التخزين"
+      },
       "owner": "Operations",
-      "due": "Day 14",
-      "approval": "Customer contact rules",
-      "retry": "—",
-      "stop": "Delivered or cancelled"
+      "due": {
+        "en": "Day 14",
+        "ar": "اليوم 14"
+      },
+      "approval": {
+        "en": "Customer contact rules",
+        "ar": "قواعد التواصل مع العميل"
+      },
+      "retry": {
+        "en": "—",
+        "ar": "—"
+      },
+      "stop": {
+        "en": "Delivered or cancelled",
+        "ar": "سُلّم أو أُلغي"
+      }
     },
     {
-      "name": "Daily briefing",
+      "name": {
+        "en": "Daily briefing",
+        "ar": "الملخص اليومي"
+      },
       "enabled": true,
       "mode": "auto",
       "usesAI": true,
-      "trigger": "07:00 Cairo, Sun–Thu",
-      "action": "Urgent work, pending replies, approvals, delivery risks, overdue payments",
+      "trigger": {
+        "en": "07:00 Cairo, Sun–Thu",
+        "ar": "07:00 بتوقيت القاهرة، الأحد–الخميس"
+      },
+      "action": {
+        "en": "Urgent work, pending replies, approvals, delivery risks, overdue payments",
+        "ar": "الأعمال العاجلة، والردود المعلّقة، والموافقات، ومخاطر التسليم، والمدفوعات المتأخرة"
+      },
       "owner": "Each user + management",
-      "due": "07:00",
-      "approval": "—",
-      "retry": "Retry at 07:15",
-      "stop": "Holiday calendar"
+      "due": {
+        "en": "07:00",
+        "ar": "07:00"
+      },
+      "approval": {
+        "en": "—",
+        "ar": "—"
+      },
+      "retry": {
+        "en": "Retry at 07:15",
+        "ar": "إعادة المحاولة الساعة 07:15"
+      },
+      "stop": {
+        "en": "Holiday calendar",
+        "ar": "تقويم العطلات"
+      }
     }
   ]
 }

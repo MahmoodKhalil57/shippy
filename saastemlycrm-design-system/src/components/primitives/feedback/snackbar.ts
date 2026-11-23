@@ -6,6 +6,8 @@ import { rcva } from "../../base/variants.ts";
 import { iconButton } from "../actions/icon-button.ts";
 import { fixed, floatingFit, floatingHeight, inset, padEnd, padStart, row, rowFill, text } from "../layout/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
+// `m` names the message on screen here, so the catalog is `t`.
+import { m as t } from "../../../i18n/index.ts";
 
 /**
  * Snackbar: a brief message about something the app just did ("Saved", "Message sent"), at the
@@ -230,7 +232,7 @@ export class UiSnackbar extends LightElement {
           ? html`<button
               type="button"
               class=${iconButton({ size: "xs" })}
-              aria-label="Dismiss"
+              aria-label=${t.snackbar_dismiss()}
               @click=${() => this.dismiss(m.id)}
             >
               ${iconSvg("x", { size: "sm" })}

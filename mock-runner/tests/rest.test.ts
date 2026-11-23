@@ -5,6 +5,7 @@ import type { BackendConfig } from "../src/types.ts";
 import type { Where } from "payload";
 import { MemoryStore, seedsFromDir, testBackend } from "../src/testing.ts";
 import { fixture } from "./fixture/config.ts";
+import { topUpSeed } from "../src/mock/runtime/seed.ts";
 
 /** The mock backend, exercised through its REST API like the Service Worker serves it, on a fixture config. */
 
@@ -291,5 +292,82 @@ describe("seed top-up", () => {
       const visible = slug === "notes" ? docs.filter((d) => d.owner === "ada") : docs;
       expect((await call("GET", `/api/${slug}/count`)).body.totalDocs, slug).toBe(visible.length);
     }
+  });
+});
+
+describe("REST: localization (Payload's `localized` fields)", () => {
+  const get = async (q: string) => (await call("GET", `/api/categories/${q}`)).body;
+
+  it("reads a localized field in the locale asked for, else the default locale's", async () => {
+    expect((await get("news")).blurb).toBe("What happened");
+    expect((await get("news?locale=ar")).blurb).toBe("ما حدث");
+    expect((await get("news?locale=ar")).aliases[0].label).toBe("تحديثات");
+    // No Arabic: the default locale's (fallback), or nothing when the fallback is turned off.
+    expect((await get("guides?locale=ar")).blurb).toBe("How to");
+    expect((await get("guides?locale=ar&fallback-locale=none")).blurb).toBeUndefined();
+    // An unknown locale reads as the default one; `all` returns every locale's values.
+    expect((await get("news?locale=fr")).blurb).toBe("What happened");
+    expect((await get("news?locale=all")).blurb).toEqual({ en: "What happened", ar: "ما حدث" });
+  });
+
+  it("matches and sorts on the values in the locale asked for", async () => {
+    const ids = async (q: string) =>
+      ((await call("GET", `/api/categories?${q}`)).body.docs as { id: string }[]).map((d) => d.id);
+    expect(await ids("locale=ar&where[blurb][equals]=ما حدث")).toEqual(["news"]);
+    expect(await ids("locale=en&where[blurb][equals]=ما حدث")).toEqual([]);
+    expect(await ids("locale=ar&where[aliases.label][equals]=تحديثات")).toEqual(["news"]);
+    // Guides has no Arabic: it matches and sorts by its fallback (English) value.
+    expect(await ids("locale=ar&sort=blurb")).toEqual(["guides", "weekly", "news"]);
+    expect(await ids("locale=en&sort=blurb")).toEqual(["weekly", "guides", "news"]);
+  });
+
+  it("writes one locale and keeps the others", async () => {
+    await login();
+    const patched = await call("PATCH", "/api/categories/guides?locale=ar", { blurb: "كيف" });
+    expect(patched.status).toBe(200);
+    expect(patched.body.doc.blurb).toBe("كيف");
+    expect((await get("guides?locale=all")).blurb).toEqual({ en: "How to", ar: "كيف" });
+    // A field not sent keeps every locale, even one read through its fallback.
+    await call("PATCH", "/api/categories/news?locale=ar", { kind: "series" });
+    expect((await get("news?locale=all")).blurb).toEqual({ en: "What happened", ar: "ما حدث" });
+    expect((await get("news?locale=all")).aliases[0].label).toEqual({ en: "Updates", ar: "تحديثات" });
+    // Created in Arabic: only Arabic is stored; English falls back to nothing.
+    const created = await call("POST", "/api/categories?locale=ar", { name: "Sport", blurb: "رياضة" });
+    const id = created.body.doc.id as string;
+    expect((await get(`${id}?locale=all`)).blurb).toEqual({ ar: "رياضة" });
+    expect((await get(id)).blurb).toBeUndefined();
+  });
+
+  it("localizes globals the same way", async () => {
+    expect((await call("GET", "/api/globals/settings?locale=ar")).body.tagline).toBe("نموذج");
+    await login("ada");
+    await call("POST", "/api/globals/settings?locale=ar", { tagline: "مثال" });
+    expect((await call("GET", "/api/globals/settings?locale=all")).body.tagline).toEqual({
+      en: "A fixture",
+      ar: "مثال",
+    });
+  });
+});
+
+describe("seed top-up: languages a seed gains later", () => {
+  it("gives text nobody changed the seed's new languages, and leaves edited text alone", async () => {
+    const { engine } = backend;
+    await call("GET", "/api/categories");
+    // A store seeded before `blurb` was localized: plain English, one of them edited since.
+    const news = (await engine.store.get("categories", "news"))!;
+    await engine.store.put("categories", {
+      ...news,
+      blurb: "What happened",
+      aliases: [{ id: "a1", label: "Updates" }],
+    });
+    const weekly = (await engine.store.get("categories", "weekly"))!;
+    await engine.store.put("categories", { ...weekly, blurb: "Edited by someone" });
+    await engine.store.setMeta("seedHash", "older");
+    await topUpSeed(engine, seeds);
+    expect((await engine.store.get("categories", "news"))!.blurb).toEqual({ en: "What happened", ar: "ما حدث" });
+    expect((await engine.store.get("categories", "news"))!.aliases).toEqual([
+      { id: "a1", label: { en: "Updates", ar: "تحديثات" } },
+    ]);
+    expect((await engine.store.get("categories", "weekly"))!.blurb).toBe("Edited by someone");
   });
 });

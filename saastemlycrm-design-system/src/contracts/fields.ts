@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { FieldLike } from "./config.ts";
+import { m } from "../i18n/index.ts";
 
 /**
  * What every field a project declares owes the person filling it in, and what it accepts, by
@@ -116,8 +117,6 @@ export function inputOf(f: FieldLike): FieldInput {
 
 /* ---------------------------------------------------------------- schemas */
 
-const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? "" : "s"}`;
-
 /** A related document as stored: its id, the document itself (read deep), or a polymorphic pair. */
 const relationValue = z.union([
   z.string().min(1),
@@ -129,7 +128,7 @@ const relationValue = z.union([
 /** A date as stored (an ISO string, or a `Date` before it's sent). */
 const dateValue = z.union([
   z.date(),
-  z.string().refine((s) => !Number.isNaN(Date.parse(s)), { error: "Pick a date." }),
+  z.string().refine((s) => !Number.isNaN(Date.parse(s)), { error: () => m.field_error_date() }),
 ]);
 
 /** The fields' values as one object schema (layout fields opened up, named tabs as groups). */
@@ -156,17 +155,21 @@ function single(f: FieldLike): z.ZodType {
     case "textarea":
     case "code":
     case "richText": {
-      let s = z.string({ error: "Text only." });
-      if (f.minLength != null) s = s.min(f.minLength, { error: `At least ${plural(f.minLength, "character")}.` });
-      if (f.maxLength != null) s = s.max(f.maxLength, { error: `At most ${plural(f.maxLength, "character")}.` });
+      let s = z.string({ error: () => m.field_error_text() });
+      if (f.minLength != null)
+        s = s.min(f.minLength, { error: () => m.field_error_min_length({ count: f.minLength! }) });
+      if (f.maxLength != null)
+        s = s.max(f.maxLength, { error: () => m.field_error_max_length({ count: f.maxLength! }) });
       return s;
     }
     case "email":
-      return z.email({ error: "An email address, like name@company.com." });
+      return z.email({ error: () => m.field_error_email() });
     case "number": {
-      let n = z.number({ error: "A number." }).refine(Number.isFinite, { error: "A number." });
-      if (f.min != null) n = n.refine((v) => v >= f.min!, { error: `${f.min} or more.` });
-      if (f.max != null) n = n.refine((v) => v <= f.max!, { error: `${f.max} or less.` });
+      let n = z
+        .number({ error: () => m.field_error_number() })
+        .refine(Number.isFinite, { error: () => m.field_error_number() });
+      if (f.min != null) n = n.refine((v) => v >= f.min!, { error: () => m.field_error_min({ min: f.min! }) });
+      if (f.max != null) n = n.refine((v) => v <= f.max!, { error: () => m.field_error_max({ max: f.max! }) });
       return n;
     }
     case "checkbox":
@@ -177,7 +180,7 @@ function single(f: FieldLike): z.ZodType {
     case "radio": {
       const values = optionValues(f);
       return values.length
-        ? z.enum(values as [string, ...string[]], { error: "Pick one of the options." })
+        ? z.enum(values as [string, ...string[]], { error: () => m.field_error_option() })
         : z.string();
     }
     case "relationship":
@@ -191,8 +194,8 @@ function single(f: FieldLike): z.ZodType {
       return zodOfFields(f.fields ?? []);
     case "array": {
       let a = z.array(zodOfFields(f.fields ?? []));
-      if (f.minRows != null) a = a.min(f.minRows, { error: `At least ${plural(f.minRows, "row")}.` });
-      if (f.maxRows != null) a = a.max(f.maxRows, { error: `At most ${plural(f.maxRows, "row")}.` });
+      if (f.minRows != null) a = a.min(f.minRows, { error: () => m.field_error_min_rows({ count: f.minRows! }) });
+      if (f.maxRows != null) a = a.max(f.maxRows, { error: () => m.field_error_max_rows({ count: f.maxRows! }) });
       return a;
     }
     case "blocks": {
@@ -215,13 +218,20 @@ function single(f: FieldLike): z.ZodType {
 export function zodOf(f: FieldLike): z.ZodType {
   const one = single(f);
   const many = f.hasMany && f.type !== "array" && f.type !== "blocks";
-  let s: z.ZodType = many ? (f.required ? z.array(one).min(1, { error: "Add at least one." }) : z.array(one)) : one;
+  let s: z.ZodType = many
+    ? f.required
+      ? z.array(one).min(1, { error: () => m.field_error_at_least_one() })
+      : z.array(one)
+    : one;
   if (!f.required || f.type === "array" || f.type === "blocks" || f.type === "group" || f.type === "checkbox")
     s = s.nullable().optional();
   else if (f.type === "text" || f.type === "textarea" || f.type === "email" || f.type === "code")
-    s = s.refine((v) => typeof v !== "string" || v.trim() !== "", { error: "Fill this in to save." });
+    s = s.refine((v) => typeof v !== "string" || v.trim() !== "", { error: () => m.field_error_required() });
   const custom = f.custom?.zod;
-  return typeof custom === "function" ? (custom as (base: z.ZodType) => z.ZodType)(s) : s;
+  if (typeof custom === "function") s = (custom as (base: z.ZodType) => z.ZodType)(s);
+  // Localized (Payload's `localized: true`): one value as written in a language, or, as stored
+  // and seeded, one per language (`{ en, ar }`), each a value of the field.
+  return f.localized ? z.union([s, z.record(z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/), s)]) : s;
 }
 
 /**
@@ -230,10 +240,10 @@ export function zodOf(f: FieldLike): z.ZodType {
  */
 export function fieldError(f: FieldLike, value: unknown): string | undefined {
   if (f.required && (value == null || value === "" || (Array.isArray(value) && !value.length)))
-    return "Fill this in to save.";
+    return m.field_error_required();
   if (value == null || value === "") return undefined;
   const r = zodOf(f).safeParse(value);
-  return r.success ? undefined : (r.error.issues[0]?.message ?? "Check this value.");
+  return r.success ? undefined : (r.error.issues[0]?.message ?? m.field_error_check());
 }
 
 /* ---------------------------------------------------------------- the contract */
@@ -248,13 +258,34 @@ export interface FieldProblem {
  * What a project's fields owe the person filling them in and don't give (see the top of this
  * file): a hint on every shown field, at most `MAX_HINT` long (the rest in `custom.about`), and a
  * placeholder on every field typed or picked into. Hidden fields (`hidden`, `admin.hidden`) owe
- * nothing; read-only ones owe no placeholder.
+ * nothing; read-only ones owe no placeholder. With `localization`, each of these, a field's
+ * label, its options' labels, its `custom.about` and its collection's or global's labels are
+ * given in every language (Payload's `{ en, ar }`), and each language's hint is short; so are the
+ * words of what people can do to a record (`custom.actions`: buttons, dialogs, results).
  */
 export function fieldProblems(config: {
-  collections?: { slug: string; fields: FieldLike[] }[];
-  globals?: { slug: string; fields: FieldLike[] }[];
+  collections?: { slug: string; fields: FieldLike[]; labels?: { singular?: unknown; plural?: unknown } }[];
+  globals?: { slug: string; fields: FieldLike[]; label?: unknown }[];
+  localization?: { locales: (string | { code: string })[] };
 }): FieldProblem[] {
   const out: FieldProblem[] = [];
+  // With languages, every text people read is given in each (Payload's `{ en, ar }`).
+  const codes = (config.localization?.locales ?? []).map((l) => (typeof l === "string" ? l : l.code));
+  const each = (v: unknown) =>
+    codes.length
+      ? !!v &&
+        typeof v === "object" &&
+        codes.every(
+          (c) => typeof (v as Record<string, unknown>)[c] === "string" && !!(v as Record<string, string>)[c].trim(),
+        )
+      : typeof v === "string" && !!v.trim();
+  const words = (v: unknown, l: string): string =>
+    typeof v === "string"
+      ? v
+      : v && typeof v === "object" && typeof (v as Record<string, unknown>)[l] === "string"
+        ? ((v as Record<string, string>)[l] ?? "")
+        : "";
+  const languages = codes.length ? ` in ${codes.join(" and ")}` : "";
   const walk = (fields: FieldLike[], where: string) => {
     for (const f of fields) {
       if (f.type === "row" || f.type === "collapsible") {
@@ -268,18 +299,74 @@ export function fieldProblems(config: {
       if (LAYOUT.has(f.type) || !f.name || f.hidden || f.admin?.hidden) continue;
       const at = `${where} › ${f.name}`;
       const hint = f.admin?.description;
-      if (typeof hint !== "string" || !hint.trim()) out.push({ at, problem: "needs a hint (admin.description)" });
-      else if (hint.length > MAX_HINT)
-        out.push({ at, problem: `hint is ${hint.length} characters; keep ${MAX_HINT}, move the rest to custom.about` });
+      if (!each(hint)) out.push({ at, problem: `needs a hint (admin.description)${languages}` });
+      else
+        for (const l of codes.length ? codes : [""]) {
+          const h = words(hint, l);
+          if (h.length > MAX_HINT)
+            out.push({
+              at,
+              problem: `hint${l ? ` (${l})` : ""} is ${h.length} characters; keep ${MAX_HINT}, move the rest to custom.about`,
+            });
+        }
       if (TYPED.has(f.type) && !f.admin?.readOnly && !f.virtual) {
         const ph = f.admin?.placeholder;
-        if (typeof ph !== "string" || !ph.trim()) out.push({ at, problem: "needs a placeholder (admin.placeholder)" });
+        if (!each(ph)) out.push({ at, problem: `needs a placeholder (admin.placeholder)${languages}` });
+      }
+      if (codes.length) {
+        // No label reads as its name humanized, in English whatever the language: it needs one.
+        if (f.label !== false && !each(f.label)) out.push({ at, problem: `label needs ${codes.join(" and ")}` });
+        if (f.custom?.about !== undefined && !each(f.custom.about))
+          out.push({ at, problem: `custom.about needs ${codes.join(" and ")}` });
+        for (const o of f.options ?? [])
+          if (typeof o === "object" && !each(o.label))
+            out.push({ at, problem: `option ${o.value}'s label needs ${codes.join(" and ")}` });
       }
       if (f.type === "group" || f.type === "array") walk(f.fields ?? [], at);
       if (f.type === "blocks") for (const b of f.blocks ?? []) walk(b.fields, `${at} › ${b.slug}`);
     }
   };
-  for (const c of config.collections ?? []) walk(c.fields, c.slug);
-  for (const g of config.globals ?? []) walk(g.fields, g.slug);
+  // What people can do to a record (`custom.actions`, a collection's or an array field's): its
+  // button, its dialog and its result in every language. Words only: a value that is all `$row.…`
+  // (another field's text, already in the reader's language) owes nothing.
+  const actionWords = (actions: unknown, at: string) => {
+    if (!codes.length || !Array.isArray(actions)) return;
+    const check = (v: unknown, what: string) => {
+      if (v === undefined || v === null || each(v)) return;
+      if (typeof v === "string" && !/[A-Za-z]{2,}/.test(v.replace(/\$[\w.]+/g, ""))) return;
+      out.push({ at, problem: `action ${what} needs ${codes.join(" and ")}` });
+    };
+    for (const a of actions as Record<string, unknown>[]) {
+      const name = words(a.label, codes[0] ?? "") || words(a.label, "");
+      check(a.label, `"${name}" label`);
+      for (const k of ["done", "prompt", "reason"]) check(a[k], `"${name}" ${k}`);
+      const confirm = a.confirm as Record<string, unknown> | undefined;
+      if (confirm && typeof confirm === "object")
+        for (const k of ["heading", "text", "label"]) check(confirm[k], `"${name}" confirm ${k}`);
+      for (const f of (a.fields as Record<string, unknown>[] | undefined) ?? [])
+        check(f.label, `"${name}" field label`);
+    }
+  };
+  const fieldActions = (fields: FieldLike[], at: string) => {
+    for (const f of fields) {
+      if (f.custom?.actions) actionWords(f.custom.actions, `${at} › ${f.name ?? f.type}`);
+      if (f.fields) fieldActions(f.fields, f.name ? `${at} › ${f.name}` : at);
+      for (const t of f.tabs ?? []) fieldActions(t.fields, at);
+    }
+  };
+  for (const c of config.collections ?? []) {
+    actionWords((c as { custom?: { actions?: unknown } }).custom?.actions, c.slug);
+    fieldActions(c.fields, c.slug);
+  }
+  for (const g of config.globals ?? []) fieldActions(g.fields, g.slug);
+  for (const c of config.collections ?? []) {
+    if (codes.length && (!each(c.labels?.singular) || !each(c.labels?.plural)))
+      out.push({ at: c.slug, problem: `labels (singular and plural) need ${codes.join(" and ")}` });
+    walk(c.fields, c.slug);
+  }
+  for (const g of config.globals ?? []) {
+    if (codes.length && !each(g.label)) out.push({ at: g.slug, problem: `label needs ${codes.join(" and ")}` });
+    walk(g.fields, g.slug);
+  }
   return out;
 }

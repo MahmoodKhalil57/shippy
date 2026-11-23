@@ -1,5 +1,6 @@
 import type { CollectionConfig, GlobalConfig } from "payload";
 import { collectionPage, documentPage, globalPage, widgets, type PageView } from "saastemlycrm-design-system/contracts";
+import { m } from "./i18n/paraglide/messages.js";
 import { LIST_PAGES } from "./pages/records.ts";
 
 /**
@@ -37,14 +38,14 @@ export function pages(collections: CollectionConfig[], globals: GlobalConfig[]):
 export const sourcingPipeline: PageView = {
   Component: widgets({
     header: {
-      eyebrow: "Sourcing desk",
-      heading: "Sourcing pipeline",
-      subtitle: "Messages to read, supplier requests awaiting a reply, and offers to check, on one page.",
+      eyebrow: m.page_sourcing_eyebrow(),
+      heading: m.page_sourcing_heading(),
+      subtitle: m.page_sourcing_subtitle(),
     },
     widgets: [
       {
-        title: "Messages to review",
-        subhead: "New and flagged messages; a message opens beside the list.",
+        title: m.page_sourcing_messages_title(),
+        subhead: m.page_sourcing_messages_subhead(),
         size: "full",
         rows: 10,
         collection: {
@@ -58,7 +59,7 @@ export const sourcingPipeline: PageView = {
         },
       },
       {
-        title: "Supplier requests awaiting a reply",
+        title: m.page_sourcing_rfqs_title(),
         size: "m",
         rows: 8,
         minRows: 6,
@@ -73,8 +74,8 @@ export const sourcingPipeline: PageView = {
         },
       },
       {
-        title: "Offers to check",
-        subhead: "Technical equivalence is a person's decision.",
+        title: m.page_sourcing_offers_title(),
+        subhead: m.page_sourcing_offers_subhead(),
         size: "m",
         rows: 8,
         minRows: 6,
@@ -91,8 +92,8 @@ export const sourcingPipeline: PageView = {
   }),
   path: "/sourcing-pipeline",
   meta: {
-    title: "Sourcing pipeline",
-    description: "Messages to review, supplier requests awaiting a reply and offers to check, on one page.",
+    title: m.page_sourcing_heading(),
+    description: m.page_sourcing_description(),
   },
-  nav: { group: "Sourcing desk", label: "Pipeline" },
+  nav: { group: m.page_sourcing_eyebrow(), label: m.page_sourcing_nav() },
 };

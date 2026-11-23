@@ -1,6 +1,7 @@
 import { actions, document, steps, table, widgets } from "saastemlycrm-design-system/contracts";
 import * as fmt from "../format/commercial.ts";
 import { quotation } from "../queries/commercial.ts";
+import { m } from "../i18n/paraglide/messages.js";
 
 /**
  * Quotation tab "Preview & send" (/collections/quotations/:id/preview): the quotation as Golden
@@ -19,7 +20,7 @@ export const quotePreview = widgets({
   // portal check, the copy (with its currency above it and its language on it).
   widgets: [
     steps({
-      title: "Decision state",
+      title: m.page_quote_decision(),
       size: "m",
       data: quotation,
       format: fmt.quoteDecision,
@@ -27,7 +28,7 @@ export const quotePreview = widgets({
     // The approval requests on this quotation and how far each has got (the approvals
     // collection's own `progress`). Deciding is in the decision state beside it.
     {
-      title: "Approvals",
+      title: m.page_quote_approvals(),
       size: "s",
       collection: {
         collection: "approvals",
@@ -42,17 +43,17 @@ export const quotePreview = widgets({
     // and its cost and margin, never printed (the `internal` group, which Sales can't read; the
     // margin amber under the pricing policy's minimum), with its link to the pricing.
     {
-      title: "Versions",
+      title: m.page_quote_versions(),
       size: "s",
       records: {
         doc: true,
         field: "versions",
         columns: ["number", "status", "totalExVat"],
-        empty: "No other versions.",
+        empty: m.page_quote_no_versions(),
       },
     },
     {
-      title: "Internal — never printed",
+      title: m.page_quote_internal(),
       size: "s",
       visible: ({ user }) => user.role !== "sales",
       fields: {
@@ -66,20 +67,20 @@ export const quotePreview = widgets({
       },
     },
     table({
-      title: "Portal submission check",
+      title: m.page_quote_portal(),
       size: "m",
       data: quotation,
       empty: {
         when: (v) => !v.can.portalCheck && !fmt.portalRows(v).length,
-        heading: "No portal submission to check.",
-        description: "Only quotations sent through a customer's procurement portal are checked here.",
+        heading: m.page_quote_no_portal(),
+        description: m.page_quote_no_portal_description(),
       },
       format: fmt.portalCheck,
     }),
     // It heads the copy, which is customer-facing.
     actions({
-      title: "Customer copy",
-      subhead: "Customer-facing: supplier names, costs and margins are never printed.",
+      title: m.page_quote_copy(),
+      subhead: m.page_quote_copy_subhead(),
       size: "full",
       skeleton: "text",
       data: quotation,

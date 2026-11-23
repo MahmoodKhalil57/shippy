@@ -2,11 +2,16 @@ import type { Joins, Select } from "../payload/select.ts";
 import type { Where } from "payload";
 import { stringify } from "qs-esm";
 import type { Doc, PaginatedDocs } from "../contracts/config.ts";
+import { locale } from "../i18n/index.ts";
 
 /**
  * A small typed client for Payload's REST API (like Payload's REST SDK): `fetch("/api/…")` with
  * Payload's routes, query syntax and response shapes. It works the same against a real Payload
  * server or the mock runner's in-browser backend, which hands over `setBackendReady`.
+ *
+ * Every request names the interface's language (Payload's `locale`), unless it names one itself:
+ * localized fields are read in it (falling back to the default language where a value is
+ * missing) and written in it, and custom endpoints get it as `req.locale`.
  */
 
 const BASE = import.meta.env.BASE_URL; // "/" or "/sub/path/"
@@ -76,7 +81,9 @@ export interface FindOptions extends ReadOptions {
 
 async function request<T>(method: string, path: string, body?: unknown, query?: object): Promise<T> {
   await ready;
-  const qs = query ? stringify(query, { addQueryPrefix: true, encodeValuesOnly: true }) : "";
+  const q = { locale: locale(), ...(query as Record<string, unknown> | undefined) };
+  // A path may carry a query of its own (an action's `call`): the rest is added to it.
+  const qs = (path.includes("?") ? "&" : "?") + stringify(q, { encodeValuesOnly: true });
   const init: RequestInit = { method, headers: {} };
   if (body instanceof FormData) init.body = body;
   else if (body !== undefined) {

@@ -1,4 +1,5 @@
 import type { CollectionViewSpec, Widget } from "saastemlycrm-design-system/contracts";
+import { m } from "../i18n/paraglide/messages.js";
 
 /**
  * What each collection's own page shows beside its list (`collectionPage`'s `before`), and the
@@ -49,130 +50,151 @@ const overTime = (collection: string, by: string, title: string, bucket: "day" |
 export const LIST_PAGES: Record<string, ListPage> = {
   cases: {
     before: [
-      share("cases", "stage", "Cases by stage"),
-      treemap("cases", "customer", "Case value by customer", "value"),
-      ring("cases", "owner", "Cases per owner"),
+      share("cases", "stage", m.page_records_cases_by_stage()),
+      treemap("cases", "customer", m.page_records_case_value_by_customer(), "value"),
+      ring("cases", "owner", m.page_records_cases_per_owner()),
     ],
   },
   customers: {
     layout: "cards",
     before: [
-      treemap("invoices", "customer", "Who owes us (USD)", "balanceUsd"),
-      ring("customers", "type", "Customers by type"),
-      share("customers", "contactRule", "Contact rules"),
+      treemap("invoices", "customer", m.page_records_who_owes_us(), "balanceUsd"),
+      ring("customers", "type", m.page_records_customers_by_type()),
+      share("customers", "contactRule", m.page_records_contact_rules()),
     ],
   },
   suppliers: {
     layout: "cards",
     before: [
-      ring("suppliers", "country", "Suppliers by country"),
-      share("suppliers", "kind", "Kinds of supplier"),
-      treemap("purchase-orders", "supplier", "Orders by supplier", "total"),
+      ring("suppliers", "country", m.page_records_suppliers_by_country()),
+      share("suppliers", "kind", m.page_records_supplier_kinds()),
+      treemap("purchase-orders", "supplier", m.page_records_orders_by_supplier(), "total"),
     ],
   },
-  users: { layout: "cards", before: [ring("users", "role", "The team by role")] },
+  users: { layout: "cards", before: [ring("users", "role", m.page_records_team_by_role())] },
   "intake-messages": {
     before: [
       byStatus("intake-messages", "status"),
-      ring("intake-messages", "channel", "Where messages come from"),
-      overTime("intake-messages", "receivedAt", "Messages per day", "day"),
+      ring("intake-messages", "channel", m.page_records_message_sources()),
+      overTime("intake-messages", "receivedAt", m.page_records_messages_per_day(), "day"),
     ],
   },
   "supplier-rfqs": {
     layout: "list",
-    before: [byStatus("supplier-rfqs", "status"), share("supplier-rfqs", "supplier", "Requests per supplier")],
+    before: [
+      byStatus("supplier-rfqs", "status"),
+      share("supplier-rfqs", "supplier", m.page_records_requests_per_supplier()),
+    ],
   },
   offers: {
     layout: "cards",
-    before: [ring("offers", "compliance", "Offers by compliance"), share("offers", "supplier", "Offers per supplier")],
+    before: [
+      ring("offers", "compliance", m.page_records_offers_by_compliance()),
+      share("offers", "supplier", m.page_records_offers_per_supplier()),
+    ],
   },
   quotations: {
     layout: "cards",
-    before: [byStatus("quotations", "status"), share("quotations", "status", "Quoted value by status", "totalExVat")],
+    before: [
+      byStatus("quotations", "status"),
+      share("quotations", "status", m.page_records_quoted_value_by_status(), "totalExVat"),
+    ],
   },
   approvals: {
     layout: "list",
-    before: [byStatus("approvals", "status"), ring("approvals", "type", "Decisions by kind")],
+    before: [byStatus("approvals", "status"), ring("approvals", "type", m.page_records_decisions_by_kind())],
   },
-  "customer-pos": { before: [overTime("customer-pos", "receivedAt", "Customer POs per week", "week")] },
+  "customer-pos": { before: [overTime("customer-pos", "receivedAt", m.page_records_customer_pos_per_week(), "week")] },
   "purchase-orders": {
     layout: "cards",
     before: [
       byStatus("purchase-orders", "status"),
-      treemap("purchase-orders", "supplier", "Order value by supplier", "total"),
+      treemap("purchase-orders", "supplier", m.page_records_order_value_by_supplier(), "total"),
     ],
   },
   "supplier-bills": {
     before: [
       byStatus("supplier-bills", "status"),
-      overTime("supplier-bills", "dueDate", "Bills falling due, by week", "week"),
+      overTime("supplier-bills", "dueDate", m.page_records_bills_due_by_week(), "week"),
     ],
   },
   receipts: {
     layout: "list",
-    before: [byStatus("receipts", "qc"), ring("receipts", "warehouse", "Receipts by warehouse")],
+    before: [byStatus("receipts", "qc"), ring("receipts", "warehouse", m.page_records_receipts_by_warehouse())],
   },
   deliveries: {
     layout: "calendar",
-    before: [ring("deliveries", "status", "Deliveries by status"), share("deliveries", "case", "Deliveries per case")],
+    before: [
+      ring("deliveries", "status", m.page_records_deliveries_by_status()),
+      share("deliveries", "case", m.page_records_deliveries_per_case()),
+    ],
   },
   invoices: {
     before: [
-      share("invoices", "ageBucket", "Open balance by age (USD)", "balanceUsd"),
-      treemap("invoices", "customer", "Open balance by customer (USD)", "balanceUsd"),
+      share("invoices", "ageBucket", m.page_records_balance_by_age(), "balanceUsd"),
+      treemap("invoices", "customer", m.page_records_balance_by_customer(), "balanceUsd"),
     ],
   },
   payments: {
     layout: "list",
     before: [
-      ring("payments", "direction", "Money in and out", "amount"),
-      overTime("payments", "paidAt", "Payments per week", "week"),
+      ring("payments", "direction", m.page_records_money_in_out(), "amount"),
+      overTime("payments", "paidAt", m.page_records_payments_per_week(), "week"),
     ],
   },
   vessels: {
     layout: "cards",
-    before: [ring("vessels", "vesselType", "Vessels by type"), share("vessels", "customer", "Vessels per customer")],
+    before: [
+      ring("vessels", "vesselType", m.page_records_vessels_by_type()),
+      share("vessels", "customer", m.page_records_vessels_per_customer()),
+    ],
   },
   products: {
     layout: "list",
     before: [
-      treemap("stock", "product", "Stock on hand by product", "onHand"),
-      ring("products", "store", "Products by store"),
+      treemap("stock", "product", m.page_records_stock_by_product(), "onHand"),
+      ring("products", "store", m.page_records_products_by_store()),
     ],
   },
-  "supplier-prices": { layout: "list", before: [share("supplier-prices", "supplier", "Prices per supplier")] },
-  pricelists: { layout: "cards", before: [ring("pricelists", "principal", "Price lists per principal")] },
+  "supplier-prices": {
+    layout: "list",
+    before: [share("supplier-prices", "supplier", m.page_records_prices_per_supplier())],
+  },
+  pricelists: { layout: "cards", before: [ring("pricelists", "principal", m.page_records_pricelists_per_principal())] },
   stock: {
     layout: "list",
     before: [
-      ring("stock", "warehouse", "Units on hand by warehouse", "onHand"),
-      treemap("stock", "product", "Available by product", "available"),
+      ring("stock", "warehouse", m.page_records_units_by_warehouse(), "onHand"),
+      treemap("stock", "product", m.page_records_available_by_product(), "available"),
     ],
   },
   tasks: {
     layout: "board",
-    before: [byStatus("tasks", "status"), share("tasks", "type", "Tasks by type")],
+    before: [byStatus("tasks", "status"), share("tasks", "type", m.page_records_tasks_by_type())],
   },
   activities: {
     layout: "list",
-    before: [ring("activities", "kind", "Activity by kind"), overTime("activities", "at", "Activity per day", "day")],
+    before: [
+      ring("activities", "kind", m.page_records_activity_by_kind()),
+      overTime("activities", "at", m.page_records_activity_per_day(), "day"),
+    ],
   },
   "ai-calls": {
     layout: "list",
-    before: [byStatus("ai-calls", "outcome"), ring("ai-calls", "task", "AI calls by task")],
+    before: [byStatus("ai-calls", "outcome"), ring("ai-calls", "task", m.page_records_ai_calls_by_task())],
   },
   "integration-exceptions": {
     layout: "list",
     before: [
       byStatus("integration-exceptions", "status"),
-      ring("integration-exceptions", "source", "Exceptions by source"),
+      ring("integration-exceptions", "source", m.page_records_exceptions_by_source()),
     ],
   },
   opportunities: {
     layout: "board",
     before: [
-      share("opportunities", "source", "Where prospects come from"),
-      ring("opportunities", "segment", "By segment"),
+      share("opportunities", "source", m.page_records_prospect_sources()),
+      ring("opportunities", "segment", m.page_records_by_segment()),
     ],
   },
   "vendor-registrations": {

@@ -1,11 +1,12 @@
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
+import { formatInt } from "../../../i18n/index.ts";
 import { LightElement } from "../../base/light-element.ts";
 import { motion } from "../../base/motion-queue.ts";
 import { rcva } from "../../base/variants.ts";
 import { fixed, inlineRow, row, rowLine, stack, text } from "../layout/algebra.ts";
-import { foldParts, sharePercents, type Slot } from "./visual-math.ts";
+import { foldParts, percentText, sharePercents, type Slot } from "./visual-math.ts";
 
 /**
  * Share bar: parts of a whole as one bar split end to end (a 100% stacked bar), the legend under
@@ -135,9 +136,9 @@ export class UiShareBar extends LightElement {
     const dim = (i: number) => this._active >= 0 && this._active !== i;
     return html`<div class=${shareBar()}>
       <div class=${shareBarHead()} aria-live="polite">
-        <span class=${shareBarLabel()}>${active ? `${active.label} · ${active.share}%` : this.label}</span>
+        <span class=${shareBarLabel()}>${active ? `${active.label} · ${percentText(active.share)}` : this.label}</span>
         <span class=${shareBarTotal()}
-          >${active ? (active.valueText ?? String(active.value)) : (this.total ?? nothing)}</span
+          >${active ? (active.valueText ?? formatInt(active.value)) : (this.total ?? nothing)}</span
         >
       </div>
       <div class=${shareBarTrack()} aria-hidden="true" @pointerleave=${() => this.#set(-1)}>
@@ -157,8 +158,8 @@ export class UiShareBar extends LightElement {
         ${parts.map((p, i) => {
           const body = html`<span class=${shareBarDot({ slot: p.slot })}></span>
             <span class=${shareBarName()}>${p.label}</span>
-            <span class=${shareBarAmount()}>${p.valueText ?? String(p.value)}</span>
-            <span class=${shareBarShare()}>${p.share}%</span>`;
+            <span class=${shareBarAmount()}>${p.valueText ?? formatInt(p.value)}</span>
+            <span class=${shareBarShare()}>${percentText(p.share)}</span>`;
           const cls = shareBarChip({ dim: dim(i), link: !!p.href });
           const on = () => this.#set(i);
           const off = () => this.#set(-1);

@@ -1,5 +1,6 @@
 import type { Action, KindData, Tone } from "saastemlycrm-design-system/contracts";
 import type { ProjectView } from "../endpoints/platform.ts";
+import { m } from "../i18n/paraglide/messages.js";
 import { formatDate } from "./index.ts";
 
 /**
@@ -10,13 +11,13 @@ import { formatDate } from "./index.ts";
  * draws out.
  */
 
-/** The plan's 13 weeks, W1 to W13. */
-export const WEEKS = Array.from({ length: 13 }, (_, i) => `W${i + 1}`);
+/** The plan's 13 weeks, W1 to W13, in the interface's language. */
+export const weeks = () => Array.from({ length: 13 }, (_, i) => m.project_week({ n: i + 1 }));
 
 export const PHASE_TONE: Record<string, Tone> = { 0: "neutral", 1: "primary", 2: "info", 3: "success" };
 
 /** A link to the demo screen that shows it (none when the plan names no screen). */
-export const see = (href: string, label = "Open in demo"): Action[] => (href ? [{ label, href }] : []);
+export const see = (href: string, label = m.project_open_in_demo()): Action[] => (href ? [{ label, href }] : []);
 
 /** 01, 02…: an item's number in a list of principles or problems. */
 export const two = (i: number) => String(i + 1).padStart(2, "0");
@@ -27,9 +28,9 @@ export type Phase = ProjectView["phases"][number];
 
 /** The four phases over 13 weeks, each approved on its own. */
 export const roadmap = (d: ProjectView): KindData<"gantt"> => ({
-  note: "Each phase is approved on its own; a weekly 45-minute review keeps progress, baseline numbers and decisions in one place.",
-  label: "Phase",
-  periods: WEEKS,
+  note: m.project_roadmap_note(),
+  label: m.project_phase(),
+  periods: weeks(),
   rows: d.phases.map((p) => ({
     label: p.name,
     supporting: p.weeks,
@@ -42,10 +43,7 @@ export const roadmap = (d: ProjectView): KindData<"gantt"> => ({
 
 /** What the one monthly plan covers after go-live (Odoo licences and larger changes are apart). */
 export const monthlyPlan = (d: ProjectView): KindData<"list"> => ({
-  note: [
-    "One monthly plan keeps everything running after go-live.",
-    "Odoo licences are with Odoo directly. Larger change requests are scoped and agreed separately.",
-  ].join("\n"),
+  note: [m.project_monthly_note(), m.project_monthly_note_licences()].join("\n"),
   items: d.monthly.map(([title, text]) => ({ headline: title, supporting: text, icon: "check" })),
 });
 
@@ -77,10 +75,10 @@ export const platformWork = (d: ProjectView): KindData<"tiles"> => ({
 export const problems = (d: ProjectView): KindData<"tiles"> => ({
   look: "card",
   items: d.problems.map(([problem, answer, href], i) => ({
-    overline: `Problem ${two(i)}`,
+    overline: m.project_problem({ n: two(i) }),
     heading: problem,
-    text: `→ ${answer}`,
-    actions: see(href, "Show me"),
+    text: m.project_answer({ answer }),
+    actions: see(href, m.project_show_me()),
     filled: true,
   })),
 });
@@ -91,13 +89,13 @@ export const trust = (d: ProjectView): KindData<"tiles"> => ({
     overline: two(i),
     heading: title,
     text,
-    actions: see(href, "Show me"),
+    actions: see(href, m.project_show_me()),
   })),
 });
 
 /** The payment rule: each phase paid in three steps, the last after 30 days of real use. */
 export const payment = (d: ProjectView): KindData<"tiles"> => ({
-  note: "Each phase is paid in three steps, so you only pay the last part once it works in your hands.",
+  note: m.project_payment_note(),
   look: "card",
   figure: true,
   fit: "xs",
@@ -107,20 +105,22 @@ export const payment = (d: ProjectView): KindData<"tiles"> => ({
 /** Every requirement from the brief, the phase that delivers it and the screen that shows it. */
 export const brief = (d: ProjectView): KindData<"table"> => ({
   head: {
-    tags: [{ label: `${d.requirements.length} / ${d.requirements.length} covered`, tone: "success" }],
+    tags: [
+      { label: m.project_covered_of({ done: d.requirements.length, total: d.requirements.length }), tone: "success" },
+    ],
   },
-  note: "Every requirement designed, with the screen that shows it and an acceptance test.",
+  note: m.project_brief_note(),
   columns: [
-    { key: "requirement", label: "From your brief" },
-    { key: "phase", label: "Phase" },
-    { key: "covered", label: "Covered" },
+    { key: "requirement", label: m.project_col_requirement() },
+    { key: "phase", label: m.project_phase() },
+    { key: "covered", label: m.project_covered() },
     { key: "open", label: "" },
   ],
   rows: d.requirements.map(([requirement, phase, href]) => ({
     requirement,
-    phase: { text: `Phase ${phase}`, tone: PHASE_TONE[phase] ?? "neutral", tag: true },
-    covered: { text: "Covered", dot: "success" },
-    open: { text: "", actions: see(href, "Show me") },
+    phase: { text: m.project_phase_n({ n: phase }), tone: PHASE_TONE[phase] ?? "neutral", tag: true },
+    covered: { text: m.project_covered(), dot: "success" },
+    open: { text: "", actions: see(href, m.project_show_me()) },
   })),
 });
 
@@ -131,12 +131,12 @@ export const acceptancePassing = (d: ProjectView): KindData<"gauges"> => {
   return {
     items: [
       {
-        label: "Passing",
+        label: m.project_passing(),
         value: passed,
         max: total,
         tone: "success",
-        valueText: `${passed} / ${total}`,
-        a11y: `${passed} of ${total} acceptance tests pass`,
+        valueText: m.project_done_of({ done: passed, total }),
+        a11y: m.project_tests_pass({ count: passed, total }),
       },
     ],
   };
@@ -150,13 +150,15 @@ export const acceptance = (d: ProjectView): KindData<"table"> => {
   const passed = passing(d);
   const total = d.acceptance.length;
   return {
-    head: { tags: [{ label: `${passed} / ${total} pass`, tone: passed === total ? "success" : "info" }] },
-    note: `The ten scenarios you asked to see live, each with its evidence. Checked against the data in this demo ${formatDate(d.checkedAt)}; at go-live they run on your own data.`,
+    head: {
+      tags: [{ label: m.project_pass_of({ done: passed, total }), tone: passed === total ? "success" : "info" }],
+    },
+    note: m.project_acceptance_note({ at: formatDate(d.checkedAt) }),
     columns: [
       { key: "no", label: "#" },
-      { key: "scenario", label: "Scenario", supporting: "evidence" },
-      { key: "check", label: "Checked live" },
-      { key: "status", label: "Status" },
+      { key: "scenario", label: m.project_col_scenario(), supporting: "evidence" },
+      { key: "check", label: m.project_col_checked() },
+      { key: "status", label: m.project_col_status() },
       { key: "open", label: "" },
     ],
     rows: d.acceptance.map((a) => ({
@@ -165,7 +167,7 @@ export const acceptance = (d: ProjectView): KindData<"table"> => {
       evidence: a.evidence,
       check: a.check,
       status: { text: a.status, tone: a.pass ? "success" : "warning", tag: true },
-      open: { text: "", actions: see(a.href, "Open") },
+      open: { text: "", actions: see(a.href, m.project_open()) },
     })),
   };
 };

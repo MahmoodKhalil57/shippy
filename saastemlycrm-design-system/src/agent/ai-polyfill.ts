@@ -52,7 +52,8 @@ export async function nativeAiUsable(): Promise<boolean> {
   const lm = api("LanguageModel");
   if (!lm || lm.__isPolyfill || typeof lm.availability !== "function") return false;
   try {
-    return (await lm.availability()) !== "unavailable";
+    // Its output language named (Chrome asks for one; it writes English, not yet Arabic).
+    return (await lm.availability({ expectedOutputs: [{ type: "text", languages: ["en"] }] })) !== "unavailable";
   } catch {
     return false;
   }

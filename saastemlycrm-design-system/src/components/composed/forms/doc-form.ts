@@ -37,6 +37,7 @@ import "../../primitives/layout/flex.ts";
 import "../../primitives/layout/grid.ts";
 import "../../primitives/navigation/tabs.ts";
 import "../../primitives/typography/text.ts";
+import { intl, m } from "../../../i18n/index.ts";
 
 /**
  * Doc form: Edits a document described by Payload fields.
@@ -170,8 +171,8 @@ const fromInputDate = (v: string, appearance: DateAppearance, previous: unknown)
   if (appearance === "timeOnly") {
     // A time on the day the value already had (or today).
     const day = typeof previous === "string" && previous ? new Date(previous) : new Date();
-    const [h, m] = v.split(":").map(Number);
-    day.setHours(h ?? 0, m ?? 0, 0, 0);
+    const [h, min] = v.split(":").map(Number);
+    day.setHours(h ?? 0, min ?? 0, 0, 0);
     return day.toISOString();
   }
   return new Date(appearance === "monthOnly" ? `${v}-01T00:00` : v).toISOString();
@@ -187,7 +188,7 @@ interface SuggestSpec {
 type Suggestion = { busy: true } | { value: unknown; label: string } | { note: string };
 const dateLabel = (iso: string) => {
   const d = new Date(`${iso}T00:00`);
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString(undefined, { dateStyle: "medium" });
+  return Number.isNaN(d.getTime()) ? iso : intl.date({ dateStyle: "medium" }).format(d);
 };
 
 /** Fields holding a value, with layout fields flattened (for row labels). */
@@ -271,7 +272,11 @@ export class UiDocForm extends LightElement {
       case "number":
         return f.hasMany ? null : { field: { ...base, type: "number" }, toValue: Number, label: words };
       case "checkbox":
-        return { field: { ...base, type: "boolean" }, toValue: Boolean, label: (x) => (x === true ? "Yes" : "No") };
+        return {
+          field: { ...base, type: "boolean" },
+          toValue: Boolean,
+          label: (x) => (x === true ? m.doc_form_yes() : m.doc_form_no()),
+        };
       case "date": {
         const appearance = appearanceOf(f);
         if (appearance !== "dayOnly" && appearance !== "dayAndTime") return null;
@@ -341,7 +346,7 @@ export class UiDocForm extends LightElement {
   /** One value as it reads on screen (an option's label, a related record's name), or "" for none. */
   private _read(f: FieldLike, v: unknown, data: Data): string {
     if (v == null || v === "" || isObj(v) || Array.isArray(v)) return "";
-    if (typeof v === "boolean") return f.type === "checkbox" ? (v ? "Yes" : "No") : "";
+    if (typeof v === "boolean") return f.type === "checkbox" ? (v ? m.doc_form_yes() : m.doc_form_no()) : "";
     if (f.type === "select" || f.type === "radio") {
       const o = (f.options ?? []).find((o) => (typeof o === "string" ? o : o.value) === v);
       return o == null ? text(v) : typeof o === "string" ? o : (textOf(o.label) ?? o.value);
@@ -355,10 +360,10 @@ export class UiDocForm extends LightElement {
   }
 
   private _suggestion(key: string, next?: Suggestion) {
-    const m = new Map(this._suggestions);
-    if (next) m.set(key, next);
-    else m.delete(key);
-    this._suggestions = m;
+    const all = new Map(this._suggestions);
+    if (next) all.set(key, next);
+    else all.delete(key);
+    this._suggestions = all;
   }
 
   private async _suggest(key: string, spec: SuggestSpec) {
@@ -369,14 +374,12 @@ export class UiDocForm extends LightElement {
       const value = x == null ? null : spec.toValue(x);
       this._suggestion(
         key,
-        x == null || value == null
-          ? { note: "Nothing on the form points to an answer yet. Fill in more and try again." }
-          : { value, label: spec.label(x) },
+        x == null || value == null ? { note: m.doc_form_suggest_nothing() } : { value, label: spec.label(x) },
       );
     } catch (e) {
       // The model's own errors ("An unknown error occurred") say nothing a person can act on.
       console.warn("Suggestion failed", e);
-      this._suggestion(key, { note: "The AI couldn't suggest an answer this time. Try again in a moment." });
+      this._suggestion(key, { note: m.doc_form_suggest_failed() });
     }
   }
 
@@ -432,7 +435,7 @@ export class UiDocForm extends LightElement {
           mode="checkbox"
           icon="arrow"
           ?open=${!f.admin?.initCollapsed || this._errorsIn(path, f.fields) > 0}
-          .heading=${labelOf(f) || "Details"}
+          .heading=${labelOf(f) || m.doc_form_details()}
         >
           ${f.admin?.description ? html`<ui-text variant="body-md" color="muted">${f.admin.description}</ui-text>` : nothing}
           ${this._fields(f.fields ?? [], data, path)}
@@ -451,7 +454,7 @@ export class UiDocForm extends LightElement {
             const description = (tab as { description?: unknown }).description;
             return {
               // A tab with errors inside says so, so they're found without opening every tab.
-              label: errors ? `${label} · ${errors} ${errors === 1 ? "error" : "errors"}` : label,
+              label: errors ? m.doc_form_tab_errors({ label, count: errors }) : label,
               content: html`${typeof description === "string" ? html`<ui-text variant="body-md" color="muted">${description}</ui-text>` : nothing}
               ${
                 tab.name
@@ -509,7 +512,11 @@ export class UiDocForm extends LightElement {
     const rows = Array.isArray(data[name]) ? (data[name] as Data[]) : [];
     const at = [...path, name];
     const labels = (f as { labels?: { singular?: unknown; plural?: unknown } }).labels;
-    const singular = typeof labels?.singular === "string" ? labels.singular : "Row";
+    const named = typeof labels?.singular === "string" ? labels.singular : undefined;
+    const singular = named ?? m.doc_form_row();
+    const plural = (
+      typeof labels?.plural === "string" ? labels.plural : labelOf(f) || humanize(name)
+    ).toLocaleLowerCase();
     const sortable = f.admin?.isSortable !== false;
     const full = f.maxRows != null && rows.length >= f.maxRows;
     const removable = !(f.minRows != null && rows.length <= f.minRows);
@@ -549,8 +556,8 @@ export class UiDocForm extends LightElement {
         ? f.minRows != null && f.maxRows != null
           ? `${f.minRows}–${f.maxRows}`
           : f.maxRows != null
-            ? `up to ${f.maxRows}`
-            : `at least ${f.minRows}`
+            ? m.doc_form_rows_up_to({ max: f.maxRows })
+            : m.doc_form_rows_at_least({ min: f.minRows! })
         : "";
 
     return html`<ui-flex direction="col" gap="2">
@@ -562,15 +569,15 @@ export class UiDocForm extends LightElement {
         ${
           rows.length > 1
             ? html`<ui-flex gap="1">
-                <ui-button size="xs" variant="text" @click=${() => fold(false)}>Collapse all</ui-button>
-                <ui-button size="xs" variant="text" @click=${() => fold(true)}>Expand all</ui-button>
+                <ui-button size="xs" variant="text" @click=${() => fold(false)}>${m.doc_form_collapse_all()}</ui-button>
+                <ui-button size="xs" variant="text" @click=${() => fold(true)}>${m.doc_form_expand_all()}</ui-button>
               </ui-flex>`
             : nothing
         }
       </ui-flex>
       ${f.admin?.description ? html`<ui-text variant="body-md" color="muted">${f.admin.description}</ui-text>` : nothing}
       ${this._error(at)}
-      ${rows.length ? nothing : html`<ui-empty-state size="sm">No ${humanize(name).toLowerCase()} yet.</ui-empty-state>`}
+      ${rows.length ? nothing : html`<ui-empty-state size="sm">${m.doc_form_rows_empty({ items: plural })}</ui-empty-state>`}
       ${rows.map((row, i) => {
         const fields = f.type === "blocks" ? (blockOf(row)?.fields ?? []) : (f.fields ?? []);
         const open = isOpen(row, i);
@@ -582,13 +589,13 @@ export class UiDocForm extends LightElement {
           [this._rowLabel(fields, row)].find((l) => l !== String(i + 1) && l !== text(i + 1).padStart(2, "0")) ||
           "";
         const menu: DropdownItem[] = [
-          ...(sortable && i > 0 ? [{ label: "Move up", value: "up", icon: "arrow-up" as const }] : []),
+          ...(sortable && i > 0 ? [{ label: m.doc_form_move_up(), value: "up", icon: "arrow-up" as const }] : []),
           ...(sortable && i < rows.length - 1
-            ? [{ label: "Move down", value: "down", icon: "arrow-down" as const }]
+            ? [{ label: m.doc_form_move_down(), value: "down", icon: "arrow-down" as const }]
             : []),
-          ...(full ? [] : [{ label: "Duplicate", value: "duplicate", icon: "copy" as const }]),
+          ...(full ? [] : [{ label: m.doc_form_duplicate(), value: "duplicate", icon: "copy" as const }]),
           ...(removable
-            ? [{ label: "Remove", value: "remove", icon: "x" as const, destructive: true, separator: true }]
+            ? [{ label: m.doc_form_remove(), value: "remove", icon: "x" as const, destructive: true, separator: true }]
             : []),
         ];
         return html`<ui-box border rounded="box" padding="3">
@@ -597,15 +604,17 @@ export class UiDocForm extends LightElement {
               <ui-button
                 size="xs"
                 variant="text"
-                .label=${`${open ? "Collapse" : "Expand"} ${kind} ${i + 1}`}
+                .label=${open ? m.doc_form_collapse_row({ kind, number: i + 1 }) : m.doc_form_expand_row({ kind, number: i + 1 })}
                 @click=${() => (this._folded = new Map(this._folded).set(rowId(row, i), !open))}
               >
                 <ui-icon name=${open ? "chevron-down" : "chevron-right"} size="sm"></ui-icon>
-                <ui-text as="span" variant="title-sm">${kind} ${text(i + 1).padStart(2, "0")}</ui-text>
+                <ui-text as="span" variant="title-sm"
+                  >${m.doc_form_row_title({ kind, number: text(i + 1).padStart(2, "0") })}</ui-text
+                >
                 ${name ? html`<ui-text as="span" variant="body-md" color="muted" truncate>${name}</ui-text>` : nothing}
               </ui-button>
               <ui-flex align="center" gap="1">
-                ${errors ? html`<ui-tag tone="error">${errors} ${errors === 1 ? "error" : "errors"}</ui-tag>` : nothing}
+                ${errors ? html`<ui-tag tone="error">${m.doc_form_errors({ count: errors })}</ui-tag>` : nothing}
                 ${
                   this.readonly || !menu.length
                     ? nothing
@@ -615,7 +624,7 @@ export class UiDocForm extends LightElement {
                         trigger-variant="text"
                         trigger-size="xs"
                         trigger-shape="round"
-                        .triggerLabel=${`${kind} ${i + 1} actions`}
+                        .triggerLabel=${m.doc_form_row_actions({ kind, number: i + 1 })}
                         .items=${menu}
                         @ui-select=${(e: CustomEvent<{ item: { value: string } }>) => {
                           e.stopPropagation();
@@ -634,8 +643,8 @@ export class UiDocForm extends LightElement {
                       ? html`<ui-text-input
                           size="sm"
                           width="full"
-                          leading="Name"
-                          placeholder="Optional"
+                          .leading=${m.doc_form_block_name()}
+                          .placeholder=${m.doc_form_optional()}
                           .value=${typeof row.blockName === "string" ? row.blockName : ""}
                           .readonly=${this.readonly}
                           @input=${(e: Event) => this._set([...at, i, "blockName"], (e.target as HTMLInputElement).value)}
@@ -651,7 +660,7 @@ export class UiDocForm extends LightElement {
         this.readonly || full
           ? full && !this.readonly
             ? html`<ui-text variant="body-md" color="muted"
-                >The most ${humanize(name).toLowerCase()} allowed is ${f.maxRows}.</ui-text
+                >${m.doc_form_rows_max({ items: plural, max: f.maxRows! })}</ui-text
               >`
             : nothing
           : f.type === "blocks"
@@ -660,7 +669,7 @@ export class UiDocForm extends LightElement {
                   mode="popover"
                   trigger-variant="outlined"
                   trigger-size="xs"
-                  .label=${`+ Add ${singular === "Row" ? "block" : singular.toLowerCase()}`}
+                  .label=${named ? m.doc_form_add_named({ name: named }) : m.doc_form_add_block()}
                   .items=${allowedBlocks.map((b) => ({ label: blockLabel(b.slug), value: b.slug }))}
                   @ui-select=${(e: CustomEvent<{ item: { value: string } }>) => {
                     e.stopPropagation();
@@ -669,7 +678,9 @@ export class UiDocForm extends LightElement {
                 ></ui-dropdown>
               </ui-flex>`
             : html`<ui-flex
-                ><ui-button size="xs" variant="outlined" @click=${() => add()}>+ Add ${singular}</ui-button></ui-flex
+                ><ui-button size="xs" variant="outlined" @click=${() => add()}
+                  >${m.doc_form_add_named({ name: singular })}</ui-button
+                ></ui-flex
               >`
       }
     </ui-flex>`;
@@ -687,7 +698,7 @@ export class UiDocForm extends LightElement {
         </ui-flex>
         ${
           view.createHref && f.admin?.allowCreate !== false && !this.readonly
-            ? html`<ui-button size="xs" variant="text" href=${view.createHref}>+ Create new</ui-button>`
+            ? html`<ui-button size="xs" variant="text" href=${view.createHref}>${m.doc_form_create_new()}</ui-button>`
             : nothing
         }
       </ui-flex>
@@ -702,11 +713,13 @@ export class UiDocForm extends LightElement {
             i === 0 && row.href ? html`<ui-link href=${row.href}>${row.cells[c.key]}</ui-link>` : row.cells[c.key],
         }))}
         .rows=${view.rows}
-        .empty=${"None yet."}
+        .empty=${m.doc_form_none_yet()}
       ></ui-table>
       ${
         view.total > view.rows.length
-          ? html`<ui-text variant="body-sm" color="muted">Showing ${view.rows.length} of ${view.total}.</ui-text>`
+          ? html`<ui-text variant="body-sm" color="muted"
+              >${m.doc_form_join_showing({ shown: view.rows.length, total: view.total })}</ui-text
+            >`
           : nothing
       }
     </ui-flex>`;
@@ -789,7 +802,7 @@ export class UiDocForm extends LightElement {
           .checked=${v === true}
           .disabled=${disabled}
           aria-label=${label}
-          .label=${v === true ? "Yes" : "No"}
+          .label=${v === true ? m.doc_form_yes() : m.doc_form_no()}
           @change=${(e: Event) => set(target(e).checked)}
         ></ui-switch>`;
       case "segmented":
@@ -841,7 +854,9 @@ export class UiDocForm extends LightElement {
           .step=${f.admin?.step ?? ((f.max ?? 100) - (f.min ?? 0) <= 1 ? 0.01 : 1)}
           .value=${typeof v === "number" ? v : (f.min ?? 0)}
           .format=${(x: number) =>
-            f.max === 1 && f.min === 0 ? `${Math.round(x * 100)}%` : `${x}${unit === "pct" ? "%" : (suffix ?? "")}`}
+            f.max === 1 && f.min === 0
+              ? intl.number({ style: "percent" }).format(x)
+              : `${intl.number().format(x)}${unit === "pct" ? "%" : (suffix ?? "")}`}
           ?disabled=${disabled}
           @input=${(e: Event) => set(Number(target(e).value))}
         ></ui-range>`;
@@ -852,7 +867,7 @@ export class UiDocForm extends LightElement {
           .min=${f.min ?? (unit === "days" ? 0 : undefined)}
           .max=${f.max ?? undefined}
           .step=${f.admin?.step ?? 1}
-          .unit=${suffix ?? (unit === "days" ? "days" : "")}
+          .unit=${suffix ?? (unit === "days" ? m.doc_form_unit_days() : "")}
           .placeholder=${placeholder ?? ""}
           ?disabled=${disabled}
           @ui-change=${(e: CustomEvent<{ value: number | null }>) => set(e.detail.value)}
@@ -916,7 +931,7 @@ export class UiDocForm extends LightElement {
             creatable
             .color=${color}
             .value=${Array.isArray(v) ? v.map(text) : []}
-            .placeholder=${placeholder ?? "Type and press Enter"}
+            .placeholder=${placeholder ?? m.doc_form_type_enter()}
             .readonly=${disabled}
             field-width="full"
             @ui-change=${(e: CustomEvent<{ value: string[] }>) => set(e.detail.value)}
@@ -944,7 +959,7 @@ export class UiDocForm extends LightElement {
           inputmode="decimal"
           .color=${color}
           .value=${Array.isArray(v) ? v.map(text) : []}
-          .placeholder=${placeholder ?? "Type a number and press Enter"}
+          .placeholder=${placeholder ?? m.doc_form_type_number_enter()}
           .readonly=${disabled}
           field-width="full"
           @ui-change=${(e: CustomEvent<{ value: string[] }>) =>
@@ -1011,7 +1026,7 @@ export class UiDocForm extends LightElement {
               }
             }}
           ></ui-textarea>
-          ${bad != null ? html`<ui-text variant="body-md" color="error">Not valid JSON yet; it's saved once it is.</ui-text>` : nothing}`;
+          ${bad != null ? html`<ui-text variant="body-md" color="error">${m.doc_form_json_invalid()}</ui-text>` : nothing}`;
       }
       case "checkbox":
         return html`<ui-checkbox
@@ -1036,7 +1051,9 @@ export class UiDocForm extends LightElement {
               set(next);
             }}
           ></ui-text-input>`;
-        return html`<ui-grid fit="xs" gap="4">${part(0, "Longitude")}${part(1, "Latitude")}</ui-grid>`;
+        return html`<ui-grid fit="xs" gap="4"
+          >${part(0, m.doc_form_longitude())}${part(1, m.doc_form_latitude())}</ui-grid
+        >`;
       }
       case "select":
       case "radio":
@@ -1044,7 +1061,9 @@ export class UiDocForm extends LightElement {
       case "upload":
         return this._choice(f, v, set, label, "", disabled, color, placeholder, data);
       default:
-        return html`<ui-text variant="body-md" color="muted">${label}: unsupported field type "${f.type}"</ui-text>`;
+        return html`<ui-text variant="body-md" color="muted"
+          >${m.doc_form_unsupported({ label, type: String(f.type) })}</ui-text
+        >`;
     }
   }
 
@@ -1138,7 +1157,7 @@ export class UiDocForm extends LightElement {
         ?multiple=${!!f.hasMany}
         ?clearable=${f.admin?.isClearable ?? !f.required}
         .color=${color}
-        .placeholder=${placeholder ?? (f.hasMany ? "Choose…" : "—")}
+        .placeholder=${placeholder ?? (f.hasMany ? m.doc_form_choose() : "—")}
         .readonly=${disabled}
         field-width="full"
         @ui-change=${(e: CustomEvent<{ value: string | string[] }>) =>
@@ -1156,11 +1175,11 @@ export class UiDocForm extends LightElement {
     const href = this.relationHref;
     const open =
       href && f.admin?.allowEdit !== false && ids.length === 1
-        ? html`<ui-link href=${href(target(ids[0]!), bare(ids[0]!))}>Open</ui-link>`
+        ? html`<ui-link href=${href(target(ids[0]!), bare(ids[0]!))}>${m.doc_form_open()}</ui-link>`
         : undefined;
     const create =
       href && !poly && f.admin?.allowCreate !== false && !disabled
-        ? html`<ui-link href=${href(f.relationTo as string)} target="_blank">+ New</ui-link>`
+        ? html`<ui-link href=${href(f.relationTo as string)} target="_blank">${m.doc_form_new()}</ui-link>`
         : undefined;
     const parts = [hint || undefined, open, create].filter((x) => x != null);
     const fieldHint = parts.length ? html`${parts.map((x, i) => html`${i ? " · " : ""}${x}`)}` : "";

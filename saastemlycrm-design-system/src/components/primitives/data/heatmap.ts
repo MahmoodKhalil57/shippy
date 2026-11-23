@@ -1,6 +1,8 @@
 import { html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
+import { formatInt, m } from "../../../i18n/index.ts";
+import { isRtl } from "../../base/reading.ts";
 import { LightElement } from "../../base/light-element.ts";
 import { motion } from "../../base/motion-queue.ts";
 import { rcva } from "../../base/variants.ts";
@@ -95,7 +97,7 @@ export class UiHeatmap extends LightElement {
     const n = this.cells.length;
     if (!n) return;
     const at = this._active < 0 ? n - 1 : this._active;
-    const rtl = getComputedStyle(this).direction === "rtl";
+    const rtl = isRtl(this);
     const step: Record<string, number> = {
       ArrowUp: -1,
       ArrowDown: 1,
@@ -120,7 +122,7 @@ export class UiHeatmap extends LightElement {
         class=${heatmapGrid()}
         tabindex="0"
         role="img"
-        aria-label=${this.label || "Heatmap"}
+        aria-label=${this.label || m.heatmap_label()}
         @keydown=${this.#key}
         @blur=${() => (this._active = -1)}
         @pointerleave=${() => (this._active = -1)}
@@ -136,12 +138,12 @@ export class UiHeatmap extends LightElement {
       </div>
       <div class=${heatmapFoot()}>
         <p class=${heatmapCaption()} aria-live="polite">
-          ${on ? `${on.label} · ${on.valueText ?? String(on.value)}` : this.summary}
+          ${on ? `${on.label} · ${on.valueText ?? formatInt(on.value)}` : this.summary}
         </p>
         <span class=${heatmapKey()} aria-hidden="true">
-          Less
+          ${m.heatmap_less()}
           ${(["0", "1", "2", "3", "4"] as const).map((l) => html`<span class=${heatmapSwatch({ level: l })}></span>`)}
-          More
+          ${m.heatmap_more()}
         </span>
       </div>
     </div>`;

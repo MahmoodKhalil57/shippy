@@ -11,6 +11,7 @@ import "../../primitives/layout/box.ts";
 import "../../primitives/layout/flex.ts";
 import "../../primitives/media/icon.ts";
 import "../../primitives/typography/text.ts";
+import { intl, m } from "../../../i18n/index.ts";
 import {
   filterComplete,
   filterWhere,
@@ -43,36 +44,45 @@ export * from "../../base/filter-query.ts";
  */
 interface OperatorChoice {
   operator: FilterOperator;
-  label: string;
+  /** Its words, in the interface's language (symbols for numbers). */
+  label: () => string;
   /** Fixed value (`exists`: true / false); no value control. */
   value?: boolean;
 }
 const SET: OperatorChoice[] = [
-  { operator: "exists", label: "is set", value: true },
-  { operator: "exists", label: "is empty", value: false },
+  { operator: "exists", label: () => m.filter_builder_op_is_set(), value: true },
+  { operator: "exists", label: () => m.filter_builder_op_is_empty(), value: false },
 ];
 const OPERATORS: Record<FilterFieldType, OperatorChoice[]> = {
   text: [
-    { operator: "like", label: "contains" },
-    { operator: "not_like", label: "doesn't contain" },
-    { operator: "equals", label: "is" },
-    { operator: "not_equals", label: "is not" },
+    { operator: "like", label: () => m.filter_builder_op_contains() },
+    { operator: "not_like", label: () => m.filter_builder_op_not_contains() },
+    { operator: "equals", label: () => m.filter_builder_op_is() },
+    { operator: "not_equals", label: () => m.filter_builder_op_is_not() },
     ...SET,
   ],
   number: [
-    { operator: "equals", label: "=" },
-    { operator: "not_equals", label: "≠" },
-    { operator: "greater_than", label: ">" },
-    { operator: "greater_than_equal", label: "≥" },
-    { operator: "less_than", label: "<" },
-    { operator: "less_than_equal", label: "≤" },
+    { operator: "equals", label: () => "=" },
+    { operator: "not_equals", label: () => "≠" },
+    { operator: "greater_than", label: () => ">" },
+    { operator: "greater_than_equal", label: () => "≥" },
+    { operator: "less_than", label: () => "<" },
+    { operator: "less_than_equal", label: () => "≤" },
     ...SET,
   ],
-  date: [{ operator: "greater_than", label: "after" }, { operator: "less_than", label: "before" }, ...SET],
-  select: [{ operator: "in", label: "is any of" }, { operator: "not_in", label: "is none of" }, ...SET],
+  date: [
+    { operator: "greater_than", label: () => m.filter_builder_op_after() },
+    { operator: "less_than", label: () => m.filter_builder_op_before() },
+    ...SET,
+  ],
+  select: [
+    { operator: "in", label: () => m.filter_builder_op_any_of() },
+    { operator: "not_in", label: () => m.filter_builder_op_none_of() },
+    ...SET,
+  ],
   boolean: [
-    { operator: "equals", label: "is yes", value: true },
-    { operator: "equals", label: "is no", value: false },
+    { operator: "equals", label: () => m.filter_builder_op_yes(), value: true },
+    { operator: "equals", label: () => m.filter_builder_op_no(), value: false },
   ],
 };
 const choiceKey = (c: OperatorChoice) => (c.value === undefined ? c.operator : `${c.operator}:${String(c.value)}`);
@@ -152,7 +162,10 @@ export class UiFilterBuilder extends LightElement {
     if (choice.value !== undefined) return "";
     const values = Array.isArray(c.value) ? c.value : [c.value];
     const labels = values.map((v) => field?.options?.find((o) => o.value === v)?.label ?? String(v));
-    return labels.length > 2 ? `${labels.slice(0, 2).join(", ")} +${labels.length - 2}` : labels.join(", ");
+    const list = intl.list({ type: "disjunction" });
+    return labels.length > 2
+      ? m.filter_builder_values_more({ values: list.format(labels.slice(0, 2)), count: labels.length - 2 })
+      : list.format(labels);
   }
 
   private _chip(c: FilterCondition, i: number) {
@@ -164,12 +177,12 @@ export class UiFilterBuilder extends LightElement {
       size="md"
       pressable
       removable
-      .removeLabel=${`Remove filter: ${field?.label ?? c.field}`}
+      .removeLabel=${m.filter_builder_remove_filter({ field: field?.label ?? c.field })}
       @ui-press=${() => this._edit(i)}
       @ui-remove=${() => this._remove(i)}
     >
       <span>${field?.label ?? c.field}</span>
-      <ui-text as="span" color="muted">${choice.label}</ui-text>
+      <ui-text as="span" color="muted">${choice.label()}</ui-text>
       ${value ? html`<ui-text emphasized as="span">${value}</ui-text>` : nothing}
     </ui-chip>`;
   }
@@ -180,12 +193,14 @@ export class UiFilterBuilder extends LightElement {
     const set = (value: FilterValue) => (this._draft = { ...draft, value });
     if (field.type === "select") {
       const picked = Array.isArray(draft.value) ? (draft.value as string[]) : [];
-      const options = (field.options ?? []).filter((o) => o.label.toLowerCase().includes(this._search.toLowerCase()));
+      const options = (field.options ?? []).filter((o) =>
+        o.label.toLocaleLowerCase().includes(this._search.toLocaleLowerCase()),
+      );
       return html`${
           (field.options?.length ?? 0) > 8
             ? html`<ui-search
                 size="sm"
-                label=${`Search ${field.label.toLowerCase()}`}
+                .label=${m.filter_builder_search_options({ field: field.label })}
                 .value=${this._search}
                 @input=${(e: Event) => (this._search = (e.target as HTMLInputElement).value)}
               ></ui-search>`
@@ -211,9 +226,9 @@ export class UiFilterBuilder extends LightElement {
     return html`<ui-text-input
       size="sm"
       width="full"
-      leading="Value"
+      .leading=${m.filter_builder_value()}
       type=${field.type === "number" ? "number" : field.type === "date" ? "date" : "text"}
-      placeholder=${field.type === "text" ? "Value" : ""}
+      placeholder=${field.type === "text" ? m.filter_builder_value() : ""}
       .value=${draft.value == null ? "" : String(draft.value)}
       @input=${(e: Event) => set((e.target as HTMLInputElement).value)}
       @keydown=${(e: KeyboardEvent) => e.key === "Enter" && this._apply()}
@@ -229,7 +244,7 @@ export class UiFilterBuilder extends LightElement {
       <ui-select
         size="sm"
         width="full"
-        leading="Field"
+        .leading=${m.filter_builder_field()}
         .options=${this.fields.map((f) => ({ label: f.label, value: f.name }))}
         .value=${draft.field}
         @change=${(e: Event) => {
@@ -240,8 +255,8 @@ export class UiFilterBuilder extends LightElement {
       <ui-select
         size="sm"
         width="full"
-        leading="Is"
-        .options=${choices.map((c) => ({ label: c.label, value: choiceKey(c) }))}
+        .leading=${m.filter_builder_is()}
+        .options=${choices.map((c) => ({ label: c.label(), value: choiceKey(c) }))}
         .value=${choiceKey(choiceOf(field.type, draft))}
         @change=${(e: Event) => {
           const c = choices.find((x) => choiceKey(x) === (e.target as HTMLSelectElement).value)!;
@@ -258,12 +273,12 @@ export class UiFilterBuilder extends LightElement {
         ${
           this._editing >= 0
             ? html`<ui-button size="xs" variant="text" color="error" @click=${() => this._remove(this._editing)}
-                >Remove</ui-button
+                >${m.filter_builder_remove()}</ui-button
               >`
             : nothing
         }
         <ui-button size="xs" color="primary" ?disabled=${!filterComplete(draft)} @click=${() => this._apply()}
-          >${this._editing >= 0 ? "Update" : "Add filter"}</ui-button
+          >${this._editing >= 0 ? m.filter_builder_update() : m.filter_builder_add_filter()}</ui-button
         >
       </ui-flex>
     </ui-flex>`;
@@ -277,10 +292,10 @@ export class UiFilterBuilder extends LightElement {
         this.value.length > 1
           ? html`<ui-select
               size="sm"
-              leading="Match"
+              .leading=${m.filter_builder_match()}
               .options=${[
-                { label: "all", value: "and" },
-                { label: "any", value: "or" },
+                { label: m.filter_builder_match_all(), value: "and" },
+                { label: m.filter_builder_match_any(), value: "or" },
               ]}
               .value=${this.match}
               @change=${(e: Event) => this._emit(this.value, (e.target as HTMLSelectElement).value as FilterMatch)}
@@ -293,14 +308,18 @@ export class UiFilterBuilder extends LightElement {
         panel-width="6"
         trigger-variant="text"
         trigger-size="xs"
-        .label=${"Add filter"}
+        .label=${m.filter_builder_add_filter()}
       >
-        <span slot="trigger" @click=${() => this._edit(-1)}><ui-icon name="filter" size="sm"></ui-icon> Filter</span>
+        <span slot="trigger" @click=${() => this._edit(-1)}
+          ><ui-icon name="filter" size="sm"></ui-icon> ${m.filter_builder_filter()}</span
+        >
         ${this._editor()}
       </ui-dropdown>
       ${
         this.value.length
-          ? html`<ui-button size="xs" variant="text" @click=${() => this._emit([])}>Clear filters</ui-button>`
+          ? html`<ui-button size="xs" variant="text" @click=${() => this._emit([])}
+              >${m.filter_builder_clear()}</ui-button
+            >`
           : nothing
       }
     </ui-flex>`;

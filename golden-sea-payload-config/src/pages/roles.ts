@@ -2,6 +2,7 @@ import { details, list, steps, text, widgets } from "saastemlycrm-design-system/
 import * as fmt from "../format/roles.ts";
 import * as link from "../links.ts";
 import { roles, routing } from "../queries/roles.ts";
+import { m } from "../i18n/paraglide/messages.js";
 
 /**
  * Roles & permissions (/roles): the permissions matrix per role and its people (the settings
@@ -19,22 +20,20 @@ export const rolesPage = widgets({
   // its presets include office hours, when no one is.
   params: { at: "2026-11-17T19:40:00.000Z" },
   header: {
-    eyebrow: "Team · access",
-    heading: "Roles & permissions",
-    subtitle:
-      "Sales never sees costs or margins; approvals need a named person; bank-detail changes need two. Urgent RFQs after hours go to whoever is on call.",
+    eyebrow: m.page_roles_eyebrow(),
+    heading: m.page_roles_heading(),
+    subtitle: m.page_roles_subtitle(),
     actions: [
-      { label: "People", href: link.list("users") },
-      { label: "Approval rules", href: link.global("approval-rules") },
+      { label: m.page_roles_people(), href: link.list("users") },
+      { label: m.page_roles_approval_rules(), href: link.global("approval-rules") },
     ],
   },
   // The matrix across, the routing simulator with how it's enforced beside it (who is alerted
   // after hours under it), then the roster.
   widgets: [
     {
-      title: "Permissions matrix",
-      subhead:
-        "Who can see and approve what, per role and person. Named users and licences are confirmed in Phase 0. Management edits a role: it applies to everyone in it and is logged on the audit trail.",
+      title: m.page_roles_matrix(),
+      subhead: m.page_roles_matrix_subhead(),
       size: "l",
       records: {
         global: "settings",
@@ -52,47 +51,46 @@ export const rolesPage = widgets({
           "accounting",
         ],
         supporting: { role: "note" },
-        labels: { role: "Role" },
+        labels: { role: m.page_roles_role() },
       },
     },
     text({
-      title: "After-hours routing — try it",
+      title: m.page_roles_routing(),
       size: "m",
       skeleton: "text",
       data: routing,
       format: fmt.routingSimulator,
     }),
     list({
-      title: "Enforced, not just written down",
+      title: m.page_roles_enforced(),
       size: "s",
       skeleton: "list",
       data: roles,
       format: fmt.permissionChecks,
     }),
     steps({
-      title: "Who is alerted",
+      title: m.page_roles_alerted(),
       size: "m",
       skeleton: "text",
       data: routing,
       // In office hours nobody is alerted: the tile keeps its place and says so.
       empty: {
         when: (r) => !r.routedTo,
-        heading: "No one is alerted in office hours.",
-        description: "The case owner picks the RFQ up.",
+        heading: m.page_roles_no_alert(),
+        description: m.page_roles_no_alert_description(),
       },
       format: fmt.escalation,
     }),
     details({
-      title: "Where each permission is enforced",
+      title: m.page_roles_where(),
       size: "s",
       skeleton: "card",
       data: roles,
       format: fmt.whereEnforced,
     }),
     {
-      title: "On-call roster",
-      subhead:
-        "Office hours Sun–Thu 08:00–17:00 Cairo. Outside them, urgent RFQs (or a vessel ETA under 24 h) alert the on-duty person by WhatsApp / SMS, then the backup, then the senior contacts. Management and the office manager edit a shift.",
+      title: m.page_roles_roster(),
+      subhead: m.page_roles_roster_subhead(),
       size: "l",
       records: {
         global: "on-call-roster",

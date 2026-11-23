@@ -19,6 +19,7 @@ import {
 import type { PageTransition } from "../../primitives/layout/frame.ts";
 import "../../primitives/layout/frame.ts";
 import type { IconName } from "../../primitives/media/icon.ts";
+import { m } from "../../../i18n/index.ts";
 
 export type { PageTransition } from "../../primitives/layout/frame.ts";
 
@@ -97,8 +98,8 @@ export class UiAppShell extends LightElement {
   @property({ attribute: "brand-icon" }) brandIcon?: IconName;
   @property({ type: Boolean, reflect: true, attribute: "nav-open" }) navOpen = false;
   @property({ type: Boolean, reflect: true, attribute: "aside-open" }) asideOpen = false;
-  @property({ attribute: "nav-label" }) navLabel = "Navigation";
-  @property({ attribute: "aside-label" }) asideLabel = "Side panel";
+  @property({ attribute: "nav-label" }) navLabel = m.app_shell_navigation();
+  @property({ attribute: "aside-label" }) asideLabel = m.app_shell_side_panel();
   /**
    * What the person chose for the navigation: `true` expanded it, `false` collapsed it, `null`
    * nothing yet (expanded from an extra-large window). The app remembers it from `ui-change`'s `expanded`.

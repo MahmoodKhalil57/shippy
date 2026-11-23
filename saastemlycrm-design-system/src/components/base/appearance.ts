@@ -4,6 +4,7 @@
  * changes. Shared by `<ui-appearance>` (src/components/composed/actions/appearance.ts) and
  * index.html's first-paint script (same storage keys).
  */
+import { m } from "../../i18n/index.ts";
 
 /** Themes in the order the theme button steps through them. `system` follows the OS (no `data-theme`). */
 export const THEMES = ["system", "dark", "light"] as const;
@@ -52,8 +53,8 @@ export function applyScheme(id: string) {
  * src/components/composed/actions/live-background.ts).
  */
 export const LIVE_BACKGROUNDS = [
-  { id: "live-waves", label: "Waves" },
-  { id: "live-magnet-lines", label: "Magnet lines" },
+  { id: "live-waves", label: () => m.appearance_background_live_waves() },
+  { id: "live-magnet-lines", label: () => m.appearance_background_live_magnet_lines() },
 ] as const;
 export type LiveBackground = (typeof LIVE_BACKGROUNDS)[number]["id"];
 export const isLiveBackground = (id: string | null | undefined): id is LiveBackground =>

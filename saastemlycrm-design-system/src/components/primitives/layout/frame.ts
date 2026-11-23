@@ -7,11 +7,13 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
+import { backdrop } from "./algebra.ts";
 import { button } from "../actions/button.ts";
 import { iconButton } from "../actions/icon-button.ts";
 import { iconSvg, type IconName } from "../media/icon.ts";
 import { menuFoldTween, type MenuFoldTween } from "../navigation/menu.ts";
 import { motion } from "../../base/motion-queue.ts";
+import { m } from "../../../i18n/index.ts";
 
 /**
  * Frame: the parts of an application frame — a header across the top, a collapsible column on
@@ -67,7 +69,9 @@ export const appShell = rcva(
      and rails sit on, and what the floating glass (sheets, menus, dialogs) refracts. Under it, the
      chosen background image (`--app-background`, set by `<ui-appearance kind="background">`)
      (the scrim that keeps text on the shell readable is a layer of its own, `appShellLayer`). */
-  "group/shell @container/frame relative isolate grid h-dvh [--main-radius:var(--radius-lg)] grid grid-rows-[repeat(var(--frame-quarter-rows,12),calc(var(--tile-h)/4))_minmax(0,1fr)] grid-cols-[repeat(4,calc(var(--tile-w)/4))_var(--frame-slack,0px)_repeat(var(--frame-inner-quarters,16),calc(var(--tile-w)/4))_var(--frame-slack,0px)_repeat(4,var(--frame-end-quarter,calc(var(--tile-w)/4)))] overflow-hidden [--clips:frame] bg-surface-container [background-image:var(--app-background,none),radial-gradient(70%_60%_at_0%_0%,color-mix(in_oklab,var(--color-primary)_16%,transparent),transparent_70%),radial-gradient(60%_55%_at_100%_100%,color-mix(in_oklab,var(--color-secondary)_12%,transparent),transparent_70%),radial-gradient(45%_40%_at_100%_0%,color-mix(in_oklab,var(--color-accent)_9%,transparent),transparent_70%)] bg-cover bg-center text-on-surface",
+  "group/shell @container/frame relative isolate grid h-dvh [--main-radius:var(--radius-lg)] grid grid-rows-[repeat(var(--frame-quarter-rows,12),calc(var(--tile-h)/4))_minmax(0,1fr)] grid-cols-[repeat(4,calc(var(--tile-w)/4))_var(--frame-slack,0px)_repeat(var(--frame-inner-quarters,16),calc(var(--tile-w)/4))_var(--frame-slack,0px)_repeat(4,var(--frame-end-quarter,calc(var(--tile-w)/4)))] overflow-hidden [--clips:frame] " +
+    backdrop +
+    " text-on-surface",
   {
     variants: {
       /**
@@ -80,7 +84,7 @@ export const appShell = rcva(
        * edges and gaps are 0, so the header, the rail and the main panel meet the screen's edges
        * and each other (the side panel's rail has moved into the navigation's: `merged`).
        */
-      compact: { true: "[--frame-gap:0px] [--main-radius:0px] [--main-radius-ss:var(--radius-lg)]" },
+      compact: { true: "[--frame-gap:0px]" },
     },
   },
 );
@@ -284,12 +288,14 @@ export const appShellWell = rcva("[grid-row:1/-3] flex flex-col relative min-h-0
  */
 export const appShellMain = rcva(
   "@container/main w-full min-h-0 flex-1 overflow-x-clip overflow-y-auto overscroll-contain py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden rounded-(--main-radius)",
-  { variants: { compact: { true: "rounded-ss-lg" } } },
+  // Compact: the window meets the screen's end edge (no end rail), so its corners there are
+  // square; the ones by the rail stay round. Logical sides: mirrored right to left.
+  { variants: { compact: { true: "rounded-s-lg rounded-e-none" } } },
 );
 
 /** The slab's edge around the window, over the page (see `frame-lip`, src/styles/theme.css). */
 export const appShellLip = rcva("pointer-events-none absolute inset-0 z-10 rounded-(--main-radius) frame-lip", {
-  variants: { compact: { true: "rounded-ss-lg" } },
+  variants: { compact: { true: "rounded-s-lg rounded-e-none" } },
 });
 
 /** The slab's glint over the lip's lens: drawn once, moved and clipped with the window (`frame-glint`). */
@@ -864,7 +870,7 @@ export class UiFrameColumn extends LightElement {
       ? html`<button
           type="button"
           class=${iconButton({ class: appShellToggle({ column: side }) })}
-          aria-label=${showExtra ? `Show ${what} icons` : `Show ${this.extraLabel.toLowerCase()} icons`}
+          aria-label=${m.frame_show_icons({ what: showExtra ? what : this.extraLabel.toLowerCase() })}
           @click=${() => this.dispatchEvent(new CustomEvent("ui-rail-switch", { detail: { view: showExtra ? "own" : "extra" } }))}
         >
           ${iconSvg("swap", { size: "md" })}
@@ -872,7 +878,7 @@ export class UiFrameColumn extends LightElement {
       : html`<button
           type="button"
           class=${iconButton({ class: appShellToggle({ column: merged ? "start" : side }) })}
-          aria-label=${open ? `Collapse ${what}` : `Expand ${what}`}
+          aria-label=${open ? m.frame_collapse({ what }) : m.frame_expand({ what })}
           aria-expanded=${open ? "true" : "false"}
           @click=${() => this._ask(!open)}
         >
@@ -1256,11 +1262,23 @@ export class UiFrameMain extends LightElement {
       role="separator"
       aria-orientation="vertical"
       tabindex="0"
-      aria-label=${label ? `Resize to ${open ? "close" : "open"} ${label.toLowerCase()}` : "Resize"}
+      aria-label=${
+        label
+          ? open
+            ? m.frame_resize_to_close({ what: label.toLowerCase() })
+            : m.frame_resize_to_open({ what: label.toLowerCase() })
+          : m.frame_resize()
+      }
       aria-valuemin="0"
       aria-valuemax="1"
       aria-valuenow=${open ? 1 : 0}
-      title=${label ? `Drag to ${open ? "close" : "open"} ${label.toLowerCase()}` : ""}
+      title=${
+        label
+          ? open
+            ? m.frame_drag_to_close({ what: label.toLowerCase() })
+            : m.frame_drag_to_open({ what: label.toLowerCase() })
+          : ""
+      }
       @pointerdown=${(e: PointerEvent) => this.#down(side, e)}
       @mousedown=${(e: MouseEvent) => e.preventDefault()}
       @pointermove=${this.#move}

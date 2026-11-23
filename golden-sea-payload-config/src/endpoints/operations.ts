@@ -5,6 +5,8 @@ import { idOf, logActivity } from "../collections/shared.ts";
 import type { Doc } from "saastemlycrm-design-system/contracts";
 import { DEMO_NOW } from "./home.ts";
 import * as link from "../links.ts";
+import { m } from "../i18n/paraglide/messages.js";
+import { type Lang, intlLocale, langOf, optionLabel } from "./insights-shared.ts";
 
 /**
  * Root endpoints for order-to-cash: the customer PO check (PO vs approved quotation version,
@@ -353,13 +355,28 @@ export const ORDER_BOOK: Record<string, Plan> = {
   },
 };
 
-/** Amendment wording the AI proposes for known mismatches (a person records it). */
-const SUGGESTIONS: Record<string, string> = {
-  "NSM-PO-77104|1|Pack size": "Customer amendment: PO line 1 → 48 × 400 ml (email Ingrid L. 17 Nov 08:40)",
-  "NSM-PO-77104|3|Price": "Customer accepted the v2 price USD 11.20 for line 3 (email Ingrid L. 17 Nov 08:40)",
-  "NSM-PO-77104|3|Quantity": "Customer confirmed 10 EA, as quoted — not 15 (email Ingrid L. 17 Nov 08:40)",
-  "NSM-PO-77231|3|Pack size": "Customer amendment: PO line 3 → 100 × 500 ml (email 17 Nov 11:02)",
-  "NSM-PO-77231|5|Quantity": "Customer confirmed 15 EA (email 17 Nov 11:02)",
+/** Amendment wording the AI proposes for known mismatches (a person records it), in English and Arabic. */
+const SUGGESTIONS: Record<string, { en: string; ar: string }> = {
+  "NSM-PO-77104|1|Pack size": {
+    en: "Customer amendment: PO line 1 → 48 × 400 ml (email Ingrid L. 17 Nov 08:40)",
+    ar: "تعديل من العميل: بند أمر الشراء 1 ← 48 × 400 مل (بريد Ingrid L. في 17 نوفمبر 08:40)",
+  },
+  "NSM-PO-77104|3|Price": {
+    en: "Customer accepted the v2 price USD 11.20 for line 3 (email Ingrid L. 17 Nov 08:40)",
+    ar: "قبل العميل سعر النسخة v2 وهو USD 11.20 للبند 3 (بريد Ingrid L. في 17 نوفمبر 08:40)",
+  },
+  "NSM-PO-77104|3|Quantity": {
+    en: "Customer confirmed 10 EA, as quoted — not 15 (email Ingrid L. 17 Nov 08:40)",
+    ar: "أكّد العميل 10 قطع كما في العرض، وليس 15 (بريد Ingrid L. في 17 نوفمبر 08:40)",
+  },
+  "NSM-PO-77231|3|Pack size": {
+    en: "Customer amendment: PO line 3 → 100 × 500 ml (email 17 Nov 11:02)",
+    ar: "تعديل من العميل: بند أمر الشراء 3 ← 100 × 500 مل (بريد في 17 نوفمبر 11:02)",
+  },
+  "NSM-PO-77231|5|Quantity": {
+    en: "Customer confirmed 15 EA (email 17 Nov 11:02)",
+    ar: "أكّد العميل 15 قطعة (بريد في 17 نوفمبر 11:02)",
+  },
 };
 
 /** The agent's (simulated) ETA updates, per case. */
@@ -414,6 +431,10 @@ const FINANCE_ROLES = ["management", "finance-director", "operations"];
 const canFinance = (req: PayloadRequest) => FINANCE_ROLES.includes(String(userOf(req)?.role));
 
 const fail = (message: string, status = 400) => Response.json({ errors: [{ message }] }, { status });
+/** The request's language, as Paraglide's options. */
+const loc = (req: PayloadRequest) => ({ locale: langOf(req) });
+/** "Sign in first." in the request's language. */
+const signIn = (req: PayloadRequest) => fail(m.api_operations_sign_in_first({}, loc(req)), 401);
 const num = (v: unknown) => (typeof v === "number" ? v : Number(v) || 0);
 const str = (v: unknown): string =>
   typeof v === "string" ? v : typeof v === "number" || typeof v === "boolean" ? String(v) : "";
@@ -432,6 +453,7 @@ async function body(req: PayloadRequest): Promise<Record<string, unknown>> {
 const find = async (req: PayloadRequest, collection: string, where?: Record<string, unknown>) =>
   (
     await req.payload.find({
+      locale: req.locale,
       collection: collection as never,
       where: where as never,
       depth: 0,
@@ -440,7 +462,9 @@ const find = async (req: PayloadRequest, collection: string, where?: Record<stri
   ).docs as unknown as Doc[];
 
 const byId = (req: PayloadRequest, collection: string, id: string) =>
-  req.payload.findByID({ collection: collection as never, id, depth: 0 }).catch(() => null) as Promise<Doc | null>;
+  req.payload
+    .findByID({ locale: req.locale, collection: collection as never, id, depth: 0 })
+    .catch(() => null) as Promise<Doc | null>;
 
 const update = (req: PayloadRequest, collection: string, id: string, data: Record<string, unknown>) =>
   req.payload.update({ collection: collection as never, id, data: data as never, req }) as unknown as Promise<Doc>;
@@ -463,7 +487,7 @@ async function attempt(fn: () => Promise<Response>): Promise<Response> {
 async function fxRates(req: PayloadRequest): Promise<Record<Cur, number>> {
   const out: Record<Cur, number> = { EGP: 1, USD: 48.6, EUR: 52.9 };
   try {
-    const g = (await req.payload.findGlobal({ slug: "fx-rates" as never, depth: 0 } as never)) as {
+    const g = (await req.payload.findGlobal({ locale: req.locale, slug: "fx-rates" as never, depth: 0 } as never)) as {
       rates?: { currency?: string; egpPerUnit?: number; status?: string }[];
     };
     for (const r of g.rates ?? []) if (r.status === "Active" && r.currency) out[r.currency as Cur] = num(r.egpPerUnit);
@@ -504,10 +528,11 @@ function planFor(caseId: string, sales: boolean): Plan | undefined {
 /** Everything the "Order & purchasing" and "Delivery & billing" tabs show for one case. */
 async function caseOps(req: PayloadRequest) {
   const user = userOf(req);
-  if (!user) return fail("You are not allowed to perform this action.", 401);
+  const t = loc(req);
+  if (!user) return fail(m.api_insights_shared_not_allowed({}, t), 401);
   const id = str(req.routeParams?.id);
   const c = await byId(req, "cases", id);
-  if (!c) return fail("Case not found.", 404);
+  if (!c) return fail(m.api_operations_case_not_found({}, t), 404);
   const sales = isSales(req);
   const where = { case: { equals: id } };
   const [cpos, pos, receipts, deliveries, invoices, activities] = await Promise.all([
@@ -598,7 +623,8 @@ async function caseOps(req: PayloadRequest) {
       plan: d.plan ?? {},
       lines: ((d.lines as { lineNo: number; qty: number; lot?: string }[] | undefined) ?? []).map((l) => ({
         ...l,
-        description: plan?.lines.find((x) => x.lineNo === l.lineNo)?.description ?? `Line ${l.lineNo}`,
+        description:
+          plan?.lines.find((x) => x.lineNo === l.lineNo)?.description ?? m.api_operations_line({ n: l.lineNo }, t),
       })),
       dispatchedAt: d.dispatchedAt,
       confirmedAt: d.confirmedAt,
@@ -630,7 +656,7 @@ async function caseOps(req: PayloadRequest) {
   const quotedLines = plan?.lines ?? [];
   const checks = ((cpo?.checks as Check[] | undefined) ?? []).map((ch) => ({
     ...ch,
-    suggestion: SUGGESTIONS[`${str(cpo?.number)}|${ch.lineNo}|${ch.field}`],
+    suggestion: SUGGESTIONS[`${str(cpo?.number)}|${ch.lineNo}|${ch.field}`]?.[t.locale],
   }));
 
   return Response.json({
@@ -683,7 +709,7 @@ async function caseOps(req: PayloadRequest) {
 
 /** POST /api/operations/po-check { case } — the AI reads the customer's PO and checks it against the quotation. */
 async function poCheck(req: PayloadRequest) {
-  if (!req.user) return fail("Sign in first.", 401);
+  if (!req.user) return signIn(req);
   const { case: caseId } = await body(req);
   const id = str(caseId);
   const existing = (await find(req, "customer-pos", { case: { equals: id } }))[0];
@@ -692,8 +718,9 @@ async function poCheck(req: PayloadRequest) {
     const doc = await update(req, "customer-pos", existing.id, { checks: existing.checks });
     return Response.json({ doc, created: false, confidence: 0.96 });
   }
+  const t = loc(req);
   const incoming = ORDER_BOOK[id]?.incomingPo;
-  if (!incoming) return fail("No customer PO has been received for this case yet.");
+  if (!incoming) return fail(m.api_operations_no_customer_po_yet({}, t));
   const doc = await create(req, "customer-pos", {
     number: incoming.number,
     case: id,
@@ -709,56 +736,67 @@ async function poCheck(req: PayloadRequest) {
     stage: "Won — PO mismatch",
     decision: "Won",
     tone: open ? "danger" : "info",
-    nextAction: open ? `Resolve ${open} PO mismatches before confirming the sales order` : "Confirm the sales order",
-    blocker: open ? "Commitment blocked" : "",
+    nextAction: open
+      ? m.api_operations_resolve_mismatches({ n: open }, t)
+      : m.api_operations_confirm_sales_order({}, t),
+    blocker: open ? m.api_operations_commitment_blocked({}, t) : "",
   });
   await logActivity(req, {
     case: id,
     kind: "auto",
-    text: `Customer PO ${incoming.number} read by AI and checked against ${str(c?.caseId)} quotation: ${open} mismatch(es).`,
+    text: m.api_operations_po_read_activity({ number: incoming.number, caseId: str(c?.caseId), open }, t),
   });
   return Response.json({ doc, created: true, confidence: 0.96 });
 }
 
 /** POST /api/operations/po-amend { po, index, resolution, evidence? } — records the customer's written agreement. */
 async function poAmend(req: PayloadRequest) {
-  if (!req.user) return fail("Sign in first.", 401);
+  if (!req.user) return signIn(req);
   const b = await body(req);
+  const t = loc(req);
   const po = await byId(req, "customer-pos", str(b.po));
-  if (!po) return fail("Customer PO not found.", 404);
+  if (!po) return fail(m.api_operations_customer_po_not_found({}, t), 404);
   const resolution = str(b.resolution).trim();
-  if (!resolution) return fail("Describe the customer's written agreement (who, when, what).");
-  if (!b.evidence) return fail("Attach the customer's written confirmation (email or signed amendment).");
+  if (!resolution) return fail(m.api_operations_describe_agreement({}, t));
+  if (!b.evidence) return fail(m.api_operations_attach_confirmation({}, t));
   const checks = [...((po.checks as Check[] | undefined) ?? [])];
   const i = num(b.index);
-  if (!checks[i] || checks[i].matches) return fail("That check has no mismatch to resolve.");
+  if (!checks[i] || checks[i].matches) return fail(m.api_operations_no_mismatch({}, t));
   checks[i] = { ...checks[i], resolution, evidence: b.evidence };
   const doc = await update(req, "customer-pos", po.id, { checks });
   const caseId = str(idOf(po.case));
   await logActivity(req, {
     case: caseId,
-    text: `PO ${str(po.number)} line ${checks[i].lineNo || "header"} (${checks[i].field}): ${resolution} — evidence attached.`,
+    text: m.api_operations_amend_activity(
+      {
+        number: str(po.number),
+        line: checks[i].lineNo || m.api_operations_header({}, t),
+        field: optionLabel(req, "customer-pos", "checks.field", checks[i].field),
+        resolution,
+      },
+      t,
+    ),
   });
   if (doc.status === "Validated")
     await update(req, "cases", caseId, {
       tone: "info",
       blocker: "",
-      nextAction: "Confirm the sales order & prepare supplier POs",
+      nextAction: m.api_operations_confirm_and_prepare({}, t),
     });
   return Response.json({ doc });
 }
 
 /** POST /api/operations/po-award { po, lineNo, outcome, reason } — partial award: keep a line open or close it. */
 async function poAward(req: PayloadRequest) {
-  if (!req.user) return fail("Sign in first.", 401);
+  if (!req.user) return signIn(req);
   const b = await body(req);
+  const t = loc(req);
   const po = await byId(req, "customer-pos", str(b.po));
-  if (!po) return fail("Customer PO not found.", 404);
+  if (!po) return fail(m.api_operations_customer_po_not_found({}, t), 404);
   const outcome = str(b.outcome);
   const reason = str(b.reason).trim();
-  if (!["Open — revision to follow", "Closed"].includes(outcome))
-    return fail("Choose to keep the line open or close it.");
-  if (outcome === "Closed" && !reason) return fail("Closing an unawarded line needs a reason.");
+  if (!["Open — revision to follow", "Closed"].includes(outcome)) return fail(m.api_operations_keep_or_close({}, t));
+  if (outcome === "Closed" && !reason) return fail(m.api_operations_closing_needs_reason({}, t));
   const lineNo = num(b.lineNo);
   const all = (po.unawarded as Unawarded[] | undefined) ?? [];
   const was = all.find((u) => u.lineNo === lineNo);
@@ -766,7 +804,15 @@ async function poAward(req: PayloadRequest) {
   const doc = await update(req, "customer-pos", po.id, { unawarded: [...rest, { lineNo, outcome, reason }] });
   await logActivity(req, {
     case: str(idOf(po.case)),
-    text: `Line ${lineNo} not awarded: ${outcome}${reason ? ` — ${reason}` : ""}.`,
+    text: m.api_operations_not_awarded_activity(
+      {
+        line: lineNo,
+        outcome: optionLabel(req, "customer-pos", "unawarded.outcome", outcome),
+        hasReason: reason ? "yes" : "no",
+        reason,
+      },
+      t,
+    ),
   });
   // `undo`: the call that puts the line back where it was (undecided, or kept open).
   return Response.json({
@@ -787,20 +833,20 @@ type Unawarded = { lineNo: number; outcome?: string; reason?: string };
  * without it).
  */
 async function poAwardUndo(req: PayloadRequest) {
-  if (!req.user) return fail("Sign in first.", 401);
+  if (!req.user) return signIn(req);
   const b = await body(req);
+  const t = loc(req);
   const po = await byId(req, "customer-pos", str(b.po));
-  if (!po) return fail("Customer PO not found.", 404);
+  if (!po) return fail(m.api_operations_customer_po_not_found({}, t), 404);
   const lineNo = num(b.lineNo);
   const all = (po.unawarded as Unawarded[] | undefined) ?? [];
   const now = all.find((u) => u.lineNo === lineNo);
-  if (!now || now.outcome !== str(b.outcome))
-    return fail(`Line ${lineNo} has been decided again since — nothing to take back.`, 409);
+  if (!now || now.outcome !== str(b.outcome)) return fail(m.api_operations_decided_again({ line: lineNo }, t), 409);
   const caseId = str(idOf(po.case));
   if ((await find(req, "purchase-orders", { case: { equals: caseId } })).length)
-    return fail("The sales order is confirmed and its supplier POs are prepared — the line's decision stands.", 409);
+    return fail(m.api_operations_decision_stands({}, t), 409);
   const was = b.was && typeof b.was === "object" ? (b.was as Unawarded) : null;
-  if (was && was.outcome !== "Open — revision to follow") return fail("A line goes back to undecided or kept open.");
+  if (was && was.outcome !== "Open — revision to follow") return fail(m.api_operations_back_to_undecided({}, t));
   const rest = all.filter((u) => u.lineNo !== lineNo);
   const doc = (await req.payload.update({
     collection: "customer-pos" as never,
@@ -813,20 +859,33 @@ async function poAwardUndo(req: PayloadRequest) {
   })) as unknown as Doc;
   await logActivity(req, {
     case: caseId,
-    text: `Line ${lineNo}: “${str(b.outcome)}” taken back — ${was ? was.outcome : "undecided again"}.`,
+    text: m.api_operations_award_undo_activity(
+      {
+        line: lineNo,
+        outcome: optionLabel(req, "customer-pos", "unawarded.outcome", b.outcome),
+        hasWas: was ? "yes" : "no",
+        was: was ? optionLabel(req, "customer-pos", "unawarded.outcome", was.outcome) : "",
+      },
+      t,
+    ),
   });
-  return Response.json({ doc, message: `Line ${lineNo} is ${was ? "kept open again" : "undecided again"}` });
+  return Response.json({
+    doc,
+    message: was
+      ? m.api_operations_kept_open_again({ line: lineNo }, t)
+      : m.api_operations_undecided_again({ line: lineNo }, t),
+  });
 }
 
 /** POST /api/operations/confirm-order { case } — sales order confirmed; supplier POs prepared for approval. */
 async function confirmOrder(req: PayloadRequest) {
-  if (!req.user) return fail("Sign in first.", 401);
+  if (!req.user) return signIn(req);
   const { case: caseId } = await body(req);
   const id = str(caseId);
+  const t = loc(req);
   const po = (await find(req, "customer-pos", { case: { equals: id } }))[0];
-  if (!po) return fail("No customer PO on file.");
-  if (po.status !== "Validated")
-    return fail(`Commitment blocked: ${num(po.openMismatches)} PO mismatch(es) need written customer agreement.`);
+  if (!po) return fail(m.api_operations_no_customer_po({}, t));
+  if (po.status !== "Validated") return fail(m.api_operations_commitment_blocked_by({ n: num(po.openMismatches) }, t));
   const plan = ORDER_BOOK[id];
   const existing = await find(req, "purchase-orders", { case: { equals: id } });
   const created: Doc[] = [];
@@ -863,25 +922,36 @@ async function confirmOrder(req: PayloadRequest) {
     tone: "info",
     wait: "Awaiting internal approval",
     blocker: "",
-    nextAction: "Re-check supplier costs, then approve supplier POs",
+    nextAction: m.api_operations_recheck_then_approve({}, t),
   });
   await logActivity(req, {
     case: id,
-    text: `Sales order confirmed against PO ${str(po.number)}. ${created.length} supplier PO(s) prepared for re-check and approval.`,
+    text: m.api_operations_order_confirmed_activity({ number: str(po.number), n: created.length }, t),
   });
   return Response.json({ created: created.map((p) => p.number) });
 }
 
 /** POST /api/operations/po-recheck { po } — re-checks price, availability, FX and lead time before confirming. */
 async function poRecheck(req: PayloadRequest) {
-  if (!req.user) return fail("Sign in first.", 401);
-  if (isSales(req)) return fail("Supplier costs are not visible to Sales.", 403);
+  if (!req.user) return signIn(req);
+  const t = loc(req);
+  if (isSales(req)) return fail(m.api_operations_costs_hidden_sales({}, t), 403);
   const { po: poId } = await body(req);
   const po = await byId(req, "purchase-orders", str(poId));
-  if (!po) return fail("Purchase order not found.", 404);
+  if (!po) return fail(m.api_operations_po_not_found({}, t), 404);
   const rows = ORDER_BOOK[str(idOf(po.case))]?.recheck?.[str(idOf(po.supplier))] ?? [
-    { item: "Supplier price", atQuotation: "As quoted", now: "Unchanged", ok: true },
-    { item: "Availability & lead time", atQuotation: "As quoted", now: "Confirmed by phone", ok: true },
+    {
+      item: m.api_operations_recheck_price({}, t),
+      atQuotation: m.api_operations_as_quoted({}, t),
+      now: m.api_operations_unchanged({}, t),
+      ok: true,
+    },
+    {
+      item: m.api_operations_recheck_availability({}, t),
+      atQuotation: m.api_operations_as_quoted({}, t),
+      now: m.api_operations_confirmed_by_phone({}, t),
+      ok: true,
+    },
   ];
   const doc = await update(req, "purchase-orders", po.id, {
     recheck: rows,
@@ -891,7 +961,15 @@ async function poRecheck(req: PayloadRequest) {
   await logActivity(req, {
     case: str(idOf(po.case)),
     kind: changed.length ? "alert" : "auto",
-    text: `Re-check for ${str(po.number)}: ${changed.length ? changed.map((r) => `${r.item} → ${r.now}`).join("; ") : "no changes"}.`,
+    text: m.api_operations_recheck_activity(
+      {
+        number: str(po.number),
+        changes: changed.length
+          ? changed.map((r) => `${r.item} → ${r.now}`).join(t.locale === "ar" ? "؛ " : "; ")
+          : m.api_operations_no_changes({}, t),
+      },
+      t,
+    ),
   });
   return Response.json({ doc, changed: changed.length });
 }
@@ -900,14 +978,14 @@ async function poRecheck(req: PayloadRequest) {
 
 /** POST /api/operations/eta-change { case } — the agent's ETA email: every open drop, booking and task re-planned. */
 async function etaChange(req: PayloadRequest) {
-  if (!req.user) return fail("Sign in first.", 401);
+  if (!req.user) return signIn(req);
   const { case: caseId } = await body(req);
   const id = str(caseId);
+  const t = loc(req);
   const c = await byId(req, "cases", id);
   const upd = ETA_UPDATES[id];
-  if (!c || !upd) return fail("No ETA update from the agent for this case.");
-  if (str(c.eta) === upd.eta)
-    return Response.json({ changed: 0, message: "ETA already up to date — nothing re-planned." });
+  if (!c || !upd) return fail(m.api_operations_no_eta_update({}, t));
+  if (str(c.eta) === upd.eta) return Response.json({ changed: 0, message: m.api_operations_eta_up_to_date({}, t) });
   const deltaMs = new Date(upd.eta).getTime() - new Date(str(c.eta) || upd.eta).getTime();
   const hours = Math.round(deltaMs / 3600000);
   const deliveries = await find(req, "deliveries", { case: { equals: id } });
@@ -918,11 +996,14 @@ async function etaChange(req: PayloadRequest) {
     const plannedAt = upd.eta;
     const readyAt = addDays(upd.eta, -0.5);
     plan.readyAt = readyAt;
-    plan.launch = `${str(plan.launch).split(" — ")[0] || "Launch / boat"} — re-booked for ${fmt(plannedAt)}`;
+    plan.launch = m.api_operations_launch_rebooked(
+      { launch: str(plan.launch).split(" — ")[0] || m.api_operations_launch_boat({}, t), at: fmt(plannedAt, t.locale) },
+      t,
+    );
     await update(req, "deliveries", d.id, { plannedAt, plan, status: "Rescheduled" });
     moved.push(str(d.number));
     await create(req, "tasks", {
-      title: `Re-confirm truck, boarding staff and launch for ${str(d.number)} (ETA ${hours >= 0 ? "+" : ""}${hours} h)`,
+      title: m.api_operations_reconfirm_task({ number: str(d.number), hours: `${hours >= 0 ? "+" : ""}${hours}` }, t),
       type: "Delivery task",
       channel: "Call",
       due: readyAt,
@@ -934,23 +1015,32 @@ async function etaChange(req: PayloadRequest) {
   }
   await update(req, "cases", id, {
     eta: upd.eta,
-    blocker: `ETA moved ${hours >= 0 ? "+" : ""}${hours} h by agent — ${moved.length} drop(s) re-planned`,
+    blocker: m.api_operations_eta_moved_blocker({ hours: `${hours >= 0 ? "+" : ""}${hours}`, n: moved.length }, t),
     tone: "warn",
   });
-  const text = `ETA change from ${upd.from}: ${fmt(str(c.eta))} → ${fmt(upd.eta)}. ${upd.text} Re-planned: ${moved.join(", ") || "nothing open"}; owner and management alerted.`;
+  const text = m.api_operations_eta_change_activity(
+    {
+      from: upd.from,
+      was: fmt(str(c.eta), t.locale),
+      now: fmt(upd.eta, t.locale),
+      email: upd.text,
+      moved: moved.join(t.locale === "ar" ? "، " : ", ") || m.api_operations_nothing_open({}, t),
+    },
+    t,
+  );
   await logActivity(req, { case: id, kind: "alert", text });
   await notify(req, [str(idOf(c.owner)), "kb"], {
-    title: `ETA change ${str(c.caseId)}: ${fmt(upd.eta)}`,
-    detail: `${moved.length} drop(s) re-planned — re-confirm transport.`,
+    title: m.api_operations_eta_notification({ caseId: str(c.caseId), at: fmt(upd.eta, t.locale) }, t),
+    detail: m.api_operations_eta_notification_detail({ n: moved.length }, t),
     kind: "Alert",
     href: link.doc("cases", id, "delivery"),
   });
   return Response.json({ changed: moved.length, moved, eta: upd.eta, hours, text });
 }
 
-const fmt = (iso: string) =>
+const fmt = (iso: string, lang: Lang = "en") =>
   iso
-    ? new Intl.DateTimeFormat("en-GB", {
+    ? new Intl.DateTimeFormat(intlLocale(lang), {
         day: "2-digit",
         month: "short",
         hour: "2-digit",
@@ -961,11 +1051,12 @@ const fmt = (iso: string) =>
 
 /** POST /api/operations/confirm-delivery { delivery, proof, signedBy, shortages? } — delivered only with evidence. */
 async function confirmDelivery(req: PayloadRequest) {
-  if (!req.user) return fail("Sign in first.", 401);
+  if (!req.user) return signIn(req);
   const b = await body(req);
+  const t = loc(req);
   const d = await byId(req, "deliveries", str(b.delivery));
-  if (!d) return fail("Delivery not found.", 404);
-  if (!str(b.signedBy).trim()) return fail("Who signed the delivery note on board?");
+  if (!d) return fail(m.api_operations_delivery_not_found({}, t), 404);
+  if (!str(b.signedBy).trim()) return fail(m.api_operations_who_signed({}, t));
   return attempt(async () => {
     const doc = await update(req, "deliveries", d.id, {
       status: "Delivered — confirmed",
@@ -980,11 +1071,11 @@ async function confirmDelivery(req: PayloadRequest) {
     const open = all.filter((x) => !/confirmed|Cancelled/.test(str(x.status))).length;
     await update(req, "cases", caseId, {
       stage: open ? `Delivering (drop 1 of 2)` : "Delivered",
-      nextAction: `Invoice ${str(d.number)} — delivered quantities only`,
+      nextAction: m.api_operations_invoice_delivered({ number: str(d.number) }, t),
     });
     await logActivity(req, {
       case: caseId,
-      text: `${str(d.number)} delivered — signed by ${str(b.signedBy)}; signed delivery note attached.`,
+      text: m.api_operations_delivered_activity({ number: str(d.number), signedBy: str(b.signedBy) }, t),
     });
     return Response.json({ doc });
   });
@@ -994,13 +1085,13 @@ async function confirmDelivery(req: PayloadRequest) {
 
 /** POST /api/operations/invoice-delivery { delivery } — invoice exactly what was delivered (never twice). */
 async function invoiceDelivery(req: PayloadRequest) {
-  if (!req.user) return fail("Sign in first.", 401);
-  if (!canFinance(req)) return fail("Invoices are issued by operations & finance.", 403);
+  if (!req.user) return signIn(req);
+  const t = loc(req);
+  if (!canFinance(req)) return fail(m.api_operations_invoices_by_finance({}, t), 403);
   const b = await body(req);
   const d = await byId(req, "deliveries", str(b.delivery));
-  if (!d) return fail("Delivery not found.", 404);
-  if (d.status !== "Delivered — confirmed")
-    return fail("Only a delivery confirmed with a signed delivery note can be invoiced.");
+  if (!d) return fail(m.api_operations_delivery_not_found({}, t), 404);
+  if (d.status !== "Delivered — confirmed") return fail(m.api_operations_only_confirmed_invoiced({}, t));
   const caseId = str(idOf(d.case));
   const [c, all] = await Promise.all([
     byId(req, "cases", caseId),
@@ -1008,7 +1099,7 @@ async function invoiceDelivery(req: PayloadRequest) {
   ]);
   const customer = c ? await byId(req, "customers", str(idOf(c.customer))) : null;
   const plan = ORDER_BOOK[caseId];
-  if (!c || !customer || !plan) return fail("No order book for this case.");
+  if (!c || !customer || !plan) return fail(m.api_operations_no_order_book({}, t));
   const confirmed = all.filter((x) => x.status === "Delivered — confirmed");
   const deliveredTotal = (lineNo: number) =>
     confirmed
@@ -1019,7 +1110,7 @@ async function invoiceDelivery(req: PayloadRequest) {
     const book = plan.lines.find((x) => x.lineNo === l.lineNo);
     return {
       lineNo: l.lineNo,
-      description: book?.description ?? `Line ${l.lineNo}`,
+      description: book?.description ?? m.api_operations_line({ n: l.lineNo }, t),
       qty: l.qty,
       deliveredQty: deliveredTotal(l.lineNo),
       unitPrice: book?.sellPrice ?? 0,
@@ -1049,10 +1140,19 @@ async function invoiceDelivery(req: PayloadRequest) {
       eInvoice: { status: "Not submitted" },
       status: "Open",
     });
-    await update(req, "cases", caseId, { nextAction: `Submit ${str(doc.number)} to the tax authority (e-invoice)` });
+    await update(req, "cases", caseId, {
+      nextAction: m.api_operations_submit_einvoice({ number: str(doc.number) }, t),
+    });
     await logActivity(req, {
       case: caseId,
-      text: `Invoice ${str(doc.number)} created from ${str(d.number)}: delivered quantities only (${lines.map((l) => `L${l.lineNo} × ${l.qty}`).join(", ")}).`,
+      text: m.api_operations_invoice_created_activity(
+        {
+          number: str(doc.number),
+          delivery: str(d.number),
+          lines: lines.map((l) => `L${l.lineNo} × ${l.qty}`).join(t.locale === "ar" ? "، " : ", "),
+        },
+        t,
+      ),
     });
     return Response.json({ doc });
   });
@@ -1065,23 +1165,28 @@ async function invoiceDelivery(req: PayloadRequest) {
  * (Submitted → Valid).
  */
 async function eInvoice(req: PayloadRequest) {
-  if (!req.user) return fail("Sign in first.", 401);
-  if (!canFinance(req)) return fail("E-invoices are submitted by operations & finance.", 403);
+  if (!req.user) return signIn(req);
+  const t = loc(req);
+  if (!canFinance(req)) return fail(m.api_operations_einvoices_by_finance({}, t), 403);
   const b = await body(req);
   const inv = await byId(req, "invoices", str(b.invoice));
-  if (!inv) return fail("Invoice not found.", 404);
+  if (!inv) return fail(m.api_operations_invoice_not_found({}, t), 404);
   const e = { ...(inv.eInvoice as Record<string, unknown> | undefined) };
   const billing = { ...(inv.billing as Record<string, unknown> | undefined) };
   if (e.status === "Valid")
-    return Response.json({ doc: inv, result: "already-valid", message: "Already accepted — not resubmitted." });
+    return Response.json({ doc: inv, result: "already-valid", message: m.api_operations_already_accepted({}, t) });
   if (e.status === "Submitted") {
     const doc = await update(req, "invoices", inv.id, { eInvoice: { ...e, status: "Valid", error: null } });
     await logActivity(req, {
       case: str(idOf(inv.case)),
       kind: "auto",
-      text: `E-invoice ${str(inv.number)}: Valid (UUID ${str(e.uuid)}).`,
+      text: m.api_operations_einvoice_valid_activity({ number: str(inv.number), uuid: str(e.uuid) }, t),
     });
-    return Response.json({ doc, result: "valid", message: `Tax authority: ${str(inv.number)} is valid.` });
+    return Response.json({
+      doc,
+      result: "valid",
+      message: m.api_operations_einvoice_valid({ number: str(inv.number) }, t),
+    });
   }
   if (b.taxId) billing.taxId = str(b.taxId);
   // The rejected one: the buyer's tax registration number must have 9 digits.
@@ -1092,10 +1197,10 @@ async function eInvoice(req: PayloadRequest) {
         ...e,
         status: "Rejected",
         submittedAt: new Date().toISOString(),
-        error: `Buyer tax registration number “${str(billing.taxId) || "—"}” not found (9 digits expected). Correct it and resubmit.`,
+        error: m.api_operations_tax_id_error({ taxId: str(billing.taxId) || "—" }, t),
       },
     });
-    return Response.json({ doc, result: "rejected", message: "Rejected by the tax authority — buyer tax ID." });
+    return Response.json({ doc, result: "rejected", message: m.api_operations_rejected_tax_id({}, t) });
   }
   const uuid = `${str(inv.number).replace(/\D/g, "").slice(-4)}-${Math.abs(hash(str(inv.number)))
     .toString(16)
@@ -1119,9 +1224,13 @@ async function eInvoice(req: PayloadRequest) {
   await logActivity(req, {
     case: str(idOf(inv.case)),
     kind: "auto",
-    text: `E-invoice ${str(inv.number)} signed and submitted to the tax authority (UUID ${uuid}).`,
+    text: m.api_operations_einvoice_submitted_activity({ number: str(inv.number), uuid }, t),
   });
-  return Response.json({ doc, result: "submitted", message: `${str(inv.number)} signed and submitted.` });
+  return Response.json({
+    doc,
+    result: "submitted",
+    message: m.api_operations_einvoice_submitted({ number: str(inv.number) }, t),
+  });
 }
 
 function hash(s: string) {
@@ -1139,7 +1248,7 @@ function hash(s: string) {
  */
 export async function cash(req: PayloadRequest) {
   const user = userOf(req);
-  if (!user) return fail("You are not allowed to perform this action.", 401);
+  if (!user) return fail(m.api_insights_shared_not_allowed({}, loc(req)), 401);
   const sales = isSales(req);
   const fx = await fxRates(req);
   const toEgp = (amount: number, cur: unknown) => amount * (fx[(str(cur) || "EGP") as Cur] ?? 1);
@@ -1186,7 +1295,7 @@ export async function cash(req: PayloadRequest) {
   const base = {
     receivables,
     weeks: weeks.map((w) =>
-      new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", timeZone: "UTC" }).format(w),
+      new Intl.DateTimeFormat(intlLocale(langOf(req)), { day: "2-digit", month: "short", timeZone: "UTC" }).format(w),
     ),
   };
   if (sales)
@@ -1322,16 +1431,16 @@ export async function cash(req: PayloadRequest) {
  * that a person reviews and sends.
  */
 async function collectionDraft(req: PayloadRequest) {
-  if (!req.user) return fail("Sign in first.", 401);
+  if (!req.user) return signIn(req);
   return collectionDraftFor(req, str((await body(req)).invoice));
 }
 
 /** The reminder draft for one invoice (also behind the cash page's reminders, ./cash.ts). */
 /** The AI's collection reminder for one invoice (the invoice's own `reminder` draft, ../collections/finance.ts). */
 export async function collectionDraftFor(req: PayloadRequest, invoice: string) {
-  if (!req.user) return fail("Sign in first.", 401);
+  if (!req.user) return signIn(req);
   const inv = await byId(req, "invoices", invoice);
-  if (!inv) return fail("Invoice not found.", 404);
+  if (!inv) return fail(m.api_operations_invoice_not_found({}, loc(req)), 404);
   const customer = await byId(req, "customers", str(idOf(inv.customer)));
   return Response.json(reminderDraft(inv, customer));
 }

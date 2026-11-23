@@ -11,8 +11,14 @@
     "wait": "Awaiting supplier",
     "tone": "info",
     "owner": "ky",
-    "nextAction": "Select offers & price lines 1–5",
-    "blocker": "Line 6 awaiting customer clarification",
+    "nextAction": {
+      "en": "Select offers & price lines 1–5",
+      "ar": "اختيار العروض وتسعير البنود 1–5"
+    },
+    "blocker": {
+      "en": "Line 6 awaiting customer clarification",
+      "ar": "البند 6 بانتظار توضيح العميل"
+    },
     "lines": {
       "ready": 3,
       "waiting": 1,
@@ -23,21 +29,30 @@
     "urgent": false,
     "quoteLines": [
       {
-        "description": "Rust remover, 25 ltr drum",
+        "description": {
+          "en": "Rust remover, 25 ltr drum",
+          "ar": "مزيل صدأ، برميل 25 لترًا"
+        },
         "qty": 4,
         "unit": "ltr",
         "unitPrice": 118,
         "supplier": "S2"
       },
       {
-        "description": "Degreaser, water based",
+        "description": {
+          "en": "Degreaser, water based",
+          "ar": "مزيل شحوم، مائي الأساس"
+        },
         "qty": 10,
         "unit": "ltr",
         "unitPrice": 42,
         "supplier": "S1"
       },
       {
-        "description": "Safety helmet, white",
+        "description": {
+          "en": "Safety helmet, white",
+          "ar": "خوذة سلامة، بيضاء"
+        },
         "qty": 12,
         "unit": "pcs",
         "unitPrice": 14,
@@ -53,7 +68,10 @@
     "items": [
       {
         "lineNo": 1,
-        "description": "CRC Belt Grip spray for mud pump V-belts, 400 ml aerosol",
+        "description": {
+          "en": "CRC Belt Grip spray for mud pump V-belts, 400 ml aerosol",
+          "ar": "بخاخ CRC Belt Grip لسيور V لمضخة الطين، عبوة رذاذ 400 مل"
+        },
         "product": "P1",
         "brand": "CRC",
         "qty": 24,
@@ -68,12 +86,18 @@
         "selection": {
           "marginPct": 25,
           "offers": ["off-l1-s5"],
-          "reason": "Best fit (landed cost): Horizon ex-stock Damietta incl. freight"
+          "reason": {
+            "en": "Best fit (landed cost): Horizon ex-stock Damietta incl. freight",
+            "ar": "الأنسب (التكلفة الواصلة): Horizon من مخزون دمياط شاملًا الشحن"
+          }
         }
       },
       {
         "lineNo": 2,
-        "description": "LOCTITE 243 threadlocker, medium strength, 50 ml",
+        "description": {
+          "en": "LOCTITE 243 threadlocker, medium strength, 50 ml",
+          "ar": "مثبّت براغي LOCTITE 243، قوة متوسطة، 50 مل"
+        },
         "product": "P2",
         "brand": "Loctite",
         "exactBrand": true,
@@ -90,12 +114,18 @@
         "selection": {
           "marginPct": 22,
           "offers": ["off-l2-s2-v2"],
-          "reason": "Corrected v2 — exact LOCTITE 243"
+          "reason": {
+            "en": "Corrected v2 — exact LOCTITE 243",
+            "ar": "v2 مصحَّح — LOCTITE 243 نفسه"
+          }
         }
       },
       {
         "lineNo": 3,
-        "description": "Electrical contact cleaner, 250 ml aerosol — 50 L total",
+        "description": {
+          "en": "Electrical contact cleaner, 250 ml aerosol — 50 L total",
+          "ar": "منظف ملامسات كهربائية، عبوة رذاذ 250 مل — 50 لترًا إجمالًا"
+        },
         "product": "P3",
         "qty": 200,
         "unit": "can",
@@ -109,13 +139,19 @@
         "selection": {
           "marginPct": 25,
           "offers": ["off-l3-s2"],
-          "reason": "Alternative pack fixes shelf life (2028) and is cheaper per litre",
+          "reason": {
+            "en": "Alternative pack fixes shelf life (2028) and is cheaper per litre",
+            "ar": "العبوة البديلة تحل مشكلة الصلاحية (2028) وأرخص للتر"
+          },
           "customerAccepted": false
         }
       },
       {
         "lineNo": 4,
-        "description": "Welding electrodes E6013, Ø3.2 mm, 5 kg pack",
+        "description": {
+          "en": "Welding electrodes E6013, Ø3.2 mm, 5 kg pack",
+          "ar": "أقطاب لحام E6013، Ø3.2 مم، عبوة 5 كجم"
+        },
         "product": "P4",
         "partNo": "E6013-3.2",
         "qty": 4,
@@ -130,7 +166,10 @@
       },
       {
         "lineNo": 5,
-        "description": "Safety helmet EN 397, white, with chin strap",
+        "description": {
+          "en": "Safety helmet EN 397, white, with chin strap",
+          "ar": "خوذة سلامة EN 397، بيضاء، مع حزام ذقن"
+        },
         "product": "P5",
         "qty": 15,
         "unit": "EA",
@@ -143,7 +182,10 @@
         "originalText": "SAFETY HELMET WHITE W/ CHIN STRAP | — | 15 | PCS",
         "selection": {
           "marginPct": 28,
-          "reason": "Split: Nile Safety only has 10 — cheaper than 15 from Delta",
+          "reason": {
+            "en": "Split: Nile Safety only has 10 — cheaper than 15 from Delta",
+            "ar": "تجزئة: لدى Nile Safety 10 فقط — أرخص من 15 لدى Delta"
+          },
           "offers": ["off-l5-s4", "off-l5-s1"],
           "splitQty": [
             {
@@ -159,7 +201,10 @@
       },
       {
         "lineNo": 6,
-        "description": "Flame-retardant coverall, navy, EN ISO 11612",
+        "description": {
+          "en": "Flame-retardant coverall, navy, EN ISO 11612",
+          "ar": "أفرول مقاوم للهب، كحلي، EN ISO 11612"
+        },
         "product": "P6",
         "qty": 10,
         "unit": "EA",
@@ -168,7 +213,10 @@
         "impa": "190451",
         "status": "Clarification needed",
         "confidence": 0.58,
-        "missing": "Size breakdown not specified",
+        "missing": {
+          "en": "Size breakdown not specified",
+          "ar": "توزيع المقاسات غير محدد"
+        },
         "originalText": "COVERALL FR NAVY | — | 10 | PCS"
       }
     ],
@@ -177,7 +225,10 @@
         "lineNo": 6,
         "to": "Customer",
         "via": "Email",
-        "question": "Please confirm size breakdown (S/M/L/XL/XXL) for 10 FR coveralls.",
+        "question": {
+          "en": "Please confirm size breakdown (S/M/L/XL/XXL) for 10 FR coveralls.",
+          "ar": "يرجى تأكيد توزيع المقاسات (S/M/L/XL/XXL) لعدد 10 أفرولات مقاومة للهب."
+        },
         "askedAt": "2026-11-15T10:40:00.000Z",
         "askedBy": "ky"
       },
@@ -185,10 +236,16 @@
         "lineNo": 2,
         "to": "Customer",
         "via": "Phone",
-        "question": "Customer wrote “heavy coat” — confirm standard LOCTITE 243, 50 ml?",
+        "question": {
+          "en": "Customer wrote “heavy coat” — confirm standard LOCTITE 243, 50 ml?",
+          "ar": "كتب العميل «طبقة ثقيلة» — هل نؤكد LOCTITE 243 القياسي، 50 مل؟"
+        },
         "askedAt": "2026-11-15T10:45:00.000Z",
         "askedBy": "ky",
-        "answer": "Confirmed: 243, 50 ml, 3 pcs (phone 15 Nov 12:10)",
+        "answer": {
+          "en": "Confirmed: 243, 50 ml, 3 pcs (phone 15 Nov 12:10)",
+          "ar": "تم التأكيد: 243، 50 مل، 3 قطع (هاتفيًا 15 نوفمبر 12:10)"
+        },
         "answeredAt": "2026-11-15T12:10:00.000Z"
       }
     ],
@@ -198,23 +255,35 @@
       "fxRateUSD": 48.6,
       "charges": [
         {
-          "label": "Port Said launch delivery to vessel",
+          "label": {
+            "en": "Port Said launch delivery to vessel",
+            "ar": "تسليم بلنش إلى السفينة في بورسعيد"
+          },
           "amountEGP": 4200,
           "status": "Estimate"
         },
         {
-          "label": "Horizon freight Damietta → Port Said",
+          "label": {
+            "en": "Horizon freight Damietta → Port Said",
+            "ar": "شحن Horizon من دمياط ← بورسعيد"
+          },
           "amountEGP": 600,
           "status": "Confirmed"
         },
         {
-          "label": "Bank transfer charges",
+          "label": {
+            "en": "Bank transfer charges",
+            "ar": "رسوم التحويل البنكي"
+          },
           "amountEGP": 350,
           "status": "Confirmed"
         }
       ]
     },
-    "handoverNote": "Line 6 waits for Capt. Erik's sizes; lines 1–5 ready to price once Port Said Welding replies on line 4."
+    "handoverNote": {
+      "en": "Line 6 waits for Capt. Erik's sizes; lines 1–5 ready to price once Port Said Welding replies on line 4.",
+      "ar": "البند 6 ينتظر مقاسات الكابتن Erik؛ البنود 1–5 جاهزة للتسعير بمجرد رد Port Said Welding على البند 4."
+    }
   },
   {
     "id": "gs-rfq-0141",
@@ -228,8 +297,14 @@
     "wait": "Awaiting supplier",
     "tone": "warn",
     "owner": "sa",
-    "nextAction": "Chase 2 pump-seal suppliers",
-    "blocker": "Deadline today 16:00",
+    "nextAction": {
+      "en": "Chase 2 pump-seal suppliers",
+      "ar": "متابعة موردَي مانع تسرب المضخة"
+    },
+    "blocker": {
+      "en": "Deadline today 16:00",
+      "ar": "الموعد النهائي اليوم 16:00"
+    },
     "lines": {
       "ready": 2,
       "waiting": 4,
@@ -245,7 +320,10 @@
       "fxRateUSD": 48.6,
       "charges": [
         {
-          "label": "Suez launch delivery to vessel",
+          "label": {
+            "en": "Suez launch delivery to vessel",
+            "ar": "تسليم بلنش إلى السفينة في السويس"
+          },
           "amountEGP": 3200,
           "status": "Estimate"
         }
@@ -254,7 +332,10 @@
     "items": [
       {
         "lineNo": 1,
-        "description": "Safety harness, full body, EN 361, with shock-absorbing lanyard",
+        "description": {
+          "en": "Safety harness, full body, EN 361, with shock-absorbing lanyard",
+          "ar": "حزام أمان كامل للجسم، EN 361، مع حبل ممتص للصدمات"
+        },
         "qty": 4,
         "unit": "EA",
         "packSize": 1,
@@ -267,7 +348,10 @@
       },
       {
         "lineNo": 2,
-        "description": "Lifejacket SOLAS / MED, adult, with light and whistle",
+        "description": {
+          "en": "Lifejacket SOLAS / MED, adult, with light and whistle",
+          "ar": "سترة نجاة SOLAS / MED، للبالغين، مع ضوء وصفارة"
+        },
         "qty": 6,
         "unit": "EA",
         "packSize": 1,
@@ -280,7 +364,10 @@
       },
       {
         "lineNo": 3,
-        "description": "Mechanical seal, ballast pump Shinko GVD200, 45 mm shaft",
+        "description": {
+          "en": "Mechanical seal, ballast pump Shinko GVD200, 45 mm shaft",
+          "ar": "مانع تسرب ميكانيكي، مضخة الصابورة Shinko GVD200، عمود 45 مم"
+        },
         "brand": "Shinko",
         "exactBrand": true,
         "partNo": "GVD200-MS45",
@@ -295,7 +382,10 @@
       },
       {
         "lineNo": 4,
-        "description": "Mechanical seal, fire & GS pump Shinko SHQ100, 35 mm shaft",
+        "description": {
+          "en": "Mechanical seal, fire & GS pump Shinko SHQ100, 35 mm shaft",
+          "ar": "مانع تسرب ميكانيكي، مضخة الحريق والخدمة العامة Shinko SHQ100، عمود 35 مم"
+        },
         "brand": "Shinko",
         "exactBrand": true,
         "partNo": "SHQ100-MS35",
@@ -310,7 +400,10 @@
       },
       {
         "lineNo": 5,
-        "description": "O-ring kit, NBR, metric sizes, 382 pcs",
+        "description": {
+          "en": "O-ring kit, NBR, metric sizes, 382 pcs",
+          "ar": "طقم حلقات O-ring، NBR، مقاسات مترية، 382 قطعة"
+        },
         "qty": 2,
         "unit": "set",
         "packSize": 1,
@@ -322,12 +415,18 @@
         "selection": {
           "marginPct": 22,
           "offers": ["off-0141-l5-s1"],
-          "reason": "Best fit (landed cost); Suez Industrial has not replied"
+          "reason": {
+            "en": "Best fit (landed cost); Suez Industrial has not replied",
+            "ar": "الأنسب (التكلفة الواصلة)؛ لم يرد Suez Industrial"
+          }
         }
       },
       {
         "lineNo": 6,
-        "description": "PTFE thread seal tape, 12 mm × 12 m",
+        "description": {
+          "en": "PTFE thread seal tape, 12 mm × 12 m",
+          "ar": "شريط تفلون لإحكام اللحامات، 12 مم × 12 م"
+        },
         "qty": 50,
         "unit": "roll",
         "packSize": 1,
@@ -339,7 +438,10 @@
         "selection": {
           "marginPct": 22,
           "offers": ["off-0141-l6-s1"],
-          "reason": "Best fit (landed cost); Suez Industrial has not replied"
+          "reason": {
+            "en": "Best fit (landed cost); Suez Industrial has not replied",
+            "ar": "الأنسب (التكلفة الواصلة)؛ لم يرد Suez Industrial"
+          }
         }
       }
     ]
@@ -356,8 +458,14 @@
     "wait": "Awaiting corrected offer",
     "tone": "warn",
     "owner": "ky",
-    "nextAction": "Supplier to correct paint colour code (RAL 7035 → 7038)",
-    "blocker": "1 line blocked from pricing",
+    "nextAction": {
+      "en": "Supplier to correct paint colour code (RAL 7035 → 7038)",
+      "ar": "على المورّد تصحيح رمز لون الدهان (RAL 7035 ← 7038)"
+    },
+    "blocker": {
+      "en": "1 line blocked from pricing",
+      "ar": "بند واحد متوقف عن التسعير"
+    },
     "lines": {
       "ready": 5,
       "waiting": 1,
@@ -370,7 +478,10 @@
     "items": [
       {
         "lineNo": 1,
-        "description": "Hempathane HS 55610 topcoat, RAL 7038 agate grey, 20 L kit",
+        "description": {
+          "en": "Hempathane HS 55610 topcoat, RAL 7038 agate grey, 20 L kit",
+          "ar": "طلاء نهائي Hempathane HS 55610، RAL 7038 رمادي عقيقي، طقم 20 لترًا"
+        },
         "brand": "Hempel",
         "model": "Hempathane HS 55610",
         "partNo": "55610 RAL 7038",
@@ -386,7 +497,10 @@
       },
       {
         "lineNo": 2,
-        "description": "Hydraulic oil ISO VG 46, 208 L drum",
+        "description": {
+          "en": "Hydraulic oil ISO VG 46, 208 L drum",
+          "ar": "زيت هيدروليك ISO VG 46، برميل 208 لترات"
+        },
         "qty": 4,
         "unit": "drum",
         "packSize": 1,
@@ -398,12 +512,18 @@
         "selection": {
           "marginPct": 22,
           "offers": ["off-0140-l2-s11"],
-          "reason": "Best fit (landed cost)"
+          "reason": {
+            "en": "Best fit (landed cost)",
+            "ar": "الأنسب (التكلفة الواصلة)"
+          }
         }
       },
       {
         "lineNo": 3,
-        "description": "Steel wire rope, galvanised 6×36 IWRC, 20 mm × 220 m",
+        "description": {
+          "en": "Steel wire rope, galvanised 6×36 IWRC, 20 mm × 220 m",
+          "ar": "حبل سلك فولاذي مجلفن 6×36 IWRC، 20 مم × 220 م"
+        },
         "qty": 1,
         "unit": "roll",
         "packSize": 1,
@@ -416,12 +536,18 @@
         "selection": {
           "marginPct": 25,
           "offers": ["off-0140-l3-s13"],
-          "reason": "Best fit (landed cost)"
+          "reason": {
+            "en": "Best fit (landed cost)",
+            "ar": "الأنسب (التكلفة الواصلة)"
+          }
         }
       },
       {
         "lineNo": 4,
-        "description": "Paint roller 9 in with frame",
+        "description": {
+          "en": "Paint roller 9 in with frame",
+          "ar": "رولة دهان 9 بوصات مع إطار"
+        },
         "qty": 24,
         "unit": "pcs",
         "packSize": 1,
@@ -433,12 +559,18 @@
         "selection": {
           "marginPct": 25,
           "offers": ["off-0140-l4-s5"],
-          "reason": "Best fit (landed cost)"
+          "reason": {
+            "en": "Best fit (landed cost)",
+            "ar": "الأنسب (التكلفة الواصلة)"
+          }
         }
       },
       {
         "lineNo": 5,
-        "description": "Masking tape 50 mm × 50 m",
+        "description": {
+          "en": "Masking tape 50 mm × 50 m",
+          "ar": "شريط لاصق للتغطية 50 مم × 50 م"
+        },
         "qty": 40,
         "unit": "roll",
         "packSize": 1,
@@ -450,12 +582,18 @@
         "selection": {
           "marginPct": 25,
           "offers": ["off-0140-l5-s5"],
-          "reason": "Best fit (landed cost)"
+          "reason": {
+            "en": "Best fit (landed cost)",
+            "ar": "الأنسب (التكلفة الواصلة)"
+          }
         }
       },
       {
         "lineNo": 6,
-        "description": "Cable ties, nylon, 300 mm, pack of 100",
+        "description": {
+          "en": "Cable ties, nylon, 300 mm, pack of 100",
+          "ar": "روابط كابلات نايلون، 300 مم، عبوة 100"
+        },
         "qty": 10,
         "unit": "pack",
         "packSize": 1,
@@ -467,7 +605,10 @@
         "selection": {
           "marginPct": 25,
           "offers": ["off-0140-l6-s5"],
-          "reason": "Best fit (landed cost)"
+          "reason": {
+            "en": "Best fit (landed cost)",
+            "ar": "الأنسب (التكلفة الواصلة)"
+          }
         }
       }
     ],
@@ -477,12 +618,18 @@
       "fxRateUSD": 48.6,
       "charges": [
         {
-          "label": "Damietta launch delivery to vessel",
+          "label": {
+            "en": "Damietta launch delivery to vessel",
+            "ar": "تسليم بلنش إلى السفينة في دمياط"
+          },
           "amountEGP": 3800,
           "status": "Estimate"
         },
         {
-          "label": "Bank transfer charges",
+          "label": {
+            "en": "Bank transfer charges",
+            "ar": "رسوم التحويل البنكي"
+          },
           "amountEGP": 350,
           "status": "Confirmed"
         }
@@ -501,8 +648,14 @@
     "wait": "Awaiting customer decision",
     "tone": "info",
     "owner": "ky",
-    "nextAction": "Internal reminder only — do not chase",
-    "blocker": "Customer rule: no status requests",
+    "nextAction": {
+      "en": "Internal reminder only — do not chase",
+      "ar": "تذكير داخلي فقط — بلا متابعة للعميل"
+    },
+    "blocker": {
+      "en": "Customer rule: no status requests",
+      "ar": "قاعدة العميل: لا استفسارات عن الحالة"
+    },
     "lines": {
       "ready": 4,
       "waiting": 0,
@@ -518,12 +671,18 @@
       "fxRateUSD": 48.6,
       "charges": [
         {
-          "label": "Alexandria launch delivery to vessel",
+          "label": {
+            "en": "Alexandria launch delivery to vessel",
+            "ar": "تسليم بلنش إلى السفينة في الإسكندرية"
+          },
           "amountEGP": 2500,
           "status": "Confirmed"
         },
         {
-          "label": "Bank transfer charges",
+          "label": {
+            "en": "Bank transfer charges",
+            "ar": "رسوم التحويل البنكي"
+          },
           "amountEGP": 350,
           "status": "Confirmed"
         }
@@ -532,7 +691,10 @@
     "items": [
       {
         "lineNo": 1,
-        "description": "Mooring rope, polypropylene 40 mm × 220 m",
+        "description": {
+          "en": "Mooring rope, polypropylene 40 mm × 220 m",
+          "ar": "حبل رسو، بولي بروبيلين 40 مم × 220 م"
+        },
         "qty": 2,
         "unit": "roll",
         "packSize": 1,
@@ -544,12 +706,18 @@
         "selection": {
           "marginPct": 23.1,
           "offers": ["off-0139-l1-s13"],
-          "reason": "Best fit (landed cost)"
+          "reason": {
+            "en": "Best fit (landed cost)",
+            "ar": "الأنسب (التكلفة الواصلة)"
+          }
         }
       },
       {
         "lineNo": 2,
-        "description": "Shackle, galvanised 1 in",
+        "description": {
+          "en": "Shackle, galvanised 1 in",
+          "ar": "شاكل مجلفن 1 بوصة"
+        },
         "qty": 20,
         "unit": "pcs",
         "packSize": 1,
@@ -561,12 +729,18 @@
         "selection": {
           "marginPct": 23.1,
           "offers": ["off-0139-l2-s13"],
-          "reason": "Best fit (landed cost)"
+          "reason": {
+            "en": "Best fit (landed cost)",
+            "ar": "الأنسب (التكلفة الواصلة)"
+          }
         }
       },
       {
         "lineNo": 3,
-        "description": "CRC Belt Grip spray, 400 ml",
+        "description": {
+          "en": "CRC Belt Grip spray, 400 ml",
+          "ar": "بخاخ CRC Belt Grip، 400 مل"
+        },
         "product": "P1",
         "brand": "CRC",
         "qty": 36,
@@ -580,12 +754,18 @@
         "selection": {
           "marginPct": 23.1,
           "offers": ["off-0139-l3-s1"],
-          "reason": "Best fit (landed cost)"
+          "reason": {
+            "en": "Best fit (landed cost)",
+            "ar": "الأنسب (التكلفة الواصلة)"
+          }
         }
       },
       {
         "lineNo": 4,
-        "description": "LED floodlight 100 W, IP66",
+        "description": {
+          "en": "LED floodlight 100 W, IP66",
+          "ar": "كشاف LED بقدرة 100 واط، IP66"
+        },
         "qty": 6,
         "unit": "pcs",
         "packSize": 1,
@@ -597,7 +777,10 @@
         "selection": {
           "marginPct": 23.1,
           "offers": ["off-0139-l4-s1"],
-          "reason": "Best fit (landed cost)"
+          "reason": {
+            "en": "Best fit (landed cost)",
+            "ar": "الأنسب (التكلفة الواصلة)"
+          }
         }
       }
     ]
@@ -614,8 +797,14 @@
     "wait": "Awaiting internal approval",
     "tone": "warn",
     "owner": "sa",
-    "nextAction": "Karim Balbaa: margin exception (12.4%)",
-    "blocker": "Below 15% minimum margin",
+    "nextAction": {
+      "en": "Karim Balbaa: margin exception (12.4%)",
+      "ar": "كريم بلباع: استثناء هامش (12.4%)"
+    },
+    "blocker": {
+      "en": "Below 15% minimum margin",
+      "ar": "أقل من الحد الأدنى للهامش 15%"
+    },
     "lines": {
       "ready": 6,
       "waiting": 0,
@@ -631,12 +820,18 @@
       "fxRateUSD": 48.6,
       "charges": [
         {
-          "label": "Damietta launch delivery to vessel",
+          "label": {
+            "en": "Damietta launch delivery to vessel",
+            "ar": "تسليم بلنش إلى السفينة في دمياط"
+          },
           "amountEGP": 3500,
           "status": "Confirmed"
         },
         {
-          "label": "Bank transfer charges",
+          "label": {
+            "en": "Bank transfer charges",
+            "ar": "رسوم التحويل البنكي"
+          },
           "amountEGP": 350,
           "status": "Confirmed"
         }
@@ -645,7 +840,10 @@
     "items": [
       {
         "lineNo": 1,
-        "description": "Hempel Hempadur 45880 epoxy, grey, 20 L kit",
+        "description": {
+          "en": "Hempel Hempadur 45880 epoxy, grey, 20 L kit",
+          "ar": "إيبوكسي Hempel Hempadur 45880، رمادي، طقم 20 لترًا"
+        },
         "brand": "Hempel",
         "qty": 6,
         "unit": "set",
@@ -658,12 +856,18 @@
         "selection": {
           "marginPct": 12.4,
           "offers": ["off-0137-l1-s1"],
-          "reason": "Best fit; margin cut to the customer's target price (approval requested)"
+          "reason": {
+            "en": "Best fit; margin cut to the customer's target price (approval requested)",
+            "ar": "الأنسب؛ خُفّض الهامش إلى السعر المستهدف للعميل (طُلبت الموافقة)"
+          }
         }
       },
       {
         "lineNo": 2,
-        "description": "Hempel Hempathane HS 55610, white RAL 9010, 5 L",
+        "description": {
+          "en": "Hempel Hempathane HS 55610, white RAL 9010, 5 L",
+          "ar": "Hempel Hempathane HS 55610، أبيض RAL 9010، 5 لترات"
+        },
         "brand": "Hempel",
         "qty": 12,
         "unit": "can",
@@ -676,12 +880,18 @@
         "selection": {
           "marginPct": 12.4,
           "offers": ["off-0137-l2-s1"],
-          "reason": "Best fit; margin cut to the customer's target price (approval requested)"
+          "reason": {
+            "en": "Best fit; margin cut to the customer's target price (approval requested)",
+            "ar": "الأنسب؛ خُفّض الهامش إلى السعر المستهدف للعميل (طُلبت الموافقة)"
+          }
         }
       },
       {
         "lineNo": 3,
-        "description": "Thinner 08450, 20 L",
+        "description": {
+          "en": "Thinner 08450, 20 L",
+          "ar": "مخفف 08450، 20 لترًا"
+        },
         "brand": "Hempel",
         "qty": 4,
         "unit": "can",
@@ -694,12 +904,18 @@
         "selection": {
           "marginPct": 12.4,
           "offers": ["off-0137-l3-s1"],
-          "reason": "Best fit (landed cost)"
+          "reason": {
+            "en": "Best fit (landed cost)",
+            "ar": "الأنسب (التكلفة الواصلة)"
+          }
         }
       },
       {
         "lineNo": 4,
-        "description": "Paint roller 9 in with frame",
+        "description": {
+          "en": "Paint roller 9 in with frame",
+          "ar": "رولة دهان 9 بوصات مع إطار"
+        },
         "qty": 24,
         "unit": "pcs",
         "packSize": 1,
@@ -711,12 +927,18 @@
         "selection": {
           "marginPct": 12.4,
           "offers": ["off-0137-l4-s1"],
-          "reason": "Best fit (landed cost)"
+          "reason": {
+            "en": "Best fit (landed cost)",
+            "ar": "الأنسب (التكلفة الواصلة)"
+          }
         }
       },
       {
         "lineNo": 5,
-        "description": "Wire brush, 4-row, wooden handle",
+        "description": {
+          "en": "Wire brush, 4-row, wooden handle",
+          "ar": "فرشاة سلك، 4 صفوف، مقبض خشبي"
+        },
         "qty": 30,
         "unit": "pcs",
         "packSize": 1,
@@ -728,12 +950,18 @@
         "selection": {
           "marginPct": 12.4,
           "offers": ["off-0137-l5-s1"],
-          "reason": "Best fit (landed cost)"
+          "reason": {
+            "en": "Best fit (landed cost)",
+            "ar": "الأنسب (التكلفة الواصلة)"
+          }
         }
       },
       {
         "lineNo": 6,
-        "description": "Masking tape 50 mm × 50 m",
+        "description": {
+          "en": "Masking tape 50 mm × 50 m",
+          "ar": "شريط لاصق للتغطية 50 مم × 50 م"
+        },
         "qty": 40,
         "unit": "roll",
         "packSize": 1,
@@ -745,7 +973,10 @@
         "selection": {
           "marginPct": 12.4,
           "offers": ["off-0137-l6-s1"],
-          "reason": "Best fit (landed cost)"
+          "reason": {
+            "en": "Best fit (landed cost)",
+            "ar": "الأنسب (التكلفة الواصلة)"
+          }
         }
       }
     ]
@@ -762,8 +993,14 @@
     "wait": "Awaiting customer decision",
     "tone": "danger",
     "owner": "ky",
-    "nextAction": "Customer PO uses expired v1 price on line 3",
-    "blocker": "Commitment blocked",
+    "nextAction": {
+      "en": "Customer PO uses expired v1 price on line 3",
+      "ar": "أمر شراء العميل يستخدم سعر v1 المنتهي في البند 3"
+    },
+    "blocker": {
+      "en": "Commitment blocked",
+      "ar": "الالتزام متوقف"
+    },
     "lines": {
       "ready": 5,
       "waiting": 0,
@@ -776,7 +1013,10 @@
     "items": [
       {
         "lineNo": 1,
-        "description": "Electrical contact cleaner, 400 ml",
+        "description": {
+          "en": "Electrical contact cleaner, 400 ml",
+          "ar": "منظف ملامسات كهربائية، 400 مل"
+        },
         "qty": 48,
         "unit": "can",
         "packSize": 1,
@@ -788,12 +1028,18 @@
         "selection": {
           "marginPct": 27.1,
           "offers": ["off-0136-l1-s2"],
-          "reason": "Best fit (landed cost)"
+          "reason": {
+            "en": "Best fit (landed cost)",
+            "ar": "الأنسب (التكلفة الواصلة)"
+          }
         }
       },
       {
         "lineNo": 2,
-        "description": "LOCTITE 243 threadlocker, 50 ml",
+        "description": {
+          "en": "LOCTITE 243 threadlocker, 50 ml",
+          "ar": "مثبّت براغي LOCTITE 243، 50 مل"
+        },
         "product": "P2",
         "brand": "Loctite",
         "exactBrand": true,
@@ -809,12 +1055,18 @@
         "selection": {
           "marginPct": 25.8,
           "offers": ["off-0136-l2-s1"],
-          "reason": "Best fit (landed cost)"
+          "reason": {
+            "en": "Best fit (landed cost)",
+            "ar": "الأنسب (التكلفة الواصلة)"
+          }
         }
       },
       {
         "lineNo": 3,
-        "description": "Safety helmet EN 397, white",
+        "description": {
+          "en": "Safety helmet EN 397, white",
+          "ar": "خوذة سلامة EN 397، بيضاء"
+        },
         "product": "P5",
         "qty": 10,
         "unit": "EA",
@@ -827,12 +1079,18 @@
         "selection": {
           "marginPct": 37.5,
           "offers": ["off-0136-l3-s4-v2"],
-          "reason": "v2 price after v1 expired 10 Nov"
+          "reason": {
+            "en": "v2 price after v1 expired 10 Nov",
+            "ar": "سعر v2 بعد انتهاء v1 في 10 نوفمبر"
+          }
         }
       },
       {
         "lineNo": 4,
-        "description": "FR coverall navy EN ISO 11612, size L",
+        "description": {
+          "en": "FR coverall navy EN ISO 11612, size L",
+          "ar": "أفرول مقاوم للهب كحلي EN ISO 11612، مقاس L"
+        },
         "product": "P6",
         "qty": 8,
         "unit": "EA",
@@ -846,12 +1104,18 @@
         "selection": {
           "marginPct": 25,
           "offers": ["off-0136-l4-s1"],
-          "reason": "Best fit (landed cost)"
+          "reason": {
+            "en": "Best fit (landed cost)",
+            "ar": "الأنسب (التكلفة الواصلة)"
+          }
         }
       },
       {
         "lineNo": 5,
-        "description": "Degreaser, water based, 25 L",
+        "description": {
+          "en": "Degreaser, water based, 25 L",
+          "ar": "مزيل شحوم، مائي الأساس، 25 لترًا"
+        },
         "qty": 2,
         "unit": "drum",
         "packSize": 1,
@@ -863,7 +1127,10 @@
         "selection": {
           "marginPct": 26.1,
           "offers": ["off-0136-l5-s1"],
-          "reason": "Best fit (landed cost)"
+          "reason": {
+            "en": "Best fit (landed cost)",
+            "ar": "الأنسب (التكلفة الواصلة)"
+          }
         }
       }
     ]
@@ -880,7 +1147,10 @@
     "wait": "Awaiting internal approval",
     "tone": "info",
     "owner": "sa",
-    "nextAction": "Prepare v2 with ESAB alternative",
+    "nextAction": {
+      "en": "Prepare v2 with ESAB alternative",
+      "ar": "إعداد v2 مع بديل ESAB"
+    },
     "blocker": "",
     "lines": {
       "ready": 7,
@@ -890,7 +1160,10 @@
     },
     "value": 15400,
     "urgent": false,
-    "handoverNote": "Customer wants the ESAB alternative priced in v2; datasheet attached to line 3.",
+    "handoverNote": {
+      "en": "Customer wants the ESAB alternative priced in v2; datasheet attached to line 3.",
+      "ar": "يريد العميل تسعير بديل ESAB في v2؛ ورقة البيانات مرفقة بالبند 3."
+    },
     "currency": "USD",
     "pricing": {
       "allocation": "value",
@@ -898,12 +1171,18 @@
       "fxRateUSD": 48.6,
       "charges": [
         {
-          "label": "Supply-boat transfer to DOS Falcon",
+          "label": {
+            "en": "Supply-boat transfer to DOS Falcon",
+            "ar": "نقل بسفينة إمداد إلى DOS Falcon"
+          },
           "amountEGP": 4500,
           "status": "Estimate"
         },
         {
-          "label": "Bank transfer charges",
+          "label": {
+            "en": "Bank transfer charges",
+            "ar": "رسوم التحويل البنكي"
+          },
           "amountEGP": 350,
           "status": "Confirmed"
         }
@@ -912,7 +1191,10 @@
     "items": [
       {
         "lineNo": 1,
-        "description": "Welding electrode E6013 Ø3.2 mm, 5 kg pack",
+        "description": {
+          "en": "Welding electrode E6013 Ø3.2 mm, 5 kg pack",
+          "ar": "قطب لحام E6013 Ø3.2 مم، عبوة 5 كجم"
+        },
         "product": "P4",
         "brand": "ESAB",
         "model": "OK 46.00 (customer's choice in v2)",
@@ -928,12 +1210,18 @@
         "selection": {
           "marginPct": 21.4,
           "offers": ["off-0135-l1-s3"],
-          "reason": "ESAB alternative, as the customer asked (email 12 Nov)"
+          "reason": {
+            "en": "ESAB alternative, as the customer asked (email 12 Nov)",
+            "ar": "بديل ESAB، كما طلب العميل (بريد 12 نوفمبر)"
+          }
         }
       },
       {
         "lineNo": 2,
-        "description": "Welding electrode E7018 Ø4.0 mm, 5 kg",
+        "description": {
+          "en": "Welding electrode E7018 Ø4.0 mm, 5 kg",
+          "ar": "قطب لحام E7018 Ø4.0 مم، 5 كجم"
+        },
         "qty": 20,
         "unit": "pack",
         "packSize": 1,
@@ -945,12 +1233,18 @@
         "selection": {
           "marginPct": 21.4,
           "offers": ["off-0135-l2-s3"],
-          "reason": "Best fit (landed cost)"
+          "reason": {
+            "en": "Best fit (landed cost)",
+            "ar": "الأنسب (التكلفة الواصلة)"
+          }
         }
       },
       {
         "lineNo": 3,
-        "description": "Grinding disc 115 mm",
+        "description": {
+          "en": "Grinding disc 115 mm",
+          "ar": "قرص تجليخ 115 مم"
+        },
         "qty": 200,
         "unit": "pcs",
         "packSize": 1,
@@ -962,12 +1256,18 @@
         "selection": {
           "marginPct": 21.4,
           "offers": ["off-0135-l3-s1"],
-          "reason": "Best fit (landed cost)"
+          "reason": {
+            "en": "Best fit (landed cost)",
+            "ar": "الأنسب (التكلفة الواصلة)"
+          }
         }
       },
       {
         "lineNo": 4,
-        "description": "Cutting disc 115 × 1 mm",
+        "description": {
+          "en": "Cutting disc 115 × 1 mm",
+          "ar": "قرص قطع 115 × 1 مم"
+        },
         "qty": 300,
         "unit": "pcs",
         "packSize": 1,
@@ -979,12 +1279,18 @@
         "selection": {
           "marginPct": 21.4,
           "offers": ["off-0135-l4-s1"],
-          "reason": "Best fit (landed cost)"
+          "reason": {
+            "en": "Best fit (landed cost)",
+            "ar": "الأنسب (التكلفة الواصلة)"
+          }
         }
       },
       {
         "lineNo": 5,
-        "description": "Welding gloves, leather",
+        "description": {
+          "en": "Welding gloves, leather",
+          "ar": "قفازات لحام، جلد"
+        },
         "qty": 60,
         "unit": "pcs",
         "packSize": 1,
@@ -996,12 +1302,18 @@
         "selection": {
           "marginPct": 21.4,
           "offers": ["off-0135-l5-s1"],
-          "reason": "Best fit (landed cost)"
+          "reason": {
+            "en": "Best fit (landed cost)",
+            "ar": "الأنسب (التكلفة الواصلة)"
+          }
         }
       },
       {
         "lineNo": 6,
-        "description": "Welding helmet, auto-darkening",
+        "description": {
+          "en": "Welding helmet, auto-darkening",
+          "ar": "قناع لحام، ذاتي التعتيم"
+        },
         "qty": 6,
         "unit": "pcs",
         "packSize": 1,
@@ -1013,12 +1325,18 @@
         "selection": {
           "marginPct": 21.4,
           "offers": ["off-0135-l6-s1"],
-          "reason": "Best fit (landed cost)"
+          "reason": {
+            "en": "Best fit (landed cost)",
+            "ar": "الأنسب (التكلفة الواصلة)"
+          }
         }
       },
       {
         "lineNo": 7,
-        "description": "Wire brush, stainless",
+        "description": {
+          "en": "Wire brush, stainless",
+          "ar": "فرشاة سلك، ستانلس ستيل"
+        },
         "qty": 40,
         "unit": "pcs",
         "packSize": 1,
@@ -1030,12 +1348,18 @@
         "selection": {
           "marginPct": 21.4,
           "offers": ["off-0135-l7-s1"],
-          "reason": "Best fit (landed cost)"
+          "reason": {
+            "en": "Best fit (landed cost)",
+            "ar": "الأنسب (التكلفة الواصلة)"
+          }
         }
       },
       {
         "lineNo": 8,
-        "description": "Welding cable, 50 mm², 50 m drum",
+        "description": {
+          "en": "Welding cable, 50 mm², 50 m drum",
+          "ar": "كابل لحام، 50 مم²، بكرة 50 م"
+        },
         "qty": 2,
         "unit": "roll",
         "packSize": 1,
@@ -1047,7 +1371,10 @@
       },
       {
         "lineNo": 9,
-        "description": "Electrode holder, 400 A, fully insulated",
+        "description": {
+          "en": "Electrode holder, 400 A, fully insulated",
+          "ar": "ماسك أقطاب، 400 أمبير، معزول بالكامل"
+        },
         "qty": 6,
         "unit": "pcs",
         "packSize": 1,
@@ -1071,8 +1398,14 @@
     "wait": "Awaiting delivery or payment",
     "tone": "ok",
     "owner": "ah",
-    "nextAction": "Collect signed delivery note drop 1",
-    "blocker": "ETA moved +1 day",
+    "nextAction": {
+      "en": "Collect signed delivery note drop 1",
+      "ar": "استلام إذن التسليم الموقّع للدفعة 1"
+    },
+    "blocker": {
+      "en": "ETA moved +1 day",
+      "ar": "تأخر موعد الوصول يومًا واحدًا"
+    },
     "lines": {
       "ready": 9,
       "waiting": 0,
@@ -1085,7 +1418,10 @@
     "items": [
       {
         "lineNo": 1,
-        "description": "Coverall FR, assorted sizes",
+        "description": {
+          "en": "Coverall FR, assorted sizes",
+          "ar": "أفرول مقاوم للهب، مقاسات متنوعة"
+        },
         "product": "P6",
         "qty": 40,
         "unit": "EA",
@@ -1098,12 +1434,18 @@
         "selection": {
           "marginPct": 30.3,
           "offers": ["off-0133-l1-s1"],
-          "reason": "Best fit (landed cost)"
+          "reason": {
+            "en": "Best fit (landed cost)",
+            "ar": "الأنسب (التكلفة الواصلة)"
+          }
         }
       },
       {
         "lineNo": 2,
-        "description": "Safety gloves, leather palm (pairs)",
+        "description": {
+          "en": "Safety gloves, leather palm (pairs)",
+          "ar": "قفازات سلامة، راحة جلدية (أزواج)"
+        },
         "qty": 200,
         "unit": "pcs",
         "packSize": 1,
@@ -1115,12 +1457,18 @@
         "selection": {
           "marginPct": 30,
           "offers": ["off-0133-l2-s1"],
-          "reason": "Best fit (landed cost)"
+          "reason": {
+            "en": "Best fit (landed cost)",
+            "ar": "الأنسب (التكلفة الواصلة)"
+          }
         }
       },
       {
         "lineNo": 3,
-        "description": "Safety helmet EN 397, white",
+        "description": {
+          "en": "Safety helmet EN 397, white",
+          "ar": "خوذة سلامة EN 397، بيضاء"
+        },
         "product": "P5",
         "qty": 10,
         "unit": "EA",
@@ -1133,12 +1481,18 @@
         "selection": {
           "marginPct": 34.6,
           "offers": ["off-0133-l3-s4"],
-          "reason": "Best fit (landed cost)"
+          "reason": {
+            "en": "Best fit (landed cost)",
+            "ar": "الأنسب (التكلفة الواصلة)"
+          }
         }
       },
       {
         "lineNo": 4,
-        "description": "Hydraulic oil ISO VG 68, 208 L drum",
+        "description": {
+          "en": "Hydraulic oil ISO VG 68, 208 L drum",
+          "ar": "زيت هيدروليك ISO VG 68، برميل 208 لترات"
+        },
         "qty": 6,
         "unit": "drum",
         "packSize": 1,
@@ -1150,12 +1504,18 @@
         "selection": {
           "marginPct": 28,
           "offers": ["off-0133-l4-s2"],
-          "reason": "Best fit (landed cost)"
+          "reason": {
+            "en": "Best fit (landed cost)",
+            "ar": "الأنسب (التكلفة الواصلة)"
+          }
         }
       },
       {
         "lineNo": 5,
-        "description": "Hydraulic hose assembly 1 in, 4SH, 10 m, with fittings",
+        "description": {
+          "en": "Hydraulic hose assembly 1 in, 4SH, 10 m, with fittings",
+          "ar": "خرطوم هيدروليك مجمّع 1 بوصة، 4SH، 10 م، مع التركيبات"
+        },
         "qty": 12,
         "unit": "pcs",
         "packSize": 1,
@@ -1167,12 +1527,18 @@
         "selection": {
           "marginPct": 25,
           "offers": ["off-0133-l5-gs"],
-          "reason": "Own stock — reserved in Alexandria"
+          "reason": {
+            "en": "Own stock — reserved in Alexandria",
+            "ar": "من مخزوننا — محجوز في الإسكندرية"
+          }
         }
       },
       {
         "lineNo": 6,
-        "description": "Round sling, polyester, 5 t × 6 m",
+        "description": {
+          "en": "Round sling, polyester, 5 t × 6 m",
+          "ar": "حمّالة دائرية، بوليستر، 5 طن × 6 م"
+        },
         "qty": 20,
         "unit": "pcs",
         "packSize": 1,
@@ -1184,12 +1550,18 @@
         "selection": {
           "marginPct": 25,
           "offers": ["off-0133-l6-gs"],
-          "reason": "Own stock — reserved in Alexandria"
+          "reason": {
+            "en": "Own stock — reserved in Alexandria",
+            "ar": "من مخزوننا — محجوز في الإسكندرية"
+          }
         }
       },
       {
         "lineNo": 7,
-        "description": "Chain block, 5 t, 6 m lift",
+        "description": {
+          "en": "Chain block, 5 t, 6 m lift",
+          "ar": "رافعة جنزير، 5 طن، رفع 6 م"
+        },
         "qty": 4,
         "unit": "pcs",
         "packSize": 1,
@@ -1201,12 +1573,18 @@
         "selection": {
           "marginPct": 25,
           "offers": ["off-0133-l7-gs"],
-          "reason": "Own stock — reserved in Alexandria"
+          "reason": {
+            "en": "Own stock — reserved in Alexandria",
+            "ar": "من مخزوننا — محجوز في الإسكندرية"
+          }
         }
       },
       {
         "lineNo": 8,
-        "description": "Fire extinguisher, CO2 5 kg, MED",
+        "description": {
+          "en": "Fire extinguisher, CO2 5 kg, MED",
+          "ar": "طفاية حريق CO2 بوزن 5 كجم، MED"
+        },
         "qty": 10,
         "unit": "pcs",
         "packSize": 1,
@@ -1218,12 +1596,18 @@
         "selection": {
           "marginPct": 25,
           "offers": ["off-0133-l8-gs"],
-          "reason": "Own stock — reserved in Alexandria"
+          "reason": {
+            "en": "Own stock — reserved in Alexandria",
+            "ar": "من مخزوننا — محجوز في الإسكندرية"
+          }
         }
       },
       {
         "lineNo": 9,
-        "description": "Oil spill kit, 240 L wheeled bin",
+        "description": {
+          "en": "Oil spill kit, 240 L wheeled bin",
+          "ar": "طقم مكافحة تسرب الزيت، حاوية بعجلات 240 لترًا"
+        },
         "qty": 4,
         "unit": "set",
         "packSize": 1,
@@ -1235,7 +1619,10 @@
         "selection": {
           "marginPct": 25,
           "offers": ["off-0133-l9-gs"],
-          "reason": "Own stock — reserved in Alexandria"
+          "reason": {
+            "en": "Own stock — reserved in Alexandria",
+            "ar": "من مخزوننا — محجوز في الإسكندرية"
+          }
         }
       }
     ]
@@ -1252,7 +1639,10 @@
     "wait": "Awaiting delivery or payment",
     "tone": "ok",
     "owner": "ah",
-    "nextAction": "Balance USD 4,200 due 30 Nov",
+    "nextAction": {
+      "en": "Balance USD 4,200 due 30 Nov",
+      "ar": "رصيد USD 4,200 مستحق 30 نوفمبر"
+    },
     "blocker": "",
     "lines": {
       "ready": 4,
@@ -1271,32 +1661,50 @@
       "fxRateUSD": 48.6,
       "charges": [
         {
-          "label": "Road freight Cairo → Suez",
+          "label": {
+            "en": "Road freight Cairo → Suez",
+            "ar": "شحن بري القاهرة ← السويس"
+          },
           "amountEGP": 4500,
           "status": "Confirmed"
         },
         {
-          "label": "Launch delivery to vessel, Suez anchorage",
+          "label": {
+            "en": "Launch delivery to vessel, Suez anchorage",
+            "ar": "تسليم بلنش إلى السفينة، مخطاف السويس"
+          },
           "amountEGP": 3800,
           "status": "Confirmed"
         },
         {
-          "label": "Port agent fee & gate pass",
+          "label": {
+            "en": "Port agent fee & gate pass",
+            "ar": "رسوم الوكيل البحري وتصريح البوابة"
+          },
           "amountEGP": 2000,
           "status": "Confirmed"
         },
         {
-          "label": "Bank transfer charges",
+          "label": {
+            "en": "Bank transfer charges",
+            "ar": "رسوم التحويل البنكي"
+          },
           "amountEGP": 350,
           "status": "Confirmed"
         }
       ]
     },
-    "handoverNote": "Handed over after delivery: DN-0131 signed by the Chief Engineer on 9 Nov. USD 10,000 received 12 Nov; balance USD 4,200 due 30 Nov. Claim CLM-0131-1 (2 cracked helmets) is open with Delta Marine.",
+    "handoverNote": {
+      "en": "Handed over after delivery: DN-0131 signed by the Chief Engineer on 9 Nov. USD 10,000 received 12 Nov; balance USD 4,200 due 30 Nov. Claim CLM-0131-1 (2 cracked helmets) is open with Delta Marine.",
+      "ar": "سُلّم بعد التسليم: وقّع كبير المهندسين إذن التسليم DN-0131 في 9 نوفمبر. استُلم USD 10,000 في 12 نوفمبر؛ والرصيد USD 4,200 مستحق 30 نوفمبر. المطالبة CLM-0131-1 (خوذتان مشروختان) مفتوحة مع Delta Marine."
+    },
     "items": [
       {
         "lineNo": 1,
-        "description": "Fuel injection valve nozzle, aux. engine Yanmar 6EY18ALW",
+        "description": {
+          "en": "Fuel injection valve nozzle, aux. engine Yanmar 6EY18ALW",
+          "ar": "فوهة صمام حقن الوقود، المحرك المساعد Yanmar 6EY18ALW"
+        },
         "brand": "Yanmar",
         "exactBrand": true,
         "partNo": "150P155",
@@ -1311,12 +1719,18 @@
         "selection": {
           "marginPct": 24.27,
           "offers": ["off-0131-l1-s1"],
-          "reason": "Best fit (landed cost): genuine parts, one supplier, one PO"
+          "reason": {
+            "en": "Best fit (landed cost): genuine parts, one supplier, one PO",
+            "ar": "الأنسب (التكلفة الواصلة): قطع أصلية، مورّد واحد، أمر شراء واحد"
+          }
         }
       },
       {
         "lineNo": 2,
-        "description": "Piston ring set (one cylinder), Yanmar 6EY18ALW",
+        "description": {
+          "en": "Piston ring set (one cylinder), Yanmar 6EY18ALW",
+          "ar": "طقم حلقات مكبس (أسطوانة واحدة)، Yanmar 6EY18ALW"
+        },
         "brand": "Yanmar",
         "exactBrand": true,
         "partNo": "146673-22500",
@@ -1331,12 +1745,18 @@
         "selection": {
           "marginPct": 24.27,
           "offers": ["off-0131-l2-s1"],
-          "reason": "Best fit (landed cost): genuine parts, one supplier, one PO"
+          "reason": {
+            "en": "Best fit (landed cost): genuine parts, one supplier, one PO",
+            "ar": "الأنسب (التكلفة الواصلة): قطع أصلية، مورّد واحد، أمر شراء واحد"
+          }
         }
       },
       {
         "lineNo": 3,
-        "description": "Turbocharger overhaul kit, MAN NR20/S",
+        "description": {
+          "en": "Turbocharger overhaul kit, MAN NR20/S",
+          "ar": "طقم عَمرة شاحن توربيني، MAN NR20/S"
+        },
         "brand": "MAN",
         "exactBrand": true,
         "partNo": "NR20S-OHK",
@@ -1351,12 +1771,18 @@
         "selection": {
           "marginPct": 24.27,
           "offers": ["off-0131-l3-s1"],
-          "reason": "Best fit (landed cost): genuine parts, one supplier, one PO"
+          "reason": {
+            "en": "Best fit (landed cost): genuine parts, one supplier, one PO",
+            "ar": "الأنسب (التكلفة الواصلة): قطع أصلية، مورّد واحد، أمر شراء واحد"
+          }
         }
       },
       {
         "lineNo": 4,
-        "description": "Safety helmet EN 397, white, with chin strap",
+        "description": {
+          "en": "Safety helmet EN 397, white, with chin strap",
+          "ar": "خوذة سلامة EN 397، بيضاء، مع حزام ذقن"
+        },
         "product": "P5",
         "qty": 12,
         "unit": "EA",
@@ -1369,7 +1795,10 @@
         "selection": {
           "marginPct": 24.27,
           "offers": ["off-0131-l4-s1"],
-          "reason": "Best fit (landed cost): genuine parts, one supplier, one PO"
+          "reason": {
+            "en": "Best fit (landed cost): genuine parts, one supplier, one PO",
+            "ar": "الأنسب (التكلفة الواصلة): قطع أصلية، مورّد واحد، أمر شراء واحد"
+          }
         }
       }
     ]
@@ -1386,7 +1815,10 @@
     "wait": "Awaiting customer decision",
     "tone": "neutral",
     "owner": "sa",
-    "nextAction": "Customer paused — vessel drydock moved",
+    "nextAction": {
+      "en": "Customer paused — vessel drydock moved",
+      "ar": "أوقف العميل الملف مؤقتًا — تغيّر موعد الحوض الجاف للسفينة"
+    },
     "blocker": "",
     "lines": {
       "ready": 4,
@@ -1400,7 +1832,10 @@
     "items": [
       {
         "lineNo": 1,
-        "description": "Fire hose, 2.5 in × 20 m, with Storz couplings",
+        "description": {
+          "en": "Fire hose, 2.5 in × 20 m, with Storz couplings",
+          "ar": "خرطوم حريق، 2.5 بوصة × 20 م، مع وصلات Storz"
+        },
         "qty": 12,
         "unit": "pcs",
         "packSize": 1,
@@ -1413,12 +1848,18 @@
         "selection": {
           "marginPct": 28,
           "offers": ["off-0130-l1-s1"],
-          "reason": "Best fit (landed cost)"
+          "reason": {
+            "en": "Best fit (landed cost)",
+            "ar": "الأنسب (التكلفة الواصلة)"
+          }
         }
       },
       {
         "lineNo": 2,
-        "description": "Fire hose nozzle, jet / spray, 2.5 in, Storz",
+        "description": {
+          "en": "Fire hose nozzle, jet / spray, 2.5 in, Storz",
+          "ar": "فوهة خرطوم حريق، نفث / رذاذ، 2.5 بوصة، Storz"
+        },
         "qty": 12,
         "unit": "pcs",
         "packSize": 1,
@@ -1430,12 +1871,18 @@
         "selection": {
           "marginPct": 28,
           "offers": ["off-0130-l2-s1"],
-          "reason": "Best fit (landed cost)"
+          "reason": {
+            "en": "Best fit (landed cost)",
+            "ar": "الأنسب (التكلفة الواصلة)"
+          }
         }
       },
       {
         "lineNo": 3,
-        "description": "Lifebuoy SOLAS, 2.5 kg, with light and smoke signal",
+        "description": {
+          "en": "Lifebuoy SOLAS, 2.5 kg, with light and smoke signal",
+          "ar": "طوق نجاة SOLAS، 2.5 كجم، مع ضوء وإشارة دخان"
+        },
         "qty": 6,
         "unit": "pcs",
         "packSize": 1,
@@ -1448,12 +1895,18 @@
         "selection": {
           "marginPct": 28,
           "offers": ["off-0130-l3-s12"],
-          "reason": "Best fit (landed cost)"
+          "reason": {
+            "en": "Best fit (landed cost)",
+            "ar": "الأنسب (التكلفة الواصلة)"
+          }
         }
       },
       {
         "lineNo": 4,
-        "description": "Rags, white cotton",
+        "description": {
+          "en": "Rags, white cotton",
+          "ar": "خِرق قطنية بيضاء"
+        },
         "qty": 150,
         "unit": "kg",
         "packSize": 1,
@@ -1465,7 +1918,10 @@
         "selection": {
           "marginPct": 25,
           "offers": ["off-0130-l4-s1"],
-          "reason": "Best fit (landed cost)"
+          "reason": {
+            "en": "Best fit (landed cost)",
+            "ar": "الأنسب (التكلفة الواصلة)"
+          }
         }
       }
     ],
@@ -1475,7 +1931,10 @@
       "fxRateUSD": 48.6,
       "charges": [
         {
-          "label": "Alexandria launch delivery to vessel",
+          "label": {
+            "en": "Alexandria launch delivery to vessel",
+            "ar": "تسليم بلنش إلى السفينة في الإسكندرية"
+          },
           "amountEGP": 2200,
           "status": "Estimate"
         }

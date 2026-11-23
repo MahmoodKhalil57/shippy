@@ -6,6 +6,7 @@ import { rcva } from "../../base/variants.ts";
 import { row, stack, text } from "../layout/algebra.ts";
 import { iconSvg, type IconName } from "../media/icon.ts";
 import { loading as loadingRecipe } from "./loading.ts";
+import { m } from "../../../i18n/index.ts";
 
 /**
  * Empty state: what goes where content isn't (yet) — nothing to show, still loading, or it
@@ -68,7 +69,7 @@ export class UiEmptyState extends LightElement {
   @property() tone: "neutral" | "error" = "neutral";
   /** Waiting for the content: M3's loading indicator, announced with `label`. */
   @property({ type: Boolean }) loading = false;
-  @property() label = "Loading";
+  @property() label = m.empty_state_loading();
 
   render() {
     const size = this.size ?? "md";

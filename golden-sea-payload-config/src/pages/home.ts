@@ -21,6 +21,7 @@ import { myDecisions, ROLES, toCollect } from "../queries/aside.ts";
 import { BY_RISK, LIVE, mine, type Where } from "../queries/cases.ts";
 import { home, unread } from "../queries/home.ts";
 import { dueToday, toTriage } from "../queries/work.ts";
+import { m } from "../i18n/paraglide/messages.js";
 
 /**
  * The dashboard's home (Payload `admin.components.views.dashboard`): the signed-in user's day,
@@ -66,7 +67,7 @@ const charts = (from: number, end?: number) => {
     data: home,
     tiles,
     visible: (s: WidgetScope) => tiles(s) > 0,
-    empty: { heading: "No chart for this yet." },
+    empty: { heading: m.page_home_no_chart() },
     items: (h: Home) => fmt.homeCharts(h).slice(from, end),
     key: (c: HomeChart) => c.title,
     title: (c: HomeChart) => c.title,
@@ -89,8 +90,8 @@ const counts = (
 
 /** Today's follow-ups (open tasks due by tonight, overdue first, in red), someone's or everyone's. */
 const followUps = (visible: Widget["visible"], where: Where): Widget => ({
-  title: "Today's follow-ups",
-  subhead: "Reminders stop on reply, decline or case closure",
+  title: m.page_home_follow_ups_title(),
+  subhead: m.page_home_follow_ups_subhead(),
   size: "s",
   visible,
   records: {
@@ -102,7 +103,7 @@ const followUps = (visible: Widget["visible"], where: Where): Widget => ({
     tags: ["when"],
     dot: "when",
     layout: "list",
-    empty: "No follow-ups due today.",
+    empty: m.page_home_no_follow_ups(),
     more: true,
   },
 });
@@ -147,8 +148,12 @@ const queue = (
       deadline: "due",
       nextAction: "blocker",
     },
-    labels: { customer: "Customer · vessel", "lineCount.ready": "Lines", nextAction: "Next action · blocker" },
-    empty: "No live cases.",
+    labels: {
+      customer: m.page_home_customer_vessel(),
+      "lineCount.ready": m.page_home_lines(),
+      nextAction: m.page_home_next_blocker(),
+    },
+    empty: m.page_home_no_live_cases(),
     more: true,
   },
 });
@@ -160,55 +165,65 @@ export const homePage = widgets({
     // The strip of four, 5 tiles each: the role's counts (from the collections) and its figures
     // with a trend (/home), in the role's order, the headline first.
     counts(to("finance-director"), "approvals", [
-      { label: "Decisions waiting", where: myDecisions.where, note: "payments, deposits, bank changes", main: true },
+      {
+        label: m.page_home_decisions_waiting(),
+        where: myDecisions.where,
+        note: m.page_home_decisions_note(),
+        main: true,
+      },
     ]),
     counts(to("sales", "desk"), "cases", [
-      { label: "My live cases", where: mine(LIVE), note: "cases you own that are still open", main: true },
+      { label: m.page_home_my_live_cases(), where: mine(LIVE), note: m.page_home_my_live_cases_note(), main: true },
     ]),
     counts(to("office-admin"), "intake-messages", [
-      { label: "Inbox to triage", where: toTriage, note: "new messages and uncertain matches", main: true },
-      { label: "Follow-ups due today", collection: "tasks", where: dueToday, note: "reminders stop on reply" },
+      { label: m.page_home_inbox_triage(), where: toTriage, note: m.page_home_inbox_note(), main: true },
+      { label: m.page_home_due_today(), collection: "tasks", where: dueToday, note: m.page_home_due_today_note() },
     ]),
     figures({
       width: 5,
       data: home,
       labels: fmt.homeFigureLabels,
+      name: fmt.homeFigureName,
       format: fmt.homeFigures,
     }),
     counts(to("operations"), "supplier-bills", [
-      { label: "Supplier bills to match", where: { status: { not_equals: "Paid" } }, note: "PO · receipt · bill" },
       {
-        label: "Invoices to collect",
-        collection: "invoices",
-        where: toCollect.where,
-        note: "e-invoices valid at the tax authority",
+        label: m.page_home_bills_match(),
+        where: { status: { not_equals: "Paid" } },
+        note: m.page_home_bills_match_note(),
       },
       {
-        label: "Integration exceptions",
+        label: m.page_home_to_collect(),
+        collection: "invoices",
+        where: toCollect.where,
+        note: m.page_home_to_collect_note(),
+      },
+      {
+        label: m.page_home_exceptions(),
         collection: "integration-exceptions",
         where: { status: { equals: "Open" } },
-        note: "safe retry available",
+        note: m.page_home_exceptions_note(),
         tone: { some: "warning", none: "success" },
       },
     ]),
     // The day's chart with what's next and the first list beside it (4 lanes: 2 + 1 + 1).
     chart.each(charts(0, 1)),
     list({
-      title: "Next up",
+      title: m.page_home_next_up(),
       // Its subhead comes with the data; this line holds its place while it loads.
-      subhead: "This week",
+      subhead: m.page_home_this_week(),
       size: "s",
       emphasis: "inverse",
       skeleton: "list",
       data: home,
-      empty: { when: (h) => !fmt.homePart(h, "agenda"), heading: "Nothing due this week." },
+      empty: { when: (h) => !fmt.homePart(h, "agenda"), heading: m.page_home_nothing_this_week() },
       format: fmt.agenda,
     }),
     // The first list: the decisions waiting for the approvers (tinted, so it reads first), the
     // follow-ups due today, the pipeline's next steps for Sales, the inbox for the office.
     {
-      title: "Waiting for your decision",
-      subhead: "Everything is prepared — you approve or return",
+      title: m.page_home_your_decision(),
+      subhead: m.page_home_your_decision_subhead(),
       size: "s",
       emphasis: "tinted",
       visible: to("management", "finance-director"),
@@ -223,8 +238,8 @@ export const homePage = widgets({
     },
     followUps(to("operations", "desk"), mine(dueToday)),
     {
-      title: "Pipeline next steps",
-      subhead: "Growth CRM · calls, visits and registrations",
+      title: m.page_home_pipeline(),
+      subhead: m.page_home_pipeline_subhead(),
       size: "s",
       visible: to("sales"),
       collection: {
@@ -237,8 +252,8 @@ export const homePage = widgets({
       },
     },
     {
-      title: "Inbox to triage",
-      subhead: "AI has read each message — check the case, owner and missing details",
+      title: m.page_home_inbox_triage(),
+      subhead: m.page_home_inbox_subhead(),
       size: "s",
       visible: to("office-admin"),
       collection: {
@@ -252,46 +267,34 @@ export const homePage = widgets({
     },
     // The queue with the second list (3 + 1): every live case for management, finance and the
     // office (with owners), the user's own for everyone else.
-    queue(
-      to("management"),
-      "All live cases",
-      "Sorted by risk, then deadline · every case has an owner and a next action",
-      LIVE,
-      { owner: true, value: true },
-    ),
-    queue(to("finance-director"), "All live cases", "Sorted by risk, then deadline", LIVE, {
+    queue(to("management"), m.page_home_all_live(), m.page_home_all_live_subhead(), LIVE, { owner: true, value: true }),
+    queue(to("finance-director"), m.page_home_all_live(), m.page_home_by_risk(), LIVE, {
       owner: true,
       value: true,
     }),
-    queue(to("office-admin"), "Desk cases", "Every live case, its owner and next step", LIVE, { owner: true }),
-    queue(to("operations"), "My queue", "Cases I own, sorted by risk, then deadline", mine(LIVE), { value: true }),
-    queue(to("sales"), "My queue", "Cases I own, sorted by risk, then deadline", mine(LIVE), {}),
-    queue(
-      to("desk"),
-      "My queue",
-      "Sorted by risk, then deadline · every case has an owner, deadline and next action",
-      mine(LIVE),
-      { value: true },
-    ),
+    queue(to("office-admin"), m.page_home_desk_cases(), m.page_home_desk_cases_subhead(), LIVE, { owner: true }),
+    queue(to("operations"), m.page_home_my_queue(), m.page_home_my_queue_subhead(), mine(LIVE), { value: true }),
+    queue(to("sales"), m.page_home_my_queue(), m.page_home_my_queue_subhead(), mine(LIVE), {}),
+    queue(to("desk"), m.page_home_my_queue(), m.page_home_desk_queue_subhead(), mine(LIVE), { value: true }),
     // The second list: the 07:00 briefing (several collections: /home writes it), or for the
     // office everyone's follow-ups due today.
     list({
-      title: "Daily briefing",
+      title: m.page_home_briefing(),
       // Its subhead comes with the data; this line holds its place while it loads.
-      subhead: "This morning",
+      subhead: m.page_home_this_morning(),
       size: "s",
       skeleton: "list",
       visible: (s) => s.user.role !== "office-admin",
       data: home,
-      empty: { when: (h) => !fmt.homePart(h, "briefing"), heading: "Nothing needs you this morning." },
+      empty: { when: (h) => !fmt.homePart(h, "briefing"), heading: m.page_home_nothing_morning() },
       format: fmt.briefing,
     }),
     followUps(to("office-admin"), dueToday),
     // The day at a glance, alive: deadlines draining in real time, the month's calendar, and the
     // figures the role steers by against their targets.
     countdown({
-      title: "Deadlines, live",
-      subhead: "Quotes due and vessels arriving, soonest first",
+      title: m.page_home_deadlines(),
+      subhead: m.page_home_deadlines_subhead(),
       size: "s",
       rows: 8,
       maxRows: 9,
@@ -300,7 +303,7 @@ export const homePage = widgets({
       format: shapes.deadlines,
     }),
     month({
-      title: "This month",
+      title: m.page_home_this_month(),
       size: "s",
       rows: 7,
       maxRows: 8,
@@ -309,7 +312,7 @@ export const homePage = widgets({
       format: shapes.calendar,
     }),
     bullet({
-      title: "Targets",
+      title: m.page_home_targets(),
       size: "s",
       rows: 8,
       maxRows: 8,
@@ -319,7 +322,7 @@ export const homePage = widgets({
       format: shapes.targets,
     }),
     waffle({
-      title: "Win rate",
+      title: m.page_home_win_rate(),
       size: "s",
       rows: 3,
       maxRows: 4,
@@ -329,7 +332,7 @@ export const homePage = widgets({
       format: shapes.winWaffle,
     }),
     dial({
-      title: "Quote turnaround",
+      title: m.page_home_turnaround(),
       size: "s",
       rows: 4,
       maxRows: 5,
@@ -343,8 +346,8 @@ export const homePage = widgets({
     // My quote deadlines over the next 7 days: the cases collection itself, drawn as a chart by
     // deadline (switchable to a calendar, a timeline or rows), not a chart computed by hand.
     {
-      title: "My deadlines, next 7 days",
-      subhead: "Quote deadlines on cases I own",
+      title: m.page_home_my_deadlines(),
+      subhead: m.page_home_my_deadlines_subhead(),
       size: "m",
       rows: 7,
       minRows: 6,
@@ -364,7 +367,7 @@ export const homePage = widgets({
     // The collections themselves, laid out for a glance: the open tasks as rows, and the live cases
     // on a month calendar by their quote deadline (each switchable to a table, cards or a board).
     {
-      title: "Open tasks",
+      title: m.page_home_open_tasks(),
       size: "m",
       rows: 8,
       minRows: 5,
@@ -378,7 +381,7 @@ export const homePage = widgets({
       },
     },
     {
-      title: "Quote deadlines",
+      title: m.page_home_quote_deadlines(),
       size: "m",
       rows: 10,
       minRows: 8,

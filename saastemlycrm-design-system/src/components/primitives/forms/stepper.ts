@@ -6,6 +6,7 @@ import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { fixed, fixedWidth, inlineRow, text } from "../layout/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
+import { m } from "../../../i18n/index.ts";
 
 /**
  * Stepper: a whole number nudged up or down (days, pieces, people), or typed.
@@ -84,7 +85,7 @@ export class UiStepper extends LightElement {
       <button
         type="button"
         class=${stepperButton()}
-        aria-label=${`Less${this.label ? ` ${this.label}` : ""}`}
+        aria-label=${this.label ? m.stepper_less_of({ label: this.label }) : m.stepper_less()}
         ?disabled=${this.disabled || (this.min != null && v != null && v <= this.min)}
         @click=${() => this._by(-1)}
       >
@@ -96,7 +97,7 @@ export class UiStepper extends LightElement {
       <button
         type="button"
         class=${stepperButton()}
-        aria-label=${`More${this.label ? ` ${this.label}` : ""}`}
+        aria-label=${this.label ? m.stepper_more_of({ label: this.label }) : m.stepper_more()}
         ?disabled=${this.disabled || (this.max != null && v != null && v >= this.max)}
         @click=${() => this._by(1)}
       >

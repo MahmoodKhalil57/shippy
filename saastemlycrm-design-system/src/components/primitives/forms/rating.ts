@@ -5,6 +5,8 @@ import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { fixed, inlineRow, row, text } from "../layout/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
+import { inlineStep } from "../../base/reading.ts";
+import { m } from "../../../i18n/index.ts";
 
 /**
  * Rating: a score in stars, picked in one tap (a supplier's reliability, a quote's fit).
@@ -60,10 +62,12 @@ export class UiRating extends LightElement {
 
   private _key(e: KeyboardEvent) {
     const cur = this.value ?? 0;
+    // Left and right follow the reading direction; up is more, down is less.
+    const step = inlineStep(e.key, this) || (e.key === "ArrowUp" ? 1 : e.key === "ArrowDown" ? -1 : 0);
     const next =
-      e.key === "ArrowRight" || e.key === "ArrowUp"
+      step > 0
         ? Math.min(this.max, cur + 1)
-        : e.key === "ArrowLeft" || e.key === "ArrowDown"
+        : step < 0
           ? Math.max(1, cur - 1)
           : e.key === "Home"
             ? 1
@@ -78,7 +82,7 @@ export class UiRating extends LightElement {
 
   render() {
     const v = this.value ?? 0;
-    const words = v ? (this.words[v - 1] ?? `${v} of ${this.max}`) : "Not rated";
+    const words = v ? (this.words[v - 1] ?? m.rating_of({ value: v, max: this.max })) : m.rating_none();
     return html`<div class=${rating()}>
       <div class=${ratingStars()} role="radiogroup" aria-label=${this.label || nothing} @keydown=${this._key}>
         ${Array.from({ length: this.max }, (_, i) => {
@@ -88,7 +92,7 @@ export class UiRating extends LightElement {
             role="radio"
             class=${ratingStar({ on: n <= v, picked: n === this.#picked })}
             aria-checked=${String(n === v)}
-            aria-label=${this.words[i] ? `${n}: ${this.words[i]}` : `${n} of ${this.max}`}
+            aria-label=${this.words[i] ? m.rating_star_words({ value: n, words: this.words[i] }) : m.rating_of({ value: n, max: this.max })}
             tabindex=${n === (v || 1) ? "0" : "-1"}
             ?disabled=${this.disabled}
             @click=${() => this._set(n === v && !this.required ? null : n)}

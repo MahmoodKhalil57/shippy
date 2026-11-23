@@ -1,6 +1,8 @@
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
+import { intl, intlTag, locale, m } from "../../../i18n/index.ts";
+import { isRtl } from "../../base/reading.ts";
 import { LightElement } from "../../base/light-element.ts";
 import { monthWeeks, readMonth, weekdayOrder, type WeekStart } from "../../base/month.ts";
 import { motion } from "../../base/motion-queue.ts";
@@ -83,6 +85,19 @@ export interface MonthEvent {
 const DOTS = 3;
 
 /**
+ * The language's first day of the week (0 Sunday … 6 Saturday): Sunday in English (US), Saturday
+ * in Arabic (Egypt, the Gulf), from `Intl.Locale`'s week info; Sunday where a browser has none.
+ */
+export function localeWeekStart(): WeekStart {
+  const loc = new Intl.Locale(intlTag("number")) as Intl.Locale & {
+    getWeekInfo?: () => { firstDay: number };
+    weekInfo?: { firstDay: number };
+  };
+  const first = (loc.getWeekInfo?.() ?? loc.weekInfo)?.firstDay;
+  return (first ? first % 7 : 0) as WeekStart;
+}
+
+/**
  * @example <ui-month label="Due in November" month="2026-11" today="2026-11-17" week-start="1" .events=${events}></ui-month>
  */
 @customElement("ui-month")
@@ -94,8 +109,8 @@ export class UiMonth extends LightElement {
   @property({ attribute: false }) events: MonthEvent[] = [];
   /** The whole, for screen readers ("Due in November"). */
   @property() label = "";
-  /** The week's first day: 0 Sunday, 1 Monday. */
-  @property({ attribute: "week-start", type: Number }) weekStart: WeekStart = 0;
+  /** The week's first day (0 Sunday … 6 Saturday); left out, the language's (`localeWeekStart`). */
+  @property({ attribute: "week-start", type: Number }) weekStart?: WeekStart;
   /** The day chosen (its things listed), 0 for none. */
   @state() private _chosen = 0;
   /** The day holding the tab stop. */
@@ -137,19 +152,16 @@ export class UiMonth extends LightElement {
     }
   }
 
-  #name(year: number, m: number, d: number, style: "long" | "short") {
-    return new Intl.DateTimeFormat(undefined, {
-      weekday: "short",
-      day: "numeric",
-      month: style,
-      timeZone: "UTC",
-    }).format(Date.UTC(year, m - 1, d));
+  #name(year: number, mon: number, d: number, style: "long" | "short") {
+    return intl
+      .date({ weekday: "short", day: "numeric", month: style, timeZone: "UTC" })
+      .format(Date.UTC(year, mon - 1, d));
   }
 
   #key = async (e: KeyboardEvent) => {
     const days = readMonth(this.month)?.days ?? 0;
     if (!days) return;
-    const rtl = getComputedStyle(this).direction === "rtl";
+    const rtl = isRtl(this);
     const step: Record<string, number> = {
       ArrowLeft: rtl ? 1 : -1,
       ArrowRight: rtl ? -1 : 1,
@@ -168,25 +180,27 @@ export class UiMonth extends LightElement {
   };
 
   render() {
-    const m = readMonth(this.month);
-    if (!m) return nothing;
+    const mo = readMonth(this.month);
+    if (!mo) return nothing;
+    const start = this.weekStart ?? localeWeekStart();
     const byDay = this.#days();
     const today = this.#todayDay();
-    const weeks = monthWeeks(m.year, m.month, this.weekStart === 1 ? 1 : 0);
-    const names = new Intl.DateTimeFormat(undefined, { weekday: "short", timeZone: "UTC" });
+    const weeks = monthWeeks(mo.year, mo.month, start);
+    // Arabic has no short weekday names (its "short" are the full ones, cut off in a 7-column
+    // grid): its one-letter names, as Arabic calendars head their columns.
+    const names = intl.date({ weekday: locale() === "ar" ? "narrow" : "short", timeZone: "UTC" });
     // 4 Jan 1970 was a Sunday: weekday w is that day + w.
     const weekday = (w: number) => names.format(Date.UTC(1970, 0, 4 + w));
     const chosen = byDay.get(this._chosen) ?? [];
     return html`<div class=${month()}>
       <div class=${monthGrid()} role="group" aria-label=${this.label || nothing} @keydown=${this.#key}>
-        ${weekdayOrder(this.weekStart === 1 ? 1 : 0).map(
-          (w) => html`<span class=${monthWeekday()} aria-hidden="true">${weekday(w)}</span>`,
-        )}
+        ${weekdayOrder(start).map((w) => html`<span class=${monthWeekday()} aria-hidden="true">${weekday(w)}</span>`)}
         ${weeks.flatMap((week, r) =>
           week.map((d) => {
             if (d === null) return html`<span aria-hidden="true"></span>`;
             const on = byDay.get(d) ?? [];
-            const name = `${this.#name(m.year, m.month, d, "long")}${on.length ? `, ${on.length} due` : ""}`;
+            const day = this.#name(mo.year, mo.month, d, "long");
+            const name = on.length ? m.month_day_due({ day, count: on.length }) : day;
             return html`<button
               type="button"
               class=${monthDay({ chosen: d === this._chosen, today: d === today, busy: on.length > 0 })}
@@ -213,7 +227,7 @@ export class UiMonth extends LightElement {
       <div class=${monthAgenda()} aria-live="polite">
         ${
           this._chosen
-            ? html`<p class=${monthAgendaHead()}>${this.#name(m.year, m.month, this._chosen, "short")}</p>
+            ? html`<p class=${monthAgendaHead()}>${this.#name(mo.year, mo.month, this._chosen, "short")}</p>
                 ${
                   chosen.length
                     ? html`<ul class=${monthAgenda()}>
@@ -229,7 +243,7 @@ export class UiMonth extends LightElement {
                           </li>`;
                         })}
                       </ul>`
-                    : html`<p class=${monthEmpty()}>Nothing due</p>`
+                    : html`<p class=${monthEmpty()}>${m.month_nothing_due()}</p>`
                 }`
             : nothing
         }

@@ -1,5 +1,5 @@
 import type { CollectionConfig } from "payload";
-import { DAY, TODAY, computed, deskAccess, management, related, scalar } from "./shared.ts";
+import { DAY, TODAY, choices, computed, deskAccess, inLanguage, management, related, scalar, words } from "./shared.ts";
 import { tones, type CollectionAction, type CollectionSettings } from "saastemlycrm-design-system/contracts";
 
 export const GROWTH_STAGES = [
@@ -12,12 +12,42 @@ export const GROWTH_STAGES = [
   "Closed",
 ];
 
-export const SALES_CHANNELS = ["Call", "Email", "WhatsApp", "Site visit", "Meeting"];
-export const SALES_RESULTS = ["Reached — positive", "Reached — call back", "No answer", "Not interested", "Sent"];
+const GROWTH_STAGE_OPTIONS = choices(GROWTH_STAGES, {
+  Prospect: "عميل محتمل",
+  Introduced: "تم التعارف",
+  "Registration submitted": "قُدّم التسجيل",
+  "Approved vendor": "مورّد معتمد",
+  "First RFQ": "أول طلب عرض",
+  "Active account": "حساب نشط",
+  Closed: "مغلق",
+});
 
-const day = (v: unknown) =>
+export const SALES_CHANNELS = ["Call", "Email", "WhatsApp", "Site visit", "Meeting"];
+const SALES_CHANNEL_OPTIONS = choices(SALES_CHANNELS, {
+  Call: "مكالمة",
+  Email: "البريد الإلكتروني",
+  WhatsApp: "WhatsApp",
+  "Site visit": "زيارة موقع",
+  Meeting: "اجتماع",
+});
+export const SALES_RESULTS = ["Reached — positive", "Reached — call back", "No answer", "Not interested", "Sent"];
+const SALES_RESULT_AR: Record<string, string> = {
+  "Reached — positive": "تم الوصول — إيجابي",
+  "Reached — call back": "تم الوصول — معاودة الاتصال",
+  "No answer": "لا رد",
+  "Not interested": "غير مهتم",
+  Sent: "مُرسل",
+};
+const SALES_RESULT_OPTIONS = choices(SALES_RESULTS, SALES_RESULT_AR);
+
+/** A day ("18 Nov"), in the request's language (`req`), else English. */
+const day = (v: unknown, req?: { locale?: unknown }) =>
   typeof v === "string" && v
-    ? new Date(v).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" })
+    ? new Date(v).toLocaleDateString(req?.locale === "ar" ? "ar-u-nu-latn" : "en-GB", {
+        day: "numeric",
+        month: "short",
+        timeZone: "UTC",
+      })
     : "";
 /** The start of the demo's day: a next step dated before it is overdue. */
 const TODAY_START = TODAY.toISOString().slice(0, 10);
@@ -29,42 +59,63 @@ const IN_A_WEEK = new Date(TODAY.getTime() + 7 * DAY).toISOString().slice(0, 10)
  * next one; POST /api/growth/:id/outcome saves it, closes the step's task, puts the next step on
  * the owner's follow-ups and says what it planned.
  */
-const outcome = (label: string, planning: boolean): CollectionAction => ({
-  label,
+const outcome = (label: { en: string; ar: string }, planning: boolean): CollectionAction => ({
+  label: words(label),
   when: { noNextStep: planning ? { equals: true } : { not_equals: true } },
   call: { path: "/growth/$row.id/outcome", body: { company: "$row.name" } },
-  prompt: `${label} — $row.name`,
+  prompt: words({ en: `${label.en} — $row.name`, ar: `${label.ar} — $row.name` }),
   fields: [
     {
       type: "select",
       name: "result",
-      label: "Outcome",
+      label: words({ en: "Outcome", ar: "النتيجة" }),
       required: true,
-      options: SALES_RESULTS,
+      options: SALES_RESULT_OPTIONS.map((o) => ({ ...o, label: words(o.label) })),
       defaultValue: planning ? "Sent" : "Reached — positive",
-      admin: planning ? undefined : { description: "Step: $row.nextStep ($row.channel, $row.contact)" },
+      admin: planning
+        ? undefined
+        : {
+            description: words({
+              en: "Step: $row.nextStep ($row.channel, $row.contact)",
+              ar: "الخطوة: $row.nextStep ($row.channel، $row.contact)",
+            }),
+          },
     },
     {
       type: "textarea",
       name: "note",
-      label: "What happened",
-      admin: { placeholder: "Who said what — e.g. Registration committee meets 24 Nov; documents complete." },
+      label: words({ en: "What happened", ar: "ما حدث" }),
+      admin: {
+        placeholder: words({
+          en: "Who said what — e.g. Registration committee meets 24 Nov; documents complete.",
+          ar: "من قال ماذا — مثال: تجتمع لجنة التسجيل 24 نوفمبر؛ المستندات مكتملة.",
+        }),
+      },
     },
     {
       type: "text",
       name: "nextStep",
-      label: "Next step",
+      label: words({ en: "Next step", ar: "الخطوة التالية" }),
       admin: {
-        placeholder: "e.g. Call after the committee decision",
-        description: "Saved on the opportunity; the next step goes on the owner's follow-ups.",
+        placeholder: words({ en: "e.g. Call after the committee decision", ar: "مثال: الاتصال بعد قرار اللجنة" }),
+        description: words({
+          en: "Saved on the opportunity; the next step goes on the owner's follow-ups.",
+          ar: "يُحفظ على فرصة البيع؛ وتُضاف الخطوة التالية إلى متابعات المالك.",
+        }),
       },
     },
-    { type: "date", name: "nextStepDue", label: "Next step date", defaultValue: IN_A_WEEK, admin: { width: "50%" } },
+    {
+      type: "date",
+      name: "nextStepDue",
+      label: words({ en: "Next step date", ar: "تاريخ الخطوة التالية" }),
+      defaultValue: IN_A_WEEK,
+      admin: { width: "50%" },
+    },
     {
       type: "select",
       name: "stage",
-      label: "Stage",
-      options: GROWTH_STAGES,
+      label: words({ en: "Stage", ar: "المرحلة" }),
+      options: GROWTH_STAGE_OPTIONS.map((o) => ({ ...o, label: words(o.label) })),
       defaultValue: "$row.stage",
       admin: { width: "50%" },
     },
@@ -75,15 +126,19 @@ const outcome = (label: string, planning: boolean): CollectionAction => ({
 /** Growth pipeline — kept apart from operational RFQs; linked to the customer once business is won. */
 export const Opportunities: CollectionConfig = {
   slug: "opportunities",
+  labels: { singular: { en: "Opportunity", ar: "فرصة بيع" }, plural: { en: "Opportunities", ar: "فرص البيع" } },
   custom: {
     list: { board: "stage" },
     // Wherever opportunities show (the growth board, Sales' home): record what happened, plan what's next.
-    actions: [outcome("Record outcome", false), outcome("Plan next step", true)],
+    actions: [
+      outcome({ en: "Record outcome", ar: "تسجيل النتيجة" }, false),
+      outcome({ en: "Plan next step", ar: "تخطيط الخطوة التالية" }, true),
+    ],
   } satisfies CollectionSettings,
   admin: {
     useAsTitle: "name",
     defaultColumns: ["name", "stage", "owner", "nextStepDue", "estimatedValue"],
-    group: "Growth",
+    group: { en: "Growth", ar: "النمو" },
   },
   access: deskAccess,
   hooks: {
@@ -102,13 +157,22 @@ export const Opportunities: CollectionConfig = {
         {
           name: "name",
           type: "text",
+          label: { en: "Name", ar: "الاسم" },
           required: true,
-          admin: { description: "The prospect company's name.", placeholder: "e.g. Nordvik Ship Management" },
+          admin: {
+            description: { en: "The prospect company's name.", ar: "اسم الشركة المحتملة." },
+            placeholder: { en: "e.g. Nordvik Ship Management", ar: "مثال: Nordvik Ship Management" },
+          },
         },
         {
           name: "kind",
           type: "text",
-          admin: { description: "One line on what they are and how big.", placeholder: "Ship manager · 14 reefers" },
+          label: { en: "Kind", ar: "النوع" },
+          localized: true,
+          admin: {
+            description: { en: "One line on what they are and how big.", ar: "سطر واحد عن طبيعتها وحجمها." },
+            placeholder: { en: "Ship manager · 14 reefers", ar: "مدير سفن · 14 سفينة مبرّدة" },
+          },
         },
       ],
     },
@@ -118,18 +182,36 @@ export const Opportunities: CollectionConfig = {
         {
           name: "segment",
           type: "select",
-          options: ["Marine", "Offshore", "Oil & gas", "Industrial", "Shipbuilding & repair"],
-          admin: { description: "The market they belong to.", placeholder: "Pick a segment" },
+          label: { en: "Segment", ar: "الشريحة" },
+          options: [
+            { value: "Marine", label: { en: "Marine", ar: "بحري" } },
+            { value: "Offshore", label: { en: "Offshore", ar: "أوفشور" } },
+            { value: "Oil & gas", label: { en: "Oil & gas", ar: "النفط والغاز" } },
+            { value: "Industrial", label: { en: "Industrial", ar: "صناعي" } },
+            { value: "Shipbuilding & repair", label: { en: "Shipbuilding & repair", ar: "بناء وإصلاح السفن" } },
+          ],
+          admin: {
+            description: { en: "The market they belong to.", ar: "السوق الذي تنتمي إليه." },
+            placeholder: words({ en: "Pick a segment", ar: "اختر قطاعًا" }),
+          },
         },
         {
           name: "source",
           type: "text",
-          admin: { description: "How we found them.", placeholder: "e.g. Referral from a Port Said agent" },
+          label: { en: "Source", ar: "المصدر" },
+          admin: {
+            description: { en: "How we found them.", ar: "كيف وجدناهم." },
+            placeholder: { en: "e.g. Referral from a Port Said agent", ar: "مثال: ترشيح من وكيل في بورسعيد" },
+          },
         },
         {
           name: "estimatedValue",
           type: "text",
-          admin: { description: "What we expect them to buy in a year.", placeholder: "USD 60k / yr" },
+          label: { en: "Estimated Value", ar: "القيمة التقديرية" },
+          admin: {
+            description: { en: "What we expect them to buy in a year.", ar: "ما نتوقع أن يشتروه في السنة." },
+            placeholder: { en: "USD 60k / yr", ar: "USD 60 ألف / سنة" },
+          },
         },
       ],
     },
@@ -139,15 +221,26 @@ export const Opportunities: CollectionConfig = {
         {
           name: "nextStep",
           type: "text",
+          label: { en: "Next Step", ar: "الخطوة التالية" },
+          localized: true,
           admin: {
-            description: "The one thing to do next to move them forward.",
-            placeholder: "e.g. Call after the committee decision",
+            description: {
+              en: "The one thing to do next to move them forward.",
+              ar: "الخطوة الوحيدة التالية لدفعهم إلى الأمام.",
+            },
+            placeholder: { en: "e.g. Call after the committee decision", ar: "مثال: الاتصال بعد قرار اللجنة" },
           },
         },
         {
           name: "nextStepDue",
           type: "date",
-          admin: { description: "The day the next step should happen by." },
+          label: { en: "Next Step Due", ar: "موعد الخطوة التالية" },
+          admin: {
+            description: {
+              en: "The day the next step should happen by.",
+              ar: "اليوم الذي يجب أن تتم فيه الخطوة التالية.",
+            },
+          },
         },
       ],
     },
@@ -157,38 +250,62 @@ export const Opportunities: CollectionConfig = {
         {
           name: "contact",
           type: "text",
-          label: "Who",
-          admin: { description: "The person or role to reach.", placeholder: "Procurement lead" },
+          label: { en: "Who", ar: "من" },
+          admin: {
+            description: { en: "The person or role to reach.", ar: "الشخص أو الدور المطلوب الوصول إليه." },
+            placeholder: { en: "Procurement lead", ar: "مسؤول المشتريات" },
+          },
         },
         {
           name: "channel",
           type: "select",
-          options: SALES_CHANNELS,
+          label: { en: "Channel", ar: "القناة" },
+          options: SALES_CHANNEL_OPTIONS,
           custom: tones(Object.fromEntries(SALES_CHANNELS.map((c) => [c, "info" as const]))),
-          admin: { description: "How the next step will be done.", placeholder: "Pick a channel" },
+          admin: {
+            description: { en: "How the next step will be done.", ar: "كيف ستُنفَّذ الخطوة التالية." },
+            placeholder: words({ en: "Pick a channel", ar: "اختر قناة" }),
+          },
         },
       ],
     },
     {
       name: "script",
       type: "textarea",
-      label: "What to say",
+      localized: true,
+      label: { en: "What to say", ar: "ماذا نقول" },
       admin: {
-        description: "Talking points for the next step.",
-        placeholder: "e.g. Introduce our Port Said stores and ask about their vendor list.",
+        description: { en: "Talking points for the next step.", ar: "نقاط الحديث للخطوة التالية." },
+        placeholder: {
+          en: "e.g. Introduce our Port Said stores and ask about their vendor list.",
+          ar: "مثال: نعرّف بمستلزماتنا في بورسعيد ونسأل عن قائمة مورّديهم.",
+        },
       },
     },
     {
       name: "fleetSize",
       type: "number",
+      label: { en: "Fleet Size", ar: "حجم الأسطول" },
       min: 0,
-      admin: { description: "How many vessels they run in total.", placeholder: "e.g. 14" },
+      admin: {
+        description: { en: "How many vessels they run in total.", ar: "إجمالي عدد السفن التي يشغّلونها." },
+        placeholder: { en: "e.g. 14", ar: "مثال: 14" },
+      },
     },
     {
       name: "fleet",
       type: "array",
-      labels: { singular: "Vessel", plural: "Fleet (known vessels)" },
-      admin: { description: "The prospect's vessels, before they become vessel records." },
+      label: { en: "Fleet", ar: "الأسطول" },
+      labels: {
+        singular: { en: "Vessel", ar: "السفينة" },
+        plural: { en: "Fleet (known vessels)", ar: "الأسطول (السفن المعروفة)" },
+      },
+      admin: {
+        description: {
+          en: "The prospect's vessels, before they become vessel records.",
+          ar: "سفن العميل المحتمل، قبل أن تصبح سجلات سفن.",
+        },
+      },
       fields: [
         {
           type: "row",
@@ -196,14 +313,24 @@ export const Opportunities: CollectionConfig = {
             {
               name: "name",
               type: "text",
+              label: { en: "Name", ar: "الاسم" },
               required: true,
-              admin: { description: "The vessel's name.", placeholder: "e.g. MV Nordic Star" },
+              admin: {
+                description: { en: "The vessel's name.", ar: "اسم السفينة." },
+                placeholder: { en: "e.g. MV Nordic Star", ar: "مثال: MV Nordic Star" },
+              },
             },
             {
               name: "imo",
               type: "text",
-              label: "IMO",
-              admin: { description: "The 7-digit IMO number, if known.", placeholder: "e.g. 9811204" },
+              label: { en: "IMO", ar: "IMO" },
+              admin: {
+                description: {
+                  en: "The 7-digit IMO number, if known.",
+                  ar: "رقم IMO المكوّن من 7 أرقام، إن كان معروفًا.",
+                },
+                placeholder: { en: "e.g. 9811204", ar: "مثال: 9811204" },
+              },
               validate: (value: unknown) =>
                 value == null ||
                 value === "" ||
@@ -213,8 +340,11 @@ export const Opportunities: CollectionConfig = {
             {
               name: "vesselType",
               type: "text",
-              label: "Type",
-              admin: { description: "What kind of vessel she is.", placeholder: "e.g. Reefer" },
+              label: { en: "Type", ar: "النوع" },
+              admin: {
+                description: { en: "What kind of vessel she is.", ar: "نوع السفينة." },
+                placeholder: { en: "e.g. Reefer", ar: "مثال: سفينة مبرّدة" },
+              },
             },
           ],
         },
@@ -223,33 +353,57 @@ export const Opportunities: CollectionConfig = {
     {
       name: "outcomes",
       type: "array",
-      labels: { singular: "Outcome", plural: "Outcomes" },
-      admin: { description: "What happened after each call, visit or email, newest last." },
+      label: { en: "Outcomes", ar: "النتائج" },
+      labels: { singular: { en: "Outcome", ar: "النتيجة" }, plural: { en: "Outcomes", ar: "النتائج" } },
+      admin: {
+        description: {
+          en: "What happened after each call, visit or email, newest last.",
+          ar: "ما حدث بعد كل مكالمة أو زيارة أو بريد، والأحدث في الأخير.",
+        },
+      },
       fields: [
         {
           type: "row",
           fields: [
-            { name: "at", type: "date", admin: { description: "When it happened." } },
+            {
+              name: "at",
+              type: "date",
+              label: { en: "At", ar: "الوقت" },
+              admin: { description: { en: "When it happened.", ar: "متى حدث ذلك." } },
+            },
             {
               name: "result",
               type: "select",
-              options: SALES_RESULTS,
-              admin: { description: "How the contact went.", placeholder: "Pick an outcome" },
+              label: { en: "Result", ar: "النتيجة" },
+              options: SALES_RESULT_OPTIONS,
+              admin: {
+                description: { en: "How the contact went.", ar: "كيف سار التواصل." },
+                placeholder: words({ en: "Pick an outcome", ar: "اختر نتيجة" }),
+              },
             },
             {
               name: "by",
               type: "relationship",
+              label: { en: "By", ar: "بواسطة" },
               relationTo: "users",
-              admin: { description: "Who made the contact.", placeholder: "Search users" },
+              admin: {
+                description: { en: "Who made the contact.", ar: "من قام بالتواصل." },
+                placeholder: words({ en: "Search users", ar: "ابحث في المستخدمين" }),
+              },
             },
           ],
         },
         {
           name: "note",
           type: "textarea",
+          label: { en: "Note", ar: "ملاحظة" },
+          localized: true,
           admin: {
-            description: "What was said and agreed.",
-            placeholder: "e.g. Committee meets 24 Nov; documents complete.",
+            description: { en: "What was said and agreed.", ar: "ما قيل وما اتُّفق عليه." },
+            placeholder: {
+              en: "e.g. Committee meets 24 Nov; documents complete.",
+              ar: "مثال: تجتمع اللجنة 24 نوفمبر؛ المستندات مكتملة.",
+            },
           },
         },
       ],
@@ -257,40 +411,66 @@ export const Opportunities: CollectionConfig = {
     {
       name: "customer",
       type: "relationship",
+      label: { en: "Customer", ar: "العميل" },
       relationTo: "customers",
-      admin: { description: "Set when the prospect becomes a customer.", placeholder: "Search customers" },
+      admin: {
+        description: { en: "Set when the prospect becomes a customer.", ar: "يُضبط عندما يصبح العميل المحتمل عميلًا." },
+        placeholder: words({ en: "Search customers", ar: "ابحث في العملاء" }),
+      },
     },
     {
       name: "notes",
       type: "textarea",
+      label: { en: "Notes", ar: "ملاحظات" },
+      localized: true,
       admin: {
-        description: "Background that does not fit elsewhere.",
-        placeholder: "e.g. Fleet manager prefers WhatsApp after 4 pm.",
+        description: {
+          en: "Background that does not fit elsewhere.",
+          ar: "معلومات خلفية لا مكان لها في غير هذا الحقل.",
+        },
+        placeholder: {
+          en: "e.g. Fleet manager prefers WhatsApp after 4 pm.",
+          ar: "مثال: مدير الأسطول يفضّل واتساب بعد الرابعة عصرًا.",
+        },
       },
     },
     {
       name: "stage",
       type: "select",
+      label: { en: "Stage", ar: "المرحلة" },
       required: true,
       defaultValue: "Prospect",
-      options: GROWTH_STAGES,
+      options: GROWTH_STAGE_OPTIONS,
       admin: {
         position: "sidebar",
-        description: "How far along they are, from prospect to active account.",
-        placeholder: "Pick a stage",
+        description: {
+          en: "How far along they are, from prospect to active account.",
+          ar: "مدى تقدّمهم، من عميل محتمل إلى حساب نشط.",
+        },
+        placeholder: words({ en: "Pick a stage", ar: "اختر مرحلة" }),
       },
     },
     {
       name: "owner",
       type: "relationship",
+      label: { en: "Owner", ar: "المسؤول" },
       relationTo: "users",
       required: true,
-      admin: { position: "sidebar", description: "The salesperson who owns this lead.", placeholder: "Search users" },
+      admin: {
+        position: "sidebar",
+        description: { en: "The salesperson who owns this lead.", ar: "مندوب المبيعات المسؤول عن هذا العميل المحتمل." },
+        placeholder: words({ en: "Search users", ar: "ابحث في المستخدمين" }),
+      },
     },
     {
       name: "noNextStep",
       type: "checkbox",
-      admin: { position: "sidebar", readOnly: true, description: "Set when no next step is planned." },
+      label: { en: "No Next Step", ar: "لا خطوة تالية" },
+      admin: {
+        position: "sidebar",
+        readOnly: true,
+        description: { en: "Set when no next step is planned.", ar: "يُضبط عندما لا توجد خطوة تالية مخططة." },
+      },
     },
     // Worked out on read (never stored): where the next step stands (red when there is none or
     // its date has passed), the step itself, and the last outcome recorded.
@@ -298,36 +478,56 @@ export const Opportunities: CollectionConfig = {
       {
         name: "step",
         type: "text",
-        label: "Next step status",
+        label: { en: "Next step status", ar: "حالة الخطوة التالية" },
         custom: {
           toneWhen: [
             { when: { noNextStep: { equals: true } }, tone: "error" },
             { when: { nextStepDue: { less_than: TODAY_START } }, tone: "error" },
           ],
         },
-        admin: { position: "sidebar", description: "Whether the next step is planned, due or overdue." },
+        admin: {
+          position: "sidebar",
+          description: {
+            en: "Whether the next step is planned, due or overdue.",
+            ar: "هل الخطوة التالية مخططة أم مستحقة أم متأخرة.",
+          },
+        },
       },
-      (o) => {
-        if (o.noNextStep === true) return "No next step — plan one or close";
-        if (typeof o.nextStepDue !== "string" || !o.nextStepDue) return o.nextStep ? "Planned" : null;
-        return o.nextStepDue < TODAY_START ? `Overdue · ${day(o.nextStepDue)}` : day(o.nextStepDue);
+      (o, req) => {
+        if (o.noNextStep === true)
+          return inLanguage(req, { en: "No next step — plan one or close", ar: "لا خطوة تالية — خطّط لواحدة أو أغلق" });
+        if (typeof o.nextStepDue !== "string" || !o.nextStepDue)
+          return o.nextStep ? inLanguage(req, { en: "Planned", ar: "مخططة" }) : null;
+        const due = day(o.nextStepDue, req);
+        return o.nextStepDue < TODAY_START ? inLanguage(req, { en: `Overdue · ${due}`, ar: `متأخرة · ${due}` }) : due;
       },
     ),
     computed(
       {
         name: "brief",
         type: "text",
-        label: "Next step",
-        admin: { condition: () => false, description: "The next step, or a nudge to plan one." },
+        label: { en: "Next step", ar: "الخطوة التالية" },
+        admin: {
+          condition: () => false,
+          description: { en: "The next step, or a nudge to plan one.", ar: "الخطوة التالية، أو تنبيه لتخطيط واحدة." },
+        },
       },
-      (o) => scalar(o.nextStep) || "Plan the next step, or close the opportunity.",
+      (o, req) =>
+        scalar(o.nextStep) ||
+        inLanguage(req, {
+          en: "Plan the next step, or close the opportunity.",
+          ar: "خطّط للخطوة التالية، أو أغلق فرصة البيع.",
+        }),
     ),
     computed(
       {
         name: "lastOutcome",
         type: "text",
-        label: "Last outcome",
-        admin: { condition: () => false, description: "The most recent contact, in one line." },
+        label: { en: "Last outcome", ar: "آخر نتيجة" },
+        admin: {
+          condition: () => false,
+          description: { en: "The most recent contact, in one line.", ar: "آخر تواصل، في سطر واحد." },
+        },
       },
       async (o, req) => {
         const last = (o.outcomes as { at?: string; result?: string; note?: string; by?: unknown }[] | undefined)?.at(
@@ -335,7 +535,13 @@ export const Opportunities: CollectionConfig = {
         );
         if (!last) return null;
         const by = scalar((await related(req, "users", last.by))?.name);
-        return `Last: ${scalar(last.result)}${last.note ? ` — ${last.note}` : ""} (${[by, day(last.at)].filter(Boolean).join(", ")})`;
+        const result = scalar(last.result);
+        const note = last.note ? ` — ${last.note}` : "";
+        const when = [by, day(last.at, req)].filter(Boolean);
+        return inLanguage(req, {
+          en: `Last: ${result}${note} (${when.join(", ")})`,
+          ar: `آخر نتيجة: ${SALES_RESULT_AR[result] ?? result}${note} (${when.join("، ")})`,
+        });
       },
     ),
   ],
@@ -344,11 +550,14 @@ export const Opportunities: CollectionConfig = {
 /** Applications to become an approved supplier of a ship manager / owner. */
 export const VendorRegistrations: CollectionConfig = {
   slug: "vendor-registrations",
-  labels: { singular: "Vendor registration", plural: "Vendor registrations" },
+  labels: {
+    singular: { en: "Vendor registration", ar: "تسجيل مورّد" },
+    plural: { en: "Vendor registrations", ar: "تسجيلات الموردين" },
+  },
   admin: {
     useAsTitle: "company",
     defaultColumns: ["company", "portal", "status", "submittedAt", "renewBy"],
-    group: "Growth",
+    group: { en: "Growth", ar: "النمو" },
   },
   access: deskAccess,
   fields: [
@@ -358,55 +567,91 @@ export const VendorRegistrations: CollectionConfig = {
         {
           name: "company",
           type: "text",
+          label: { en: "Company", ar: "الشركة" },
           required: true,
-          admin: { description: "The ship manager or owner we apply to.", placeholder: "e.g. Nordvik Ship Management" },
+          admin: {
+            description: { en: "The ship manager or owner we apply to.", ar: "مدير السفن أو المالك الذي نتقدّم إليه." },
+            placeholder: { en: "e.g. Nordvik Ship Management", ar: "مثال: Nordvik Ship Management" },
+          },
         },
         {
           name: "customer",
           type: "relationship",
+          label: { en: "Customer", ar: "العميل" },
           relationTo: "customers",
-          admin: { description: "Their customer record, once they have one.", placeholder: "Search customers" },
+          admin: {
+            description: { en: "Their customer record, once they have one.", ar: "سجل العميل الخاص بهم، متى وُجد." },
+            placeholder: words({ en: "Search customers", ar: "ابحث في العملاء" }),
+          },
         },
         {
           name: "opportunity",
           type: "relationship",
+          label: { en: "Opportunity", ar: "الفرصة" },
           relationTo: "opportunities",
-          admin: { description: "The sales lead this application belongs to.", placeholder: "Search opportunities" },
+          admin: {
+            description: { en: "The sales lead this application belongs to.", ar: "فرصة البيع التي يتبعها هذا الطلب." },
+            placeholder: words({ en: "Search opportunities", ar: "ابحث في فرص البيع" }),
+          },
         },
       ],
     },
     {
       name: "portal",
       type: "text",
-      label: "Portal / method",
-      admin: { description: "Where or how we submit the application.", placeholder: "e.g. Nordvik supplier portal" },
+      label: { en: "Portal / method", ar: "البوابة / الطريقة" },
+      admin: {
+        description: { en: "Where or how we submit the application.", ar: "أين أو كيف نقدّم الطلب." },
+        placeholder: { en: "e.g. Nordvik supplier portal", ar: "مثال: بوابة موردي Nordvik" },
+      },
     },
     {
       type: "row",
       fields: [
-        { name: "submittedAt", type: "date", admin: { description: "The day we sent the application in." } },
+        {
+          name: "submittedAt",
+          type: "date",
+          label: { en: "Submitted At", ar: "تاريخ التقديم" },
+          admin: { description: { en: "The day we sent the application in.", ar: "اليوم الذي أرسلنا فيه الطلب." } },
+        },
         {
           name: "committeeDate",
           type: "date",
-          label: "Committee decides",
-          admin: { description: "When their vendor committee meets to decide." },
+          label: { en: "Committee decides", ar: "موعد قرار اللجنة" },
+          admin: {
+            description: {
+              en: "When their vendor committee meets to decide.",
+              ar: "موعد اجتماع لجنة الموردين لديهم للبت.",
+            },
+          },
         },
-        { name: "renewBy", type: "date", admin: { description: "When the approval must be renewed." } },
+        {
+          name: "renewBy",
+          type: "date",
+          label: { en: "Renew By", ar: "التجديد قبل" },
+          admin: { description: { en: "When the approval must be renewed.", ar: "موعد تجديد الاعتماد." } },
+        },
       ],
     },
     {
       name: "contact",
       type: "text",
-      label: "Their contact",
+      label: { en: "Their contact", ar: "جهة الاتصال لديهم" },
       admin: {
-        description: "Who handles vendor approval on their side.",
-        placeholder: "e.g. Sara Lindqvist, Procurement",
+        description: { en: "Who handles vendor approval on their side.", ar: "من يتولى اعتماد الموردين من جهتهم." },
+        placeholder: { en: "e.g. Sara Lindqvist, Procurement", ar: "مثال: Sara Lindqvist، المشتريات" },
       },
     },
     {
       name: "documents",
       type: "array",
-      admin: { description: "The papers they ask for, and where each one stands." },
+      label: { en: "Documents", ar: "المستندات" },
+      admin: {
+        description: {
+          en: "The papers they ask for, and where each one stands.",
+          ar: "المستندات التي يطلبونها وموقف كل منها.",
+        },
+      },
       fields: [
         {
           type: "row",
@@ -414,17 +659,39 @@ export const VendorRegistrations: CollectionConfig = {
             {
               name: "name",
               type: "text",
+              label: { en: "Name", ar: "الاسم" },
+              localized: true,
               required: true,
-              admin: { description: "The document they ask for.", placeholder: "e.g. ISO 9001 certificate" },
+              admin: {
+                description: { en: "The document they ask for.", ar: "المستند الذي يطلبونه." },
+                placeholder: { en: "e.g. ISO 9001 certificate", ar: "مثال: شهادة ISO 9001" },
+              },
             },
             {
               name: "status",
               type: "select",
-              options: ["Missing", "Ready", "Submitted", "Expired"],
+              label: { en: "Status", ar: "الحالة" },
+              options: [
+                { value: "Missing", label: { en: "Missing", ar: "ناقص" } },
+                { value: "Ready", label: { en: "Ready", ar: "جاهز" } },
+                { value: "Submitted", label: { en: "Submitted", ar: "مقدَّم" } },
+                { value: "Expired", label: { en: "Expired", ar: "منتهي" } },
+              ],
               defaultValue: "Missing",
-              admin: { description: "Where this document stands.", placeholder: "Pick a status" },
+              admin: {
+                description: { en: "Where this document stands.", ar: "موقف هذا المستند." },
+                placeholder: words({ en: "Pick a status", ar: "اختر حالة" }),
+              },
             },
-            { name: "file", type: "upload", relationTo: "media", admin: { description: "The scan or PDF we submit." } },
+            {
+              name: "file",
+              type: "upload",
+              label: { en: "File", ar: "الملف المرفق" },
+              relationTo: "media",
+              admin: {
+                description: { en: "The scan or PDF we submit.", ar: "النسخة الممسوحة أو ملف PDF الذي نقدّمه." },
+              },
+            },
           ],
         },
       ],
@@ -432,17 +699,27 @@ export const VendorRegistrations: CollectionConfig = {
     {
       name: "nextStep",
       type: "text",
+      label: { en: "Next Step", ar: "الخطوة التالية" },
+      localized: true,
       admin: {
-        description: "What we do next on this application.",
-        placeholder: "e.g. Send the renewed ISO certificate",
+        description: { en: "What we do next on this application.", ar: "ما نفعله بعد ذلك في هذا الطلب." },
+        placeholder: { en: "e.g. Send the renewed ISO certificate", ar: "مثال: إرسال شهادة ISO المجدّدة" },
       },
     },
     {
       name: "status",
       type: "select",
+      label: { en: "Status", ar: "الحالة" },
       required: true,
       defaultValue: "Documents requested",
-      options: ["Documents requested", "Submitted", "Under review", "Approved", "Rejected", "Renewal overdue"],
+      options: [
+        { value: "Documents requested", label: { en: "Documents requested", ar: "طُلبت المستندات" } },
+        { value: "Submitted", label: { en: "Submitted", ar: "مقدَّم" } },
+        { value: "Under review", label: { en: "Under review", ar: "قيد المراجعة" } },
+        { value: "Approved", label: { en: "Approved", ar: "معتمد" } },
+        { value: "Rejected", label: { en: "Rejected", ar: "مرفوض" } },
+        { value: "Renewal overdue", label: { en: "Renewal overdue", ar: "التجديد متأخر" } },
+      ],
       custom: tones({
         "Documents requested": "warning",
         Submitted: "info",
@@ -453,8 +730,8 @@ export const VendorRegistrations: CollectionConfig = {
       }),
       admin: {
         position: "sidebar",
-        description: "Where the application stands with the buyer.",
-        placeholder: "Pick a status",
+        description: { en: "Where the application stands with the buyer.", ar: "موقف الطلب لدى المشتري." },
+        placeholder: words({ en: "Pick a status", ar: "اختر حالة" }),
       },
     },
     // Worked out on read (never stored): its dates and its documents, in a line each.
@@ -462,14 +739,22 @@ export const VendorRegistrations: CollectionConfig = {
       {
         name: "dates",
         type: "text",
-        label: "Dates",
-        admin: { condition: () => false, description: "Submission, committee and renewal dates in one line." },
+        label: { en: "Dates", ar: "التواريخ" },
+        admin: {
+          condition: () => false,
+          description: {
+            en: "Submission, committee and renewal dates in one line.",
+            ar: "تواريخ التقديم واللجنة والتجديد في سطر واحد.",
+          },
+        },
       },
-      (r) =>
+      (r, req) =>
         [
-          r.submittedAt && `Submitted ${day(r.submittedAt)}`,
-          r.committeeDate && `Committee ${day(r.committeeDate)}`,
-          r.renewBy && `Renew by ${day(r.renewBy)}`,
+          r.submittedAt &&
+            inLanguage(req, { en: `Submitted ${day(r.submittedAt)}`, ar: `قُدّم ${day(r.submittedAt, req)}` }),
+          r.committeeDate &&
+            inLanguage(req, { en: `Committee ${day(r.committeeDate)}`, ar: `اللجنة ${day(r.committeeDate, req)}` }),
+          r.renewBy && inLanguage(req, { en: `Renew by ${day(r.renewBy)}`, ar: `التجديد قبل ${day(r.renewBy, req)}` }),
         ]
           .filter(Boolean)
           .join(" · ") || null,
@@ -478,16 +763,21 @@ export const VendorRegistrations: CollectionConfig = {
       {
         name: "paperwork",
         type: "text",
-        label: "Documents",
-        admin: { condition: () => false, description: "The documents, with the missing or expired ones flagged." },
+        label: { en: "Documents", ar: "المستندات" },
+        admin: {
+          condition: () => false,
+          description: {
+            en: "The documents, with the missing or expired ones flagged.",
+            ar: "المستندات، مع تمييز الناقص أو المنتهي منها.",
+          },
+        },
       },
-      (r) =>
+      (r, req) =>
         ((r.documents as { name?: string; status?: string }[] | undefined) ?? [])
           .map((d) => {
             const status = scalar(d.status) || "Missing";
-            return status === "Missing" || status === "Expired"
-              ? `${scalar(d.name)} — ${status.toLowerCase()}`
-              : scalar(d.name);
+            const flag = inLanguage(req, { en: status.toLowerCase(), ar: status === "Missing" ? "ناقص" : "منتهي" });
+            return status === "Missing" || status === "Expired" ? `${scalar(d.name)} — ${flag}` : scalar(d.name);
           })
           .join(" · ") || null,
     ),
@@ -497,10 +787,11 @@ export const VendorRegistrations: CollectionConfig = {
 /** Email campaigns: approved lists and content; only management sends. */
 export const Campaigns: CollectionConfig = {
   slug: "campaigns",
+  labels: { singular: { en: "Campaign", ar: "حملة" }, plural: { en: "Campaigns", ar: "الحملات" } },
   admin: {
     useAsTitle: "name",
     defaultColumns: ["name", "audience", "contentStatus", "status", "scheduledAt"],
-    group: "Growth",
+    group: { en: "Growth", ar: "النمو" },
   },
   access: {
     read: ({ req }) => Boolean(req.user),
@@ -527,8 +818,13 @@ export const Campaigns: CollectionConfig = {
     {
       name: "name",
       type: "text",
+      label: { en: "Name", ar: "الاسم" },
+      localized: true,
       required: true,
-      admin: { description: "An internal name to find the campaign by.", placeholder: "e.g. Winter bond stores offer" },
+      admin: {
+        description: { en: "An internal name to find the campaign by.", ar: "اسم داخلي للعثور على الحملة." },
+        placeholder: { en: "e.g. Winter bond stores offer", ar: "مثال: عرض مستلزمات الإيداع الجمركي للشتاء" },
+      },
     },
     {
       type: "row",
@@ -536,38 +832,65 @@ export const Campaigns: CollectionConfig = {
         {
           name: "audience",
           type: "text",
+          label: { en: "Audience", ar: "الجمهور" },
+          localized: true,
           required: true,
-          admin: { description: "Who gets it, in a few words.", placeholder: "Ship managers, consented" },
+          admin: {
+            description: { en: "Who gets it, in a few words.", ar: "من يستلمها، في كلمات قليلة." },
+            placeholder: { en: "Ship managers, consented", ar: "مديرو السفن، بموافقتهم" },
+          },
         },
         {
           name: "recipients",
           type: "number",
+          label: { en: "Recipients", ar: "المستلمون" },
           min: 0,
-          admin: { description: "How many contacts are on the list.", placeholder: "e.g. 120" },
+          admin: {
+            description: { en: "How many contacts are on the list.", ar: "عدد جهات الاتصال في القائمة." },
+            placeholder: { en: "e.g. 120", ar: "مثال: 120" },
+          },
         },
         {
           name: "consentOnly",
           type: "checkbox",
           defaultValue: true,
-          label: "Consented contacts only",
-          admin: { description: "Keep ticked so only contacts who agreed to emails get it." },
+          label: { en: "Consented contacts only", ar: "جهات الاتصال الموافقة فقط" },
+          admin: {
+            description: {
+              en: "Keep ticked so only contacts who agreed to emails get it.",
+              ar: "أبقِه محددًا ليستلمها فقط من وافق على تلقي الرسائل.",
+            },
+          },
         },
       ],
     },
     {
       name: "subject",
       type: "text",
+      label: { en: "Subject", ar: "الموضوع" },
+      localized: true,
       admin: {
-        description: "The email subject line recipients see.",
-        placeholder: "e.g. Bond stores for your winter port calls",
+        description: { en: "The email subject line recipients see.", ar: "سطر الموضوع الذي يراه المستلمون." },
+        placeholder: {
+          en: "e.g. Bond stores for your winter port calls",
+          ar: "مثال: مستلزمات الإيداع الجمركي لرسوّكم الشتوي",
+        },
       },
     },
     {
       name: "body",
       type: "textarea",
+      label: { en: "Body", ar: "النص" },
+      localized: true,
       admin: {
-        description: "The email text. It must be approved before sending.",
-        placeholder: "e.g. Dear Captain, our Port Said stores now carry...",
+        description: {
+          en: "The email text. It must be approved before sending.",
+          ar: "نص البريد. يجب اعتماده قبل الإرسال.",
+        },
+        placeholder: {
+          en: "e.g. Dear Captain, our Port Said stores now carry...",
+          ar: "مثال: حضرة القبطان، أصبحت مخازننا في بورسعيد توفّر...",
+        },
       },
     },
     {
@@ -576,18 +899,32 @@ export const Campaigns: CollectionConfig = {
         {
           name: "contentStatus",
           type: "select",
+          label: { en: "Content Status", ar: "حالة المحتوى" },
           defaultValue: "Draft",
-          options: ["Draft", "Awaiting approval", "Approved"],
+          options: [
+            { value: "Draft", label: { en: "Draft", ar: "مسودة" } },
+            { value: "Awaiting approval", label: { en: "Awaiting approval", ar: "بانتظار الموافقة" } },
+            { value: "Approved", label: { en: "Approved", ar: "معتمد" } },
+          ],
           custom: tones({ Draft: "warning", "Awaiting approval": "warning", Approved: "success" }),
-          admin: { description: "Whether the wording has been signed off.", placeholder: "Pick a status" },
+          admin: {
+            description: { en: "Whether the wording has been signed off.", ar: "هل اعتُمدت الصياغة." },
+            placeholder: words({ en: "Pick a status", ar: "اختر حالة" }),
+          },
         },
-        { name: "scheduledAt", type: "date", admin: { description: "When it goes out; management sets this." } },
+        {
+          name: "scheduledAt",
+          type: "date",
+          label: { en: "Scheduled At", ar: "موعد الإرسال" },
+          admin: { description: { en: "When it goes out; management sets this.", ar: "موعد الإرسال؛ تضبطه الإدارة." } },
+        },
       ],
     },
     {
       name: "stats",
       type: "group",
-      admin: { description: "How the send performed." },
+      label: { en: "Stats", ar: "الإحصاءات" },
+      admin: { description: { en: "How the send performed.", ar: "أداء الإرسال." } },
       fields: [
         {
           type: "row",
@@ -595,20 +932,32 @@ export const Campaigns: CollectionConfig = {
             {
               name: "sent",
               type: "number",
+              label: { en: "Sent", ar: "المرسلة" },
               min: 0,
-              admin: { description: "Emails delivered.", placeholder: "e.g. 118" },
+              admin: {
+                description: { en: "Emails delivered.", ar: "الرسائل المسلّمة." },
+                placeholder: { en: "e.g. 118", ar: "مثال: 118" },
+              },
             },
             {
               name: "opened",
               type: "number",
+              label: { en: "Opened", ar: "المفتوحة" },
               min: 0,
-              admin: { description: "Recipients who opened it.", placeholder: "e.g. 54" },
+              admin: {
+                description: { en: "Recipients who opened it.", ar: "المستلمون الذين فتحوها." },
+                placeholder: { en: "e.g. 54", ar: "مثال: 54" },
+              },
             },
             {
               name: "replied",
               type: "number",
+              label: { en: "Replied", ar: "الردود" },
               min: 0,
-              admin: { description: "Recipients who wrote back.", placeholder: "e.g. 9" },
+              admin: {
+                description: { en: "Recipients who wrote back.", ar: "المستلمون الذين ردّوا." },
+                placeholder: { en: "e.g. 9", ar: "مثال: 9" },
+              },
             },
           ],
         },
@@ -617,12 +966,18 @@ export const Campaigns: CollectionConfig = {
     {
       name: "status",
       type: "select",
+      label: { en: "Status", ar: "الحالة" },
       defaultValue: "Draft",
-      options: ["Draft", "Scheduled", "Sent", "Cancelled"],
+      options: [
+        { value: "Draft", label: { en: "Draft", ar: "مسودة" } },
+        { value: "Scheduled", label: { en: "Scheduled", ar: "مجدول" } },
+        { value: "Sent", label: { en: "Sent", ar: "مُرسل" } },
+        { value: "Cancelled", label: { en: "Cancelled", ar: "ملغى" } },
+      ],
       admin: {
         position: "sidebar",
-        description: "Only management can schedule or send.",
-        placeholder: "Pick a status",
+        description: { en: "Only management can schedule or send.", ar: "الإدارة وحدها تجدول الإرسال أو ترسل." },
+        placeholder: words({ en: "Pick a status", ar: "اختر حالة" }),
       },
     },
     // Worked out on read (never stored): who it reaches and how it did.
@@ -630,25 +985,44 @@ export const Campaigns: CollectionConfig = {
       {
         name: "reach",
         type: "text",
-        label: "Audience",
-        admin: { condition: () => false, description: "Who it reaches, in one line." },
+        label: { en: "Audience", ar: "الجمهور" },
+        admin: {
+          condition: () => false,
+          description: { en: "Who it reaches, in one line.", ar: "من تصل إليهم، في سطر واحد." },
+        },
       },
-      (c) =>
-        [scalar(c.audience), `${Number(c.recipients) || 0} contacts`, c.consentOnly !== false ? "consented only" : ""]
+      (c, req) => {
+        const n = Number(c.recipients) || 0;
+        return [
+          scalar(c.audience),
+          inLanguage(req, { en: `${n} contacts`, ar: `${n} جهة اتصال` }),
+          c.consentOnly !== false ? inLanguage(req, { en: "consented only", ar: "الموافقون فقط" }) : "",
+        ]
           .filter(Boolean)
-          .join(" · "),
+          .join(" · ");
+      },
     ),
     computed(
       {
         name: "results",
         type: "text",
-        label: "Results",
-        admin: { condition: () => false, description: "Sent, opened and replied counts in one line." },
+        label: { en: "Results", ar: "النتائج" },
+        admin: {
+          condition: () => false,
+          description: {
+            en: "Sent, opened and replied counts in one line.",
+            ar: "أعداد المرسل والمفتوح والمردود عليه في سطر واحد.",
+          },
+        },
       },
-      (c) => {
+      (c, req) => {
         const s = (c.stats as { sent?: number; opened?: number; replied?: number } | undefined) ?? {};
-        return Number(s.sent)
-          ? `${Number(s.sent)} sent · ${Number(s.opened) || 0} opened · ${Number(s.replied) || 0} replied`
+        const [sent, opened, replied] = [Number(s.sent), Number(s.opened) || 0, Number(s.replied) || 0];
+        return sent
+          ? inLanguage(req, {
+              en: `${sent} sent · ${opened} opened · ${replied} replied`,
+              ar: `${sent} مُرسلة · ${opened} مفتوحة · ${replied} مردود عليها`,
+            })
           : null;
       },
     ),

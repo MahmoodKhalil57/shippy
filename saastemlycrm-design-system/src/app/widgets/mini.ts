@@ -1,4 +1,5 @@
 import { formatNumber, type Cell, type ListItem, type Stat, type ViewBlock } from "./schema.ts";
+import { formatInt, intl, m } from "../../i18n/index.ts";
 
 /**
  * A widget's mini version: what it shows, cut down to a glance for the side panel's Widgets (a
@@ -65,7 +66,7 @@ function parts(list: Part[], label?: string): ViewBlock[] {
     {
       type: "share",
       ...(label ? { label } : {}),
-      parts: other ? [...top, { label: "Other", value: other }] : top,
+      parts: other ? [...top, { label: m.widget_mini_other(), value: other }] : top,
     },
   ];
 }
@@ -73,9 +74,7 @@ function parts(list: Part[], label?: string): ViewBlock[] {
 /** "2026-11-03" as "3 Nov": a short date for a narrow line. */
 const shortDate = (iso: string) => {
   const d = new Date(`${iso.slice(0, 10)}T00:00:00Z`);
-  return Number.isNaN(d.getTime())
-    ? iso
-    : d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+  return Number.isNaN(d.getTime()) ? iso : intl.date({ day: "numeric", month: "short", timeZone: "UTC" }).format(d);
 };
 
 /** A cell as one line of text. */
@@ -174,7 +173,7 @@ function mini(b: ViewBlock): ViewBlock[] {
         ? figure({
             label: b.label ?? b.parts[0].label,
             value: b.parts[0].valueText ?? String(b.parts[0].value),
-            share: { value: b.parts[0].value / (b.max || 1), text: b.total ?? `of ${b.max}` },
+            share: { value: b.parts[0].value / (b.max || 1), text: b.total ?? m.widget_share_of_max({ max: b.max }) },
           })
         : parts(b.parts, b.label);
     case "funnel":
@@ -188,7 +187,7 @@ function mini(b: ViewBlock): ViewBlock[] {
         weeks[weeks.length - 1]!.value += d.value;
       });
       return figure({
-        label: b.label ?? "Total",
+        label: b.label ?? m.widget_total(),
         value: String(total),
         ...(weeks.length > 1
           ? { trend: { labels: weeks.map((w) => w.label), values: weeks.map((w) => w.value) } }
@@ -201,18 +200,21 @@ function mini(b: ViewBlock): ViewBlock[] {
       const min = b.min ?? 0;
       const tone = b.zones?.find((z) => b.value <= z.to)?.tone;
       return figure({
-        label: b.label ?? "Reading",
+        label: b.label ?? m.widget_mini_reading(),
         value: b.valueText ?? String(b.value),
         ...(tone ? { tone } : {}),
-        share: { value: (b.value - min) / (b.max - min || 1), text: b.caption ?? `of ${b.max}` },
+        share: {
+          value: (b.value - min) / (b.max - min || 1),
+          text: b.caption ?? m.widget_mini_of({ max: formatInt(b.max) }),
+        },
       });
     }
     case "waffle": {
       const max = b.max ?? 100;
       return figure({
-        label: b.label ?? "Share",
+        label: b.label ?? m.widget_mini_share(),
         value: b.valueText ?? `${b.value ?? 0}`,
-        share: { value: (b.value ?? 0) / (max || 1), text: b.caption ?? `of ${max}` },
+        share: { value: (b.value ?? 0) / (max || 1), text: b.caption ?? m.widget_mini_of({ max: formatInt(max) }) },
       });
     }
     case "share":
@@ -230,7 +232,10 @@ function mini(b: ViewBlock): ViewBlock[] {
               ? {
                   share: {
                     value: Math.max(0, last.value) / Math.abs(first.value),
-                    text: `of ${first.label} (${first.valueText ?? formatNumber(first.value, b.format)})`,
+                    text: m.widget_share_of_first({
+                      label: first.label,
+                      value: first.valueText ?? formatNumber(first.value, b.format),
+                    }),
                   },
                 }
               : {}),
@@ -258,7 +263,19 @@ function mini(b: ViewBlock): ViewBlock[] {
       return [{ ...b, items: b.items.slice(0, MINI_ITEMS) }];
     case "steps": {
       const at = b.items[b.current];
-      return at ? [{ type: "text", text: `Step ${b.current + 1} of ${b.items.length}: ${at.label}`, muted: true }] : [];
+      return at
+        ? [
+            {
+              type: "text",
+              text: m.widget_mini_step({
+                step: formatInt(b.current + 1),
+                total: formatInt(b.items.length),
+                label: at.label,
+              }),
+              muted: true,
+            },
+          ]
+        : [];
     }
     case "alert":
       return [{ type: "alert", tone: b.tone, heading: b.heading, text: b.text }];
@@ -277,5 +294,5 @@ export const miniBlocks = (blocks: ViewBlock[]): ViewBlock[] => blocks.flatMap(m
 
 /** What a mini version that keeps nothing shows: a line opening its screen. */
 export const miniOpen = (href: string, label: string): ViewBlock[] => [
-  { type: "list", variant: "divided", items: [{ headline: `Open ${label}`, href }] },
+  { type: "list", variant: "divided", items: [{ headline: m.widget_mini_open({ label }), href }] },
 ];

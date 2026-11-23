@@ -75,7 +75,10 @@
       {
         "type": "Wrong brand / part",
         "severity": "Blocks use",
-        "detail": "Offered LOCTITE 242, requested 243 (exact part required)",
+        "detail": {
+          "en": "Offered LOCTITE 242, requested 243 (exact part required)",
+          "ar": "عُرض LOCTITE 242، والمطلوب 243 (القطعة نفسها مطلوبة)"
+        },
         "detectedBy": "Rules"
       }
     ]
@@ -135,7 +138,10 @@
       {
         "type": "Shelf life",
         "severity": "Warning",
-        "detail": "Batch expires Mar 2027 (4 months left), below the 6 months the vessel asked for"
+        "detail": {
+          "en": "Batch expires Mar 2027 (4 months left), below the 6 months the vessel asked for",
+          "ar": "تنتهي الدفعة مارس 2027 (يتبقى 4 أشهر)، أقل من 6 أشهر طلبتها السفينة"
+        }
       }
     ]
   },
@@ -160,7 +166,10 @@
       {
         "type": "Pack size",
         "severity": "Needs customer acceptance",
-        "detail": "100 × 500 ml instead of 200 × 250 ml — same 50 L"
+        "detail": {
+          "en": "100 × 500 ml instead of 200 × 250 ml — same 50 L",
+          "ar": "100 × 500 مل بدلًا من 200 × 250 مل — الـ 50 لترًا نفسها"
+        }
       }
     ]
   },
@@ -183,7 +192,10 @@
       {
         "type": "Lead time vs ETA",
         "severity": "Blocks use",
-        "detail": "9-day import misses vessel ETA 21 Nov"
+        "detail": {
+          "en": "9-day import misses vessel ETA 21 Nov",
+          "ar": "الاستيراد خلال 9 أيام يفوّت موعد وصول السفينة 21 نوفمبر"
+        }
       }
     ]
   },
@@ -206,7 +218,10 @@
       {
         "type": "Quantity shortfall",
         "severity": "Warning",
-        "detail": "Only 10 of 15 available"
+        "detail": {
+          "en": "Only 10 of 15 available",
+          "ar": "المتاح 10 فقط من 15"
+        }
       }
     ]
   },
@@ -299,7 +314,10 @@
       {
         "type": "Specification",
         "severity": "Blocks use",
-        "detail": "Offered RAL 7035 light grey; the vessel asked for RAL 7038 agate grey",
+        "detail": {
+          "en": "Offered RAL 7035 light grey; the vessel asked for RAL 7038 agate grey",
+          "ar": "عُرض RAL 7035 رمادي فاتح؛ وطلبت السفينة RAL 7038 رمادي عقيقي"
+        },
         "detectedBy": "Rules"
       }
     ]

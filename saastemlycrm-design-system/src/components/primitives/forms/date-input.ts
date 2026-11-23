@@ -5,6 +5,7 @@ import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { inlineRow, row, stack, text } from "../layout/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
+import { intl, m } from "../../../i18n/index.ts";
 
 /**
  * Date input: a day (or a day and a time), with the days people mean most a tap away, and the
@@ -41,12 +42,9 @@ export function daysBetween(today: string, day: string): number {
   );
 }
 
-/** "today", "tomorrow", "in 3 days", "yesterday", "5 days ago". */
+/** "today", "tomorrow", "in 3 days", "yesterday", "5 days ago", in the interface's language. */
 export function relativeDay(days: number): string {
-  if (days === 0) return "today";
-  if (days === 1) return "tomorrow";
-  if (days === -1) return "yesterday";
-  return days > 0 ? `in ${days} days` : `${-days} days ago`;
+  return intl.relative({ numeric: "auto" }).format(days, "day");
 }
 
 /**
@@ -88,15 +86,16 @@ export class UiDateInput extends LightElement {
     const day = this.value.slice(0, 10);
     const days = day ? daysBetween(today, day) : undefined;
     const d = day ? new Date(`${day}T00:00:00Z`) : undefined;
+    const date = d ? intl.date({ weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }).format(d) : "";
     const said = d
-      ? `${d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" })}${
-          this.time && this.value.length > 10 ? ` ${this.value.slice(11, 16)}` : ""
-        } · ${relativeDay(days!)}`
+      ? this.time && this.value.length > 10
+        ? m.date_input_said_time({ date, time: this.value.slice(11, 16), relative: relativeDay(days!) })
+        : m.date_input_said({ date, relative: relativeDay(days!) })
       : "";
     const picks: [string, number][] = [
-      ["Today", 0],
-      ["Tomorrow", 1],
-      ["In a week", 7],
+      [m.date_input_today(), 0],
+      [m.date_input_tomorrow(), 1],
+      [m.date_input_in_a_week(), 7],
     ];
     return html`<div class=${dateInput()}>
       <input
@@ -117,7 +116,7 @@ export class UiDateInput extends LightElement {
           : html`<div
               class=${dateInputPicks()}
               role="group"
-              aria-label=${`Quick picks${this.label ? ` for ${this.label}` : ""}`}
+              aria-label=${this.label ? m.date_input_picks_for({ label: this.label }) : m.date_input_picks()}
             >
               ${picks.map(
                 ([name, n]) =>
@@ -128,7 +127,7 @@ export class UiDateInput extends LightElement {
               ${
                 this.value && !this.required
                   ? html`<button type="button" class=${dateInputPick()} @click=${() => this._set("")}>
-                      ${iconSvg("x", { size: "xs" })}Clear
+                      ${iconSvg("x", { size: "xs" })}${m.date_input_clear()}
                     </button>`
                   : nothing
               }

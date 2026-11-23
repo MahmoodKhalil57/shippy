@@ -1,6 +1,7 @@
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
+import { formatInt, m } from "../../../i18n/index.ts";
 import { LightElement } from "../../base/light-element.ts";
 import { motion } from "../../base/motion-queue.ts";
 import { rcva } from "../../base/variants.ts";
@@ -9,6 +10,7 @@ import {
   fraction,
   indexAt,
   percentOf,
+  percentText,
   TRACK,
   zonesOf,
   type DrawnZone,
@@ -131,14 +133,17 @@ export class UiDial extends LightElement {
   }
 
   #sentence() {
-    const v = this.valueText || String(this.value);
+    const value = this.valueText || formatInt(this.value);
     const p = percentOf(this.value - this.min, this.max - this.min);
-    return p === null ? v : `${v} · ${p}% of ${this.min}–${this.max}`;
+    return p === null
+      ? value
+      : m.dial_reading({ value, share: percentText(p), min: formatInt(this.min), max: formatInt(this.max) });
   }
 
   #zoneText(z: DrawnZone) {
-    const range = `${z.low}–${z.high}`;
-    return z.label ? `${z.label}: ${range}` : range;
+    const low = formatInt(z.low);
+    const high = formatInt(z.high);
+    return z.label ? m.dial_zone({ zone: z.label, low, high }) : m.dial_range({ low, high });
   }
 
   /** Where the pointer is on the arc, as a fraction of the range (null: off the arc's band). */
@@ -183,7 +188,7 @@ export class UiDial extends LightElement {
         class=${dialFace()}
         role="meter"
         tabindex="0"
-        aria-label=${this.label || this.caption || "Dial"}
+        aria-label=${this.label || this.caption || m.dial_label()}
         aria-valuenow=${this.value}
         aria-valuemin=${this.min}
         aria-valuemax=${this.max}
@@ -200,12 +205,12 @@ export class UiDial extends LightElement {
           <span class=${dialNeedleTip()}></span>
         </div>
         <div class=${dialMiddle()} aria-hidden="true">
-          <span class=${dialValue()}>${this.valueText || String(this.value)}</span>
+          <span class=${dialValue()}>${this.valueText || formatInt(this.value)}</span>
         </div>
       </div>
-      <div class=${dialEnds()} aria-hidden="true">
-        <span class=${dialEnd()}>${this.min}</span>
-        <span class=${dialEnd()}>${this.max}</span>
+      <div class=${dialEnds()} aria-hidden="true" dir="ltr">
+        <span class=${dialEnd()}>${formatInt(this.min)}</span>
+        <span class=${dialEnd()}>${formatInt(this.max)}</span>
       </div>
       <p class=${dialLine()} aria-live="polite">${line || nothing}</p>
     </div>`;

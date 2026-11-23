@@ -5,6 +5,8 @@ import { keyed } from "lit/directives/keyed.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { axisOf, labelBoxes, labelStep, niceScale, pointAt, smoothPath, type Point } from "../../base/chart.ts";
 import { floating as float } from "../../base/floating.ts";
+import { formatInt, m } from "../../../i18n/index.ts";
+import { inlineStep, isRtl } from "../../base/reading.ts";
 import { LightElement } from "../../base/light-element.ts";
 import { whenIdle } from "../../base/work-queue.ts";
 import { motion } from "../../base/motion-queue.ts";
@@ -256,7 +258,7 @@ export class UiChart extends LightElement {
   @property({ attribute: false }) labels: string[] = [];
   @property({ attribute: false }) series: ChartSeries[] = [];
   /** How values read in the tooltip, over a highlighted bar and in the table. */
-  @property({ attribute: false }) format: (v: number) => string = (v) => v.toLocaleString();
+  @property({ attribute: false }) format: (v: number) => string = (v) => formatInt(v);
   /** How the y axis' ticks read (default: `format`); `step` is the distance between two ticks. */
   @property({ attribute: false }) tickFormat?: (v: number, step: number) => string;
   /** A reference value drawn as a dashed line (e.g. a target or a policy minimum). */
@@ -271,7 +273,7 @@ export class UiChart extends LightElement {
   /** The range shown at first, in points (default: the first of `ranges`). */
   @property({ type: Number }) range?: number;
   /** The range switch's accessible name. */
-  @property({ attribute: "range-label" }) rangeLabel = "Range";
+  @property({ attribute: "range-label" }) rangeLabel = m.chart_range();
   @state() private _hover = -1;
   @state() private _hidden: ReadonlySet<number> = new Set();
   @state() private _points?: number;
@@ -413,14 +415,13 @@ export class UiChart extends LightElement {
     const el = e.currentTarget as HTMLElement;
     const r = el.getBoundingClientRect();
     const across = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
-    const f = getComputedStyle(el).direction === "rtl" ? 1 - across : across;
+    const f = isRtl(el) ? 1 - across : across;
     this._hover = this.kind === "bars" ? Math.min(n - 1, Math.floor(f * n)) : Math.round(f * (n - 1));
   }
 
   private _key(e: KeyboardEvent, n: number) {
     if (!n) return;
-    const rtl = getComputedStyle(e.currentTarget as HTMLElement).direction === "rtl";
-    const step = { ArrowRight: rtl ? -1 : 1, ArrowLeft: rtl ? 1 : -1 }[e.key];
+    const step = inlineStep(e.key, e.currentTarget as HTMLElement);
     if (step) this._hover = this._hover < 0 ? n - 1 : Math.min(n - 1, Math.max(0, this._hover + step));
     else if (e.key === "Home") this._hover = 0;
     else if (e.key === "End") this._hover = n - 1;
@@ -445,11 +446,10 @@ export class UiChart extends LightElement {
   }
 
   private _rangeKey(e: KeyboardEvent, i: number, offers: ChartRange[]) {
-    const dir = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+    const dir = inlineStep(e.key, this) || { ArrowDown: 1, ArrowUp: -1 }[e.key];
     if (!dir) return;
     e.preventDefault();
-    const rtl = getComputedStyle(this).direction === "rtl" && (e.key === "ArrowLeft" || e.key === "ArrowRight");
-    const j = (i + (rtl ? -dir : dir) + offers.length) % offers.length;
+    const j = (i + dir + offers.length) % offers.length;
     this.querySelectorAll<HTMLButtonElement>("[data-chart-range]")[j]?.focus();
     this._setRange(offers[j]!.points);
   }
@@ -463,7 +463,7 @@ export class UiChart extends LightElement {
     return html`<div class=${chartHead()}>
       ${
         legend
-          ? html`<div class=${chartLegend()} role="group" aria-label="Series">
+          ? html`<div class=${chartLegend()} role="group" aria-label=${m.chart_series()}>
               ${v.series.map(
                 (s) =>
                   html`<button
@@ -621,7 +621,8 @@ export class UiChart extends LightElement {
         ${
           v.stacked
             ? html`<span class=${chartTooltipRow({ total: true })}
-                ><span class=${chartTooltipName()}>Total</span><strong>${this.format(v.totals[i]!)}</strong></span
+                ><span class=${chartTooltipName()}>${m.chart_total()}</span
+                ><strong>${this.format(v.totals[i]!)}</strong></span
               >`
             : nothing
         }
@@ -630,7 +631,7 @@ export class UiChart extends LightElement {
             ? html`<span class=${chartTooltipRow()}
                 ><span class=${chartTooltipName()}
                   ><span class=${chartKey({ target: true })}></span
-                  >${this.targetLabel ? this.targetLabel : "Target"}</span
+                  >${this.targetLabel ? this.targetLabel : m.chart_target()}</span
                 >${this.targetLabel ? nothing : html`<strong>${this.format(this.target)}</strong>`}</span
               >`
             : nothing
@@ -730,14 +731,14 @@ export class UiChart extends LightElement {
                   { length: v.n },
                   (_, i) =>
                     html`<tr>
-                      <th>${v.labels[i] ?? i + 1}</th>
+                      <th>${v.labels[i] ?? formatInt(i + 1)}</th>
                       ${v.shown.map((s) => html`<td>${this.format(s.values[i]!)}</td>`)}
                     </tr>`,
                 )}
                 ${
                   this.target !== undefined
                     ? html`<tr>
-                        <th>${this.targetLabel || "Target"}</th>
+                        <th>${this.targetLabel || m.chart_target()}</th>
                         <td colspan=${v.shown.length}>${this.format(this.target)}</td>
                       </tr>`
                     : nothing

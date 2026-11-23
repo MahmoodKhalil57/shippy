@@ -2,7 +2,9 @@ import type { Endpoint, PayloadRequest } from "payload";
 import type { Doc } from "saastemlycrm-design-system/contracts";
 import { WAITS, relativeDue } from "../collections/cases.ts";
 import { TODAY } from "../collections/shared.ts";
-import { history as H } from "./history.ts";
+import { m } from "../i18n/paraglide/messages.js";
+import { history as H, historyLabel } from "./history.ts";
+import { intlLocale, langOf, optionLabel } from "./insights-shared.ts";
 
 /**
  * GET /api/home — what the signed-in user's home needs that spans several collections, tailored
@@ -33,6 +35,8 @@ export interface HomeDelta {
 export interface HomeTile {
   /** The figure the strip leads with (drawn tinted). */
   main?: boolean;
+  /** Its tile: the same in every language (its English words); `label` is its words in the request's. */
+  key: string;
   label: string;
   value: string;
   note?: string;
@@ -109,11 +113,13 @@ const nameOf = (v: unknown) =>
 const date = (v: unknown) => (typeof v === "string" ? new Date(v) : undefined);
 const first = (name: string) => name.split(" ")[0] ?? name;
 
-const fmtDay = (d: Date) => d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
-const fmtTime = (d: Date) => d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
+type Lang = "en" | "ar";
+const fmtDay = (d: Date, lang: Lang) =>
+  d.toLocaleDateString(intlLocale(lang), { day: "numeric", month: "short", timeZone: "UTC" });
+const fmtTime = (d: Date, lang: Lang) =>
+  d.toLocaleTimeString(intlLocale(lang), { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
 /** "today 16:00", "tomorrow 09:00", "in 3 days", "2 days overdue": as a case's `due` reads. */
-const relative = (d: Date) => relativeDue(d.toISOString());
-const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+const relative = (d: Date, req: PayloadRequest) => relativeDue(d.toISOString(), req);
 
 /** A change with its sign, "+2" or "−0.4" (a real minus sign), and nothing before a zero. */
 const signed = (n: number, digits = 0) => {
@@ -125,14 +131,31 @@ const signed = (n: number, digits = 0) => {
  * note under it doesn't say), or that nothing changed. `rising` says what a rise means: good news
  * (`"good"`), bad news (`"bad"`), or neither when left out (a queue that grew is just busier).
  */
-const moved = (change: number, amount: string, o: { rising?: "good" | "bad"; than?: string } = {}): HomeDelta => ({
-  text: change === 0 ? (o.than ? `same as ${o.than}` : "no change") : o.than ? `${amount} vs ${o.than}` : amount,
+const moved = (
+  lang: Lang,
+  change: number,
+  amount: string,
+  o: { rising?: "good" | "bad"; than?: string } = {},
+): HomeDelta => ({
+  text:
+    change === 0
+      ? o.than
+        ? m.api_home_same_as({ than: o.than }, { locale: lang })
+        : m.api_home_no_change({}, { locale: lang })
+      : o.than
+        ? m.api_home_amount_vs({ amount, than: o.than }, { locale: lang })
+        : amount,
   dir: change > 0 ? "up" : change < 0 ? "down" : "flat",
   good: change === 0 || !o.rising ? undefined : change > 0 === (o.rising === "good"),
 });
 
 async function all(req: PayloadRequest, collection: string) {
-  const r = await req.payload.find({ collection: collection as never, pagination: false, depth: 1 });
+  const r = await req.payload.find({
+    locale: req.locale,
+    collection: collection as never,
+    pagination: false,
+    depth: 1,
+  });
   return r.docs as unknown as Doc[];
 }
 
@@ -140,8 +163,16 @@ async function all(req: PayloadRequest, collection: string) {
 export async function homeData(req: PayloadRequest): Promise<Home | Response> {
   {
     const me = req.user as unknown as (Doc & { name?: string; role?: string }) | null;
-    if (!me)
-      return Response.json({ errors: [{ message: "You are not allowed to perform this action." }] }, { status: 401 });
+    const lang = langOf(req);
+    const o = { locale: lang };
+    if (!me) return Response.json({ errors: [{ message: m.api_insights_shared_not_allowed({}, o) }] }, { status: 401 });
+    /** History labels, option labels and number formats in the request's language. */
+    const t = (label: string) => historyLabel(label, lang);
+    const ts = (labels: string[]) => labels.map(t);
+    const opt = (collection: string, field: string, value: unknown) => optionLabel(req, collection, field, value);
+    const int = (n: number) => n.toLocaleString(intlLocale(lang, "en-US"));
+    const lastWeek = m.api_home_last_week({}, o);
+    const fourWeeksAgo = m.api_home_4_weeks_ago({}, o);
     const role = str(me.role ?? "");
     const [cases, approvals, tasks, rfqs, messages, exceptions, invoices, bills, deliveries, opportunities] =
       await Promise.all(
@@ -193,7 +224,10 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
         briefing.push({
           for: [...desk, idOf(c.owner) === me.id ? role : ""],
           tone: "error",
-          title: `${str(c.vessel)} quote ${d! < DEMO_NOW ? "" : "due "}${relative(d!)}`,
+          title:
+            d! < DEMO_NOW
+              ? m.api_home_quote_late({ vessel: str(c.vessel), when: relative(d!, req) }, o)
+              : m.api_home_quote_due_when({ vessel: str(c.vessel), when: relative(d!, req) }, o),
           sub: `${str(c.caseId)} · ${str(c.nextAction ?? "")}${c.blocker ? ` · ${str(c.blocker)}` : ""}`,
           href: path("collections", "cases", c.id),
         });
@@ -201,8 +235,8 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
         briefing.push({
           for: [...desk, "operations"],
           tone: "error",
-          title: `Customer PO mismatch on ${str(c.caseId)}`,
-          sub: str(c.blocker || c.nextAction || "Commitment blocked until the PO matches the approved quote."),
+          title: m.api_home_po_mismatch({ caseId: str(c.caseId) }, o),
+          sub: str(c.blocker || c.nextAction || m.api_home_commitment_blocked({}, o)),
           href: path("collections", "cases", c.id),
         });
       const eta = date(c.eta);
@@ -210,7 +244,7 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
         briefing.push({
           for: ["supply-chain", "operations", "management"],
           tone: "warning",
-          title: `${str(c.vessel)} arrives ${relative(eta!)}`,
+          title: m.api_home_arrives_when({ vessel: str(c.vessel), when: relative(eta!, req) }, o),
           sub: `${str(c.caseId)} · ${str(c.port ?? "")} · ${str(c.nextAction ?? "")}`,
           href: path("collections", "cases", c.id),
         });
@@ -221,8 +255,15 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
         briefing.push({
           for: ["supply-chain", "management"],
           tone: "warning",
-          title: `${nameOf(r.supplier)} hasn't replied`,
-          sub: `${str(r.reference)} was due ${relative(due)} · ${str(r.lastEvent ?? "reminder drafted")}`,
+          title: m.api_home_supplier_silent({ supplier: nameOf(r.supplier) }, o),
+          sub: m.api_home_was_due(
+            {
+              reference: str(r.reference),
+              when: relative(due, req),
+              last: str(r.lastEvent ?? m.api_home_reminder_drafted({}, o)),
+            },
+            o,
+          ),
           href: path("collections", "supplier-rfqs", r.id),
         });
     }
@@ -230,8 +271,8 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
       briefing.push({
         for: ["supply-chain", "sales", "operations"],
         tone: "info",
-        title: `${pending.length} item${pending.length === 1 ? "" : "s"} awaiting approval`,
-        sub: [...new Set(pending.map((a) => str(a.type)))].join(", "),
+        title: m.api_home_items_awaiting_approval({ count: pending.length }, o),
+        sub: [...new Set(pending.map((a) => opt("approvals", "type", a.type)))].join(lang === "ar" ? "، " : ", "),
         href: path("collections", "approvals"),
       });
     /** Invoices with a balance still to collect. */
@@ -241,8 +282,8 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
       briefing.push({
         for: ["operations", "management", "office-admin", "supply-chain"],
         tone: "warning",
-        title: `${str(x.source)}: ${str(x.summary)}`,
-        sub: `${str(x.impact ?? "")} · safe retry available`,
+        title: `${opt("integration-exceptions", "source", x.source)}: ${str(x.summary)}`,
+        sub: m.api_home_safe_retry({ impact: str(x.impact ?? "") }, o),
         href: path("collections", "integration-exceptions", x.id),
       });
     for (const inv of receivable) {
@@ -250,8 +291,21 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
       briefing.push({
         for: ["operations", "finance-director", "management"],
         tone: "info",
-        title: `${nameOf(inv.customer)}: ${str(inv.currency) || "USD"} ${Number(inv.balance ?? 0).toLocaleString("en-US")} due ${due ? fmtDay(due) : "—"}`,
-        sub: `${str(inv.number)} · ${str(inv.status)}${typeof inv.paid === "number" && inv.paid ? ` · ${Number(inv.paid).toLocaleString("en-US")} received` : ""} · collection reminder drafted`,
+        title: m.api_home_invoice_due(
+          {
+            customer: nameOf(inv.customer),
+            amount: `${str(inv.currency) || "USD"} ${int(Number(inv.balance ?? 0))}`,
+            day: due ? fmtDay(due, lang) : "—",
+          },
+          o,
+        ),
+        sub:
+          typeof inv.paid === "number" && inv.paid
+            ? m.api_home_invoice_sub_paid(
+                { number: str(inv.number), status: opt("invoices", "status", inv.status), paid: int(Number(inv.paid)) },
+                o,
+              )
+            : m.api_home_invoice_sub({ number: str(inv.number), status: opt("invoices", "status", inv.status) }, o),
         href: path("collections", "invoices", inv.id),
       });
     }
@@ -260,7 +314,7 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
       briefing.push({
         for: ["supply-chain", "sales", "office-admin"],
         tone: "info",
-        title: `${newMessages.length} new message${newMessages.length === 1 ? "" : "s"} in the inbox`,
+        title: m.api_home_new_messages({ count: newMessages.length }, o),
         sub: newMessages.map((m) => str(m.fromName ?? m.from)).join(", "),
         href: path("collections", "intake-messages"),
       });
@@ -293,124 +347,131 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
       const weeks = [...(H.waitTrend[wait] ?? []).slice(0, -1), n];
       const change = since(weeks);
       return {
-        label: wait,
+        key: wait,
+        label: t(wait),
         value: str(n),
         note,
         href: path("collections", "cases"),
-        trend: { labels: H.weeks, values: weeks, unit: "count" },
-        delta: moved(change, signed(change), { than: "last week" }),
+        trend: { labels: ts(H.weeks), values: weeks, unit: "count" },
+        delta: moved(lang, change, signed(change), { than: lastWeek }),
       };
     };
     /** Figures several roles steer by. */
     const inquiries4 = fourWeeks(H.inquiries);
     const won4 = fourWeeks(H.won);
     const wonTile: HomeTile = {
-      label: "Won, last 4 weeks",
+      key: m.api_home_won_4_weeks({}, { locale: "en" }),
+      label: m.api_home_won_4_weeks({}, o),
       value: str(won4.now),
-      note: "vs prior 4 weeks",
-      trend: { labels: H.weeks, values: H.won, unit: "count" },
-      delta: moved(won4.change, `${signed(won4.change)}%`, { rising: "good" }),
+      note: m.api_home_vs_prior_4_weeks({}, o),
+      trend: { labels: ts(H.weeks), values: H.won, unit: "count" },
+      delta: moved(lang, won4.change, `${signed(won4.change)}%`, { rising: "good" }),
     };
     const profitChange = Math.round(
       ((last(H.gpExpectedK) - H.gpExpectedK[H.gpExpectedK.length - 2]!) / H.gpExpectedK[H.gpExpectedK.length - 2]!) *
         100,
     );
     const profitTile: HomeTile = {
-      label: "Expected gross profit, Nov",
-      value: `EGP ${last(H.gpExpectedK)}k`,
-      note: `${last(H.gpActualK)}k billed so far`,
-      trend: { labels: H.months, values: H.gpExpectedK, unit: "egp-k" },
-      delta: moved(profitChange, `${signed(profitChange)}%`, { rising: "good", than: H.months[H.months.length - 2] }),
+      key: m.api_home_expected_gp_nov({}, { locale: "en" }),
+      label: m.api_home_expected_gp_nov({}, o),
+      value: m.api_home_thousands({ currency: "EGP", n: last(H.gpExpectedK) }, o),
+      note: m.api_home_billed_so_far({ n: last(H.gpActualK) }, o),
+      trend: { labels: ts(H.months), values: H.gpExpectedK, unit: "egp-k" },
+      delta: moved(lang, profitChange, `${signed(profitChange)}%`, {
+        rising: "good",
+        than: t(H.months[H.months.length - 2]!),
+      }),
     };
     const ackTile: HomeTile = {
-      label: "Time to acknowledge",
-      value: `${last(H.ackMinutes)} min`,
-      note: "median, new RFQs",
-      trend: { labels: H.weeks, values: H.ackMinutes, unit: "minutes" },
-      delta: moved(since(H.ackMinutes, 4), `${signed(since(H.ackMinutes, 4))} min`, {
+      key: m.api_home_time_to_acknowledge({}, { locale: "en" }),
+      label: m.api_home_time_to_acknowledge({}, o),
+      value: m.api_home_minutes({ n: last(H.ackMinutes) }, o),
+      note: m.api_home_median_new_rfqs({}, o),
+      trend: { labels: ts(H.weeks), values: H.ackMinutes, unit: "minutes" },
+      delta: moved(lang, since(H.ackMinutes, 4), m.api_home_minutes({ n: signed(since(H.ackMinutes, 4)) }, o), {
         rising: "bad",
-        than: "4 weeks ago",
+        than: fourWeeksAgo,
       }),
     };
     const pipeline: HomeChart = {
-      title: "Inquiries, quotes and wins",
-      sub: "RFQ cases per week of receipt, last 12 weeks",
+      title: m.api_home_pipeline_title({}, o),
+      sub: m.api_home_pipeline_sub({}, o),
       kind: "line",
       unit: "count",
-      labels: H.weeks,
+      labels: ts(H.weeks),
       series: [
-        { name: "Inquiries", values: H.inquiries },
-        { name: "Quoted", values: H.quoted },
-        { name: "Won", values: H.won },
+        { name: m.api_home_inquiries({}, o), values: H.inquiries },
+        { name: m.api_home_quoted({}, o), values: H.quoted },
+        { name: m.api_home_won({}, o), values: H.won },
       ],
     };
     const turnaround: HomeChart = {
-      title: "Quotation turnaround",
-      sub: "Median days from RFQ received to quote sent",
+      title: m.api_home_turnaround_title({}, o),
+      sub: m.api_home_turnaround_sub({}, o),
       kind: "line",
       unit: "days",
-      labels: H.weeks,
-      series: [{ name: "Median days", values: H.turnaround }],
+      labels: ts(H.weeks),
+      series: [{ name: m.api_home_median_days({}, o), values: H.turnaround }],
       target: 1,
-      targetLabel: "Target 1 d",
+      targetLabel: m.api_home_target_1_day({}, o),
     };
     const profit: HomeChart = {
-      title: "Gross profit: expected vs actual",
-      sub: "EGP thousands · actual replaces estimates as costs are billed (Nov in progress)",
+      title: m.api_home_gp_title({}, o),
+      sub: m.api_home_gp_sub({}, o),
       kind: "line",
       unit: "egp-k",
-      labels: H.months,
+      labels: ts(H.months),
       series: [
-        { name: "Expected", values: H.gpExpectedK },
-        { name: "Actual", values: H.gpActualK },
+        { name: m.api_home_expected({}, o), values: H.gpExpectedK },
+        { name: m.api_home_actual({}, o), values: H.gpActualK },
       ],
     };
     const cash: HomeChart = {
-      title: "Cash in vs cash out, next 8 weeks",
-      sub: "Expected customer receipts and committed supplier payments, EGP thousands",
+      title: m.api_home_cash_title({}, o),
+      sub: m.api_home_cash_sub({}, o),
       kind: "line",
       unit: "egp-k",
-      labels: H.cashWeeks,
+      labels: ts(H.cashWeeks),
       series: [
-        { name: "Receipts", values: H.receiptsK },
-        { name: "Payments", values: H.paymentsK },
+        { name: m.api_home_receipts({}, o), values: H.receiptsK },
+        { name: m.api_home_payments({}, o), values: H.paymentsK },
       ],
     };
     const ack: HomeChart = {
-      title: "Time to acknowledge an RFQ",
-      sub: "Median minutes · automatic acknowledgement went live 6 Oct",
+      title: m.api_home_ack_title({}, o),
+      sub: m.api_home_ack_sub({}, o),
       kind: "bars",
       unit: "minutes",
-      labels: H.weeks,
-      series: [{ name: "Minutes", values: H.ackMinutes }],
+      labels: ts(H.weeks),
+      series: [{ name: m.api_home_minutes_series({}, o), values: H.ackMinutes }],
       highlightLast: true,
     };
     const afterHours: HomeChart = {
-      title: "Out-of-hours requests",
-      sub: "RFQs outside Sun–Thu 08:00–17:00, routed to the on-call person",
+      title: m.api_home_after_hours_title({}, o),
+      sub: m.api_home_after_hours_sub({}, o),
       kind: "bars",
       unit: "count",
-      labels: H.weeks,
-      series: [{ name: "RFQs", values: H.afterHours }],
+      labels: ts(H.weeks),
+      series: [{ name: m.api_home_rfqs({}, o), values: H.afterHours }],
       highlightLast: true,
     };
     const lost: HomeChart = {
-      title: "Why we lose",
-      sub: "Lost cases by recorded reason, last 90 days",
+      title: m.api_home_lost_title({}, o),
+      sub: m.api_home_lost_sub({}, o),
       kind: "bars",
       unit: "count",
-      labels: H.lostReasons.map((r) => r[0]),
-      series: [{ name: "Lost cases", values: H.lostReasons.map((r) => r[1]) }],
+      labels: H.lostReasons.map((r) => t(r[0])),
+      series: [{ name: m.api_home_lost_cases({}, o), values: H.lostReasons.map((r) => r[1]) }],
     };
     const myTurnaround: HomeChart = {
-      title: "My quote turnaround",
-      sub: "Median days, last 8 weeks",
+      title: m.api_home_my_turnaround({}, o),
+      sub: m.api_home_my_turnaround_sub({}, o),
       kind: "line",
       unit: "days",
-      labels: H.weeks.slice(-8),
-      series: [{ name: "Median days", values: H.myTurnaround }],
+      labels: ts(H.weeks.slice(-8)),
+      series: [{ name: m.api_home_median_days({}, o), values: H.myTurnaround }],
       target: 1,
-      targetLabel: "Target 1 d",
+      targetLabel: m.api_home_target_1_day({}, o),
     };
 
     const awaitingReply = rfqs.filter((r) => r.status === "Awaiting reply").length;
@@ -425,22 +486,22 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
     /** "11:00" today; "Wed 10:00" later, or "Wed" for a date with no time. */
     const lead = (d: Date) => {
       const timed = d.getTime() % DAY !== 0;
-      if (d.getTime() < today + DAY) return timed ? fmtTime(d) : "Today";
-      const day = d.toLocaleDateString("en-GB", { weekday: "short", timeZone: "UTC" });
-      return timed ? `${day} ${fmtTime(d)}` : day;
+      if (d.getTime() < today + DAY) return timed ? fmtTime(d, lang) : m.api_home_today({}, o);
+      const day = d.toLocaleDateString(intlLocale(lang), { weekday: "short", timeZone: "UTC" });
+      return timed ? `${day} ${fmtTime(d, lang)}` : day;
     };
     const own = (c: Doc) => idOf(c.owner) === me.id;
     const everyones = ["management", "office-admin"].includes(role);
     const due: { at: Date; for: boolean; title: string; sub: string; href: string }[] = [];
-    for (const t of openTasks) {
-      const at = date(t.due);
+    for (const k of openTasks) {
+      const at = date(k.due);
       if (within(at))
         due.push({
           at,
-          for: own(t) || role === "office-admin",
-          title: str(t.title),
-          sub: str(t.type ?? t.channel ?? ""),
-          href: path("collections", "tasks", t.id),
+          for: own(k) || role === "office-admin",
+          title: str(k.title),
+          sub: k.type ? opt("tasks", "type", k.type) : opt("tasks", "channel", k.channel ?? ""),
+          href: path("collections", "tasks", k.id),
         });
     }
     for (const r of rfqs) {
@@ -449,7 +510,7 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
         due.push({
           at,
           for: ["supply-chain", "management"].includes(role),
-          title: `${nameOf(r.supplier)}: reply due`,
+          title: m.api_home_reply_due({ supplier: nameOf(r.supplier) }, o),
           sub: str(r.reference),
           href: path("collections", "supplier-rfqs", r.id),
         });
@@ -460,7 +521,7 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
         due.push({
           at: deadline,
           for: everyones || (["supply-chain", "sales"].includes(role) && own(c)),
-          title: `${str(c.vessel)}: quote due`,
+          title: m.api_home_quote_due({ vessel: str(c.vessel) }, o),
           sub: `${str(c.caseId)} · ${str(c.port ?? "")}`,
           href: path("collections", "cases", c.id),
         });
@@ -469,7 +530,7 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
         due.push({
           at: eta,
           for: ["supply-chain", "operations", "management"].includes(role),
-          title: `${str(c.vessel)} arrives`,
+          title: m.api_home_arrives({ vessel: str(c.vessel) }, o),
           sub: `${str(c.caseId)} · ${str(c.port ?? "")}`,
           href: path("collections", "cases", c.id),
         });
@@ -480,7 +541,7 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
         due.push({
           at,
           for: role === "operations",
-          title: `Drop ${str(d.number)} leaves`,
+          title: m.api_home_drop_leaves({ number: str(d.number) }, o),
           sub: str(d.place ?? ""),
           href: path("collections", "deliveries", d.id),
         });
@@ -491,8 +552,8 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
         due.push({
           at,
           for: ["operations", "finance-director", "management"].includes(role),
-          title: `${nameOf(inv.customer)}: invoice due`,
-          sub: `${str(inv.currency) || "USD"} ${Number(inv.balance ?? 0).toLocaleString("en-US")}`,
+          title: m.api_home_invoice_due_short({ customer: nameOf(inv.customer) }, o),
+          sub: `${str(inv.currency) || "USD"} ${int(Number(inv.balance ?? 0))}`,
           href: path("collections", "invoices", inv.id),
         });
     }
@@ -502,20 +563,20 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
         due.push({
           at,
           for: ["operations", "finance-director"].includes(role),
-          title: `${nameOf(b.supplier)}: bill due`,
+          title: m.api_home_bill_due({ supplier: nameOf(b.supplier) }, o),
           sub: str(b.billNumber),
           href: path("collections", "supplier-bills", b.id),
         });
     }
-    for (const o of opportunities) {
-      const at = date(o.nextStepDue);
-      if (within(at) && own(o))
+    for (const p of opportunities) {
+      const at = date(p.nextStepDue);
+      if (within(at) && own(p))
         due.push({
           at,
           for: true,
-          title: str(o.nextStep ?? o.name),
-          sub: str(o.name),
-          href: path("collections", "opportunities", o.id),
+          title: str(p.nextStep ?? p.name),
+          sub: str(p.name),
+          href: path("collections", "opportunities", p.id),
         });
     }
     const upcoming = due.filter((d) => d.for).sort((a, b) => a.at.getTime() - b.at.getTime());
@@ -523,11 +584,11 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
     const agenda: HomeWidget = {
       kind: "agenda",
       id: "agenda",
-      title: "Next up",
+      title: m.api_home_next_up({}, o),
       sub: upcoming.length
         ? [
-            dueToday ? `${dueToday} today` : "Nothing due today",
-            ...(upcoming.length > dueToday ? [`${upcoming.length - dueToday} later this week`] : []),
+            dueToday ? m.api_home_n_today({ n: dueToday }, o) : m.api_home_nothing_due_today({}, o),
+            ...(upcoming.length > dueToday ? [m.api_home_later_this_week({ n: upcoming.length - dueToday }, o)] : []),
           ].join(" · ")
         : "",
       // The next five: what fits a glance (the lists behind it hold the rest).
@@ -538,22 +599,33 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
         href: d.href,
         late: d.at.getTime() % DAY !== 0 && d.at < DEMO_NOW,
       })),
-      empty: "Nothing due this week.",
+      empty: m.api_home_nothing_due_week({}, o),
     };
 
     /* ---------------------------------------------------------------- per role */
     const name = first(str(me.name ?? ""));
-    const eyebrow = `My day · ${DEMO_NOW.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "UTC" })}`;
-    const greeting = `Good morning, ${name}`;
+    const eyebrow = m.api_home_my_day(
+      {
+        date: DEMO_NOW.toLocaleDateString(intlLocale(lang), {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+          timeZone: "UTC",
+        }),
+      },
+      o,
+    );
+    const greeting = m.api_home_good_morning({ name }, o);
     /** The greeting's subtitle: the day's live numbers, in one line. */
     const numbers = (...parts: string[]) => parts.join(" · ");
     const briefingList: HomeWidget = {
       kind: "briefing",
       id: "briefing",
-      title: "Daily briefing",
-      sub: "Prepared at 07:00 from your cases, inbox and integrations",
+      title: m.api_home_daily_briefing({}, o),
+      sub: m.api_home_briefing_sub({}, o),
       items: myBriefing,
-      empty: "Nothing needs you this morning.",
+      empty: m.api_home_nothing_needs_you({}, o),
     };
     const quotesDue = live.filter(
       (c) =>
@@ -572,13 +644,13 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
       case "management":
         body = {
           subtitle: numbers(
-            `${plural(forMe.length, "decision")} waiting`,
-            `${plural(quotesDue, "quote")} due by tomorrow`,
-            plural(live.length, "live case"),
+            m.api_home_decisions_waiting({ n: forMe.length }, o),
+            m.api_home_quotes_due_tomorrow({ n: quotesDue }, o),
+            m.api_home_live_cases({ n: live.length }, o),
           ),
           actions: [
-            { label: "All live cases", href: path("collections", "cases") },
-            { label: "Open approvals", href: path("collections", "approvals"), primary: true },
+            { label: m.api_home_all_live_cases({}, o), href: path("collections", "cases") },
+            { label: m.api_home_open_approvals({}, o), href: path("collections", "approvals"), primary: true },
           ],
           widgets: [
             briefingList,
@@ -588,22 +660,29 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
               tiles: [
                 {
                   main: true,
-                  label: "Inquiries, last 4 weeks",
+                  key: m.api_home_inquiries_4_weeks({}, { locale: "en" }),
+                  label: m.api_home_inquiries_4_weeks({}, o),
                   value: str(inquiries4.now),
-                  note: "vs prior 4 weeks",
-                  trend: { labels: H.weeks, values: H.inquiries, unit: "count" },
-                  delta: moved(inquiries4.change, `${signed(inquiries4.change)}%`, { rising: "good" }),
+                  note: m.api_home_vs_prior_4_weeks({}, o),
+                  trend: { labels: ts(H.weeks), values: H.inquiries, unit: "count" },
+                  delta: moved(lang, inquiries4.change, `${signed(inquiries4.change)}%`, { rising: "good" }),
                 },
                 wonTile,
                 {
-                  label: "Quote turnaround",
-                  value: `${last(H.turnaround)} d`,
-                  note: "median · target 1 d",
-                  trend: { labels: H.weeks, values: H.turnaround, unit: "days" },
-                  delta: moved(since(H.turnaround, 4), `${signed(since(H.turnaround, 4), 1)} d`, {
-                    rising: "bad",
-                    than: "4 weeks ago",
-                  }),
+                  key: m.api_home_quote_turnaround({}, { locale: "en" }),
+                  label: m.api_home_quote_turnaround({}, o),
+                  value: m.api_home_days({ n: last(H.turnaround) }, o),
+                  note: m.api_home_median_target({}, o),
+                  trend: { labels: ts(H.weeks), values: H.turnaround, unit: "days" },
+                  delta: moved(
+                    lang,
+                    since(H.turnaround, 4),
+                    m.api_home_days({ n: signed(since(H.turnaround, 4), 1) }, o),
+                    {
+                      rising: "bad",
+                      than: fourWeeksAgo,
+                    },
+                  ),
                 },
                 profitTile,
               ],
@@ -615,12 +694,12 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
               charts: [
                 pipeline,
                 {
-                  title: "Value won per month",
-                  sub: "Customer POs incl. partial awards, USD thousands",
+                  title: m.api_home_value_won_title({}, o),
+                  sub: m.api_home_value_won_sub({}, o),
                   kind: "bars",
                   unit: "usd-k",
-                  labels: H.months,
-                  series: [{ name: "Value won", values: H.wonValueK }],
+                  labels: ts(H.months),
+                  series: [{ name: m.api_home_value_won({}, o), values: H.wonValueK }],
                   highlightLast: true,
                 },
                 turnaround,
@@ -638,13 +717,13 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
         );
         body = {
           subtitle: numbers(
-            `${plural(forMe.length, "decision")} waiting`,
-            `USD ${pastDue.toFixed(1)}k past due`,
-            `${plural(openBills.length, "supplier bill")} open`,
+            m.api_home_decisions_waiting({ n: forMe.length }, o),
+            m.api_home_usd_past_due({ n: pastDue.toFixed(1) }, o),
+            m.api_home_supplier_bills_open({ n: openBills.length }, o),
           ),
           actions: [
-            { label: "Invoices", href: path("collections", "invoices") },
-            { label: "Open approvals", href: path("collections", "approvals"), primary: true },
+            { label: m.api_home_invoices({}, o), href: path("collections", "invoices") },
+            { label: m.api_home_open_approvals({}, o), href: path("collections", "approvals"), primary: true },
           ],
           widgets: [
             briefingList,
@@ -653,22 +732,24 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
               id: "money",
               tiles: [
                 {
-                  label: "Receivables",
-                  value: `USD ${sum(H.ageing).toFixed(1)}k`,
-                  note: `${pastDue.toFixed(1)}k past due`,
+                  key: m.api_home_receivables({}, { locale: "en" }),
+                  label: m.api_home_receivables({}, o),
+                  value: m.api_home_thousands({ currency: "USD", n: sum(H.ageing).toFixed(1) }, o),
+                  note: m.api_home_k_past_due({ n: pastDue.toFixed(1) }, o),
                   href: path("collections", "invoices"),
-                  trend: { labels: H.weeks, values: H.receivablesK, unit: "usd-k" },
-                  delta: moved(receivablesChange, `${signed(receivablesChange)}%`, {
+                  trend: { labels: ts(H.weeks), values: H.receivablesK, unit: "usd-k" },
+                  delta: moved(lang, receivablesChange, `${signed(receivablesChange)}%`, {
                     rising: "bad",
-                    than: "last week",
+                    than: lastWeek,
                   }),
                 },
                 {
-                  label: "Net cash, next 8 weeks",
-                  value: `EGP ${sum(H.receiptsK) - sum(H.paymentsK)}k`,
-                  note: `in ${sum(H.receiptsK).toLocaleString("en-US")}k · out ${sum(H.paymentsK).toLocaleString("en-US")}k`,
+                  key: m.api_home_net_cash({}, { locale: "en" }),
+                  label: m.api_home_net_cash({}, o),
+                  value: m.api_home_thousands({ currency: "EGP", n: sum(H.receiptsK) - sum(H.paymentsK) }, o),
+                  note: m.api_home_in_out({ in: int(sum(H.receiptsK)), out: int(sum(H.paymentsK)) }, o),
                   trend: {
-                    labels: H.cashWeeks,
+                    labels: ts(H.cashWeeks),
                     values: H.receiptsK.map((r, i) => r - H.paymentsK[i]!),
                     unit: "egp-k",
                   },
@@ -683,12 +764,12 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
               charts: [
                 cash,
                 {
-                  title: "Receivables by age",
-                  sub: "USD thousands, all customers",
+                  title: m.api_home_receivables_by_age({}, o),
+                  sub: m.api_home_usd_thousands_all({}, o),
                   kind: "bars",
                   unit: "usd-k",
-                  labels: H.ageingKeys,
-                  series: [{ name: "Receivables", values: H.ageing }],
+                  labels: ts(H.ageingKeys),
+                  series: [{ name: m.api_home_receivables({}, o), values: H.ageing }],
                 },
                 profit,
               ],
@@ -702,13 +783,13 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
         const moving = [...H.waitTrend["Awaiting delivery or payment"]!.slice(0, -1), inProgress.length];
         body = {
           subtitle: numbers(
-            `${plural(inProgress.length, "delivery", "deliveries")} in progress`,
-            `${plural(openBills.length, "bill")} to match`,
-            plural(openExceptions.length, "integration exception"),
+            m.api_home_deliveries_in_progress({ n: inProgress.length }, o),
+            m.api_home_bills_to_match({ n: openBills.length }, o),
+            m.api_home_integration_exceptions({ n: openExceptions.length }, o),
           ),
           actions: [
-            { label: "Supplier bills", href: path("collections", "supplier-bills") },
-            { label: "Deliveries", href: path("collections", "deliveries"), primary: true },
+            { label: m.api_home_supplier_bills({}, o), href: path("collections", "supplier-bills") },
+            { label: m.api_home_deliveries({}, o), href: path("collections", "deliveries"), primary: true },
           ],
           widgets: [
             {
@@ -717,12 +798,15 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
               tiles: [
                 {
                   main: true,
-                  label: "Deliveries in progress",
+                  key: m.api_home_deliveries_in_progress_label({}, { locale: "en" }),
+                  label: m.api_home_deliveries_in_progress_label({}, o),
                   value: str(inProgress.length),
-                  note: inProgress.map((d) => `${str(d.number)} ${str(d.status).toLowerCase()}`).join(" · "),
+                  note: inProgress
+                    .map((d) => `${str(d.number)} ${opt("deliveries", "status", d.status).toLowerCase()}`)
+                    .join(" · "),
                   href: path("collections", "deliveries"),
-                  trend: { labels: H.weeks, values: moving, unit: "count" },
-                  delta: moved(since(moving), signed(since(moving)), { than: "last week" }),
+                  trend: { labels: ts(H.weeks), values: moving, unit: "count" },
+                  delta: moved(lang, since(moving), signed(since(moving)), { than: lastWeek }),
                 },
               ],
             },
@@ -734,16 +818,19 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
         break;
       }
       case "sales": {
-        const steps = opportunities.filter((o) => own(o) && within(date(o.nextStepDue)));
+        const steps = opportunities.filter((p) => own(p) && within(date(p.nextStepDue)));
         body = {
           subtitle: numbers(
-            plural(myLive.length, "live case"),
-            `${myLive.filter((c) => c.wait === "Awaiting customer decision").length} awaiting the customer`,
-            `${plural(steps.length, "pipeline step")} this week`,
+            m.api_home_live_cases({ n: myLive.length }, o),
+            m.api_home_awaiting_customer(
+              { n: myLive.filter((c) => c.wait === "Awaiting customer decision").length },
+              o,
+            ),
+            m.api_home_pipeline_steps_week({ n: steps.length }, o),
           ),
           actions: [
-            { label: "Pipeline", href: path("collections", "opportunities") },
-            { label: "New case", href: path("collections", "cases", "create"), primary: true },
+            { label: m.api_home_pipeline({}, o), href: path("collections", "opportunities") },
+            { label: m.api_home_new_case({}, o), href: path("collections", "cases", "create"), primary: true },
           ],
           widgets: [
             {
@@ -766,13 +853,13 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
         const outOfHours = since(H.afterHours);
         body = {
           subtitle: numbers(
-            `${plural(newMessages.length, "message")} to triage`,
-            `${plural(todays(), "follow-up")} due today`,
-            plural(live.length, "live case"),
+            m.api_home_messages_to_triage({ n: newMessages.length }, o),
+            m.api_home_follow_ups_due_today({ n: todays() }, o),
+            m.api_home_live_cases({ n: live.length }, o),
           ),
           actions: [
-            { label: "Follow-ups", href: path("collections", "tasks") },
-            { label: "Review inbox", href: path("collections", "intake-messages"), primary: true },
+            { label: m.api_home_follow_ups({}, o), href: path("collections", "tasks") },
+            { label: m.api_home_review_inbox({}, o), href: path("collections", "intake-messages"), primary: true },
           ],
           widgets: [
             {
@@ -780,11 +867,12 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
               id: "desk",
               tiles: [
                 {
-                  label: "Out-of-hours RFQs",
+                  key: m.api_home_out_of_hours_rfqs({}, { locale: "en" }),
+                  label: m.api_home_out_of_hours_rfqs({}, o),
                   value: str(last(H.afterHours)),
-                  note: "this week, vs last week",
-                  trend: { labels: H.weeks, values: H.afterHours, unit: "count" },
-                  delta: moved(outOfHours, signed(outOfHours)),
+                  note: m.api_home_this_week_vs_last({}, o),
+                  trend: { labels: ts(H.weeks), values: H.afterHours, unit: "count" },
+                  delta: moved(lang, outOfHours, signed(outOfHours)),
                 },
                 ackTile,
               ],
@@ -799,38 +887,44 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
         // Supply chain & customer service (and anyone else): the buyer's day.
         body = {
           subtitle: numbers(
-            `${plural(mine.length, "case")} in your queue`,
-            `${plural(awaitingReply, "supplier reply", "supplier replies")} outstanding`,
-            `${plural(todays(me.id), "follow-up")} today`,
+            m.api_home_cases_in_queue({ n: mine.length }, o),
+            m.api_home_supplier_replies_outstanding({ n: awaitingReply }, o),
+            m.api_home_follow_ups_today({ n: todays(me.id) }, o),
           ),
           actions: [
-            { label: "Review inbox", href: path("collections", "intake-messages") },
+            { label: m.api_home_review_inbox({}, o), href: path("collections", "intake-messages") },
             ...(mine[0]
               ? [
                   {
-                    label: `Continue ${str(mine[0].caseId)}`,
+                    label: m.api_home_continue({ caseId: str(mine[0].caseId) }, o),
                     href: path("collections", "cases", mine[0].id),
                     primary: true,
                   },
                 ]
-              : [{ label: "All cases", href: path("collections", "cases"), primary: true }]),
+              : [{ label: m.api_home_all_cases({}, o), href: path("collections", "cases"), primary: true }]),
           ],
           widgets: [
             {
               kind: "tiles",
               id: "waits",
               tiles: [
-                waitTile("Awaiting supplier", live, `${plural(awaitingReply, "supplier RFQ")} awaiting reply`),
-                waitTile("Awaiting internal approval", live, `${plural(pending.length, "approval")} in the queue`),
+                waitTile("Awaiting supplier", live, m.api_home_rfqs_awaiting_reply({ n: awaitingReply }, o)),
+                waitTile("Awaiting internal approval", live, m.api_home_approvals_in_queue({ n: pending.length }, o)),
                 {
-                  label: "My quote turnaround",
-                  value: `${last(H.myTurnaround)} d`,
-                  note: "median · target 1 d",
-                  trend: { labels: H.weeks.slice(-8), values: H.myTurnaround, unit: "days" },
-                  delta: moved(since(H.myTurnaround), `${signed(since(H.myTurnaround), 1)} d`, {
-                    rising: "bad",
-                    than: "last week",
-                  }),
+                  key: m.api_home_my_turnaround({}, { locale: "en" }),
+                  label: m.api_home_my_turnaround({}, o),
+                  value: m.api_home_days({ n: last(H.myTurnaround) }, o),
+                  note: m.api_home_median_target({}, o),
+                  trend: { labels: ts(H.weeks.slice(-8)), values: H.myTurnaround, unit: "days" },
+                  delta: moved(
+                    lang,
+                    since(H.myTurnaround),
+                    m.api_home_days({ n: signed(since(H.myTurnaround), 1) }, o),
+                    {
+                      rising: "bad",
+                      than: lastWeek,
+                    },
+                  ),
                 },
               ],
             },

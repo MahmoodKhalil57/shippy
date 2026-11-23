@@ -3,6 +3,7 @@ import { customElement, property, state } from "lit/decorators.js";
 import { LightElement } from "../../base/light-element.ts";
 import "../../primitives/index.ts";
 import type { AskAnswer } from "../../base/ask-spec.ts";
+import { m } from "../../../i18n/index.ts";
 
 /**
  * Ask: questions answered from the records, as a small chat. Each answer has its key points and
@@ -26,10 +27,10 @@ export class UiAsk extends LightElement {
   /** Pre-filled question. */
   @property() question = "";
   /** Who answers. */
-  @property() name = "Assistant";
-  @property() placeholder = "Ask a question…";
+  @property() name = m.ask_assistant();
+  @property() placeholder = m.ask_placeholder();
   @property() intro = "";
-  @property() reading = "Reading the records…";
+  @property() reading = m.ask_reading_records();
   @property() footnote = "";
   @state() private turns: AskAnswer[] = [];
   @state() private asking = "";
@@ -59,7 +60,7 @@ export class UiAsk extends LightElement {
   }
 
   private _answer(a: AskAnswer) {
-    return html`<ui-chat placement="end" color="primary" author="You">${a.question}</ui-chat>
+    return html`<ui-chat placement="end" color="primary" .author=${m.ask_you()}><bdi>${a.question}</bdi></ui-chat>
       <ui-chat .author=${this.name} .color=${a.refused ? "warning" : undefined}>
         <ui-flex direction="col" gap="2">
           <ui-text variant="label-lg">${a.answer}</ui-text>
@@ -73,7 +74,7 @@ export class UiAsk extends LightElement {
           ${
             a.sources.length
               ? html`<ui-flex gap="1" wrap align="center">
-                  <ui-text variant="body-sm" color="muted">Sources:</ui-text>
+                  <ui-text variant="body-sm" color="muted">${m.ask_sources()}</ui-text>
                   ${a.sources.map((s) => html`<ui-button size="xs" variant="tonal" .href=${s.href}>${s.label}</ui-button>`)}
                 </ui-flex>`
               : nothing
@@ -90,10 +91,10 @@ export class UiAsk extends LightElement {
               ${this.turns.map((t) => this._answer(t))}
               ${
                 this.asking
-                  ? html`<ui-chat placement="end" color="primary" author="You">${this.asking}</ui-chat>
+                  ? html`<ui-chat placement="end" color="primary" .author=${m.ask_you()}>${this.asking}</ui-chat>
                       <ui-chat .author=${this.name}>
                         <ui-flex gap="2" align="center">
-                          <ui-loading size="sm" label="Reading"></ui-loading>
+                          <ui-loading size="sm" .label=${m.ask_reading()}></ui-loading>
                           <ui-text variant="body-md">${this.reading}</ui-text>
                         </ui-flex>
                       </ui-chat>`
@@ -110,7 +111,7 @@ export class UiAsk extends LightElement {
           width="fill"
           size="sm"
           autocomplete="off"
-          aria-label="Question"
+          aria-label=${m.ask_question()}
           .placeholder=${this.placeholder}
           .value=${this.question}
           @input=${(e: Event) => (this.question = (e.target as HTMLInputElement).value)}
@@ -119,7 +120,7 @@ export class UiAsk extends LightElement {
           }}
         ></ui-text-input>
         <ui-button size="xs" color="primary" ?disabled=${Boolean(this.asking)} @click=${() => void this.send()}
-          ><ui-icon name="send" size="sm"></ui-icon>Ask</ui-button
+          ><ui-icon name="send" size="sm"></ui-icon>${m.ask_ask()}</ui-button
         >
       </ui-flex>
       ${

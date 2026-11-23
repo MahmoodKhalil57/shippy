@@ -9,6 +9,7 @@ import { iconButton } from "../actions/icon-button.ts";
 import { inset, row, rowLine, tileCap } from "../layout/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
 import { kbd, kbdKeys } from "../showcase/kbd.ts";
+import { m } from "../../../i18n/index.ts";
 
 /**
  * Search: the one search field (M3 search bar; Apple search field).
@@ -62,7 +63,7 @@ export type SearchVariants = VariantProps<typeof search>;
 @customElement("ui-search")
 export class UiSearch extends LightElement {
   /** The field's name and placeholder: "Search cases", "Search by name". */
-  @property() label = "Search";
+  @property() label = m.search_label();
   @property() value = "";
   @property() size: SearchVariants["size"];
   @property() variant: SearchVariants["variant"];
@@ -106,7 +107,7 @@ export class UiSearch extends LightElement {
         <span class=${searchLauncherText()} data-search-text>${this.label}</span>
         ${
           this.shortcut
-            ? html`<span class=${kbdKeys({ class: searchShortcut() })} data-search-keys
+            ? html`<span class=${kbdKeys({ class: searchShortcut() })} data-search-keys dir="ltr"
                 >${this.shortcut
                   .split("+")
                   .map(
@@ -124,6 +125,7 @@ export class UiSearch extends LightElement {
         autocomplete=${ifDefined(this.autocomplete)}
         placeholder=${this.label}
         aria-label=${this.label}
+        dir="auto"
         .value=${live(this.value)}
         @input=${this._onInput}
         @keydown=${this._onKey}
@@ -133,7 +135,7 @@ export class UiSearch extends LightElement {
           ? html`<button
               type="button"
               class=${iconButton({ size: "xs" })}
-              aria-label="Clear search"
+              aria-label=${m.search_clear()}
               @click=${this._clear}
             >
               ${iconSvg("x", { size: "sm" })}

@@ -1,5 +1,7 @@
 import type { KindData } from "saastemlycrm-design-system/contracts";
 import type { RolesView, Routing } from "../endpoints/platform.ts";
+import { m } from "../i18n/paraglide/messages.js";
+import { getLocale } from "../i18n/paraglide/runtime.js";
 import * as link from "../links.ts";
 
 /**
@@ -10,13 +12,13 @@ import * as link from "../links.ts";
  * GET /api/on-call/route, ../endpoints/platform.ts), what a kind draws out.
  */
 
-/** Simulator presets (Cairo time; the demo is set on Tue 17 Nov, 11:30). */
+/** Simulator presets (Cairo time; the demo is set on Tue 17 Nov, 11:30), their words read when drawn. */
 const PRESETS = [
-  { label: "Tue 17 Nov 11:30 — office hours", at: "2026-11-17T09:30:00.000Z" },
-  { label: "Tonight 21:40", at: "2026-11-17T19:40:00.000Z" },
-  { label: "Fri 20 Nov 10:00 — weekend", at: "2026-11-20T08:00:00.000Z" },
-  { label: "Sat 21 Nov 14:00 — weekend", at: "2026-11-21T12:00:00.000Z" },
-  { label: "Sun 22 Nov 06:30 — before office", at: "2026-11-22T04:30:00.000Z" },
+  { label: m.roles_preset_office, at: "2026-11-17T09:30:00.000Z" },
+  { label: m.roles_preset_tonight, at: "2026-11-17T19:40:00.000Z" },
+  { label: m.roles_preset_friday, at: "2026-11-20T08:00:00.000Z" },
+  { label: m.roles_preset_saturday, at: "2026-11-21T12:00:00.000Z" },
+  { label: m.roles_preset_sunday, at: "2026-11-22T04:30:00.000Z" },
 ];
 
 /**
@@ -24,18 +26,18 @@ const PRESETS = [
  * applies and why. Who is alerted, in order, is `escalation`.
  */
 export const routingSimulator = (r: Routing): KindData<"text"> => ({
-  note: "Pick when an urgent RFQ arrives. The rule “After-hours & weekend RFQ” decides who is alerted; the alert is simulated and lands in that person's notifications.",
+  note: m.roles_simulator_note(),
   choice: {
     param: "at",
-    label: "When the urgent RFQ arrives",
+    label: m.roles_simulator_choice(),
     value: r.at,
-    options: PRESETS.map((p) => ({ value: p.at, label: p.label })),
+    options: PRESETS.map((p) => ({ value: p.at, label: p.label() })),
   },
   tags: [
     { label: r.atText },
-    { label: r.inHours ? "Office hours" : "After hours", tone: r.inHours ? "info" : "warning" },
+    { label: r.inHours ? m.roles_office_hours() : m.roles_after_hours(), tone: r.inHours ? "info" : "warning" },
   ],
-  text: r.routedTo ? r.reason : `${r.reason} Office hours — the case owner picks it up; no alert needed.`,
+  text: r.routedTo ? r.reason : m.roles_in_hours_text({ reason: r.reason }),
 });
 
 /** The live checks that each permission holds (Sales sees no costs…), passing or failing right now. */
@@ -43,7 +45,7 @@ export const permissionChecks = (d: RolesView): KindData<"list"> => ({
   items: d.checks.map((c) => ({
     headline: c.label,
     supporting: c.detail,
-    tags: [{ label: c.pass ? "Verified" : "Failing", tone: c.pass ? "success" : "error" }],
+    tags: [{ label: c.pass ? m.roles_verified() : m.roles_failing(), tone: c.pass ? "success" : "error" }],
   })),
 });
 
@@ -58,15 +60,15 @@ export const escalation = (r: Routing): KindData<"steps"> | null =>
     tone: "warning",
     current: 0,
     items: [
-      { label: `Now: ${r.routedTo.name} (on duty)` },
-      { label: `+${r.escalateAfterMinutes} min: ${r.backup?.name ?? "—"} (backup)` },
-      { label: `Then: ${r.senior.map((p) => p.name).join(", ")} (senior)` },
+      { label: m.roles_step_now({ name: r.routedTo.name }) },
+      { label: m.roles_step_backup({ minutes: r.escalateAfterMinutes, name: r.backup?.name ?? "—" }) },
+      { label: m.roles_step_senior({ names: r.senior.map((p) => p.name).join(getLocale() === "ar" ? "، " : ", ") }) },
     ],
     actions: [
       {
-        label: "Send the alert (simulated)",
+        label: m.roles_send_alert(),
         call: { path: "/on-call/route", body: { at: r.at, simulate: true } },
-        done: `Alert sent to ${r.routedTo.name} (WhatsApp / SMS simulated · notification created)`,
+        done: m.roles_alert_sent({ name: r.routedTo.name }),
       },
     ],
   };
@@ -76,8 +78,8 @@ export const whereEnforced = (d: RolesView): KindData<"details"> => ({
   alerts: [
     {
       tone: "info",
-      text: "Try it: switch the signed-in user to Soaad Amer (Sales) and open the pricing tab of GS-RFQ-0142 — costs and margins are gone.",
-      actions: [{ label: "Open GS-RFQ-0142 pricing", href: link.doc("cases", "gs-rfq-0142", "pricing") }],
+      text: m.roles_try_it(),
+      actions: [{ label: m.roles_open_pricing(), href: link.doc("cases", "gs-rfq-0142", "pricing") }],
     },
   ],
   layout: "inline",

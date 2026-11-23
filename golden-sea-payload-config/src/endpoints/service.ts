@@ -1,6 +1,7 @@
 import type { Endpoint, PayloadRequest } from "payload";
 import { TODAY } from "../collections/shared.ts";
-import { fail, meOf } from "./insights-shared.ts";
+import { m } from "../i18n/paraglide/messages.js";
+import { fail, intlLocale, langOf, meOf } from "./insights-shared.ts";
 
 /**
  * The service behind the platform, counted (GET /api/usage): this month's use of each measure in
@@ -51,7 +52,7 @@ const text = (v: unknown) => (typeof v === "string" ? v : "");
 const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : 0);
 
 async function count(req: PayloadRequest, collection: string, where: Record<string, unknown>) {
-  const r = await req.payload.count({ collection: collection as never, where: where as never });
+  const r = await req.payload.count({ locale: req.locale, collection: collection as never, where: where as never });
   return r.totalDocs;
 }
 
@@ -61,7 +62,7 @@ export async function usage(req: PayloadRequest): Promise<UsageView> {
   const day = TODAY.getUTCDate();
   const since = { greater_than_equal: start.toISOString() };
   const inMonth = (v: unknown) => typeof v === "string" && new Date(v) >= start;
-  const g = (await req.payload.findGlobal({ slug: "service-usage" as never, depth: 0 })) as Row;
+  const g = (await req.payload.findGlobal({ locale: req.locale, slug: "service-usage" as never, depth: 0 })) as Row;
   const ai = (tasks: string[], extra: Record<string, unknown> = {}) =>
     count(req, "ai-calls", { at: since, task: { in: tasks }, ...extra });
   const support = ((g.support as Row[] | undefined) ?? []).filter((s) => inMonth(s.date));
@@ -98,7 +99,7 @@ export async function usage(req: PayloadRequest): Promise<UsageView> {
   const docs = lines.find((l) => l.measure === "Documents read");
   const documents = docs?.used ?? reading;
   return {
-    month: TODAY.toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" }),
+    month: TODAY.toLocaleDateString(intlLocale(langOf(req)), { month: "long", year: "numeric", timeZone: "UTC" }),
     day,
     days,
     lines,
@@ -121,7 +122,7 @@ export const serviceEndpoints: Endpoint[] = [
     path: "/usage",
     method: "get",
     handler: async (req) => {
-      if (!meOf(req)) return fail(401, "Please sign in.");
+      if (!meOf(req)) return fail(401, m.api_service_sign_in({}, { locale: langOf(req) }));
       return Response.json(await usage(req));
     },
   },

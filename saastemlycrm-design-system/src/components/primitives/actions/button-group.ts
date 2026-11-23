@@ -5,6 +5,7 @@ import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { fixed, inlineRow } from "../layout/algebra.ts";
 import { iconSvg, type IconName } from "../media/icon.ts";
+import { inlineStep } from "../../base/reading.ts";
 
 /**
  * Button group: choose one (or several) of a few closely related options — a view, a currency,
@@ -102,13 +103,13 @@ export class UiButtonGroup extends LightElement {
   }
 
   private _key(e: KeyboardEvent, i: number) {
-    const dir = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+    // Left and right follow the reading direction; down is the next option, up the previous.
+    const dir = inlineStep(e.key, this) || (e.key === "ArrowDown" ? 1 : e.key === "ArrowUp" ? -1 : 0);
     if (!dir) return;
     e.preventDefault();
-    const rtl = getComputedStyle(this).direction === "rtl" && (e.key === "ArrowLeft" || e.key === "ArrowRight");
     const n = this.options.length;
     let j = i;
-    do j = (j + (rtl ? -dir : dir) + n) % n;
+    do j = (j + dir + n) % n;
     while (this.options[j]!.disabled && j !== i);
     const buttons = this.querySelectorAll<HTMLButtonElement>("[data-group-item]");
     buttons[j]?.focus();
