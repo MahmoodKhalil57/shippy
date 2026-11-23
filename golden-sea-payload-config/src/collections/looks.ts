@@ -82,6 +82,7 @@ const LOOKS: Record<string, Look> = {
   stock: { eyebrow: "warehouse", cardFields: ["product", "onHand", "reserved", "available"] },
   tasks: { calendar: "due" },
   activities: { calendar: "at", status: "kind", cardFields: ["case", "actor", "at"] },
+  "ai-calls": { calendar: "at", eyebrow: "task", status: "outcome", cardFields: ["case", "confidence", "at"] },
   "integration-exceptions": {
     calendar: "occurredAt",
     eyebrow: "source",

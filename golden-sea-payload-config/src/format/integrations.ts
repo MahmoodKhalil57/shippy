@@ -11,11 +11,62 @@ import { formatDate } from "./index.ts";
  * kind draws out.
  */
 
-/** The integrations global as stored: its email-history import and its backups. */
+/** The integrations global as stored: its email-history import, the Odoo migration and its backups. */
 export interface IntegrationsGlobal {
   emailImport?: Record<string, unknown>;
+  migration?: MigrationPart[];
   backups?: Record<string, unknown>;
 }
+
+/** One part of Odoo's data on its way into the platform. */
+export interface MigrationPart {
+  part?: string;
+  inOdoo?: number;
+  moved?: number;
+  checked?: number;
+  status?: string;
+}
+
+const count = new Intl.NumberFormat("en-GB");
+const pct = (n: number, of: number) => (of ? Math.round((n / of) * 100) : 0);
+
+/**
+ * Moving off Odoo, as a whole: how many of its records are in the platform and how many a person
+ * has checked against Odoo, then the parts done. Odoo is switched off only once every part is.
+ */
+export const migration = ({ migration: parts = [] }: IntegrationsGlobal): KindData<"gauges"> => {
+  const sum = (k: "inOdoo" | "moved" | "checked") => parts.reduce((t, p) => t + (Number(p[k]) || 0), 0);
+  const all = sum("inOdoo");
+  const done = parts.filter((p) => p.status === "Done").length;
+  const ready = parts.length > 0 && done === parts.length;
+  return {
+    items: [
+      {
+        label: "Moved into the platform",
+        value: sum("moved"),
+        max: all || 1,
+        valueText: `${pct(sum("moved"), all)}%`,
+        note: `${count.format(sum("moved"))} of ${count.format(all)} records`,
+      },
+      {
+        label: "Checked against Odoo",
+        value: sum("checked"),
+        max: all || 1,
+        valueText: `${pct(sum("checked"), all)}%`,
+        note: `${count.format(sum("checked"))} records checked by a person`,
+      },
+      {
+        label: "Parts done",
+        value: done,
+        max: parts.length || 1,
+        tone: ready ? "success" : undefined,
+        valueText: `${done} of ${parts.length}`,
+        note: ready ? "Ready to switch Odoo off" : "Odoo stays on until every part is done",
+      },
+    ],
+    note: "Odoo keeps running beside the platform while its data moves. Nothing in Odoo is changed or deleted.",
+  };
+};
 
 /** A stored value as text (the groups hold them loosely). */
 export const str = (v: unknown) => (typeof v === "string" || typeof v === "number" ? String(v) : "");

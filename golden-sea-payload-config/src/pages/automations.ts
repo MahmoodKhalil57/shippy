@@ -111,5 +111,21 @@ export const automationsPage = widgets({
         labels: { at: "When", kind: "Who", text: "What" },
       },
     },
+    // Every AI call (the ai-calls collection), latest first: what it read, how sure it was, and
+    // who confirmed, corrected or rejected the result.
+    {
+      title: "AI log",
+      subhead: "Every AI call: what it read, how sure it was, and the person who checked it.",
+      size: "l",
+      records: {
+        collection: "ai-calls",
+        sort: "-at",
+        limit: 20,
+        columns: ["at", "task", "subject", "confidence", "outcome"],
+        supporting: { task: "model", subject: "case", outcome: "reviewedBy" },
+        labels: { at: "When", subject: "What it read" },
+        more: true,
+      },
+    },
   ],
 });

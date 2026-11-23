@@ -128,14 +128,14 @@
     "packLabel": "200 × 250 ml",
     "leadDays": 3,
     "validUntil": "2026-11-24T00:00:00.000Z",
-    "expiry": "2027-02",
+    "expiry": "2027-03",
     "source": "Email",
     "compliance": "Pending",
     "deviations": [
       {
         "type": "Shelf life",
         "severity": "Warning",
-        "detail": "Batch expires Feb 2027 (15 months) — below 18-month requirement"
+        "detail": "Batch expires Mar 2027 (4 months left), below the 6 months the vessel asked for"
       }
     ]
   },

@@ -25,6 +25,7 @@ import {
   str,
   unauthorized,
 } from "./insights-shared.ts";
+import { logAiCall } from "../collections/shared.ts";
 import * as link from "../links.ts";
 
 /**
@@ -607,6 +608,11 @@ export const assistantEndpoints: Endpoint[] = [
       if (!meOf(req)) return unauthorized();
       const b = await briefing(req, true);
       summarised.set(String(meOf(req)!.id), b.at);
+      await logAiCall(req, {
+        task: "Write the briefing",
+        subject: `Briefing from ${b.read} live records`,
+        values: b.read,
+      });
       return Response.json({ ok: true, at: b.at, message: `Summarised again at ${b.at} from ${b.read} live records.` });
     },
   },
@@ -617,7 +623,14 @@ export const assistantEndpoints: Endpoint[] = [
       if (!meOf(req)) return unauthorized();
       const question = str((await body(req)).question).slice(0, 500);
       if (!question.trim()) return Response.json({ errors: [{ message: "Ask a question." }] }, { status: 400 });
-      return Response.json(await ask(req, question));
+      const a = await ask(req, question);
+      await logAiCall(req, {
+        task: "Answer a question",
+        subject: question,
+        values: a.sources.length,
+        outcome: a.refused ? "Rejected" : "Applied automatically",
+      });
+      return Response.json(a);
     },
   },
   {

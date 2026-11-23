@@ -264,6 +264,43 @@ export async function logActivity(
   }
 }
 
+/**
+ * Logs one AI call in the AI log (`ai-calls`): every call the platform makes is on record, with
+ * how sure it was. The demo's AI is a deterministic stub, and says so in `model`. Never blocks the
+ * call it logs.
+ */
+export async function logAiCall(
+  req: PayloadRequest,
+  entry: {
+    task: string;
+    subject: string;
+    case?: string | null;
+    confidence?: number;
+    values?: number;
+    outcome?: string;
+  },
+) {
+  try {
+    await req.payload.create({
+      collection: "ai-calls" as never,
+      data: {
+        at: new Date().toISOString(),
+        task: entry.task,
+        subject: entry.subject.slice(0, 200),
+        case: entry.case ?? undefined,
+        confidence: entry.confidence,
+        values: entry.values,
+        seconds: 0.4,
+        model: "Demo stub (no live AI)",
+        outcome: entry.outcome ?? "Applied automatically",
+      } as never,
+      req,
+    });
+  } catch {
+    /* logging never blocks the call it logs */
+  }
+}
+
 /** A string or number as text; anything else (objects, null) as "". */
 export const scalar = (v: unknown): string => (typeof v === "string" ? v : typeof v === "number" ? String(v) : "");
 

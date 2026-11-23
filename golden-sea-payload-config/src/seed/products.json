@@ -83,7 +83,7 @@
     ],
     "certificates": ["SDS"],
     "shelfLifeMonths": 36,
-    "minShelfLifeMonths": 18,
+    "minShelfLifeMonths": 6,
     "agency": "S10"
   },
   {

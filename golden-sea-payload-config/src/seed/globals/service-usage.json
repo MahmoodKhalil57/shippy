@@ -1,0 +1,98 @@
+{
+  "plan": [
+    {
+      "line": "AI usage",
+      "measure": "Documents read",
+      "source": "AI log: reading",
+      "fullUse": 1500,
+      "earlier": 260
+    },
+    {
+      "line": "AI usage",
+      "measure": "Questions answered",
+      "source": "AI log: questions",
+      "fullUse": 600,
+      "earlier": 70
+    },
+    {
+      "line": "AI usage",
+      "measure": "Briefings written",
+      "source": "AI log: briefings",
+      "fullUse": 60,
+      "earlier": 28
+    },
+    {
+      "line": "Hosting",
+      "measure": "Emails processed",
+      "source": "Inbox",
+      "fullUse": 3000,
+      "earlier": 1120
+    },
+    {
+      "line": "Support & care",
+      "measure": "Support hours",
+      "source": "Support log",
+      "fullUse": 20,
+      "earlier": 0
+    },
+    {
+      "line": "Continuous improvement",
+      "measure": "Change requests",
+      "source": "Change requests",
+      "fullUse": 4,
+      "earlier": 0
+    }
+  ],
+  "support": [
+    {
+      "date": "2026-11-03T00:00:00.000Z",
+      "hours": 1.5,
+      "kind": "Fix",
+      "topic": "Mailbox rule for purchasing@ after the domain change"
+    },
+    {
+      "date": "2026-11-06T00:00:00.000Z",
+      "hours": 2,
+      "kind": "Training",
+      "topic": "Soaad Amer and the growth board"
+    },
+    {
+      "date": "2026-11-10T00:00:00.000Z",
+      "hours": 0.5,
+      "kind": "Security patch",
+      "topic": "Mail reader library updated"
+    },
+    {
+      "date": "2026-11-12T00:00:00.000Z",
+      "hours": 1,
+      "kind": "Question",
+      "topic": "Splitting one RFQ across two supplier categories"
+    },
+    {
+      "date": "2026-11-15T00:00:00.000Z",
+      "hours": 2.5,
+      "kind": "Fix",
+      "topic": "E-invoice signing service unreachable, retried with finance"
+    }
+  ],
+  "changes": [
+    {
+      "requestedAt": "2026-11-08T00:00:00.000Z",
+      "requestedBy": "ah",
+      "status": "Done",
+      "title": "The port agent's phone on every delivery card"
+    },
+    {
+      "requestedAt": "2026-11-13T00:00:00.000Z",
+      "requestedBy": "kb",
+      "status": "Approved",
+      "title": "Arabic quotation footer with the company stamp"
+    },
+    {
+      "requestedAt": "2026-11-16T00:00:00.000Z",
+      "requestedBy": "kb",
+      "status": "Estimated",
+      "title": "Weekly supplier scorecard by email"
+    }
+  ]
+}

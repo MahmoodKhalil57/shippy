@@ -102,7 +102,7 @@
         "packSize": 0.25,
         "store": "Electrical stores",
         "impa": "450713",
-        "certificates": "SDS · min. 18 months shelf life",
+        "certificates": "SDS · min. 6 months shelf life",
         "status": "Awaiting customer acceptance",
         "confidence": 0.91,
         "originalText": "CONTACT CLEANER AEROSOL 250ML | — | 200 | CAN",
@@ -351,7 +351,8 @@
       "noOffer": 0
     },
     "value": 15400,
-    "urgent": false
+    "urgent": false,
+    "handoverNote": "Customer wants the ESAB alternative priced in v2; datasheet attached to line 3."
   },
   {
     "id": "gs-rfq-0133",

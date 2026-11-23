@@ -1,0 +1,62 @@
+import { bullet, figures, widgets } from "saastemlycrm-design-system/contracts";
+import * as fmt from "../format/service.ts";
+import * as link from "../links.ts";
+import { usage } from "../queries/service.ts";
+
+/**
+ * Service usage (/usage): what the platform did this month, counted in units, against the plan
+ * at full use: documents read, questions answered, briefings, emails processed, support hours and
+ * change requests (GET /api/usage, ../endpoints/service.ts, from the service-usage global's plan,
+ * the AI log and the inbox). Then what the AI's work saved, the AI calls by task, the support log
+ * and the change requests (the global's rows and the AI log's records, no code). Running costs
+ * follow these counts; the platform shows the counts, never prices.
+ */
+export const usagePage = widgets({
+  header: {
+    eyebrow: "Configuration · service",
+    heading: "Service usage",
+    subtitle:
+      "What the platform did this month, counted the way the running costs are: documents read, questions answered, emails processed, support hours and changes. Quieter months use less.",
+    actions: [
+      { label: "AI log", href: link.list("ai-calls"), main: true },
+      { label: "Edit the plan", href: link.global("service-usage") },
+    ],
+  },
+  widgets: [
+    bullet({
+      title: "This month against the plan at full use",
+      size: "l",
+      rows: 8,
+      skeleton: "list",
+      data: usage,
+      format: fmt.againstPlan,
+    }),
+    {
+      title: "AI calls by task",
+      size: "s",
+      rows: 8,
+      breakdown: { collection: "ai-calls", by: "task", as: "ring" },
+    },
+    figures({ data: usage, format: fmt.measured }),
+    {
+      title: "Support log",
+      subhead: "Sunday to Thursday, on your hours: fixes, updates, security patches and questions.",
+      size: "m",
+      records: {
+        global: "service-usage",
+        field: "support",
+        columns: ["date", "topic", "kind", "hours"],
+      },
+    },
+    {
+      title: "Change requests",
+      subhead: "Each one estimated and approved before work starts.",
+      size: "m",
+      records: {
+        global: "service-usage",
+        field: "changes",
+        columns: ["requestedAt", "title", "requestedBy", "status"],
+      },
+    },
+  ],
+});

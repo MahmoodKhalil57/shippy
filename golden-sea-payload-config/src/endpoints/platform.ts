@@ -1,7 +1,7 @@
 import type { Endpoint, PayloadRequest } from "payload";
 import type { Doc } from "saastemlycrm-design-system/contracts";
 import { HANDOVER_ROLES, bucketOf, lineCounts, mayReassign, type LineBucket } from "../collections/cases.ts";
-import { CONTACT_RULES, ROLES } from "../collections/shared.ts";
+import { CONTACT_RULES, ROLES, logAiCall } from "../collections/shared.ts";
 import { PERMISSIONS } from "../globals/index.ts";
 import { DEMO_NOW } from "./home.ts";
 import * as link from "../links.ts";
@@ -420,6 +420,13 @@ const handover: Endpoint = {
     const { to } = await body(req);
     const target = o.team.find((p) => p.id === to);
     if (!target) return deny("Pick someone on the desk to hand over to.", 400);
+    // A draft for a person to edit: logged, never applied without them.
+    await logAiCall(req, {
+      task: "Draft a handover",
+      subject: `Handover note for ${o.caseId} to ${target.name}`,
+      case: o.id,
+      outcome: "Waiting for review",
+    });
     return json(handoverDraft(o, target.name));
   },
 };
@@ -450,6 +457,18 @@ const reassign: Endpoint = {
       } as never,
       req,
     });
+    // The AI's handover draft for this case, now sent by a person: confirmed under their name.
+    for (const call of await all(req, "ai-calls", {
+      case: { equals: id },
+      task: { equals: "Draft a handover" },
+      outcome: { equals: "Waiting for review" },
+    }))
+      await req.payload.update({
+        collection: "ai-calls" as never,
+        id: call.id,
+        data: { outcome: "Confirmed by a person", reviewedBy: str(me(req)?.id) } as never,
+        req,
+      });
     // Open tasks of the previous owner on this case move with it.
     let moved = 0;
     if (previous)

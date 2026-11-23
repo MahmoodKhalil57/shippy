@@ -34,6 +34,7 @@ export const COLLECTIONS = [
   "tasks",
   "activities",
   "integration-exceptions",
+  "ai-calls",
   "notifications",
   "bookmarks",
   "opportunities",
@@ -54,6 +55,7 @@ export const GLOBALS = [
   "message-templates",
   "integrations",
   "on-call-roster",
+  "service-usage",
 ] as const;
 
 export const VIEWS = [
@@ -68,6 +70,8 @@ export const VIEWS = [
   "/roles",
   "/integrations",
   "/project",
+  "/usage",
+  "/value",
   "/sourcing-pipeline",
 ] as const;
 

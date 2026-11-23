@@ -157,6 +157,10 @@ export const LIST_PAGES: Record<string, ListPage> = {
     layout: "list",
     before: [ring("activities", "kind", "Activity by kind"), overTime("activities", "at", "Activity per day", "day")],
   },
+  "ai-calls": {
+    layout: "list",
+    before: [byStatus("ai-calls", "outcome"), ring("ai-calls", "task", "AI calls by task")],
+  },
   "integration-exceptions": {
     layout: "list",
     before: [

@@ -83,6 +83,89 @@
     "confidential": 23,
     "excludeConfidential": true
   },
+  "migration": [
+    {
+      "part": "Customers and contacts",
+      "odooModel": "res.partner",
+      "inOdoo": 412,
+      "moved": 412,
+      "checked": 412,
+      "status": "Done",
+      "note": "Merged 9 duplicates with you"
+    },
+    {
+      "part": "Vessels",
+      "odooModel": "x_vessel",
+      "inOdoo": 186,
+      "moved": 186,
+      "checked": 150,
+      "status": "Checking",
+      "note": "36 vessels have no IMO number in Odoo"
+    },
+    {
+      "part": "Products and part numbers",
+      "odooModel": "product.product",
+      "inOdoo": 3240,
+      "moved": 3240,
+      "checked": 2900,
+      "status": "Checking",
+      "note": "IMPA codes matched on 2,900"
+    },
+    {
+      "part": "Supplier prices",
+      "odooModel": "product.supplierinfo",
+      "inOdoo": 8912,
+      "moved": 6100,
+      "checked": 0,
+      "status": "Moving",
+      "note": "Each price keeps its date and validity"
+    },
+    {
+      "part": "Quotations and sales orders",
+      "odooModel": "sale.order",
+      "inOdoo": 1104,
+      "moved": 0,
+      "checked": 0,
+      "status": "Not started",
+      "note": "Phase 3, after the open cases close"
+    },
+    {
+      "part": "Purchase orders",
+      "odooModel": "purchase.order",
+      "inOdoo": 962,
+      "moved": 0,
+      "checked": 0,
+      "status": "Not started",
+      "note": "Phase 3"
+    },
+    {
+      "part": "Invoices and supplier bills",
+      "odooModel": "account.move",
+      "inOdoo": 2388,
+      "moved": 0,
+      "checked": 0,
+      "status": "Not started",
+      "note": "Phase 3, with e-invoice receipts"
+    },
+    {
+      "part": "Payments",
+      "odooModel": "account.payment",
+      "inOdoo": 1950,
+      "moved": 0,
+      "checked": 0,
+      "status": "Not started",
+      "note": "Phase 3"
+    },
+    {
+      "part": "Stock, lots and expiry",
+      "odooModel": "stock.lot",
+      "inOdoo": 640,
+      "moved": 0,
+      "checked": 0,
+      "status": "Not started",
+      "note": "Phase 3, counted on a quiet day"
+    }
+  ],
   "backups": {
     "schedule": "Daily 02:00 Cairo",
     "locations": 3,

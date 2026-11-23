@@ -440,6 +440,139 @@ export const IntegrationExceptions: CollectionConfig = {
   ],
 };
 
+/** What the AI is asked to do, by kind of work (the log's `task`, the usage page's measures). */
+export const AI_TASKS = [
+  "Read an email",
+  "Read an attachment",
+  "Match a reply",
+  "Check an offer",
+  "Draft a handover",
+  "Write the briefing",
+  "Answer a question",
+  "Draft a reminder",
+] as const;
+
+/**
+ * Every AI call, logged: what it was asked to do, what it read, how sure it was, and whether a
+ * person confirmed, corrected or rejected the result ("Every step logged" in the proposal). The
+ * AI never applies an uncertain value on its own: under 85% it waits for a person. Written by the
+ * endpoints that call the AI (`logAiCall`, ./shared.ts); people only add their review.
+ */
+export const AiCalls: CollectionConfig = {
+  slug: "ai-calls",
+  labels: { singular: "AI call", plural: "AI calls" },
+  admin: {
+    useAsTitle: "subject",
+    defaultColumns: ["at", "task", "subject", "case", "confidence", "outcome"],
+    group: "Work",
+  },
+  defaultSort: "-at",
+  access: { read: loggedIn, create: loggedIn, update: management, delete: () => false },
+  fields: [
+    {
+      type: "row",
+      fields: [
+        {
+          name: "at",
+          type: "date",
+          required: true,
+          admin: { date: { pickerAppearance: "dayAndTime" }, description: "When the AI ran." },
+        },
+        {
+          name: "task",
+          type: "select",
+          required: true,
+          options: [...AI_TASKS],
+          admin: { description: "What the AI was asked to do.", placeholder: "Pick a task" },
+        },
+      ],
+    },
+    {
+      name: "subject",
+      type: "text",
+      required: true,
+      admin: {
+        description: "What it read or answered, in one line.",
+        placeholder: "e.g. RFQ email from Helios Bulk, 3 attachments",
+      },
+    },
+    {
+      name: "case",
+      type: "relationship",
+      relationTo: "cases",
+      admin: { description: "The case it worked on, if any.", placeholder: "Search cases" },
+    },
+    {
+      type: "row",
+      fields: [
+        {
+          name: "confidence",
+          type: "number",
+          min: 0,
+          max: 1,
+          admin: {
+            step: 0.01,
+            description: "How sure the AI was, from 0 to 1. Under 0.85 waits for a person.",
+            placeholder: "e.g. 0.92",
+          },
+        },
+        {
+          name: "values",
+          type: "number",
+          min: 0,
+          admin: { description: "How many values it read or wrote.", placeholder: "e.g. 14" },
+        },
+        {
+          name: "seconds",
+          type: "number",
+          min: 0,
+          admin: { step: 0.1, description: "How long the call took.", placeholder: "e.g. 3.2" },
+        },
+      ],
+    },
+    {
+      name: "model",
+      type: "text",
+      admin: { description: "The model and version that answered.", placeholder: "e.g. Demo stub (no live AI)" },
+    },
+    {
+      name: "outcome",
+      type: "select",
+      required: true,
+      defaultValue: "Applied automatically",
+      options: [
+        "Applied automatically",
+        "Confirmed by a person",
+        "Corrected by a person",
+        "Rejected",
+        "Waiting for review",
+      ],
+      custom: tones({
+        "Applied automatically": "success",
+        "Confirmed by a person": "success",
+        "Corrected by a person": "info",
+        Rejected: "error",
+        "Waiting for review": "warning",
+      }),
+      admin: {
+        position: "sidebar",
+        description: "What happened to the result.",
+        placeholder: "Pick an outcome",
+      },
+    },
+    {
+      name: "reviewedBy",
+      type: "relationship",
+      relationTo: "users",
+      admin: {
+        position: "sidebar",
+        description: "Who confirmed, corrected or rejected it.",
+        placeholder: "Search users",
+      },
+    },
+  ],
+};
+
 /** Only the signed-in user's own documents (a Payload Where-returning access function). */
 const own: Access = ({ req }) => (req.user ? { user: { equals: req.user.id } } : false);
 

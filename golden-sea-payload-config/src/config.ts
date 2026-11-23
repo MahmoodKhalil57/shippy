@@ -11,6 +11,8 @@ import { automationsPage } from "./pages/automations.ts";
 import { growthPage } from "./pages/growth.ts";
 import { integrationsPage } from "./pages/integrations.ts";
 import { projectPage } from "./pages/project.ts";
+import { usagePage } from "./pages/usage.ts";
+import { valuePage } from "./pages/value.ts";
 import { rolesPage } from "./pages/roles.ts";
 import { Cases } from "./collections/cases.ts";
 import { Pricelists, Products, Stock, SupplierPrices } from "./collections/catalog.ts";
@@ -21,7 +23,7 @@ import { Deliveries, PurchaseOrders, Receipts, SupplierBills } from "./collectio
 import { Campaigns, Opportunities, VendorRegistrations } from "./collections/growth.ts";
 import { IntakeMessages, Offers, SupplierRfqs } from "./collections/sourcing.ts";
 import { Users } from "./collections/users.ts";
-import { Activities, Bookmarks, IntegrationExceptions, Notifications, Tasks } from "./collections/work.ts";
+import { Activities, AiCalls, Bookmarks, IntegrationExceptions, Notifications, Tasks } from "./collections/work.ts";
 import { globals } from "./globals/index.ts";
 import { withLooks } from "./collections/looks.ts";
 import { GuideTopics, Tours } from "./globals/dashboard.ts";
@@ -71,6 +73,7 @@ const collections = withLooks([
   Tasks,
   Activities,
   IntegrationExceptions,
+  AiCalls,
   Notifications,
   Bookmarks,
   // Growth
@@ -214,6 +217,18 @@ export default defineConfig({
           path: "/project",
           meta: { title: "Delivery plan", description: "Phases, requirements coverage and acceptance tests." },
           nav: { group: "Insights", label: "Delivery plan" },
+        },
+        value: {
+          Component: valuePage,
+          path: "/value",
+          meta: { title: "Value", description: "When the platform pays for itself, in your own figures." },
+          nav: { group: "Insights", label: "Value" },
+        },
+        usage: {
+          Component: usagePage,
+          path: "/usage",
+          meta: { title: "Service usage", description: "This month's use of the service, counted in units." },
+          nav: { group: "Configuration", label: "Service usage" },
         },
         // Related collections on one page (./pages.ts).
         pipeline: sourcingPipeline,

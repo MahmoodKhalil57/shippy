@@ -113,6 +113,16 @@ seed data (`src/seed`). Entry points: `.` (the config, `src/config.ts`) and `./s
     nothing to draw is hidden (`hidden`: unpriced cases, roles without money).
   - `tests/widget-files.test.ts` enforces this: no `src/widgets`, pages that never draw (no
     `render`, `source` or `block(`), formatters that import no queries, and only those imports.
+- **The AI log** (`ai-calls`, `src/collections/work.ts`): every AI call, what it read, how sure it
+  was and who checked it. Endpoints that call the AI log it with `logAiCall` (`src/collections/shared.ts`);
+  the demo's AI is a stub and says so in `model`. A handover draft waits for review until the
+  reassignment that sends it confirms it under the sender's name. Entries can't be deleted.
+- **Service usage and value** (`/usage`, `/value`; `GET /api/usage`, `src/endpoints/service.ts`): the
+  service counted in units (the `service-usage` global's plan at full use, plus the AI log, the
+  inbox, the support log and the change requests) and the payback what-if on Golden Sea's side
+  only. Neither shows SaaSTEMLY's prices; `tests/service.test.ts` holds it.
+- **Odoo migration:** the integrations global's `migration` rows (counted, moved, checked by a
+  person), shown on `/integrations` as rows and as gauges; Odoo is switched off once every part is done.
 - **Screens:** see "Screens are widgets" in `saastemlycrm-design-system/AGENTS.md`. Anything the
   widget vocabulary can't draw becomes a generic block or component in the design system.
 - **Where collections, records and globals are:** `src/pages.ts`. Nothing has a page of its own, so

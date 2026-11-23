@@ -1,4 +1,4 @@
-import { details, message, settings, widgets } from "saastemlycrm-design-system/contracts";
+import { details, gauges, message, settings, widgets } from "saastemlycrm-design-system/contracts";
 import * as fmt from "../format/integrations.ts";
 import * as link from "../links.ts";
 import { integrations, integrationsGlobal } from "../queries/integrations.ts";
@@ -69,6 +69,25 @@ export const integrationsPage = widgets({
       skeleton: "text",
       data: integrationsGlobal,
       format: fmt.backups,
+    }),
+    {
+      title: "Moving off Odoo",
+      subhead:
+        "Each part of Odoo's data is counted, copied in, then checked by a person against Odoo. Odoo is switched off once every part is done.",
+      size: "l",
+      records: {
+        global: "integrations",
+        field: "migration",
+        columns: ["part", "inOdoo", "moved", "checked", "status"],
+        supporting: { part: "odooModel", status: "note" },
+      },
+    },
+    gauges({
+      title: "Odoo migration",
+      size: "s",
+      rows: 4,
+      data: integrationsGlobal,
+      format: fmt.migration,
     }),
     message({
       title: "Branded acknowledgement",

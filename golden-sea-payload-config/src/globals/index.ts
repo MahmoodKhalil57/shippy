@@ -1270,6 +1270,74 @@ export const Integrations: GlobalConfig = {
       ],
     },
     {
+      // Moving off Odoo, a part of its data at a time: counted, moved, then checked against Odoo
+      // by a person, until Odoo can be switched off (phase 3).
+      name: "migration",
+      type: "array",
+      label: "Odoo migration",
+      labels: { singular: "Part", plural: "Parts" },
+      admin: { description: "What moves from Odoo, how much has moved and how much is checked." },
+      fields: [
+        {
+          type: "row",
+          fields: [
+            {
+              name: "part",
+              type: "text",
+              required: true,
+              admin: { description: "What moves, in your words.", placeholder: "e.g. Customers and contacts" },
+            },
+            {
+              name: "odooModel",
+              type: "text",
+              label: "Odoo model",
+              admin: { description: "Where it lives in Odoo.", placeholder: "e.g. res.partner" },
+            },
+          ],
+        },
+        {
+          type: "row",
+          fields: [
+            {
+              name: "inOdoo",
+              type: "number",
+              min: 0,
+              label: "In Odoo",
+              admin: { description: "Records counted in Odoo.", placeholder: "e.g. 412" },
+            },
+            {
+              name: "moved",
+              type: "number",
+              min: 0,
+              admin: { description: "Records copied into the platform.", placeholder: "e.g. 412" },
+            },
+            {
+              name: "checked",
+              type: "number",
+              min: 0,
+              admin: { description: "Records a person checked against Odoo.", placeholder: "e.g. 380" },
+            },
+          ],
+        },
+        {
+          name: "status",
+          type: "select",
+          defaultValue: "Not started",
+          options: ["Not started", "Moving", "Checking", "Done"],
+          custom: tones({ "Not started": "neutral", Moving: "info", Checking: "warning", Done: "success" }),
+          admin: { description: "Done once every record is moved and checked.", placeholder: "Pick a status" },
+        },
+        {
+          name: "note",
+          type: "text",
+          admin: {
+            description: "What's left or what was found.",
+            placeholder: "e.g. 36 vessels without an IMO number",
+          },
+        },
+      ],
+    },
+    {
       name: "backups",
       type: "group",
       label: "Backups, staging and export",
@@ -1461,6 +1529,171 @@ export const OnCallRoster: GlobalConfig = {
   ],
 };
 
+/** Where each measure of the service is counted (GET /api/usage, ../endpoints/service.ts). */
+export const USAGE_SOURCES = [
+  "AI log: reading",
+  "AI log: questions",
+  "AI log: briefings",
+  "Inbox",
+  "Support log",
+  "Change requests",
+] as const;
+
+/**
+ * The service behind the platform, counted in units: what it did this month against the plan at
+ * full use (documents read, questions answered, emails processed, support hours, change
+ * requests), the support log and the change requests. The running costs follow these counts; the
+ * platform shows the counts, never prices.
+ */
+export const ServiceUsage: GlobalConfig = {
+  slug: "service-usage",
+  label: "Service usage",
+  admin: { group: "Configuration" },
+  access: staffRead,
+  fields: [
+    {
+      name: "plan",
+      type: "array",
+      label: "Full-use plan",
+      labels: { singular: "Measure", plural: "Measures" },
+      admin: { description: "Each measure of the service and how much of it a month at full use means." },
+      fields: [
+        {
+          type: "row",
+          fields: [
+            {
+              name: "line",
+              type: "select",
+              required: true,
+              options: ["AI usage", "Hosting", "Support & care", "Continuous improvement"],
+              admin: { description: "Which line of the service it counts.", placeholder: "Pick a line" },
+            },
+            {
+              name: "measure",
+              type: "text",
+              required: true,
+              admin: { description: "What is counted, in plain words.", placeholder: "e.g. Documents read" },
+            },
+          ],
+        },
+        {
+          type: "row",
+          fields: [
+            {
+              name: "source",
+              type: "select",
+              required: true,
+              options: [...USAGE_SOURCES],
+              admin: { description: "Where the platform counts it.", placeholder: "Pick a source" },
+            },
+            {
+              name: "fullUse",
+              type: "number",
+              min: 0,
+              required: true,
+              label: "Full use a month",
+              admin: { description: "How much of it a month at full use means.", placeholder: "e.g. 1500" },
+            },
+            {
+              name: "earlier",
+              type: "number",
+              min: 0,
+              defaultValue: 0,
+              label: "Counted earlier this month",
+              admin: {
+                description: "Counted this month before the records kept here.",
+                placeholder: "e.g. 260",
+              },
+            },
+          ],
+        },
+      ],
+    },
+    {
+      name: "support",
+      type: "array",
+      label: "Support log",
+      labels: { singular: "Visit", plural: "Visits" },
+      admin: { description: "Each piece of support work, with the time it took." },
+      fields: [
+        {
+          type: "row",
+          fields: [
+            { name: "date", type: "date", required: true, admin: { description: "When it was done." } },
+            {
+              name: "hours",
+              type: "number",
+              min: 0,
+              required: true,
+              admin: { step: 0.5, description: "Time it took, in hours.", placeholder: "e.g. 1.5" },
+            },
+            {
+              name: "kind",
+              type: "select",
+              options: ["Fix", "Update", "Security patch", "Question", "Training"],
+              custom: tones({
+                Fix: "warning",
+                Update: "info",
+                "Security patch": "error",
+                Question: "neutral",
+                Training: "success",
+              }),
+              admin: { description: "What sort of work it was.", placeholder: "Pick a kind" },
+            },
+          ],
+        },
+        {
+          name: "topic",
+          type: "text",
+          required: true,
+          admin: { description: "What was done, in one line.", placeholder: "e.g. Mailbox rule for purchasing@" },
+        },
+      ],
+    },
+    {
+      name: "changes",
+      type: "array",
+      label: "Change requests",
+      labels: { singular: "Request", plural: "Requests" },
+      admin: { description: "Small changes and new automations you asked for." },
+      fields: [
+        {
+          type: "row",
+          fields: [
+            { name: "requestedAt", type: "date", required: true, admin: { description: "When it was asked for." } },
+            {
+              name: "requestedBy",
+              type: "relationship",
+              relationTo: "users",
+              admin: { description: "Who asked for it.", placeholder: "Search users" },
+            },
+            {
+              name: "status",
+              type: "select",
+              defaultValue: "Requested",
+              options: ["Requested", "Estimated", "Approved", "In progress", "Done"],
+              custom: tones({
+                Requested: "neutral",
+                Estimated: "info",
+                Approved: "warning",
+                "In progress": "info",
+                Done: "success",
+              }),
+              admin: { description: "Estimated and approved before any work starts.", placeholder: "Pick a status" },
+            },
+          ],
+        },
+        {
+          name: "title",
+          type: "text",
+          required: true,
+          admin: { description: "The change, in one line.", placeholder: "e.g. Weekly supplier scorecard by email" },
+        },
+      ],
+    },
+  ],
+};
+
 export const globals = [
   Branding,
   Assistant,
@@ -1472,4 +1705,5 @@ export const globals = [
   MessageTemplates,
   Integrations,
   OnCallRoster,
+  ServiceUsage,
 ];
