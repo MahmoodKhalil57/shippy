@@ -13,3 +13,8 @@ export * from "./textarea.ts";
 export * from "./switch.ts";
 export * from "./form.ts";
 export * from "./search.ts";
+export * from "./field.ts";
+export * from "./rating.ts";
+export * from "./scale.ts";
+export * from "./stepper.ts";
+export * from "./date-input.ts";

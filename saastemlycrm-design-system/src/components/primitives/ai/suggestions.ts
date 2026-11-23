@@ -1,4 +1,5 @@
 import { html } from "lit";
+import { scrollRoom } from "../layout/algebra.ts";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
@@ -16,8 +17,7 @@ export const suggestions = rcva("", {
   variants: {
     wrap: {
       true: "flex flex-row flex-wrap max-w-full gap-1.5",
-      false:
-        "min-w-0 max-w-full overflow-x-auto whitespace-nowrap overscroll-x-contain [scrollbar-width:none] [mask-image:linear-gradient(to_right,black_calc(100%-1rem),transparent)] rtl:[mask-image:linear-gradient(to_left,black_calc(100%-1rem),transparent)] [&>*+*]:ms-1",
+      false: `${scrollRoom} min-w-0 max-w-full overflow-x-auto whitespace-nowrap overscroll-x-contain [scrollbar-width:none] [mask-image:linear-gradient(to_right,black_calc(100%-1rem),transparent)] rtl:[mask-image:linear-gradient(to_left,black_calc(100%-1rem),transparent)] [&>*+*]:ms-1`,
     },
   },
   defaultVariants: { wrap: false },

@@ -400,6 +400,66 @@ export async function extract(
   }
 }
 
+/** One question on a form, for `suggest`. */
+export interface SuggestField {
+  label: string;
+  /** What goes in (the field's hint). */
+  hint?: string;
+  type: "string" | "number" | "boolean";
+  /** The only answers allowed (a select's or a relationship's labels). */
+  options?: readonly string[];
+  /** A date (`YYYY-MM-DD`), an email, or a paragraph rather than a line. */
+  format?: "date" | "email" | "paragraph";
+}
+
+/**
+ * A likely answer for one empty question on a form, from what the rest of the form already says
+ * (Prompt API, its answer limited to the field's type and, for a choice, to its options). The
+ * person sees it as a suggestion and takes it or leaves it; null when nothing on the form points
+ * to an answer (the model is told not to make up names, numbers or dates).
+ */
+export async function suggest(
+  field: SuggestField,
+  what: string,
+  known: Readonly<Record<string, string>>,
+  today: string,
+  onProgress?: Progress,
+): Promise<string | number | boolean | null> {
+  // The same plain shapes `extract` uses, which every Prompt API backend constrains to: a nullable
+  // type, or a list of strings. A choice says "nothing fits" with a word of its own, not null (a
+  // null inside `enum`, like `maxLength`, isn't something every backend takes). Length is cut here.
+  const choices = field.options?.length ? [...field.options, NO_ANSWER] : undefined;
+  const value = choices ? { type: "string", enum: choices } : { type: [field.type, "null"] };
+  const schema = { type: "object", properties: { value }, required: ["value"] };
+  const lines = Object.entries(known).map(([k, v]) => `- ${k}: ${v.slice(0, 200)}`);
+  const shape =
+    field.format === "date"
+      ? " Answer a date as YYYY-MM-DD."
+      : field.format === "paragraph"
+        ? " Answer in one to three plain sentences."
+        : field.type === "string"
+          ? " Answer in a few words, as a person would type it."
+          : "";
+  const r = await promptJson<{ value?: string | number | boolean | null }>(
+    `You help someone at ${business() || org()} fill in a ${what}. Suggest the most likely value for one field, ` +
+      `from the rest of the form. Use what the form says; don't make up names, numbers, dates or references ` +
+      `it gives no ground for: answer ${choices ? `"${NO_ANSWER}"` : "null"} instead. Today is ${today}.${shape}`,
+    `The form so far:\n${lines.join("\n") || "(empty)"}\n\nSuggest: ${field.label}${field.hint ? ` (${field.hint})` : ""}`,
+    schema,
+    onProgress,
+  );
+  const v = r.value;
+  if (v == null || v === "") return null;
+  if (field.options?.length) return typeof v === "string" && field.options.includes(v) ? v : null;
+  if (field.type === "number") return typeof v === "number" && Number.isFinite(v) ? v : null;
+  if (field.type === "boolean") return typeof v === "boolean" ? v : null;
+  if (typeof v !== "string") return null;
+  if (field.format === "date") return /^\d{4}-\d{2}-\d{2}$/.test(v.trim()) ? v.trim() : null;
+  return v.trim().slice(0, field.format === "paragraph" ? 600 : 120) || null;
+}
+/** A choice's "nothing on the form points to one of these" (never one of a field's options). */
+const NO_ANSWER = "(no answer)";
+
 /* ---------------------------------------------------------------- scores, replies, speech */
 
 /** A 1–5 rating of `text` for `question` (the Decisions API's score, else the Prompt API). */

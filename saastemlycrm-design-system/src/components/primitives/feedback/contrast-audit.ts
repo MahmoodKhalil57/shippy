@@ -4,7 +4,7 @@ import { styleMap } from "lit/directives/style-map.js";
 import { inlineStart } from "../../base/inline-start.ts";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
-import { floating, floatingHeight, inset, pad, row, stack, text } from "../layout/algebra.ts";
+import { floating, floatingHeight, inset, pad, row, scrollRoom, stack, text } from "../layout/algebra.ts";
 import { auditContrast, type ContrastIssue } from "../../base/contrast.ts";
 import { auditProminence, type ProminenceIssue } from "../../base/prominence.ts";
 import { auditLayers, type LayoutIssue } from "../../base/layout.ts";
@@ -49,9 +49,11 @@ export const contrastAuditPanel = rcva(
 export const contrastAuditHead = rcva(`${row} items-center justify-between gap-2`);
 export const contrastAuditTitle = rcva("font-semibold");
 export const contrastAuditSummary = rcva(`${text.prose} text-body-sm text-on-surface-variant`);
-export const contrastAuditList = rcva(`${stack} min-h-0 overflow-y-auto [--scrollbar-inset:var(--radius-box)]`);
+export const contrastAuditList = rcva(
+  `${stack} ${scrollRoom} min-h-0 overflow-y-auto [--scrollbar-inset:var(--radius-box)]`,
+);
 export const contrastAuditItem = rcva(
-  `${row} ${inset["2"]} touch-target items-center gap-2 rounded-field py-1 text-start state-layer focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary`,
+  `${row} ${inset["2"]} touch-target items-center gap-2 rounded-field py-1 text-start state-layer`,
 );
 export const contrastAuditRatio = rcva("w-14 shrink-0 font-mono text-label-md", {
   variants: { kind: { contrast: "text-error-ink", prominence: "text-warning-ink", layout: "text-info-ink" } },

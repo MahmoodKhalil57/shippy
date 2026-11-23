@@ -1,4 +1,5 @@
 import type { VariantProps } from "class-variance-authority";
+import { scrollRoom } from "../layout/algebra.ts";
 import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -43,7 +44,7 @@ export const tabs = rcva("tabs min-w-0 [overflow-wrap:anywhere] [&>.tab:not(.tab
 });
 
 /** Scroll area around the tabs (docs "horizontal scroll when there's no space"). */
-export const tabsScroll = rcva("overflow-x-auto", {
+export const tabsScroll = rcva(`overflow-x-auto ${scrollRoom}`, {
   variants: {
     width: { xs: "max-w-60", sm: "max-w-sm", md: "max-w-md", lg: "max-w-lg", full: "max-w-full" },
   },

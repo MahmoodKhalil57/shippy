@@ -5,7 +5,18 @@ import { clampColumnWidth, COLUMN_MAX_WIDTH, COLUMN_MIN_WIDTH, moveColumn, order
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
 import { button } from "../actions/button.ts";
-import { fixed, fixedWidth, inlineRow, row, rowLine, scrolled, scrollX, stack, text } from "../layout/algebra.ts";
+import {
+  fixed,
+  fixedWidth,
+  inlineRow,
+  row,
+  rowLine,
+  scrolled,
+  scrollRoom,
+  scrollX,
+  stack,
+  text,
+} from "../layout/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
 import { tag } from "./tag.ts";
 
@@ -49,7 +60,7 @@ export const table = rcva(
     // cells: secondary ink; the record link as a label
     "[&_td]:text-on-surface-variant [&_td_a]:no-underline [&_td_a]:underline-offset-2 [&_td_a:hover]:underline [&_td_a:hover]:text-on-surface [&_td:first-of-type_a]:font-medium [&_td:first-of-type_a]:text-on-surface",
     // the whole row opens the record
-    "[&_tbody_tr]:relative [&_tbody_td:first-of-type_a]:after:absolute [&_tbody_td:first-of-type_a]:after:inset-0 [&_tbody_td:first-of-type_a]:after:content-[''] [&_tbody_tr:has(td:first-of-type_a)]:cursor-pointer [&_tbody_td:not(:first-of-type)_:is(a,button,label,input)]:relative [&_tbody_td:not(:first-of-type)_:is(a,button,label,input)]:z-1 [&_tbody_th_:is(a,button,label,input)]:relative [&_tbody_th_:is(a,button,label,input)]:z-1 [&_tbody_td:first-of-type_a]:focus-visible:outline-none [&_tbody_tr:has(td:first-of-type_a:focus-visible)]:outline-2 [&_tbody_tr:has(td:first-of-type_a:focus-visible)]:-outline-offset-2 [&_tbody_tr:has(td:first-of-type_a:focus-visible)]:outline-primary",
+    "[&_tbody_tr]:relative [&_tbody_td:first-of-type_a]:after:absolute [&_tbody_td:first-of-type_a]:after:inset-0 [&_tbody_td:first-of-type_a]:after:content-[''] [&_tbody_tr:has(td:first-of-type_a)]:cursor-pointer [&_tbody_td:not(:first-of-type)_:is(a,button,label,input)]:relative [&_tbody_td:not(:first-of-type)_:is(a,button,label,input)]:z-1 [&_tbody_th_:is(a,button,label,input)]:relative [&_tbody_th_:is(a,button,label,input)]:z-1 [--focus:host] [&_tbody_td:first-of-type_a]:focus-visible:outline-none [&_tbody_tr:has(td:first-of-type_a:focus-visible)]:outline-2 [&_tbody_tr:has(td:first-of-type_a:focus-visible)]:-outline-offset-2 [&_tbody_tr:has(td:first-of-type_a:focus-visible)]:outline-primary",
   ].join(" "),
   {
     variants: {
@@ -103,7 +114,9 @@ export const table = rcva(
 export const tableWrapper = rcva(scrollX, {
   variants: {
     /** Every cell (and what's inside it) on one line: the table scrolls sideways in this box. */
-    nowrap: { true: "overflow-x-auto [&_th]:whitespace-nowrap [&_td]:whitespace-nowrap [&_.badge]:whitespace-nowrap" },
+    nowrap: {
+      true: `overflow-x-auto ${scrollRoom} [&_th]:whitespace-nowrap [&_td]:whitespace-nowrap [&_.badge]:whitespace-nowrap`,
+    },
     /** "Table with border and background". */
     bordered: { true: "rounded-box border border-outline-variant bg-surface [--scrollbar-inset:var(--radius-box)]" },
     /** Fixed scroll height (the pinned examples use `h-96`). */
@@ -130,7 +143,7 @@ export const tableCell = rcva("", {
     /** Keep on one line (ids and references that would break at their hyphens). */
     nowrap: { true: "min-w-0 truncate" },
     /** A column someone sized: what doesn't fit wraps, or ends in "…" on one-line cells. */
-    sized: { true: "overflow-hidden text-ellipsis" },
+    sized: { true: "overflow-hidden [--clips:text] text-ellipsis" },
     /** The column being dragged: its cells tinted, so it's clear which one moves. */
     dragging: { true: "bg-primary/5" },
   },
@@ -168,7 +181,7 @@ export const tableHeadLabel = rcva("", { variants: { sized: { true: "block min-w
  * 2px line that shows on hovering the header and turns primary on hover, focus and drag.
  */
 export const tableResize = rcva(
-  `${row} absolute inset-y-0 z-1 w-3 pointer-coarse:w-6 cursor-col-resize touch-none justify-center outline-none before:h-full before:w-0.5 before:rounded-full before:content-[''] before:[transition:background-color_var(--duration-effects-fast)_var(--ease-effects-fast)] group-hover/th:not-hover:before:bg-outline hover:before:bg-primary focus-visible:before:bg-primary`,
+  `${row} absolute inset-y-0 z-1 w-3 pointer-coarse:w-6 cursor-col-resize touch-none justify-center outline-none [--focus:fill] before:h-full before:w-0.5 before:rounded-full before:content-[''] before:[transition:background-color_var(--duration-effects-fast)_var(--ease-effects-fast)] group-hover/th:not-hover:before:bg-outline hover:before:bg-primary focus-visible:before:bg-primary`,
   {
     variants: {
       /** Over the border between two columns; the last column's stays inside the table (no overflow). */
@@ -189,7 +202,7 @@ export const tableAnnounce = rcva("sr-only");
  * columns, in which order). Unsorted, the arrows show on hover / focus only.
  */
 export const tableSort = rcva(
-  `${inlineRow} group/sort touch-target items-center gap-1 rounded-field py-0.5 font-[inherit] text-[inherit] tracking-[inherit] uppercase state-layer hover:text-on-surface focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary [transition:background-color_var(--duration-effects-fast)_var(--ease-effects-fast),color_var(--duration-effects-fast)_var(--ease-effects-fast)]`,
+  `${inlineRow} group/sort touch-target items-center gap-1 rounded-field py-0.5 font-[inherit] text-[inherit] tracking-[inherit] uppercase state-layer hover:text-on-surface [transition:background-color_var(--duration-effects-fast)_var(--ease-effects-fast),color_var(--duration-effects-fast)_var(--ease-effects-fast)]`,
   // `end`: the arrows before the label (layout/algebra.ts `rowReverse`, kept inline: `inlineFlex`).
   { variants: { align: { start: "", center: "", end: "flex flex-row-reverse flex-wrap max-w-full inline-flex!" } } },
 );
@@ -231,7 +244,7 @@ export const tableEmpty = rcva("py-10 text-center text-on-surface-variant");
  */
 export const tablePerson = rcva(`${row} items-center gap-2`);
 export const tablePersonAvatar = rcva(
-  `${fixed["7"]} ${row} items-center justify-center overflow-hidden rounded-full bg-primary-container text-label-sm text-on-primary-container [&>img]:size-full [&>img]:object-cover [tr[aria-selected=true]_&]:bg-surface [tr[aria-selected=true]_&]:text-on-surface`,
+  `${fixed["7"]} ${row} items-center justify-center overflow-hidden [--clips:media] rounded-full bg-primary-container text-label-sm text-on-primary-container [&>img]:size-full [&>img]:object-cover [tr[aria-selected=true]_&]:bg-surface [tr[aria-selected=true]_&]:text-on-surface`,
 );
 export const tablePersonName = rcva(rowLine);
 

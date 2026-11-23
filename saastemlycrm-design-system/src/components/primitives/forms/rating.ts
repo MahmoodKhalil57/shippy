@@ -1,0 +1,110 @@
+import { html, nothing } from "lit";
+import { customElement, property } from "lit/decorators.js";
+import { keyed } from "lit/directives/keyed.js";
+import { LightElement } from "../../base/light-element.ts";
+import { rcva } from "../../base/variants.ts";
+import { fixed, inlineRow, row, text } from "../layout/algebra.ts";
+import { iconSvg } from "../media/icon.ts";
+
+/**
+ * Rating: a score in stars, picked in one tap (a supplier's reliability, a quote's fit).
+ *
+ * Purpose: Forms & input · Kind: primitive
+ *
+ * `max` stars (5) as a radio group. Pointing at a star lights it and those before it, so the
+ * score is previewed before it's set; the star just picked swells (`field-pop`, none with Reduce
+ * motion), and the score is said in words beside them ("4 of 5", or `words[n - 1]`: "Good").
+ * Picking the set star again clears it unless `required`. Keyboard: ← / → (or ↑ / ↓) move and
+ * pick, Home / End the ends. Fires `ui-change` { value } (`null` when cleared).
+ */
+export const rating = rcva(`${row} items-center gap-x-3 gap-y-1`);
+export const ratingStars = rcva(
+  `${inlineRow} items-center gap-0.5 [&:has(>button:hover)>button]:text-warning [&>button:hover~button]:text-outline-variant`,
+);
+export const ratingStar = rcva(
+  `${inlineRow} ${fixed["8"]} touch-target cursor-pointer items-center justify-center rounded-full [transition:color_var(--duration-effects-fast)_var(--ease-effects-fast),scale_var(--duration-spatial-fast)_var(--ease-spatial-fast)] hover:scale-110 disabled:cursor-default motion-reduce:transition-none [&>svg]:fill-current`,
+  {
+    variants: {
+      on: { true: "text-warning", false: "text-outline-variant" },
+      /** The star just picked: a swell. */
+      picked: {
+        true: "[animation:field-pop_var(--duration-medium2)_var(--ease-spatial-fast)] motion-reduce:animate-none",
+      },
+    },
+  },
+);
+export const ratingWords = rcva(`${text.label} text-label-lg tabular-nums text-on-surface-variant`);
+
+/**
+ * @example <ui-rating label="Reliability" .value=${4} .words=${["Poor", "Fair", "Good", "Very good", "Excellent"]}></ui-rating>
+ */
+@customElement("ui-rating")
+export class UiRating extends LightElement {
+  @property({ type: Number }) value: number | null = null;
+  @property({ type: Number }) max = 5;
+  /** Its accessible name ("Supplier reliability"). */
+  @property() label = "";
+  /** Each score in words, lowest first. */
+  @property({ attribute: false }) words: string[] = [];
+  @property({ type: Boolean }) required = false;
+  @property({ type: Boolean }) disabled = false;
+
+  #picked = 0;
+
+  private _set(n: number | null) {
+    if (this.disabled || n === this.value) return;
+    this.#picked = n ?? 0;
+    this.value = n;
+    this.dispatchEvent(new CustomEvent("ui-change", { detail: { value: n }, bubbles: true }));
+  }
+
+  private _key(e: KeyboardEvent) {
+    const cur = this.value ?? 0;
+    const next =
+      e.key === "ArrowRight" || e.key === "ArrowUp"
+        ? Math.min(this.max, cur + 1)
+        : e.key === "ArrowLeft" || e.key === "ArrowDown"
+          ? Math.max(1, cur - 1)
+          : e.key === "Home"
+            ? 1
+            : e.key === "End"
+              ? this.max
+              : undefined;
+    if (next === undefined) return;
+    e.preventDefault();
+    this._set(next);
+    void this.updateComplete.then(() => this.querySelectorAll<HTMLButtonElement>("button")[next - 1]?.focus());
+  }
+
+  render() {
+    const v = this.value ?? 0;
+    const words = v ? (this.words[v - 1] ?? `${v} of ${this.max}`) : "Not rated";
+    return html`<div class=${rating()}>
+      <div class=${ratingStars()} role="radiogroup" aria-label=${this.label || nothing} @keydown=${this._key}>
+        ${Array.from({ length: this.max }, (_, i) => {
+          const n = i + 1;
+          const star = html`<button
+            type="button"
+            role="radio"
+            class=${ratingStar({ on: n <= v, picked: n === this.#picked })}
+            aria-checked=${String(n === v)}
+            aria-label=${this.words[i] ? `${n}: ${this.words[i]}` : `${n} of ${this.max}`}
+            tabindex=${n === (v || 1) ? "0" : "-1"}
+            ?disabled=${this.disabled}
+            @click=${() => this._set(n === v && !this.required ? null : n)}
+          >
+            ${iconSvg("star", { size: "md" })}
+          </button>`;
+          return n === this.#picked ? keyed(`${n}:${v}`, star) : star;
+        })}
+      </div>
+      <span class=${ratingWords()}>${words}</span>
+    </div>`;
+  }
+}
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "ui-rating": UiRating;
+  }
+}

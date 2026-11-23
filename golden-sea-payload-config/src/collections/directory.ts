@@ -49,24 +49,46 @@ const contactsField = {
   name: "contacts",
   type: "array" as const,
   labels: { singular: "Contact", plural: "Contacts" },
+  admin: { description: "People at the company we write to, with the channel they answer on." },
   fields: [
     {
       type: "row" as const,
       fields: [
-        { name: "name", type: "text" as const, required: true },
-        { name: "role", type: "text" as const },
+        {
+          name: "name",
+          type: "text" as const,
+          required: true,
+          admin: { description: "Full name of the person.", placeholder: "e.g. Anders Nordvik" },
+        },
+        {
+          name: "role",
+          type: "text" as const,
+          admin: {
+            description: "Their job title, so we know who decides what.",
+            placeholder: "e.g. Purchasing manager",
+          },
+        },
       ],
     },
     {
       type: "row" as const,
       fields: [
-        { name: "email", type: "email" as const },
-        { name: "phone", type: "text" as const },
+        {
+          name: "email",
+          type: "email" as const,
+          admin: { description: "Where RFQs and quotations are sent.", placeholder: "e.g. purchasing@nordvik.example" },
+        },
+        {
+          name: "phone",
+          type: "text" as const,
+          admin: { description: "Direct line or mobile, with country code.", placeholder: "e.g. +47 22 33 44 55" },
+        },
         {
           name: "preferredChannel",
           type: "select" as const,
           options: ["Email", "Phone", "WhatsApp"],
           defaultValue: "Email",
+          admin: { description: "How this person prefers to be reached first.", placeholder: "Pick a channel" },
         },
       ],
     },
@@ -107,7 +129,16 @@ export const Customers: CollectionConfig = {
         {
           label: "Account",
           fields: [
-            { name: "name", type: "text", required: true, unique: true },
+            {
+              name: "name",
+              type: "text",
+              required: true,
+              unique: true,
+              admin: {
+                description: "The company's registered trading name.",
+                placeholder: "e.g. Nordvik Ship Management",
+              },
+            },
             {
               type: "row",
               fields: [
@@ -115,22 +146,47 @@ export const Customers: CollectionConfig = {
                   name: "type",
                   type: "select",
                   options: ["Ship manager", "Shipowner", "Offshore / oil & gas", "Industrial", "Shipyard / repair"],
+                  admin: { description: "What kind of business they run.", placeholder: "Pick a type" },
                 },
                 {
                   name: "segment",
                   type: "select",
                   options: ["Marine", "Offshore", "Onshore", "Oil & gas", "Shipbuilding & repair", "Industrial"],
+                  admin: {
+                    description: "The market they belong to, used for sales reporting.",
+                    placeholder: "Pick a segment",
+                  },
                 },
-                { name: "country", type: "text" },
+                {
+                  name: "country",
+                  type: "text",
+                  admin: { description: "Where the company is based.", placeholder: "e.g. Norway" },
+                },
               ],
             },
-            { name: "contactEmail", type: "email" },
+            {
+              name: "contactEmail",
+              type: "email",
+              admin: {
+                description: "The shared mailbox for quotations and invoices.",
+                placeholder: "e.g. purchasing@nordvik.example",
+              },
+            },
             {
               name: "leadSource",
               type: "text",
-              admin: { description: "Referral, port agent introduction, trade fair, website…" },
+              admin: { description: "How we first met them.", placeholder: "e.g. Port agent introduction" },
             },
-            { name: "portPreferences", type: "select", hasMany: true, options: PORTS },
+            {
+              name: "portPreferences",
+              type: "select",
+              hasMany: true,
+              options: PORTS,
+              admin: {
+                description: "Ports where their vessels usually call for stores.",
+                placeholder: "e.g. Port Said",
+              },
+            },
             contactsField,
           ],
         },
@@ -140,22 +196,56 @@ export const Customers: CollectionConfig = {
             {
               type: "row",
               fields: [
-                { name: "billingEntity", type: "text" },
-                { name: "taxId", type: "text", label: "Tax / VAT ID" },
+                {
+                  name: "billingEntity",
+                  type: "text",
+                  admin: {
+                    description: "The legal entity invoices are issued to.",
+                    placeholder: "e.g. Nordvik Ship Management AS",
+                  },
+                },
+                {
+                  name: "taxId",
+                  type: "text",
+                  label: "Tax / VAT ID",
+                  admin: {
+                    description: "Their tax number, printed on every invoice.",
+                    placeholder: "e.g. NO 912 345 678 MVA",
+                  },
+                },
               ],
             },
             {
               type: "row",
               fields: [
-                { name: "paymentTermsDays", type: "number", label: "Payment terms (days)", min: 0 },
-                { name: "currency", type: "select", options: CURRENCIES, defaultValue: "USD" },
-                { name: "creditLimit", type: "number", label: "Credit limit (USD)", min: 0 },
+                {
+                  name: "paymentTermsDays",
+                  type: "number",
+                  label: "Payment terms (days)",
+                  min: 0,
+                  admin: { description: "Days after invoice date they agreed to pay.", placeholder: "e.g. 30" },
+                },
+                {
+                  name: "currency",
+                  type: "select",
+                  options: CURRENCIES,
+                  defaultValue: "USD",
+                  admin: { description: "The currency we quote and invoice them in.", placeholder: "USD" },
+                },
+                {
+                  name: "creditLimit",
+                  type: "number",
+                  label: "Credit limit (USD)",
+                  min: 0,
+                  admin: { description: "The most we allow them to owe at once.", placeholder: "e.g. 50,000" },
+                },
               ],
             },
             {
               name: "registration",
               type: "group",
               label: "Vendor registration (Golden Sea as their approved supplier)",
+              admin: { description: "Where we stand as an approved supplier on their vendor list." },
               fields: [
                 {
                   type: "row",
@@ -170,15 +260,35 @@ export const Customers: CollectionConfig = {
                         "Approved vendor",
                         "Renewal overdue",
                       ],
+                      admin: {
+                        description: "How far their vendor approval of us has got.",
+                        placeholder: "Pick a status",
+                      },
                     },
-                    { name: "portal", type: "text", label: "Portal / method" },
+                    {
+                      name: "portal",
+                      type: "text",
+                      label: "Portal / method",
+                      admin: {
+                        description: "Where we keep our listing with them.",
+                        placeholder: "e.g. Nordvik supplier portal",
+                      },
+                    },
                   ],
                 },
                 {
                   type: "row",
                   fields: [
-                    { name: "since", type: "date" },
-                    { name: "renewBy", type: "date" },
+                    {
+                      name: "since",
+                      type: "date",
+                      admin: { description: "The day they approved us as a vendor." },
+                    },
+                    {
+                      name: "renewBy",
+                      type: "date",
+                      admin: { description: "The date the approval lapses unless we renew." },
+                    },
                   ],
                 },
               ],
@@ -192,13 +302,25 @@ export const Customers: CollectionConfig = {
       type: "select",
       label: "Contact rule",
       options: CONTACT_RULES,
-      custom: tones({ allowed: "success", "one-follow-up": "warning", "do-not-chase": "error" }),
+      custom: {
+        ...tones({ allowed: "success", "one-follow-up": "warning", "do-not-chase": "error" }),
+        about: "Applied to every follow-up and reminder automation, so no chaser goes out against this rule.",
+      },
       defaultValue: "allowed",
-      admin: { position: "sidebar", description: "Applied to every follow-up and reminder automation." },
+      admin: {
+        position: "sidebar",
+        description: "Sets how often we may chase this customer.",
+        placeholder: "Pick a rule",
+      },
     },
     // What the rule means for anyone about to contact them (never stored).
     computed(
-      { name: "contactNote", type: "text", label: "What it means", admin: { position: "sidebar" } },
+      {
+        name: "contactNote",
+        type: "text",
+        label: "What it means",
+        admin: { position: "sidebar", description: "The contact rule in plain words, for whoever is about to write." },
+      },
       (c) => CONTACT_NOTE[typeof c.contactRule === "string" ? c.contactRule : "allowed"] ?? CONTACT_NOTE.allowed,
     ),
     {
@@ -206,22 +328,36 @@ export const Customers: CollectionConfig = {
       type: "checkbox",
       label: "Do not chase",
       defaultValue: false,
-      admin: { position: "sidebar", description: "Never send status requests; internal reminders only." },
+      admin: { position: "sidebar", description: "Tick to stop all customer status requests." },
+      custom: { about: "Never send status requests to this customer; internal reminders only." },
     },
-    { name: "accountOwner", type: "relationship", relationTo: "users", admin: { position: "sidebar" } },
+    {
+      name: "accountOwner",
+      type: "relationship",
+      relationTo: "users",
+      admin: {
+        position: "sidebar",
+        description: "The Golden Sea person who looks after them.",
+        placeholder: "Search users",
+      },
+    },
     {
       name: "fleetSize",
       type: "number",
       label: "Vessels in fleet (total)",
       min: 0,
-      admin: { position: "sidebar", description: "All vessels they own or manage — not only the ones we supply." },
+      admin: {
+        position: "sidebar",
+        description: "All vessels they own or manage, not only ours.",
+        placeholder: "e.g. 14",
+      },
     },
     {
       name: "vessels",
       type: "join",
       collection: "vessels",
       on: "customer",
-      admin: { defaultColumns: ["name", "imo", "vesselType"] },
+      admin: { defaultColumns: ["name", "imo", "vesselType"], description: "The vessels we know for this customer." },
     },
   ],
 };
@@ -235,12 +371,18 @@ export const Vessels: CollectionConfig = {
     {
       type: "row",
       fields: [
-        { name: "name", type: "text", required: true },
+        {
+          name: "name",
+          type: "text",
+          required: true,
+          admin: { description: "The vessel's name as on her papers.", placeholder: "e.g. MV Nordic Star" },
+        },
         {
           name: "imo",
           type: "text",
           label: "IMO",
           unique: true,
+          admin: { description: "The 7-digit IMO number; it identifies the ship.", placeholder: "e.g. 9811204" },
           validate: (value: unknown) =>
             value == null ||
             value === "" ||
@@ -265,13 +407,40 @@ export const Vessels: CollectionConfig = {
             "Platform / rig",
             "Ferry",
           ],
+          admin: { description: "Decides which stores she is likely to need.", placeholder: "Pick a vessel type" },
         },
-        { name: "flag", type: "text" },
+        {
+          name: "flag",
+          type: "text",
+          admin: { description: "The country she is registered in.", placeholder: "e.g. Panama" },
+        },
       ],
     },
-    { name: "customer", type: "relationship", relationTo: "customers", required: true, label: "Manager / owner" },
-    { name: "manager", type: "text", label: "Managing office" },
-    { name: "notes", type: "textarea" },
+    {
+      name: "customer",
+      type: "relationship",
+      relationTo: "customers",
+      required: true,
+      label: "Manager / owner",
+      admin: { description: "The customer who orders stores for her.", placeholder: "Search customers" },
+    },
+    {
+      name: "manager",
+      type: "text",
+      label: "Managing office",
+      admin: {
+        description: "The office or desk that handles her purchasing.",
+        placeholder: "e.g. Nordvik Oslo fleet desk",
+      },
+    },
+    {
+      name: "notes",
+      type: "textarea",
+      admin: {
+        description: "Anything useful at delivery, like berth or agent.",
+        placeholder: "e.g. Usually calls at Port Said, agent is Suez Marine.",
+      },
+    },
   ],
 };
 
@@ -314,24 +483,67 @@ export const Suppliers: CollectionConfig = {
             {
               type: "row",
               fields: [
-                { name: "name", type: "text", required: true, unique: true },
-                { name: "city", type: "text" },
-                { name: "country", type: "text", defaultValue: "Egypt" },
+                {
+                  name: "name",
+                  type: "text",
+                  required: true,
+                  unique: true,
+                  admin: { description: "The supplier's trading name.", placeholder: "e.g. Delta Marine Chandlers" },
+                },
+                {
+                  name: "city",
+                  type: "text",
+                  admin: { description: "Where their warehouse or office is.", placeholder: "e.g. Alexandria" },
+                },
+                {
+                  name: "country",
+                  type: "text",
+                  defaultValue: "Egypt",
+                  admin: { description: "The country they ship from.", placeholder: "e.g. Egypt" },
+                },
               ],
             },
-            { name: "categories", type: "select", hasMany: true, options: CATEGORIES },
+            {
+              name: "categories",
+              type: "select",
+              hasMany: true,
+              options: CATEGORIES,
+              admin: {
+                description: "What they sell, used to pick who gets an RFQ.",
+                placeholder: "e.g. Engine spares",
+              },
+            },
             {
               type: "row",
               fields: [
-                { name: "currency", type: "select", options: CURRENCIES, defaultValue: "EGP" },
-                { name: "terms", type: "text", label: "Payment terms" },
+                {
+                  name: "currency",
+                  type: "select",
+                  options: CURRENCIES,
+                  defaultValue: "EGP",
+                  admin: { description: "The currency they quote in.", placeholder: "EGP" },
+                },
+                {
+                  name: "terms",
+                  type: "text",
+                  label: "Payment terms",
+                  admin: { description: "When they expect to be paid.", placeholder: "e.g. 30 days from delivery" },
+                },
               ],
             },
-            { name: "contact", type: "text", label: "Main contact" },
+            {
+              name: "contact",
+              type: "text",
+              label: "Main contact",
+              admin: { description: "The person to call first.", placeholder: "e.g. Hossam Fathy" },
+            },
             {
               name: "emailDomain",
               type: "text",
-              admin: { description: "Used to recognise replies from this supplier." },
+              admin: {
+                description: "Lets us match incoming replies to this supplier.",
+                placeholder: "e.g. deltamarine.example",
+              },
             },
             contactsField,
           ],
@@ -347,6 +559,7 @@ export const Suppliers: CollectionConfig = {
                   type: "number",
                   label: "Average reply (hours)",
                   min: 0,
+                  admin: { description: "How long they take to answer an RFQ.", placeholder: "e.g. 18" },
                   // Amber past a day.
                   custom: {
                     number: { unit: "hours" as const },
@@ -359,6 +572,7 @@ export const Suppliers: CollectionConfig = {
                   label: "On-time delivery %",
                   min: 0,
                   max: 100,
+                  admin: { description: "Share of orders delivered on the promised date.", placeholder: "e.g. 92" },
                   // A bar of 100%: amber under 85%, green from there.
                   custom: {
                     ...formats.percent(0),
@@ -369,17 +583,41 @@ export const Suppliers: CollectionConfig = {
                     ],
                   },
                 },
-                { name: "compliance", type: "number", label: "Compliant offers %", min: 0, max: 100 },
+                {
+                  name: "compliance",
+                  type: "number",
+                  label: "Compliant offers %",
+                  min: 0,
+                  max: 100,
+                  admin: { description: "Share of offers that matched the RFQ spec.", placeholder: "e.g. 88" },
+                },
               ],
             },
             {
               type: "row",
               fields: [
-                { name: "rfqCount", type: "number", label: "RFQs received", min: 0, admin: { readOnly: true } },
-                { name: "poCount", type: "number", label: "POs placed", min: 0, admin: { readOnly: true } },
+                {
+                  name: "rfqCount",
+                  type: "number",
+                  label: "RFQs received",
+                  min: 0,
+                  admin: { readOnly: true, description: "How many RFQs we have sent them." },
+                },
+                {
+                  name: "poCount",
+                  type: "number",
+                  label: "POs placed",
+                  min: 0,
+                  admin: { readOnly: true, description: "How many purchase orders we gave them." },
+                },
                 // The RFQs sent to it that it hasn't fully answered (never stored).
                 computed(
-                  { name: "openRfqs", type: "number", label: "Open RFQs" },
+                  {
+                    name: "openRfqs",
+                    type: "number",
+                    label: "Open RFQs",
+                    admin: { description: "RFQs sent to them and not fully answered yet." },
+                  },
                   async (s, req) => (await openRfqs(req)).filter((r) => idOf(r.supplier) === s.id).length,
                 ),
               ],
@@ -392,22 +630,60 @@ export const Suppliers: CollectionConfig = {
             {
               name: "bank",
               type: "group",
+              admin: { description: "Where we pay them; a change needs verification first." },
               access: { read: ({ req }) => Boolean(req.user) },
               fields: [
                 {
                   type: "row",
                   fields: [
-                    { name: "beneficiary", type: "text" },
-                    { name: "bankName", type: "text" },
+                    {
+                      name: "beneficiary",
+                      type: "text",
+                      admin: {
+                        description: "The account holder's name, as the bank has it.",
+                        placeholder: "e.g. Delta Marine Chandlers LLC",
+                      },
+                    },
+                    {
+                      name: "bankName",
+                      type: "text",
+                      admin: { description: "The bank that holds the account.", placeholder: "e.g. Banque Misr" },
+                    },
                   ],
                 },
-                { name: "iban", type: "text", label: "IBAN / account" },
+                {
+                  name: "iban",
+                  type: "text",
+                  label: "IBAN / account",
+                  admin: {
+                    description: "Changing it resets verification.",
+                    placeholder: "e.g. EG380019000500000000263180002",
+                  },
+                  custom: {
+                    about:
+                      "A change is logged as an alert and needs verification and two-person approval before any payment.",
+                  },
+                },
                 {
                   type: "row",
                   fields: [
-                    { name: "verified", type: "checkbox", defaultValue: false },
-                    { name: "verifiedBy", type: "relationship", relationTo: "users" },
-                    { name: "verifiedAt", type: "date" },
+                    {
+                      name: "verified",
+                      type: "checkbox",
+                      defaultValue: false,
+                      admin: { description: "Tick once the details were confirmed with the supplier." },
+                    },
+                    {
+                      name: "verifiedBy",
+                      type: "relationship",
+                      relationTo: "users",
+                      admin: { description: "Who confirmed the bank details.", placeholder: "Search users" },
+                    },
+                    {
+                      name: "verifiedAt",
+                      type: "date",
+                      admin: { description: "The day the bank details were confirmed." },
+                    },
                   ],
                 },
               ],
@@ -425,7 +701,11 @@ export const Suppliers: CollectionConfig = {
         { label: "Agency principal (pricelist)", value: "agency" },
         { label: "Own stock", value: "own-stock" },
       ],
-      admin: { position: "sidebar" },
+      admin: {
+        position: "sidebar",
+        description: "Local supplier, agency pricelist or our own stock.",
+        placeholder: "Pick a kind",
+      },
     },
     {
       name: "status",
@@ -433,12 +713,16 @@ export const Suppliers: CollectionConfig = {
       defaultValue: "Approved",
       options: ["New", "Trial", "Approved", "On watch", "Blocked"],
       access: { update: isManagement },
-      admin: { position: "sidebar", description: "Approved-vendor status is set by management." },
+      admin: {
+        position: "sidebar",
+        description: "Only management can approve or block a supplier.",
+        placeholder: "Pick a status",
+      },
     },
     {
       name: "source",
       type: "text",
-      admin: { position: "sidebar", readOnly: true, description: "e.g. auto-created from an email reply" },
+      admin: { position: "sidebar", readOnly: true, description: "How the record was created, like an email reply." },
     },
   ],
 };
@@ -449,7 +733,15 @@ export const Media: CollectionConfig = {
   admin: { useAsTitle: "filename", group: "Directory" },
   access: deskAccess,
   fields: [
-    { name: "alt", type: "text", label: "Alt text" },
+    {
+      name: "alt",
+      type: "text",
+      label: "Alt text",
+      admin: {
+        description: "A short description of what the file shows.",
+        placeholder: "e.g. Signed delivery note, MV Nordic Star",
+      },
+    },
     {
       name: "kind",
       type: "select",
@@ -463,6 +755,7 @@ export const Media: CollectionConfig = {
         "Portal receipt",
         "Other",
       ],
+      admin: { description: "What the file is, so it can be found later.", placeholder: "Pick a file kind" },
     },
   ],
 };

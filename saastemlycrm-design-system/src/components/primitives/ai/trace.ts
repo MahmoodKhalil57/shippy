@@ -22,7 +22,7 @@ export const traceSummary = rcva(
   {
     variants: {
       interactive: {
-        true: "touch-target cursor-pointer state-layer focus-visible:outline-2 focus-visible:outline-primary",
+        true: "touch-target cursor-pointer state-layer",
       },
     },
   },

@@ -4,7 +4,7 @@ import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
-import { scrolled, text } from "../layout/algebra.ts";
+import { scrolled, scrollRoom, text } from "../layout/algebra.ts";
 
 /**
  * Steps: where something is in a fixed sequence (M3 / Apple progress through stages).
@@ -39,7 +39,7 @@ export const stepsStep = rcva("step", {
   },
 });
 /** Horizontal scroll wrapper for long step lists. */
-export const stepsScroll = rcva("overflow-x-auto");
+export const stepsScroll = rcva(`overflow-x-auto ${scrollRoom}`);
 export const stepsSupporting = rcva(`block ${text.label} text-body-sm text-on-surface-variant`);
 
 export type StepsVariants = VariantProps<typeof steps>;

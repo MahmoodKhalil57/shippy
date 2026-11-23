@@ -14,20 +14,28 @@ import { iconSvg } from "../media/icon.ts";
  * Purpose: Feedback & guidance · Kind: primitive (Shippy, not daisyUI)
  *
  * The spotlight is a hole in the dim (one element with a huge spread shadow) that glides from
- * target to target with the M3 spatial spring; the card is the floating layer's glass and sits
+ * target to target with the M3 spatial spring. It and the card are in the top layer (manual
+ * popovers), so the dim covers everything (the header, the columns, the page's glass panels,
+ * whatever layers they make) and only the hole shows the target as it is. Its frame is an
+ * outline, not a ring: a ring is a box-shadow too and would replace the dim's; the card is the floating layer's glass and sits
  * below the target when there's room, above it otherwise, centred without a target. It follows
  * the target while the page scrolls or resizes. Keyboard: ← → move, Esc closes.
  */
 /**
- * The layer itself has no box: the spotlight and card are fixed on their own. (A full-screen box
- * here would make Chromium apply the card's refracting backdrop to the whole page.)
+ * The layer itself has no box: the spotlight and card are top-layer popovers on their own. (A
+ * full-screen box here would make Chromium apply the card's refracting backdrop to the whole page.)
  */
-export const coachmark = rcva("contents [&>*]:z-[60]");
+export const coachmark = rcva("contents");
 export const coachmarkSpot = rcva(
-  "pointer-events-none fixed rounded-box scrim-cutout ring-2 ring-primary [transition:top_var(--duration-spatial)_var(--ease-spatial),inset-inline-start_var(--duration-spatial)_var(--ease-spatial),width_var(--duration-spatial)_var(--ease-spatial),height_var(--duration-spatial)_var(--ease-spatial)] motion-reduce:transition-none top-(--top) start-(--left) h-(--h) w-(--w) max-w-full",
+  "pointer-events-none fixed inset-auto m-0 overflow-visible border-0 bg-transparent p-0 rounded-box scrim-cutout outline-2 outline-primary [transition:top_var(--duration-spatial)_var(--ease-spatial),inset-inline-start_var(--duration-spatial)_var(--ease-spatial),width_var(--duration-spatial)_var(--ease-spatial),height_var(--duration-spatial)_var(--ease-spatial)] motion-reduce:transition-none top-(--top) start-(--left) h-(--h) w-(--w) max-w-full",
 );
+/**
+ * The step card: the floating layer's glass, but filled more (the higher container at 85%, not
+ * the glass's 45%), because it sits over the tour's dim: thin glass would take on the dim and read
+ * darker than everything it explains. Still frosted at its edges.
+ */
 export const coachmarkCard = rcva(
-  `${stack} ${floating["7"]} ${floatingHeight.fit} ${pad["4"]} liquid-glass pointer-events-auto fixed gap-2 rounded-box py-4 text-on-surface [transition:top_var(--duration-spatial)_var(--ease-spatial),inset-inline-start_var(--duration-spatial)_var(--ease-spatial),opacity_var(--duration-effects)_var(--ease-effects)] motion-reduce:transition-none top-(--top) start-(--left) starting:opacity-0`,
+  `${stack} ${floating["7"]} ${floatingHeight.fit} ${pad["4"]} liquid-glass bg-surface-container-high/85! pointer-events-auto fixed inset-auto m-0 gap-2 rounded-box py-4 text-on-surface [transition:top_var(--duration-spatial)_var(--ease-spatial),inset-inline-start_var(--duration-spatial)_var(--ease-spatial),opacity_var(--duration-effects)_var(--ease-effects)] motion-reduce:transition-none top-(--top) start-(--left) starting:opacity-0`,
 );
 export const coachmarkEyebrow = rcva(`${row} items-center gap-2 text-label-md text-on-surface-variant`);
 export const coachmarkHeading = rcva(`${text.label} text-title-lg leading-snug`);
@@ -108,6 +116,9 @@ export class UiCoachmark extends LightElement {
   }
 
   protected updated() {
+    // Into the top layer, the dim first and the card over it (each stays there until it's removed).
+    for (const el of this.querySelectorAll<HTMLElement>("[data-spot], [data-card]"))
+      if (!el.matches(":popover-open")) el.showPopover();
     const card = this.querySelector<HTMLElement>("[data-card]");
     if (card && (card.offsetWidth !== this._card.w || card.offsetHeight !== this._card.h))
       this._card = { w: card.offsetWidth, h: card.offsetHeight };
@@ -174,10 +185,14 @@ export class UiCoachmark extends LightElement {
     return html`<div class=${coachmark()}>
       <div
         class=${coachmarkSpot()}
+        popover="manual"
+        data-spot
+        aria-hidden="true"
         style=${styleMap({ "--top": `${spot.top}px`, "--left": `${inlineStart(spot.left, spot.w)}px`, "--h": `${spot.h}px`, "--w": `${spot.w}px` })}
       ></div>
       <div
         class=${coachmarkCard()}
+        popover="manual"
         data-card
         role="dialog"
         aria-modal="false"

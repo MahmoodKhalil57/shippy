@@ -119,6 +119,16 @@ export const grid = {
 } as const;
 
 /**
+ * Layers: the box's children share one cell (each `layers.cell`), so the box is as big as the
+ * biggest and one can stand in for another without anything moving (a field's suggestion over its
+ * control). One column of at most 100% (I1).
+ */
+export const layers = {
+  box: "grid min-w-0 grid-cols-[minmax(0,1fr)]",
+  cell: "[grid-area:1/1] min-w-0",
+} as const;
+
+/**
  * Label beside value when the list's own width has room for both, else above (the container
  * is `container.plain`). At 24rem the value column is 24rem − min(8rem, 40%) − 16px ≥ 7rem at any
  * text size (I2): 9rem ≥ 16px.
@@ -215,7 +225,21 @@ export const cardInset = {
 } as const;
 
 /** Content wider than its box scrolls inside it (a table, a long row of steps). */
-export const scrollX = "min-w-0 max-w-full overflow-x-auto";
+/**
+ * Room for a ring inside a box that scrolls. A focus ring is a 2px outline 2px out, a selected
+ * tile's ring the same, an elevation-1 shadow less; a scroller cuts whatever its content draws past
+ * its edges, on both axes (a box that scrolls one way clips the other: CSS turns the other axis's
+ * `visible` into `auto`). So 4px on every side: `inset["1"]` across (which yields only to content
+ * under 7rem plus 8px) and `py-1` down. tests/clip-room.test.ts requires it on every scroller.
+ */
+export const scrollRoom = `${inset["1"]} py-1`;
+/**
+ * A box that clips (`overflow: clip`) but paints 4px past its edge (`overflow-clip-margin`): a ring
+ * on what touches its edge is drawn whole, and nothing it holds can push it wider. For a box that
+ * clips without scrolling and may hold something focusable. tests/clip-room.test.ts.
+ */
+export const clipRoom = "overflow-clip [overflow-clip-margin:4px]";
+export const scrollX = `min-w-0 max-w-full overflow-x-auto ${scrollRoom}`;
 /**
  * Inside a scroller only: a table's columns keep 10rem each, and the table scrolls sideways when
  * they can't all have it (data/table.ts draws every table inside `scrollX`); a horizontal row of
@@ -313,14 +337,26 @@ export const floating = {
   sheet: "w-[min(calc(8_*_var(--tile-w)),round(down,calc(100vw_-_2rem),var(--tile-w)))]",
   sheetWide: "w-[min(calc(12_*_var(--tile-w)),round(down,calc(100vw_-_2rem),var(--tile-w)))]",
   /**
-   * A list under a field (a combobox's options): its anchor's width rounded up to whole tiles, at
-   * least 4, at most the window's whole tiles.
+   * A list under a field (a combobox's options): its anchor's width (`--anchor-w`, measured by
+   * Floating UI, src/components/base/floating.ts) rounded up to whole tiles, at least 4, at most
+   * the window's whole tiles.
    */
   anchor:
-    "w-[round(up,max(anchor-size(width),calc(4_*_var(--tile-w))),var(--tile-w))] max-w-[round(down,calc(100vw_-_2rem),var(--tile-w))]",
+    "w-[round(up,max(var(--anchor-w,0px),calc(4_*_var(--tile-w))),var(--tile-w))] max-w-[round(down,calc(100vw_-_2rem),var(--tile-w))]",
   /** As wide as its content rounded up to whole tiles, at most the window's whole tiles less 1rem a side. */
   fit: "not-supports-[width:calc-size(max-content,size)]:w-max supports-[width:calc-size(max-content,size)]:w-[calc-size(max-content,round(up,size,var(--tile-w)))] max-w-[round(down,calc(100vw_-_2rem),var(--tile-w))]",
 } as const;
+
+/**
+ * How every floating panel comes and goes (a top-layer panel Floating UI places, src/components/base/floating.ts):
+ * it grows from the edge that touches its anchor (`--float-origin`), M3's enter (a quick fade and
+ * a short expand on the emphasized decelerate curve) and exit (faster, on emphasized accelerate);
+ * nothing with Reduce motion. Closed, it isn't displayed (`not-open:hidden`: a panel's own `menu` or
+ * `card` display would otherwise keep it on the page, invisible, over what's under it); `display`
+ * / `overlay` ride along so it stays in the top layer while it fades out.
+ */
+export const floatMotion =
+  "not-open:hidden origin-(--float-origin) opacity-0 scale-95 open:opacity-100 open:scale-100 starting:open:opacity-0 starting:open:scale-95 [transition:opacity_var(--duration-short3)_var(--ease-emphasized-accelerate),scale_var(--duration-short3)_var(--ease-emphasized-accelerate),display_var(--duration-short3)_allow-discrete,overlay_var(--duration-short3)_allow-discrete] open:[transition:opacity_var(--duration-short3)_var(--ease-emphasized-decelerate),scale_var(--duration-medium1)_var(--ease-emphasized-decelerate),display_var(--duration-medium1)_allow-discrete,overlay_var(--duration-medium1)_allow-discrete] motion-reduce:transition-none";
 
 /**
  * A floating panel as wide as its content rounded up to whole tiles (where `calc-size()` isn't
@@ -341,8 +377,8 @@ export const floatingFit = {
  */
 export const floatingHeight = {
   fit: "supports-[height:calc-size(auto,size)]:h-[calc-size(auto,round(up,size,calc(var(--tile-h)/4)))]",
-  /** A list popover: at most 5 tiles (280px). */
-  list: "max-h-[round(down,calc(5_*_var(--tile-h)),calc(var(--tile-h)/4))]",
+  /** A list popover: at most 5 tiles (280px), and no taller than the room on its side (`--float-max-h`). */
+  list: "max-h-[round(down,min(calc(5_*_var(--tile-h)),var(--float-max-h,100dvh)),calc(var(--tile-h)/4))]",
   /** A dialog with sections: at most 36rem, the window less 1rem, or 76% of it plus 4rem. */
   dialog: "max-h-[round(down,min(36rem,calc(100dvh_-_1rem),calc(76dvh_+_4rem)),calc(var(--tile-h)/4))]",
   /** A panel over the page (the assistant): 38rem, or the window less 7rem, exactly. */
@@ -357,14 +393,6 @@ export const floatingHeight = {
   "4": "max-h-[round(down,calc(4_*_var(--tile-h)),calc(var(--tile-h)/4))]",
   "6": "max-h-[round(down,calc(6_*_var(--tile-h)),calc(var(--tile-h)/4))]",
 } as const;
-
-/**
- * A tooltip's tip (daisyUI's `::before`, or its `.tooltip-content`): its words rounded up to whole
- * tiles across, at most 6 (320px; M3's plain tooltip is a line of a few words), and quarter tiles
- * down. Written whole wherever a tooltip is (`TOOLTIP_GLASS`, the icon button, the rail).
- */
-export const tip =
-  "not-supports-[width:calc-size(max-content,size)]:[&::before]:w-max [&::before]:max-w-[calc(6_*_var(--tile-w))] supports-[width:calc-size(max-content,size)]:[&::before]:w-[calc-size(max-content,round(up,size,var(--tile-w)))] supports-[height:calc-size(auto,size)]:[&::before]:h-[calc-size(auto,round(up,size,calc(var(--tile-h)/4)))] not-supports-[width:calc-size(max-content,size)]:[&>.tooltip-content]:w-max [&>.tooltip-content]:max-w-[calc(6_*_var(--tile-w))] supports-[width:calc-size(max-content,size)]:[&>.tooltip-content]:w-[calc-size(max-content,round(up,size,var(--tile-w)))] supports-[height:calc-size(auto,size)]:[&>.tooltip-content]:h-[calc-size(auto,round(up,size,calc(var(--tile-h)/4)))]";
 
 /**
  * A primitive's own box in tiles (a field, a bar, a gauge): N tiles wide, at most its parent (I1).
@@ -472,8 +500,7 @@ export const frame = {
    * A drag handle on the main panel's edge: a 16px strip centred on it, over the window's lip. It
    * draws nothing under the pointer (only its cursor shows); keyboard focus outlines it.
    */
-  dragHandle:
-    "absolute inset-y-0 z-20 w-4 shrink-0 cursor-col-resize touch-none rounded-full touch-target focus-visible:outline-2 focus-visible:outline-primary",
+  dragHandle: "absolute inset-y-0 z-20 w-4 shrink-0 cursor-col-resize touch-none rounded-full touch-target",
   pushMove:
     "[transition:margin-inline-start_var(--duration-spatial)_var(--ease-spatial)_var(--push-start-delay,0s),margin-inline-end_var(--duration-spatial)_var(--ease-spatial)_var(--push-end-delay,0s)] motion-reduce:transition-none",
   /** A column keeps the width frame-fit gives it: its rail, or its open width while it pushes. */
@@ -529,7 +556,7 @@ export const board = {
   box: "@container/board w-full",
   lanes:
     "grid auto-rows-[calc(var(--tile-h)/4)] gap-0 [grid-template-columns:repeat(var(--board-quarters,4),calc(var(--tile-w)/4))]",
-  tile: "grid min-w-0 min-h-0 overflow-clip grid-cols-[minmax(0,1fr)] grid-rows-[minmax(0,1fr)] [grid-column:var(--lane)/span_var(--span)] [grid-row:var(--row)/span_var(--rows)]",
+  tile: "grid min-w-0 min-h-0 overflow-clip [--clips:frame] grid-cols-[minmax(0,1fr)] grid-rows-[minmax(0,1fr)] [grid-column:var(--lane)/span_var(--span)] [grid-row:var(--row)/span_var(--rows)]",
   /** Its surface 4px inside its tiles. */
   inset: "p-1",
   /**

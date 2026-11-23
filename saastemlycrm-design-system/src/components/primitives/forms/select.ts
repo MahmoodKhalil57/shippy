@@ -4,7 +4,7 @@ import { customElement, property, query } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement, uid, type Renderable } from "../../base/light-element.ts";
 import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
-import { tiles } from "../layout/algebra.ts";
+import { fixed, tiles } from "../layout/algebra.ts";
 import { fieldsetField, type FieldsetVariants } from "./fieldset.ts";
 import { label as labelRecipe } from "./label.ts";
 
@@ -73,7 +73,42 @@ export const selectAdornment = rcva("label text-on-surface-variant");
 
 export type SelectVariants = VariantProps<typeof select>;
 
-export type SelectOption = string | { label: string; value?: string; disabled?: boolean };
+/**
+ * An option's colour dot (in the open list and in the field once chosen): a status's `tone`, or a
+ * category's `hue` (the chart palette's slot, its place in the field's options).
+ */
+export const selectDot = rcva(`${fixed["2.5"]} inline-block rounded-full align-middle`, {
+  variants: {
+    tone: {
+      neutral: "bg-outline",
+      primary: "bg-primary",
+      info: "bg-info",
+      success: "bg-success",
+      warning: "bg-warning",
+      error: "bg-error",
+    },
+    hue: {
+      "0": "bg-chart-1",
+      "1": "bg-chart-2",
+      "2": "bg-chart-3",
+      "3": "bg-chart-4",
+      "4": "bg-chart-5",
+      "5": "bg-chart-6",
+    },
+  },
+});
+
+export type SelectOption =
+  | string
+  | {
+      label: string;
+      value?: string;
+      disabled?: boolean;
+      /** A status's tone: its dot. */
+      tone?: "neutral" | "primary" | "info" | "success" | "warning" | "error";
+      /** A category's hue slot (0–5): its dot. */
+      hue?: number;
+    };
 
 /**
  * @example
@@ -145,8 +180,18 @@ export class UiSelect extends LightElement {
     if (!this.options.length) return this.content;
     return this.options.map((o) => {
       const opt = typeof o === "string" ? { label: o, value: o } : { ...o, value: o.value ?? o.label };
+      const dot =
+        opt.tone || opt.hue != null
+          ? html`<span
+              class=${selectDot({
+                tone: opt.tone,
+                hue: opt.hue == null ? undefined : (String(((opt.hue % 6) + 6) % 6) as "0"),
+              })}
+              aria-hidden="true"
+            ></span>`
+          : nothing;
       return html`<option value=${opt.value} ?disabled=${!!opt.disabled} ?selected=${opt.value === this.value}>
-        ${opt.label}
+        ${dot}${opt.label}
       </option>`;
     });
   }

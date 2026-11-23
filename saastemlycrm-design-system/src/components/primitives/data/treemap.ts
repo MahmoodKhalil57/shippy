@@ -33,9 +33,9 @@ import { stack, text } from "../layout/algebra.ts";
  */
 export const treemap = rcva(`${stack} w-full gap-2`);
 /** The box the cells tile: the height it's given, at least 12rem. */
-export const treemapPlot = rcva("relative h-full min-h-48 w-full overflow-hidden rounded-field");
+export const treemapPlot = rcva("relative h-full min-h-48 w-full overflow-hidden [--clips:shape] rounded-field");
 export const treemapCell = rcva(
-  "absolute start-(--x) top-(--y) w-(--w) max-w-full h-(--h) overflow-hidden rounded-sm border-2 border-transparent bg-clip-padding origin-top-left rtl:origin-top-right outline-none [animation:cell-in_var(--duration-long1)_var(--ease-emphasized-decelerate)_both] [animation-delay:calc(var(--i)*var(--duration-short2))] [transition:opacity_var(--duration-short4)_var(--ease-standard),background-color_var(--duration-short4)_var(--ease-standard)] motion-reduce:[animation:none] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary",
+  "absolute start-(--x) top-(--y) w-(--w) max-w-full h-(--h) overflow-hidden [--clips:shape] rounded-sm border-2 border-transparent bg-clip-padding origin-top-left rtl:origin-top-right [animation:cell-in_var(--duration-long1)_var(--ease-emphasized-decelerate)_both] [animation-delay:calc(var(--i)*var(--duration-short2))] [transition:opacity_var(--duration-short4)_var(--ease-standard),background-color_var(--duration-short4)_var(--ease-standard)] motion-reduce:[animation:none]",
   {
     variants: {
       slot: {

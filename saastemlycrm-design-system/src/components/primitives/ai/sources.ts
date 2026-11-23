@@ -14,14 +14,14 @@ import { iconSvg } from "../media/icon.ts";
  */
 export const sources = rcva(`${text.label} group/sources text-body-sm`);
 export const sourcesSummary = rcva(
-  `${row} ${pad["1.5"]} touch-target w-fit cursor-pointer list-none items-center gap-1.5 rounded-field py-1 font-medium text-on-surface-variant state-layer focus-visible:outline-2 focus-visible:outline-primary [&::-webkit-details-marker]:hidden`,
+  `${row} ${pad["1.5"]} touch-target w-fit cursor-pointer list-none items-center gap-1.5 rounded-field py-1 font-medium text-on-surface-variant state-layer [&::-webkit-details-marker]:hidden`,
 );
 export const sourcesChevron = rcva(
   "transition-transform duration-(--duration-spatial-fast) ease-spatial-fast group-open/sources:rotate-180 motion-reduce:transition-none",
 );
 export const sourcesList = rcva(`${stack} ${padStart["1"]} mt-1 gap-0.5 border-s-2 border-outline-variant`);
 export const sourcesLink = rcva(
-  `${row} ${inset["2"]} touch-target items-center gap-1.5 rounded-field py-1 state-layer focus-visible:outline-2 focus-visible:outline-primary`,
+  `${row} ${inset["2"]} touch-target items-center gap-1.5 rounded-field py-1 state-layer`,
 );
 /** Basis 0: it stays beside its icon and truncates, rather than wrapping under it. */
 export const sourcesLabel = rcva(`${text.line} flex-1`);

@@ -2,7 +2,7 @@ import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
-import { row, text } from "../layout/algebra.ts";
+import { inlineRow, row, text } from "../layout/algebra.ts";
 import { iconButton } from "../actions/icon-button.ts";
 import { iconSvg, type IconName } from "../media/icon.ts";
 
@@ -42,7 +42,8 @@ export const messageActions = rcva(`${row} items-center gap-0.5 text-on-surface-
     },
   },
 });
-export const messageAction = rcva("tooltip tooltip-bottom", {
+/** An action under a message, its label in the page's one tip (`data-tip`), under it. */
+export const messageAction = rcva(inlineRow, {
   variants: { pressed: { true: "text-primary-ink" } },
 });
 
@@ -90,7 +91,7 @@ export class UiMessage extends LightElement {
   }
 
   private _action(label: string, icon: IconName, onClick: () => void, pressed?: boolean) {
-    return html`<span class=${messageAction({ pressed })} data-tip=${label}>
+    return html`<span class=${messageAction({ pressed })} data-tip=${label} data-tip-side="bottom">
       <button
         type="button"
         class=${iconButton({ size: "xs", shape: "square" })}

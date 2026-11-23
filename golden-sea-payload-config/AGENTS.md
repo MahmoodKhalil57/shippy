@@ -144,6 +144,14 @@ seed data (`src/seed`). Entry points: `.` (the config, `src/config.ts`) and `./s
 - **Links:** `src/links.ts` narrows the design system's `links()` to this config's collections,
   globals and views; widgets and endpoints import it as `import * as link from "../links.ts"` and
   write `link.doc("cases", id, "pricing")`. `tests/links.test.ts` keeps its lists equal to the config.
+- **Fields owe a hint and a placeholder:** every shown field has `admin.description` (one line, at
+  most 120 characters; the rest in `custom.about`), and every field typed or picked into has
+  `admin.placeholder` (an example: "e.g. MV Nordic Tern"). `tests/fields.test.ts` requires it and
+  checks every seed document and 20 faker mocks per collection against each collection's zod
+  schema (the design system's `fieldContractProblems`). The shared helpers (`money`, `evidence`,
+  `caseRef`) take their words as their last argument. `custom.mock` gives a realistic mock,
+  `custom.zod` a narrower schema, `custom.input` another input (see "Generated forms" in the
+  design system's AGENTS.md).
 - **Design test:** `tests/design.test.ts` draws every screen as every seeded user and checks it with
   the design system's data rules (`screenDesignProblems` from `saastemlycrm-design-system/testing`,
   fed by the mock backend). A failure

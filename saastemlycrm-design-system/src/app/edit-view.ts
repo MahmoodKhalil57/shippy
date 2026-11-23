@@ -4,7 +4,7 @@ import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { api, ApiError } from "../api/client.ts";
 import { parse, stringify } from "qs-esm";
-import type { DocumentViewSpec, GlobalViewSpec } from "./widgets/widget.ts";
+import { todayIso, type DocumentViewSpec, type GlobalViewSpec } from "./widgets/widget.ts";
 import type { Doc, FieldLike } from "../contracts/config.ts";
 import {
   setIn,
@@ -418,6 +418,9 @@ export class DashboardEditView extends LightElement {
       .joins=${this.joins}
       .relationHref=${this._relationHref}
       .user=${this.user}
+      .today=${todayIso()}
+      .what=${this.globalSlug ? globalLabel(globalOf(this.globalSlug)!) : labels(collectionOf(this.slug)!).singular}
+      .contextFields=${this._fields}
       ?readonly=${readonly}
       @ui-change=${this._change}
     ></ui-doc-form>`;
@@ -727,15 +730,23 @@ export class DashboardEditView extends LightElement {
     if (this.tile) {
       const canDelete = this.docId && !isAccount && collectionPerms?.delete.permission && this._shows("delete");
       const home = !!(this.spec as { home?: boolean } | undefined)?.home && this._shows("header");
-      return html`<ui-form label=${heading} @ui-submit=${() => this._save()}>
-          <ui-flex direction="col" gap="5">
-            <ui-flex justify=${home ? "between" : "end"} align="center" gap="2" wrap>
+      // Where it is (the breadcrumbs, "Read only") leads; what to do with it (Delete, Save or Create)
+      // closes the form, under the last field, where the person ends up once they've filled it in.
+      const top =
+        home || !canSave
+          ? html`<ui-flex justify=${home ? "between" : "end"} align="center" gap="2" wrap>
               ${home ? html`<ui-breadcrumbs .items=${crumbs}></ui-breadcrumbs>` : nothing}
-              <ui-flex align="center" gap="2" wrap>
+              ${canSave ? nothing : html`<ui-tag variant="outline">Read only</ui-tag>`}
+            </ui-flex>`
+          : nothing;
+      const actions =
+        canSave || canDelete
+          ? html`<ui-divider></ui-divider>
+              <ui-flex justify="end" align="center" gap="2" wrap>
                 ${this.dirty ? html`<ui-tag tone="warning">Unsaved changes</ui-tag>` : nothing}
                 ${
                   canDelete
-                    ? html`<ui-button variant="text" color="error" size="xs" @click=${() => (this.confirmDelete = true)}
+                    ? html`<ui-button variant="text" color="error" size="sm" @click=${() => (this.confirmDelete = true)}
                         >Delete</ui-button
                       >`
                     : nothing
@@ -744,19 +755,20 @@ export class DashboardEditView extends LightElement {
                   canSave
                     ? html`<ui-button
                         type="submit"
-                        size="sm"
                         color="primary"
                         .disabled=${this.saving || (!this.dirty && !!(this.docId || g))}
                         title="Ctrl + S"
                       >
                         ${this.saving ? "Saving…" : this.docId || g ? (this.dirty ? "Save" : "Saved") : "Create"}
                       </ui-button>`
-                    : html`<ui-tag variant="outline">Read only</ui-tag>`
+                    : nothing
                 }
-              </ui-flex>
-            </ui-flex>
-            ${this._hero()} ${this._stage()} ${tabBar} ${problems} ${this._form(main, readonly)}
-            ${hasSide && this._shows("sidebar") ? side : nothing}
+              </ui-flex>`
+          : nothing;
+      return html`<ui-form label=${heading} @ui-submit=${() => this._save()}>
+          <ui-flex direction="col" gap="5">
+            ${top} ${this._hero()} ${this._stage()} ${tabBar} ${problems} ${this._form(main, readonly)}
+            ${hasSide && this._shows("sidebar") ? side : nothing} ${actions}
           </ui-flex>
         </ui-form>
         <ui-modal

@@ -44,7 +44,7 @@ export const listItem = rcva(
   {
     variants: {
       interactive: {
-        true: "touch-target state-layer cursor-pointer rounded-field outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary",
+        true: "touch-target state-layer cursor-pointer rounded-field",
       },
       selected: { true: "rounded-field bg-primary-container" },
       separated: { true: "rounded-field bg-surface-container-low" },

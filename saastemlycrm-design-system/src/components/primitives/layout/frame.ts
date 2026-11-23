@@ -61,7 +61,7 @@ export const appShell = rcva(
      and rails sit on, and what the floating glass (sheets, menus, dialogs) refracts. Under it, the
      chosen background image (`--app-background`, set by `<ui-appearance kind="background">`)
      (the scrim that keeps text on the shell readable is a layer of its own, `appShellLayer`). */
-  "group/shell @container/frame relative isolate grid h-dvh [--main-radius:var(--radius-lg)] grid grid-rows-[repeat(var(--frame-quarter-rows,12),calc(var(--tile-h)/4))_minmax(0,1fr)] grid-cols-[repeat(4,calc(var(--tile-w)/4))_var(--frame-slack,0px)_repeat(var(--frame-inner-quarters,16),calc(var(--tile-w)/4))_var(--frame-slack,0px)_repeat(4,var(--frame-end-quarter,calc(var(--tile-w)/4)))] overflow-hidden bg-surface-container [background-image:var(--app-background,none),radial-gradient(70%_60%_at_0%_0%,color-mix(in_oklab,var(--color-primary)_16%,transparent),transparent_70%),radial-gradient(60%_55%_at_100%_100%,color-mix(in_oklab,var(--color-secondary)_12%,transparent),transparent_70%),radial-gradient(45%_40%_at_100%_0%,color-mix(in_oklab,var(--color-accent)_9%,transparent),transparent_70%)] bg-cover bg-center text-on-surface",
+  "group/shell @container/frame relative isolate grid h-dvh [--main-radius:var(--radius-lg)] grid grid-rows-[repeat(var(--frame-quarter-rows,12),calc(var(--tile-h)/4))_minmax(0,1fr)] grid-cols-[repeat(4,calc(var(--tile-w)/4))_var(--frame-slack,0px)_repeat(var(--frame-inner-quarters,16),calc(var(--tile-w)/4))_var(--frame-slack,0px)_repeat(4,var(--frame-end-quarter,calc(var(--tile-w)/4)))] overflow-hidden [--clips:frame] bg-surface-container [background-image:var(--app-background,none),radial-gradient(70%_60%_at_0%_0%,color-mix(in_oklab,var(--color-primary)_16%,transparent),transparent_70%),radial-gradient(60%_55%_at_100%_100%,color-mix(in_oklab,var(--color-secondary)_12%,transparent),transparent_70%),radial-gradient(45%_40%_at_100%_0%,color-mix(in_oklab,var(--color-accent)_9%,transparent),transparent_70%)] bg-cover bg-center text-on-surface",
   {
     variants: {
       /**
@@ -179,7 +179,7 @@ export const appShellColumn = rcva(
  * a backdrop) and widens there; closing, it stays lifted until it has folded back into the rail.
  */
 export const appShellPanel = rcva(
-  "flex h-full min-h-0 flex-col gap-0 overflow-hidden border-transparent px-[calc((var(--frame-rail)_-_2.75rem)/2)] motion-reduce:transition-none",
+  "flex h-full min-h-0 flex-col gap-0 overflow-hidden [--clips:frame] border-transparent px-[calc((var(--frame-rail)_-_2.75rem)/2)] motion-reduce:transition-none",
   {
     variants: {
       side: {
@@ -277,7 +277,7 @@ export const appShellWell = rcva("[grid-row:1/-3] flex flex-col relative min-h-0
  * keyboard; its scrollbar isn't drawn (a classic one would take part of a tile).
  */
 export const appShellMain = rcva(
-  "@container/main w-full min-h-0 flex-1 overflow-x-clip overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden rounded-(--main-radius)",
+  "@container/main w-full min-h-0 flex-1 overflow-x-clip overflow-y-auto overscroll-contain py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden rounded-(--main-radius)",
   { variants: { compact: { true: "rounded-ss-lg" } } },
 );
 
@@ -292,7 +292,7 @@ export const appShellLip = rcva("pointer-events-none absolute inset-0 z-10 round
  * Space or the arrow keys.
  */
 export const appShellDragHandle = rcva(
-  "absolute inset-y-0 z-20 w-4 shrink-0 cursor-col-resize touch-none rounded-full touch-target focus-visible:outline-2 focus-visible:outline-primary",
+  "absolute inset-y-0 z-20 w-4 shrink-0 cursor-col-resize touch-none rounded-full touch-target",
   {
     variants: {
       side: {
@@ -339,7 +339,7 @@ export const appShellCenter = rcva(
 // Under the main panel: the last quarter of the frame's last tile and the height left over under
 // it (the main panel's subgrid), its one line centred in them.
 export const appShellPageFooter = rcva(
-  "[grid-row:-3/-1] shrink-0 min-w-0 content-center overflow-hidden [overflow-wrap:anywhere] text-center text-body-sm leading-none opacity-65",
+  "[grid-row:-3/-1] shrink-0 min-w-0 content-center overflow-hidden [--clips:text] [overflow-wrap:anywhere] text-center text-body-sm leading-none opacity-65",
 );
 
 /**
@@ -370,7 +370,7 @@ export const appShellFooter = rcva(
   // squeezed into the rail's width while the column grows. The footer is one row tall and clips
   // below it: while the column is still narrow the name wraps under the avatar, and without the
   // clip that second line would lift the avatar until the column is wide enough.
-  "flex flex-col justify-center gap-1 ps-1 h-(--tile-h) min-h-(--tile-h) max-h-(--tile-h) overflow-y-clip [&>*>*+*]:[transition:opacity_var(--duration-effects)_var(--ease-effects)_var(--settle-spatial)] [&>*>*+*]:starting:opacity-0 motion-reduce:[&>*>*+*]:[transition:none]",
+  "flex flex-col justify-center gap-1 ps-1 h-(--tile-h) min-h-(--tile-h) max-h-(--tile-h) overflow-y-clip [--clips:text] [&>*>*+*]:[transition:opacity_var(--duration-effects)_var(--ease-effects)_var(--settle-spatial)] [&>*>*+*]:starting:opacity-0 motion-reduce:[&>*>*+*]:[transition:none]",
 );
 
 /**
@@ -408,7 +408,7 @@ export const appShellSlot = rcva("flex min-h-0 w-full flex-col gap-[calc(var(--t
     /** The scrolling part of a column (its toggle stays put above it). */
     // It scrolls without a scrollbar: while the column folds, one would show beside half-drawn rows.
     scroll: {
-      true: "flex-1 overflow-x-hidden overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+      true: "flex-1 overflow-x-hidden overflow-y-auto overscroll-contain py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
     },
   },
 });
@@ -441,9 +441,9 @@ export const appShellNavList = rcva("motion-reduce:transition-none", {
        * Unfold once the column has grown: the labels, headings and chevrons fade in beside icons that
        * never moved, so nothing shows cut off in a column still on its way open; groups expand then too.
        */
-      shown: `visible [--menu-collapse:0] [--menu-expanded:1] [transition:visibility_0s,--menu-collapse_0s_var(--settle-spatial),--menu-expanded_0s_var(--settle-spatial)] [&_li>details>ul]:overflow-hidden [&_li>details>ul]:transition-[block-size] [&_li>details>ul]:duration-(--duration-spatial) [&_li>details>ul]:ease-spatial [&_li>details>ul]:delay-(--settle-spatial) [&_li>details>ul]:starting:[block-size:0] motion-reduce:[&_li>details>ul]:transition-none`,
+      shown: `[--clips:fold] visible [--menu-collapse:0] [--menu-expanded:1] [transition:visibility_0s,--menu-collapse_0s_var(--settle-spatial),--menu-expanded_0s_var(--settle-spatial)] [&_li>details>ul]:overflow-hidden [&_li>details>ul]:transition-[block-size] [&_li>details>ul]:duration-(--duration-spatial) [&_li>details>ul]:ease-spatial [&_li>details>ul]:delay-(--settle-spatial) [&_li>details>ul]:starting:[block-size:0] motion-reduce:[&_li>details>ul]:transition-none`,
       /** Groups collapse first; fold as they settle; hand over to the rail once folded. */
-      hidden: `invisible [--menu-collapse:1] [--menu-expanded:0] [transition:visibility_0s_var(--settle-spatial),--menu-collapse_0s,--menu-expanded_0s] group-data-[groups-open]/column:[transition:visibility_0s_calc(var(--settle-spatial)_*_2),--menu-collapse_0s_var(--settle-spatial),--menu-expanded_0s] [&_li>details>ul]:overflow-hidden [&_li>details>ul]:[block-size:0] [&_li>details>ul]:transition-[block-size] [&_li>details>ul]:duration-(--duration-spatial) [&_li>details>ul]:ease-spatial [&_li>details>ul]:delay-0 motion-reduce:[&_li>details>ul]:transition-none`,
+      hidden: `[--clips:fold] invisible [--menu-collapse:1] [--menu-expanded:0] [transition:visibility_0s_var(--settle-spatial),--menu-collapse_0s,--menu-expanded_0s] group-data-[groups-open]/column:[transition:visibility_0s_calc(var(--settle-spatial)_*_2),--menu-collapse_0s_var(--settle-spatial),--menu-expanded_0s] [&_li>details>ul]:overflow-hidden [&_li>details>ul]:[block-size:0] [&_li>details>ul]:transition-[block-size] [&_li>details>ul]:duration-(--duration-spatial) [&_li>details>ul]:ease-spatial [&_li>details>ul]:delay-0 motion-reduce:[&_li>details>ul]:transition-none`,
     },
   },
 });

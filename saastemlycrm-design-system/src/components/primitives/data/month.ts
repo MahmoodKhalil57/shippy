@@ -35,7 +35,7 @@ export const month = rcva(`${stack} w-full gap-2`);
 export const monthGrid = rcva(`${grid.month}`);
 export const monthWeekday = rcva(`${text.line} pb-1 text-center text-label-sm text-on-surface-variant`);
 export const monthDay = rcva(
-  `${stack} touch-target state-layer relative min-h-10 items-center gap-0.5 overflow-hidden rounded-sm py-1 text-label-md tabular-nums outline-none [animation:cell-in_var(--duration-medium2)_var(--ease-emphasized-decelerate)_both] [animation-delay:calc(var(--c)*var(--duration-short1))] focus-visible:outline-2 focus-visible:outline-primary motion-reduce:[animation:none]`,
+  `${stack} touch-target state-layer relative min-h-10 items-center gap-0.5 overflow-hidden [--clips:text] rounded-sm py-1 text-label-md tabular-nums [animation:cell-in_var(--duration-medium2)_var(--ease-emphasized-decelerate)_both] [animation-delay:calc(var(--c)*var(--duration-short1))] motion-reduce:[animation:none]`,
   {
     variants: {
       chosen: { true: "bg-primary-container text-on-primary-container", false: "text-on-surface" },
@@ -63,7 +63,7 @@ export const monthMore = rcva(`${text.label} text-label-sm leading-none text-on-
 export const monthAgenda = rcva(`${stack} gap-1`);
 export const monthAgendaHead = rcva(`${text.label} text-title-sm text-on-surface`);
 export const monthAgendaItem = rcva(
-  `${row} ${text.label} items-center gap-2 rounded-field px-1 py-0.5 text-body-md text-on-surface outline-none focus-visible:outline-2 focus-visible:outline-primary`,
+  `${row} ${text.label} items-center gap-2 rounded-field px-1 py-0.5 text-body-md text-on-surface`,
   { variants: { link: { true: "cursor-pointer hover:underline", false: "" } } },
 );
 export const monthAgendaLabel = rcva(`${rowLine}`);

@@ -4,7 +4,7 @@ import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
-import { tip } from "../layout/algebra.ts";
+import { inlineRow } from "../layout/algebra.ts";
 import { iconSvg, type IconName } from "../media/icon.ts";
 
 /**
@@ -48,10 +48,11 @@ export const iconButton = rcva(
     defaultVariants: { variant: "standard", size: "sm", shape: "round" },
   },
 );
-/** The hover / focus label (a plain M3 tooltip). */
-export const iconButtonTooltip = rcva(
-  `tooltip tooltip-bottom [&>.tooltip-content]:liquid-glass-clear [&::before]:liquid-glass-clear [&::before]:text-on-surface [&::after]:invisible ${tip}`,
-);
+/**
+ * The hover / focus label (a plain M3 tooltip): the page's one tip (`data-tip`,
+ * src/components/primitives/feedback/tooltip.ts), under the button.
+ */
+export const iconButtonTooltip = rcva(inlineRow);
 
 export type IconButtonVariants = VariantProps<typeof iconButton>;
 
@@ -102,7 +103,7 @@ export class UiIconButton extends LightElement {
         </button>`;
     return this.noTooltip || !this.label
       ? el
-      : html`<span class=${iconButtonTooltip()} data-tip=${this.label}>${el}</span>${nothing}`;
+      : html`<span class=${iconButtonTooltip()} data-tip=${this.label} data-tip-side="bottom">${el}</span>${nothing}`;
   }
 }
 

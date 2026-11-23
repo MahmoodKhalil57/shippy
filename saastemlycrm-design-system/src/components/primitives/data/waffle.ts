@@ -34,9 +34,7 @@ import { cellCounts, foldParts, percentOf, type Slot } from "./visual-math.ts";
  */
 export const waffle = rcva(`${row} w-full items-center gap-4`);
 /** The cells: two tiles square, ten rows of ten. */
-export const waffleGrid = rcva(
-  `${tiles["2"]} ${stack} gap-0.5 rounded-xs outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary`,
-);
+export const waffleGrid = rcva(`${tiles["2"]} ${stack} gap-0.5 rounded-xs`);
 export const waffleRow = rcva(`${row} gap-0.5`);
 export const waffleCell = rcva(
   `${rowGrow} aspect-square rounded-xs [animation:cell-in_var(--duration-medium2)_var(--ease-emphasized-decelerate)_both] [animation-delay:calc(var(--c)*var(--duration-short1)/5)] [transition:opacity_var(--duration-short4)_var(--ease-standard)] motion-reduce:[animation:none]`,
@@ -62,7 +60,7 @@ export const waffleValue = rcva(`${text.label} text-title-md tabular-nums text-o
 export const waffleCaption = rcva(`${text.label} line-clamp-2 text-label-md text-on-surface-variant`);
 export const waffleLegend = rcva(`${stack} gap-0.5`);
 export const waffleItem = rcva(
-  `${row} items-center gap-2 rounded-field px-1 py-0.5 ${text.label} text-body-sm outline-none [transition:opacity_var(--duration-short4)_var(--ease-standard)] focus-visible:outline-2 focus-visible:outline-primary`,
+  `${row} items-center gap-2 rounded-field px-1 py-0.5 ${text.label} text-body-sm [transition:opacity_var(--duration-short4)_var(--ease-standard)]`,
   {
     variants: {
       dim: { true: "opacity-50", false: "" },

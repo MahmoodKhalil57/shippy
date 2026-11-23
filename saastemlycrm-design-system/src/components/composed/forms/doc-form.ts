@@ -3,8 +3,11 @@ import { customElement, property, state } from "lit/decorators.js";
 import type { Where } from "payload";
 import { matches } from "../../../payload/query.ts";
 import type { FieldLike } from "../../../contracts/config.ts";
+import { fieldError, inputOf } from "../../../contracts/fields.ts";
 import type { DropdownItem } from "../../primitives/actions/dropdown.ts";
 import { LightElement } from "../../base/light-element.ts";
+import { AI_CHANGE } from "../../../agent/ai-polyfill.ts";
+import { suggest, supported, type SuggestField } from "../../../agent/built-in-ai.ts";
 import "../../primitives/actions/button.ts";
 import "../../primitives/actions/dropdown.ts";
 import "../../primitives/data/table.ts";
@@ -15,6 +18,14 @@ import "../../primitives/containers/card.ts";
 import "../../primitives/containers/collapse.ts";
 import "../../primitives/data/badge.ts";
 import "../../primitives/forms/checkbox.ts";
+import "../../primitives/actions/button-group.ts";
+import "../../primitives/forms/date-input.ts";
+import "../../primitives/forms/field.ts";
+import "../../primitives/forms/range.ts";
+import "../../primitives/forms/rating.ts";
+import "../../primitives/forms/scale.ts";
+import "../../primitives/forms/stepper.ts";
+import "../../primitives/forms/switch.ts";
 import "../../primitives/forms/fieldset.ts";
 import "../../primitives/forms/radio.ts";
 import "../../primitives/forms/select.ts";
@@ -166,6 +177,19 @@ const fromInputDate = (v: string, appearance: DateAppearance, previous: unknown)
   return new Date(appearance === "monthOnly" ? `${v}-01T00:00` : v).toISOString();
 };
 
+/** What a field's suggestion is asked as, and how its answer becomes the field's value and reads. */
+interface SuggestSpec {
+  field: SuggestField;
+  toValue: (x: string | number | boolean) => unknown;
+  label: (x: string | number | boolean) => string;
+}
+/** A field's suggestion: on its way, shown, or why none came. */
+type Suggestion = { busy: true } | { value: unknown; label: string } | { note: string };
+const dateLabel = (iso: string) => {
+  const d = new Date(`${iso}T00:00`);
+  return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString(undefined, { dateStyle: "medium" });
+};
+
 /** Fields holding a value, with layout fields flattened (for row labels). */
 const valueFields = (fields: FieldLike[]): FieldLike[] =>
   fields.flatMap((f) =>
@@ -204,6 +228,157 @@ export class UiDocForm extends LightElement {
   @state() private _folded = new Map<string, boolean>();
   /** JSON fields whose text doesn't parse (kept as typed), by path. */
   @state() private _badJson = new Map<string, string>();
+  /** Fields changed here (by dotted path): their value is checked as it's typed from then on. */
+  @state() private _touched = new Set<string>();
+  /** Today (`YYYY-MM-DD`) for dates said in words ("in 3 days"); else the device's. */
+  @property() today = "";
+  /** What the document is ("Case", "Supplier"), for suggestions. */
+  @property() what = "";
+  /**
+   * Every field of the document, when this form shows only some of them (the main part or the
+   * sidebar): a suggestion reads the whole document.
+   */
+  @property({ attribute: false }) contextFields?: FieldLike[];
+  /** Suggested answers, by dotted path (`ui-field`'s third state, after placeholder and value). */
+  @state() private _suggestions = new Map<string, Suggestion>();
+
+  #aiChange = () => this.requestUpdate();
+  override connectedCallback() {
+    super.connectedCallback();
+    addEventListener(AI_CHANGE, this.#aiChange);
+  }
+  override disconnectedCallback() {
+    super.disconnectedCallback();
+    removeEventListener(AI_CHANGE, this.#aiChange);
+  }
+
+  /** How `f` is suggested, or null when a suggestion makes no sense for it (lists, files, JSON…). */
+  private _suggestSpec(f: FieldLike, v: unknown, data: Data): SuggestSpec | null {
+    const hint = typeof f.admin?.description === "string" ? f.admin.description : undefined;
+    const base = { label: labelOf(f), hint };
+    const words = (x: string | number | boolean) => String(x);
+    switch (f.type) {
+      case "text":
+      case "email":
+        if (f.hasMany) return null;
+        return {
+          field: { ...base, type: "string", ...(f.type === "email" ? { format: "email" as const } : {}) },
+          toValue: words,
+          label: words,
+        };
+      case "textarea":
+        return { field: { ...base, type: "string", format: "paragraph" }, toValue: words, label: words };
+      case "number":
+        return f.hasMany ? null : { field: { ...base, type: "number" }, toValue: Number, label: words };
+      case "checkbox":
+        return { field: { ...base, type: "boolean" }, toValue: Boolean, label: (x) => (x === true ? "Yes" : "No") };
+      case "date": {
+        const appearance = appearanceOf(f);
+        if (appearance !== "dayOnly" && appearance !== "dayAndTime") return null;
+        return {
+          field: { ...base, type: "string", format: "date" },
+          toValue: (x) => fromInputDate(appearance === "dayAndTime" ? `${x}T09:00` : String(x), appearance, v),
+          label: (x) => dateLabel(String(x)),
+        };
+      }
+      case "select":
+      case "radio":
+      case "relationship": {
+        if (f.hasMany || Array.isArray(f.relationTo)) return null;
+        const options =
+          f.type === "relationship"
+            ? this._options(f, data)
+            : (f.options ?? []).map((o) =>
+                typeof o === "string" ? { value: o, label: o } : { value: o.value, label: textOf(o.label) ?? o.value },
+              );
+        if (!options.length || options.length > 80) return null;
+        const byLabel = new Map(options.map((o) => [String(o.label), o.value]));
+        return {
+          field: { ...base, type: "string", options: [...byLabel.keys()] },
+          toValue: (x) => byLabel.get(String(x)) ?? null,
+          label: words,
+        };
+      }
+      default:
+        return null;
+    }
+  }
+
+  /** What the document already says, as a person reads it (label: value), for a suggestion. */
+  private _known(skip: string): Record<string, string> {
+    const out: Record<string, string> = {};
+    const walk = (fields: FieldLike[], data: Data, prefix: string, at: string) => {
+      for (const f of fields) {
+        if (Object.keys(out).length >= 60) return;
+        if (f.type === "row" || f.type === "collapsible") walk(f.fields ?? [], data, prefix, at);
+        else if (f.type === "tabs")
+          for (const t of f.tabs ?? [])
+            if (t.name)
+              walk(
+                t.fields,
+                isObj(data[t.name]) ? (data[t.name] as Data) : {},
+                `${prefix}${t.name} · `,
+                `${at}${t.name}.`,
+              );
+            else walk(t.fields, data, prefix, at);
+        else if (f.type === "group" && f.name)
+          walk(
+            f.fields ?? [],
+            isObj(data[f.name]) ? (data[f.name] as Data) : {},
+            `${prefix}${labelOf(f)} · `,
+            `${at}${f.name}.`,
+          );
+        else if (f.name && `${at}${f.name}` !== skip) {
+          const shown = this._read(f, data[f.name], data);
+          if (shown) out[`${prefix}${labelOf(f)}`] = shown;
+        }
+      }
+    };
+    walk(this.contextFields ?? this.fields, this.value, "", "");
+    return out;
+  }
+
+  /** One value as it reads on screen (an option's label, a related record's name), or "" for none. */
+  private _read(f: FieldLike, v: unknown, data: Data): string {
+    if (v == null || v === "" || isObj(v) || Array.isArray(v)) return "";
+    if (typeof v === "boolean") return f.type === "checkbox" ? (v ? "Yes" : "No") : "";
+    if (f.type === "select" || f.type === "radio") {
+      const o = (f.options ?? []).find((o) => (typeof o === "string" ? o : o.value) === v);
+      return o == null ? text(v) : typeof o === "string" ? o : (textOf(o.label) ?? o.value);
+    }
+    if (f.type === "relationship") {
+      if (Array.isArray(f.relationTo)) return "";
+      return this._options(f, data, [text(v)]).find((o) => o.value === text(v))?.label ?? "";
+    }
+    if (f.type === "date") return text(v).slice(0, 10);
+    return text(v);
+  }
+
+  private _suggestion(key: string, next?: Suggestion) {
+    const m = new Map(this._suggestions);
+    if (next) m.set(key, next);
+    else m.delete(key);
+    this._suggestions = m;
+  }
+
+  private async _suggest(key: string, spec: SuggestSpec) {
+    this._suggestion(key, { busy: true });
+    try {
+      const today = this.today || new Date().toISOString().slice(0, 10);
+      const x = await suggest(spec.field, this.what || "record", this._known(key), today);
+      const value = x == null ? null : spec.toValue(x);
+      this._suggestion(
+        key,
+        x == null || value == null
+          ? { note: "Nothing on the form points to an answer yet. Fill in more and try again." }
+          : { value, label: spec.label(x) },
+      );
+    } catch (e) {
+      // The model's own errors ("An unknown error occurred") say nothing a person can act on.
+      console.warn("Suggestion failed", e);
+      this._suggestion(key, { note: "The AI couldn't suggest an answer this time. Try again in a moment." });
+    }
+  }
 
   private _set(path: Path, v: unknown) {
     this.value = setIn(this.value, path, v);
@@ -214,10 +389,6 @@ export class UiDocForm extends LightElement {
   private _error(path: Path) {
     const msg = this.errors[path.join(".")];
     return msg ? html`<ui-text variant="body-md" color="error">${msg}</ui-text>` : nothing;
-  }
-
-  private _hasError(path: Path) {
-    return !!this.errors[path.join(".")];
   }
 
   /** Errors at or inside `path` (for tabs and folded rows). */
@@ -541,120 +712,261 @@ export class UiDocForm extends LightElement {
     </ui-flex>`;
   }
 
+  /**
+   * One field: the question (`<ui-field>`: its label, "Required" or a check, its hint and "More",
+   * what's wrong as it's typed, a count against its limit) around the input its shape calls for
+   * (`inputOf`: a segmented choice, a scale, a slider, a stepper, a switch, a date with quick
+   * picks…). Its value is checked against its schema (`fieldError`, from its Payload settings)
+   * once it's been changed here; an error from the server wins.
+   */
   private _input(f: FieldLike, data: Data, path: Path) {
     const name = f.name!;
     const at = [...path, name];
+    const key = at.join(".");
     const v = data[name];
-    const label = labelOf(f) + (f.required ? " *" : "");
-    const description = f.admin?.description ?? "";
-    const color = this._hasError(at) ? ("error" as const) : undefined;
-    // A running count against `maxLength` (Payload validates it; this shows it coming).
+    const touched = this._touched.has(key);
+    const error = this.errors[key] ?? (touched ? fieldError(f, v) : undefined) ?? "";
+    const filled = !(v == null || v === "" || (Array.isArray(v) && !v.length));
+    const description = typeof f.admin?.description === "string" ? f.admin.description : "";
+    const about = typeof f.custom?.about === "string" ? f.custom.about : "";
     const count =
-      f.maxLength != null && typeof v === "string" && !(f.type === "text" && f.hasMany)
-        ? `${v.length} / ${f.maxLength}`
-        : "";
-    const hint = [typeof description === "string" ? description : "", count].filter(Boolean).join(" · ") || description;
+      f.maxLength != null && typeof v === "string" && !(f.type === "text" && f.hasMany) ? v.length : undefined;
+    const set = (x: unknown) => {
+      if (!touched) this._touched = new Set(this._touched).add(key);
+      // An answer of one's own replaces a suggestion.
+      if (this._suggestions.has(key)) this._suggestion(key);
+      this._set(at, x);
+    };
+    const control = this._control(f, v, set, data, !!error);
+    const locked = this.readonly || !!f.admin?.readOnly;
+    const spec = !locked && supported("LanguageModel") ? this._suggestSpec(f, v, data) : null;
+    const s = this._suggestions.get(key);
+    // A checkbox reads as one line: its switch and its words (the switch carries the label).
+    return html`<ui-field
+      .label=${labelOf(f)}
+      ?required=${!!f.required}
+      ?filled=${filled}
+      ?valid=${touched && filled && !error}
+      ?readonly=${this.readonly || !!f.admin?.readOnly}
+      .hint=${description}
+      .about=${about}
+      .error=${error}
+      .count=${count}
+      .max=${count != null ? f.maxLength : undefined}
+      ?suggestable=${!!spec}
+      ?suggesting=${!!s && "busy" in s}
+      .suggestion=${s && "label" in s ? s.label : ""}
+      .suggestNote=${s && "note" in s ? s.note : ""}
+      @ui-suggest=${() => spec && this._suggest(key, spec)}
+      @ui-suggestion=${(e: CustomEvent<{ accept: boolean }>) => {
+        const got = this._suggestions.get(key);
+        this._suggestion(key);
+        if (e.detail.accept && got && "value" in got) set(got.value);
+      }}
+      >${control}</ui-field
+    >`;
+  }
+
+  /** The input for a field, bare (its label, hint and error are the `<ui-field>`'s). */
+  private _control(f: FieldLike, v: unknown, set: (x: unknown) => void, data: Data, invalid: boolean) {
+    const label = labelOf(f);
     const placeholder = textOf(f.admin?.placeholder);
     const disabled = this.readonly || !!f.admin?.readOnly;
-    const set = (x: unknown) => this._set(at, x);
+    const color = invalid ? ("error" as const) : undefined;
     const target = (e: Event) => e.target as HTMLInputElement;
-    let control: TemplateResult;
+    const num = (x: string) => (x === "" ? null : Number(x));
+    const kind = inputOf(f);
+    const unit = f.custom?.number?.unit;
+    const suffix = typeof f.custom?.suffix === "string" ? f.custom.suffix : undefined;
+    const options = (f.options ?? []).map((o, i) =>
+      typeof o === "string" ? { value: o, label: o, i } : { value: o.value, label: textOf(o.label) ?? o.value, i },
+    );
+    const toned = !!f.custom?.tones;
 
-    switch (f.type) {
-      case "text":
-      case "email":
-        if (f.hasMany) {
-          control = html`<ui-combobox
-            .legend=${label}
-            .hint=${hint || "Type a value and press Enter."}
-            multiple
-            creatable
-            .color=${color}
-            .value=${Array.isArray(v) ? v.map(text) : []}
-            .placeholder=${placeholder ?? "Add…"}
-            .readonly=${disabled}
-            field-width="full"
-            @ui-change=${(e: CustomEvent<{ value: string[] }>) => set(e.detail.value)}
-          ></ui-combobox>`;
-          break;
-        }
-        control = html`<ui-text-input
-          .color=${color}
-          .maxlength=${f.maxLength}
-          .minlength=${f.minLength}
-          autocomplete=${(f.admin?.autoComplete as string | undefined) ?? "off"}
-          .legend=${label}
-          .hint=${hint}
-          .type=${f.type === "email" ? "email" : "text"}
-          .value=${v == null ? "" : text(v)}
-          .placeholder=${placeholder}
-          .readonly=${disabled}
-          field-width="full"
+    switch (kind) {
+      case "switch":
+        return html`<ui-switch
+          .checked=${v === true}
+          .disabled=${disabled}
+          aria-label=${label}
+          .label=${v === true ? "Yes" : "No"}
+          @change=${(e: Event) => set(target(e).checked)}
+        ></ui-switch>`;
+      case "segmented":
+      case "chips":
+        return html`<ui-button-group
+          .label=${label}
+          select=${kind === "chips" ? "multi" : "single"}
+          .value=${typeof v === "string" ? v : ""}
+          .values=${Array.isArray(v) ? v.map(text) : []}
+          .options=${options.map((o) => ({
+            value: o.value,
+            label: o.label,
+            disabled,
+            // A status's tone, else a category's hue: the same colour it has in lists and cards.
+            ...(toned ? { tone: f.custom!.tones![o.value] ?? "neutral" } : { hue: o.i }),
+          }))}
+          @ui-change=${(e: CustomEvent<{ value?: string; values?: string[] }>) =>
+            set(kind === "chips" ? (e.detail.values ?? []) : (e.detail.value ?? null))}
+        ></ui-button-group>`;
+      case "rating":
+        return html`<ui-rating
+          .label=${label}
+          .max=${f.max ?? 5}
+          .value=${typeof v === "number" ? v : null}
+          ?required=${!!f.required}
+          ?disabled=${disabled}
+          .words=${Array.isArray(f.custom?.words) ? (f.custom.words as string[]) : []}
+          @ui-change=${(e: CustomEvent<{ value: number | null }>) => set(e.detail.value)}
+        ></ui-rating>`;
+      case "scale":
+        return html`<ui-scale
+          .label=${label}
+          .min=${f.min ?? 1}
+          .max=${f.max ?? 5}
+          .value=${typeof v === "number" ? v : null}
+          .low=${typeof f.custom?.low === "string" ? f.custom.low : ""}
+          .high=${typeof f.custom?.high === "string" ? f.custom.high : ""}
+          ?disabled=${disabled}
+          @ui-change=${(e: CustomEvent<{ value: number }>) => set(e.detail.value)}
+        ></ui-scale>`;
+      case "slider":
+        return html`<ui-range
+          .label=${label}
+          bubble
           width="full"
-          @input=${(e: Event) => set(target(e).value)}
-        ></ui-text-input>`;
-        break;
-      case "number":
-        // hasMany numbers (e.g. line numbers 1, 2, 5) as chips.
-        if (f.hasMany) {
-          control = html`<ui-combobox
-            .legend=${label}
-            .hint=${hint || "Type a number and press Enter."}
-            multiple
-            creatable
-            inputmode="decimal"
-            .color=${color}
-            .value=${Array.isArray(v) ? v.map(text) : []}
-            .placeholder=${placeholder ?? "Add…"}
-            .readonly=${disabled}
-            field-width="full"
-            @ui-change=${(e: CustomEvent<{ value: string[] }>) =>
-              set(e.detail.value.map(Number).filter((n) => Number.isFinite(n)))}
-          ></ui-combobox>`;
-          break;
-        }
-        control = html`<ui-text-input
-          .legend=${label}
-          .hint=${hint}
+          color="primary"
+          .min=${f.min ?? 0}
+          .max=${f.max ?? 100}
+          .step=${f.admin?.step ?? ((f.max ?? 100) - (f.min ?? 0) <= 1 ? 0.01 : 1)}
+          .value=${typeof v === "number" ? v : (f.min ?? 0)}
+          .format=${(x: number) =>
+            f.max === 1 && f.min === 0 ? `${Math.round(x * 100)}%` : `${x}${unit === "pct" ? "%" : (suffix ?? "")}`}
+          ?disabled=${disabled}
+          @input=${(e: Event) => set(Number(target(e).value))}
+        ></ui-range>`;
+      case "stepper":
+        return html`<ui-stepper
+          .label=${label}
+          .value=${typeof v === "number" ? v : null}
+          .min=${f.min ?? (unit === "days" ? 0 : undefined)}
+          .max=${f.max ?? undefined}
+          .step=${f.admin?.step ?? 1}
+          .unit=${suffix ?? (unit === "days" ? "days" : "")}
+          .placeholder=${placeholder ?? ""}
+          ?disabled=${disabled}
+          @ui-change=${(e: CustomEvent<{ value: number | null }>) => set(e.detail.value)}
+        ></ui-stepper>`;
+      case "money":
+      case "percent":
+      case "number": {
+        if (f.hasMany) break;
+        const money = f.custom?.number;
+        const currency =
+          kind === "money"
+            ? (money?.currency ?? (money?.currencyField ? text(data[money.currencyField]) : "")) || undefined
+            : undefined;
+        return html`<ui-text-input
+          aria-label=${label}
           .color=${color}
           .placeholder=${placeholder}
           .step=${f.admin?.step == null ? "any" : text(f.admin.step)}
           inputmode="decimal"
           type="number"
+          tabular
+          .leading=${currency}
+          .trailing=${kind === "percent" ? "%" : suffix}
           .min=${f.min == null ? undefined : text(f.min)}
           .max=${f.max == null ? undefined : text(f.max)}
           .value=${v == null ? "" : text(v)}
           .readonly=${disabled}
-          field-width="full"
           width="full"
-          @input=${(e: Event) => set(target(e).value === "" ? null : Number(target(e).value))}
+          @input=${(e: Event) => set(num(target(e).value))}
         ></ui-text-input>`;
-        break;
+      }
       case "date": {
         const appearance = appearanceOf(f);
+        if (appearance !== "dayOnly" && appearance !== "dayAndTime") break;
         const bound = (d: unknown) =>
           d == null ? undefined : toInputDate(new Date(d as string).toISOString(), appearance);
-        control = html`<ui-text-input
-          .legend=${label}
-          .hint=${hint}
-          .color=${color}
-          .type=${DATE_INPUT[appearance]}
+        return html`<ui-date-input
+          .label=${label}
+          ?time=${appearance === "dayAndTime"}
+          .today=${this.today}
+          ?future=${/due|deadline|eta|arriv|expir|until|by$|valid/i.test(f.name ?? "")}
           .min=${bound(f.admin?.date?.minDate)}
           .max=${bound(f.admin?.date?.maxDate)}
           .value=${toInputDate(v, appearance)}
+          ?required=${!!f.required}
+          ?disabled=${disabled}
+          @ui-change=${(e: CustomEvent<{ value: string }>) => set(fromInputDate(e.detail.value, appearance, v))}
+        ></ui-date-input>`;
+      }
+      default:
+        break;
+    }
+
+    switch (f.type) {
+      case "text":
+      case "email":
+        if (f.hasMany)
+          return html`<ui-combobox
+            aria-label=${label}
+            multiple
+            creatable
+            .color=${color}
+            .value=${Array.isArray(v) ? v.map(text) : []}
+            .placeholder=${placeholder ?? "Type and press Enter"}
+            .readonly=${disabled}
+            field-width="full"
+            @ui-change=${(e: CustomEvent<{ value: string[] }>) => set(e.detail.value)}
+          ></ui-combobox>`;
+        return html`<ui-text-input
+          aria-label=${label}
+          .color=${color}
+          .maxlength=${f.maxLength}
+          .minlength=${f.minLength}
+          autocomplete=${(f.admin?.autoComplete as string | undefined) ?? "off"}
+          .type=${f.type === "email" ? "email" : "text"}
+          .icon=${f.type === "email" ? "mail" : undefined}
+          .value=${v == null ? "" : text(v)}
+          .placeholder=${placeholder}
+          .readonly=${disabled}
+          width="full"
+          @input=${(e: Event) => set(target(e).value)}
+        ></ui-text-input>`;
+      case "number":
+        // hasMany numbers (line numbers 1, 2, 5) as chips.
+        return html`<ui-combobox
+          aria-label=${label}
+          multiple
+          creatable
+          inputmode="decimal"
+          .color=${color}
+          .value=${Array.isArray(v) ? v.map(text) : []}
+          .placeholder=${placeholder ?? "Type a number and press Enter"}
           .readonly=${disabled}
           field-width="full"
+          @ui-change=${(e: CustomEvent<{ value: string[] }>) =>
+            set(e.detail.value.map(Number).filter((n) => Number.isFinite(n)))}
+        ></ui-combobox>`;
+      case "date": {
+        const appearance = appearanceOf(f);
+        return html`<ui-text-input
+          aria-label=${label}
+          .color=${color}
+          .type=${DATE_INPUT[appearance]}
+          .value=${toInputDate(v, appearance)}
+          .readonly=${disabled}
           width="full"
           @input=${(e: Event) => set(fromInputDate(target(e).value, appearance, v))}
         ></ui-text-input>`;
-        break;
       }
       case "textarea":
       case "code":
       case "richText":
-        control = html`<ui-textarea
-            .legend=${f.type === "code" && f.admin?.language ? `${label} · ${text(f.admin.language)}` : label}
-            .hint=${hint}
+        return html`<ui-textarea
+            aria-label=${f.type === "code" && f.admin?.language ? `${label} · ${text(f.admin.language)}` : label}
             .color=${color}
             .rows=${f.admin?.rows ?? (f.type === "code" ? 8 : 3)}
             ?mono=${f.type === "code"}
@@ -662,7 +974,6 @@ export class UiDocForm extends LightElement {
             .value=${typeof v === "string" ? v : v == null ? "" : JSON.stringify(v)}
             .placeholder=${placeholder}
             .readonly=${disabled}
-            field-width="full"
             width="full"
             @input=${(e: Event) => set((e.target as HTMLTextAreaElement).value)}
           ></ui-textarea>
@@ -675,46 +986,40 @@ export class UiDocForm extends LightElement {
                 ></ui-ai-tools>`
               : nothing
           }`;
-        break;
       case "json": {
         // Checked as it's typed; text that doesn't parse stays as typed (and isn't saved) until it does.
-        const key = at.join(".");
-        const bad = this._badJson.get(key);
-        control = html`<ui-textarea
-            .legend=${label}
-            .hint=${hint}
+        const k = `${f.name}`;
+        const bad = this._badJson.get(k);
+        return html`<ui-textarea
+            aria-label=${label}
             .color=${bad != null || color ? "error" : undefined}
             mono
             .rows=${f.admin?.rows ?? 8}
             .value=${bad ?? (v == null ? "" : JSON.stringify(v, null, 2))}
             .readonly=${disabled}
-            field-width="full"
             width="full"
             @input=${(e: Event) => {
               const raw = (e.target as HTMLTextAreaElement).value;
               const next = new Map(this._badJson);
               try {
                 const parsed: unknown = raw.trim() ? JSON.parse(raw) : null;
-                next.delete(key);
+                next.delete(k);
                 this._badJson = next;
                 set(parsed);
               } catch {
-                this._badJson = next.set(key, raw);
+                this._badJson = next.set(k, raw);
               }
             }}
           ></ui-textarea>
-          ${bad != null ? html`<ui-text variant="body-md" color="error">Not valid JSON yet — it's saved once it is.</ui-text>` : nothing}`;
-        break;
+          ${bad != null ? html`<ui-text variant="body-md" color="error">Not valid JSON yet; it's saved once it is.</ui-text>` : nothing}`;
       }
       case "checkbox":
-        control = html`<ui-checkbox
-          .label=${labelOf(f)}
-          .hint=${hint}
+        return html`<ui-checkbox
+          .label=${label}
           .checked=${v === true}
           .disabled=${disabled}
           @change=${(e: Event) => set(target(e).checked)}
         ></ui-checkbox>`;
-        break;
       case "point": {
         const p = Array.isArray(v) ? (v as (number | null)[]) : [null, null];
         const part = (i: 0 | 1, legend: string) =>
@@ -727,23 +1032,20 @@ export class UiDocForm extends LightElement {
             width="full"
             @input=${(e: Event) => {
               const next = [...p];
-              next[i] = target(e).value === "" ? null : Number(target(e).value);
+              next[i] = num(target(e).value);
               set(next);
             }}
           ></ui-text-input>`;
-        control = html`<ui-grid fit="xs" gap="4">${part(0, `${label} · longitude`)}${part(1, "Latitude")}</ui-grid>`;
-        break;
+        return html`<ui-grid fit="xs" gap="4">${part(0, "Longitude")}${part(1, "Latitude")}</ui-grid>`;
       }
       case "select":
       case "radio":
       case "relationship":
       case "upload":
-        control = this._choice(f, v, set, label, hint, disabled, color, placeholder, data);
-        break;
+        return this._choice(f, v, set, label, "", disabled, color, placeholder, data);
       default:
-        control = html`<ui-text variant="body-md" color="muted">${label}: unsupported field type "${f.type}"</ui-text>`;
+        return html`<ui-text variant="body-md" color="muted">${label}: unsupported field type "${f.type}"</ui-text>`;
     }
-    return html`<ui-flex direction="col" gap="1">${control}${this._error(at)}</ui-flex>`;
   }
 
   /**
@@ -816,7 +1118,7 @@ export class UiDocForm extends LightElement {
 
     if (f.type === "radio") {
       return html`<ui-radio
-        .legend=${label}
+        aria-label=${label}
         .hint=${hint ?? ""}
         direction=${f.admin?.layout === "vertical" ? "vertical" : "horizontal"}
         .options=${options}
@@ -829,7 +1131,7 @@ export class UiDocForm extends LightElement {
     const picked = f.hasMany ? (Array.isArray(v) ? v.map(toOption) : []) : toOption(v);
     const field = (fieldHint: unknown) =>
       html`<ui-combobox
-        .legend=${label}
+        aria-label=${label}
         .hint=${fieldHint ?? ""}
         .options=${options}
         .value=${picked}

@@ -16,10 +16,10 @@ import { iconSvg } from "../media/icon.ts";
  * empties), `ui-stop` on Stop.
  */
 export const promptInput = rcva(
-  `${stack} ${inset["1.5"]} gap-1 rounded-box border border-outline-variant bg-surface py-1.5 transition-[border-color,box-shadow] duration-(--duration-effects) ease-effects focus-within:border-primary/60 focus-within:ring-3 focus-within:ring-primary/15 motion-reduce:transition-none`,
+  `${stack} ${inset["1.5"]} gap-1 rounded-box border border-outline-variant bg-surface py-1.5 transition-[border-color,box-shadow] duration-(--duration-effects) ease-effects has-[>textarea:focus]:border-primary has-[>textarea:focus]:inset-ring has-[>textarea:focus]:inset-ring-primary motion-reduce:transition-none`,
 );
 export const promptInputText = rcva(
-  `${inset["2"]} ${text.label} max-h-40 min-h-10 resize-none bg-transparent py-1.5 text-body-md outline-none [field-sizing:content] placeholder:text-on-surface-variant disabled:cursor-not-allowed`,
+  `${inset["2"]} ${text.label} max-h-40 min-h-10 resize-none bg-transparent py-1.5 text-body-md caret-primary outline-none [--focus:field] [field-sizing:content] placeholder:text-on-surface-variant disabled:cursor-not-allowed`,
 );
 export const promptInputBar = rcva(`${row} items-center gap-1`);
 export const promptInputTools = rcva(`${row} min-w-0 flex-1 items-center gap-1`);

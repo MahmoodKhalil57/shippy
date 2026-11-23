@@ -639,7 +639,12 @@ export class AppWidgets extends LightElement {
       // A kept widget's mini version, each of its items too (a widget drawn per item: its figures).
       const pinned = this.#pins.get(this.#sources.get(key)?.base ?? key);
       const mini = !!pinned;
-      if (mini || w.fit) this.#fitting.add(key);
+      // A page's own collection, record or setting is as tall as it is (never "Show all") until
+      // someone sizes it by hand: then that size, scrolling inside, within its bounds.
+      const mine = this.#prefs.value.boards[this.#boardKey];
+      const byHand =
+        mine?.rows?.[key] != null || this.live?.heights?.[key] != null || (this.live?.key === key && !!this.live.rows);
+      if (mini || w.fit || (page && !byHand)) this.#fitting.add(key);
       else this.#fitting.delete(key);
       const b = mini
         ? (() => {
@@ -887,7 +892,8 @@ export class AppWidgets extends LightElement {
               : nothing
           }
           ${
-            Object.keys(mine.pins ?? {}).length
+            // Only when it would move something: a gap some tile could move up into.
+            Object.keys(mine.pins ?? {}).length && this._gaps
               ? html`<ui-button size="xs" variant="text" @click=${() => this.#compact()}>Compact</ui-button>`
               : nothing
           }
@@ -936,6 +942,25 @@ export class AppWidgets extends LightElement {
   #keep(change: (mine: NonNullable<ReturnType<typeof preferences.get>["boards"][string]>) => object) {
     const board = this.#boardKey;
     preferences.set((p) => ({ boards: { ...p.boards, [board]: change({ ...p.boards[board] }) } }));
+  }
+
+  /** Whether "Compact" would move a tile (a gap above one of them): else it isn't offered. */
+  @state() private _gaps = false;
+
+  /**
+   * After each render, once the board has placed its tiles: whether compacting would move any of
+   * them (its own `compact` against where they are now). Read from the board's placement, never
+   * measured; set only when it changes, so it settles in one more render at most.
+   */
+  protected updated() {
+    const board = this.querySelector<UiBoard>(":scope > ui-board");
+    if (!board) return;
+    void board.updateComplete.then(() => {
+      if (!board.lanes) return;
+      const boxes = this.#boxes(board.placed());
+      const gaps = [...compact(boxes, this.#fixed)].some(([k, spot]) => boxes.get(k)?.row !== spot.row);
+      if (gaps !== this._gaps) this._gaps = gaps;
+    });
   }
 
   /** Closes the gaps left on a board arranged by hand: every tile up as far as it goes in its lanes (`compact`). */
@@ -1521,6 +1546,7 @@ export class AppWidget extends LightElement {
     return html`<ui-tile
       .size=${w.size}
       ?bare=${bare}
+      scrolls
       .heading=${bare ? "" : heading}
       .subhead=${w.subhead ?? ""}
       .count=${this.count}

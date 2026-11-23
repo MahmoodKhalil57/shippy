@@ -16,7 +16,7 @@ import { iconSvg, type IconName } from "../media/icon.ts";
  * empty slot (an upload). It presses in on a spring when clicked. Fires a plain `click`.
  */
 export const choiceTile = rcva(
-  "group/tile relative isolate grid aspect-[16/10] w-full cursor-pointer place-items-center overflow-hidden rounded-field bg-surface-container text-on-surface-variant ring-1 ring-outline-variant [transition:box-shadow_var(--duration-effects-fast)_var(--ease-effects-fast),scale_var(--duration-spatial-fast)_var(--ease-spatial-fast)] hover:ring-2 hover:ring-primary/50 active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary motion-reduce:transition-none",
+  "group/tile relative isolate grid aspect-[16/10] w-full cursor-pointer place-items-center overflow-hidden [--clips:media] rounded-field bg-surface-container text-on-surface-variant ring-1 ring-outline-variant [transition:box-shadow_var(--duration-effects-fast)_var(--ease-effects-fast),scale_var(--duration-spatial-fast)_var(--ease-spatial-fast)] hover:ring-2 hover:ring-primary/50 active:scale-[0.96] motion-reduce:transition-none",
   {
     variants: {
       selected: { true: "ring-2 ring-primary hover:ring-primary" },

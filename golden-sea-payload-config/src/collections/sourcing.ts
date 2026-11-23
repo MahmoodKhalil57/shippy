@@ -60,7 +60,7 @@ const percentOf = (tonePath?: string, label = "Confidence"): Field => ({
   type: "number",
   label,
   virtual: true,
-  admin: { readOnly: true },
+  admin: { readOnly: true, description: "The same confidence as a whole percentage." },
   custom: {
     ...formats.percent(0),
     ...(tonePath
@@ -79,6 +79,15 @@ const percentOf = (tonePath?: string, label = "Confidence"): Field => ({
         typeof siblingData?.confidence === "number" ? Math.round(siblingData.confidence * 100) : undefined,
     ],
   },
+});
+
+/** A 0–1 confidence the AI gives, with its hint. */
+const confidenceField = (hint: string): Field => ({
+  name: "confidence",
+  type: "number",
+  min: 0,
+  max: 1,
+  admin: { description: hint, placeholder: "e.g. 0.92" },
 });
 
 /** Whether the inbox-history import is approved (its decisions are then final), read once per request. */
@@ -184,26 +193,73 @@ export const IntakeMessages: CollectionConfig = {
                   type: "select",
                   required: true,
                   options: ["Email", "Website form", "WhatsApp", "Phone", "Customer portal"],
+                  admin: { description: "How the message reached us.", placeholder: "Pick a channel" },
                 },
-                { name: "mailbox", type: "text", admin: { placeholder: "sales@ / purchasing@" } },
+                {
+                  name: "mailbox",
+                  type: "text",
+                  admin: {
+                    description: "The shared mailbox that received it, for email.",
+                    placeholder: "sales@ / purchasing@",
+                  },
+                },
                 {
                   name: "receivedAt",
                   type: "date",
                   required: true,
-                  admin: { date: { pickerAppearance: "dayAndTime" } },
+                  admin: {
+                    description: "When it arrived. The inbox sorts newest first.",
+                    date: { pickerAppearance: "dayAndTime" },
+                  },
                 },
               ],
             },
             {
               type: "row",
               fields: [
-                { name: "from", type: "text", required: true },
-                { name: "fromName", type: "text" },
+                {
+                  name: "from",
+                  type: "text",
+                  required: true,
+                  admin: {
+                    description: "Sender's email address or phone number.",
+                    placeholder: "e.g. ops@nordictern.com",
+                  },
+                },
+                {
+                  name: "fromName",
+                  type: "text",
+                  admin: {
+                    description: "Sender's display name, as shown in the mailbox.",
+                    placeholder: "e.g. Anders Holm",
+                  },
+                },
               ],
             },
-            { name: "subject", type: "text", required: true },
-            { name: "body", type: "textarea" },
-            { name: "attachments", type: "upload", relationTo: "media", hasMany: true },
+            {
+              name: "subject",
+              type: "text",
+              required: true,
+              admin: {
+                description: "The email subject or the first line of the message.",
+                placeholder: "e.g. RFQ provisions for MV Nordic Tern, Port Said",
+              },
+            },
+            {
+              name: "body",
+              type: "textarea",
+              admin: {
+                description: "The message text, kept as received.",
+                placeholder: "e.g. Please quote the attached list, delivery Port Said 14 Dec.",
+              },
+            },
+            {
+              name: "attachments",
+              type: "upload",
+              relationTo: "media",
+              hasMany: true,
+              admin: { description: "Files that came with the message, stored in the media library." },
+            },
             {
               name: "files",
               type: "array",
@@ -213,9 +269,29 @@ export const IntakeMessages: CollectionConfig = {
                 {
                   type: "row",
                   fields: [
-                    { name: "name", type: "text", required: true },
-                    { name: "kind", type: "select", options: ["Excel", "PDF", "Word", "Image", "Other"] },
-                    { name: "note", type: "text" },
+                    {
+                      name: "name",
+                      type: "text",
+                      required: true,
+                      admin: { description: "The file name as received.", placeholder: "e.g. provisions-list.xlsx" },
+                    },
+                    {
+                      name: "kind",
+                      type: "select",
+                      options: ["Excel", "PDF", "Word", "Image", "Other"],
+                      admin: {
+                        description: "The kind of file, so the AI reads it the right way.",
+                        placeholder: "Pick a type",
+                      },
+                    },
+                    {
+                      name: "note",
+                      type: "text",
+                      admin: {
+                        description: "Anything worth knowing about this file.",
+                        placeholder: "e.g. Second sheet is deck stores",
+                      },
+                    },
                   ],
                 },
               ],
@@ -226,10 +302,18 @@ export const IntakeMessages: CollectionConfig = {
               unique: true,
               admin: {
                 readOnly: true,
-                description: "Mailbox message-id / form submission id — re-processing the same message is a no-op.",
+                description:
+                  "Mailbox message-id or form submission id. Processing the same message twice does nothing.",
               },
             },
-            { name: "attachmentHash", type: "text", admin: { readOnly: true } },
+            {
+              name: "attachmentHash",
+              type: "text",
+              admin: {
+                readOnly: true,
+                description: "Fingerprint of the attachments, to spot the same files sent twice.",
+              },
+            },
             {
               name: "scenario",
               type: "text",
@@ -244,18 +328,29 @@ export const IntakeMessages: CollectionConfig = {
               name: "extraction",
               type: "group",
               label: "AI draft (never applied automatically when confidence is low)",
+              admin: { description: "What the AI read from the message. A person checks it before a case is built." },
               fields: [
                 {
                   name: "header",
                   type: "array",
                   labels: { singular: "Field", plural: "Fields" },
+                  admin: { description: "Case details the AI found, such as vessel, port and ETA." },
                   fields: [
                     {
                       type: "row",
                       fields: [
-                        { name: "field", type: "text", required: true },
-                        { name: "value", type: "text" },
-                        { name: "confidence", type: "number", min: 0, max: 1 },
+                        {
+                          name: "field",
+                          type: "text",
+                          required: true,
+                          admin: { description: "Which case detail this is.", placeholder: "e.g. Vessel" },
+                        },
+                        {
+                          name: "value",
+                          type: "text",
+                          admin: { description: "What the AI read for it.", placeholder: "e.g. MV Nordic Tern" },
+                        },
+                        confidenceField("How sure the AI is, from 0 to 1."),
                       ],
                     },
                   ],
@@ -264,62 +359,208 @@ export const IntakeMessages: CollectionConfig = {
                   name: "lines",
                   type: "array",
                   labels: { singular: "Line", plural: "Lines" },
+                  admin: { description: "The requested items the AI found, one line each." },
                   fields: [
-                    { name: "description", type: "text", required: true },
+                    {
+                      name: "description",
+                      type: "text",
+                      required: true,
+                      admin: {
+                        description: "What the customer asked for.",
+                        placeholder: "e.g. Fresh water hose 25 mm",
+                      },
+                    },
                     {
                       type: "row",
                       fields: [
-                        { name: "brand", type: "text" },
-                        { name: "partNo", type: "text" },
-                        { name: "impa", type: "text" },
-                        { name: "issa", type: "text" },
-                        { name: "qty", type: "text" },
-                        { name: "unit", type: "text" },
-                        { name: "brandRule", type: "select", options: ["Any", "Preferred brand", "Exact brand"] },
-                        { name: "confidence", type: "number", min: 0, max: 1 },
+                        {
+                          name: "brand",
+                          type: "text",
+                          admin: { description: "Brand named in the request.", placeholder: "e.g. Gates" },
+                        },
+                        {
+                          name: "partNo",
+                          type: "text",
+                          admin: { description: "Maker's part number, if given.", placeholder: "e.g. 7-11-10-8" },
+                        },
+                        {
+                          name: "impa",
+                          type: "text",
+                          admin: {
+                            description: "IMPA code, the marine stores catalogue number.",
+                            placeholder: "e.g. 590312",
+                          },
+                        },
+                        {
+                          name: "issa",
+                          type: "text",
+                          admin: {
+                            description: "ISSA code, used for ship cleaning and chemicals.",
+                            placeholder: "e.g. 75.110.01",
+                          },
+                        },
+                        {
+                          name: "qty",
+                          type: "text",
+                          admin: {
+                            description: "Quantity as written, before it is cleaned up.",
+                            placeholder: "e.g. 12",
+                          },
+                        },
+                        {
+                          name: "unit",
+                          type: "text",
+                          admin: { description: "Unit as written in the request.", placeholder: "e.g. pcs" },
+                        },
+                        {
+                          name: "brandRule",
+                          type: "select",
+                          options: ["Any", "Preferred brand", "Exact brand"],
+                          admin: {
+                            description: "How strictly the customer wants the brand.",
+                            placeholder: "Pick a rule",
+                          },
+                          custom: {
+                            about: "Exact brand means a different brand is a deviation the customer must accept.",
+                          },
+                        },
+                        confidenceField("How sure the AI is about this line, from 0 to 1."),
                       ],
                     },
                     {
                       type: "row",
                       fields: [
-                        { name: "store", type: "text" },
-                        { name: "source", type: "text", label: "Source attachment" },
-                        { name: "flag", type: "text", label: "Missing / unclear" },
+                        {
+                          name: "store",
+                          type: "text",
+                          admin: { description: "Ship store this item belongs to.", placeholder: "e.g. Deck stores" },
+                        },
+                        {
+                          name: "source",
+                          type: "text",
+                          label: "Source attachment",
+                          admin: {
+                            description: "The attachment this line came from.",
+                            placeholder: "e.g. provisions-list.xlsx",
+                          },
+                        },
+                        {
+                          name: "flag",
+                          type: "text",
+                          label: "Missing / unclear",
+                          admin: {
+                            description: "What is missing or unclear on this line.",
+                            placeholder: "e.g. No quantity given",
+                          },
+                        },
                       ],
                     },
-                    { name: "originalText", type: "text" },
+                    {
+                      name: "originalText",
+                      type: "text",
+                      admin: {
+                        description: "The line exactly as the customer wrote it.",
+                        placeholder: "e.g. 12x hose 25mm gates",
+                      },
+                    },
                   ],
                 },
-                { name: "missing", type: "array", fields: [{ name: "item", type: "text", required: true }] },
-                { name: "clarification", type: "textarea", label: "Drafted clarification request (not sent)" },
+                {
+                  name: "missing",
+                  type: "array",
+                  admin: { description: "Details still needed from the customer before pricing." },
+                  fields: [
+                    {
+                      name: "item",
+                      type: "text",
+                      required: true,
+                      admin: { description: "One missing detail.", placeholder: "e.g. Vessel ETA" },
+                    },
+                  ],
+                },
+                {
+                  name: "clarification",
+                  type: "textarea",
+                  label: "Drafted clarification request (not sent)",
+                  admin: {
+                    description: "A reply asking for the missing details. A person sends it.",
+                    placeholder: "e.g. Could you confirm the vessel ETA and quantities?",
+                  },
+                },
                 {
                   name: "assignment",
                   type: "group",
                   label: "Suggested by the assignment rules",
+                  admin: { description: "Who should handle the case, by the assignment rules." },
                   fields: [
                     {
                       type: "row",
                       fields: [
-                        { name: "owner", type: "relationship", relationTo: "users" },
-                        { name: "backup", type: "relationship", relationTo: "users" },
-                        { name: "deadline", type: "date" },
+                        {
+                          name: "owner",
+                          type: "relationship",
+                          relationTo: "users",
+                          admin: { description: "Suggested case owner.", placeholder: "e.g. Karim Youssef" },
+                        },
+                        {
+                          name: "backup",
+                          type: "relationship",
+                          relationTo: "users",
+                          admin: { description: "Covers when the owner is away.", placeholder: "e.g. Mona Adel" },
+                        },
+                        {
+                          name: "deadline",
+                          type: "date",
+                          admin: { description: "When the quote should go out, by the rules." },
+                        },
                       ],
                     },
-                    { name: "rule", type: "text" },
+                    {
+                      name: "rule",
+                      type: "text",
+                      admin: {
+                        description: "The assignment rule that picked them.",
+                        placeholder: "e.g. Port Said vessels",
+                      },
+                    },
                   ],
                 },
                 {
                   name: "acknowledgement",
                   type: "group",
                   label: "Acknowledgement draft",
+                  admin: { description: "A short receipt reply for the customer. Never sent without a person." },
                   fields: [
-                    { name: "subject", type: "text" },
-                    { name: "body", type: "textarea" },
-                    { name: "manual", type: "checkbox", label: "Owner sends it by hand (WhatsApp / phone)" },
+                    {
+                      name: "subject",
+                      type: "text",
+                      admin: {
+                        description: "Subject of the receipt reply.",
+                        placeholder: "e.g. RE: RFQ for MV Nordic Tern",
+                      },
+                    },
+                    {
+                      name: "body",
+                      type: "textarea",
+                      admin: {
+                        description: "Text of the receipt reply.",
+                        placeholder: "e.g. Thank you, we received your request and will quote shortly.",
+                      },
+                    },
+                    {
+                      name: "manual",
+                      type: "checkbox",
+                      label: "Owner sends it by hand (WhatsApp / phone)",
+                      admin: { description: "Tick when the message came by WhatsApp or phone, so no email goes out." },
+                    },
                   ],
                 },
-                { name: "model", type: "text", admin: { readOnly: true, description: "Model / version used" } },
-                { name: "extractedAt", type: "date", admin: { readOnly: true } },
+                { name: "model", type: "text", admin: { readOnly: true, description: "Model and version used." } },
+                {
+                  name: "extractedAt",
+                  type: "date",
+                  admin: { readOnly: true, description: "When the AI last read this message." },
+                },
               ],
             },
           ],
@@ -330,7 +571,7 @@ export const IntakeMessages: CollectionConfig = {
       name: "classification",
       type: "select",
       options: ["New RFQ", "Supplier reply", "Service request", "Duplicate", "Customer reply", "Not an RFQ"],
-      admin: { position: "sidebar" },
+      admin: { position: "sidebar", description: "What the AI decided this message is.", placeholder: "Pick a class" },
     },
     {
       name: "status",
@@ -351,31 +592,72 @@ export const IntakeMessages: CollectionConfig = {
         "Case created": "success",
         Ignored: "neutral",
       }),
-      admin: { position: "sidebar" },
+      admin: { position: "sidebar", description: "Where the message is in triage.", placeholder: "Pick a status" },
     },
     {
       name: "match",
       type: "group",
-      admin: { position: "sidebar" },
+      admin: { position: "sidebar", description: "Which case and supplier RFQ this message belongs to." },
       fields: [
-        { name: "case", type: "relationship", relationTo: "cases" },
-        { name: "supplierRfq", type: "relationship", relationTo: "supplier-rfqs" },
-        { name: "reference", type: "text", label: "Reference found" },
-        { name: "confidence", type: "number", min: 0, max: 1 },
+        {
+          name: "case",
+          type: "relationship",
+          relationTo: "cases",
+          admin: { description: "The case the message was linked to.", placeholder: "e.g. GS-RFQ-0142" },
+        },
+        {
+          name: "supplierRfq",
+          type: "relationship",
+          relationTo: "supplier-rfqs",
+          admin: { description: "The supplier RFQ a reply answers.", placeholder: "e.g. GS-SRFQ-0142-A" },
+        },
+        {
+          name: "reference",
+          type: "text",
+          label: "Reference found",
+          admin: { description: "A case or RFQ reference quoted in the message.", placeholder: "e.g. GS-SRFQ-0142-A" },
+        },
+        confidenceField("How sure the AI is about the match, from 0 to 1."),
         percentOf("match.confidencePct", "Match confidence"),
-        { name: "basis", type: "textarea", label: "Why it matched" },
+        {
+          name: "basis",
+          type: "textarea",
+          label: "Why it matched",
+          admin: {
+            description: "The reason the AI gave for the match.",
+            placeholder: "e.g. Subject quotes GS-SRFQ-0142-A.",
+          },
+        },
         {
           name: "candidates",
           type: "array",
-          admin: { description: "Below 85% confidence a person picks the case (review queue)." },
+          admin: { description: "Cases it might belong to, when the match is unsure." },
+          custom: {
+            about: "Below 85% confidence nothing is linked by itself. A person picks the case in the review queue.",
+          },
           fields: [
-            { name: "case", type: "relationship", relationTo: "cases", required: true },
-            { name: "confidence", type: "number", min: 0, max: 1 },
-            { name: "reason", type: "text" },
+            {
+              name: "case",
+              type: "relationship",
+              relationTo: "cases",
+              required: true,
+              admin: { description: "A case this message could belong to.", placeholder: "e.g. GS-RFQ-0142" },
+            },
+            confidenceField("How sure the AI is about this case, from 0 to 1."),
+            {
+              name: "reason",
+              type: "text",
+              admin: { description: "Why this case is a candidate.", placeholder: "e.g. Same vessel and port" },
+            },
           ],
         },
-        { name: "reviewedBy", type: "relationship", relationTo: "users" },
-        { name: "reviewedAt", type: "date" },
+        {
+          name: "reviewedBy",
+          type: "relationship",
+          relationTo: "users",
+          admin: { description: "Who made the review decision.", placeholder: "e.g. Karim Youssef" },
+        },
+        { name: "reviewedAt", type: "date", admin: { description: "When the review decision was made." } },
       ],
     },
     // The cases a person may link an uncertain match to, each with its confidence: its "Link to…"
@@ -385,12 +667,35 @@ export const IntakeMessages: CollectionConfig = {
         name: "candidates",
         type: "array",
         label: "Candidate cases",
-        admin: { position: "sidebar", condition: (data) => Boolean(data?.match?.candidates?.length) },
+        admin: {
+          position: "sidebar",
+          description: "Cases to link the message to, each with its confidence.",
+          condition: (data) => Boolean(data?.match?.candidates?.length),
+        },
         fields: [
-          { name: "case", type: "relationship", relationTo: "cases" },
-          { name: "confidence", type: "number" },
-          { name: "confidencePct", type: "number", label: "Confidence", custom: formats.percent(0) },
-          { name: "reason", type: "text" },
+          {
+            name: "case",
+            type: "relationship",
+            relationTo: "cases",
+            admin: { description: "A case this message could belong to.", placeholder: "e.g. GS-RFQ-0142" },
+          },
+          {
+            name: "confidence",
+            type: "number",
+            admin: { description: "How sure the AI is about this case, from 0 to 1.", placeholder: "e.g. 0.72" },
+          },
+          {
+            name: "confidencePct",
+            type: "number",
+            label: "Confidence",
+            admin: { description: "The same confidence as a percentage.", placeholder: "e.g. 72" },
+            custom: formats.percent(0),
+          },
+          {
+            name: "reason",
+            type: "text",
+            admin: { description: "Why this case is a candidate.", placeholder: "e.g. Same vessel and port" },
+          },
         ],
       },
       (m) =>
@@ -407,7 +712,7 @@ export const IntakeMessages: CollectionConfig = {
         name: "uncertain",
         type: "textarea",
         label: "To confirm",
-        admin: { position: "sidebar" },
+        admin: { position: "sidebar", description: "What a person should confirm in the offer read from the reply." },
         custom: { toneWhen: [{ when: {}, tone: "warning" }] },
       },
       (m) =>
@@ -422,30 +727,84 @@ export const IntakeMessages: CollectionConfig = {
       labels: { singular: "Offer line", plural: "Offer read from the reply" },
       admin: {
         position: "sidebar",
-        description: "Supplier offer lines read from a reply; saved as offers once matched.",
+        description: "Supplier offer lines read from a reply, saved as offers once matched.",
       },
       fields: [
         {
           type: "row",
           fields: [
-            { name: "lineNo", type: "number", required: true, min: 1 },
-            { name: "price", type: "number", min: 0, access: { read: costVisible } },
-            { name: "currency", type: "select", options: CURRENCIES, defaultValue: "EGP" },
+            {
+              name: "lineNo",
+              type: "number",
+              required: true,
+              min: 1,
+              admin: { description: "The RFQ line this price answers.", placeholder: "e.g. 3" },
+            },
+            {
+              name: "price",
+              type: "number",
+              min: 0,
+              access: { read: costVisible },
+              admin: { description: "The supplier's price per pack, as read.", placeholder: "e.g. 1250" },
+            },
+            {
+              name: "currency",
+              type: "select",
+              options: CURRENCIES,
+              defaultValue: "EGP",
+              admin: { description: "Currency the supplier quoted in.", placeholder: "Pick a currency" },
+            },
           ],
         },
         {
           type: "row",
           fields: [
-            { name: "packs", type: "number", min: 0 },
-            { name: "packSize", type: "number", min: 0 },
-            { name: "packLabel", type: "text" },
-            { name: "leadDays", type: "number", min: 0 },
-            { name: "validDays", type: "number", min: 0 },
+            {
+              name: "packs",
+              type: "number",
+              min: 0,
+              admin: { description: "How many packs the supplier offers.", placeholder: "e.g. 12" },
+            },
+            {
+              name: "packSize",
+              type: "number",
+              min: 0,
+              admin: { description: "Base units in one pack.", placeholder: "e.g. 100" },
+            },
+            {
+              name: "packLabel",
+              type: "text",
+              admin: { description: "How the pack is described.", placeholder: "e.g. 100 × 500 ml" },
+            },
+            {
+              name: "leadDays",
+              type: "number",
+              min: 0,
+              admin: { description: "Days from order to delivery.", placeholder: "e.g. 5" },
+            },
+            {
+              name: "validDays",
+              type: "number",
+              min: 0,
+              admin: { description: "Days the price stays valid.", placeholder: "e.g. 14" },
+            },
           ],
         },
-        { name: "offeredDescription", type: "text" },
-        { name: "uncertain", type: "text", label: "What a person should confirm" },
-        { name: "confidence", type: "number", min: 0, max: 1 },
+        {
+          name: "offeredDescription",
+          type: "text",
+          admin: { description: "The item as the supplier describes it.", placeholder: "e.g. Gates hose 25 mm, 10 m" },
+        },
+        {
+          name: "uncertain",
+          type: "text",
+          label: "What a person should confirm",
+          admin: {
+            description: "What the AI was unsure about on this line.",
+            placeholder: "e.g. Is the price per pack or per unit?",
+          },
+        },
+        confidenceField("How sure the AI is about this line, from 0 to 1."),
       ],
     },
     {
@@ -455,19 +814,25 @@ export const IntakeMessages: CollectionConfig = {
       options: ["Live", "History import"],
       admin: {
         position: "sidebar",
-        description: "History import: a past email organised by the inbox-history import.",
+        description: "History import means a past email organised by the inbox-history import.",
+        placeholder: "Pick a source",
       },
     },
     {
       name: "history",
       type: "group",
       label: "History import review",
-      admin: { position: "sidebar", condition: (data) => data?.source === "History import" },
+      admin: {
+        position: "sidebar",
+        description: "What the import found in a past email, for a person to confirm.",
+        condition: (data) => data?.source === "History import",
+      },
       fields: [
         {
           name: "kind",
           type: "select",
           options: ["Customer", "Vessel", "Supplier", "Price", "Confidential"],
+          admin: { description: "What kind of fact the import found.", placeholder: "Pick a kind" },
           custom: tones({
             Customer: "neutral",
             Vessel: "info",
@@ -476,14 +841,29 @@ export const IntakeMessages: CollectionConfig = {
             Confidential: "error",
           }),
         },
-        { name: "question", type: "text" },
-        { name: "proposal", type: "text" },
-        { name: "confidence", type: "number", min: 0, max: 1 },
+        {
+          name: "question",
+          type: "text",
+          admin: {
+            description: "What the import is asking a person to check.",
+            placeholder: "e.g. Is Delta Marine Stores a supplier?",
+          },
+        },
+        {
+          name: "proposal",
+          type: "text",
+          admin: {
+            description: "What the import proposes to record.",
+            placeholder: "e.g. Add Delta Marine Stores as supplier",
+          },
+        },
+        confidenceField("How sure the import is, from 0 to 1."),
         percentOf(),
         {
           name: "decision",
           type: "select",
           options: ["Confirmed", "Rejected"],
+          admin: { description: "A person's decision on the proposal.", placeholder: "Pick a decision" },
           custom: tones({ Confirmed: "success", Rejected: "neutral" }),
         },
         // Once management approves the import its decisions are final (no more Change).
@@ -492,27 +872,47 @@ export const IntakeMessages: CollectionConfig = {
           type: "checkbox",
           label: "Import approved",
           virtual: true,
-          admin: { readOnly: true },
+          admin: { readOnly: true, description: "Once management approves the import, decisions are final." },
           hooks: { afterRead: [({ req }: { req: PayloadRequest }) => historyApproved(req)] },
         },
       ],
     },
     // How the inbox lists it: where it came from, its files, how urgent it reads.
-    computed({ name: "via", type: "text", label: "Channel", admin: { position: "sidebar" } }, (m) => {
-      const mailbox = scalar(m.mailbox);
-      if (m.channel === "Email") return mailbox.startsWith("Gmail") ? mailbox : `Outlook · ${mailbox || "sales@"}`;
-      return m.channel === "Website form" ? "Website quick-quote form" : scalar(m.channel);
-    }),
-    computed({ name: "fileCount", type: "text", label: "Files", admin: { position: "sidebar" } }, (m) => {
-      const n = ((m.files as unknown[] | undefined) ?? []).length;
-      return n ? `${n} file${n === 1 ? "" : "s"}` : "";
-    }),
+    computed(
+      {
+        name: "via",
+        type: "text",
+        label: "Channel",
+        admin: { position: "sidebar", description: "Where the message came from." },
+      },
+      (m) => {
+        const mailbox = scalar(m.mailbox);
+        if (m.channel === "Email") return mailbox.startsWith("Gmail") ? mailbox : `Outlook · ${mailbox || "sales@"}`;
+        return m.channel === "Website form" ? "Website quick-quote form" : scalar(m.channel);
+      },
+    ),
+    computed(
+      {
+        name: "fileCount",
+        type: "text",
+        label: "Files",
+        admin: { position: "sidebar", description: "How many files came with it." },
+      },
+      (m) => {
+        const n = ((m.files as unknown[] | undefined) ?? []).length;
+        return n ? `${n} file${n === 1 ? "" : "s"}` : "";
+      },
+    ),
     {
       name: "urgency",
       type: "number",
       min: 1,
       max: 5,
-      admin: { position: "sidebar", readOnly: true, description: "From its words and status (1–5)." },
+      admin: {
+        position: "sidebar",
+        readOnly: true,
+        description: "How urgent it reads, from 1 to 5, by its words and status.",
+      },
     },
     computed(
       {
@@ -524,11 +924,20 @@ export const IntakeMessages: CollectionConfig = {
       },
       (m) => (Number(m.urgency) >= 3 ? `Urgency ${Number(m.urgency)}/5` : ""),
     ),
-    { name: "createdCase", type: "relationship", relationTo: "cases", admin: { position: "sidebar", readOnly: true } },
+    {
+      name: "createdCase",
+      type: "relationship",
+      relationTo: "cases",
+      admin: { position: "sidebar", readOnly: true, description: "The case built from this message, if any." },
+    },
     {
       name: "acknowledgedAt",
       type: "date",
-      admin: { position: "sidebar", readOnly: true, description: "Set once — never acknowledged twice." },
+      admin: {
+        position: "sidebar",
+        readOnly: true,
+        description: "Set once, so a customer is never acknowledged twice.",
+      },
     },
   ],
 };
@@ -613,30 +1022,89 @@ export const SupplierRfqs: CollectionConfig = {
     {
       type: "row",
       fields: [
-        { name: "reference", type: "text", unique: true, admin: { readOnly: true } },
-        caseRef(),
-        { name: "supplier", type: "relationship", relationTo: "suppliers", required: true },
+        {
+          name: "reference",
+          type: "text",
+          unique: true,
+          admin: { readOnly: true, description: "Numbered per case, such as GS-SRFQ-0142-A." },
+        },
+        caseRef(true, { hint: "The customer case this supplier request is for." }),
+        {
+          name: "supplier",
+          type: "relationship",
+          relationTo: "suppliers",
+          required: true,
+          admin: { description: "The supplier asked to quote.", placeholder: "e.g. Delta Marine Stores" },
+        },
       ],
     },
-    { name: "lineNos", type: "number", hasMany: true, label: "Lines included", required: true },
+    {
+      name: "lineNos",
+      type: "number",
+      hasMany: true,
+      label: "Lines included",
+      required: true,
+      admin: { description: "Case line numbers sent to this supplier.", placeholder: "e.g. 1, 2, 5" },
+    },
     {
       type: "row",
       fields: [
-        { name: "sentAt", type: "date", admin: { date: { pickerAppearance: "dayAndTime" } } },
-        { name: "dueAt", type: "date", required: true, admin: { date: { pickerAppearance: "dayAndTime" } } },
+        {
+          name: "sentAt",
+          type: "date",
+          admin: { description: "When the request went to the supplier.", date: { pickerAppearance: "dayAndTime" } },
+        },
+        {
+          name: "dueAt",
+          type: "date",
+          required: true,
+          admin: { description: "When we need the supplier's answer by.", date: { pickerAppearance: "dayAndTime" } },
+        },
       ],
     },
     {
       type: "row",
       fields: [
-        { name: "reminders", type: "number", min: 0, defaultValue: 0 },
-        { name: "nextReminderAt", type: "date" },
-        { name: "escalated", type: "checkbox", defaultValue: false },
+        {
+          name: "reminders",
+          type: "number",
+          min: 0,
+          defaultValue: 0,
+          admin: { description: "How many reminders went to the supplier.", placeholder: "e.g. 1" },
+          custom: { about: "Two reminders go out. After that the case owner is alerted." },
+        },
+        {
+          name: "nextReminderAt",
+          type: "date",
+          admin: { description: "When the next reminder is due." },
+        },
+        {
+          name: "escalated",
+          type: "checkbox",
+          defaultValue: false,
+          admin: { description: "Ticked once the case owner has been alerted." },
+        },
         // Worked out on read: how many reminders went out and what comes next (never stored).
-        computed({ name: "reminderState", type: "text", label: "Reminders" }, reminderState),
+        computed(
+          {
+            name: "reminderState",
+            type: "text",
+            label: "Reminders",
+            admin: { description: "Reminders sent and what comes next." },
+          },
+          reminderState,
+        ),
       ],
     },
-    { name: "lastEvent", type: "text", label: "Latest" },
+    {
+      name: "lastEvent",
+      type: "text",
+      label: "Latest",
+      admin: {
+        description: "The most recent thing that happened on this request.",
+        placeholder: "e.g. Supplier replied by email",
+      },
+    },
     {
       type: "row",
       fields: [
@@ -645,20 +1113,33 @@ export const SupplierRfqs: CollectionConfig = {
           type: "select",
           options: ["Split by category", "Full list"],
           defaultValue: "Split by category",
+          admin: {
+            description: "Whether the supplier gets the whole list or only their category.",
+            placeholder: "Pick a mode",
+          },
         },
-        { name: "category", type: "text", admin: { description: "The category this supplier was asked for." } },
+        {
+          name: "category",
+          type: "text",
+          admin: { description: "The category this supplier was asked for.", placeholder: "e.g. Deck stores" },
+        },
       ],
     },
     {
       name: "supplierQuestion",
       type: "textarea",
-      admin: { condition: (_, s) => s?.status === "Clarification needed" },
+      admin: {
+        description: "What the supplier asked us to clarify.",
+        placeholder: "e.g. Is the hose with or without couplings?",
+        condition: (_, s) => s?.status === "Clarification needed",
+      },
     },
     {
       name: "anonymised",
       type: "checkbox",
       label: "Client identity & attachments removed",
       defaultValue: true,
+      admin: { description: "Always on. The supplier never sees who the customer is." },
       validate: (v: unknown) => v === true || "Supplier RFQs never carry the client's identity.",
     },
     {
@@ -678,9 +1159,18 @@ export const SupplierRfqs: CollectionConfig = {
         Declined: "neutral",
         "No response": "error",
       }),
-      admin: { position: "sidebar" },
+      admin: {
+        position: "sidebar",
+        description: "Where the request stands with the supplier.",
+        placeholder: "Pick a status",
+      },
     },
-    { name: "sentBy", type: "relationship", relationTo: "users", admin: { position: "sidebar" } },
+    {
+      name: "sentBy",
+      type: "relationship",
+      relationTo: "users",
+      admin: { position: "sidebar", description: "Who sent the request.", placeholder: "e.g. Karim Youssef" },
+    },
   ],
 };
 
@@ -750,21 +1240,61 @@ export const Offers: CollectionConfig = {
     {
       type: "row",
       fields: [
-        caseRef(),
-        { name: "lineNo", type: "number", required: true, min: 1, label: "Line #" },
-        { name: "supplierRfq", type: "relationship", relationTo: "supplier-rfqs" },
+        caseRef(true, { hint: "The customer case this offer prices." }),
+        {
+          name: "lineNo",
+          type: "number",
+          required: true,
+          min: 1,
+          label: "Line #",
+          admin: { description: "The case line this offer answers.", placeholder: "e.g. 3" },
+        },
+        {
+          name: "supplierRfq",
+          type: "relationship",
+          relationTo: "supplier-rfqs",
+          admin: { description: "The supplier request this offer replies to.", placeholder: "e.g. GS-SRFQ-0142-A" },
+        },
       ],
     },
     {
       type: "row",
       fields: [
-        { name: "supplier", type: "relationship", relationTo: "suppliers", required: true },
-        { name: "product", type: "relationship", relationTo: "products" },
-        { name: "version", type: "number", min: 1, defaultValue: 1 },
-        { name: "supersedes", type: "relationship", relationTo: "offers" },
+        {
+          name: "supplier",
+          type: "relationship",
+          relationTo: "suppliers",
+          required: true,
+          admin: { description: "Who made the offer.", placeholder: "e.g. Delta Marine Stores" },
+        },
+        {
+          name: "product",
+          type: "relationship",
+          relationTo: "products",
+          admin: { description: "The catalogue product this matches, if known.", placeholder: "Search products" },
+        },
+        {
+          name: "version",
+          type: "number",
+          min: 1,
+          defaultValue: 1,
+          admin: { description: "Revision number, 1 for the first offer.", placeholder: "e.g. 1" },
+        },
+        {
+          name: "supersedes",
+          type: "relationship",
+          relationTo: "offers",
+          admin: { description: "The earlier offer this revision replaces.", placeholder: "Search offers" },
+          custom: { about: "A revision replaces the earlier offer, which is kept for audit and marked superseded." },
+        },
       ],
     },
-    { name: "offeredDescription", type: "text", label: "As offered (brand / part / spec)" },
+    {
+      name: "offeredDescription",
+      type: "text",
+      label: "As offered (brand / part / spec)",
+      admin: { description: "The item as the supplier describes it.", placeholder: "e.g. Gates hose 25 mm, 10 m" },
+    },
     {
       type: "row",
       fields: [
@@ -775,42 +1305,105 @@ export const Offers: CollectionConfig = {
           min: 0,
           label: "Price per pack",
           access: { read: costVisible },
+          admin: { description: "The supplier's price for one pack, before freight.", placeholder: "e.g. 1250" },
         },
-        { name: "currency", type: "select", options: CURRENCIES, required: true, defaultValue: "EGP" },
-        { name: "discountPct", type: "number", min: 0, max: 100 },
+        {
+          name: "currency",
+          type: "select",
+          options: CURRENCIES,
+          required: true,
+          defaultValue: "EGP",
+          admin: { description: "Currency the supplier quoted in.", placeholder: "Pick a currency" },
+        },
+        {
+          name: "discountPct",
+          type: "number",
+          min: 0,
+          max: 100,
+          admin: { description: "Discount the supplier gave, in percent.", placeholder: "e.g. 5" },
+        },
       ],
     },
     {
       type: "row",
       fields: [
-        { name: "packs", type: "number", required: true, min: 0, label: "Packs offered" },
-        { name: "packSize", type: "number", min: 0, defaultValue: 1, label: "Base units per pack" },
-        { name: "packLabel", type: "text", admin: { placeholder: "100 × 500 ml" } },
+        {
+          name: "packs",
+          type: "number",
+          required: true,
+          min: 0,
+          label: "Packs offered",
+          admin: { description: "How many packs the supplier can supply.", placeholder: "e.g. 12" },
+        },
+        {
+          name: "packSize",
+          type: "number",
+          min: 0,
+          defaultValue: 1,
+          label: "Base units per pack",
+          admin: { description: "Units in one pack, to compare with the quantity asked.", placeholder: "e.g. 100" },
+        },
+        {
+          name: "packLabel",
+          type: "text",
+          admin: { description: "How the pack is described by the supplier.", placeholder: "100 × 500 ml" },
+        },
       ],
     },
     {
       type: "row",
       fields: [
-        { name: "leadDays", type: "number", min: 0, required: true, label: "Lead time (days)" },
-        { name: "validUntil", type: "date" },
-        { name: "expiry", type: "text", label: "Batch expiry (YYYY-MM)" },
+        {
+          name: "leadDays",
+          type: "number",
+          min: 0,
+          required: true,
+          label: "Lead time (days)",
+          admin: { description: "Days from order to delivery. Checked against the vessel ETA.", placeholder: "e.g. 5" },
+        },
+        {
+          name: "validUntil",
+          type: "date",
+          admin: { description: "The last day the price holds." },
+        },
+        {
+          name: "expiry",
+          type: "text",
+          label: "Batch expiry (YYYY-MM)",
+          admin: { description: "Expiry of the batch offered, for shelf life checks.", placeholder: "e.g. 2027-06" },
+        },
       ],
     },
     {
       type: "row",
       fields: [
-        { name: "paymentTerms", type: "text" },
-        { name: "deliveryBasis", type: "text" },
-        { name: "freightEGP", type: "number", min: 0, label: "Freight (EGP)" },
+        {
+          name: "paymentTerms",
+          type: "text",
+          admin: { description: "When the supplier wants to be paid.", placeholder: "e.g. 30 days from invoice" },
+        },
+        {
+          name: "deliveryBasis",
+          type: "text",
+          admin: { description: "Where the supplier delivers to.", placeholder: "e.g. Ex warehouse Port Said" },
+        },
+        {
+          name: "freightEGP",
+          type: "number",
+          min: 0,
+          label: "Freight (EGP)",
+          admin: { description: "Freight the supplier charges on top, in EGP.", placeholder: "e.g. 800" },
+        },
       ],
     },
     {
       name: "deviations",
       type: "array",
       labels: { singular: "Deviation", plural: "Deviations" },
-      admin: {
-        description:
-          "Wrong brand / part, missing item, quantity shortfall, spec, unit, pack size, expired validity, lead time vs ETA, shelf life.",
+      admin: { description: "Where the offer differs from what the customer asked." },
+      custom: {
+        about:
+          "Wrong brand or part, missing item, quantity shortfall, spec, unit, pack size, expired validity, lead time vs ETA, shelf life. Some block use, others need the customer's acceptance.",
       },
       fields: [
         {
@@ -831,17 +1424,29 @@ export const Offers: CollectionConfig = {
                 "Lead time vs ETA",
                 "Shelf life",
               ],
+              admin: { description: "What kind of difference it is.", placeholder: "Pick a type" },
             },
             {
               name: "severity",
               type: "select",
               options: ["Blocks use", "Needs customer acceptance", "Warning"],
               defaultValue: "Warning",
+              admin: { description: "How much it matters for the quote.", placeholder: "Pick a severity" },
             },
           ],
         },
-        { name: "detail", type: "text" },
-        { name: "detectedBy", type: "select", options: ["Rules", "AI", "Person"], defaultValue: "Rules" },
+        {
+          name: "detail",
+          type: "text",
+          admin: { description: "What exactly differs.", placeholder: "e.g. Offered 20 mm, asked 25 mm" },
+        },
+        {
+          name: "detectedBy",
+          type: "select",
+          options: ["Rules", "AI", "Person"],
+          defaultValue: "Rules",
+          admin: { description: "Who spotted it.", placeholder: "Pick a source" },
+        },
       ],
     },
     evidence("evidence", "Source (email, PDF, WhatsApp screenshot)"),
@@ -851,21 +1456,31 @@ export const Offers: CollectionConfig = {
       required: true,
       defaultValue: "Email",
       options: ["Email", "WhatsApp / phone", "Supplier portal", "Agency pricelist", "Own stock"],
-      admin: { position: "sidebar" },
+      admin: { position: "sidebar", description: "Where the price came from.", placeholder: "Pick a source" },
     },
     {
       name: "compliance",
       type: "select",
       defaultValue: "Pending",
       options: ["Pending", "Confirmed", "Rejected", "Awaiting corrected offer"],
-      admin: { position: "sidebar", description: "Technical equivalence is a human decision." },
+      admin: {
+        position: "sidebar",
+        description: "Whether the offer meets the request. A person decides.",
+        placeholder: "Pick a status",
+      },
+      custom: { about: "Technical equivalence is a human decision, never the AI's." },
     },
-    { name: "superseded", type: "checkbox", defaultValue: false, admin: { position: "sidebar", readOnly: true } },
+    {
+      name: "superseded",
+      type: "checkbox",
+      defaultValue: false,
+      admin: { position: "sidebar", readOnly: true, description: "Set when a newer version replaces this offer." },
+    },
     {
       name: "enteredBy",
       type: "relationship",
       relationTo: "users",
-      admin: { position: "sidebar" },
+      admin: { position: "sidebar", description: "Who captured this offer.", placeholder: "e.g. Karim Youssef" },
       defaultValue: ({ user }: { user?: { id?: string } }) => user?.id,
     },
   ],

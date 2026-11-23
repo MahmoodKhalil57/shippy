@@ -2,6 +2,7 @@ import type { VariantProps } from "class-variance-authority";
 import { html, nothing } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { floating as float } from "../../base/floating.ts";
 import { LightElement, uid, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { chip, chipRemove } from "../data/chip.ts";
@@ -21,26 +22,33 @@ import { fieldsetField, type FieldsetVariants } from "./fieldset.ts";
  * array of strings with `multiple`.
  */
 export const combobox = rcva(
-  "input h-auto min-h-(--size) min-w-0 cursor-text max-w-full flex-wrap items-center gap-1 py-1 [anchor-scope:--combobox]",
+  "input h-auto min-h-(--size) min-w-0 max-w-full flex-wrap items-center gap-1 py-1 [anchor-scope:--combobox]",
   {
     variants: {
       color: { error: "input-error" },
       size: { sm: "input-sm", md: "input-md" },
       width: { full: "w-full", auto: "w-auto" },
       disabled: { true: "cursor-not-allowed opacity-70" },
+      /** A value to read, not to type into: no text cursor (the theme drops its outline and caret). */
+      readonly: { true: "cursor-default", false: "cursor-text" },
     },
-    defaultVariants: { width: "full" },
+    defaultVariants: { width: "full", readonly: false },
   },
 );
-export const comboboxInput = rcva("min-w-[min(100%,5rem)] flex-1 bg-transparent outline-none");
+export const comboboxInput = rcva(
+  "min-w-[min(100%,5rem)] flex-1 bg-transparent caret-primary outline-none [--focus:field]",
+);
 // layout: fixed (the clear and open icon buttons)
 export const comboboxIcon = rcva(`${row} ${rowEnd} items-center gap-0.5 text-on-surface-variant`);
 export const comboboxClear = rcva(
-  "touch-target grid size-6 place-items-center rounded-full state-layer hover:text-on-surface focus-visible:outline-2 focus-visible:outline-primary",
+  "touch-target grid size-6 place-items-center rounded-full state-layer hover:text-on-surface",
 );
-/** The options: a glass popover under the field, growing down from it (M3 enter / exit). */
+/**
+ * The options: a glass popover under the field (over it when there's no room under; Floating UI
+ * places it), as wide as the field in whole tiles, growing from it (M3 enter / exit).
+ */
 export const comboboxList = rcva(
-  `${text.label} liquid-glass [--outer-radius:var(--radius-box)] [--outer-padding:var(--space-50)] shadow-elevation-2 m-0 mt-1 ${floatingHeight.fit} ${floatingHeight.list} ${floating.anchor} origin-top overflow-y-auto overscroll-contain rounded-box p-1 text-body-md [position-area:bottom_span-right] [position-try-fallbacks:flip-block] scale-y-90 opacity-0 open:scale-y-100 open:opacity-100 [transition:opacity_var(--duration-short2)_var(--ease-emphasized-accelerate),scale_var(--duration-short3)_var(--ease-emphasized-accelerate),display_var(--duration-short3)_allow-discrete,overlay_var(--duration-short3)_allow-discrete] open:[transition:opacity_var(--duration-short3)_var(--ease-emphasized-decelerate),scale_var(--duration-medium1)_var(--ease-emphasized-decelerate),display_var(--duration-medium1)_allow-discrete,overlay_var(--duration-medium1)_allow-discrete] starting:open:scale-y-90 starting:open:opacity-0 motion-reduce:scale-y-100 [--scrollbar-inset:var(--radius-box)]`,
+  `${text.label} liquid-glass [--outer-radius:var(--radius-box)] [--outer-padding:var(--space-50)] shadow-elevation-2 ${floatingHeight.fit} ${floatingHeight.list} ${floating.anchor} origin-(--float-origin) overflow-y-auto overscroll-contain rounded-box p-1 text-body-md scale-y-90 opacity-0 open:scale-y-100 open:opacity-100 [transition:opacity_var(--duration-short2)_var(--ease-emphasized-accelerate),scale_var(--duration-short3)_var(--ease-emphasized-accelerate),display_var(--duration-short3)_allow-discrete,overlay_var(--duration-short3)_allow-discrete] open:[transition:opacity_var(--duration-short3)_var(--ease-emphasized-decelerate),scale_var(--duration-medium1)_var(--ease-emphasized-decelerate),display_var(--duration-medium1)_allow-discrete,overlay_var(--duration-medium1)_allow-discrete] starting:open:scale-y-90 starting:open:opacity-0 motion-reduce:scale-y-100 [--scrollbar-inset:var(--radius-box)]`,
 );
 export const comboboxGroup = rcva(`${inset["3"]} pt-2 pb-1 text-label-md text-on-surface-variant`);
 export const comboboxOption = rcva(
@@ -101,6 +109,8 @@ export class UiCombobox extends LightElement {
   @property({ attribute: "field-width" }) fieldWidth: FieldsetVariants["width"];
   /** Read when the options are values typed by people (numbers): `inputmode` for the box. */
   @property() inputmode?: string;
+  /** Its accessible name when the label is outside it (a `ui-field`'s). */
+  @property({ attribute: "aria-label" }) ariaLabelText?: string;
 
   @state() private _query = "";
   @state() private _open = false;
@@ -219,8 +229,8 @@ export class UiCombobox extends LightElement {
     const single = !this.multiple && values[0] ? this._labelOf(values[0]) : "";
     let lastGroup: string | undefined;
     const control = html`<div
-        class=${combobox({ color: this.color, size: this.size, disabled: this.disabled })}
-        style=${`anchor-name:--${this._id}`}
+        class=${combobox({ color: this.color, size: this.size, disabled: this.disabled, readonly: this.readonly })}
+        data-control
         @click=${() => {
           this._input?.focus();
           this._show();
@@ -254,6 +264,7 @@ export class UiCombobox extends LightElement {
           id=${this._id}
           class=${comboboxInput()}
           role="combobox"
+          aria-label=${ifDefined(!this.legend && !this.label ? this.ariaLabelText : undefined)}
           autocomplete="off"
           inputmode=${ifDefined(this.inputmode)}
           aria-expanded=${this._open ? "true" : "false"}
@@ -297,7 +308,7 @@ export class UiCombobox extends LightElement {
         role="listbox"
         aria-multiselectable=${this.multiple ? "true" : "false"}
         class=${comboboxList()}
-        style=${`position-anchor:--${this._id}`}
+        ${float({ placement: "bottom-start", fallbacks: ["top-start"], anchor: () => this.querySelector("[data-control]") })}
         @mousedown=${(e: Event) => e.preventDefault()}
       >
         ${

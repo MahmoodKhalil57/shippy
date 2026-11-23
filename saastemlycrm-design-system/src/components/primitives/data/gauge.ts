@@ -26,7 +26,7 @@ export const gauge = rcva("flex min-w-0 flex-col gap-1", {
 export const gaugeHead = rcva(`${row} items-baseline justify-between gap-x-2`);
 export const gaugeHeading = rcva(`${rowFill} truncate text-body-md text-on-surface`);
 export const gaugeValue = rcva(`${text.label} text-title-sm text-on-surface tabular-nums`);
-export const gaugeTrack = rcva("h-1 w-full overflow-hidden rounded-full bg-surface-container-highest");
+export const gaugeTrack = rcva("h-1 w-full overflow-hidden [--clips:bar] rounded-full bg-surface-container-highest");
 export const gaugeFill = rcva(
   // As wide as the reading (`--fill`, a share of the track), never wider than the track.
   "h-full w-(--fill) max-w-full rounded-full [transition:width_var(--duration-medium2)_var(--ease-emphasized-decelerate)]",

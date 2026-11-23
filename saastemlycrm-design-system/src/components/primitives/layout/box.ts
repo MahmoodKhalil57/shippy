@@ -1,4 +1,5 @@
 import type { VariantProps } from "class-variance-authority";
+import { clipRoom, scrollRoom } from "../layout/algebra.ts";
 import { customElement, property } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { html, literal, type StaticValue } from "lit/static-html.js";
@@ -69,9 +70,9 @@ export const box = rcva("", {
     max: { sm: "max-w-sm", md: "max-w-md", lg: "max-w-lg", xl: "max-w-xl" },
     /** At most this tall; what's more scrolls (a long list in a popover). */
     maxHeight: {
-      "56": "max-h-56 overflow-y-auto overscroll-contain pe-1 [--scrollbar-inset:var(--radius-field)]",
-      "72": "max-h-72 overflow-y-auto overscroll-contain pe-1 [--scrollbar-inset:var(--radius-field)]",
-      "96": "max-h-[min(24rem,70dvh)] overflow-y-auto overscroll-contain pe-1 [--scrollbar-inset:var(--radius-field)]",
+      "56": `max-h-56 overflow-y-auto overscroll-contain ${scrollRoom} [--scrollbar-inset:var(--radius-field)]`,
+      "72": `max-h-72 overflow-y-auto overscroll-contain ${scrollRoom} [--scrollbar-inset:var(--radius-field)]`,
+      "96": `max-h-[min(24rem,70dvh)] overflow-y-auto overscroll-contain ${scrollRoom} [--scrollbar-inset:var(--radius-field)]`,
     },
     width: {
       auto: "w-auto",
@@ -103,9 +104,9 @@ export const box = rcva("", {
       screen: "h-screen",
     },
     overflow: {
-      auto: "overflow-auto",
-      hidden: "overflow-hidden",
-      "x-auto": "overflow-x-auto",
+      auto: `overflow-auto ${scrollRoom}`,
+      hidden: clipRoom,
+      "x-auto": `overflow-x-auto ${scrollRoom}`,
     },
     /** Center the content on both axes. */
     center: { true: "grid min-w-0 place-items-center" },

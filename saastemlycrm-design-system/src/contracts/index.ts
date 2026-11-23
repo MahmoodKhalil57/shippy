@@ -13,8 +13,11 @@
  * - Links to the dashboard's pages: `links()`, `linkTarget()` (./app/widgets/links.ts), and where they
  *   lead: `placesOf()`, `placeOf()` (./app/widgets/places.ts).
  * - Pages for a collection, a document or a global: `collectionPage()`, `documentPage()`, `globalPage()`.
+ * - What every field owes (a hint, a placeholder), accepts (`zodOf`) and is entered with
+ *   (`inputOf`): `fieldProblems`, `fieldError` (./fields.ts).
  */
 export * from "./config.ts";
+export * from "./fields.ts";
 export * from "../app/widgets/widget.ts";
 export * from "../app/widgets/schema.ts";
 export * from "../app/widgets/design-check.ts";

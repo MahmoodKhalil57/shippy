@@ -126,6 +126,35 @@
     rotate: 360deg;
   }
 }
+/* A field's error arriving: a short shake, so the eye finds it (src/components/primitives/forms/field.ts). */
+@keyframes field-shake {
+  0%,
+  100% {
+    translate: 0;
+  }
+  20%,
+  60% {
+    translate: -3px;
+  }
+  40%,
+  80% {
+    translate: 3px;
+  }
+}
+
+/* A value just picked (a star, a step, a number stepped): a quick swell back to size. */
+@keyframes field-pop {
+  0% {
+    scale: 1;
+  }
+  45% {
+    scale: 1.18;
+  }
+  100% {
+    scale: 1;
+  }
+}
+
 @keyframes m3-pulse {
   50% {
     opacity: 0.5;

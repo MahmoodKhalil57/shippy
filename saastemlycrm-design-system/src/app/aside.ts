@@ -59,7 +59,6 @@ export type Attention = Record<string, number>;
 export const expandAsideSection = (id: AsideSection) =>
   preferences.set((p) => ({ asideCollapsed: (p.asideCollapsed ?? []).filter((x) => x !== id) }));
 
-const BOOKMARK_THIS = "bookmark-this";
 const NOTIFICATION = "notification:";
 const TOUR = "tour:";
 /** A notification kind's badge colour: the tone of its value on the `kind` field (`custom.tones`). */
@@ -185,7 +184,6 @@ export class DashboardAside extends LightElement {
   /** Opening a notification marks it read. */
   private async _open(item: MenuItem) {
     const value = typeof item.value === "string" ? item.value : "";
-    if (value === BOOKMARK_THIS) return void toggleBookmark({ href: this.path, label: this.pageTitle });
     if (value.startsWith(TOUR)) return startTour(value.slice(TOUR.length));
     if (!value.startsWith(NOTIFICATION)) return;
     await api.update("notifications", value.slice(NOTIFICATION.length), { read: true }).catch(() => undefined);
@@ -209,24 +207,16 @@ export class DashboardAside extends LightElement {
         : this.notifications.length
           ? this.notifications
           : [{ label: "You're all caught up", disabled: true }],
-      bookmarks: [
-        {
-          card: true,
-          label: here ? "Remove this page" : "Bookmark this page",
-          // Always a second line, so the row keeps its height while a new page's title is on its way
-          // (without one, every row under it jumped on each navigation).
-          description: here ? "Take it off your bookmarks" : this.pageTitle || "Keep it one click away",
-          oneLine: true,
-          value: BOOKMARK_THIS,
-        },
-        ...marks.map((b) => ({
-          card: true,
-          label: b.label,
-          description: bookmarkKind(b.href),
-          href: b.href,
-          active: b.href === this.path,
-        })),
-      ],
+      // The section's star (its header) bookmarks this page; the list is the bookmarks themselves.
+      bookmarks: marks.length
+        ? marks.map((b) => ({
+            card: true,
+            label: b.label,
+            description: bookmarkKind(b.href),
+            href: b.href,
+            active: b.href === this.path,
+          }))
+        : [{ label: "Press the star to keep a page here", disabled: true }],
       // The side panel's widgets (`admin.custom.aside`): the same widgets a screen has, on a board of
       // their own, arranged and remembered on their own ("aside").
       widgets: [
@@ -258,7 +248,12 @@ export class DashboardAside extends LightElement {
     const counts: Partial<Record<AsideSection, number>> = { bookmarks: marks.length };
     return ASIDE_SECTIONS.map((s) => ({
       label: s.label,
-      icon: icon(s.icon, s.id === "notifications" ? this.unread : 0),
+      // The bookmarks' star is filled while this page is one, and pressing it (un)bookmarks it.
+      icon: icon(s.id === "bookmarks" && here ? "star-filled" : s.icon, s.id === "notifications" ? this.unread : 0),
+      iconAction:
+        s.id === "bookmarks"
+          ? { label: here ? "Remove this page from bookmarks" : "Bookmark this page", pressed: here }
+          : undefined,
       value: s.id,
       badge: counts[s.id] || undefined,
       open: !collapsed.includes(s.id),
@@ -276,6 +271,8 @@ export class DashboardAside extends LightElement {
       @ui-toggle=${(e: CustomEvent<{ item: MenuItem; open: boolean }>) =>
         this._remember(e.detail.item.value as AsideSection, e.detail.open)}
       @ui-select=${(e: CustomEvent<{ item: MenuItem }>) => void this._open(e.detail.item)}
+      @ui-icon-action=${(e: CustomEvent<{ item: MenuItem }>) =>
+        e.detail.item.value === "bookmarks" && void toggleBookmark({ href: this.path, label: this.pageTitle })}
     ></ui-menu>`;
   }
 }

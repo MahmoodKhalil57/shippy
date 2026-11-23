@@ -4,7 +4,7 @@ import Icons from "unplugin-icons/vite";
  * Icons: `import home from "~icons/line-md/home"` resolves, at build time, to that one icon from
  * its Iconify collection (only icons that are imported reach the bundle).
  *
- * Allowed collections: line-md (animated outline icons, preferred), material-symbols-light,
+ * Allowed collections: line-md (animated outline icons, preferred), material-symbols,
  * devicon and logos (technology / brand logos). Anything else fails the build.
  *
  * Each icon compiles to `{ viewBox, body }`: `body(uid)` returns a static Lit `svg` template, its
@@ -12,7 +12,7 @@ import Icons from "unplugin-icons/vite";
  * so primitives render it inside their own `<svg>` (see `iconSvg` in
  * src/components/primitives/media/icon.ts) with no `unsafeSVG`.
  */
-export const ICON_COLLECTIONS = ["line-md", "material-symbols-light", "devicon", "logos"] as const;
+export const ICON_COLLECTIONS = ["line-md", "material-symbols", "devicon", "logos"] as const;
 
 const escapeTemplate = (s: string) => s.replace(/\\/g, "\\\\").replace(/`/g, "\\`").replace(/\$\{/g, "\\${");
 

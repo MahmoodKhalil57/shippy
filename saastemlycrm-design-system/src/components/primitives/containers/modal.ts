@@ -51,7 +51,7 @@ export const modalBox = rcva(
       },
       /** `header` / body / `footer` sections; only the body scrolls. At most quarter tiles down. */
       sections: {
-        true: `flex ${floatingHeight.dialog} flex-col overflow-hidden p-0`,
+        true: `flex ${floatingHeight.dialog} flex-col overflow-hidden [--clips:surface] p-0`,
       },
     },
     defaultVariants: { width: "default" },

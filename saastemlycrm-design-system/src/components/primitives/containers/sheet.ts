@@ -32,7 +32,7 @@ import { iconSvg } from "../media/icon.ts";
  */
 export const sheet = rcva(`modal modal-end ${inset["4"]} py-4 max-sm:px-0 max-sm:py-0`);
 export const sheetBox = rcva(
-  `modal-box liquid-glass-surface shadow-elevation-1 ${stack} ${floatingHeight.sheet} max-h-full max-w-none overflow-hidden rounded-lg p-0 max-sm:h-full max-sm:w-full max-sm:rounded-none motion-reduce:transition-none`,
+  `modal-box liquid-glass-surface shadow-elevation-1 ${stack} ${floatingHeight.sheet} max-h-full max-w-none overflow-hidden [--clips:surface] rounded-lg p-0 max-sm:h-full max-sm:w-full max-sm:rounded-none motion-reduce:transition-none`,
   {
     variants: {
       size: {

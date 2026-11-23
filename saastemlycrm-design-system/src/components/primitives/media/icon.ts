@@ -13,7 +13,8 @@ import { inlineRow } from "../layout/algebra.ts";
 import type { IconName } from "./icon-names.ts";
 import iCheck from "~icons/line-md/confirm";
 import iX from "~icons/line-md/close";
-import iInfo from "~icons/material-symbols-light/info-outline";
+import iInfo from "~icons/material-symbols/info-outline";
+import iHelp from "~icons/material-symbols/help-outline";
 import iWarning from "~icons/line-md/alert";
 import iError from "~icons/line-md/close-circle";
 import iSuccess from "~icons/line-md/confirm-circle";
@@ -27,11 +28,12 @@ import iSearch from "~icons/line-md/search";
 import iSun from "~icons/line-md/sunny-outline";
 import iMoon from "~icons/line-md/moon";
 import iHome from "~icons/line-md/home";
-import iSettings from "~icons/material-symbols-light/tune";
+import iSettings from "~icons/material-symbols/tune";
 import iUser from "~icons/line-md/account";
-import iUsers from "~icons/material-symbols-light/group-outline";
+import iUsers from "~icons/material-symbols/group-outline";
 import iHeart from "~icons/line-md/heart";
 import iStar from "~icons/line-md/star";
+import iStarFilled from "~icons/material-symbols/star-rounded";
 import iPlus from "~icons/line-md/plus";
 import iMinus from "~icons/line-md/minus";
 import iArrowLeft from "~icons/line-md/arrow-left";
@@ -39,72 +41,73 @@ import iArrowRight from "~icons/line-md/arrow-right";
 import iMail from "~icons/line-md/email";
 import iBell from "~icons/line-md/bell";
 import iGrid from "~icons/line-md/grid-3";
-import iInbox from "~icons/material-symbols-light/inbox-outline";
+import iInbox from "~icons/material-symbols/inbox-outline";
 import iBriefcase from "~icons/line-md/briefcase";
-import iTruck from "~icons/material-symbols-light/local-shipping-outline";
-import iBanknotes from "~icons/material-symbols-light/payments-outline";
-import iCube from "~icons/material-symbols-light/deployed-code-outline";
+import iTruck from "~icons/material-symbols/local-shipping-outline";
+import iBanknotes from "~icons/material-symbols/payments-outline";
+import iCube from "~icons/material-symbols/deployed-code-outline";
 import iClipboard from "~icons/line-md/clipboard-list";
-import iTrendingUp from "~icons/material-symbols-light/trending-up";
-import iDatabase from "~icons/material-symbols-light/database-outline";
+import iTrendingUp from "~icons/material-symbols/trending-up";
+import iDatabase from "~icons/material-symbols/database-outline";
 import iPlay from "~icons/line-md/play";
-import iChart from "~icons/material-symbols-light/monitoring";
+import iChart from "~icons/material-symbols/monitoring";
 import iCompass from "~icons/line-md/compass";
-import iSparkles from "~icons/material-symbols-light/stars";
+import iSparkles from "~icons/material-symbols/stars";
+import iLiveHelp from "~icons/material-symbols/live-help-outline-rounded";
 import iShield from "~icons/line-md/security";
-import iChat from "~icons/material-symbols-light/forum-outline";
-import iSend from "~icons/material-symbols-light/send-rounded";
-import iAssistant from "~icons/material-symbols-light/smart-toy-outline";
-import iCloud from "~icons/material-symbols-light/cloud-outline";
-import iDevice from "~icons/material-symbols-light/computer-outline";
-import iUnfold from "~icons/material-symbols-light/unfold-more";
-import iCopy from "~icons/material-symbols-light/content-copy-outline";
-import iThumbUp from "~icons/material-symbols-light/thumb-up-outline";
-import iThumbDown from "~icons/material-symbols-light/thumb-down-outline";
-import iRetry from "~icons/material-symbols-light/refresh-rounded";
-import iEdit from "~icons/material-symbols-light/edit-outline";
-import iStop from "~icons/material-symbols-light/stop-rounded";
-import iExternal from "~icons/material-symbols-light/open-in-new";
-import iArrowDown from "~icons/material-symbols-light/arrow-downward-rounded";
-import iArrowUp from "~icons/material-symbols-light/arrow-upward-rounded";
-import iFilter from "~icons/material-symbols-light/filter-list-rounded";
-import iColumns from "~icons/material-symbols-light/view-column-outline-rounded";
-import iTable from "~icons/material-symbols-light/table-rows-outline-rounded";
-import iCalendar from "~icons/material-symbols-light/calendar-month-outline-rounded";
-import iList from "~icons/material-symbols-light/view-list-outline-rounded";
-import iVCompact from "~icons/material-symbols-light/view-compact-outline-rounded";
-import iVFocus from "~icons/material-symbols-light/view-carousel-outline-rounded";
-import iVStack from "~icons/material-symbols-light/stacks-outline-rounded";
-import iVTimeline from "~icons/material-symbols-light/view-timeline-outline-rounded";
-import iVHeat from "~icons/material-symbols-light/calendar-view-week-outline-rounded";
-import iVMosaic from "~icons/material-symbols-light/auto-awesome-mosaic-outline-rounded";
-import iVScatter from "~icons/material-symbols-light/scatter-plot-outline-rounded";
-import iVRanking from "~icons/material-symbols-light/leaderboard-outline-rounded";
-import iThinking from "~icons/material-symbols-light/neurology-outline";
-import iTool from "~icons/material-symbols-light/build-outline";
-import iBlock from "~icons/material-symbols-light/block";
-import iGlobe from "~icons/material-symbols-light/language";
-import iMic from "~icons/material-symbols-light/mic-outline";
-import iUpload from "~icons/material-symbols-light/upload";
-import iPrint from "~icons/material-symbols-light/print-outline";
-import iTranslate from "~icons/material-symbols-light/translate";
-import iSync from "~icons/material-symbols-light/cloud-sync-outline";
-import iHistory from "~icons/material-symbols-light/history";
-import iFlag from "~icons/material-symbols-light/flag";
-import iRoute from "~icons/material-symbols-light/route";
+import iChat from "~icons/material-symbols/forum-outline";
+import iSend from "~icons/material-symbols/send-rounded";
+import iAssistant from "~icons/material-symbols/assistant-outline-rounded";
+import iCloud from "~icons/material-symbols/cloud-outline";
+import iDevice from "~icons/material-symbols/computer-outline";
+import iUnfold from "~icons/material-symbols/unfold-more";
+import iCopy from "~icons/material-symbols/content-copy-outline";
+import iThumbUp from "~icons/material-symbols/thumb-up-outline";
+import iThumbDown from "~icons/material-symbols/thumb-down-outline";
+import iRetry from "~icons/material-symbols/refresh-rounded";
+import iEdit from "~icons/material-symbols/edit-outline";
+import iStop from "~icons/material-symbols/stop-rounded";
+import iExternal from "~icons/material-symbols/open-in-new";
+import iArrowDown from "~icons/material-symbols/arrow-downward-rounded";
+import iArrowUp from "~icons/material-symbols/arrow-upward-rounded";
+import iFilter from "~icons/material-symbols/filter-list-rounded";
+import iColumns from "~icons/material-symbols/view-column-outline-rounded";
+import iTable from "~icons/material-symbols/table-rows-outline-rounded";
+import iCalendar from "~icons/material-symbols/calendar-month-outline-rounded";
+import iList from "~icons/material-symbols/view-list-outline-rounded";
+import iVCompact from "~icons/material-symbols/view-compact-outline-rounded";
+import iVFocus from "~icons/material-symbols/view-carousel-outline-rounded";
+import iVStack from "~icons/material-symbols/stacks-outline-rounded";
+import iVTimeline from "~icons/material-symbols/view-timeline-outline-rounded";
+import iVHeat from "~icons/material-symbols/calendar-view-week-outline-rounded";
+import iVMosaic from "~icons/material-symbols/auto-awesome-mosaic-outline-rounded";
+import iVScatter from "~icons/material-symbols/scatter-plot-outline-rounded";
+import iVRanking from "~icons/material-symbols/leaderboard-outline-rounded";
+import iThinking from "~icons/material-symbols/neurology-outline";
+import iTool from "~icons/material-symbols/build-outline";
+import iBlock from "~icons/material-symbols/block";
+import iGlobe from "~icons/material-symbols/language";
+import iMic from "~icons/material-symbols/mic-outline";
+import iUpload from "~icons/material-symbols/upload";
+import iPrint from "~icons/material-symbols/print-outline";
+import iTranslate from "~icons/material-symbols/translate";
+import iSync from "~icons/material-symbols/cloud-sync-outline";
+import iHistory from "~icons/material-symbols/history";
+import iFlag from "~icons/material-symbols/flag";
+import iRoute from "~icons/material-symbols/route";
 import iFile from "~icons/line-md/document";
-import iKey from "~icons/material-symbols-light/key-outline";
+import iKey from "~icons/material-symbols/key-outline";
 import iPhone from "~icons/line-md/phone";
 import iLink from "~icons/line-md/link";
-import iBolt from "~icons/material-symbols-light/bolt-outline";
-import iArchive from "~icons/material-symbols-light/archive-outline";
-import iTrash from "~icons/material-symbols-light/delete-outline";
-import iAnchor from "~icons/material-symbols-light/anchor";
+import iBolt from "~icons/material-symbols/bolt-outline";
+import iArchive from "~icons/material-symbols/archive-outline";
+import iTrash from "~icons/material-symbols/delete-outline";
+import iAnchor from "~icons/material-symbols/anchor";
 import iContrast from "~icons/line-md/light-dark";
-import iPalette from "~icons/material-symbols-light/palette-outline";
-import iWallpaper from "~icons/material-symbols-light/wallpaper";
-import iNoImage from "~icons/material-symbols-light/hide-image-outline";
-import iPasskey from "~icons/material-symbols-light/passkey";
+import iPalette from "~icons/material-symbols/palette-outline";
+import iWallpaper from "~icons/material-symbols/wallpaper";
+import iNoImage from "~icons/material-symbols/hide-image-outline";
+import iPasskey from "~icons/material-symbols/passkey";
 
 /**
  * Icon: a sized, coloured inline SVG icon.
@@ -113,7 +116,7 @@ import iPasskey from "~icons/material-symbols-light/passkey";
  *
  * The system's icons, by name (`ICONS`), or any authored `<svg>` sized by the same variants.
  * Every icon comes from an Iconify collection through unplugin-icons (plugins/icons.ts): line-md
- * (animated outline icons, preferred), material-symbols-light, devicon and logos only. Each is
+ * (animated outline icons, preferred), material-symbols, devicon and logos only. Each is
  * imported on its own, so only the icons listed here reach the bundle. `iconSvg()` is exported so
  * other primitives render the same icons. Every variant is responsive, e.g. `size="sm md:lg"`.
  */
@@ -162,6 +165,7 @@ export const ICONS = {
   check: iCheck,
   x: iX,
   info: iInfo,
+  help: iHelp,
   warning: iWarning,
   error: iError,
   success: iSuccess,
@@ -182,6 +186,8 @@ export const ICONS = {
   users: iUsers,
   heart: iHeart,
   star: iStar,
+  /** Starred: the page is bookmarked. */
+  "star-filled": iStarFilled,
   plus: iPlus,
   minus: iMinus,
   "arrow-left": iArrowLeft,
@@ -204,6 +210,8 @@ export const ICONS = {
   compass: iCompass,
   /** AI: drafted or read by the assistant. */
   sparkles: iSparkles,
+  /** What goes in a field, on request (its "?"). */
+  "live-help": iLiveHelp,
   shield: iShield,
   chat: iChat,
   send: iSend,

@@ -182,7 +182,7 @@ describe("floating surfaces are tiles", async () => {
 /**
  * Every widget keeps to the space it's given, by construction: the board's cell clips what's in it
  * (`board.tile`); a tile with a surface is a card exactly its cell's box, its body capped under its
- * header (`tile`, `tileBody`); a bare tile is a column that clips (`tile` `bare`) whose content takes
+ * header, clipping or scrolling what doesn't fit (`tile`, `tileBody`); a bare tile is a column that clips (`tile` `bare`) whose content takes
  * what's left of the box (`tileContent` `fill`); and a figure that is a widget of its own fills that
  * content and clips its own (`statSurface` `fill`), so its card is the tile, whatever it holds.
  */
@@ -201,8 +201,12 @@ describe("every widget keeps to its tile", () => {
     const cell = new Set(board.tile.split(/\s+/));
     expect(cell.has("overflow-clip")).toBe(true);
     has(tileSrc, /export const tile = rcva\("([^"]*)"/, "h-full", "min-h-0");
-    has(tileSrc, /bare: \{ true: "([^"]*)"/, "flex", "flex-col", "overflow-hidden");
-    has(tileSrc, /capped: \{ true: "([^"]*)"/, "grow", "min-h-0", "overflow-hidden");
+    // Clipping with room for a ring at its edge (`clipRoom`: overflow-clip, painted 4px past it).
+    has(tileSrc, /bare: \{ true: `([^`]*)`/, "flex", "flex-col", "${clipRoom}");
+    has(tileSrc, /capped: \{ true: "([^"]*)"/, "grow", "min-h-0");
+    // What doesn't fit stays in the box either way: clipped (towards "Show all") or scrolled in it.
+    has(tileSrc, /clip: (clipRoom),/, "clipRoom");
+    has(tileSrc, /scroll: [`"]([^`"]*)[`"]/, "overflow-y-auto");
     has(tileSrc, /fill: \{ true: "([^"]*)"/, "grow", "min-h-0");
     has(statSrc, /fill: \{ true: "([^"]*)"/, "grow", "basis-0", "min-h-0", "overflow-hidden");
   });

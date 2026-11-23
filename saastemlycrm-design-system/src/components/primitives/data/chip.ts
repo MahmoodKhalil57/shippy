@@ -38,33 +38,27 @@ export const chip = rcva(`${inlineRow} ${text.label} items-center`, {
   defaultVariants: { variant: "input", size: "sm" },
 });
 /** The chip's content when it's pressable. */
-export const chipBody = rcva(
-  `${row} touch-target min-w-0 items-baseline gap-1 truncate text-start focus-visible:outline-2 focus-visible:outline-primary`,
-  {
-    variants: {
-      variant: {
-        input: "rounded-full",
-        // Leading padding that limits itself (layout/algebra.ts `padStart["3"]`).
-        filter: "touch-target rounded-s-field py-1 ps-[min(12px,max(0px,calc(100%_-_7rem)))] pe-1 state-layer",
-      },
+export const chipBody = rcva(`${row} touch-target min-w-0 items-baseline gap-1 truncate text-start`, {
+  variants: {
+    variant: {
+      input: "rounded-full",
+      // Leading padding that limits itself (layout/algebra.ts `padStart["3"]`).
+      filter: "touch-target rounded-s-field py-1 ps-[min(12px,max(0px,calc(100%_-_7rem)))] pe-1 state-layer",
     },
   },
-);
+});
 /** The content when it isn't a button. */
 export const chipLabel = rcva("min-w-0", {
   variants: { variant: { input: "", filter: "truncate py-1 ps-[min(12px,max(0px,calc(100%_-_7rem)))] pe-1" } },
 });
-export const chipRemove = rcva(
-  "touch-target grid place-items-center text-on-surface-variant hover:text-on-surface focus-visible:outline-2 focus-visible:outline-primary",
-  {
-    variants: {
-      variant: {
-        input: "touch-target size-4 shrink-0 rounded-full state-layer",
-        filter: "touch-target size-7 shrink-0 rounded-e-field state-layer",
-      },
+export const chipRemove = rcva("touch-target grid place-items-center text-on-surface-variant hover:text-on-surface", {
+  variants: {
+    variant: {
+      input: "touch-target size-4 shrink-0 rounded-full state-layer",
+      filter: "touch-target size-7 shrink-0 rounded-e-field state-layer",
     },
   },
-);
+});
 
 export type ChipVariants = VariantProps<typeof chip>;
 

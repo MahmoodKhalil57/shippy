@@ -116,6 +116,19 @@ export interface FieldLike {
     href?: string;
     /** For an array field: what people can do to one of its rows (`$row.…` is the row, `$parent.…` the document). */
     actions?: CollectionAction[];
+    /**
+     * The longer story behind the field, past its one-line hint (`admin.description`): why it
+     * matters, where its value comes from, what happens with it. Shown on demand ("More").
+     */
+    about?: string;
+    /** How it's entered, when not the most direct its shape allows (`inputOf`, ./fields.ts). */
+    input?: import("./fields.ts").FieldInput;
+    /** Narrows its value's schema past what its Payload settings say (`zodOf`): `(base) => base.refine(…)`. */
+    zod?: (base: import("zod").ZodType) => import("zod").ZodType;
+    /** A realistic mock value (the testing package's `mockOf`), from faker: `(faker) => faker.company.name()`. */
+    mock?: (faker: import("@faker-js/faker").Faker) => unknown;
+    /** The unit shown after a typed number ("pcs", "kg"), when its `number` format has none. */
+    suffix?: string;
     [key: string]: unknown;
   };
   fields?: FieldLike[];

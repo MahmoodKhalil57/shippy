@@ -25,7 +25,7 @@ import { row, rowLine, stack, text } from "../layout/algebra.ts";
 export const funnel = rcva(`${stack} w-full gap-1`);
 export const funnelCaption = rcva(`${text.label} text-label-md text-on-surface-variant`);
 export const funnelStage = rcva(
-  `${stack} gap-1 rounded-field px-1 py-1 outline-none [transition:opacity_var(--duration-short4)_var(--ease-standard)] focus-visible:outline-2 focus-visible:outline-primary`,
+  `${stack} gap-1 rounded-field px-1 py-1 [transition:opacity_var(--duration-short4)_var(--ease-standard)]`,
   { variants: { dim: { true: "opacity-50", false: "" }, link: { true: "cursor-pointer", false: "" } } },
 );
 export const funnelHead = rcva(`${row} items-baseline gap-2`);

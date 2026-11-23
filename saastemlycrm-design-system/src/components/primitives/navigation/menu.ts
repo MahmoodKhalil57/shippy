@@ -5,7 +5,7 @@ import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
-import { stack, row, text, tip } from "../layout/algebra.ts";
+import { inlineRow, stack, row, text } from "../layout/algebra.ts";
 
 /**
  * Menu: Displays a list of links vertically or horizontally.
@@ -78,7 +78,7 @@ export const menu = rcva(
        * sits 4px inside its tiles: its pill and the highlight are 38px, with a 4px gap between rows.
        */
       nav: {
-        true: "[&>li]:max-w-full py-0 gap-0 [&_li]:my-0 [&_ul]:my-0 [&_ul]:py-0 [&_li>:is(a,button):not([data-card])]:h-[calc(var(--tile-h)*0.75_-_4px)] [&_li>:is(a,button):not([data-card])]:my-0.5 [&_li>:is(a,button):not([data-card])]:py-0 [&_li>:is(a,button):not([data-card])]:content-center [&_li>details>summary]:h-[calc(var(--tile-h)*0.75_-_4px)] [&_li>details>summary]:my-0.5 [&_li>details>summary]:py-0 [&_li>details>summary]:content-center [&>li>:is(a,button)_svg]:size-5 [&>li>details>summary_svg]:size-5 px-0 text-label-lg [&_.menu-title]:text-on-surface-variant [&_.menu-title]:h-[calc(var(--tile-h)*0.25)] [&_.menu-title]:py-0 [&_.menu-title]:leading-[calc(var(--tile-h)*0.25)] [&_.menu-title]:text-label-md [&_.menu-title]:select-none [&_.menu-title]:pointer-events-none [interpolate-size:allow-keywords] [&_details::details-content]:overflow-hidden [&_details::details-content]:[block-size:0] [&_details::details-content]:[transition:block-size_var(--duration-spatial)_var(--ease-spatial),content-visibility_var(--duration-spatial)_allow-discrete] [&_details[open]::details-content]:[block-size:auto] motion-reduce:[&_details::details-content]:transition-none",
+        true: "[&>li]:max-w-full py-0 gap-0 [&_li]:my-0 [&_ul]:my-0 [&_ul]:py-0 [&_li>:is(a,button):not([data-card])]:h-[calc(var(--tile-h)*0.75_-_4px)] [&_li>:is(a,button):not([data-card])]:my-0.5 [&_li>:is(a,button):not([data-card])]:py-0 [&_li>:is(a,button):not([data-card])]:content-center [&_li>details>summary]:h-[calc(var(--tile-h)*0.75_-_4px)] [&_li>details>summary]:my-0.5 [&_li>details>summary]:py-0 [&_li>details>summary]:content-center [&>li>:is(a,button)_svg]:size-5 [&>li>details>summary_svg]:size-5 px-0 text-label-lg [&_.menu-title]:text-on-surface-variant [&_.menu-title]:h-[calc(var(--tile-h)*0.25)] [&_.menu-title]:py-0 [&_.menu-title]:leading-[calc(var(--tile-h)*0.25)] [&_.menu-title]:text-label-md [&_.menu-title]:select-none [&_.menu-title]:pointer-events-none [interpolate-size:allow-keywords] [--clips:fold] [&_details::details-content]:overflow-hidden [&_details::details-content]:[block-size:0] [&_details::details-content]:[transition:block-size_var(--duration-spatial)_var(--ease-spatial),content-visibility_var(--duration-spatial)_allow-discrete] [&_details[open]::details-content]:[block-size:auto] motion-reduce:[&_details::details-content]:transition-none",
       },
       /**
        * Open navigation list that can fold into the rail's look with motion: set
@@ -118,6 +118,19 @@ export const menu = rcva(
   },
 );
 
+/**
+ * A group whose icon is a button of its own (`MenuItem.iconAction`, a split button): the icon's
+ * button sits where the row's icon was, exactly the rail's icon pill (`w-11`: 12px either side of
+ * a 20px icon) and the row's height, and draws the icon. The row is clipped to start 2px after it
+ * (`menuLink`'s `split`), so the two halves are two pills: pointing at one lights only that one
+ * (the star its own state layer, never daisyUI's row tint), and a press on the star never reaches
+ * the row. The rest of the row still opens and closes the group.
+ */
+export const menuSplit = rcva("relative");
+export const menuIconAction = rcva(
+  `${inlineRow} touch-target state-layer absolute start-0 top-0.5 z-1 h-[calc(var(--tile-h)*0.75_-_4px)] w-11 cursor-pointer items-center justify-center rounded-inner text-current hover:bg-transparent`,
+);
+
 /** Non-interactive title `<li>` (or `<h2>` inside an `<li>` that has a submenu). */
 export const menuTitle = rcva("menu-title");
 
@@ -137,7 +150,7 @@ export const menuContent = rcva(
   // (a board, whose container query box has no width of its own) is a block the item's width.
   // It's content, not an item: none of daisyUI's item states (its hover tint, its pressed `:active`
   // fill and text colour, its focus ring), which painted the whole board on any click inside it.
-  "block w-full p-0 whitespace-normal *:block! *:w-full *:bg-transparent! *:text-inherit! *:shadow-none! *:outline-none! *:cursor-auto! [opacity:calc(1_-_var(--menu-collapse,0))] [transition:opacity_var(--duration-effects-fast)_var(--ease-effects-fast)] motion-reduce:transition-none",
+  "block w-full p-0 whitespace-normal *:block! *:w-full *:bg-transparent! *:text-inherit! *:shadow-none! *:outline-none! [--focus:fill] *:cursor-auto! [opacity:calc(1_-_var(--menu-collapse,0))] [transition:opacity_var(--duration-effects-fast)_var(--ease-effects-fast)] motion-reduce:transition-none",
 );
 
 /** `<li>` wrapper. `menu-disabled` goes here, next to a disabled control. */
@@ -179,14 +192,15 @@ export const menuLink = rcva("rounded-inner", {
      * optional description under it and the badge kept at full size — for items whose text
      * matters (notifications, tours…). Spaced from its neighbours; still a link or button.
      */
+    /**
+     * The row half of a split group (`menuSplit`): it starts 2px after the icon's button, and its
+     * label 6px after that (its own icon, cut away, keeps its place; a 20px gap after it, not 8).
+     */
+    split: {
+      true: "gap-x-5 [clip-path:inset(0_0_0_calc(2.75rem_+_2px)_round_var(--radius-field))] rtl:[clip-path:inset(0_calc(2.75rem_+_2px)_0_0_round_var(--radius-field))]",
+    },
     card: {
       true: "my-1 flex flex-col inline-flex! max-w-full items-stretch! gap-0.5 rounded-box border border-outline-variant bg-surface/50 w-full px-[min(12px,max(0px,calc((100%_-_7rem)/2)))] py-2 whitespace-normal hover:bg-surface",
-    },
-    /** Icon-only items show a tooltip with the label (the tooltip's glass, `TOOLTIP_GLASS`, written out). */
-    tooltip: {
-      top: `tooltip [&::before]:liquid-glass-clear [&::before]:text-on-surface [&>.tooltip-content]:liquid-glass-clear [&>.tooltip-content]:text-on-surface [&::after]:invisible ${tip}`,
-      right: `tooltip tooltip-right [&::before]:liquid-glass-clear [&::before]:text-on-surface [&>.tooltip-content]:liquid-glass-clear [&>.tooltip-content]:text-on-surface [&::after]:invisible ${tip}`,
-      bottom: `tooltip tooltip-bottom [&::before]:liquid-glass-clear [&::before]:text-on-surface [&>.tooltip-content]:liquid-glass-clear [&>.tooltip-content]:text-on-surface [&::after]:invisible ${tip}`,
     },
   },
 });
@@ -350,6 +364,12 @@ export interface MenuItem {
   href?: string;
   /** Leading icon, e.g. an inline `<svg>` (sized by the menu's `icon-size`). */
   icon?: Renderable;
+  /**
+   * A group's icon does something of its own (a split button): pressing the icon fires
+   * `ui-icon-action` ({ item }) and the rest of the row still opens and closes the group. `pressed`
+   * says whether its state is on (a bookmarked page's star).
+   */
+  iconAction?: { label: string; pressed?: boolean };
   /** Show the item as a card: the whole label wraps, with `description` under it. */
   card?: boolean;
   /** A card's second line (e.g. a notification's detail, a tour's summary). */
@@ -510,17 +530,15 @@ export class UiMenu extends LightElement {
   private _link(item: MenuItem, path: number[]) {
     const rail = this.layout === "rail";
     const iconOnly = rail || (this.iconOnly && !!item.icon);
-    // The rail scrolls (and would clip a CSS tooltip), so it uses the native one.
-    const tip = iconOnly && !rail && this.tooltip !== "none" ? this.tooltip : undefined;
-    const title = rail && typeof item.label === "string" ? item.label : undefined;
+    // Icon-only items name themselves in the page's one tip (a popover: no scrolling rail clips it).
+    const tipSide = rail ? "right" : iconOnly && this.tooltip !== "none" ? this.tooltip : undefined;
     const cls = menuLink({
       active: item.active,
       focus: item.focus,
-      tooltip: tip,
       anchor: this._anchor(item, path),
       card: !!item.card && !rail,
     });
-    const dataTip = tip && typeof item.label === "string" ? item.label : undefined;
+    const dataTip = tipSide && typeof item.label === "string" ? item.label : undefined;
     const ariaLabel = iconOnly && typeof item.label === "string" ? item.label : undefined;
     if (item.href && !item.disabled) {
       return html`<a
@@ -528,7 +546,7 @@ export class UiMenu extends LightElement {
         href=${item.href}
         ?data-card=${!!item.card && !rail}
         data-tip=${ifDefined(dataTip)}
-        title=${ifDefined(title)}
+        data-tip-side=${ifDefined(dataTip ? tipSide : undefined)}
         aria-label=${ifDefined(ariaLabel)}
         aria-current=${ifDefined(item.active ? "page" : undefined)}
         @click=${(e: Event) => this._select(item, path, e)}
@@ -541,7 +559,7 @@ export class UiMenu extends LightElement {
       ?disabled=${!!item.disabled}
       ?data-card=${!!item.card && !rail}
       data-tip=${ifDefined(dataTip)}
-      title=${ifDefined(title)}
+      data-tip-side=${ifDefined(dataTip ? tipSide : undefined)}
       aria-label=${ifDefined(ariaLabel)}
       @click=${(e: Event) => this._select(item, path, e)}
     >
@@ -638,13 +656,34 @@ export class UiMenu extends LightElement {
       </li>`;
     }
 
-    return html`<li class=${li}>
+    return html`<li class=${item.iconAction ? `${li} ${menuSplit()}` : li}>
+      ${
+        item.iconAction
+          ? html`<button
+              type="button"
+              class=${menuIconAction()}
+              aria-label=${item.iconAction.label}
+              aria-pressed=${item.iconAction.pressed ? "true" : "false"}
+              data-tip=${item.iconAction.label}
+              data-tip-side="bottom"
+              @click=${() =>
+                this.dispatchEvent(
+                  new CustomEvent("ui-icon-action", { detail: { item }, bubbles: true, composed: true }),
+                )}
+            >
+              ${item.icon}
+            </button>`
+          : nothing
+      }
       <details
         data-menu-path=${path.join(".")}
         ?open=${!!item.open}
         @toggle=${(e: Event) => this._toggled(item, path, e)}
       >
-        <summary class=${menuLink({ anchor: this._anchor(item, path) })} @click=${this._opening}>
+        <summary
+          class=${menuLink({ anchor: this._anchor(item, path), split: !!item.iconAction })}
+          @click=${this._opening}
+        >
           ${this._label(item)}
         </summary>
         <ul class=${item.children.every((c) => c.content !== undefined) ? menuGroupContent() : ""}>

@@ -288,14 +288,18 @@ export const Cases: CollectionConfig = {
             defaultValue: "$row.backup.id",
             // The desk without the owner (`handoverTeam`), the backup marked.
             options: "$row.handoverTeam" as never,
-            admin: { placeholder: "Choose a person" },
+            admin: { description: "The colleague who takes the case over.", placeholder: "Choose a person" },
           },
           {
             type: "textarea",
             name: "note",
             label: "Handover note",
             required: true,
-            admin: { description: "Edit freely — nothing is saved until you confirm.", rows: 10 },
+            admin: {
+              description: "Edit freely. Nothing is saved until you confirm.",
+              placeholder: "e.g. Offers are in for lines 1 to 6, customer call pending.",
+              rows: 10,
+            },
           },
         ],
         prefill: { when: "to", into: "note", from: "draft", call: { path: "/case-overview/$row.id/handover" } },
@@ -373,39 +377,129 @@ export const Cases: CollectionConfig = {
             {
               type: "row",
               fields: [
-                { name: "caseId", type: "text", label: "Case", unique: true, admin: { readOnly: true } },
-                { name: "customer", type: "relationship", relationTo: "customers", required: true },
-                { name: "customerRef", type: "text", label: "Customer reference" },
+                {
+                  name: "caseId",
+                  type: "text",
+                  label: "Case",
+                  unique: true,
+                  admin: { readOnly: true, description: "Numbered automatically when the case is created." },
+                },
+                {
+                  name: "customer",
+                  type: "relationship",
+                  relationTo: "customers",
+                  required: true,
+                  admin: {
+                    description: "The shipping company or owner asking for the quote.",
+                    placeholder: "e.g. Nordvik Ship Management",
+                  },
+                },
+                {
+                  name: "customerRef",
+                  type: "text",
+                  label: "Customer reference",
+                  admin: {
+                    description: "The customer's own RFQ or requisition number, if any.",
+                    placeholder: "e.g. RFQ-2026-0457",
+                  },
+                },
               ],
             },
             {
               type: "row",
               fields: [
-                { name: "vessel", type: "text", required: true },
-                { name: "vesselRecord", type: "relationship", relationTo: "vessels", label: "Vessel record (IMO)" },
-                { name: "port", type: "select", options: PORTS },
+                {
+                  name: "vessel",
+                  type: "text",
+                  required: true,
+                  admin: { description: "The ship the stores are for.", placeholder: "e.g. MV Nordic Tern" },
+                },
+                {
+                  name: "vesselRecord",
+                  type: "relationship",
+                  relationTo: "vessels",
+                  label: "Vessel record (IMO)",
+                  admin: {
+                    description: "Link the vessel's record to keep its IMO number and history.",
+                    placeholder: "Search vessels",
+                  },
+                },
+                {
+                  name: "port",
+                  type: "select",
+                  options: PORTS,
+                  admin: {
+                    description: "Where the goods are handed over to the vessel.",
+                    placeholder: "e.g. Port Said",
+                  },
+                },
               ],
             },
             {
               type: "row",
               fields: [
-                { name: "eta", type: "date", label: "ETA", admin: { date: { pickerAppearance: "dayAndTime" } } },
-                { name: "deadline", type: "date", required: true, label: "Quote deadline" },
-                { name: "currency", type: "select", options: CURRENCIES, defaultValue: "USD", label: "Quote currency" },
+                {
+                  name: "eta",
+                  type: "date",
+                  label: "ETA",
+                  admin: {
+                    date: { pickerAppearance: "dayAndTime" },
+                    description: "When the vessel is expected at the port.",
+                  },
+                },
+                {
+                  name: "deadline",
+                  type: "date",
+                  required: true,
+                  label: "Quote deadline",
+                  admin: { description: "When the customer needs our quotation by." },
+                },
+                {
+                  name: "currency",
+                  type: "select",
+                  options: CURRENCIES,
+                  defaultValue: "USD",
+                  label: "Quote currency",
+                  admin: { description: "The currency the customer is quoted in.", placeholder: "USD" },
+                },
               ],
             },
-            { name: "agent", type: "text", label: "Port agent / delivery contact" },
-            { name: "nextAction", type: "text", label: "Next action", required: true },
+            {
+              name: "agent",
+              type: "text",
+              label: "Port agent / delivery contact",
+              admin: {
+                description: "Who meets the goods at the port, usually the vessel's agent.",
+                placeholder: "e.g. Ahmed Hassan, Suez Agency",
+              },
+            },
+            {
+              name: "nextAction",
+              type: "text",
+              label: "Next action",
+              required: true,
+              admin: {
+                description: "The next step and who takes it.",
+                placeholder: "e.g. Chase supplier offers for lines 3 to 5",
+              },
+            },
             {
               name: "blocker",
               type: "text",
               // Red on a blocked case.
               custom: { toneWhen: [{ when: { tone: { equals: "danger" } }, tone: "error" }] },
+              admin: {
+                description: "What stops this case moving, if anything.",
+                placeholder: "e.g. Customer has not confirmed the brand",
+              },
             },
             {
               name: "handoverNote",
               type: "textarea",
-              admin: { description: "Logged on the timeline when the owner changes." },
+              admin: {
+                description: "Logged on the timeline when the owner changes.",
+                placeholder: "e.g. Offers are in for lines 1 to 6, customer call pending.",
+              },
             },
           ],
         },
@@ -424,37 +518,133 @@ export const Cases: CollectionConfig = {
                 {
                   type: "row",
                   fields: [
-                    { name: "lineNo", type: "number", required: true, min: 1, label: "#" },
-                    { name: "description", type: "text", required: true },
+                    {
+                      name: "lineNo",
+                      type: "number",
+                      required: true,
+                      min: 1,
+                      label: "#",
+                      admin: { description: "The line's position in the customer's list.", placeholder: "e.g. 3" },
+                    },
+                    {
+                      name: "description",
+                      type: "text",
+                      required: true,
+                      admin: {
+                        description: "The item as the customer names it.",
+                        placeholder: "e.g. Safety helmet, white, size L",
+                      },
+                    },
                   ],
                 },
                 {
                   type: "row",
                   fields: [
-                    { name: "product", type: "relationship", relationTo: "products" },
-                    { name: "brand", type: "text" },
-                    { name: "exactBrand", type: "checkbox", label: "Exact brand / part only", defaultValue: false },
+                    {
+                      name: "product",
+                      type: "relationship",
+                      relationTo: "products",
+                      admin: {
+                        description: "Match it to a catalogue product to reuse suppliers and prices.",
+                        placeholder: "Search products",
+                      },
+                    },
+                    {
+                      name: "brand",
+                      type: "text",
+                      admin: { description: "The brand the customer asks for.", placeholder: "e.g. Jotun" },
+                    },
+                    {
+                      name: "exactBrand",
+                      type: "checkbox",
+                      label: "Exact brand / part only",
+                      defaultValue: false,
+                      admin: { description: "Tick when only this brand or part number is acceptable." },
+                    },
                   ],
                 },
                 {
                   type: "row",
                   fields: [
-                    { name: "model", type: "text" },
-                    { name: "partNo", type: "text", label: "Part no." },
-                    { name: "impa", type: "text", label: "IMPA" },
-                    { name: "issa", type: "text", label: "ISSA" },
+                    {
+                      name: "model",
+                      type: "text",
+                      admin: { description: "The model or type of the item.", placeholder: "e.g. HEMPEL 45880" },
+                    },
+                    {
+                      name: "partNo",
+                      type: "text",
+                      label: "Part no.",
+                      admin: { description: "The maker's part number.", placeholder: "e.g. 4410-2203" },
+                    },
+                    {
+                      name: "impa",
+                      type: "text",
+                      label: "IMPA",
+                      admin: {
+                        description: "The IMPA code, the standard marine stores number.",
+                        placeholder: "e.g. 150101",
+                      },
+                    },
+                    {
+                      name: "issa",
+                      type: "text",
+                      label: "ISSA",
+                      admin: {
+                        description: "The ISSA code, the ship chandlers' catalogue number.",
+                        placeholder: "e.g. 41.01.01",
+                      },
+                    },
                   ],
                 },
                 {
                   type: "row",
                   fields: [
-                    { name: "qty", type: "number", required: true, min: 0 },
-                    { name: "unit", type: "select", options: UNITS, required: true },
-                    { name: "packSize", type: "number", min: 0, label: "Base units per unit", defaultValue: 1 },
-                    { name: "store", type: "select", options: STORES },
+                    {
+                      name: "qty",
+                      type: "number",
+                      required: true,
+                      min: 0,
+                      admin: { description: "How many units the customer wants.", placeholder: "e.g. 12" },
+                    },
+                    {
+                      name: "unit",
+                      type: "select",
+                      options: UNITS,
+                      required: true,
+                      admin: { description: "The unit the quantity is counted in.", placeholder: "e.g. pcs" },
+                    },
+                    {
+                      name: "packSize",
+                      type: "number",
+                      min: 0,
+                      label: "Base units per unit",
+                      defaultValue: 1,
+                      admin: {
+                        description: "How many base units one unit holds, such as 12 per carton.",
+                        placeholder: "e.g. 12",
+                      },
+                    },
+                    {
+                      name: "store",
+                      type: "select",
+                      options: STORES,
+                      admin: {
+                        description: "Which store department the item belongs to.",
+                        placeholder: "Pick a store",
+                      },
+                    },
                   ],
                 },
-                { name: "certificates", type: "text", label: "Certificates / requirements" },
+                {
+                  name: "certificates",
+                  type: "text",
+                  label: "Certificates / requirements",
+                  admin: {
+                    description: "Papers or specs the customer needs with the goods.",
+                    placeholder: "e.g. Class certificate, MSDS",
+                  },
+                },
                 {
                   type: "row",
                   fields: [
@@ -464,7 +654,14 @@ export const Cases: CollectionConfig = {
                       options: LINE_STATUSES,
                       defaultValue: "Not sourced",
                       // In the tone of the bucket it counts in: ready, waiting, blocked, no offer.
-                      custom: tones(Object.fromEntries(LINE_STATUSES.map((s) => [s, BUCKET_TONE[bucketOf(s)]]))),
+                      custom: {
+                        ...tones(Object.fromEntries(LINE_STATUSES.map((s) => [s, BUCKET_TONE[bucketOf(s)]]))),
+                        about: "Each status counts as ready, waiting, blocked or no offer on the case's line bar.",
+                      },
+                      admin: {
+                        description: "Where this line stands in sourcing and delivery.",
+                        placeholder: "Pick a status",
+                      },
                     },
                     {
                       name: "confidence",
@@ -472,7 +669,10 @@ export const Cases: CollectionConfig = {
                       min: 0,
                       max: 1,
                       label: "AI extraction confidence",
-                      admin: { readOnly: true },
+                      admin: {
+                        readOnly: true,
+                        description: "How sure the AI was when it read this line from the email.",
+                      },
                     },
                     // How sure the AI was, as a share; amber under 85% (check it at the source).
                     rowComputed(
@@ -480,6 +680,7 @@ export const Cases: CollectionConfig = {
                         name: "aiRead",
                         type: "number",
                         label: "AI read",
+                        admin: { description: "The AI's confidence as a percentage; amber under 85%." },
                         custom: {
                           ...formats.percent(0),
                           toneWhen: [{ when: { aiRead: { less_than: 85 } }, tone: "warning" }],
@@ -489,7 +690,15 @@ export const Cases: CollectionConfig = {
                     ),
                   ],
                 },
-                { name: "missing", type: "text", label: "Missing / unclear" },
+                {
+                  name: "missing",
+                  type: "text",
+                  label: "Missing / unclear",
+                  admin: {
+                    description: "What is unclear on this line and must be asked.",
+                    placeholder: "e.g. Size and colour",
+                  },
+                },
                 {
                   name: "originalText",
                   type: "textarea",
@@ -499,24 +708,41 @@ export const Cases: CollectionConfig = {
                   name: "selection",
                   type: "group",
                   label: "Selected offer",
+                  admin: { description: "The offer chosen for this line and why." },
                   fields: [
                     {
                       name: "offers",
                       type: "relationship",
                       relationTo: "offers",
                       hasMany: true,
-                      admin: { description: "More than one = split sourcing." },
+                      admin: { description: "More than one = split sourcing.", placeholder: "Search offers" },
                     },
                     {
                       name: "splitQty",
                       type: "array",
                       labels: { singular: "Split", plural: "Split quantities" },
+                      admin: { description: "How the quantity is shared between offers." },
                       fields: [
                         {
                           type: "row",
                           fields: [
-                            { name: "offer", type: "relationship", relationTo: "offers", required: true },
-                            { name: "qty", type: "number", min: 0, required: true },
+                            {
+                              name: "offer",
+                              type: "relationship",
+                              relationTo: "offers",
+                              required: true,
+                              admin: {
+                                description: "The offer that covers part of the quantity.",
+                                placeholder: "Search offers",
+                              },
+                            },
+                            {
+                              name: "qty",
+                              type: "number",
+                              min: 0,
+                              required: true,
+                              admin: { description: "Units taken from this offer.", placeholder: "e.g. 6" },
+                            },
                           ],
                         },
                       ],
@@ -524,7 +750,10 @@ export const Cases: CollectionConfig = {
                     {
                       name: "reason",
                       type: "textarea",
-                      admin: { description: "Required when the choice isn't the best-fit offer." },
+                      admin: {
+                        description: "Required when the choice isn't the best-fit offer.",
+                        placeholder: "e.g. Cheaper offer lacks the certificate",
+                      },
                     },
                     {
                       name: "marginPct",
@@ -533,6 +762,7 @@ export const Cases: CollectionConfig = {
                       max: 90,
                       label: "Margin %",
                       access: { read: costVisible },
+                      admin: { description: "Our margin on this line; hidden from Sales.", placeholder: "e.g. 18" },
                     },
                     {
                       type: "row",
@@ -542,8 +772,14 @@ export const Cases: CollectionConfig = {
                           type: "checkbox",
                           label: "Customer accepted alternative in writing",
                           defaultValue: false,
+                          admin: { description: "Tick once the customer agreed to a substitute in writing." },
                         },
-                        { name: "acceptanceEvidence", type: "upload", relationTo: "media" },
+                        {
+                          name: "acceptanceEvidence",
+                          type: "upload",
+                          relationTo: "media",
+                          admin: { description: "The email or message where the customer agreed." },
+                        },
                       ],
                     },
                   ],
@@ -554,36 +790,67 @@ export const Cases: CollectionConfig = {
               name: "clarifications",
               type: "array",
               labels: { singular: "Clarification", plural: "Clarifications" },
+              admin: { description: "Questions asked about the lines, and the answers." },
               fields: [
                 {
                   type: "row",
                   fields: [
-                    { name: "lineNo", type: "number", min: 1, label: "Line #" },
+                    {
+                      name: "lineNo",
+                      type: "number",
+                      min: 1,
+                      label: "Line #",
+                      admin: { description: "The line the question is about.", placeholder: "e.g. 4" },
+                    },
                     {
                       name: "to",
                       type: "select",
                       options: ["Customer", "Supplier", "Internal"],
                       defaultValue: "Customer",
+                      admin: { description: "Who the question goes to.", placeholder: "Customer" },
                     },
-                    { name: "via", type: "select", options: ["Email", "Phone", "WhatsApp", "Supplier question"] },
+                    {
+                      name: "via",
+                      type: "select",
+                      options: ["Email", "Phone", "WhatsApp", "Supplier question"],
+                      admin: { description: "How the question was sent.", placeholder: "Email" },
+                    },
                   ],
                 },
-                { name: "question", type: "textarea", required: true },
+                {
+                  name: "question",
+                  type: "textarea",
+                  required: true,
+                  admin: {
+                    description: "What we need to know, in one clear question.",
+                    placeholder: "e.g. Is size 42 or 43 required?",
+                  },
+                },
                 {
                   type: "row",
                   fields: [
-                    { name: "askedAt", type: "date" },
-                    { name: "askedBy", type: "relationship", relationTo: "users" },
+                    { name: "askedAt", type: "date", admin: { description: "When the question was sent." } },
+                    {
+                      name: "askedBy",
+                      type: "relationship",
+                      relationTo: "users",
+                      admin: { description: "The colleague who asked.", placeholder: "Search team" },
+                    },
                   ],
                 },
-                { name: "answer", type: "textarea" },
-                { name: "answeredAt", type: "date" },
+                {
+                  name: "answer",
+                  type: "textarea",
+                  admin: { description: "The reply received.", placeholder: "e.g. Size 42, white." },
+                },
+                { name: "answeredAt", type: "date", admin: { description: "When the reply came in." } },
                 // The answer, or "Waiting" (amber) while the question is open.
                 rowComputed(
                   {
                     name: "reply",
                     type: "text",
                     label: "Answer",
+                    admin: { description: "The answer, or Waiting while the question is open." },
                     custom: { toneWhen: [{ when: { answer: { exists: false } }, tone: "warning" }] },
                   },
                   (q) => scalar(q.answer) || "Waiting",
@@ -599,14 +866,40 @@ export const Cases: CollectionConfig = {
               name: "lines",
               type: "group",
               label: "Line status (summary)",
+              admin: { description: "Line counts used until the lines themselves are entered." },
               fields: [
                 {
                   type: "row",
                   fields: [
-                    { name: "ready", type: "number", defaultValue: 0, min: 0 },
-                    { name: "waiting", type: "number", defaultValue: 0, min: 0 },
-                    { name: "blocked", type: "number", defaultValue: 0, min: 0 },
-                    { name: "noOffer", type: "number", label: "No offer", defaultValue: 0, min: 0 },
+                    {
+                      name: "ready",
+                      type: "number",
+                      defaultValue: 0,
+                      min: 0,
+                      admin: { description: "Lines ready to quote or order.", placeholder: "e.g. 4" },
+                    },
+                    {
+                      name: "waiting",
+                      type: "number",
+                      defaultValue: 0,
+                      min: 0,
+                      admin: { description: "Lines waiting on a supplier or the customer.", placeholder: "e.g. 2" },
+                    },
+                    {
+                      name: "blocked",
+                      type: "number",
+                      defaultValue: 0,
+                      min: 0,
+                      admin: { description: "Lines stuck on a missing detail.", placeholder: "e.g. 1" },
+                    },
+                    {
+                      name: "noOffer",
+                      type: "number",
+                      label: "No offer",
+                      defaultValue: 0,
+                      min: 0,
+                      admin: { description: "Lines no supplier has offered on yet.", placeholder: "e.g. 0" },
+                    },
                   ],
                 },
               ],
@@ -615,17 +908,47 @@ export const Cases: CollectionConfig = {
               name: "quoteLines",
               type: "array",
               labels: { singular: "Quote line", plural: "Quote lines" },
+              admin: { description: "The lines as quoted to the customer." },
               fields: [
-                { name: "description", type: "text", required: true },
+                {
+                  name: "description",
+                  type: "text",
+                  required: true,
+                  admin: {
+                    description: "What the customer is quoted for.",
+                    placeholder: "e.g. Safety helmet, white, size L",
+                  },
+                },
                 {
                   type: "row",
                   fields: [
-                    { name: "qty", type: "number", min: 0 },
-                    { name: "unit", type: "select", options: ["pcs", "kg", "ltr", "set", "roll"] },
-                    { name: "unitPrice", type: "number", label: "Unit price (USD)", min: 0 },
+                    {
+                      name: "qty",
+                      type: "number",
+                      min: 0,
+                      admin: { description: "Units quoted.", placeholder: "e.g. 12" },
+                    },
+                    {
+                      name: "unit",
+                      type: "select",
+                      options: ["pcs", "kg", "ltr", "set", "roll"],
+                      admin: { description: "The unit the quantity is counted in.", placeholder: "e.g. pcs" },
+                    },
+                    {
+                      name: "unitPrice",
+                      type: "number",
+                      label: "Unit price (USD)",
+                      min: 0,
+                      admin: { description: "The selling price per unit in US dollars.", placeholder: "e.g. 24.50" },
+                    },
                   ],
                 },
-                { name: "supplier", type: "relationship", relationTo: "suppliers" },
+                {
+                  name: "supplier",
+                  type: "relationship",
+                  relationTo: "suppliers",
+                  admin: { description: "Who supplies this line.", placeholder: "Search suppliers" },
+                },
               ],
             },
           ],
@@ -637,6 +960,7 @@ export const Cases: CollectionConfig = {
               name: "pricing",
               type: "group",
               access: { read: costVisible },
+              admin: { description: "How shared charges and the discount are priced; hidden from Sales." },
               fields: [
                 {
                   type: "row",
@@ -651,6 +975,10 @@ export const Cases: CollectionConfig = {
                         { label: "By quantity", value: "qty" },
                         { label: "Equal per line", value: "lines" },
                       ],
+                      admin: {
+                        description: "How shared charges are split across the lines.",
+                        placeholder: "By line value",
+                      },
                     },
                     {
                       name: "discountPct",
@@ -659,13 +987,17 @@ export const Cases: CollectionConfig = {
                       min: 0,
                       max: 50,
                       defaultValue: 0,
+                      admin: {
+                        description: "Discount given to the customer on the whole quote.",
+                        placeholder: "e.g. 5",
+                      },
                     },
                     {
                       name: "fxRateUSD",
                       type: "number",
                       label: "FX snapshot USD/EGP",
                       min: 0,
-                      admin: { readOnly: true },
+                      admin: { readOnly: true, description: "The dollar rate in EGP fixed when the case was priced." },
                     },
                   ],
                 },
@@ -673,19 +1005,44 @@ export const Cases: CollectionConfig = {
                   name: "charges",
                   type: "array",
                   labels: { singular: "Shared charge", plural: "Shared charges" },
+                  admin: { description: "Charges shared by the whole case, such as port fees." },
                   fields: [
                     {
                       type: "row",
                       fields: [
-                        { name: "label", type: "text", required: true },
-                        { name: "amountEGP", type: "number", min: 0, label: "Amount (EGP)" },
+                        {
+                          name: "label",
+                          type: "text",
+                          required: true,
+                          admin: { description: "What the charge is for.", placeholder: "e.g. Port clearance" },
+                        },
+                        {
+                          name: "amountEGP",
+                          type: "number",
+                          min: 0,
+                          label: "Amount (EGP)",
+                          admin: { description: "The estimated amount in Egyptian pounds.", placeholder: "e.g. 8,500" },
+                        },
                         {
                           name: "status",
                           type: "select",
                           options: ["Estimate", "Confirmed", "Not applicable"],
                           defaultValue: "Estimate",
+                          admin: {
+                            description: "Whether the charge is a guess or confirmed.",
+                            placeholder: "Estimate",
+                          },
                         },
-                        { name: "actualEGP", type: "number", min: 0, label: "Actual (EGP)" },
+                        {
+                          name: "actualEGP",
+                          type: "number",
+                          min: 0,
+                          label: "Actual (EGP)",
+                          admin: {
+                            description: "What the charge actually cost in Egyptian pounds.",
+                            placeholder: "e.g. 9,200",
+                          },
+                        },
                       ],
                     },
                   ],
@@ -701,26 +1058,49 @@ export const Cases: CollectionConfig = {
               name: "service",
               type: "group",
               label: "Spare-parts clearance & forwarding",
-              admin: { condition: (data) => data?.caseType === "service" },
+              admin: {
+                condition: (data) => data?.caseType === "service",
+                description: "Customs and forwarding for spare parts sent to a vessel.",
+              },
               fields: [
                 {
                   type: "row",
                   fields: [
-                    { name: "awb", type: "text", label: "AWB / B/L" },
-                    { name: "carrier", type: "text" },
-                    { name: "arrival", type: "date" },
+                    {
+                      name: "awb",
+                      type: "text",
+                      label: "AWB / B/L",
+                      admin: {
+                        description: "The air waybill or bill of lading number.",
+                        placeholder: "e.g. 176-12345675",
+                      },
+                    },
+                    {
+                      name: "carrier",
+                      type: "text",
+                      admin: {
+                        description: "The airline or shipping line carrying the parcel.",
+                        placeholder: "e.g. Emirates SkyCargo",
+                      },
+                    },
+                    { name: "arrival", type: "date", admin: { description: "When the shipment lands in Egypt." } },
                   ],
                 },
                 {
                   type: "row",
                   fields: [
-                    { name: "customsDeclaration", type: "text" },
+                    {
+                      name: "customsDeclaration",
+                      type: "text",
+                      admin: { description: "The customs declaration number.", placeholder: "e.g. 2026/118452" },
+                    },
                     {
                       name: "customsStatus",
                       type: "select",
                       options: ["Documents pending", "Submitted", "Released", "Held by customs"],
+                      admin: { description: "Where customs clearance stands.", placeholder: "Pick a status" },
                     },
-                    { name: "releasedAt", type: "date" },
+                    { name: "releasedAt", type: "date", admin: { description: "When customs released the goods." } },
                   ],
                 },
                 {
@@ -728,17 +1108,38 @@ export const Cases: CollectionConfig = {
                   type: "relationship",
                   relationTo: "cases",
                   label: "Deliver together with case",
+                  admin: {
+                    description: "Another case whose delivery goes out with this one.",
+                    placeholder: "e.g. GS-RFQ-0142",
+                  },
                 },
                 {
                   name: "fees",
                   type: "array",
+                  admin: { description: "Extra fees paid for clearance and forwarding." },
                   fields: [
                     {
                       type: "row",
                       fields: [
-                        { name: "label", type: "text", required: true },
-                        { name: "amountUSD", type: "number", min: 0 },
-                        { name: "atCost", type: "checkbox", label: "Re-billed at cost", defaultValue: false },
+                        {
+                          name: "label",
+                          type: "text",
+                          required: true,
+                          admin: { description: "What the fee is for.", placeholder: "e.g. Customs duty" },
+                        },
+                        {
+                          name: "amountUSD",
+                          type: "number",
+                          min: 0,
+                          admin: { description: "The fee in US dollars.", placeholder: "e.g. 350" },
+                        },
+                        {
+                          name: "atCost",
+                          type: "checkbox",
+                          label: "Re-billed at cost",
+                          defaultValue: false,
+                          admin: { description: "Tick when the fee is passed on without markup." },
+                        },
                       ],
                     },
                   ],
@@ -749,15 +1150,40 @@ export const Cases: CollectionConfig = {
               name: "held",
               type: "group",
               label: "Held stores",
-              admin: { condition: (data) => data?.caseType === "held" },
+              admin: {
+                condition: (data) => data?.caseType === "held",
+                description: "Stores we keep for a vessel until it arrives.",
+              },
               fields: [
                 {
                   type: "row",
                   fields: [
-                    { name: "location", type: "text" },
-                    { name: "receivedAt", type: "date" },
-                    { name: "freeDays", type: "number", min: 0, defaultValue: 14 },
-                    { name: "dailyChargeUSD", type: "number", min: 0, defaultValue: 5 },
+                    {
+                      name: "location",
+                      type: "text",
+                      admin: {
+                        description: "Where in our warehouse the stores sit.",
+                        placeholder: "e.g. Alexandria, rack B3",
+                      },
+                    },
+                    { name: "receivedAt", type: "date", admin: { description: "When the stores arrived with us." } },
+                    {
+                      name: "freeDays",
+                      type: "number",
+                      min: 0,
+                      defaultValue: 14,
+                      admin: { description: "Days we hold the stores free of charge.", placeholder: "e.g. 14" },
+                    },
+                    {
+                      name: "dailyChargeUSD",
+                      type: "number",
+                      min: 0,
+                      defaultValue: 5,
+                      admin: {
+                        description: "The charge per day in US dollars once free days run out.",
+                        placeholder: "e.g. 5",
+                      },
+                    },
                   ],
                 },
               ],
@@ -766,7 +1192,13 @@ export const Cases: CollectionConfig = {
         },
       ],
     },
-    { name: "caseType", type: "select", options: CASE_TYPES, defaultValue: "rfq", admin: { position: "sidebar" } },
+    {
+      name: "caseType",
+      type: "select",
+      options: CASE_TYPES,
+      defaultValue: "rfq",
+      admin: { position: "sidebar", description: "What kind of job this is.", placeholder: "Pick a case type" },
+    },
     {
       name: "stage",
       type: "select",
@@ -797,14 +1229,22 @@ export const Cases: CollectionConfig = {
         Lost: "neutral",
         Expired: "neutral",
       }),
-      admin: { position: "sidebar" },
+      admin: {
+        position: "sidebar",
+        description: "Where the case is, from first email to settlement.",
+        placeholder: "Pick a stage",
+      },
     },
     {
       name: "decision",
       type: "select",
       label: "Customer decision",
       options: [...QUOTE_DECISIONS, "Partially won"],
-      admin: { position: "sidebar" },
+      admin: {
+        position: "sidebar",
+        description: "The customer's answer on our quotation.",
+        placeholder: "Pick a decision",
+      },
     },
     {
       name: "wait",
@@ -818,7 +1258,11 @@ export const Cases: CollectionConfig = {
         "Awaiting customer decision": "info",
         "Awaiting delivery or payment": "info",
       }),
-      admin: { position: "sidebar" },
+      admin: {
+        position: "sidebar",
+        description: "What the case is waiting on right now.",
+        placeholder: "Pick what it waits for",
+      },
     },
     {
       name: "tone",
@@ -833,7 +1277,11 @@ export const Cases: CollectionConfig = {
         { label: "Paused", value: "neutral" },
       ],
       custom: tones({ danger: "error", warn: "warning", info: "info", ok: "success", neutral: "neutral" }),
-      admin: { position: "sidebar" },
+      admin: {
+        position: "sidebar",
+        description: "How worried we are about this case.",
+        placeholder: "Pick a risk level",
+      },
     },
     {
       name: "riskRank",
@@ -841,8 +1289,23 @@ export const Cases: CollectionConfig = {
       label: "Risk rank",
       admin: { hidden: true, readOnly: true, description: "0 blocked … 4 paused: what queues sort by." },
     },
-    { name: "owner", type: "relationship", relationTo: "users", required: true, admin: { position: "sidebar" } },
-    { name: "backup", type: "relationship", relationTo: "users", admin: { position: "sidebar" } },
+    {
+      name: "owner",
+      type: "relationship",
+      relationTo: "users",
+      required: true,
+      admin: { position: "sidebar", description: "The person responsible for the case.", placeholder: "Search team" },
+    },
+    {
+      name: "backup",
+      type: "relationship",
+      relationTo: "users",
+      admin: {
+        position: "sidebar",
+        description: "Covers the case when the owner is away.",
+        placeholder: "Search team",
+      },
+    },
     {
       name: "value",
       type: "number",
@@ -851,17 +1314,39 @@ export const Cases: CollectionConfig = {
       custom: formats.money("USD"),
       // The selling value: never for Sales (as everywhere else).
       access: { read: costVisible },
-      admin: { position: "sidebar" },
+      admin: {
+        position: "sidebar",
+        description: "The selling value of the case in US dollars; hidden from Sales.",
+        placeholder: "e.g. 18,500",
+      },
     },
-    { name: "urgent", type: "checkbox", defaultValue: false, admin: { position: "sidebar" } },
-    { name: "lostReason", type: "text", admin: { position: "sidebar", condition: (data) => data?.stage === "Lost" } },
+    {
+      name: "urgent",
+      type: "checkbox",
+      defaultValue: false,
+      admin: { position: "sidebar", description: "Tick for a case that must jump the queue." },
+    },
+    {
+      name: "lostReason",
+      type: "text",
+      admin: {
+        position: "sidebar",
+        condition: (data) => data?.stage === "Lost",
+        description: "Why we lost the case, for later review.",
+        placeholder: "e.g. Customer chose a cheaper bid",
+      },
+    },
     {
       name: "sourceMessage",
       type: "relationship",
       relationTo: "intake-messages",
-      admin: { position: "sidebar", readOnly: true },
+      admin: { position: "sidebar", readOnly: true, description: "The email this case was created from." },
     },
-    { name: "closedAt", type: "date", admin: { position: "sidebar", readOnly: true } },
+    {
+      name: "closedAt",
+      type: "date",
+      admin: { position: "sidebar", readOnly: true, description: "When the case was settled and closed." },
+    },
     // Worked out on read, the same on every screen that shows a case (never stored).
     computed(
       {
@@ -870,12 +1355,18 @@ export const Cases: CollectionConfig = {
         label: "Due",
         // Red once the deadline has passed.
         custom: { toneWhen: [{ when: { deadline: { less_than: NOW } }, tone: "error" }] },
-        admin: { position: "sidebar" },
+        admin: { position: "sidebar", description: "How long until the quote deadline." },
       },
       (c) => relativeDue(c.deadline),
     ),
-    computed({ name: "vesselPort", type: "text", label: "Vessel · port", admin: { condition: () => false } }, (c) =>
-      [scalar(c.vessel), scalar(c.port)].filter(Boolean).join(" · "),
+    computed(
+      {
+        name: "vesselPort",
+        type: "text",
+        label: "Vessel · port",
+        admin: { condition: () => false, description: "The vessel and its port on one line." },
+      },
+      (c) => [scalar(c.vessel), scalar(c.port)].filter(Boolean).join(" · "),
     ),
     // How far the lines are before the order (`lineCounts`): each count a bar of all of them, ready
     // in green (amber while any is blocked). Nothing for a case with no lines yet.
@@ -884,13 +1375,19 @@ export const Cases: CollectionConfig = {
         name: "lineCount",
         type: "group",
         label: "Lines",
-        admin: { condition: () => false },
+        admin: { condition: () => false, description: "How far the lines are before the order." },
         fields: [
-          { name: "total", type: "number", label: "Lines" },
+          {
+            name: "total",
+            type: "number",
+            label: "Lines",
+            admin: { description: "How many lines the case has.", placeholder: "e.g. 6" },
+          },
           {
             name: "ready",
             type: "number",
             label: "Ready",
+            admin: { description: "Lines ready to quote or order.", placeholder: "e.g. 4" },
             custom: {
               gauge: { max: "lineCount.total" },
               toneWhen: [
@@ -903,9 +1400,16 @@ export const Cases: CollectionConfig = {
             name,
             type: "number" as const,
             label,
+            admin: { description: `Lines that are ${label.toLowerCase()}.`, placeholder: "e.g. 1" },
             custom: { gauge: { max: "lineCount.total" }, toneWhen: [{ when: {}, tone }] },
           })),
-          { name: "readyPct", type: "number", label: "Ready share", custom: formats.percent(0) },
+          {
+            name: "readyPct",
+            type: "number",
+            label: "Ready share",
+            admin: { description: "Share of the lines that are ready.", placeholder: "e.g. 67" },
+            custom: formats.percent(0),
+          },
         ],
       },
       (c) => {
@@ -923,10 +1427,18 @@ export const Cases: CollectionConfig = {
       },
     ),
     // Under the ready count: of how many, and how many are blocked ("of 6 · 1 blocked").
-    computed({ name: "lineNote", type: "text", label: "Lines", admin: { condition: () => false } }, (c) => {
-      const l = lineCounts(c);
-      return l.total ? [`of ${l.total}`, l.blocked ? `${l.blocked} blocked` : ""].filter(Boolean).join(" · ") : null;
-    }),
+    computed(
+      {
+        name: "lineNote",
+        type: "text",
+        label: "Lines",
+        admin: { condition: () => false, description: "Of how many lines, and how many are blocked." },
+      },
+      (c) => {
+        const l = lineCounts(c);
+        return l.total ? [`of ${l.total}`, l.blocked ? `${l.blocked} blocked` : ""].filter(Boolean).join(" · ") : null;
+      },
+    ),
     computed(
       {
         name: "flag",
@@ -934,19 +1446,30 @@ export const Cases: CollectionConfig = {
         label: "Urgency",
         options: ["Urgent"],
         custom: tones({ Urgent: "error" }),
-        admin: { condition: () => false },
+        admin: { condition: () => false, description: "Shows Urgent when the case is marked urgent." },
       },
       (c) => (c.urgent === true ? "Urgent" : null),
     ),
     // Whether the person reading may hand it over (the "Reassign" action).
-    computed({ name: "canReassign", type: "checkbox", admin: { condition: () => false } }, (c, req) =>
-      mayReassign(c, req.user as Reader),
+    computed(
+      {
+        name: "canReassign",
+        type: "checkbox",
+        admin: { condition: () => false, description: "Whether the reader may hand this case over." },
+      },
+      (c, req) => mayReassign(c, req.user as Reader),
     ),
     // Who it can be handed to: the desk without its owner, the backup marked.
-    computed({ name: "handoverTeam", type: "json", admin: { condition: () => false } }, async (c, req) =>
-      (await desk(req))
-        .filter((u) => u.id !== idOf(c.owner))
-        .map((u) => ({ label: `${scalar(u.name)}${u.id === idOf(c.backup) ? " (backup)" : ""}`, value: u.id })),
+    computed(
+      {
+        name: "handoverTeam",
+        type: "json",
+        admin: { condition: () => false, description: "The people this case can be handed to." },
+      },
+      async (c, req) =>
+        (await desk(req))
+          .filter((u) => u.id !== idOf(c.owner))
+          .map((u) => ({ label: `${scalar(u.name)}${u.id === idOf(c.backup) ? " (backup)" : ""}`, value: u.id })),
     ),
   ],
 };

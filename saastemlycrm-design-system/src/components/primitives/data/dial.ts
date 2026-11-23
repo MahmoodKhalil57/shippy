@@ -45,7 +45,7 @@ import {
 export const dial = rcva(`${stack} w-full items-center gap-1`);
 /** The half-circle: four tiles across, half as high. */
 export const dialFace = rcva(
-  `${tiles["4"]} relative aspect-[2/1] overflow-hidden rounded-t-full outline-none [animation:dial-sweep_var(--duration-long4)_var(--ease-emphasized-decelerate)_backwards] [transition:--dial-angle_var(--duration-medium4)_var(--ease-emphasized-decelerate)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary motion-reduce:[animation:none] motion-reduce:transition-none`,
+  `${tiles["4"]} relative aspect-[2/1] overflow-hidden [--clips:shape] rounded-t-full [animation:dial-sweep_var(--duration-long4)_var(--ease-emphasized-decelerate)_backwards] [transition:--dial-angle_var(--duration-medium4)_var(--ease-emphasized-decelerate)] motion-reduce:[animation:none] motion-reduce:transition-none`,
 );
 /** The whole circle (its lower half clipped by the face), drawn by `--dial-fill`, masked to a ring. */
 export const dialArc = rcva(

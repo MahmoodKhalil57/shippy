@@ -54,7 +54,7 @@ export const quadrantCaption = rcva(
 );
 /** A dot's hit area (24px, centred on its point): it fades and grows in as it enters. */
 export const quadrantMark = rcva(
-  "absolute start-(--x) bottom-(--y) z-0 grid size-6 -translate-x-1/2 translate-y-1/2 place-items-center rounded-full outline-none rtl:translate-x-1/2 [animation:cell-in_var(--duration-medium4)_var(--ease-emphasized-decelerate)_both] [animation-delay:calc(var(--i)*var(--duration-short1))] [transition:opacity_var(--duration-short4)_var(--ease-standard)] motion-reduce:[animation:none] focus-visible:outline-2 focus-visible:outline-primary",
+  "absolute start-(--x) bottom-(--y) z-0 grid size-6 -translate-x-1/2 translate-y-1/2 place-items-center rounded-full rtl:translate-x-1/2 [animation:cell-in_var(--duration-medium4)_var(--ease-emphasized-decelerate)_both] [animation-delay:calc(var(--i)*var(--duration-short1))] [transition:opacity_var(--duration-short4)_var(--ease-standard)] motion-reduce:[animation:none]",
   {
     variants: {
       dim: { true: "opacity-30", false: "" },

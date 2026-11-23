@@ -39,7 +39,7 @@ export const waterfall = rcva(`${stack} w-full gap-2`);
 export const waterfallPlot = rcva("relative h-40 w-full");
 /** A step's slot: the full height of the plot, its share of the width. */
 export const waterfallSlot = rcva(
-  "absolute inset-y-0 start-(--x) w-(--w) max-w-full rounded-xs outline-none [transition:opacity_var(--duration-short4)_var(--ease-standard)] focus-visible:outline-2 focus-visible:outline-primary",
+  "absolute inset-y-0 start-(--x) w-(--w) max-w-full rounded-xs [transition:opacity_var(--duration-short4)_var(--ease-standard)]",
   {
     variants: {
       dim: { true: "opacity-40", false: "" },

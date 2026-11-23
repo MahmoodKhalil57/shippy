@@ -40,7 +40,8 @@ export const textarea = rcva("textarea min-w-0", {
     validator: { true: "validator" },
     /** Code and JSON: monospaced, no wrapping, tab-sized indents. */
     mono: {
-      true: "font-mono text-body-md [tab-size:2] whitespace-pre overflow-x-auto min-w-0 [overflow-wrap:anywhere]",
+      // The text area is its own scroller, and its own padding is the room (`--ring-room: own`).
+      true: "font-mono text-body-md [tab-size:2] whitespace-pre overflow-x-auto min-w-0 [overflow-wrap:anywhere] [--ring-room:own]",
     },
     width: {
       auto: "w-auto",
@@ -105,6 +106,8 @@ export class UiTextarea extends LightElement {
   @property({ attribute: "field-surface" }) fieldSurface: FieldsetVariants["surface"];
   @property({ attribute: "field-width" }) fieldWidth: FieldsetVariants["width"];
   @property({ attribute: "input-id" }) inputId = uid("textarea");
+  /** Its accessible name when the label is outside it (a `ui-field`'s). */
+  @property({ attribute: "aria-label" }) ariaLabelText?: string;
 
   @query("textarea") textarea!: HTMLTextAreaElement;
 
@@ -150,7 +153,7 @@ export class UiTextarea extends LightElement {
       ?disabled=${this.disabled}
       ?required=${this.required}
       ?readonly=${this.readonly}
-      aria-label=${ifDefined(!this.label && !this.legend ? this.placeholder : undefined)}
+      aria-label=${ifDefined(!this.label && !this.legend ? (this.ariaLabelText ?? this.placeholder) : undefined)}
       @input=${(e: Event) => (this.value = (e.target as HTMLTextAreaElement).value)}
     ></textarea>`;
 

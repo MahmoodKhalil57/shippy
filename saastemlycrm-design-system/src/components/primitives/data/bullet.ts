@@ -34,7 +34,7 @@ export const bulletHead = rcva(`${row} items-baseline gap-x-2`);
 export const bulletHeading = rcva(`${rowLine} text-body-md text-on-surface`);
 export const bulletValue = rcva(`${text.label} text-title-sm tabular-nums text-on-surface`);
 export const bulletTrack = rcva(
-  "relative h-6 w-full overflow-hidden rounded-xs bg-surface-container-highest outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+  "relative h-6 w-full overflow-hidden [--clips:bar] rounded-xs bg-surface-container-highest",
 );
 /** A band of the track: darkest for poor, lightest for good (one neutral ramp). */
 export const bulletBand = rcva("absolute inset-y-0 [transition:opacity_var(--duration-short4)_var(--ease-standard)]", {

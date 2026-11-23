@@ -45,7 +45,7 @@ import { tag } from "./tag.ts";
 export const statSurface = rcva("border", {
   variants: {
     /** The whole of its tile (a figure that is a widget of its own): its tile's box, clipping the rest. */
-    fill: { true: "grow basis-0 min-h-0 overflow-hidden", false: "" },
+    fill: { true: "grow basis-0 min-h-0 overflow-hidden [--clips:surface]", false: "" },
     /** A filling figure that links: its tile lifts it on hover with its handles (`tileArrange`), not it alone. */
     lift: { true: "hover:translate-y-0!", false: "" },
     surface: {
@@ -105,7 +105,9 @@ export const statDenseLine = rcva(`${text.label} truncate`, {
 
 /** The share: a track as wide as the cell, filled `--share` of the way in the figure's tone. */
 export const statShare = rcva(`${stack} gap-1`);
-export const statShareTrack = rcva("h-1.5 w-full overflow-hidden rounded-full bg-surface-container-highest");
+export const statShareTrack = rcva(
+  "h-1.5 w-full overflow-hidden [--clips:bar] rounded-full bg-surface-container-highest",
+);
 export const statShareFill = rcva(
   "block h-full w-(--share) max-w-full rounded-full [transition:width_var(--duration-long2)_var(--ease-emphasized-decelerate)] starting:w-0 motion-reduce:transition-none",
   {

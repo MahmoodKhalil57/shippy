@@ -9,6 +9,13 @@
   .table :where(thead, tfoot) th {
     position: relative;
   }
+  /* A panel Floating UI places (src/components/base/floating.ts): at the `left` / `top` it's given,
+     in the window (a popover is in the top layer), never centred by the popover's own defaults. */
+  [data-floating] {
+    position: fixed;
+    inset: auto;
+    margin: 0;
+  }
 }
 
 @layer utilities {
@@ -36,6 +43,116 @@
       border-color: transparent;
       box-shadow: none;
       cursor: default;
+    }
+    /* Clicked into, a read-only field stays a value: no text caret, no focus outline (nothing can be
+       typed there), only its fill a step deeper so where focus is still shows. */
+    input:read-only:not([type="checkbox"], [type="radio"], [type="range"]),
+    textarea:read-only {
+      caret-color: transparent;
+      cursor: default;
+    }
+    input.input:read-only:not([type="checkbox"], [type="radio"], [type="range"]):focus,
+    textarea.textarea:read-only:focus,
+    :is(.input, .textarea):has(
+        input:read-only:not([type="checkbox"], [type="radio"], [type="range"]),
+        textarea:read-only
+      ):focus-within {
+      outline: none;
+      box-shadow: none;
+      background-color: var(--color-surface-container);
+    }
+
+    /* ------------------------------------------------------------------ focus
+       Focus shows the way the control is used, never as a ring around it (AGENTS.md "Focus";
+       tests/focus.test.ts holds primitives to it: none draws its own).
+
+       Typing: the caret blinks where the text goes and the field's own edge turns primary at
+       2px (M3's focused outlined field), on any focus, pointer or keyboard. The caret already
+       says "type here", so there is no ring. Forced colours draw the system's highlight on the
+       edge instead, since there the border colour carries nothing. */
+    :is(.input, .textarea, .select, .file-input):is(:focus, :focus-within) {
+      outline: none;
+      box-shadow: inset 0 0 0 1px var(--input-color);
+      caret-color: var(--color-primary);
+      @media (forced-colors: active) {
+        outline: 2px solid Highlight;
+        outline-offset: -2px;
+      }
+    }
+    :is(.input, .textarea, .select, .file-input):is(:focus, :focus-within):not(
+        [class*="-primary"],
+        [class*="-secondary"],
+        [class*="-accent"],
+        [class*="-neutral"],
+        [class*="-info"],
+        [class*="-success"],
+        [class*="-warning"],
+        [class*="-error"]
+      ) {
+      --input-color: var(--color-primary);
+    }
+    :is(
+      input:not(
+        [type="checkbox"],
+        [type="radio"],
+        [type="range"],
+        [type="button"],
+        [type="submit"],
+        [type="reset"],
+        [type="color"],
+        [type="file"],
+        [type="image"]
+      ),
+      textarea,
+      select,
+      [contenteditable]:not([contenteditable="false"])
+    ):focus {
+      outline: none;
+      caret-color: var(--color-primary);
+    }
+
+    /* Pressing: only from the keyboard (a pointer already knows where it is), the control's own
+       edge is marked from inside, 2px of primary that follows its corners, over its focus state
+       layer. Inside, so no box clips it and it never collides with a neighbour. A filled coloured
+       button marks it in its own content colour (primary on primary would vanish). */
+    :focus-visible:not(
+      input:not(
+        [type="checkbox"],
+        [type="radio"],
+        [type="range"],
+        [type="button"],
+        [type="submit"],
+        [type="reset"],
+        [type="color"],
+        [type="file"],
+        [type="image"]
+      ),
+      textarea,
+      select,
+      [contenteditable]:not([contenteditable="false"])
+    ) {
+      outline: 2px solid var(--focus-ink, var(--color-primary));
+      outline-offset: -2px;
+    }
+    .btn:is(
+        .btn-primary,
+        .btn-secondary,
+        .btn-accent,
+        .btn-neutral,
+        .btn-info,
+        .btn-success,
+        .btn-warning,
+        .btn-error
+      ):not(.btn-ghost, .btn-outline, .btn-soft, .btn-dash, .btn-link) {
+      --focus-ink: var(--btn-fg);
+    }
+
+    /* Choosing (a checkbox, radio, switch or slider): M3's state layer, a soft primary halo
+       around the control, from the keyboard only; an unticked box's edge turns primary too. */
+    :is(.checkbox, .radio, .toggle, .range):focus-visible {
+      --input-color: var(--color-primary);
+      outline: 4px solid color-mix(in oklab, var(--color-primary) 24%, transparent);
+      outline-offset: 0;
     }
 
     /* Colour roles (src/styles/theme.css) for daisyUI's own lines.
@@ -134,6 +251,64 @@ select::picker(select) {
   @apply liquid-glass rounded-box;
   --tw-shadow: var(--shadow-elevation-2);
   border-color: transparent;
+}
+
+/* An expressive select (M3 menus): the list grows from the field it belongs to (top edge, a quick
+   fade and a short drop on the emphasized decelerate curve), its options cascade in one after
+   another, the chosen one carries the primary check, and the field's chevron turns while it's
+   open. With Reduce motion it simply appears (the spatial tokens are 0, and the rules below sit
+   in `no-preference`). Every <select> in the app, whichever primitive draws it. */
+select option::checkmark {
+  color: var(--color-primary);
+}
+select option:checked {
+  background-color: var(--color-secondary-container);
+  color: var(--color-on-secondary-container);
+  font-weight: 500;
+}
+@media (prefers-reduced-motion: no-preference) {
+  select::picker(select) {
+    transform-origin: top center;
+    transition:
+      opacity var(--duration-short4) var(--ease-emphasized-decelerate),
+      translate var(--duration-medium2) var(--ease-emphasized-decelerate),
+      scale var(--duration-medium2) var(--ease-emphasized-decelerate),
+      display var(--duration-medium2) allow-discrete,
+      overlay var(--duration-medium2) allow-discrete;
+  }
+  select:not(:open)::picker(select) {
+    opacity: 0;
+    scale: 1 0.92;
+    translate: 0 -0.25rem;
+    transition-duration: var(--duration-short3);
+    transition-timing-function: var(--ease-emphasized-accelerate);
+  }
+  @starting-style {
+    select:open::picker(select) {
+      opacity: 0;
+      scale: 1 0.92;
+      translate: 0 -0.25rem;
+    }
+  }
+  select::picker(select) option {
+    transition:
+      opacity var(--duration-short4) var(--ease-emphasized-decelerate),
+      translate var(--duration-medium1) var(--ease-emphasized-decelerate),
+      background-color var(--duration-effects-fast) var(--ease-effects-fast);
+    transition-delay: calc(min(sibling-index(), 10) * var(--duration-short1) / 2);
+  }
+  @starting-style {
+    select:open::picker(select) option {
+      opacity: 0;
+      translate: 0 -0.375rem;
+    }
+  }
+  select::picker-icon {
+    transition: rotate var(--duration-spatial-fast) var(--ease-spatial-fast);
+  }
+  select:open::picker-icon {
+    rotate: 180deg;
+  }
 }
 
 /* No built-in depth: daisyUI's `--depth: 1` gives every button, input and toggle a small shadow

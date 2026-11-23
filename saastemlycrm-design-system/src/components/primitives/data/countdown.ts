@@ -35,17 +35,16 @@ import { inlineRow, row, rowLine, stack, text } from "../layout/algebra.ts";
  */
 export const countdown = rcva(`${stack} relative w-full gap-1`);
 export const countdownList = rcva(`${stack} gap-1`);
-export const countdownItem = rcva(
-  `${stack} gap-1 rounded-field px-1 py-1 outline-none focus-visible:outline-2 focus-visible:outline-primary`,
-  { variants: { link: { true: "cursor-pointer hover:underline", false: "" } } },
-);
+export const countdownItem = rcva(`${stack} gap-1 rounded-field px-1 py-1`, {
+  variants: { link: { true: "cursor-pointer hover:underline", false: "" } },
+});
 export const countdownHead = rcva(`${row} items-baseline gap-x-2`);
 export const countdownLabel = rcva(`${rowLine} text-body-md text-on-surface`);
 export const countdownLeft = rcva(`${inlineRow} ${text.label} items-center gap-1 text-label-lg tabular-nums`, {
   variants: { overdue: { true: "text-error-ink", false: "text-on-surface-variant" } },
 });
 export const countdownSupporting = rcva(`${text.line} text-body-sm text-on-surface-variant`);
-export const countdownTrack = rcva("h-1 w-full overflow-hidden rounded-full", {
+export const countdownTrack = rcva("h-1 w-full overflow-hidden [--clips:bar] rounded-full", {
   variants: { overdue: { true: "bg-error-container", false: "bg-surface-container-highest" } },
 });
 /** The part of the run left: `--left` wide as it's drawn, drained to nothing over `--drain`. */

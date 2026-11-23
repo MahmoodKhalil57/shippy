@@ -35,9 +35,15 @@ export const Activities: CollectionConfig = {
           type: "date",
           required: true,
           defaultValue: () => new Date().toISOString(),
-          admin: { date: { pickerAppearance: "dayAndTime" } },
+          admin: { date: { pickerAppearance: "dayAndTime" }, description: "When the step happened." },
         },
-        { name: "case", type: "relationship", relationTo: "cases", index: true },
+        {
+          name: "case",
+          type: "relationship",
+          relationTo: "cases",
+          index: true,
+          admin: { description: "The customer case it belongs to.", placeholder: "e.g. GS-RFQ-0142" },
+        },
         {
           name: "kind",
           type: "select",
@@ -48,33 +54,65 @@ export const Activities: CollectionConfig = {
           ],
           custom: tones({ auto: "info", human: "success", alert: "warning" }),
           defaultValue: "auto",
+          admin: { description: "Whether the system, a person or a warning did it.", placeholder: "Pick a kind" },
         },
       ],
     },
-    { name: "text", type: "textarea", required: true },
+    {
+      name: "text",
+      type: "textarea",
+      required: true,
+      admin: {
+        description: "What happened, in plain words.",
+        placeholder: "e.g. Reminder sent to Delta Marine for RFQ 0142.",
+      },
+    },
     {
       type: "row",
       fields: [
-        { name: "actor", type: "relationship", relationTo: "users" },
-        { name: "entity", type: "text", admin: { description: "collection/id of the record changed" } },
+        {
+          name: "actor",
+          type: "relationship",
+          relationTo: "users",
+          admin: { description: "The person who did it; empty for automatic steps.", placeholder: "Search users" },
+        },
+        {
+          name: "entity",
+          type: "text",
+          admin: { description: "The record that changed, as collection/id.", placeholder: "e.g. suppliers/12" },
+        },
         {
           name: "rule",
           type: "text",
           label: "Automation rule",
-          admin: { description: "Set when an automation did it." },
+          admin: { description: "Set when an automation did it.", placeholder: "e.g. RFQ reminder" },
         },
       ],
     },
-    { name: "undoOf", type: "relationship", relationTo: "activities", label: "Undoes" },
+    {
+      name: "undoOf",
+      type: "relationship",
+      relationTo: "activities",
+      label: "Undoes",
+      admin: { description: "The earlier step this one reverses.", placeholder: "Search the activity log" },
+    },
     // Who or what did it, in a line (never stored): "Automatic · System · rule: RFQ reminder",
     // "Human · Karim Youssef". Every automatic step names its rule, every human one the person.
-    computed({ name: "byline", type: "text", label: "By", admin: { condition: () => false } }, async (a, req) => {
-      const kind = KIND_LABEL[scalar(a.kind)] ?? "Automatic";
-      const actor = a.actor ? scalar((await related(req, "users", a.actor))?.name) : "";
-      return [kind, actor || (a.kind === "human" ? "" : "System"), a.rule ? `rule: ${scalar(a.rule)}` : ""]
-        .filter(Boolean)
-        .join(" · ");
-    }),
+    computed(
+      {
+        name: "byline",
+        type: "text",
+        label: "By",
+        admin: { condition: () => false, description: "Who or what did it, with the rule if automatic." },
+      },
+      async (a, req) => {
+        const kind = KIND_LABEL[scalar(a.kind)] ?? "Automatic";
+        const actor = a.actor ? scalar((await related(req, "users", a.actor))?.name) : "";
+        return [kind, actor || (a.kind === "human" ? "" : "System"), a.rule ? `rule: ${scalar(a.rule)}` : ""]
+          .filter(Boolean)
+          .join(" · ");
+      },
+    ),
   ],
 };
 
@@ -103,7 +141,15 @@ export const Tasks: CollectionConfig = {
     ],
   },
   fields: [
-    { name: "title", type: "text", required: true },
+    {
+      name: "title",
+      type: "text",
+      required: true,
+      admin: {
+        description: "What has to be done, in a few words.",
+        placeholder: "e.g. Chase Delta Marine for RFQ 0142 prices",
+      },
+    },
     {
       type: "row",
       fields: [
@@ -120,13 +166,20 @@ export const Tasks: CollectionConfig = {
             "Delivery task",
             "Clarification",
           ],
+          admin: { description: "Decides who is contacted and how it is tracked.", placeholder: "Pick a task type" },
         },
         {
           name: "channel",
           type: "select",
           options: ["Email", "Call", "WhatsApp", "Site visit", "Meeting", "Internal"],
+          admin: { description: "How it will be done.", placeholder: "Pick a channel" },
         },
-        { name: "due", type: "date", required: true, admin: { date: { pickerAppearance: "dayAndTime" } } },
+        {
+          name: "due",
+          type: "date",
+          required: true,
+          admin: { date: { pickerAppearance: "dayAndTime" }, description: "When it must be done by." },
+        },
       ],
     },
     // "Overdue" (in red), "11:00" or its day: how every list of follow-ups says when (never stored).
@@ -136,27 +189,76 @@ export const Tasks: CollectionConfig = {
         type: "text",
         label: "When",
         custom: { toneWhen: [{ when: { when: { equals: "Overdue" } }, tone: "error" }] },
-        admin: { position: "sidebar" },
+        admin: { position: "sidebar", description: "Overdue, a time today, or the due day." },
       },
       (t) => (t.status === "Open" || !t.status ? dueLabel(t.due) : null),
     ),
     {
       type: "row",
       fields: [
-        { name: "case", type: "relationship", relationTo: "cases" },
-        { name: "customer", type: "relationship", relationTo: "customers" },
-        { name: "supplier", type: "relationship", relationTo: "suppliers" },
-        { name: "opportunity", type: "relationship", relationTo: "opportunities" },
+        {
+          name: "case",
+          type: "relationship",
+          relationTo: "cases",
+          admin: { description: "The case this task is about.", placeholder: "e.g. GS-RFQ-0142" },
+        },
+        {
+          name: "customer",
+          type: "relationship",
+          relationTo: "customers",
+          admin: { description: "The customer to contact, if any.", placeholder: "Search customers" },
+        },
+        {
+          name: "supplier",
+          type: "relationship",
+          relationTo: "suppliers",
+          admin: { description: "The supplier to contact, if any.", placeholder: "Search suppliers" },
+        },
+        {
+          name: "opportunity",
+          type: "relationship",
+          relationTo: "opportunities",
+          admin: { description: "The sales lead this belongs to.", placeholder: "Search opportunities" },
+        },
       ],
     },
-    { name: "who", type: "text", label: "Who (person / role)" },
-    { name: "goal", type: "text" },
-    { name: "script", type: "textarea", label: "What to say / draft" },
-    { name: "internalOnly", type: "checkbox", label: "Internal only (no customer contact)", defaultValue: false },
+    {
+      name: "who",
+      type: "text",
+      label: "Who (person / role)",
+      admin: { description: "The person or role to reach.", placeholder: "e.g. Purchasing manager" },
+    },
+    {
+      name: "goal",
+      type: "text",
+      admin: { description: "What we want out of it.", placeholder: "e.g. Get a firm price by Thursday" },
+    },
+    {
+      name: "script",
+      type: "textarea",
+      label: "What to say / draft",
+      admin: {
+        description: "Talking points or a draft message.",
+        placeholder: "e.g. Ask if the quote for 40 drums of lube oil still stands.",
+      },
+    },
+    {
+      name: "internalOnly",
+      type: "checkbox",
+      label: "Internal only (no customer contact)",
+      defaultValue: false,
+      admin: { description: "Tick when nobody outside Golden Sea is contacted." },
+      custom: {
+        about: "Customers set to do not chase can only get internal tasks; customer follow-ups to them are refused.",
+      },
+    },
     {
       name: "outcome",
       type: "group",
-      admin: { condition: (data) => data?.status === "Done" || data?.status === "Skipped" },
+      admin: {
+        description: "How it went, once done or skipped.",
+        condition: (data) => data?.status === "Done" || data?.status === "Skipped",
+      },
       fields: [
         {
           type: "row",
@@ -165,27 +267,53 @@ export const Tasks: CollectionConfig = {
               name: "result",
               type: "select",
               options: ["Reached — positive", "Reached — call back", "No answer", "Not interested", "Sent"],
+              admin: { description: "How the contact went.", placeholder: "Pick an outcome" },
             },
-            { name: "nextDate", type: "date" },
+            { name: "nextDate", type: "date", admin: { description: "When to try again, if needed." } },
           ],
         },
-        { name: "note", type: "textarea" },
+        {
+          name: "note",
+          type: "textarea",
+          admin: {
+            description: "What was said or decided.",
+            placeholder: "e.g. Left a voicemail, will call back tomorrow.",
+          },
+        },
       ],
     },
-    { name: "owner", type: "relationship", relationTo: "users", required: true, admin: { position: "sidebar" } },
+    {
+      name: "owner",
+      type: "relationship",
+      relationTo: "users",
+      required: true,
+      admin: { position: "sidebar", description: "The person who has to do it.", placeholder: "Search users" },
+    },
     {
       name: "status",
       type: "select",
       defaultValue: "Open",
       options: ["Open", "Done", "Skipped", "Cancelled"],
       custom: tones({ Open: "info", Done: "success", Skipped: "neutral", Cancelled: "neutral" }),
-      admin: { position: "sidebar" },
+      admin: {
+        position: "sidebar",
+        description: "Open until done, skipped or cancelled.",
+        placeholder: "Pick a status",
+      },
     },
-    { name: "createdByRule", type: "text", admin: { position: "sidebar", readOnly: true } },
+    {
+      name: "createdByRule",
+      type: "text",
+      admin: { position: "sidebar", readOnly: true, description: "The automation rule that created it, if any." },
+    },
     {
       name: "stopCondition",
       type: "text",
-      admin: { position: "sidebar", description: "e.g. reply received, case closed" },
+      admin: {
+        position: "sidebar",
+        description: "When to stop the task without doing it.",
+        placeholder: "e.g. Reply received or case closed",
+      },
     },
   ],
 };
@@ -235,28 +363,54 @@ export const IntegrationExceptions: CollectionConfig = {
     {
       type: "row",
       fields: [
-        { name: "occurredAt", type: "date", required: true, admin: { date: { pickerAppearance: "dayAndTime" } } },
+        {
+          name: "occurredAt",
+          type: "date",
+          required: true,
+          admin: { date: { pickerAppearance: "dayAndTime" }, description: "When the failure happened." },
+        },
         {
           name: "source",
           type: "select",
           required: true,
           options: ["Outlook", "Gmail", "Website form", "AI extraction", "E-invoicing", "Automation rule", "Import"],
+          admin: { description: "Which integration raised it.", placeholder: "Pick a source" },
         },
       ],
     },
-    { name: "summary", type: "text", required: true },
-    { name: "impact", type: "text" },
+    {
+      name: "summary",
+      type: "text",
+      required: true,
+      admin: { description: "What went wrong, in one line.", placeholder: "e.g. Supplier offer PDF could not be read" },
+    },
+    {
+      name: "impact",
+      type: "text",
+      admin: { description: "What this blocks or delays.", placeholder: "e.g. RFQ 0142 has no comparison yet" },
+    },
     {
       name: "idempotencyKey",
       type: "text",
-      admin: { description: "Message-id / document id: a retry checks it first so nothing is created or sent twice." },
+      admin: { description: "The message or document id behind it.", placeholder: "e.g. msg-7f3a91" },
+      custom: { about: "A retry checks this id first, so nothing is created or sent twice." },
     },
-    { name: "payload", type: "json", admin: { description: "Technical detail for the retry." } },
+    {
+      name: "payload",
+      type: "json",
+      admin: { description: "Technical detail kept for the retry." },
+    },
     {
       type: "row",
       fields: [
-        { name: "retries", type: "number", min: 0, defaultValue: 0 },
-        { name: "lastRetryAt", type: "date" },
+        {
+          name: "retries",
+          type: "number",
+          min: 0,
+          defaultValue: 0,
+          admin: { description: "How many times it was retried.", placeholder: "e.g. 0" },
+        },
+        { name: "lastRetryAt", type: "date", admin: { description: "When it was last retried." } },
       ],
     },
     {
@@ -271,9 +425,18 @@ export const IntegrationExceptions: CollectionConfig = {
         "Auto-resolved": "success",
         Ignored: "neutral",
       }),
-      admin: { position: "sidebar" },
+      admin: {
+        position: "sidebar",
+        description: "Open until retried, reviewed or ignored.",
+        placeholder: "Pick a status",
+      },
     },
-    { name: "resolvedBy", type: "relationship", relationTo: "users", admin: { position: "sidebar" } },
+    {
+      name: "resolvedBy",
+      type: "relationship",
+      relationTo: "users",
+      admin: { position: "sidebar", description: "Who closed it.", placeholder: "Search users" },
+    },
   ],
 };
 
@@ -299,10 +462,22 @@ export const Notifications: CollectionConfig = {
       required: true,
       index: true,
       defaultValue: ({ user }: { user?: { id?: string } }) => user?.id,
-      admin: { position: "sidebar" },
+      admin: { position: "sidebar", description: "The person who sees it in their bell.", placeholder: "Search users" },
     },
-    { name: "title", type: "text", required: true },
-    { name: "detail", type: "text" },
+    {
+      name: "title",
+      type: "text",
+      required: true,
+      admin: {
+        description: "The headline they read first.",
+        placeholder: "e.g. Quotation GS-Q-0142 needs your approval",
+      },
+    },
+    {
+      name: "detail",
+      type: "text",
+      admin: { description: "One more line of context.", placeholder: "e.g. Margin is below the approval threshold." },
+    },
     {
       type: "row",
       fields: [
@@ -313,12 +488,13 @@ export const Notifications: CollectionConfig = {
           defaultValue: "Update",
           options: ["Approval", "Reply", "Reminder", "Alert", "Payment", "Update"],
           custom: tones({ Approval: "warning", Alert: "error", Payment: "success", Reply: "info", Reminder: "info" }),
+          admin: { description: "What sort of news it is.", placeholder: "Pick a kind" },
         },
         {
           name: "href",
           type: "text",
           label: "Link",
-          admin: { description: "Dashboard path it opens, e.g. /collections/cases/gs-rfq-0142." },
+          admin: { description: "The dashboard page it opens.", placeholder: "e.g. /collections/cases/gs-rfq-0142" },
         },
       ],
     },
@@ -327,9 +503,14 @@ export const Notifications: CollectionConfig = {
       type: "date",
       required: true,
       defaultValue: () => new Date().toISOString(),
-      admin: { position: "sidebar", date: { pickerAppearance: "dayAndTime" } },
+      admin: { position: "sidebar", date: { pickerAppearance: "dayAndTime" }, description: "When it was sent." },
     },
-    { name: "read", type: "checkbox", defaultValue: false, admin: { position: "sidebar" } },
+    {
+      name: "read",
+      type: "checkbox",
+      defaultValue: false,
+      admin: { position: "sidebar", description: "Set once the person has opened it." },
+    },
   ],
 };
 
@@ -348,8 +529,19 @@ export const Bookmarks: CollectionConfig = {
       required: true,
       index: true,
       defaultValue: ({ user }: { user?: { id?: string } }) => user?.id,
+      admin: { description: "The person whose list it is in.", placeholder: "Search users" },
     },
-    { name: "label", type: "text", required: true },
-    { name: "href", type: "text", required: true },
+    {
+      name: "label",
+      type: "text",
+      required: true,
+      admin: { description: "The name shown in the side panel.", placeholder: "e.g. Open RFQs" },
+    },
+    {
+      name: "href",
+      type: "text",
+      required: true,
+      admin: { description: "The dashboard page it opens.", placeholder: "e.g. /collections/cases" },
+    },
   ],
 };

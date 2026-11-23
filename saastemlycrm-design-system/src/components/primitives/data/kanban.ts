@@ -62,7 +62,7 @@ export const kanbanCardTop = rcva(`${row} items-center gap-2`);
 /** The headline: the slot that takes the room; as a link its hit area is the whole card. */
 export const kanbanCardTitle = rcva(`${rowFill} text-title-sm`, {
   variants: {
-    link: { true: "no-underline outline-none after:absolute after:inset-0 after:content-['']" },
+    link: { true: "no-underline outline-none [--focus:host] after:absolute after:inset-0 after:content-['']" },
   },
 });
 /** The card's menu stays above the card's own link. */
@@ -75,7 +75,7 @@ export const kanbanCardPerson = rcva(`${row} items-center gap-1.5 text-label-md 
   variants: { landed: { true: "text-on-primary-container" } },
 });
 export const kanbanCardAvatar = rcva(
-  `${fixed["6"]} ${row} items-center justify-center overflow-hidden rounded-full bg-primary-container text-label-sm text-on-primary-container [&>img]:size-full [&>img]:object-cover`,
+  `${fixed["6"]} ${row} items-center justify-center overflow-hidden [--clips:media] rounded-full bg-primary-container text-label-sm text-on-primary-container [&>img]:size-full [&>img]:object-cover`,
   { variants: { landed: { true: "bg-surface text-on-surface" } } },
 );
 export const kanbanCardName = rcva(rowLine);

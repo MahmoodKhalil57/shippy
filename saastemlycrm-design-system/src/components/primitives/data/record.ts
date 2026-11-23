@@ -129,11 +129,11 @@ const ENTER =
 
 export const recordCards = rcva(`${grid.sm} w-full gap-4`);
 export const recordCard = rcva(
-  `${stack} group/record relative h-full gap-3 overflow-hidden rounded-box border border-outline-variant bg-surface-container-low ${inset["4"]} pt-5 pb-4 text-on-surface outline-none ${ENTER}`,
+  `${stack} group/record relative h-full gap-3 overflow-hidden rounded-box border border-outline-variant bg-surface-container-low ${inset["4"]} pt-5 pb-4 text-on-surface ${ENTER}`,
   {
     variants: {
       link: {
-        true: "cursor-pointer [transition:translate_var(--duration-spatial-fast)_var(--ease-spatial-fast),box-shadow_var(--duration-effects-fast)_var(--ease-effects-fast),border-color_var(--duration-effects-fast)_var(--ease-effects-fast)] hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-elevation-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary motion-reduce:transition-none",
+        true: "cursor-pointer [transition:translate_var(--duration-spatial-fast)_var(--ease-spatial-fast),box-shadow_var(--duration-effects-fast)_var(--ease-effects-fast),border-color_var(--duration-effects-fast)_var(--ease-effects-fast)] hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-elevation-2 motion-reduce:transition-none",
         false: "",
       },
     },
@@ -155,7 +155,7 @@ export const recordFacts = rcva(`${grid.pairs} gap-x-4 gap-y-2`);
 export const recordFact = rcva(`${stack} gap-0`);
 export const recordFactLabel = rcva(`${text.line} text-label-sm text-on-surface-variant`);
 export const recordFactValue = rcva(`${text.label} line-clamp-2 text-body-md text-on-surface`);
-export const recordTrack = rcva("h-1 w-full overflow-hidden rounded-full bg-surface-container-highest");
+export const recordTrack = rcva("h-1 w-full overflow-hidden [--clips:bar] rounded-full bg-surface-container-highest");
 export const recordFill = rcva(
   "block h-full w-(--p) max-w-full rounded-full bg-chart-1 [transition:width_var(--duration-long2)_var(--ease-emphasized-decelerate)] starting:w-0 motion-reduce:transition-none",
 );
@@ -173,11 +173,11 @@ export const recordGo = rcva(
 
 export const recordList = rcva(`${stack} w-full gap-1`);
 export const recordRow = rcva(
-  `${row} group/record relative items-center gap-x-3 gap-y-1 rounded-field ${inset["2"]} py-2 text-on-surface outline-none ${ENTER}`,
+  `${row} group/record relative items-center gap-x-3 gap-y-1 rounded-field ${inset["2"]} py-2 text-on-surface ${ENTER}`,
   {
     variants: {
       link: {
-        true: "cursor-pointer touch-target state-layer focus-visible:outline-2 focus-visible:outline-primary",
+        true: "cursor-pointer touch-target state-layer",
         false: "",
       },
     },
@@ -192,11 +192,11 @@ export const recordRowFigure = rcva(`${text.label} text-title-sm tabular-nums te
 
 export const recordChips = rcva(`${row} w-full items-center gap-2`);
 export const recordChip = rcva(
-  `${inlineRow} ${text.label} group/record max-w-full items-center gap-1.5 rounded-full border border-outline-variant bg-surface-container-low ps-0.5 pe-3 py-0.5 text-label-lg text-on-surface outline-none ${ENTER}`,
+  `${inlineRow} ${text.label} group/record max-w-full items-center gap-1.5 rounded-full border border-outline-variant bg-surface-container-low ps-0.5 pe-3 py-0.5 text-label-lg text-on-surface ${ENTER}`,
   {
     variants: {
       link: {
-        true: "cursor-pointer touch-target state-layer [transition:border-color_var(--duration-short4)_var(--ease-standard)] hover:border-primary/40 focus-visible:outline-2 focus-visible:outline-primary motion-reduce:transition-none",
+        true: "cursor-pointer touch-target state-layer [transition:border-color_var(--duration-short4)_var(--ease-standard)] hover:border-primary/40 motion-reduce:transition-none",
         false: "",
       },
     },
@@ -214,7 +214,7 @@ export const recordHeroFigures = rcva(`${grid.xs} gap-3`);
 export const recordHeroFigure = rcva(`${stack} gap-0.5 rounded-field bg-surface-container ${inset["3"]} py-3 ${ENTER}`);
 export const recordHeroLinks = rcva(`${row} items-center gap-2`);
 export const recordHeroLink = rcva(
-  `${inlineRow} ${text.label} items-center gap-1.5 rounded-full border border-outline-variant px-3 py-1 text-label-lg text-on-surface outline-none [transition:border-color_var(--duration-short4)_var(--ease-standard)] touch-target state-layer hover:border-primary/40 focus-visible:outline-2 focus-visible:outline-primary motion-reduce:transition-none`,
+  `${inlineRow} ${text.label} items-center gap-1.5 rounded-full border border-outline-variant px-3 py-1 text-label-lg text-on-surface [transition:border-color_var(--duration-short4)_var(--ease-standard)] touch-target state-layer hover:border-primary/40 motion-reduce:transition-none`,
 );
 export const recordHeroCount = rcva(
   `${inlineRow} ${text.label} min-w-5 justify-center rounded-full bg-secondary-container px-1.5 text-label-sm tabular-nums text-on-secondary-container`,
@@ -238,9 +238,7 @@ const status = (s: RecordItem["status"]) =>
 const initials = (name: string) => monogramLetters(name);
 
 /** The link over a record with buttons: it covers the box, under the buttons. */
-export const recordCover = rcva(
-  "absolute inset-0 z-0 rounded-field outline-none focus-visible:outline-2 focus-visible:outline-primary",
-);
+export const recordCover = rcva("absolute inset-0 z-0 rounded-field");
 /** Its buttons, above the cover. */
 export const recordActions = rcva(`${row} relative z-10 items-center gap-1`);
 

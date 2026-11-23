@@ -43,7 +43,7 @@ export const ringValue = rcva(`${text.label} max-w-full text-title-sm tabular-nu
 export const ringCaption = rcva(`${text.label} line-clamp-2 text-label-sm text-on-surface-variant`);
 export const ringLegend = rcva(`${stack} ${rowFill} gap-0.5`);
 export const ringItem = rcva(
-  `${row} items-center gap-2 rounded-field px-1 py-0.5 ${text.label} text-body-sm outline-none [transition:opacity_var(--duration-short4)_var(--ease-standard)] focus-visible:outline-2 focus-visible:outline-primary`,
+  `${row} items-center gap-2 rounded-field px-1 py-0.5 ${text.label} text-body-sm [transition:opacity_var(--duration-short4)_var(--ease-standard)]`,
   {
     variants: {
       dim: { true: "opacity-50", false: "" },

@@ -48,7 +48,7 @@ export const fabDock = rcva(
  * back into it on the exit curve, quicker. With Reduce motion it only fades.
  */
 export const fabPanel = rcva(
-  `liquid-glass ${stack} ${floating["8"]} ${floatingHeight.panel} overflow-hidden rounded-box origin-bottom-right starting:scale-50 starting:opacity-0 motion-reduce:scale-100`,
+  `liquid-glass ${stack} ${floating["8"]} ${floatingHeight.panel} overflow-hidden [--clips:surface] rounded-box origin-bottom-right starting:scale-50 starting:opacity-0 motion-reduce:scale-100`,
   {
     variants: {
       hidden: {

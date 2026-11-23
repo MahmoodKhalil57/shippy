@@ -24,9 +24,7 @@ import { fixed, grid, row, stack, text } from "../layout/algebra.ts";
  * - That line is a live region, so the day being read is announced; `label` names the whole.
  */
 export const heatmap = rcva(`${stack} w-full gap-2`);
-export const heatmapGrid = rcva(
-  `${grid.calendar} rounded-field outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary`,
-);
+export const heatmapGrid = rcva(`${grid.calendar} rounded-field`);
 export const heatmapCell = rcva(
   "h-5 min-w-0 rounded-xs [animation:cell-in_var(--duration-medium2)_var(--ease-emphasized-decelerate)_both] [animation-delay:calc(var(--c)*var(--duration-short1))] motion-reduce:[animation:none]",
   {

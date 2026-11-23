@@ -167,7 +167,7 @@ export const Invoices: CollectionConfig = {
                   name: "taxId",
                   label: "Buyer tax registration number",
                   defaultValue: "$row.billing.taxId",
-                  admin: { description: "9 digits — on the customer's tax card on file: 100-200-300" },
+                  admin: { description: "9 digits, from the customer's tax card on file." },
                 },
               ]
             : undefined,
@@ -246,9 +246,23 @@ export const Invoices: CollectionConfig = {
     {
       type: "row",
       fields: [
-        { name: "number", type: "text", unique: true, admin: { readOnly: true } },
-        caseRef(),
-        { name: "customer", type: "relationship", relationTo: "customers", required: true },
+        {
+          name: "number",
+          type: "text",
+          unique: true,
+          admin: { readOnly: true, description: "Numbered automatically when saved, like INV/2026/0412." },
+        },
+        caseRef(true, { hint: "The customer case this invoice bills." }),
+        {
+          name: "customer",
+          type: "relationship",
+          relationTo: "customers",
+          required: true,
+          admin: {
+            description: "The shipping company or owner who pays this invoice.",
+            placeholder: "e.g. Nile Maritime Co.",
+          },
+        },
       ],
     },
     {
@@ -259,22 +273,69 @@ export const Invoices: CollectionConfig = {
           type: "select",
           options: ["Delivery", "Milestone", "Deposit", "Installment", "Final balance", "Service fees"],
           defaultValue: "Delivery",
+          admin: {
+            description: "Why this invoice is raised: a delivery, a deposit or a milestone.",
+            placeholder: "Pick a basis",
+          },
         },
-        { name: "delivery", type: "relationship", relationTo: "deliveries" },
+        {
+          name: "delivery",
+          type: "relationship",
+          relationTo: "deliveries",
+          admin: {
+            description: "The delivery being billed, when the basis is a delivery.",
+            placeholder: "e.g. DN-0212",
+          },
+        },
       ],
     },
     {
       name: "lines",
       type: "array",
+      admin: { description: "What is billed, one row per item delivered." },
+      custom: {
+        about:
+          "A line's total invoiced quantity across all invoices cannot exceed what was delivered, so the same quantity is never billed twice.",
+      },
       fields: [
         {
           type: "row",
           fields: [
-            { name: "lineNo", type: "number", min: 1 },
-            { name: "description", type: "text", required: true },
-            { name: "qty", type: "number", min: 0, required: true },
-            { name: "deliveredQty", type: "number", min: 0 },
-            { name: "unitPrice", type: "number", min: 0, required: true },
+            {
+              name: "lineNo",
+              type: "number",
+              min: 1,
+              admin: { description: "The order line this row bills.", placeholder: "e.g. 1" },
+            },
+            {
+              name: "description",
+              type: "text",
+              required: true,
+              admin: { description: "The item as it appears on the invoice.", placeholder: "e.g. Coverall FR, size L" },
+            },
+            {
+              name: "qty",
+              type: "number",
+              min: 0,
+              required: true,
+              admin: { description: "Units billed on this invoice.", placeholder: "e.g. 40" },
+            },
+            {
+              name: "deliveredQty",
+              type: "number",
+              min: 0,
+              admin: {
+                description: "Units delivered to the vessel. Billing cannot go above it.",
+                placeholder: "e.g. 40",
+              },
+            },
+            {
+              name: "unitPrice",
+              type: "number",
+              min: 0,
+              required: true,
+              admin: { description: "The selling price per unit, before VAT.", placeholder: "e.g. 1,950" },
+            },
           ],
         },
       ],
@@ -282,14 +343,36 @@ export const Invoices: CollectionConfig = {
     {
       type: "row",
       fields: [
-        { name: "currency", type: "select", options: CURRENCIES, defaultValue: "USD" },
-        { name: "amount", type: "number", min: 0, custom: formats.money("currency") },
-        { name: "paid", type: "number", min: 0, defaultValue: 0, custom: formats.money("currency") },
+        {
+          name: "currency",
+          type: "select",
+          options: CURRENCIES,
+          defaultValue: "USD",
+          admin: { description: "The currency the customer is billed in.", placeholder: "USD" },
+        },
+        {
+          name: "amount",
+          type: "number",
+          min: 0,
+          admin: { description: "The invoice total. It is worked out from the lines.", placeholder: "e.g. 48,200" },
+          custom: formats.money("currency"),
+        },
+        {
+          name: "paid",
+          type: "number",
+          min: 0,
+          defaultValue: 0,
+          admin: {
+            description: "Payments received so far. It grows as customer receipts are recorded.",
+            placeholder: "e.g. 10,000",
+          },
+          custom: formats.money("currency"),
+        },
         {
           name: "balance",
           type: "number",
           min: 0,
-          admin: { readOnly: true },
+          admin: { readOnly: true, description: "Amount minus paid. It reaches zero when the invoice is settled." },
           custom: formats.money("currency"),
         },
       ],
@@ -299,15 +382,28 @@ export const Invoices: CollectionConfig = {
       type: "row",
       fields: [
         computed(
-          { name: "balanceUsd", type: "number", label: "Balance (USD)", custom: formats.money("USD") },
+          {
+            name: "balanceUsd",
+            type: "number",
+            label: "Balance (USD)",
+            admin: { description: "The open balance at today's FX rate, so invoices compare." },
+            custom: formats.money("USD"),
+          },
           async (inv, req) => {
             const fx = await fxRates(req);
             const egp = (Number(inv.balance) || 0) * (fx[scalar(inv.currency) || "EGP"] ?? 1);
             return Math.round((egp / (fx.USD ?? 1)) * 100) / 100;
           },
         ),
-        computed({ name: "daysOverdue", type: "number", label: "Days overdue", custom: formats.days() }, (inv) =>
-          collectible(inv) ? daysSince(inv.dueDate) : 0,
+        computed(
+          {
+            name: "daysOverdue",
+            type: "number",
+            label: "Days overdue",
+            admin: { description: "Days past the due date. Zero or less means not yet due." },
+            custom: formats.days(),
+          },
+          (inv) => (collectible(inv) ? daysSince(inv.dueDate) : 0),
         ),
         computed(
           {
@@ -315,6 +411,7 @@ export const Invoices: CollectionConfig = {
             type: "select",
             label: "Age",
             options: [...AGE_BUCKETS],
+            admin: { description: "How late the invoice is, in the buckets finance reads receivables by." },
             custom: tones({ "Not due": "success", "1–30 days": "warning", "31–60 days": "error", "60+ days": "error" }),
           },
           (inv) => (collectible(inv) ? bucketOf(daysSince(inv.dueDate)) : null),
@@ -326,13 +423,48 @@ export const Invoices: CollectionConfig = {
       {
         name: "reminder",
         type: "group",
-        admin: { condition: () => false },
+        admin: { condition: () => false, description: "The collection reminder the AI drafts for this invoice." },
         fields: [
-          { name: "mode", type: "text" },
-          { name: "to", type: "text" },
-          { name: "subject", type: "text" },
-          { name: "body", type: "textarea" },
-          { name: "note", type: "text" },
+          {
+            name: "mode",
+            type: "text",
+            admin: {
+              description: "Customer email, or internal only for a do-not-chase account.",
+              placeholder: "e.g. customer",
+            },
+          },
+          {
+            name: "to",
+            type: "text",
+            admin: {
+              description: "The customer contact the email goes to.",
+              placeholder: "e.g. accounts@nilemaritime.com",
+            },
+          },
+          {
+            name: "subject",
+            type: "text",
+            admin: {
+              description: "The email subject line.",
+              placeholder: "e.g. Golden Sea invoice INV/2026/0412, overdue",
+            },
+          },
+          {
+            name: "body",
+            type: "textarea",
+            admin: {
+              description: "The drafted message a person reviews before sending.",
+              placeholder: "Dear accounts team,",
+            },
+          },
+          {
+            name: "note",
+            type: "text",
+            admin: {
+              description: "The account's contact rule that shaped the draft.",
+              placeholder: "e.g. Account rule: follow-ups allowed.",
+            },
+          },
         ],
       },
       async (inv, req) => (collectible(inv) ? reminderDraft(inv, await related(req, "customers", inv.customer)) : null),
@@ -341,38 +473,69 @@ export const Invoices: CollectionConfig = {
     {
       type: "row",
       fields: [
-        computed({ name: "basisNote", type: "text", label: "Basis" }, async (inv, req) => {
-          const delivery = await related(req, "deliveries", inv.delivery);
-          return `${scalar(inv.basis) || "Delivery"}${delivery ? ` · ${scalar(delivery.number)}` : ""} · ${dayText(inv.issuedAt)}`;
-        }),
-        computed({ name: "linesSummary", type: "text", label: "Invoiced lines" }, (inv) =>
-          ((inv.lines as Record<string, unknown>[] | undefined) ?? [])
-            .map(
-              (l) =>
-                `L${scalar(l.lineNo)} · ${scalar(l.qty)}${l.deliveredQty != null ? ` of ${scalar(l.deliveredQty)} delivered` : ""} × ${moneyText(Number(l.unitPrice) || 0, scalar(inv.currency))}`,
-            )
-            .join("; "),
+        computed(
+          {
+            name: "basisNote",
+            type: "text",
+            label: "Basis",
+            admin: { description: "Basis, delivery and issue date in one line." },
+          },
+          async (inv, req) => {
+            const delivery = await related(req, "deliveries", inv.delivery);
+            return `${scalar(inv.basis) || "Delivery"}${delivery ? ` · ${scalar(delivery.number)}` : ""} · ${dayText(inv.issuedAt)}`;
+          },
+        ),
+        computed(
+          {
+            name: "linesSummary",
+            type: "text",
+            label: "Invoiced lines",
+            admin: { description: "Each billed line against what was delivered." },
+          },
+          (inv) =>
+            ((inv.lines as Record<string, unknown>[] | undefined) ?? [])
+              .map(
+                (l) =>
+                  `L${scalar(l.lineNo)} · ${scalar(l.qty)}${l.deliveredQty != null ? ` of ${scalar(l.deliveredQty)} delivered` : ""} × ${moneyText(Number(l.unitPrice) || 0, scalar(inv.currency))}`,
+              )
+              .join("; "),
         ),
         // The tax authority's answer: its error, else the UUID it gave.
-        computed({ name: "eInvoiceNote", type: "text", label: "E-invoice note" }, (inv) => {
-          const e = (inv.eInvoice ?? {}) as { error?: string; uuid?: string };
-          return e.error || (e.uuid ? `UUID ${e.uuid}` : "");
-        }),
+        computed(
+          {
+            name: "eInvoiceNote",
+            type: "text",
+            label: "E-invoice note",
+            admin: { description: "The tax authority's error, or the UUID it issued." },
+          },
+          (inv) => {
+            const e = (inv.eInvoice ?? {}) as { error?: string; uuid?: string };
+            return e.error || (e.uuid ? `UUID ${e.uuid}` : "");
+          },
+        ),
         // The balance and when it's due (or settled), then each payment received.
-        computed({ name: "paymentsNote", type: "text", label: "Payments" }, async (inv, req) => {
-          const cur = scalar(inv.currency);
-          const payments = req.context?.seed
-            ? []
-            : (await customerPayments(req)).filter((p) => idOf(p.invoice) === idOf(inv.id));
-          return [
-            Number(inv.balance) > 0
-              ? `Balance ${moneyText(Number(inv.balance), cur)} due ${dayText(inv.dueDate)}`
-              : "Settled",
-            ...payments.map(
-              (p) => `${dayText(p.paidAt)} · ${scalar(p.reference)} · ${moneyText(Number(p.amount) || 0, cur)}`,
-            ),
-          ].join(" · ");
-        }),
+        computed(
+          {
+            name: "paymentsNote",
+            type: "text",
+            label: "Payments",
+            admin: { description: "The open balance and each payment received." },
+          },
+          async (inv, req) => {
+            const cur = scalar(inv.currency);
+            const payments = req.context?.seed
+              ? []
+              : (await customerPayments(req)).filter((p) => idOf(p.invoice) === idOf(inv.id));
+            return [
+              Number(inv.balance) > 0
+                ? `Balance ${moneyText(Number(inv.balance), cur)} due ${dayText(inv.dueDate)}`
+                : "Settled",
+              ...payments.map(
+                (p) => `${dayText(p.paidAt)} · ${scalar(p.reference)} · ${moneyText(Number(p.amount) || 0, cur)}`,
+              ),
+            ].join(" · ");
+          },
+        ),
       ],
     },
     // The next step with the tax authority (the e-invoice actions read it): nothing once valid.
@@ -380,11 +543,26 @@ export const Invoices: CollectionConfig = {
       {
         name: "eInvoiceNext",
         type: "group",
-        admin: { condition: () => false },
+        admin: { condition: () => false, description: "The next step with the tax authority for this invoice." },
         fields: [
-          { name: "mode", type: "text" },
-          { name: "label", type: "text" },
-          { name: "summary", type: "textarea" },
+          {
+            name: "mode",
+            type: "text",
+            admin: { description: "Local buyer, foreign buyer, or a status refresh.", placeholder: "e.g. local" },
+          },
+          {
+            name: "label",
+            type: "text",
+            admin: { description: "The action's name on the button.", placeholder: "e.g. Sign & submit" },
+          },
+          {
+            name: "summary",
+            type: "textarea",
+            admin: {
+              description: "What the submission contains, shown before sending.",
+              placeholder: "e.g. Nile Maritime Co. · EGP 48,200 · 14% standard",
+            },
+          },
         ],
       },
       async (inv, req) => {
@@ -411,10 +589,21 @@ export const Invoices: CollectionConfig = {
       {
         name: "paymentDraft",
         type: "group",
-        admin: { condition: () => false },
+        admin: { condition: () => false, description: "What recording a payment starts from." },
         fields: [
-          { name: "reference", type: "text" },
-          { name: "note", type: "text" },
+          {
+            name: "reference",
+            type: "text",
+            admin: { description: "A sample bank reference to start from.", placeholder: "e.g. TRX-77412" },
+          },
+          {
+            name: "note",
+            type: "text",
+            admin: {
+              description: "The open balance and due date, as a reminder.",
+              placeholder: "e.g. Balance EGP 48,200 · due 17 Nov",
+            },
+          },
         ],
       },
       (inv) =>
@@ -429,25 +618,49 @@ export const Invoices: CollectionConfig = {
     {
       type: "row",
       fields: [
-        { name: "issuedAt", type: "date" },
-        { name: "dueDate", type: "date" },
+        { name: "issuedAt", type: "date", admin: { description: "The invoice date printed on the document." } },
+        {
+          name: "dueDate",
+          type: "date",
+          admin: { description: "The date payment is due under the customer's terms." },
+        },
         {
           name: "vatTreatment",
           type: "select",
           options: ["14% standard", "0% — foreign vessel in transit", "Exempt"],
           defaultValue: "0% — foreign vessel in transit",
+          admin: {
+            description: "The VAT rate applied. Foreign vessels in transit are usually 0%.",
+            placeholder: "Pick a VAT treatment",
+          },
+          custom: {
+            about:
+              "A 14% standard invoice goes to a local buyer and needs their tax registration number when submitted to the tax authority.",
+          },
         },
       ],
     },
     {
       name: "billing",
       type: "group",
+      admin: { description: "The legal entity and tax number the invoice is issued to." },
       fields: [
         {
           type: "row",
           fields: [
-            { name: "legalEntity", type: "text" },
-            { name: "taxId", type: "text" },
+            {
+              name: "legalEntity",
+              type: "text",
+              admin: {
+                description: "The company name as it appears on its tax card.",
+                placeholder: "e.g. Nile Maritime Co. S.A.E.",
+              },
+            },
+            {
+              name: "taxId",
+              type: "text",
+              admin: { description: "The buyer's tax registration number, 9 digits.", placeholder: "e.g. 100-200-300" },
+            },
           ],
         },
       ],
@@ -456,6 +669,7 @@ export const Invoices: CollectionConfig = {
       name: "eInvoice",
       type: "group",
       label: "Egyptian e-invoice (tax authority)",
+      admin: { description: "Where the invoice stands with the Egyptian tax authority." },
       fields: [
         {
           type: "row",
@@ -466,6 +680,10 @@ export const Invoices: CollectionConfig = {
               label: "E-invoice (tax authority)",
               options: ["Not submitted", "Submitted", "Valid", "Invalid", "Rejected", "Cancelled"],
               defaultValue: "Not submitted",
+              admin: {
+                description: "The tax authority's verdict on the submitted invoice.",
+                placeholder: "Pick a status",
+              },
               custom: tones({
                 "Not submitted": "neutral",
                 Submitted: "info",
@@ -475,11 +693,30 @@ export const Invoices: CollectionConfig = {
                 Cancelled: "neutral",
               }),
             },
-            { name: "uuid", type: "text", label: "UUID" },
-            { name: "submittedAt", type: "date" },
+            {
+              name: "uuid",
+              type: "text",
+              label: "UUID",
+              admin: {
+                description: "The unique ID the tax authority gave the invoice.",
+                placeholder: "e.g. 7K3M9X2P4Q8R",
+              },
+            },
+            {
+              name: "submittedAt",
+              type: "date",
+              admin: { description: "When the invoice was sent to the tax authority." },
+            },
           ],
         },
-        { name: "error", type: "text" },
+        {
+          name: "error",
+          type: "text",
+          admin: {
+            description: "The reason the tax authority gave when it refused the invoice.",
+            placeholder: "e.g. Buyer tax ID not found",
+          },
+        },
       ],
     },
     {
@@ -495,7 +732,11 @@ export const Invoices: CollectionConfig = {
         Overdue: "error",
         Cancelled: "neutral",
       }),
-      admin: { position: "sidebar" },
+      admin: {
+        position: "sidebar",
+        description: "Where the invoice is. It moves on its own as payments arrive.",
+        placeholder: "Pick a status",
+      },
     },
     {
       name: "collectionRule",
@@ -568,17 +809,51 @@ export const Payments: CollectionConfig = {
             { label: "Customer receipt", value: "in" },
             { label: "Supplier payment", value: "out" },
           ],
+          admin: {
+            description: "Money in from a customer, or money out to a supplier.",
+            placeholder: "Pick a direction",
+          },
         },
-        { name: "reference", type: "text", required: true, label: "Bank reference" },
-        { name: "paidAt", type: "date", required: true },
+        {
+          name: "reference",
+          type: "text",
+          required: true,
+          label: "Bank reference",
+          admin: { description: "The reference on the bank transfer or cheque.", placeholder: "e.g. TRX-77412" },
+        },
+        {
+          name: "paidAt",
+          type: "date",
+          required: true,
+          admin: { description: "The day the money moved at the bank." },
+        },
       ],
     },
     {
       type: "row",
       fields: [
-        { name: "amount", type: "number", min: 0, required: true, custom: formats.money("currency") },
-        { name: "currency", type: "select", options: CURRENCIES, required: true },
-        { name: "fxRate", type: "number", min: 0, label: "Actual FX" },
+        {
+          name: "amount",
+          type: "number",
+          min: 0,
+          required: true,
+          admin: { description: "The amount that moved at the bank.", placeholder: "e.g. 48,200" },
+          custom: formats.money("currency"),
+        },
+        {
+          name: "currency",
+          type: "select",
+          options: CURRENCIES,
+          required: true,
+          admin: { description: "The currency of the transfer.", placeholder: "EGP" },
+        },
+        {
+          name: "fxRate",
+          type: "number",
+          min: 0,
+          label: "Actual FX",
+          admin: { description: "The rate the bank applied, in pounds per unit.", placeholder: "e.g. 48.6" },
+        },
       ],
     },
     {
@@ -588,19 +863,31 @@ export const Payments: CollectionConfig = {
           name: "invoice",
           type: "relationship",
           relationTo: "invoices",
-          admin: { condition: (_, s) => s?.direction === "in" },
+          admin: {
+            condition: (_, s) => s?.direction === "in",
+            description: "The customer invoice this receipt is allocated to.",
+            placeholder: "e.g. INV/2026/0412",
+          },
         },
         {
           name: "bill",
           type: "relationship",
           relationTo: "supplier-bills",
-          admin: { condition: (_, s) => s?.direction === "out" },
+          admin: {
+            condition: (_, s) => s?.direction === "out",
+            description: "The supplier bill this payment settles.",
+            placeholder: "e.g. DM-5512",
+          },
         },
         {
           name: "purchaseOrder",
           type: "relationship",
           relationTo: "purchase-orders",
-          admin: { condition: (_, s) => s?.direction === "out" },
+          admin: {
+            condition: (_, s) => s?.direction === "out",
+            description: "The purchase order a deposit or advance is paid against.",
+            placeholder: "e.g. PO/2026/0214",
+          },
         },
       ],
     },
@@ -609,19 +896,28 @@ export const Payments: CollectionConfig = {
       type: "select",
       options: ["Deposit / advance", "Installment", "Balance", "Full"],
       defaultValue: "Full",
+      admin: { description: "Whether this covers the whole amount or only a part.", placeholder: "Pick a kind" },
     },
     {
       name: "approval",
       type: "relationship",
       relationTo: "approvals",
-      admin: { condition: (_, s) => s?.direction === "out" },
+      admin: {
+        condition: (_, s) => s?.direction === "out",
+        description: "The approved payment approval. A supplier payment cannot be recorded without it.",
+        placeholder: "Search approvals",
+      },
     },
     {
       name: "status",
       type: "select",
       defaultValue: "Recorded",
       options: ["Planned", "Recorded", "Reconciled", "Reversed"],
-      admin: { position: "sidebar" },
+      admin: {
+        position: "sidebar",
+        description: "Recorded once the bank movement happened, Reconciled once matched.",
+        placeholder: "Pick a status",
+      },
     },
   ],
 };

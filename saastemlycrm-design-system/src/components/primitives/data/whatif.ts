@@ -49,7 +49,7 @@ export const whatifOutputValue = rcva(`${text.label} text-title-lg tabular-nums`
 export const whatifOutputNote = rcva(`${text.label} text-body-sm text-on-surface-variant`);
 export const whatifFoot = rcva(`${row} justify-end`);
 export const whatifReset = rcva(
-  `${inlineRow} ${pad["2"]} touch-target state-layer cursor-pointer items-center rounded-full py-1.5 text-label-lg text-primary focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-default disabled:text-on-surface-disabled`,
+  `${inlineRow} ${pad["2"]} touch-target state-layer cursor-pointer items-center rounded-full py-1.5 text-label-lg text-primary disabled:cursor-default disabled:text-on-surface-disabled`,
 );
 
 export interface WhatifInput {

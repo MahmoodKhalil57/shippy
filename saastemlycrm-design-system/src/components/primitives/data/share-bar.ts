@@ -35,7 +35,7 @@ export const shareBar = rcva(`${stack} w-full gap-1.5`);
 export const shareBarHead = rcva(`${row} items-baseline gap-x-2`);
 export const shareBarLabel = rcva(`${rowLine} text-label-md text-on-surface-variant`);
 export const shareBarTotal = rcva(`${text.label} text-title-sm tabular-nums text-on-surface`);
-export const shareBarTrack = rcva(`${row} h-3 w-full gap-0.5 overflow-hidden rounded-full`);
+export const shareBarTrack = rcva(`${row} h-3 w-full gap-0.5 overflow-hidden [--clips:bar] rounded-full`);
 export const shareBarSegment = rcva(
   "h-full min-w-1 basis-0 rounded-xs [animation:share-in_var(--duration-medium4)_var(--ease-emphasized-decelerate)_both] [animation-delay:calc(var(--i)*var(--duration-short2))] [transition:opacity_var(--duration-short4)_var(--ease-standard)] motion-reduce:[animation:none]",
   {
@@ -56,7 +56,7 @@ export const shareBarSegment = rcva(
 );
 export const shareBarLegend = rcva(`${row} items-center gap-x-3 gap-y-0.5`);
 export const shareBarChip = rcva(
-  `${inlineRow} items-center gap-1.5 rounded-field px-1 py-0.5 ${text.label} text-body-sm outline-none [transition:opacity_var(--duration-short4)_var(--ease-standard)] focus-visible:outline-2 focus-visible:outline-primary`,
+  `${inlineRow} items-center gap-1.5 rounded-field px-1 py-0.5 ${text.label} text-body-sm [transition:opacity_var(--duration-short4)_var(--ease-standard)]`,
   {
     variants: {
       dim: { true: "opacity-50", false: "" },

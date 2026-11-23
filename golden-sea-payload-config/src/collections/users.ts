@@ -12,8 +12,18 @@ export const Users: CollectionConfig = {
     delete: ({ req }) => req.user?.role === "management",
   },
   fields: [
-    { name: "name", type: "text", required: true },
-    { name: "initials", type: "text", maxLength: 3, admin: { position: "sidebar" } },
+    {
+      name: "name",
+      type: "text",
+      required: true,
+      admin: { description: "How this person appears across the dashboard.", placeholder: "e.g. Karim Youssef" },
+    },
+    {
+      name: "initials",
+      type: "text",
+      maxLength: 3,
+      admin: { position: "sidebar", description: "Two or three letters shown on avatars.", placeholder: "e.g. KY" },
+    },
     {
       name: "role",
       type: "select",
@@ -22,12 +32,26 @@ export const Users: CollectionConfig = {
       options: ROLES,
       // Only management changes roles (users may edit their own profile otherwise).
       access: { update: ({ req }) => req.user?.role === "management" },
+      admin: { description: "Decides what this person can see and do.", placeholder: "Pick a role" },
+      custom: { about: "Only management can change a role. Sales never sees costs, margins or case values." },
     },
     {
       type: "row",
       fields: [
-        { name: "phone", type: "text", admin: { description: "Used for WhatsApp / SMS alerts (after-hours RFQs)." } },
-        { name: "office", type: "select", options: [...WAREHOUSES.map((w) => w.split(" ")[0]), "Greece", "US"] },
+        {
+          name: "phone",
+          type: "text",
+          admin: {
+            description: "Used for WhatsApp / SMS alerts (after-hours RFQs).",
+            placeholder: "e.g. +20 100 123 4567",
+          },
+        },
+        {
+          name: "office",
+          type: "select",
+          options: [...WAREHOUSES.map((w) => w.split(" ")[0]), "Greece", "US"],
+          admin: { description: "The office or warehouse this person works from.", placeholder: "e.g. Alexandria" },
+        },
       ],
     },
     {
@@ -39,18 +63,26 @@ export const Users: CollectionConfig = {
         { label: "English", value: "en" },
         { label: "العربية (Arabic)", value: "ar" },
       ],
-      admin: { position: "sidebar", description: "Dashboard language for this person." },
+      admin: { position: "sidebar", description: "Dashboard language for this person.", placeholder: "English" },
     },
     {
       name: "notifications",
       type: "group",
+      admin: { description: "Which alerts this person receives." },
       fields: [
-        { name: "dailyBriefing", type: "checkbox", label: "Daily briefing at 07:00", defaultValue: true },
+        {
+          name: "dailyBriefing",
+          type: "checkbox",
+          label: "Daily briefing at 07:00",
+          defaultValue: true,
+          admin: { description: "Tick to get the morning summary of open cases." },
+        },
         {
           name: "afterHoursAlerts",
           type: "checkbox",
           label: "After-hours RFQ alerts when on call",
           defaultValue: false,
+          admin: { description: "Tick to be alerted about RFQs that arrive outside office hours." },
         },
       ],
     },

@@ -2,9 +2,10 @@ import type { VariantProps } from "class-variance-authority";
 import { html, nothing } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { atWidth, floating as float, placementOf } from "../../base/floating.ts";
 import { LightElement, uid, type Renderable } from "../../base/light-element.ts";
 import { isOn, rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
-import { floating, floatingHeight, row, stack, text } from "../layout/algebra.ts";
+import { floating, floatingHeight, floatMotion, row, stack, text } from "../layout/algebra.ts";
 import { button, type ButtonVariants } from "./button.ts";
 import { iconButton, type IconButtonVariants } from "./icon-button.ts";
 import { iconSvg, type IconName } from "../media/icon.ts";
@@ -18,28 +19,9 @@ import { iconSvg, type IconName } from "../media/icon.ts";
  * The docs' `placement` group holds two independent axes, so it maps to two
  * variants: `side` (top/bottom/left/right) and `align` (start/center/end).
  */
-export const dropdown = rcva("dropdown", {
-  variants: {
-    side: {
-      top: "dropdown-top",
-      bottom: "dropdown-bottom",
-      left: "dropdown-left",
-      right: "dropdown-right",
-    },
-    align: {
-      start: "dropdown-start",
-      center: "dropdown-center",
-      end: "dropdown-end",
-    },
-    /** Open on hover as well as on click/focus. */
-    hover: { true: "dropdown-hover" },
-    /** Force the state regardless of focus. */
-    force: {
-      open: "dropdown-open",
-      close: "dropdown-close",
-    },
-  },
-});
+/** Where the panel opens: a side and an alignment (responsive: `align="start md:end"`), for Floating UI. */
+export type DropdownSide = "top" | "bottom" | "left" | "right";
+export type DropdownAlign = "start" | "center" | "end";
 
 /** A menu item's row: icon, label (and description), shortcut, check. */
 export const dropdownItem = rcva(`${row} items-center gap-3`, {
@@ -50,9 +32,11 @@ export const dropdownItemDescription = rcva(`${text.label} text-body-sm text-on-
 export const dropdownItemShortcut = rcva("text-label-md text-on-surface-variant");
 export const dropdownSeparator = rcva("my-1 h-px bg-outline-variant");
 
-/** The floating panel (`dropdown-content`). Combine with `dropdownPanel` for its look. */
-/** Above everything in the page layer (indicator badges are `z-1` too and would paint over a later-opened panel). */
-export const dropdownContent = rcva("dropdown-content z-50");
+/**
+ * The floating panel: a popover in the top layer (above everything, clipped by nothing), placed by
+ * Floating UI, coming and going with `floatMotion`. Combine with `dropdownPanel` for its look.
+ */
+export const dropdownContent = rcva(floatMotion);
 
 /** Look of the panel, as in the daisyUI examples. */
 /**
@@ -93,12 +77,8 @@ export const dropdownPanel = rcva(
         "2": "shadow-elevation-2",
         "3": "shadow-elevation-3",
       },
-      /** Gap between trigger and panel (the docs' navbar dropdown uses `mt-4`). */
-      offset: {
-        "1": "mt-1",
-        "2": "mt-2",
-        "4": "mt-4",
-      },
+      /** Gap between trigger and panel, in Floating UI's `offset` (4, 8 or 16px; read by the dropdown). */
+      offset: { "1": "", "2": "", "4": "" },
     },
   },
 );
@@ -136,7 +116,6 @@ export const dropdownIcons = {
   info: iconSvg("info", {}, { label: "More info", class: dropdownIcon() }),
 } as const;
 
-export type DropdownVariants = VariantProps<typeof dropdown>;
 export type DropdownPanelVariants = VariantProps<typeof dropdownPanel>;
 export type DropdownTriggerVariants = VariantProps<typeof dropdownTrigger>;
 
@@ -169,10 +148,14 @@ export interface DropdownItem {
 }
 
 /**
- * How the dropdown opens:
- * - `focus` (default): opens while the trigger/content has focus.
- * - `details`: `<details>/<summary>`, toggles on click, works without focus.
- * - `popover`: Popover API + CSS anchor positioning; escapes `overflow:hidden` parents.
+ * Every dropdown is one thing: a button and a popover panel (the Popover API: the top layer,
+ * clipped by nothing; Escape and a click outside close it; focus goes back to the button), placed
+ * by Floating UI at `side` / `align`, flipping and shifting to stay in the window. The button
+ * toggles it with a click, Enter or Space; `hover` opens it on the pointer as well. A menu takes
+ * focus on its first item and moves with the arrow keys, Home, End and type-ahead.
+ *
+ * `mode` only sets the panel's default padding: `popover` has none (the docs' popover menu);
+ * `focus` and `details` (kept for the API) have the kind's own.
  */
 export type DropdownMode = "focus" | "details" | "popover";
 
@@ -202,14 +185,18 @@ const PANEL_DEFAULTS: Record<DropdownPanelKind, DropdownPanelVariants> = {
  * a card body with an optional `heading`). A rich trigger can be supplied as
  * `slot="trigger"`. `ui-select` (detail: { item, index }) fires when an item is
  * picked; the dropdown then closes. `show()` / `hide()` / `toggle()` control it
- * from JS. `side` / `align` / `hover` are responsive (`align="start md:end"`).
+ * from JS. `side` / `align` are responsive (`align="start md:end"`).
  */
 @customElement("ui-dropdown")
 export class UiDropdown extends LightElement {
-  @property() side: DropdownVariants["side"];
-  @property() align: DropdownVariants["align"];
-  @property({ converter: responsiveBoolean }) hover: Responsive<boolean> = false;
-  @property() force: DropdownVariants["force"];
+  /** The side it opens on (default bottom); responsive. */
+  @property() side?: string;
+  /** Its alignment along that side (default start); responsive. */
+  @property() align?: string;
+  /** Open on the pointer as well as on a click. */
+  @property({ type: Boolean }) hover = false;
+  /** Hold it open or closed, whatever the pointer and keys do. */
+  @property() force?: "open" | "close";
   @property() mode: DropdownMode = "focus";
 
   /** Trigger text (or `slot="trigger"`). */
@@ -256,14 +243,12 @@ export class UiDropdown extends LightElement {
 
   private _id = uid("dropdown");
 
-  @query("details") private _details?: HTMLDetailsElement;
   @query("[popover]") private _popover?: HTMLElement;
   @query("[data-trigger]") private _trigger?: HTMLElement;
 
   show() {
     this.#build();
-    if (this.mode === "focus") this._trigger?.focus();
-    else if (this.mode === "popover") this._popover?.showPopover();
+    if (!this._popover?.matches(":popover-open")) this._popover?.showPopover();
     this.open = true;
   }
 
@@ -287,15 +272,31 @@ export class UiDropdown extends LightElement {
   }
 
   hide() {
-    if (this.mode === "focus") (document.activeElement as HTMLElement | null)?.blur();
-    else if (this.mode === "popover") this._popover?.hidePopover();
-    if (this._details) this._details.open = false;
+    if (this._popover?.matches(":popover-open")) this._popover.hidePopover();
     this.open = false;
   }
 
   toggle() {
-    if (this.open || (this.mode === "focus" && this.contains(document.activeElement))) this.hide();
+    if (this.open) this.hide();
     else this.show();
+  }
+
+  /** `hover`: the pointer on the trigger opens it; leaving both the trigger and the panel closes it. */
+  #enter = () => {
+    if (this.hover) this.show();
+  };
+  #leave = (e: PointerEvent) => {
+    if (!this.hover) return;
+    const to = e.relatedTarget as Node | null;
+    if (to && (this._trigger?.contains(to) || this._popover?.contains(to))) return;
+    this.hide();
+  };
+
+  protected override updated(changed: Map<string, unknown>) {
+    super.updated?.(changed);
+    if (!changed.has("force") || !this.force) return;
+    if (this.force === "open") this.show();
+    else this.hide();
   }
 
   /** Arrow keys, Home / End and type-ahead move between items; Escape closes back to the trigger. */
@@ -432,98 +433,65 @@ export class UiDropdown extends LightElement {
   }
 
   render() {
-    const variants = { side: this.side, align: this.align, hover: this.hover, force: this.force };
     const isMenu = this._kind === "menu";
-    const panelCls = dropdownContent({ class: this._look() });
-    const panelTag = (cls: string) =>
-      isMenu
-        ? html`<ul
-            tabindex="-1"
-            class=${cls}
-            role="menu"
-            aria-label=${ifDefined(this._menuName)}
-            @keydown=${this._menuKey}
-          >
-            ${this._panelBody()}
-          </ul>`
-        : html`<div tabindex="0" class=${cls}>${this._panelBody()}</div>`;
-
-    if (this.mode === "details") {
-      return html`<details
-        class=${dropdown(variants)}
-        ?open=${this.open}
-        @toggle=${(e: Event) => {
-          this.open = (e.target as HTMLDetailsElement).open;
-          if (this.open) this.#build();
-        }}
-      >
-        <summary
-          data-trigger
-          class=${this._triggerCls()}
-          aria-label=${ifDefined(this.triggerLabel)}
-          title=${ifDefined(this.triggerLabel)}
-        >
-          ${this._trig()}
-        </summary>
-        ${panelTag(panelCls)}
-      </details>`;
-    }
-
-    if (this.mode === "popover") {
-      const anchor = `--${this._id}`;
-      const popCls = dropdown({ ...variants, class: this._look(true) });
-      const onToggle = (e: ToggleEvent) => (this.open = e.newState === "open");
-      return html`<button
-          data-trigger
-          type="button"
-          aria-label=${ifDefined(this.triggerLabel)}
-          title=${ifDefined(this.triggerLabel)}
-          class=${this._triggerCls()}
-          popovertarget=${this._id}
-          style="anchor-name:${anchor}"
-          aria-haspopup="menu"
-          aria-expanded=${this.open ? "true" : "false"}
-        >
-          ${this._trig()}
-        </button>
-        ${
-          isMenu
-            ? html`<ul
-                class=${popCls}
-                popover
-                id=${this._id}
-                style="position-anchor:${anchor}"
-                role="menu"
-                aria-label=${ifDefined(this._menuName)}
-                @beforetoggle=${(e: ToggleEvent) => e.newState === "open" && this.#build()}
-                @toggle=${(e: ToggleEvent) => {
-                  onToggle(e);
-                  if (e.newState === "open") this._focusFirst();
-                }}
-                @keydown=${this._menuKey}
-              >
-                ${this._panelBody()}
-              </ul>`
-            : html`<div class=${popCls} popover id=${this._id} style="position-anchor:${anchor}" @toggle=${onToggle}>
-                ${this._panelBody()}
-              </div>`
-        }`;
-    }
-
-    return html`<div class=${dropdown(variants)}>
-      <div
+    const look = dropdownContent({ class: this._look(this.mode === "popover") });
+    const onToggle = (e: ToggleEvent) => {
+      this.open = e.newState === "open";
+      if (this.open && isMenu) this._focusFirst();
+    };
+    // Where it opens (`side`, `align`, responsive) and how far off its trigger (`panel-offset`).
+    const place = float({
+      placement: placementOf(this.side, this.align),
+      gap: this.hover
+        ? 0
+        : (({ "1": 4, "2": 8, "4": 16 } as Record<string, number>)[
+            atWidth(this.panelOffset as string | undefined) ?? "1"
+          ] ?? 4),
+    });
+    return html`<button
         data-trigger
-        tabindex="0"
-        role="button"
-        class=${this._triggerCls()}
-        aria-haspopup="menu"
+        type="button"
         aria-label=${ifDefined(this.triggerLabel)}
         title=${ifDefined(this.triggerLabel)}
+        class=${this._triggerCls()}
+        popovertarget=${this._id}
+        aria-haspopup=${isMenu ? "menu" : "dialog"}
+        aria-expanded=${this.open ? "true" : "false"}
+        @pointerenter=${this.#enter}
+        @pointerleave=${this.#leave}
       >
         ${this._trig()}
-      </div>
-      ${panelTag(panelCls)}
-    </div>`;
+      </button>
+      ${
+        isMenu
+          ? html`<ul
+              class=${look}
+              popover
+              id=${this._id}
+              ${place}
+              role="menu"
+              aria-label=${ifDefined(this._menuName)}
+              @beforetoggle=${(e: ToggleEvent) => e.newState === "open" && this.#build()}
+              @toggle=${onToggle}
+              @keydown=${this._menuKey}
+              @pointerleave=${this.#leave}
+            >
+              ${this._panelBody()}
+            </ul>`
+          : html`<div
+              class=${look}
+              popover
+              id=${this._id}
+              ${place}
+              role="dialog"
+              aria-label=${ifDefined(this._menuName)}
+              @beforetoggle=${(e: ToggleEvent) => e.newState === "open" && this.#build()}
+              @toggle=${onToggle}
+              @pointerleave=${this.#leave}
+            >
+              ${this._panelBody()}
+            </div>`
+      }`;
   }
 }
 

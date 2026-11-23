@@ -4,6 +4,7 @@ import { customElement, property, state } from "lit/decorators.js";
 import { keyed } from "lit/directives/keyed.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { axisOf, labelBoxes, labelStep, niceScale, pointAt, smoothPath, type Point } from "../../base/chart.ts";
+import { floating as float } from "../../base/floating.ts";
 import { LightElement } from "../../base/light-element.ts";
 import { whenIdle } from "../../base/work-queue.ts";
 import { motion } from "../../base/motion-queue.ts";
@@ -75,7 +76,7 @@ export const chartHead = rcva(`${row} items-center justify-between gap-x-3 gap-y
 export const chartLegend = rcva(`${row} min-w-0 gap-1.5`);
 /** A legend chip: a toggle for its series. */
 export const chartChip = rcva(
-  `${inlineRow} ${text.label} ${pad["2"]} touch-target state-layer cursor-pointer items-center gap-1.5 rounded-full border border-outline-variant py-0.5 text-label-md focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary`,
+  `${inlineRow} ${text.label} ${pad["2"]} touch-target state-layer cursor-pointer items-center gap-1.5 rounded-full border border-outline-variant py-0.5 text-label-md`,
   { variants: { on: { true: "text-on-surface", false: "text-on-surface-variant" } } },
 );
 export const chartRanges = rcva(rowEnd);
@@ -97,10 +98,9 @@ export const chartTick = rcva(`${row} h-0 items-center justify-end text-end`);
 export const chartBody = rcva(`${stack} min-w-0 flex-1 gap-1`);
 
 /** The plot area: gridlines, marks, target and hover layer stacked over each other. */
-export const chartPlot = rcva(
-  "relative h-(--chart-h) w-full touch-pan-y outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
-  { variants: { bare: { true: "", false: "cursor-crosshair border-b border-outline-variant" } } },
-);
+export const chartPlot = rcva("relative h-(--chart-h) w-full touch-pan-y", {
+  variants: { bare: { true: "", false: "cursor-crosshair border-b border-outline-variant" } },
+});
 export const chartGridline = rcva(
   "pointer-events-none absolute inset-x-0 bottom-(--at) border-t border-outline-variant",
 );
@@ -163,35 +163,22 @@ export const chartTargetLabel = rcva("absolute end-0 bottom-0.5 rounded-xs bg-su
 
 /** Hover: the column under the pointer (bars), or a crosshair with a dot per series (lines). */
 export const chartColumn = rcva(
-  "pointer-events-none absolute inset-y-0 start-(--a) end-(--b) rounded-t-xs bg-on-surface/(--state-hover) [anchor-name:--chart-tip]",
+  "pointer-events-none absolute inset-y-0 start-(--a) end-(--b) rounded-t-xs bg-on-surface/(--state-hover)",
 );
-export const chartCrosshair = rcva(
-  "pointer-events-none absolute inset-y-0 start-(--x) border-s border-outline [anchor-name:--chart-tip]",
-);
+export const chartCrosshair = rcva("pointer-events-none absolute inset-y-0 start-(--x) border-s border-outline");
 export const chartDot = rcva(
   "pointer-events-none absolute start-(--x) bottom-(--y) size-2.5 -translate-x-1/2 translate-y-1/2 rounded-full bg-current ring-2 ring-surface rtl:translate-x-1/2",
   { variants: { series: SERIES } },
 );
 /**
- * The tooltip: glass, in the top layer (a popover), anchored to the hovered column or crosshair
- * (`--chart-tip`, scoped to its chart): beside it on the side with more room, its top at the
- * plot's, or above a sparkline; it flips when that side has no room. Its own size in tiles: its
+ * The tooltip: glass, in the top layer (a popover), placed by Floating UI beside the hovered
+ * column or crosshair (`data-chart-anchor`): on the side with more room, its top at the plot's, or
+ * above a sparkline; it flips when that side has no room. Its own size in tiles: its
  * content's width rounded up to whole tiles (at most 6) and quarter tiles down, so a narrow plot
  * (a sparkline's 64px) never squeezes it, and no card around it clips it.
  */
 export const chartTooltip = rcva(
-  `${stack} ${pad["2.5"]} ${floatingFit["6"]} ${floatingHeight.fit} liquid-glass pointer-events-none m-0 gap-0.5 overflow-visible rounded-field py-1.5 text-on-surface [position-anchor:--chart-tip]`,
-  {
-    variants: {
-      place: {
-        /** Beside the hovered x, towards the end (or the start), its top at the plot's. */
-        start: "mx-1 [position-area:span-block-end_inline-end] [position-try-fallbacks:flip-inline]",
-        end: "mx-1 [position-area:span-block-end_inline-start] [position-try-fallbacks:flip-inline]",
-        /** Above a sparkline, centred on its x. */
-        above: "my-1 [position-area:block-start_center] [position-try-fallbacks:flip-block]",
-      },
-    },
-  },
+  `${stack} ${pad["2.5"]} ${floatingFit["6"]} ${floatingHeight.fit} liquid-glass pointer-events-none gap-0.5 overflow-visible rounded-field py-1.5 text-on-surface`,
 );
 export const chartTooltipTitle = rcva("text-label-sm text-on-surface-variant");
 export const chartTooltipRow = rcva(`${row} items-center justify-between gap-x-3 tabular-nums`, {
@@ -593,15 +580,17 @@ export class UiChart extends LightElement {
     const half = bars ? 50 / v.n : 0;
     // Beside the hovered x, on the side with more room (it flips if that has none).
     const side = x > 50 ? "end" : "start";
+    const rtl = this.matches(":dir(rtl)");
     const label = v.labels[i];
     return html`
       ${
         bars
           ? html`<div
               class=${chartColumn()}
+              data-chart-anchor
               style=${styleMap({ "--a": `${x - half}%`, "--b": `${100 - x - half}%` })}
             ></div>`
-          : html`<div class=${chartCrosshair()} style=${styleMap({ "--x": `${x}%` })}></div>
+          : html`<div class=${chartCrosshair()} data-chart-anchor style=${styleMap({ "--x": `${x}%` })}></div>
               ${v.shown.map(
                 (s, k) =>
                   html`<div
@@ -611,8 +600,12 @@ export class UiChart extends LightElement {
               )}`
       }
       <div
-        class=${chartTooltip({ place: this.kind === "spark" ? "above" : side })}
+        class=${chartTooltip()}
         popover="manual"
+        ${float({
+          placement: this.kind === "spark" ? "top" : (side === "start") !== rtl ? "right-start" : "left-start",
+          anchor: () => this.querySelector("[data-chart-anchor]"),
+        })}
         data-chart-tip
         role="status"
       >

@@ -123,49 +123,141 @@ export const Quotations: CollectionConfig = {
     {
       type: "row",
       fields: [
-        { name: "number", type: "text", unique: true, admin: { readOnly: true } },
+        {
+          name: "number",
+          type: "text",
+          unique: true,
+          admin: { readOnly: true, description: "The quotation reference, made from the case number and version." },
+          custom: {
+            about:
+              "Built as GS-Q-<case number> v<version> when the quotation is created, so every revision keeps a traceable number.",
+          },
+        },
         caseRef(),
-        { name: "version", type: "number", min: 1, admin: { readOnly: true } },
-        { name: "previousVersion", type: "relationship", relationTo: "quotations" },
+        {
+          name: "version",
+          type: "number",
+          min: 1,
+          admin: { readOnly: true, description: "Revision count on this case, starting at 1." },
+        },
+        {
+          name: "previousVersion",
+          type: "relationship",
+          relationTo: "quotations",
+          admin: { description: "The earlier version this revision replaces.", placeholder: "e.g. GS-Q-0142 v1" },
+        },
       ],
     },
     {
       name: "lines",
       type: "array",
       labels: { singular: "Line", plural: "Lines" },
-      admin: { description: "Customer-facing snapshot — no supplier names, costs or margins." },
+      admin: { description: "What the customer sees: no supplier names, costs or margins." },
       fields: [
         {
           type: "row",
           fields: [
-            { name: "lineNo", type: "number", min: 1 },
-            { name: "partNo", type: "text" },
-            { name: "description", type: "text", required: true },
+            {
+              name: "lineNo",
+              type: "number",
+              min: 1,
+              admin: { description: "Position on the quotation, as on the customer's RFQ.", placeholder: "e.g. 3" },
+            },
+            {
+              name: "partNo",
+              type: "text",
+              admin: {
+                description: "IMPA, ISSA or maker part number the customer asked for.",
+                placeholder: "e.g. 232101",
+              },
+            },
+            {
+              name: "description",
+              type: "text",
+              required: true,
+              admin: {
+                description: "The item as the customer reads it on the quotation.",
+                placeholder: "e.g. Welding electrodes E6013, 3.2 mm",
+              },
+            },
           ],
         },
         {
           type: "row",
           fields: [
-            { name: "unit", type: "select", options: UNITS },
-            { name: "qty", type: "number", min: 0, required: true },
-            { name: "unitPrice", type: "number", min: 0, required: true },
-            { name: "lead", type: "text", defaultValue: "On arrival" },
+            {
+              name: "unit",
+              type: "select",
+              options: UNITS,
+              admin: { description: "Unit the quantity and price are quoted in.", placeholder: "e.g. kg" },
+            },
+            {
+              name: "qty",
+              type: "number",
+              min: 0,
+              required: true,
+              admin: { description: "How many units the customer gets.", placeholder: "e.g. 25" },
+            },
+            {
+              name: "unitPrice",
+              type: "number",
+              min: 0,
+              required: true,
+              admin: {
+                description: "Price per unit before VAT, in the quotation currency.",
+                placeholder: "e.g. 18.50",
+              },
+            },
+            {
+              name: "lead",
+              type: "text",
+              defaultValue: "On arrival",
+              admin: {
+                description: "When the line can be delivered to the vessel.",
+                placeholder: "e.g. 5 days ex stock",
+              },
+            },
           ],
         },
-        { name: "alternative", type: "checkbox", label: "Alternative (customer accepted)", defaultValue: false },
+        {
+          name: "alternative",
+          type: "checkbox",
+          label: "Alternative (customer accepted)",
+          defaultValue: false,
+          admin: { description: "Tick when the item replaces the one asked for and the customer agreed." },
+        },
       ],
     },
     {
       type: "row",
       fields: [
-        { name: "currency", type: "select", options: CURRENCIES, defaultValue: "USD" },
-        { name: "fxRate", type: "number", min: 0, label: "FX (EGP per unit)" },
-        { name: "discountPct", type: "number", min: 0, max: 50, defaultValue: 0 },
+        {
+          name: "currency",
+          type: "select",
+          options: CURRENCIES,
+          defaultValue: "USD",
+          admin: { description: "The currency the customer is quoted in.", placeholder: "e.g. USD" },
+        },
+        {
+          name: "fxRate",
+          type: "number",
+          min: 0,
+          label: "FX (EGP per unit)",
+          admin: { description: "EGP per one unit of the quotation currency.", placeholder: "e.g. 48.50" },
+        },
+        {
+          name: "discountPct",
+          type: "number",
+          min: 0,
+          max: 50,
+          defaultValue: 0,
+          admin: { description: "Percent off the line total, up to 50.", placeholder: "e.g. 5" },
+        },
         {
           name: "totalExVat",
           type: "number",
           min: 0,
-          admin: { readOnly: true },
+          admin: { readOnly: true, description: "Line total after discount, before VAT." },
           custom: formats.money("currency", { decimals: 2 }),
         },
       ],
@@ -174,18 +266,35 @@ export const Quotations: CollectionConfig = {
       name: "internal",
       type: "group",
       label: "Internal (never printed)",
+      admin: { description: "Costs and margin for approvers; hidden from Sales and never on the PDF." },
       access: { read: costVisible },
       fields: [
         {
           type: "row",
           fields: [
-            { name: "landedCostEGP", type: "number", min: 0, label: "Landed cost", custom: formats.money("EGP") },
-            { name: "grossProfitEGP", type: "number", label: "Gross profit", custom: formats.money("EGP") },
+            {
+              name: "landedCostEGP",
+              type: "number",
+              min: 0,
+              label: "Landed cost",
+              admin: { description: "Supplier price plus freight and duties, in EGP.", placeholder: "e.g. 84,000" },
+              custom: formats.money("EGP"),
+            },
+            {
+              name: "grossProfitEGP",
+              type: "number",
+              label: "Gross profit",
+              admin: { description: "Sales total minus landed cost, in EGP.", placeholder: "e.g. 16,500" },
+              custom: formats.money("EGP"),
+            },
             {
               name: "marginPct",
               type: "number",
               label: "Margin",
+              admin: { description: "Gross profit as a percent of the sales total.", placeholder: "e.g. 18" },
               custom: {
+                about:
+                  "Compared with the pricing policy's minimum margin; below it, the quotation needs a management exception.",
                 ...formats.percent(),
                 // Amber under the pricing policy's minimum.
                 toneWhen: [
@@ -199,18 +308,33 @@ export const Quotations: CollectionConfig = {
         {
           name: "exceptions",
           type: "textarea",
-          admin: { description: "Shown to the approver: margin below minimum, alternative pack, advance payment…" },
+          admin: {
+            description: "Why this needs a closer look: low margin, alternative pack, advance payment.",
+            placeholder: "e.g. Margin 11%, below the 15% minimum",
+          },
+          custom: { about: "The approver reads this first. Leave empty when the quotation is within policy." },
         },
         // The pricing policy's minimum beside the margin, worked out on read (the policy can change).
         {
           type: "row",
           fields: [
             computed(
-              { name: "minMarginPct", type: "number", label: "Policy minimum", custom: formats.percent(0) },
+              {
+                name: "minMarginPct",
+                type: "number",
+                label: "Policy minimum",
+                admin: { description: "The lowest margin the pricing policy allows." },
+                custom: formats.percent(0),
+              },
               async (_q, req) => minMarginOf(req),
             ),
             computed(
-              { name: "belowMinimum", type: "checkbox", label: "Below the policy minimum" },
+              {
+                name: "belowMinimum",
+                type: "checkbox",
+                label: "Below the policy minimum",
+                admin: { description: "Ticked when the margin is under the policy minimum." },
+              },
               async (q, req) => num((q.internal as Json | undefined)?.marginPct) < (await minMarginOf(req)),
             ),
           ],
@@ -220,28 +344,68 @@ export const Quotations: CollectionConfig = {
     {
       type: "row",
       fields: [
-        { name: "validUntil", type: "date" },
-        { name: "paymentTerms", type: "text", defaultValue: "90 days from invoice date" },
-        { name: "deliveryTerms", type: "text" },
+        { name: "validUntil", type: "date", admin: { description: "Last day the customer can accept these prices." } },
+        {
+          name: "paymentTerms",
+          type: "text",
+          defaultValue: "90 days from invoice date",
+          admin: { description: "When and how the customer pays.", placeholder: "e.g. 60 days from invoice date" },
+        },
+        {
+          name: "deliveryTerms",
+          type: "text",
+          admin: {
+            description: "Where and on what terms stores are handed over.",
+            placeholder: "e.g. Delivered alongside, Port Said anchorage",
+          },
+        },
       ],
     },
-    { name: "remarks", type: "textarea" },
+    {
+      name: "remarks",
+      type: "textarea",
+      admin: {
+        description: "Notes printed on the quotation for the customer.",
+        placeholder: "e.g. Prices exclude VAT and port dues.",
+      },
+    },
     // Every version of this quotation (its case's), oldest first: older ones superseded, kept for audit.
     computed(
       {
         name: "versions",
         type: "array",
-        admin: { position: "sidebar" },
+        admin: { position: "sidebar", description: "Every version on this case, oldest first." },
         fields: [
           {
             name: "number",
             type: "text",
+            admin: { description: "Quotation reference of that version.", placeholder: "e.g. GS-Q-0142 v2" },
             custom: { href: link.doc("quotations", "$row.id", "preview") },
           },
-          { name: "version", type: "number" },
-          { name: "status", type: "select", options: QUOTE_STATUSES, custom: QUOTE_TONES },
-          { name: "totalExVat", type: "number", label: "Total", custom: formats.money("currency", { decimals: 2 }) },
-          { name: "currency", type: "text" },
+          {
+            name: "version",
+            type: "number",
+            admin: { description: "Revision number of that version.", placeholder: "e.g. 2" },
+          },
+          {
+            name: "status",
+            type: "select",
+            options: QUOTE_STATUSES,
+            admin: { description: "Where that version stands.", placeholder: "e.g. Approved" },
+            custom: QUOTE_TONES,
+          },
+          {
+            name: "totalExVat",
+            type: "number",
+            label: "Total",
+            admin: { description: "That version's total before VAT.", placeholder: "e.g. 4,250" },
+            custom: formats.money("currency", { decimals: 2 }),
+          },
+          {
+            name: "currency",
+            type: "text",
+            admin: { description: "Currency of that version.", placeholder: "e.g. USD" },
+          },
         ],
       },
       async (q, req) => {
@@ -268,6 +432,7 @@ export const Quotations: CollectionConfig = {
     {
       name: "submission",
       type: "group",
+      admin: { description: "How and when the quotation went to the customer." },
       fields: [
         {
           type: "row",
@@ -277,29 +442,53 @@ export const Quotations: CollectionConfig = {
               type: "select",
               options: ["Email from Odoo", "Customer procurement portal"],
               defaultValue: "Email from Odoo",
+              admin: { description: "How the customer received the quotation.", placeholder: "e.g. Email from Odoo" },
             },
-            { name: "submittedAt", type: "date" },
-            { name: "followUpAt", type: "date" },
+            { name: "submittedAt", type: "date", admin: { description: "When the quotation was sent." } },
+            { name: "followUpAt", type: "date", admin: { description: "When to chase the customer for an answer." } },
           ],
         },
         {
           name: "portalCheck",
           type: "array",
           labels: { singular: "Checked field", plural: "Portal vs quote" },
-          admin: { condition: (_, s) => s?.method === "Customer procurement portal" },
+          admin: {
+            description: "Compare what the portal shows with the quotation.",
+            condition: (_, s) => s?.method === "Customer procurement portal",
+          },
           fields: [
             {
               type: "row",
               fields: [
-                { name: "field", type: "text", required: true },
-                { name: "portal", type: "text" },
-                { name: "quote", type: "text" },
-                { name: "matches", type: "checkbox", defaultValue: false },
+                {
+                  name: "field",
+                  type: "text",
+                  required: true,
+                  admin: { description: "The portal field being checked.", placeholder: "e.g. Total price" },
+                },
+                {
+                  name: "portal",
+                  type: "text",
+                  admin: { description: "The value as entered in the portal.", placeholder: "e.g. USD 4,250.00" },
+                },
+                {
+                  name: "quote",
+                  type: "text",
+                  admin: { description: "The value on our quotation.", placeholder: "e.g. USD 4,250.00" },
+                },
+                {
+                  name: "matches",
+                  type: "checkbox",
+                  defaultValue: false,
+                  admin: { description: "Tick when the portal value equals the quotation." },
+                },
               ],
             },
           ],
         },
-        evidence("receipt", "Portal receipt / screenshot"),
+        evidence("receipt", "Portal receipt / screenshot", {
+          hint: "The portal's confirmation that the quotation was received.",
+        }),
       ],
     },
     {
@@ -309,16 +498,38 @@ export const Quotations: CollectionConfig = {
       defaultValue: "Draft",
       options: QUOTE_STATUSES,
       custom: QUOTE_TONES,
-      admin: { position: "sidebar" },
+      admin: {
+        position: "sidebar",
+        description: "Where this version is in approval and sending.",
+        placeholder: "Pick a status",
+      },
     },
     {
       name: "decision",
       type: "select",
       options: [...QUOTE_DECISIONS, "Partially won"],
-      admin: { position: "sidebar" },
+      admin: {
+        position: "sidebar",
+        description: "The customer's answer to this quotation.",
+        placeholder: "Pick the outcome",
+      },
     },
-    { name: "preparedBy", type: "relationship", relationTo: "users", admin: { position: "sidebar" } },
-    { name: "approvedBy", type: "relationship", relationTo: "users", admin: { position: "sidebar", readOnly: true } },
+    {
+      name: "preparedBy",
+      type: "relationship",
+      relationTo: "users",
+      admin: {
+        position: "sidebar",
+        description: "The salesperson who priced this quotation.",
+        placeholder: "Search people",
+      },
+    },
+    {
+      name: "approvedBy",
+      type: "relationship",
+      relationTo: "users",
+      admin: { position: "sidebar", readOnly: true, description: "The manager who approved this version." },
+    },
   ],
 };
 
@@ -778,7 +989,15 @@ export const Approvals: CollectionConfig = {
     ],
   },
   fields: [
-    { name: "title", type: "text", required: true },
+    {
+      name: "title",
+      type: "text",
+      required: true,
+      admin: {
+        description: "A one-line summary the approver reads in the queue.",
+        placeholder: "e.g. Approve GS-Q-0142 v2 at 11% margin",
+      },
+    },
     {
       type: "row",
       fields: [
@@ -786,18 +1005,33 @@ export const Approvals: CollectionConfig = {
           name: "type",
           type: "select",
           required: true,
+          admin: {
+            description: "What kind of decision is being asked for.",
+            placeholder: "e.g. Quotation margin exception",
+          },
           custom: tones(Object.fromEntries(APPROVAL_TYPES.map((t) => [t, "primary" as const]))),
           options: APPROVAL_TYPES,
         },
         caseRef(false),
       ],
     },
-    { name: "detail", type: "textarea" },
+    {
+      name: "detail",
+      type: "textarea",
+      admin: {
+        description: "Context the approver needs to decide.",
+        placeholder: "e.g. Customer wants the ESAB alternative, margin drops to 11%.",
+      },
+    },
     {
       name: "subject",
       type: "relationship",
       relationTo: ["quotations", "purchase-orders", "payments", "suppliers", "pricelists"],
       label: "Record to approve",
+      admin: {
+        description: "The quotation, PO, payment, supplier or pricelist being decided.",
+        placeholder: "Search records",
+      },
     },
     {
       type: "row",
@@ -807,25 +1041,57 @@ export const Approvals: CollectionConfig = {
           type: "relationship",
           relationTo: "users",
           defaultValue: ({ user }: { user?: { id?: string } }) => user?.id,
+          admin: { description: "Who is asking for the approval.", placeholder: "Search people" },
         },
-        { name: "approvers", type: "relationship", relationTo: "users", hasMany: true },
-        { name: "twoPerson", type: "checkbox", label: "Two-person rule", defaultValue: false },
+        {
+          name: "approvers",
+          type: "relationship",
+          relationTo: "users",
+          hasMany: true,
+          admin: { description: "People allowed to decide; empty means management.", placeholder: "Search people" },
+        },
+        {
+          name: "twoPerson",
+          type: "checkbox",
+          label: "Two-person rule",
+          defaultValue: false,
+          admin: { description: "Tick when two different approvers must both approve." },
+        },
       ],
     },
     {
       name: "decisions",
       type: "array",
       labels: { singular: "Decision", plural: "Decisions" },
+      admin: { description: "Each approver's answer, recorded under their own name." },
       fields: [
         {
           type: "row",
           fields: [
-            { name: "user", type: "relationship", relationTo: "users" },
-            { name: "decision", type: "select", options: ["Approve", "Reject"], required: true },
-            { name: "at", type: "date" },
+            {
+              name: "user",
+              type: "relationship",
+              relationTo: "users",
+              admin: { description: "The approver who decided.", placeholder: "Search people" },
+            },
+            {
+              name: "decision",
+              type: "select",
+              options: ["Approve", "Reject"],
+              required: true,
+              admin: { description: "Approve it, or return it with a reason.", placeholder: "Pick a decision" },
+            },
+            { name: "at", type: "date", admin: { description: "When the decision was recorded." } },
           ],
         },
-        { name: "reason", type: "textarea" },
+        {
+          name: "reason",
+          type: "textarea",
+          admin: {
+            description: "Why it was returned, or a note for the other approver.",
+            placeholder: "e.g. Margin too thin, ask for v1 prices.",
+          },
+        },
       ],
     },
     {
@@ -834,19 +1100,44 @@ export const Approvals: CollectionConfig = {
       options: APPROVAL_STATUSES,
       defaultValue: "Pending",
       custom: tones({ Pending: "warning", "Approved 1 of 2": "info", Approved: "success", Rejected: "error" }),
-      admin: { position: "sidebar", readOnly: true, description: "Computed from the decisions." },
+      admin: { position: "sidebar", readOnly: true, description: "Worked out from the decisions below." },
     },
     // What the request means for whoever reads it, worked out on every read (never stored).
     computed(
-      { name: "canDecide", type: "checkbox", label: "You can decide", admin: { position: "sidebar" } },
+      {
+        name: "canDecide",
+        type: "checkbox",
+        label: "You can decide",
+        admin: { position: "sidebar", description: "Ticked when you are a listed approver who has not decided." },
+      },
       view("canDecide"),
     ),
-    computed({ name: "progress", type: "text", admin: { position: "sidebar" } }, view("progress")),
     computed(
-      { name: "whoDecides", type: "text", label: "Who decides", admin: { position: "sidebar" } },
+      {
+        name: "progress",
+        type: "text",
+        admin: { position: "sidebar", description: "Who has decided and who is still awaited." },
+      },
+      view("progress"),
+    ),
+    computed(
+      {
+        name: "whoDecides",
+        type: "text",
+        label: "Who decides",
+        admin: { position: "sidebar", description: "The approvers for this kind of request." },
+      },
       view("whoDecides"),
     ),
-    computed({ name: "why", type: "text", label: "Why you can't decide", admin: { position: "sidebar" } }, view("why")),
+    computed(
+      {
+        name: "why",
+        type: "text",
+        label: "Why you can't decide",
+        admin: { position: "sidebar", description: "The reason this request is not yours to decide." },
+      },
+      view("why"),
+    ),
     computed({ name: "afterYou", type: "text", admin: { hidden: true } }, view("afterYou")),
     // The two-person rule as a tag on the request.
     computed(
@@ -858,10 +1149,23 @@ export const Approvals: CollectionConfig = {
       },
       (a) => (a.twoPerson ? "Two-person rule" : ""),
     ),
-    computed({ name: "evidence", type: "textarea", label: "Evidence" }, view("evidence")),
+    computed(
+      {
+        name: "evidence",
+        type: "textarea",
+        label: "Evidence",
+        admin: { description: "Figures from the quotation, rates, PO or supplier behind the request." },
+      },
+      view("evidence"),
+    ),
     // The quotation it decides on (its preview and pricing are linked from the request).
     computed(
-      { name: "quotation", type: "relationship", relationTo: "quotations", admin: { position: "sidebar" } },
+      {
+        name: "quotation",
+        type: "relationship",
+        relationTo: "quotations",
+        admin: { position: "sidebar", description: "The quotation this request decides on." },
+      },
       view("quotation"),
     ),
     computed(
@@ -869,23 +1173,55 @@ export const Approvals: CollectionConfig = {
         name: "payment",
         type: "group",
         label: "Supplier payment",
-        admin: { condition: (data) => Boolean(data?.payment) },
+        admin: { description: "The supplier PO this request pays.", condition: (data) => Boolean(data?.payment) },
         fields: [
           {
             type: "row",
             fields: [
-              { name: "purchaseOrder", type: "text", label: "PO" },
-              { name: "supplier", type: "text" },
-              { name: "currency", type: "text" },
-              { name: "amount", type: "number", custom: formats.money("currency") },
+              {
+                name: "purchaseOrder",
+                type: "text",
+                label: "PO",
+                admin: { description: "Supplier PO being paid.", placeholder: "e.g. GS-PO-0087" },
+              },
+              {
+                name: "supplier",
+                type: "text",
+                admin: { description: "Who gets the money.", placeholder: "e.g. Port Said Welding Co." },
+              },
+              {
+                name: "currency",
+                type: "text",
+                admin: { description: "Currency of the payment.", placeholder: "e.g. USD" },
+              },
+              {
+                name: "amount",
+                type: "number",
+                admin: { description: "How much is due now.", placeholder: "e.g. 5,000" },
+                custom: formats.money("currency"),
+              },
             ],
           },
           {
             type: "row",
             fields: [
-              { name: "kind", type: "text" },
-              { name: "recorded", type: "checkbox", label: "Payment recorded" },
-              { name: "open", type: "checkbox", label: "Still to pay" },
+              {
+                name: "kind",
+                type: "text",
+                admin: { description: "Deposit or balance.", placeholder: "e.g. Deposit / advance" },
+              },
+              {
+                name: "recorded",
+                type: "checkbox",
+                label: "Payment recorded",
+                admin: { description: "Ticked once finance has booked the bank payment." },
+              },
+              {
+                name: "open",
+                type: "checkbox",
+                label: "Still to pay",
+                admin: { description: "Ticked while the payment is still outstanding." },
+              },
             ],
           },
           { name: "po", type: "text", admin: { hidden: true } },
@@ -924,32 +1260,63 @@ export const CustomerPOs: CollectionConfig = {
     {
       type: "row",
       fields: [
-        { name: "number", type: "text", required: true, unique: true },
+        {
+          name: "number",
+          type: "text",
+          required: true,
+          unique: true,
+          admin: { description: "The customer's own PO number.", placeholder: "e.g. NVK-PO-77412" },
+        },
         caseRef(),
-        { name: "quotation", type: "relationship", relationTo: "quotations", required: true },
+        {
+          name: "quotation",
+          type: "relationship",
+          relationTo: "quotations",
+          required: true,
+          admin: { description: "The approved version this PO orders against.", placeholder: "e.g. GS-Q-0142 v2" },
+        },
       ],
     },
     {
       type: "row",
       fields: [
-        { name: "receivedAt", type: "date" },
-        { name: "billingEntity", type: "text" },
-        { name: "file", type: "upload", relationTo: "media" },
+        { name: "receivedAt", type: "date", admin: { description: "The day the PO reached us." } },
+        {
+          name: "billingEntity",
+          type: "text",
+          admin: {
+            description: "The company we invoice, as named on the PO.",
+            placeholder: "e.g. Nordvik Ship Management Ltd",
+          },
+        },
+        {
+          name: "file",
+          type: "upload",
+          relationTo: "media",
+          admin: { description: "The PO as received, PDF or scan." },
+        },
       ],
     },
     {
       name: "checks",
       type: "array",
       labels: { singular: "Check", plural: "PO vs quotation" },
+      admin: { description: "Each PO line compared with the approved quotation." },
       fields: [
         {
           type: "row",
           fields: [
-            { name: "lineNo", type: "number", min: 0, admin: { description: "0 = header" } },
+            {
+              name: "lineNo",
+              type: "number",
+              min: 0,
+              admin: { description: "Line number; 0 for the PO header.", placeholder: "e.g. 3" },
+            },
             {
               name: "field",
               type: "select",
               required: true,
+              admin: { description: "What is being compared.", placeholder: "e.g. Price" },
               options: [
                 "Price",
                 "Quantity",
@@ -963,40 +1330,92 @@ export const CustomerPOs: CollectionConfig = {
                 "Quote validity",
               ],
             },
-            { name: "matches", type: "checkbox", defaultValue: false },
+            {
+              name: "matches",
+              type: "checkbox",
+              defaultValue: false,
+              admin: { description: "Tick when the PO equals the quotation." },
+            },
           ],
         },
         {
           type: "row",
           fields: [
-            { name: "po", type: "text", label: "On the PO" },
-            { name: "quote", type: "text", label: "On the quotation" },
+            {
+              name: "po",
+              type: "text",
+              label: "On the PO",
+              admin: { description: "The value the customer wrote.", placeholder: "e.g. USD 18.50" },
+            },
+            {
+              name: "quote",
+              type: "text",
+              label: "On the quotation",
+              admin: { description: "The value we quoted.", placeholder: "e.g. USD 18.50" },
+            },
           ],
         },
         {
           name: "resolution",
           type: "text",
-          admin: { description: "Written customer agreement or approved exception." },
+          admin: {
+            description: "Written customer agreement or approved exception.",
+            placeholder: "e.g. Customer accepted 18.50 by email, 12 Nov",
+          },
+          custom: {
+            about: "A mismatch without a resolution blocks the PO from validating, so the order cannot go ahead.",
+          },
         },
-        evidence("evidence", "Customer's written confirmation"),
+        evidence("evidence", "Customer's written confirmation", {
+          hint: "The email or letter where the customer accepts the difference.",
+        }),
       ],
     },
     {
       name: "unawarded",
       type: "array",
       labels: { singular: "Unawarded line", plural: "Unawarded lines" },
+      admin: { description: "Quotation lines the customer did not order on this PO." },
       fields: [
         {
           type: "row",
           fields: [
-            { name: "lineNo", type: "number", min: 1, required: true },
-            { name: "outcome", type: "select", options: ["Open — revision to follow", "Closed"], required: true },
-            { name: "reason", type: "text" },
+            {
+              name: "lineNo",
+              type: "number",
+              min: 1,
+              required: true,
+              admin: { description: "The quotation line left out.", placeholder: "e.g. 4" },
+            },
+            {
+              name: "outcome",
+              type: "select",
+              options: ["Open — revision to follow", "Closed"],
+              required: true,
+              admin: { description: "Whether we expect a revised quotation for it.", placeholder: "Pick an outcome" },
+            },
+            {
+              name: "reason",
+              type: "text",
+              admin: { description: "Why the customer left it out.", placeholder: "e.g. Bought locally by the vessel" },
+            },
           ],
         },
       ],
     },
-    { name: "status", type: "text", admin: { position: "sidebar", readOnly: true } },
-    { name: "openMismatches", type: "number", admin: { position: "sidebar", readOnly: true } },
+    {
+      name: "status",
+      type: "text",
+      admin: {
+        position: "sidebar",
+        readOnly: true,
+        description: "Validated, or blocked while a mismatch is unresolved.",
+      },
+    },
+    {
+      name: "openMismatches",
+      type: "number",
+      admin: { position: "sidebar", readOnly: true, description: "Checks that differ and have no resolution yet." },
+    },
   ],
 };

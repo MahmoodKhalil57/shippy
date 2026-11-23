@@ -171,29 +171,57 @@ export async function related(
 
 /* ---------------------------------------------------------------- reusable fields */
 
-export const money = (name: string, label?: string, extra: Partial<Field> = {}): Field =>
+/** What a reusable field tells the person filling it in (its hint and placeholder), when not the default. */
+export interface FieldWords {
+  hint?: string;
+  placeholder?: string;
+}
+
+/** An amount and its currency, side by side; `words` for the amount (the currency's are fixed). */
+export const money = (name: string, label?: string, extra: Partial<Field> = {}, words: FieldWords = {}): Field =>
   ({
     type: "row",
     fields: [
-      { name, type: "number", label: label ?? name, min: 0 },
-      { name: `${name}Currency`, type: "select", label: "Currency", options: CURRENCIES, defaultValue: "EGP" },
+      {
+        name,
+        type: "number",
+        label: label ?? name,
+        min: 0,
+        admin: {
+          description: words.hint ?? "The amount, before VAT; its currency is beside it.",
+          placeholder: words.placeholder ?? "e.g. 12,500",
+        },
+      },
+      {
+        name: `${name}Currency`,
+        type: "select",
+        label: "Currency",
+        options: CURRENCIES,
+        defaultValue: "EGP",
+        admin: { description: "The currency the amount is in.", placeholder: "EGP" },
+      },
     ],
     ...extra,
   }) as Field;
 
-export const evidence = (name = "evidence", label = "Evidence"): Field => ({
+export const evidence = (name = "evidence", label = "Evidence", words: FieldWords = {}): Field => ({
   name,
   type: "upload",
   relationTo: "media",
   label,
+  admin: { description: words.hint ?? "A photo, scan or PDF that backs this up." },
 });
 
-export const caseRef = (required = true): Field => ({
+export const caseRef = (required = true, words: FieldWords = {}): Field => ({
   name: "case",
   type: "relationship",
   relationTo: "cases",
   required,
   index: true,
+  admin: {
+    description: words.hint ?? "The customer case this belongs to.",
+    placeholder: words.placeholder ?? "e.g. GS-RFQ-0142",
+  },
 });
 
 /** `GS-XXX-0001`-style numbering for a collection's reference field. */

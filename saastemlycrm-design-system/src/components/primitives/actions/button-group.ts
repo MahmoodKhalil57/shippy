@@ -3,7 +3,7 @@ import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
-import { inlineRow } from "../layout/algebra.ts";
+import { fixed, inlineRow } from "../layout/algebra.ts";
 import { iconSvg, type IconName } from "../media/icon.ts";
 
 /**
@@ -22,7 +22,7 @@ import { iconSvg, type IconName } from "../media/icon.ts";
  */
 export const buttonGroup = rcva(`${inlineRow} items-center gap-0.5`);
 export const buttonGroupItem = rcva(
-  "btn btn-ghost max-w-full h-auto min-h-(--size) whitespace-normal [text-wrap:balance] touch-target state-layer gap-1 border-transparent bg-surface-container-highest text-on-surface [transition:border-radius_var(--duration-spatial-fast)_var(--ease-spatial-fast),background-color_var(--duration-effects-fast)_var(--ease-effects-fast)] rounded-sm first:rounded-s-full last:rounded-e-full focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary",
+  "btn btn-ghost max-w-full h-auto min-h-(--size) whitespace-normal [text-wrap:balance] touch-target state-layer gap-1 border-transparent bg-surface-container-highest text-on-surface [transition:border-radius_var(--duration-spatial-fast)_var(--ease-spatial-fast),background-color_var(--duration-effects-fast)_var(--ease-effects-fast)] rounded-sm first:rounded-s-full last:rounded-e-full",
   {
     variants: {
       size: { xs: "btn-sm", sm: "btn-md" },
@@ -39,7 +39,33 @@ export interface ButtonGroupOption {
   label: Renderable;
   icon?: IconName;
   disabled?: boolean;
+  /** A status's tone: a dot before its label (the tone it has as a tag). */
+  tone?: "neutral" | "primary" | "info" | "success" | "warning" | "error";
+  /** A category's hue slot (0–5): a dot before its label (the hue it has as a tag). */
+  hue?: number;
 }
+
+/** An option's colour dot, while it isn't chosen (chosen, it carries the check). */
+export const buttonGroupDot = rcva(`${fixed["2"]} rounded-full`, {
+  variants: {
+    tone: {
+      neutral: "bg-outline",
+      primary: "bg-primary",
+      info: "bg-info",
+      success: "bg-success",
+      warning: "bg-warning",
+      error: "bg-error",
+    },
+    hue: {
+      "0": "bg-chart-1",
+      "1": "bg-chart-2",
+      "2": "bg-chart-3",
+      "3": "bg-chart-4",
+      "4": "bg-chart-5",
+      "5": "bg-chart-6",
+    },
+  },
+});
 
 /**
  * @example
@@ -107,7 +133,21 @@ export class UiButtonGroup extends LightElement {
           @click=${() => this._pick(o)}
           @keydown=${(e: KeyboardEvent) => this._key(e, i)}
         >
-          ${on ? iconSvg("check", { size: "sm" }) : o.icon ? iconSvg(o.icon, { size: "sm" }) : nothing}${o.label}
+          ${
+            on
+              ? iconSvg("check", { size: "sm" })
+              : o.icon
+                ? iconSvg(o.icon, { size: "sm" })
+                : o.tone || o.hue != null
+                  ? html`<span
+                      class=${buttonGroupDot({
+                        tone: o.tone,
+                        hue: o.hue == null ? undefined : (String(((o.hue % 6) + 6) % 6) as "0"),
+                      })}
+                      aria-hidden="true"
+                    ></span>`
+                  : nothing
+          }${o.label}
         </button>`;
       })}
     </div>`;

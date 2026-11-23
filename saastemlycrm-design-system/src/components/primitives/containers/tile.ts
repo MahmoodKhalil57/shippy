@@ -2,13 +2,25 @@ import type { VariantProps } from "class-variance-authority";
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { rowsFor, type TileSize } from "../../base/board.ts";
+import { floating as float } from "../../base/floating.ts";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva } from "../../base/variants.ts";
 import { button } from "../actions/button.ts";
 import { iconSvg } from "../media/icon.ts";
 import { badge, type BadgeVariants } from "../data/badge.ts";
 import { skeleton } from "../feedback/skeleton.ts";
-import { fixed, fixedWidth, floatingFit, inlineRow, pad, stack, text } from "../layout/algebra.ts";
+import {
+  clipRoom,
+  fixed,
+  fixedWidth,
+  floatingFit,
+  floatMotion,
+  inlineRow,
+  pad,
+  scrollRoom,
+  stack,
+  text,
+} from "../layout/algebra.ts";
 import { card, cardBody, cardHeader, cardHeadingGroup, cardTitle, cardTrailing } from "./card.ts";
 
 /**
@@ -36,16 +48,23 @@ import { card, cardBody, cardHeader, cardHeadingGroup, cardTitle, cardTrailing }
 export const tile = rcva("h-full min-h-0", {
   variants: {
     /** No surface: a column its content fills, never past the tile's box. */
-    bare: { true: "flex flex-col overflow-hidden", false: "" },
+    bare: { true: `flex flex-col ${clipRoom}`, false: "" },
     size: { s: "", m: "", l: "", full: "" },
     /** What's on its way, when the screen says (`skeleton` on the widget). */
     kind: { stats: "", text: "", card: "", table: "", list: "", chart: "", entries: "" },
   },
 });
-export const tileBody = rcva(`${stack} relative gap-3`, {
+/**
+ * A tile that fits its content (the board's `rows: "fit"`, a `[data-fit]` cell) never clips it:
+ * its body overflows visibly there, whatever its `overflow` says, so it's measured whole and
+ * nothing at its edges (a button, a ring) is cut.
+ */
+export const tileBody = rcva(`${stack} relative gap-3 [[data-fit]_&]:overflow-visible`, {
   variants: {
     /** In its box: the body takes what's left of the tile's cells under the header, clipping the rest. */
-    capped: { true: "min-h-0 grow overflow-hidden", false: "" },
+    capped: { true: "min-h-0 grow", false: "" },
+    /** What doesn't fit: clipped (towards "Show all"), or scrolled inside the box (`scrolls`). */
+    overflow: { clip: clipRoom, scroll: `overflow-y-auto ${scrollRoom}`, none: "" },
     // Only a tile that holds more than its box fades out (towards "Show all").
     faded: { true: "[mask-image:linear-gradient(to_bottom,black_calc(100%_-_3rem),transparent)]", false: "" },
   },
@@ -113,7 +132,7 @@ export const tileArrange = rcva(
  * 40%): drag it to move the tile among the others; focused, the arrow keys move it earlier or later.
  */
 export const tileGrip = rcva(
-  `${fixedWidth["8"]} touch-target touch-none absolute top-1.5 start-1/2 z-10 h-1 -translate-x-1/2 rtl:translate-x-1/2 cursor-grab rounded-full bg-on-surface-variant/40 opacity-0 transition-opacity group-hover/arrange:opacity-100 pointer-coarse:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary data-[dragging]:cursor-grabbing data-[dragging]:opacity-100 motion-reduce:transition-none`,
+  `${fixedWidth["8"]} touch-target touch-none absolute top-1.5 start-1/2 z-10 h-1 -translate-x-1/2 rtl:translate-x-1/2 cursor-grab rounded-full bg-on-surface-variant/40 opacity-0 transition-opacity group-hover/arrange:opacity-100 pointer-coarse:opacity-100 focus-visible:opacity-100 data-[dragging]:cursor-grabbing data-[dragging]:opacity-100 motion-reduce:transition-none`,
 );
 /**
  * The resize corner at a tile's bottom end: the card's own corner, traced (its radius, on its edge,
@@ -122,18 +141,18 @@ export const tileGrip = rcva(
  * arrow keys do the same a tile at a time.
  */
 export const tileResize = rcva(
-  `${fixed.corner} touch-target touch-none absolute bottom-0 end-0 z-10 cursor-nwse-resize rtl:cursor-nesw-resize rounded-ee-box border-e-2 border-b-2 border-on-surface-variant/40 opacity-0 transition-opacity group-hover/arrange:opacity-100 pointer-coarse:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary data-[dragging]:opacity-100 motion-reduce:transition-none`,
+  `${fixed.corner} touch-target touch-none absolute bottom-0 end-0 z-10 cursor-nwse-resize rtl:cursor-nesw-resize rounded-ee-box border-e-2 border-b-2 border-on-surface-variant/40 opacity-0 transition-opacity group-hover/arrange:opacity-100 pointer-coarse:opacity-100 focus-visible:opacity-100 data-[dragging]:opacity-100 motion-reduce:transition-none`,
 );
 /**
  * What a click on the grab bar opens (a press that doesn't move: a drag never opens it): a small
- * popover anchored 20px above the bar, clear of the tile's edge (`position-area: top`, flipping under
- * it where there's no room),
+ * popover 20px above the bar, clear of the tile's edge (Floating UI: `top`, flipping under it where
+ * there's no room),
  * in the top layer so no tile clips it; Escape or a click elsewhere closes it (`popover="auto"`).
  * It holds the tile's one destructive action, Hide, so the action is never on the tile itself to be
  * brushed while scrolling or grabbing it.
  */
 export const tileMenu = rcva(
-  `${floatingFit["6"]} mx-0 mt-0 mb-5 liquid-glass rounded-box [--outer-radius:var(--radius-box)] [--outer-padding:var(--space-50)] p-1 text-center text-on-surface [position-area:top] [position-try-fallbacks:flip-block] [transition:opacity_var(--duration-effects-fast),display_var(--duration-effects-fast)_allow-discrete,overlay_var(--duration-effects-fast)_allow-discrete] starting:open:opacity-0 not-open:opacity-0 motion-reduce:transition-none`,
+  `${floatingFit["6"]} ${floatMotion} liquid-glass rounded-box [--outer-radius:var(--radius-box)] [--outer-padding:var(--space-50)] p-1 text-center text-on-surface`,
 );
 /**
  * Remove (hides the tile), in the grab bar's popover: its trash icon and "Remove"; red when pointed
@@ -141,7 +160,7 @@ export const tileMenu = rcva(
  * the popover's less its padding (`rounded-inner`), the popover's the theme's card radius.
  */
 export const tileMenuItem = rcva(
-  `${inlineRow} ${pad["2"]} touch-target state-layer cursor-pointer items-center gap-2 rounded-inner py-1.5 text-label-lg hover:text-error focus-visible:outline-2 focus-visible:outline-primary`,
+  `${inlineRow} ${pad["2"]} touch-target state-layer cursor-pointer items-center gap-2 rounded-inner py-1.5 text-label-lg hover:text-error`,
 );
 /** Its label: one line (the popover is as wide as it, in whole tiles, up to 6). */
 export const tileMenuLabel = rcva(text.line);
@@ -166,6 +185,11 @@ export class UiTile extends LightElement {
   @property({ type: Boolean }) loading = false;
   /** No surface and no cap: a control or notice that steers the screen. */
   @property({ type: Boolean }) bare = false;
+  /**
+   * Its body scrolls inside its box instead of fading behind "Show all": a page's own collection,
+   * record or setting, as tall as it is until someone sizes it by hand, then that tall.
+   */
+  @property({ type: Boolean }) scrolls = false;
   /** A contrasting surface for the tile the screen is about (none on a `bare` tile: it has no surface). */
   @property() emphasis?: TileEmphasis;
   /** What's on its way. */
@@ -220,7 +244,7 @@ export class UiTile extends LightElement {
   private _measure() {
     // The content's own box against the body's: `scrollHeight` would also count what's hidden on
     // purpose (a chart's table for screen readers).
-    const over = !this._open && !!this.#bodyHeight && this.#contentHeight > this.#bodyHeight + 1;
+    const over = !this.scrolls && !this._open && !!this.#bodyHeight && this.#contentHeight > this.#bodyHeight + 1;
     if (over !== this._over && !this._open) this._over = over;
   }
 
@@ -286,7 +310,11 @@ export class UiTile extends LightElement {
         ${header} ${this.subhead ? html`<p class=${tileSubhead()}>${this.subhead}</p>` : nothing}
         <div class=${tileBodyBox()}>
           <div
-            class=${tileBody({ capped: !this._open && !this.loading, faded: this._over && !this._open })}
+            class=${tileBody({
+              capped: !this._open && !this.loading,
+              overflow: this._open || this.loading ? "none" : this.scrolls ? "scroll" : "clip",
+              faded: this._over && !this._open,
+            })}
             data-tile-body
           >
             ${content}
@@ -550,11 +578,11 @@ export class UiTileArrange extends LightElement {
       <button
         type="button"
         class=${tileGrip()}
+        data-grip
         aria-label=${this.label ? `Move ${this.label}` : "Move"}
         title="Drag to move. Click for more. Arrow keys: earlier or later. Delete: hide."
         aria-haspopup="menu"
         @click=${this.#click}
-        style="anchor-name:--${this.#anchor}"
         @pointerdown=${(e: PointerEvent) => this.#down("move", e)}
         @pointermove=${this.#move}
         @pointerup=${(e: PointerEvent) => this.#end(e, "end")}
@@ -578,7 +606,13 @@ export class UiTileArrange extends LightElement {
             ></button>`
           : nothing
       }
-      <div class=${tileMenu()} popover style="position-anchor:--${this.#anchor}" role="menu">
+      <div
+        class=${tileMenu()}
+        popover
+        id=${this.#anchor}
+        ${float({ placement: "top", gap: 20, anchor: () => this.querySelector("[data-grip]") })}
+        role="menu"
+      >
         <button
           type="button"
           role="menuitem"

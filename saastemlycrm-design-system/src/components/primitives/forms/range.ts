@@ -4,7 +4,7 @@ import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
-import { inset, row, text, tileCap } from "../layout/algebra.ts";
+import { inset, pad, row, text, tileCap } from "../layout/algebra.ts";
 
 /**
  * Range slider: Selects a value by sliding a handle.
@@ -101,6 +101,16 @@ export const rangeWrapper = rcva("", {
 /** Row under the slider holding tick marks or step labels ("With steps and measure"). */
 export const rangeMeasure = rcva(`${row} ${inset["2.5"]} ${text.label} justify-between mt-2 text-body-sm`);
 
+/**
+ * The value riding above the thumb (`bubble`): it follows the thumb (`--p`, 0 to 1, across the
+ * track less a thumb's width), and swells while the thumb is held, so the number being set is
+ * where the eye already is. Room above the track for it: `rangeBubbled`.
+ */
+export const rangeBubbled = rcva("relative pt-9");
+export const rangeBubble = rcva(
+  `${text.line} ${pad["2.5"]} pointer-events-none absolute top-0 start-[calc(var(--p)*(100%_-_1.5rem)+0.75rem)] w-max max-w-full -translate-x-1/2 rtl:translate-x-1/2 rounded-full bg-primary py-0.5 text-label-lg tabular-nums text-on-primary shadow-elevation-1 [transition:scale_var(--duration-spatial-fast)_var(--ease-spatial-fast)] origin-bottom [:has(>input:active)>&]:scale-110 [:has(>input:focus-visible)>&]:scale-110 motion-reduce:transition-none`,
+);
+
 export type RangeVariants = VariantProps<typeof range>;
 
 /**
@@ -132,6 +142,10 @@ export class UiRange extends LightElement {
   @property({ type: Boolean }) ticks = false;
   /** Labels shown evenly spaced under the slider. */
   @property({ attribute: false }) labels: Renderable[] = [];
+  /** The value in a bubble above the thumb, following it (`format` writes it). */
+  @property({ type: Boolean }) bubble = false;
+  /** How the bubble writes the value ("24%", "EGP 1,200"); else the number. */
+  @property({ attribute: false }) format?: (v: number) => string;
 
   private _onInput(e: Event) {
     this.value = Number((e.target as HTMLInputElement).value);
@@ -166,11 +180,28 @@ export class UiRange extends LightElement {
       @change=${this._onChange}
     />`;
 
-    if (!wrapped) return input;
+    const p = this.max > this.min ? (this.value - this.min) / (this.max - this.min) : 0;
+    const bubble = this.bubble
+      ? html`<span class=${rangeBubble()} aria-hidden="true"
+          >${this.format ? this.format(this.value) : this.value}</span
+        >`
+      : nothing;
+    if (!wrapped)
+      return this.bubble
+        ? html`<div
+            class=${rangeWrapper({ width: this.width ?? "full", class: rangeBubbled() })}
+            style="--p:${Math.min(1, Math.max(0, p))}"
+          >
+            ${bubble}${input}
+          </div>`
+        : input;
 
     const count = this.step ? Math.floor((this.max - this.min) / this.step) + 1 : 0;
-    return html`<div class=${rangeWrapper({ width: this.width ?? "xs" })}>
-      ${input}
+    return html`<div
+      class=${rangeWrapper({ width: this.width ?? "xs", class: this.bubble ? rangeBubbled() : "" })}
+      style="--p:${Math.min(1, Math.max(0, p))}"
+    >
+      ${bubble}${input}
       ${
         this.ticks && count
           ? html`<div class=${rangeMeasure()} aria-hidden="true">
