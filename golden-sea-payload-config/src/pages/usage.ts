@@ -37,7 +37,7 @@ export const usagePage = widgets({
       rows: 8,
       breakdown: { collection: "ai-calls", by: "task", as: "ring" },
     },
-    figures({ data: usage, format: fmt.measured }),
+    figures({ data: usage, labels: fmt.MEASURED, format: fmt.measured }),
     {
       title: "Support log",
       subhead: "Sunday to Thursday, on your hours: fixes, updates, security patches and questions.",

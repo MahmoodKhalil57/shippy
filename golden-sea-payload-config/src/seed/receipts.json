@@ -56,11 +56,48 @@
     "case": "gs-rfq-0131",
     "purchaseOrder": "po-0402",
     "lineNo": 1,
+    "ordered": 6,
+    "received": 6,
+    "receivedAt": "2026-11-06T00:00:00.000Z",
+    "warehouse": "Cairo (6th October)",
+    "lot": "YN-2610-A",
+    "qc": "OK"
+  },
+  {
+    "id": "rc-0402-2",
+    "case": "gs-rfq-0131",
+    "purchaseOrder": "po-0402",
+    "lineNo": 2,
+    "ordered": 6,
+    "received": 6,
+    "receivedAt": "2026-11-06T00:00:00.000Z",
+    "warehouse": "Cairo (6th October)",
+    "lot": "YN-2610-B",
+    "qc": "OK"
+  },
+  {
+    "id": "rc-0402-3",
+    "case": "gs-rfq-0131",
+    "purchaseOrder": "po-0402",
+    "lineNo": 3,
     "ordered": 1,
     "received": 1,
     "receivedAt": "2026-11-06T00:00:00.000Z",
     "warehouse": "Cairo (6th October)",
-    "lot": "ES-0131",
+    "lot": "MN-2610-C",
+    "qc": "OK"
+  },
+  {
+    "id": "rc-0402-4",
+    "case": "gs-rfq-0131",
+    "purchaseOrder": "po-0402",
+    "lineNo": 4,
+    "ordered": 12,
+    "received": 12,
+    "receivedAt": "2026-11-06T00:00:00.000Z",
+    "warehouse": "Cairo (6th October)",
+    "lot": "H-2610",
+    "expiry": "2031-10-01T00:00:00.000Z",
     "qc": "OK"
   }
 ]

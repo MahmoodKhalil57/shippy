@@ -1,4 +1,4 @@
-import type { KindData, NumberFormat, Stat, ViewHeader } from "saastemlycrm-design-system/contracts";
+import type { Figure, KindData, NumberFormat, ViewHeader, WidgetScope } from "saastemlycrm-design-system/contracts";
 import type { Home, HomeAgendaItem, HomeChart, HomeItem, HomeUnit, HomeWidget } from "../endpoints/home.ts";
 
 /**
@@ -28,6 +28,35 @@ export const homePart = <K extends HomeWidget["kind"]>(h: Home, kind: K) =>
 export const homeCharts = (h: Home): HomeChart[] => h.widgets.flatMap((w) => (w.kind === "charts" ? w.charts : []));
 
 /**
+ * How many charts /home sends each role (../endpoints/home.ts), known before the data so the
+ * board keeps its shape: everyone without a day of their own (the sourcing desk) has one.
+ */
+const HOME_CHARTS: Record<string, number> = {
+  management: 4,
+  "finance-director": 3,
+  operations: 2,
+  sales: 2,
+  "office-admin": 2,
+};
+export const homeChartCount = ({ user }: WidgetScope) => HOME_CHARTS[user.role ?? ""] ?? 1;
+
+/**
+ * The figures with a trend /home sends each role, in its order (../endpoints/home.ts): one tile
+ * each, decided by who is looking. Everyone without a day of their own has the sourcing desk's.
+ */
+export const HOME_FIGURES = {
+  management: ["Inquiries, last 4 weeks", "Won, last 4 weeks", "Quote turnaround", "Expected gross profit, Nov"],
+  "finance-director": ["Receivables", "Net cash, next 8 weeks", "Expected gross profit, Nov"],
+  operations: ["Deliveries in progress"],
+  sales: ["Awaiting customer decision", "Awaiting internal approval", "Won, last 4 weeks"],
+  "office-admin": ["Out-of-hours RFQs", "Time to acknowledge"],
+  desk: ["Awaiting supplier", "Awaiting internal approval", "My quote turnaround"],
+} as const;
+export type HomeFigure = (typeof HOME_FIGURES)[keyof typeof HOME_FIGURES][number];
+export const homeFigureLabels = ({ user }: WidgetScope): readonly HomeFigure[] =>
+  HOME_FIGURES[(user.role ?? "") as keyof typeof HOME_FIGURES] ?? HOME_FIGURES.desk;
+
+/**
  * The home page's header: the greeting, a subtitle with the day's live numbers, the role's
  * shortcuts and "While you were away", a summary of the user's unread notifications.
  */
@@ -54,10 +83,11 @@ export const homeHeader = ({
  * its own with how it moved and its trend; the headline (`main`) is drawn tinted. The page's
  * counts complete the strip of four.
  */
-export const homeFigures = (h: Home): Stat[] =>
+export const homeFigures = (h: Home): Figure<HomeFigure>[] =>
   (homePart(h, "tiles")?.tiles ?? []).map((t) => ({
     main: t.main,
-    label: t.label,
+    // /home's labels are `HOME_FIGURES`' (a label it doesn't list shows in the last tile).
+    label: t.label as HomeFigure,
     value: t.value,
     note: t.note,
     tone: t.tone === "success" || t.tone === "warning" || t.tone === "error" ? t.tone : undefined,

@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from "vite-plus/test";
 import { formats, tones, type MockConfig } from "../src/contracts/index.ts";
 import { setProject } from "../src/app/config.ts";
-import type { Widget, WidgetScope } from "../src/app/widgets/widget.ts";
+import { eachSlots, eachTiles, type Widget, type WidgetScope } from "../src/app/widgets/widget.ts";
 
 /**
  * The no-code data widgets (src/app/widgets/data.ts) read their meaning from the Payload config:
@@ -358,22 +358,19 @@ describe("what the config says a value means", () => {
     ]);
   });
 
-  it("sorts by a virtual field as read, and hides when empty", () => {
+  it("sorts by a virtual field as read", () => {
     const w = expand(
-      { size: "l", records: { collection: "invoices", columns: ["number"], sort: "-balanceUsd", hideEmpty: true } },
+      { size: "l", records: { collection: "invoices", columns: ["number"], sort: "-balanceUsd" } },
       scope("finance"),
-    ) as {
+    ) as unknown as {
       source: { sort?: string; limit: number };
       render(d: unknown, s: WidgetScope): Record<string, any>;
-      hidden(d: unknown, s: WidgetScope): boolean;
     };
     expect(w.source.sort).toBeUndefined();
     expect(w.source.limit).toBe(0);
     expect(
       w.render({ docs, totalDocs: 3 }, scope("finance")).rows.map((r: { number: { text: string } }) => r.number.text),
     ).toEqual(["INV-2", "INV-1", "INV-3"]);
-    expect(w.hidden({ docs: [], totalDocs: 0 }, scope("finance"))).toBe(true);
-    expect(w.hidden({ docs, totalDocs: 3 }, scope("finance"))).toBe(false);
   });
 
   it("repeats an action once per array row it applies to, filled from the row", () => {
@@ -505,15 +502,13 @@ describe("fixes", () => {
     expect(all.map((a) => a.label)).toEqual(["Link A", "Link B"]);
   });
 
-  it("hides the figures when none has any documents (hideEmpty)", () => {
+  it("has a tile per figure before the data, whatever the data holds", () => {
     const x = expand(
-      {
-        size: "s",
-        metrics: { collection: "invoices", hideEmpty: true, items: [{ label: "Owed", sum: "balanceUsd" }] },
-      },
+      { size: "s", metrics: { collection: "invoices", items: [{ label: "Owed", sum: "balanceUsd" }] } },
       scope("finance"),
-    ) as { each: { items(d: unknown, s: WidgetScope): unknown[] } };
-    expect(x.each.items({ m0: { docs: [], totalDocs: 0 } }, scope("finance"))).toEqual([]);
-    expect(x.each.items({ m0: { docs, totalDocs: 3 } }, scope("finance")).length).toBe(1);
+    );
+    expect(eachSlots(x, scope("finance"))).toEqual(["Owed"]);
+    for (const data of [{ m0: { docs: [], totalDocs: 0 } }, { m0: { docs, totalDocs: 3 } }])
+      expect(eachTiles(x, data as never, scope("finance")).map((t) => t.key)).toEqual(["Owed"]);
   });
 });

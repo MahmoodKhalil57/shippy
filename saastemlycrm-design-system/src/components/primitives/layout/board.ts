@@ -70,7 +70,7 @@ export const boardLanes = rcva(layout.lanes);
 /** A tile new to the board fades in (M3: entering content fades, quickly); it never pops in. */
 export const boardTile = rcva(
   `${layout.tile} ${layout.held} [transition:opacity_var(--duration-effects)_var(--ease-effects)] starting:opacity-0 motion-reduce:transition-none data-empty:absolute data-empty:start-0 data-empty:end-0 data-empty:invisible`,
-  { variants: { inset: { true: layout.inset, false: "" } } },
+  { variants: { inset: { true: layout.inset, false: "" }, skip: { true: layout.skip, false: "" } } },
 );
 /**
  * Where the held tile lands if let go now (`UiBoard.hold`; gridstack's placeholder): its tiles in the
@@ -91,9 +91,44 @@ export const boardFit = rcva(layout.fit);
 
 /**
  * The tiles each fitting tile took last time, by its `remember` key: a tile measured once starts at
- * that height next time, so coming back to a page moves nothing.
+ * that height next time, so coming back to a page moves nothing. Kept across reloads too: starting
+ * every fitting tile one tile high, the dashboard packed itself again as each one measured its
+ * content (three or four times on loading, every tile below moving each time).
  */
-const fitMemory = new Map<string, number>();
+const FIT_KEY = "ui-board-fit";
+/** The most heights kept: the latest ones, so the memory stays small. */
+const FIT_KEPT = 400;
+const fitMemory = new Map<string, number>(readFits());
+function readFits(): [string, number][] {
+  try {
+    const saved: unknown = JSON.parse(localStorage.getItem(FIT_KEY) ?? "[]");
+    return Array.isArray(saved)
+      ? saved.filter(
+          (e): e is [string, number] =>
+            Array.isArray(e) && typeof e[0] === "string" && Number.isInteger(e[1]) && e[1] > 0,
+        )
+      : [];
+  } catch {
+    return [];
+  }
+}
+let fitSaving = false;
+/** Remembers a fitting tile's height, written out once with every other one measured now. */
+function rememberFit(key: string, rows: number) {
+  if (fitMemory.get(key) === rows) return;
+  fitMemory.delete(key);
+  fitMemory.set(key, rows);
+  if (fitSaving) return;
+  fitSaving = true;
+  queueMicrotask(() => {
+    fitSaving = false;
+    try {
+      localStorage.setItem(FIT_KEY, JSON.stringify([...fitMemory].slice(-FIT_KEPT)));
+    } catch {
+      /* storage full or blocked: the memory still holds for this visit */
+    }
+  });
+}
 
 /** Motion tokens, read once each (they never change while the page runs). */
 const tokens = new Map<string, string>();
@@ -167,6 +202,50 @@ export interface BoardPoint {
 /**
  * @example <ui-board .items=${[{ key: "stats", size: "m", content: statsCard }, { key: "queue", size: "l", content: queue }]}></ui-board>
  */
+/** What a board read for its slides (`#measure`), played without reading again (`#play`). */
+interface SlidePlan {
+  duration: number;
+  /** How long the slides wait (a column's spring still in its delay). */
+  delay: number;
+  easing: string;
+  tiles: {
+    tile: HTMLElement;
+    key: string;
+    now: { x: number; y: number; span: number; rows: number; w: number; h: number };
+    /** The size a playing size animation shows now. */
+    shown?: { w: number; h: number };
+    /** What it holds at its new size (its tiles less its inset): pinned there while it resizes. */
+    inner: { w: number; h: number };
+    /** Its first box (component hosts are `display: contents`): what's pinned. */
+    content: HTMLElement | null;
+  }[];
+  mark?: { el: HTMLElement; now: { x: number; y: number; w: number; h: number } };
+}
+
+/**
+ * Boards rendered in this task slide together: their `updated()` adds them here and one microtask
+ * later (after the renders queued with them, before the frame is painted) every one measures, then
+ * every one animates (`UiBoard.slideAll`).
+ */
+const sliding = new Set<UiBoard>();
+/** The boards on the page: a batch waits for every one of them that still has a render queued. */
+const boards = new Set<UiBoard>();
+async function flushSlides() {
+  // Renders queue each other (a board's render sets its tiles' content, whose boards render
+  // next), all in microtasks before the frame: wait them out, then measure once.
+  for (let pending = [...boards].filter((b) => b.isUpdatePending); pending.length;) {
+    await Promise.all(pending.map((b) => b.updateComplete));
+    pending = [...boards].filter((b) => b.isUpdatePending);
+  }
+  const batch = [...sliding];
+  sliding.clear();
+  UiBoard.slideAll(batch);
+}
+function slideSoon(board: UiBoard) {
+  if (!sliding.size) void flushSlides();
+  sliding.add(board);
+}
+
 @customElement("ui-board")
 export class UiBoard extends LightElement {
   @property({ attribute: false }) items: BoardItem[] = [];
@@ -186,10 +265,10 @@ export class UiBoard extends LightElement {
   }
   /** The lanes' width, as the observer last reported it. */
   #width = 0;
-  /** The width the lanes will have once the column springing now has settled (`expectWidth`). */
+  /** While a column springs: the narrower of the lanes' width before and after it (`expectWidth`). */
   #expected?: number;
 
-  /** Lanes for its width: while a column springs, also no more than its width at the end will hold. */
+  /** Lanes for its width: while a column springs, also no more than the narrower end will hold. */
   #fitLanes() {
     if (!this.#width) return;
     const scale = parseFloat(getComputedStyle(document.documentElement).fontSize) / 16 || 1;
@@ -201,28 +280,77 @@ export class UiBoard extends LightElement {
       return;
     }
     const now = lanesFor(this.#width, scale);
-    const lanes = this.#expected === undefined ? now : Math.min(now, lanesFor(this.#expected, scale));
+    // While a column springs, the lanes it will have once settled (`expectWidth`), not its width's now.
+    const lanes = this.#expected === undefined ? now : lanesFor(this.#expected, scale);
     if (lanes !== this._lanes) this._lanes = lanes;
   }
 
   /**
    * A column is springing open or shut, and the page will be `delta` px narrower (or, negative,
-   * wider) once it has settled (`<ui-frame-main>` tells its boards as the spring starts). Until
-   * `settled`, the board has no more lanes than both its width now and its width then will hold:
-   * narrowing, its tiles take their final places at once and slide there as the panel's edge comes
-   * in, so none is ever beyond the edge; widening, they gain lanes as the room arrives.
+   * wider) once it has settled (`<ui-frame-main>` tells its boards as the spring starts). The board
+   * takes the lanes it will have then at once, and its tiles slide to their new places as input
+   * motion, on the same spring as the panel's edge: each tile goes once, in one direction, with the
+   * edge, and none is ever beyond it (narrowing, the tiles come in as the edge does; widening, they
+   * spread out as the room arrives). Keeping its lanes until the spring had settled moved every tile
+   * with the edge first and back across the board after; placing them at each lane the spring passed
+   * laid the page out several times during it.
+   *
+   * Its width then is measured, not guessed: the page around it may take up the change (a page
+   * capped at 24 tiles in a wider panel keeps its width when a column opens), and a board that took
+   * `delta` off its own width re-placed every tile mid-spring and back again once it settled.
    */
-  expectWidth(delta: number, settled: Promise<unknown>) {
+  expectWidth(delta: number, settled: Promise<unknown>, timing?: { until: number; duration: number; easing: string }) {
+    this.#springTiming = timing;
     if (!this.#width || !delta) return;
-    const expected = this.#width - delta;
-    this.#expected = expected;
+    const then = this.#widthWhenPanelIs(delta);
+    // The same lanes then as now: nothing to place, before, during or after the spring.
+    if (lanesFor(then, this.#scale()) === lanesFor(this.#width, this.#scale())) return;
+    this.#expected = then;
+    this.#springing = true;
     this.#fitLanes();
     void settled.then(() => {
-      if (this.#expected !== expected) return;
+      if (this.#expected !== then) return;
       this.#expected = undefined;
+      this.#springing = false;
       this.#fitLanes();
     });
   }
+  /** A column is springing (`expectWidth`): the tiles' slides go with it, as input motion. */
+  #springing = false;
+  /** That spring's timing: when it starts moving (ms, `performance.now()`), its duration and easing. */
+  #springTiming?: { until: number; duration: number; easing: string };
+
+  #scale() {
+    return parseFloat(getComputedStyle(document.documentElement).fontSize) / 16 || 1;
+  }
+
+  /**
+   * The lanes' width once the box around the board (its nearest ancestor with a box, the page's
+   * container) sits in a parent `delta` px narrower: an empty copy of that box, in a hidden probe of
+   * that width, laid out by the same CSS (its padding and caps are relative to its parent). The
+   * board fills its box's content, so the copy's content width is the board's. Its width now less
+   * `delta` when there is no box to copy.
+   */
+  #widthWhenPanelIs(delta: number): number {
+    const boxed = (from: Element | null | undefined) => {
+      let e = from ?? null;
+      while (e && getComputedStyle(e).display === "contents") e = e.parentElement;
+      return e;
+    };
+    const box = boxed(this.parentElement);
+    const parent = boxed(box?.parentElement);
+    if (!box || !parent) return this.#width - delta;
+    const probe = document.createElement("div");
+    probe.style.cssText = `position:absolute;inset-block-start:0;inset-inline-start:0;visibility:hidden;contain:layout;inline-size:${Math.max(0, parent.clientWidth - delta)}px`;
+    const copy = box.cloneNode(false) as HTMLElement;
+    probe.append(copy);
+    parent.append(probe);
+    const cs = getComputedStyle(copy);
+    const width = copy.clientWidth - parseFloat(cs.paddingInlineStart) - parseFloat(cs.paddingInlineEnd);
+    probe.remove();
+    return width;
+  }
+
   /** Rows a tile asked for while it's open past its own ("Show all"), by its key. */
   @state() private _open = new Map<string, number>();
   /** The whole tiles a fitting tile's content takes, by its key (from `#fits`). */
@@ -240,7 +368,7 @@ export class UiBoard extends LightElement {
       const remember = el.dataset.remember || undefined;
       const inset = el.dataset.flush !== undefined ? 0 : 8;
       const rows = rowsFor((e.borderBoxSize?.[0]?.blockSize ?? e.contentRect.height) + inset, scale);
-      if (remember) fitMemory.set(remember, rows);
+      if (remember) rememberFit(remember, rows);
       if ((next ?? this._fit).get(key) !== rows) (next ??= new Map(this._fit)).set(key, rows);
     }
     if (next) this._fit = next;
@@ -256,7 +384,10 @@ export class UiBoard extends LightElement {
     const lanesEl = this._lanesEl;
     let resized = false;
     for (const e of entries)
-      if (e.target === lanesEl) {
+      // Not laid out (`display: none`: a closed pane), it keeps the lanes it had rather than take
+      // the 0 it reports. (A column's list keeps its open width while folded away, so a board in it
+      // has its lanes before the column first opens.)
+      if (e.target === lanesEl && lanesEl.checkVisibility()) {
         resized = true;
         this.#width = e.borderBoxSize?.[0]?.inlineSize ?? e.contentRect.width;
         this.#fitLanes();
@@ -490,20 +621,65 @@ export class UiBoard extends LightElement {
   /** A tile's place and tiles as they are now (what the next slide starts from). */
   #remember(tile: HTMLElement) {
     const scale = parseFloat(getComputedStyle(document.documentElement).fontSize) / 16 || 1;
-    const qw = (this._lanesEl?.clientWidth ?? 0) / (4 * Math.max(1, this._lanes));
+    const qw = this.#quarterW(scale);
     const qh = tileH(scale) / 4;
     const span = Number(tile.style.getPropertyValue("--span")) || 0;
     const rows = Number(tile.style.getPropertyValue("--rows")) || 0;
-    this.#at.set(tile.dataset.key!, { x: tile.offsetLeft, y: tile.offsetTop, span, rows, w: span * qw, h: rows * qh });
+    this.#at.set(tile.dataset.key!, { ...this.#placeOf(tile), span, rows, w: span * qw, h: rows * qh });
+  }
+
+  /**
+   * Where an element is laid out on its lanes (px from the lanes' corner, transforms and slides
+   * left out): what a tile's slide measures from and to. Not its `offsetLeft`: that is from its
+   * offset parent, outside the board, so a column springing moved every tile's `offsetLeft` with the
+   * panel's edge, and the board slid each tile back towards where it had been on each frame of the
+   * spring (nine slides stacked on one tile, which lagged the edge and then overshot it by 40px).
+   */
+  #placeOf(el: HTMLElement) {
+    const lanes = this._lanesEl;
+    const at = (e: HTMLElement | null) => {
+      let x = 0;
+      let y = 0;
+      for (; e; e = e.offsetParent as HTMLElement | null) {
+        x += e.offsetLeft;
+        y += e.offsetTop;
+      }
+      return { x, y };
+    };
+    const a = at(el);
+    const o = lanes ? at(lanes) : { x: 0, y: 0 };
+    return { x: a.x - o.x, y: a.y - o.y };
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+    boards.add(this);
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
+    boards.delete(this);
     this.#resize.disconnect();
     this.#fits.disconnect();
     this.#fitting.clear();
     this.#observed.clear();
     this.#at.clear();
+  }
+
+  /**
+   * Whether it has read its width yet. Its first render holds no tiles: `updated()` then reads the
+   * lanes' width (laying out a page without this board's tiles), and the render after it, in the
+   * same task and before any frame is painted, has its lanes and every tile in its place. Left to
+   * the observer, a slow first frame painted the tiles a few pixels wide in reading order and moved
+   * them all a frame later (a layout shift of about 0.7 on reloading the dashboard). With no width
+   * to read (hidden), it renders its tiles anyway and the observer places them.
+   */
+  #looked = false;
+
+  /** Done once the render after the first (the one with the tiles, `#looked`) is. */
+  protected override async getUpdateComplete(): Promise<boolean> {
+    const done = await super.getUpdateComplete();
+    return done || super.getUpdateComplete();
   }
 
   private get _lanesEl() {
@@ -516,6 +692,16 @@ export class UiBoard extends LightElement {
   }
 
   protected updated() {
+    if (!this.#looked) {
+      this.#looked = true;
+      const lanes = this._lanesEl;
+      const width = lanes?.checkVisibility() ? lanes.getBoundingClientRect().width : 0;
+      if (width) {
+        this.#width = width;
+        this.#fitLanes();
+      }
+      this.requestUpdate();
+    }
     // Every tile and the lanes are watched: any change of size is where a move starts (a tile that
     // grew moves the rows under it; the board's width moves everything).
     const watch = [this._lanesEl, ...this._tiles].filter((e): e is HTMLElement => !!e);
@@ -545,8 +731,9 @@ export class UiBoard extends LightElement {
     if (this.#held) this.#lift();
     // Tiles that moved in this render slide from where they were, whether or not their size
     // changed (a tile pushed down a row keeps its size, so no ResizeObserver entry reports it).
-    // Read here, after the render and before the frame is painted.
-    this._slide();
+    // Read after the render and before the frame is painted, together with every other board
+    // rendered now: all of them measure, then all of them animate, so the page is laid out once.
+    slideSoon(this);
   }
 
   /**
@@ -559,25 +746,69 @@ export class UiBoard extends LightElement {
    * after layout.
    */
   private _slide(resized = false) {
-    // While a tile is held, the board answers the hand: the fast spring (gridstack's is 0.3s).
+    this.#play(this.#measure(), resized);
+  }
+
+  /**
+   * Everything a slide needs, read in one go and nothing written: each placed tile's place and
+   * size now and before, the size a playing size animation shows, the held tile's mark. Reading
+   * between writes (an animation started, then the next tile's offset read) lays the page out
+   * once per tile; reading first lays it out at most once.
+   */
+  /**
+   * A quarter track's width: the tile the grid lays its lanes out by (a fitted board's own lane),
+   * not the box's width over its lanes, which a board taking its lanes ahead of a spring outgrows.
+   */
+  #quarterW(scale: number) {
+    return (this.fit && this._laneW ? this._laneW : tileW(scale)) / 4;
+  }
+
+  #measure(): SlidePlan {
     const fast = this.#held ? "-fast" : "";
-    const duration = cssTime(motion(`--duration-spatial${fast}`));
-    const easing = motion(`--ease-spatial${fast}`) || "ease";
-    const seen = new Set<string>();
-    const slides: Animation[] = [];
+    // Sliding with a column's spring: its timing (what's left of its delay, its duration and easing),
+    // so the tiles move with the panel's edge, not ahead of it.
+    const spring = this.#springing ? this.#springTiming : undefined;
+    const duration = spring?.duration ?? cssTime(motion(`--duration-spatial${fast}`));
+    const easing = spring?.easing ?? (motion(`--ease-spatial${fast}`) || "ease");
+    const delay = spring ? Math.max(0, spring.until - performance.now()) : 0;
     const scale = parseFloat(getComputedStyle(document.documentElement).fontSize) / 16 || 1;
     // A quarter track each way: the board's width over its quarters, a quarter of a tile down.
-    const qw = (this._lanesEl?.clientWidth ?? 0) / (4 * Math.max(1, this._lanes));
+    const qw = this.#quarterW(scale);
     const qh = tileH(scale) / 4;
+    const tiles: SlidePlan["tiles"] = [];
     for (const tile of this._tiles) {
-      const key = tile.dataset.key!;
       // Only placed tiles count: the first frame lays tiles out in reading order before the board
       // knows its lanes, and sliding from there flew every tile across the page as it loaded.
       if (tile.hasAttribute("data-empty") || !tile.style.getPropertyValue("--lane")) continue;
-      seen.add(key);
       const span = Number(tile.style.getPropertyValue("--span")) || 0;
       const rows = Number(tile.style.getPropertyValue("--rows")) || 0;
-      const now = { x: tile.offsetLeft, y: tile.offsetTop, span, rows, w: span * qw, h: rows * qh };
+      const now = { ...this.#placeOf(tile), span, rows, w: span * qw, h: rows * qh };
+      const playing = this.#sizing.get(tile);
+      const shown = playing?.playState === "running" ? { w: tile.offsetWidth, h: tile.offsetHeight } : undefined;
+      const pad = getComputedStyle(tile);
+      const inner = {
+        w: now.w - parseFloat(pad.paddingInlineStart) - parseFloat(pad.paddingInlineEnd),
+        h: now.h - parseFloat(pad.paddingBlockStart) - parseFloat(pad.paddingBlockEnd),
+      };
+      let content = tile.firstElementChild as HTMLElement | null;
+      while (content && getComputedStyle(content).display === "contents")
+        content = content.firstElementChild as HTMLElement | null;
+      tiles.push({ tile, key: tile.dataset.key!, now, shown, inner, content });
+    }
+    const markEl = this._lanesEl?.querySelector<HTMLElement>(":scope > [data-board-drop]") ?? undefined;
+    const mark = markEl && {
+      el: markEl,
+      now: { ...this.#placeOf(markEl), w: markEl.offsetWidth, h: markEl.offsetHeight },
+    };
+    return { duration, easing, delay, tiles, mark };
+  }
+
+  /** The slides a measure calls for: each tile from where it was to where it is (writes only). */
+  #play({ duration, easing, delay, tiles, mark }: SlidePlan, resized: boolean) {
+    const seen = new Set<string>();
+    const slides: Animation[] = [];
+    for (const { tile, key, now, shown, inner, content } of tiles) {
+      seen.add(key);
       const was = this.#at.get(key);
       this.#at.set(key, now);
       if (!was || !duration) continue;
@@ -589,32 +820,49 @@ export class UiBoard extends LightElement {
       // Just let go: it springs from where it was shown on `drop`'s frame, not from its old place.
       if (key === this.#dropping) continue;
       // Its size: from what it shows now (a size animation playing) or its old tiles, to its new ones.
-      if (was.span !== span || was.rows !== rows) {
-        const playing = this.#sizing.get(tile);
-        const from =
-          playing?.playState === "running" ? { w: tile.offsetWidth, h: tile.offsetHeight } : { w: was.w, h: was.h };
-        playing?.cancel();
+      if (was.span !== now.span || was.rows !== now.rows) {
+        const from = shown ?? { w: was.w, h: was.h };
+        this.#sizing.get(tile)?.cancel();
         const grow = tile.animate(
           [
             { width: `${from.w}px`, height: `${from.h}px` },
             { width: `${now.w}px`, height: `${now.h}px` },
           ],
-          { duration, easing },
+          { duration, easing, delay, fill: "backwards" },
         );
         this.#sizing.set(tile, grow);
+        // What it holds stays at its new size while the tile's box springs (the tile clips it): only
+        // the box is laid out again on each frame, not its chart, table or text (which reflowed on
+        // every frame, and its observers redrew it). Growing, the box sweeps out over it; shrinking,
+        // it is its new size at once and the box closes in round it.
+        if (content && inner.w > 0 && inner.h > 0) {
+          content.style.setProperty("inline-size", `${inner.w}px`);
+          content.style.setProperty("block-size", `${inner.h}px`);
+          content.style.setProperty("flex-shrink", "0");
+          const unpin = () => {
+            if (this.#sizing.get(tile) !== grow) return;
+            for (const p of ["inline-size", "block-size", "flex-shrink"]) content.style.removeProperty(p);
+          };
+          grow.finished.then(unpin, unpin);
+        }
         slides.push(grow);
       }
       const dx = was.x - now.x;
       const dy = was.y - now.y;
       if (Math.abs(dx) < 1 && Math.abs(dy) < 1) continue;
       slides.push(
-        tile.animate([{ translate: `${dx}px ${dy}px` }, { translate: "0 0" }], { duration, easing, composite: "add" }),
+        tile.animate([{ translate: `${dx}px ${dy}px` }, { translate: "0 0" }], {
+          duration,
+          easing,
+          delay,
+          fill: "backwards",
+          composite: "add",
+        }),
       );
     }
     // The held tile's dashed mark glides to its new place and size with the tiles making room.
-    const mark = this._lanesEl?.querySelector<HTMLElement>(":scope > [data-board-drop]");
     if (mark) {
-      const now = { x: mark.offsetLeft, y: mark.offsetTop, w: mark.offsetWidth, h: mark.offsetHeight };
+      const { el, now } = mark;
       const was = this.#mark;
       this.#mark = now;
       if (was && duration) {
@@ -622,7 +870,7 @@ export class UiBoard extends LightElement {
         const dy = was.y - now.y;
         if (Math.abs(dx) >= 1 || Math.abs(dy) >= 1)
           slides.push(
-            mark.animate([{ translate: `${dx}px ${dy}px` }, { translate: "0 0" }], {
+            el.animate([{ translate: `${dx}px ${dy}px` }, { translate: "0 0" }], {
               duration,
               easing,
               composite: "add",
@@ -630,12 +878,12 @@ export class UiBoard extends LightElement {
           );
         if (Math.abs(was.w - now.w) >= 1 || Math.abs(was.h - now.h) >= 1)
           slides.push(
-            mark.animate(
+            el.animate(
               [
                 { width: `${was.w}px`, height: `${was.h}px` },
                 { width: `${now.w}px`, height: `${now.h}px` },
               ],
-              { duration, easing },
+              { duration, easing, delay, fill: "backwards" },
             ),
           );
       }
@@ -646,8 +894,14 @@ export class UiBoard extends LightElement {
     // them (a tile grew, data came in) is follow motion: held where they were until input motion
     // has played, then a board at a time (src/components/base/motion-queue.ts). Tiles making room
     // for a held one, or for one just let go, answer the hand: input motion too.
-    if (resized || this.#arranging || this.#held) void motionQueue.input(slides);
+    if (resized || this.#arranging || this.#held || this.#springing) void motionQueue.input(slides);
     else void motionQueue.add(slides, "follow", this);
+  }
+
+  /** The boards rendered now measure together, then play together (`slideSoon`). */
+  static slideAll(boards: UiBoard[]) {
+    const plans = boards.map((b) => [b, b.isConnected ? b.#measure() : undefined] as const);
+    for (const [b, plan] of plans) if (plan) b.#play(plan, false);
   }
 
   /** The rows an item takes: what its tile asked for while open, else its own. */
@@ -768,13 +1022,14 @@ export class UiBoard extends LightElement {
         }
         ${repeat(
           // In the order the tiles were first drawn, whatever order they're placed in: Lit's repeat
-          // moves an element when the order changes, and a moved tile replays its entrance.
-          this.#inOrder(),
+          // moves an element when the order changes, and a moved tile replays its entrance. None
+          // before the board has read its width (`#looked`).
+          this.#looked ? this.#inOrder() : [],
           (it) => it.key,
           (it) => {
             const p = placeOf.get(it.key);
             return html`<div
-              class=${boardTile({ inset: !it.flush })}
+              class=${boardTile({ inset: !it.flush, skip: !!p && it.rows !== "fit" && !it.drop })}
               data-board-tile
               data-key=${it.key}
               data-size=${it.size}

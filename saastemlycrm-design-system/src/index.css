@@ -46,6 +46,16 @@
   [data-ui][align] {
     text-align: inherit;
   }
+  /* The app shell's authored parts (its menus, rails, footers) wait among its children until its
+     frame places them in their columns (`slotted`, src/components/base/light-element.ts), and what
+     a column never places isn't shown either, as with a slot. Laid out in the page's flow above the
+     frame, they made the page taller than the window for a frame or two on loading, and the
+     scrollbar that came and went moved every tile on the dashboard. (`[data-ui]` outranks the
+     hosts' `display: contents` above.) */
+  ui-app-shell > :not(ui-frame),
+  ui-app-shell > [data-ui]:not(ui-frame) {
+    display: none;
+  }
 
   body {
     min-width: 320px;
@@ -101,6 +111,9 @@
     ::-webkit-scrollbar-thumb:active {
       background-color: color-mix(in oklab, var(--color-primary) 70%, transparent);
     }
+    /* A select's open list (`::picker(select)`) is a pseudo-element these rules never reach; its
+       bar gets the same rules from src/components/base/picker-scrollbar.ts (they chain two
+       pseudo-elements, which the CSS build drops). */
   }
   @supports not selector(::-webkit-scrollbar) {
     :root,

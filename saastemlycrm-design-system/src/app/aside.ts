@@ -128,7 +128,7 @@ export class DashboardAside extends LightElement {
   /** Whose bookmarks are in the store. */
   #bookmarksFor = "";
   #bookmarks = new StoreController(this, bookmarks);
-  #prefs = new StoreController(this, preferences);
+  #prefs = new StoreController(this, preferences, undefined, { keys: ["asideCollapsed"] });
   #tour = new StoreController(this, tour);
 
   updated(changed: Map<string, unknown>) {

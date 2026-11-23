@@ -79,6 +79,27 @@
       "readyAt": "2026-11-08T16:00:00.000Z",
       "clearance": "Ship spares in transit — cleared"
     },
-    "lines": [{ "lineNo": 1, "qty": 1, "lot": "ES-0131" }]
+    "lines": [
+      {
+        "lineNo": 1,
+        "qty": 6,
+        "lot": "YN-2610-A"
+      },
+      {
+        "lineNo": 2,
+        "qty": 6,
+        "lot": "YN-2610-B"
+      },
+      {
+        "lineNo": 3,
+        "qty": 1,
+        "lot": "MN-2610-C"
+      },
+      {
+        "lineNo": 4,
+        "qty": 12,
+        "lot": "H-2610"
+      }
+    ]
   }
 ]

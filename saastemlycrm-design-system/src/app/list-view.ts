@@ -300,7 +300,14 @@ export class DashboardListView extends LightElement {
   @state() private doc: DocState | null = null;
   /** What to do once the open record's unsaved changes are let go (the question is on screen). */
   @state() private leaving: (() => void) | null = null;
-  #prefs = new StoreController(this, preferences);
+  // This list's own table settings (its columns, order, widths and view) and the row density.
+  #prefs = new StoreController(this, preferences, undefined, {
+    changed: (s, p) =>
+      s.listDensity !== p.listDensity ||
+      (["listColumns", "listColumnOrder", "listColumnWidths", "listView"] as const).some(
+        (k) => s[k][this.prefKey] !== p[k][this.prefKey],
+      ),
+  });
   #request = 0;
   #typing?: ReturnType<typeof setTimeout>;
   #emptying?: ReturnType<typeof setTimeout>;

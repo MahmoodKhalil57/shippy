@@ -509,13 +509,14 @@ export const frame = {
   navOpen: "w-(--frame-nav)",
   asideOpen: "w-(--frame-aside)",
   /**
-   * A column's list while its edge is dragged keeps its open width, the column's open width less
-   * the panel's inline padding (its rail less a 44px row, `appShellPanel`), so nothing in it moves
-   * or re-wraps as the edge is pressed or dragged; the panel clips it (`overflow-hidden`) until the
-   * column is that wide.
+   * A column's list keeps its open width, the column's open width less the panel's inline padding
+   * (its rail less a 44px row, `appShellPanel`), whatever width the column has on its way open or
+   * shut or under a dragged edge: nothing in it moves or re-wraps (no board in it changes its
+   * lanes) on any frame of the spring; the panel clips it (`overflow-hidden`) until the column is
+   * that wide.
    */
-  listDragStart: "data-[drag]:w-[calc(var(--frame-nav)_-_var(--frame-rail)_+_2.75rem)] data-[drag]:max-w-none",
-  listDragEnd: "data-[drag]:w-[calc(var(--frame-aside)_-_var(--frame-rail)_+_2.75rem)] data-[drag]:max-w-none",
+  listStart: "w-[calc(var(--frame-nav)_-_var(--frame-rail)_+_2.75rem)]! max-w-none",
+  listEnd: "w-[calc(var(--frame-aside)_-_var(--frame-rail)_+_2.75rem)]! max-w-none",
   /**
    * A column whose edge is being dragged (`<ui-frame-main>`'s handles): its rail or open width plus
    * the drag (`--drag-start` / `--drag-end`, 0 otherwise), never past its open or closed width.
@@ -524,6 +525,11 @@ export const frame = {
   railDragEnd: "w-[calc(var(--frame-rail)_+_var(--drag-end,0px))]",
   navDrag: "w-[calc(var(--frame-nav)_+_var(--drag-start-o,0px))]",
   asideDrag: "w-[calc(var(--frame-aside)_+_var(--drag-end-o,0px))]",
+  /**
+   * The slab's glint layer (`frame-glint`): the size of the largest window, the viewport, at the
+   * window's top start corner, so the window springing only moves and clips it.
+   */
+  glint: "pointer-events-none absolute top-0 start-0 w-screen h-dvh",
   /** The rail's 48px icon pills centred: (rail − 3rem) / 2 a side, and the rail is at least 3rem. */
   railInset: "px-[calc((var(--frame-rail)_-_2.75rem)/2)]",
   /** A panel reaches over the frame's edge: a negative margin the size of its transparent border (net 0). */
@@ -559,6 +565,15 @@ export const board = {
   tile: "grid min-w-0 min-h-0 overflow-clip [--clips:frame] grid-cols-[minmax(0,1fr)] grid-rows-[minmax(0,1fr)] [grid-column:var(--lane)/span_var(--span)] [grid-row:var(--row)/span_var(--rows)]",
   /** Its surface 4px inside its tiles. */
   inset: "p-1",
+  /**
+   * Off screen, skipped (`content-visibility: auto`): the browser neither restyles, lays out nor
+   * paints what a tile holds until it nears the window, so a column springing, a window resizing or
+   * a page-wide restyle costs the tiles in view, not every tile of a long dashboard (and their
+   * charts' observers stay still). Its size is the board's (its grid tracks), never its content's,
+   * so skipping it moves nothing. Not for a tile that fits its content (the board measures that
+   * content) nor one held by hand.
+   */
+  skip: "[content-visibility:auto] [contain-intrinsic-size:auto_none] data-held:[content-visibility:visible]",
   /**
    * Held by hand (`UiBoard.hold`, `data-held`): in the top layer (a manual popover), so no scrolling
    * panel clips it and it can be carried anywhere on the screen (over the side panel's Widgets), out

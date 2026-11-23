@@ -83,8 +83,9 @@ export class UiPagination extends LightElement {
   protected updated() {
     // The buttons draw after this element does: watch the numbers' own size too.
     const nav = this.querySelector("nav");
+    // Measured in the observer's callback (observing reports at once, after the browser's own
+    // layout), never here: reading sizes right after a render laid the whole page out again.
     if (nav && !this._narrow) this._resize.observe(nav);
-    this._fit();
   }
 
   private _fit() {

@@ -64,6 +64,8 @@ Media & visual effects,Aura,primitive,,Data display,https://daisyui.com/componen
 Media & visual effects,Hover 3D card,primitive,,Data display,https://daisyui.com/components/hover-3d/,Wrapper that adds a 3D tilt effect following the mouse.
 Media & visual effects,Hover Gallery,primitive,,Data display,https://daisyui.com/components/hover-gallery/,Image container where hovering reveals other images (up to 10).
 Media & visual effects,Text Rotate,primitive,,Data display,https://daisyui.com/components/text-rotate/,Cycles through up to 6 lines of text with an animation.
+Media & visual effects,Waves,primitive,,Data display,,"Lines flowing across an area that part and spring back round the pointer and ripple from a click (WebGL 2); a live background."
+Media & visual effects,Magnet lines,primitive,,Data display,,"A field of lines, needles or arrows turning towards the pointer like iron filings (WebGL 2); a live background."
 Media & visual effects,Icon,primitive,,Shippy (not daisyUI),,"Sized, coloured icons: the system's named icons (Iconify line-md / material-symbols-light / devicon / logos via unplugin-icons, tree-shaken) or an authored SVG."
 Showcase & docs,Browser mockup,primitive,,Mockup,https://daisyui.com/components/mockup-browser/,Box that looks like a browser window.
 Showcase & docs,Code mockup,primitive,,Mockup,https://daisyui.com/components/mockup-code/,Block of code in a box that looks like a code editor.

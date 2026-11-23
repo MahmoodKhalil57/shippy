@@ -1,4 +1,4 @@
-import type { KindData, Stat } from "saastemlycrm-design-system/contracts";
+import type { Figure, KindData } from "saastemlycrm-design-system/contracts";
 import type { UsageView } from "../endpoints/service.ts";
 
 /**
@@ -33,7 +33,13 @@ const part = (n: number, of: number) => (of > 0 ? Math.min(1, n / of) : 0);
  * hours of typing saved (the documents read, against the plan at full use), the replies matched
  * (those needing no person), the results a person checked and those waiting for one (of all calls).
  */
-export const measured = ({ measured: m }: UsageView): Stat[] => [
+export const MEASURED = [
+  "Hours of typing saved",
+  "Replies matched",
+  "Checked by a person",
+  "Waiting for review",
+] as const;
+export const measured = ({ measured: m }: UsageView): Figure<(typeof MEASURED)[number]>[] => [
   {
     label: "Hours of typing saved",
     value: count.format(m.hoursSaved),

@@ -286,5 +286,16 @@
     "case": "gs-rfq-0136",
     "confidence": 0.96,
     "reviewedBy": "ky"
+  },
+  {
+    "id": "ai-025",
+    "at": "2026-11-17T09:49:00.000Z",
+    "task": "Read an email",
+    "subject": "RFQ email from Helios Bulk Carriers, MV Helios Star",
+    "values": 13,
+    "seconds": 2.9,
+    "model": "Demo stub (no live AI)",
+    "outcome": "Waiting for review",
+    "confidence": 0.91
   }
 ]

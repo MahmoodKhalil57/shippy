@@ -6,6 +6,9 @@ import {
   applyScheme,
   applyTheme,
   isDark,
+  isLiveBackground,
+  LIVE_BACKGROUNDS,
+  type LiveBackground,
   remember,
   remembered,
   reveal,
@@ -16,6 +19,7 @@ import {
 } from "../../base/appearance.ts";
 import { LightElement } from "../../base/light-element.ts";
 import { pickFile } from "../../base/pick-file.ts";
+import { liveBackground } from "./live-background.ts";
 import { SCHEMES, type Scheme } from "../../../styles/schemes.ts";
 import "../../primitives/actions/button.ts";
 import "../../primitives/actions/icon-button.ts";
@@ -37,8 +41,9 @@ import "../../primitives/typography/text.ts";
  *   its icon pops in with a bounce.
  * - `scheme`: a menu of colour schemes (the tweakcn set in src/styles/schemes.ts plus daisyUI's own,
  *   "Default"), each with its swatches for the current light / dark mode (`data-scheme` on <html>).
- * - `background`: a picker of background images (`backgrounds`), "No image", or the person's own
- *   upload (scaled down, kept in the browser), painted behind the app shell.
+ * - `background`: a picker of background images (`backgrounds`), live backgrounds (`live`: animated
+ *   effects, each tile a live preview of it), "No image", or the person's own upload (scaled down,
+ *   kept in the browser), painted behind the app shell.
  * Every change is revealed by a circle growing from where it was clicked
  * (src/components/base/appearance.ts). `persist` remembers it (index.html applies the saved
  * theme and image before the first paint).
@@ -73,6 +78,8 @@ export class UiAppearance extends LightElement {
   @property({ attribute: false }) schemes: Scheme[] = SCHEMES;
   /** `background`: the images offered (besides none and your own upload). */
   @property({ attribute: false }) backgrounds: BackgroundImage[] = [];
+  /** `background`: the live backgrounds offered (animated effects; all of them unless it says). */
+  @property({ attribute: false }) live: readonly LiveBackground[] = LIVE_BACKGROUNDS.map((b) => b.id);
   /** `background`: photo credit, shown in the picker's heading. */
   @property() credit = "";
   /** The chosen id: a theme, a scheme, or a background (`none`, `custom` for an upload). */
@@ -92,8 +99,11 @@ export class UiAppearance extends LightElement {
     if (!this.persist) return;
     const saved = remembered(this._key);
     if (saved == null) return;
-    if (this.kind === "background") this.value = saved;
-    else if (this.kind === "scheme") {
+    if (this.kind === "background") {
+      this.value = saved;
+      // A live one (index.html sets it before the first paint too): the app shell draws it.
+      if (isLiveBackground(saved)) applyBackground(null, saved);
+    } else if (this.kind === "scheme") {
       this.value = this.schemes.some((x) => x.id === saved) ? saved : "default";
       applyScheme(this.value);
     } else {
@@ -113,7 +123,11 @@ export class UiAppearance extends LightElement {
         ? THEMES.map((id) => ({ id, label: id }))
         : this.kind === "scheme"
           ? [{ id: "default", label: "Default" }, ...this.schemes.map((s) => ({ id: s.id, label: s.label }))]
-          : [{ id: "none", label: "No image" }, ...this.backgrounds.map((b) => ({ id: b.id, label: b.label }))];
+          : [
+              { id: "none", label: "No image" },
+              ...this.backgrounds.map((b) => ({ id: b.id, label: b.label })),
+              ...this.#live().map((b) => ({ id: b.id, label: b.label })),
+            ];
     return { selected: this.value || this._none, choices };
   }
 
@@ -123,6 +137,11 @@ export class UiAppearance extends LightElement {
     this.#from = null;
     await this._pick(id, id === "none" ? null : (this.backgrounds.find((b) => b.id === id)?.src ?? null));
     return true;
+  }
+
+  /** The live backgrounds offered, with their names. */
+  #live() {
+    return LIVE_BACKGROUNDS.filter((b) => this.live.includes(b.id));
   }
 
   /** Apply a choice (revealed), remember it, close any menu, and say so. */
@@ -135,7 +154,7 @@ export class UiAppearance extends LightElement {
       if (this.kind === "theme") applyTheme(id);
       else if (this.kind === "scheme") applyScheme(id);
       else {
-        applyBackground(src);
+        applyBackground(src, isLiveBackground(id) ? id : null);
         if (this.persist) remember(STORAGE.backgroundSrc, src);
       }
       this.value = id;
@@ -240,6 +259,15 @@ export class UiAppearance extends LightElement {
                   ?selected=${current === b.id}
                   @click=${() => void this._pick(b.id, b.src)}
                 ></ui-choice-tile>`,
+            )}
+            ${this.#live().map(
+              (b) =>
+                html`<ui-choice-tile
+                  .label=${b.label}
+                  ?selected=${current === b.id}
+                  @click=${() => void this._pick(b.id, null)}
+                  >${liveBackground(b.id, true)}<!----></ui-choice-tile
+                >`,
             )}
             <ui-choice-tile
               icon="upload"

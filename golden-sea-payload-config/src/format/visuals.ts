@@ -1,4 +1,4 @@
-import type { KindData } from "saastemlycrm-design-system/contracts";
+import type { KindData, WidgetScope } from "saastemlycrm-design-system/contracts";
 import type { Pricing } from "../endpoints/commercial.ts";
 import type { Visuals } from "../endpoints/visuals.ts";
 import * as link from "../links.ts";
@@ -9,6 +9,14 @@ import * as link from "../links.ts";
  * words what it shows; the shapes add the glance and the interaction (pointing at a part reads it,
  * choosing one opens it).
  */
+
+/**
+ * The roles that see money (profit, receivables, cash): the endpoints' `MONEY_ROLES`
+ * (../endpoints/insights-shared.ts), whose answers say it as `money`. A money tile is placed by
+ * who is looking (`visible`), before any data, so the board never moves when the data comes.
+ */
+const MONEY_ROLES: readonly string[] = ["management", "finance-director", "operations"];
+export const seesMoney = ({ user }: WidgetScope) => MONEY_ROLES.includes(user.role ?? "");
 
 const usdK = (v: number) => `USD ${v.toFixed(1)}k`;
 const egpK = (v: number) => `EGP ${Math.round(Math.abs(v) / 1000)}k`;

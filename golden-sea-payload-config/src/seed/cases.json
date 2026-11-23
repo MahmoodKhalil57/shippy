@@ -213,7 +213,8 @@
           "status": "Confirmed"
         }
       ]
-    }
+    },
+    "handoverNote": "Line 6 waits for Capt. Erik's sizes; lines 1–5 ready to price once Port Said Welding replies on line 4."
   },
   {
     "id": "gs-rfq-0141",
@@ -236,7 +237,112 @@
       "noOffer": 0
     },
     "value": 12900,
-    "urgent": true
+    "urgent": true,
+    "currency": "USD",
+    "pricing": {
+      "allocation": "value",
+      "discountPct": 0,
+      "fxRateUSD": 48.6,
+      "charges": [
+        {
+          "label": "Suez launch delivery to vessel",
+          "amountEGP": 3200,
+          "status": "Estimate"
+        }
+      ]
+    },
+    "items": [
+      {
+        "lineNo": 1,
+        "description": "Safety harness, full body, EN 361, with shock-absorbing lanyard",
+        "qty": 4,
+        "unit": "EA",
+        "packSize": 1,
+        "store": "Safety stores",
+        "impa": "311021",
+        "certificates": "EN 361 / EN 355 certificate",
+        "status": "Awaiting supplier",
+        "confidence": 0.95,
+        "originalText": "FULL BODY HARNESS W/ LANYARD EN361 | — | 4 | PCS"
+      },
+      {
+        "lineNo": 2,
+        "description": "Lifejacket SOLAS / MED, adult, with light and whistle",
+        "qty": 6,
+        "unit": "EA",
+        "packSize": 1,
+        "store": "Safety stores",
+        "impa": "330113",
+        "certificates": "SOLAS / MED wheelmark",
+        "status": "Awaiting supplier",
+        "confidence": 0.93,
+        "originalText": "LIFEJACKET SOLAS ADULT C/W LIGHT | — | 6 | PCS"
+      },
+      {
+        "lineNo": 3,
+        "description": "Mechanical seal, ballast pump Shinko GVD200, 45 mm shaft",
+        "brand": "Shinko",
+        "exactBrand": true,
+        "partNo": "GVD200-MS45",
+        "qty": 2,
+        "unit": "set",
+        "packSize": 1,
+        "store": "Engine stores",
+        "certificates": "Maker's original only",
+        "status": "Awaiting supplier",
+        "confidence": 0.9,
+        "originalText": "MECH SEAL BALLAST PP SHINKO GVD200 SHAFT 45 | GVD200-MS45 | 2 | SET"
+      },
+      {
+        "lineNo": 4,
+        "description": "Mechanical seal, fire & GS pump Shinko SHQ100, 35 mm shaft",
+        "brand": "Shinko",
+        "exactBrand": true,
+        "partNo": "SHQ100-MS35",
+        "qty": 2,
+        "unit": "set",
+        "packSize": 1,
+        "store": "Engine stores",
+        "certificates": "Maker's original only",
+        "status": "Awaiting supplier",
+        "confidence": 0.9,
+        "originalText": "MECH SEAL FIRE/GS PP SHINKO SHQ100 SHAFT 35 | SHQ100-MS35 | 2 | SET"
+      },
+      {
+        "lineNo": 5,
+        "description": "O-ring kit, NBR, metric sizes, 382 pcs",
+        "qty": 2,
+        "unit": "set",
+        "packSize": 1,
+        "store": "Engine stores",
+        "impa": "812905",
+        "status": "Offer selected",
+        "confidence": 0.96,
+        "originalText": "O-RING KIT NBR METRIC 382PCS | — | 2 | SET",
+        "selection": {
+          "marginPct": 22,
+          "offers": ["off-0141-l5-s1"],
+          "reason": "Best fit (landed cost); Suez Industrial has not replied"
+        }
+      },
+      {
+        "lineNo": 6,
+        "description": "PTFE thread seal tape, 12 mm × 12 m",
+        "qty": 50,
+        "unit": "roll",
+        "packSize": 1,
+        "store": "Engine stores",
+        "impa": "812821",
+        "status": "Offer selected",
+        "confidence": 0.98,
+        "originalText": "TEFLON TAPE 12MM X 12M | — | 50 | ROLL",
+        "selection": {
+          "marginPct": 22,
+          "offers": ["off-0141-l6-s1"],
+          "reason": "Best fit (landed cost); Suez Industrial has not replied"
+        }
+      }
+    ]
   },
   {
     "id": "gs-rfq-0140",
@@ -259,7 +365,129 @@
       "noOffer": 0
     },
     "value": 8800,
-    "urgent": false
+    "urgent": false,
+    "currency": "EUR",
+    "items": [
+      {
+        "lineNo": 1,
+        "description": "Hempathane HS 55610 topcoat, RAL 7038 agate grey, 20 L kit",
+        "brand": "Hempel",
+        "model": "Hempathane HS 55610",
+        "partNo": "55610 RAL 7038",
+        "qty": 10,
+        "unit": "set",
+        "packSize": 1,
+        "store": "Deck stores",
+        "impa": "252111",
+        "certificates": "Colour RAL 7038 only (matches the superstructure)",
+        "status": "Awaiting supplier",
+        "confidence": 0.97,
+        "originalText": "HEMPATHANE HS 55610 RAL 7038 20LTR KIT | 55610 | 10 | SET"
+      },
+      {
+        "lineNo": 2,
+        "description": "Hydraulic oil ISO VG 46, 208 L drum",
+        "qty": 4,
+        "unit": "drum",
+        "packSize": 1,
+        "store": "Engine stores",
+        "impa": "450546",
+        "status": "Offer selected",
+        "confidence": 0.98,
+        "originalText": "HYDRAULIC OIL VG46 DRUM 208L | — | 4 | DRUM",
+        "selection": {
+          "marginPct": 22,
+          "offers": ["off-0140-l2-s11"],
+          "reason": "Best fit (landed cost)"
+        }
+      },
+      {
+        "lineNo": 3,
+        "description": "Steel wire rope, galvanised 6×36 IWRC, 20 mm × 220 m",
+        "qty": 1,
+        "unit": "roll",
+        "packSize": 1,
+        "store": "Deck stores",
+        "impa": "230136",
+        "certificates": "Mill certificate (EN 10204 3.1)",
+        "status": "Offer selected",
+        "confidence": 0.95,
+        "originalText": "WIRE ROPE GALV 6X36 IWRC 20MM X 220M | — | 1 | COIL",
+        "selection": {
+          "marginPct": 25,
+          "offers": ["off-0140-l3-s13"],
+          "reason": "Best fit (landed cost)"
+        }
+      },
+      {
+        "lineNo": 4,
+        "description": "Paint roller 9 in with frame",
+        "qty": 24,
+        "unit": "pcs",
+        "packSize": 1,
+        "store": "Deck stores",
+        "impa": "270203",
+        "status": "Offer selected",
+        "confidence": 0.99,
+        "originalText": "PAINT ROLLER 9 INCH C/W FRAME | — | 24 | PCS",
+        "selection": {
+          "marginPct": 25,
+          "offers": ["off-0140-l4-s5"],
+          "reason": "Best fit (landed cost)"
+        }
+      },
+      {
+        "lineNo": 5,
+        "description": "Masking tape 50 mm × 50 m",
+        "qty": 40,
+        "unit": "roll",
+        "packSize": 1,
+        "store": "Deck stores",
+        "impa": "471204",
+        "status": "Offer selected",
+        "confidence": 0.99,
+        "originalText": "MASKING TAPE 50MM X 50M | — | 40 | ROLL",
+        "selection": {
+          "marginPct": 25,
+          "offers": ["off-0140-l5-s5"],
+          "reason": "Best fit (landed cost)"
+        }
+      },
+      {
+        "lineNo": 6,
+        "description": "Cable ties, nylon, 300 mm, pack of 100",
+        "qty": 10,
+        "unit": "pack",
+        "packSize": 1,
+        "store": "Electrical stores",
+        "impa": "791231",
+        "status": "Offer selected",
+        "confidence": 0.97,
+        "originalText": "CABLE TIE NYLON 300MM PKT/100 | — | 10 | PKT",
+        "selection": {
+          "marginPct": 25,
+          "offers": ["off-0140-l6-s5"],
+          "reason": "Best fit (landed cost)"
+        }
+      }
+    ],
+    "pricing": {
+      "allocation": "value",
+      "discountPct": 0,
+      "fxRateUSD": 48.6,
+      "charges": [
+        {
+          "label": "Damietta launch delivery to vessel",
+          "amountEGP": 3800,
+          "status": "Estimate"
+        },
+        {
+          "label": "Bank transfer charges",
+          "amountEGP": 350,
+          "status": "Confirmed"
+        }
+      ]
+    }
   },
   {
     "id": "gs-rfq-0139",
@@ -276,13 +504,103 @@
     "nextAction": "Internal reminder only — do not chase",
     "blocker": "Customer rule: no status requests",
     "lines": {
-      "ready": 8,
+      "ready": 4,
       "waiting": 0,
       "blocked": 0,
       "noOffer": 0
     },
     "value": 21650,
-    "urgent": false
+    "urgent": false,
+    "currency": "USD",
+    "pricing": {
+      "allocation": "value",
+      "discountPct": 0,
+      "fxRateUSD": 48.6,
+      "charges": [
+        {
+          "label": "Alexandria launch delivery to vessel",
+          "amountEGP": 2500,
+          "status": "Confirmed"
+        },
+        {
+          "label": "Bank transfer charges",
+          "amountEGP": 350,
+          "status": "Confirmed"
+        }
+      ]
+    },
+    "items": [
+      {
+        "lineNo": 1,
+        "description": "Mooring rope, polypropylene 40 mm × 220 m",
+        "qty": 2,
+        "unit": "roll",
+        "packSize": 1,
+        "store": "Deck stores",
+        "impa": "175101",
+        "status": "Offer selected",
+        "confidence": 0.96,
+        "originalText": "PP MOORING ROPE 40MM X 220M | — | 2 | COIL",
+        "selection": {
+          "marginPct": 23.1,
+          "offers": ["off-0139-l1-s13"],
+          "reason": "Best fit (landed cost)"
+        }
+      },
+      {
+        "lineNo": 2,
+        "description": "Shackle, galvanised 1 in",
+        "qty": 20,
+        "unit": "pcs",
+        "packSize": 1,
+        "store": "Deck stores",
+        "impa": "232021",
+        "status": "Offer selected",
+        "confidence": 0.98,
+        "originalText": "SHACKLE GALV 1 INCH | — | 20 | PCS",
+        "selection": {
+          "marginPct": 23.1,
+          "offers": ["off-0139-l2-s13"],
+          "reason": "Best fit (landed cost)"
+        }
+      },
+      {
+        "lineNo": 3,
+        "description": "CRC Belt Grip spray, 400 ml",
+        "product": "P1",
+        "brand": "CRC",
+        "qty": 36,
+        "unit": "EA",
+        "packSize": 1,
+        "store": "Engine stores",
+        "impa": "450652",
+        "status": "Offer selected",
+        "confidence": 0.97,
+        "originalText": "CRC BELT GRIP 400ML | — | 36 | CAN",
+        "selection": {
+          "marginPct": 23.1,
+          "offers": ["off-0139-l3-s1"],
+          "reason": "Best fit (landed cost)"
+        }
+      },
+      {
+        "lineNo": 4,
+        "description": "LED floodlight 100 W, IP66",
+        "qty": 6,
+        "unit": "pcs",
+        "packSize": 1,
+        "store": "Electrical stores",
+        "impa": "790711",
+        "status": "Offer selected",
+        "confidence": 0.94,
+        "originalText": "LED FLOODLIGHT 100W IP66 | — | 6 | PCS",
+        "selection": {
+          "marginPct": 23.1,
+          "offers": ["off-0139-l4-s1"],
+          "reason": "Best fit (landed cost)"
+        }
+      }
+    ]
   },
   {
     "id": "gs-rfq-0137",
@@ -305,7 +623,132 @@
       "noOffer": 0
     },
     "value": 9340,
-    "urgent": false
+    "urgent": false,
+    "currency": "EUR",
+    "pricing": {
+      "allocation": "value",
+      "discountPct": 0,
+      "fxRateUSD": 48.6,
+      "charges": [
+        {
+          "label": "Damietta launch delivery to vessel",
+          "amountEGP": 3500,
+          "status": "Confirmed"
+        },
+        {
+          "label": "Bank transfer charges",
+          "amountEGP": 350,
+          "status": "Confirmed"
+        }
+      ]
+    },
+    "items": [
+      {
+        "lineNo": 1,
+        "description": "Hempel Hempadur 45880 epoxy, grey, 20 L kit",
+        "brand": "Hempel",
+        "qty": 6,
+        "unit": "set",
+        "packSize": 1,
+        "store": "Deck stores",
+        "impa": "251151",
+        "status": "Offer selected",
+        "confidence": 0.97,
+        "originalText": "HEMPADUR 45880 GREY 20L KIT | 45880 | 6 | KIT",
+        "selection": {
+          "marginPct": 12.4,
+          "offers": ["off-0137-l1-s1"],
+          "reason": "Best fit; margin cut to the customer's target price (approval requested)"
+        }
+      },
+      {
+        "lineNo": 2,
+        "description": "Hempel Hempathane HS 55610, white RAL 9010, 5 L",
+        "brand": "Hempel",
+        "qty": 12,
+        "unit": "can",
+        "packSize": 1,
+        "store": "Deck stores",
+        "impa": "252111",
+        "status": "Offer selected",
+        "confidence": 0.97,
+        "originalText": "HEMPATHANE HS 55610 WHITE RAL9010 5L | 55610 | 12 | CAN",
+        "selection": {
+          "marginPct": 12.4,
+          "offers": ["off-0137-l2-s1"],
+          "reason": "Best fit; margin cut to the customer's target price (approval requested)"
+        }
+      },
+      {
+        "lineNo": 3,
+        "description": "Thinner 08450, 20 L",
+        "brand": "Hempel",
+        "qty": 4,
+        "unit": "can",
+        "packSize": 1,
+        "store": "Deck stores",
+        "impa": "253021",
+        "status": "Offer selected",
+        "confidence": 0.97,
+        "originalText": "THINNER 08450 20L | 08450 | 4 | CAN",
+        "selection": {
+          "marginPct": 12.4,
+          "offers": ["off-0137-l3-s1"],
+          "reason": "Best fit (landed cost)"
+        }
+      },
+      {
+        "lineNo": 4,
+        "description": "Paint roller 9 in with frame",
+        "qty": 24,
+        "unit": "pcs",
+        "packSize": 1,
+        "store": "Deck stores",
+        "impa": "270203",
+        "status": "Offer selected",
+        "confidence": 0.97,
+        "originalText": "PAINT ROLLER 9IN W/ FRAME | — | 24 | PCS",
+        "selection": {
+          "marginPct": 12.4,
+          "offers": ["off-0137-l4-s1"],
+          "reason": "Best fit (landed cost)"
+        }
+      },
+      {
+        "lineNo": 5,
+        "description": "Wire brush, 4-row, wooden handle",
+        "qty": 30,
+        "unit": "pcs",
+        "packSize": 1,
+        "store": "Deck stores",
+        "impa": "510112",
+        "status": "Offer selected",
+        "confidence": 0.97,
+        "originalText": "WIRE BRUSH 4 ROW WOODEN HANDLE | — | 30 | PCS",
+        "selection": {
+          "marginPct": 12.4,
+          "offers": ["off-0137-l5-s1"],
+          "reason": "Best fit (landed cost)"
+        }
+      },
+      {
+        "lineNo": 6,
+        "description": "Masking tape 50 mm × 50 m",
+        "qty": 40,
+        "unit": "roll",
+        "packSize": 1,
+        "store": "Deck stores",
+        "impa": "471204",
+        "status": "Offer selected",
+        "confidence": 0.97,
+        "originalText": "MASKING TAPE 50MM X 50M | — | 40 | ROLL",
+        "selection": {
+          "marginPct": 12.4,
+          "offers": ["off-0137-l6-s1"],
+          "reason": "Best fit (landed cost)"
+        }
+      }
+    ]
   },
   {
     "id": "gs-rfq-0136",
@@ -328,7 +771,102 @@
       "noOffer": 0
     },
     "value": 6120,
-    "urgent": false
+    "urgent": false,
+    "currency": "USD",
+    "items": [
+      {
+        "lineNo": 1,
+        "description": "Electrical contact cleaner, 400 ml",
+        "qty": 48,
+        "unit": "can",
+        "packSize": 1,
+        "store": "Electrical stores",
+        "impa": "450713",
+        "status": "Offer selected",
+        "confidence": 0.96,
+        "originalText": "CONTACT CLEANER 400ML | — | 48 | CAN",
+        "selection": {
+          "marginPct": 27.1,
+          "offers": ["off-0136-l1-s2"],
+          "reason": "Best fit (landed cost)"
+        }
+      },
+      {
+        "lineNo": 2,
+        "description": "LOCTITE 243 threadlocker, 50 ml",
+        "product": "P2",
+        "brand": "Loctite",
+        "exactBrand": true,
+        "partNo": "243",
+        "qty": 6,
+        "unit": "EA",
+        "packSize": 1,
+        "store": "Engine stores",
+        "impa": "812561",
+        "status": "Offer selected",
+        "confidence": 0.96,
+        "originalText": "LOCTITE 243 50ML | 243 | 6 | PCS",
+        "selection": {
+          "marginPct": 25.8,
+          "offers": ["off-0136-l2-s1"],
+          "reason": "Best fit (landed cost)"
+        }
+      },
+      {
+        "lineNo": 3,
+        "description": "Safety helmet EN 397, white",
+        "product": "P5",
+        "qty": 10,
+        "unit": "EA",
+        "packSize": 1,
+        "store": "Safety stores",
+        "impa": "310102",
+        "status": "Offer selected",
+        "confidence": 0.96,
+        "originalText": "SAFETY HELMET WHITE EN397 | — | 10 | PCS",
+        "selection": {
+          "marginPct": 37.5,
+          "offers": ["off-0136-l3-s4-v2"],
+          "reason": "v2 price after v1 expired 10 Nov"
+        }
+      },
+      {
+        "lineNo": 4,
+        "description": "FR coverall navy EN ISO 11612, size L",
+        "product": "P6",
+        "qty": 8,
+        "unit": "EA",
+        "packSize": 1,
+        "store": "Safety stores",
+        "impa": "190451",
+        "certificates": "EN ISO 11612",
+        "status": "Offer selected",
+        "confidence": 0.96,
+        "originalText": "COVERALL FR NAVY SIZE L | — | 8 | PCS",
+        "selection": {
+          "marginPct": 25,
+          "offers": ["off-0136-l4-s1"],
+          "reason": "Best fit (landed cost)"
+        }
+      },
+      {
+        "lineNo": 5,
+        "description": "Degreaser, water based, 25 L",
+        "qty": 2,
+        "unit": "drum",
+        "packSize": 1,
+        "store": "Engine stores",
+        "impa": "450711",
+        "status": "Offer selected",
+        "confidence": 0.96,
+        "originalText": "DEGREASER WATER BASED 25L | — | 2 | DRUM",
+        "selection": {
+          "marginPct": 26.1,
+          "offers": ["off-0136-l5-s1"],
+          "reason": "Best fit (landed cost)"
+        }
+      }
+    ]
   },
   {
     "id": "gs-rfq-0135",
@@ -352,7 +890,174 @@
     },
     "value": 15400,
     "urgent": false,
-    "handoverNote": "Customer wants the ESAB alternative priced in v2; datasheet attached to line 3."
+    "handoverNote": "Customer wants the ESAB alternative priced in v2; datasheet attached to line 3.",
+    "currency": "USD",
+    "pricing": {
+      "allocation": "value",
+      "discountPct": 0,
+      "fxRateUSD": 48.6,
+      "charges": [
+        {
+          "label": "Supply-boat transfer to DOS Falcon",
+          "amountEGP": 4500,
+          "status": "Estimate"
+        },
+        {
+          "label": "Bank transfer charges",
+          "amountEGP": 350,
+          "status": "Confirmed"
+        }
+      ]
+    },
+    "items": [
+      {
+        "lineNo": 1,
+        "description": "Welding electrode E6013 Ø3.2 mm, 5 kg pack",
+        "product": "P4",
+        "brand": "ESAB",
+        "model": "OK 46.00 (customer's choice in v2)",
+        "qty": 40,
+        "unit": "pack",
+        "packSize": 5,
+        "store": "Engine stores",
+        "impa": "850542",
+        "certificates": "AWS A5.1 E6013 · mill certificate",
+        "status": "Offer selected",
+        "confidence": 0.95,
+        "originalText": "WELDING ELECTRODE E6013 3.2MM LINCOLN OMNIA 46 5KG | — | 40 | PKT",
+        "selection": {
+          "marginPct": 21.4,
+          "offers": ["off-0135-l1-s3"],
+          "reason": "ESAB alternative, as the customer asked (email 12 Nov)"
+        }
+      },
+      {
+        "lineNo": 2,
+        "description": "Welding electrode E7018 Ø4.0 mm, 5 kg",
+        "qty": 20,
+        "unit": "pack",
+        "packSize": 1,
+        "store": "Engine stores",
+        "impa": "850566",
+        "status": "Offer selected",
+        "confidence": 0.95,
+        "originalText": "WELDING ELECTRODE E7018 4.0MM 5KG | — | 20 | PKT",
+        "selection": {
+          "marginPct": 21.4,
+          "offers": ["off-0135-l2-s3"],
+          "reason": "Best fit (landed cost)"
+        }
+      },
+      {
+        "lineNo": 3,
+        "description": "Grinding disc 115 mm",
+        "qty": 200,
+        "unit": "pcs",
+        "packSize": 1,
+        "store": "Engine stores",
+        "impa": "590431",
+        "status": "Offer selected",
+        "confidence": 0.95,
+        "originalText": "GRINDING DISC 115MM | — | 200 | PCS",
+        "selection": {
+          "marginPct": 21.4,
+          "offers": ["off-0135-l3-s1"],
+          "reason": "Best fit (landed cost)"
+        }
+      },
+      {
+        "lineNo": 4,
+        "description": "Cutting disc 115 × 1 mm",
+        "qty": 300,
+        "unit": "pcs",
+        "packSize": 1,
+        "store": "Engine stores",
+        "impa": "590452",
+        "status": "Offer selected",
+        "confidence": 0.95,
+        "originalText": "CUTTING DISC 115 X 1MM | — | 300 | PCS",
+        "selection": {
+          "marginPct": 21.4,
+          "offers": ["off-0135-l4-s1"],
+          "reason": "Best fit (landed cost)"
+        }
+      },
+      {
+        "lineNo": 5,
+        "description": "Welding gloves, leather",
+        "qty": 60,
+        "unit": "pcs",
+        "packSize": 1,
+        "store": "Safety stores",
+        "impa": "311411",
+        "status": "Offer selected",
+        "confidence": 0.95,
+        "originalText": "WELDING GLOVES LEATHER | — | 60 | PRS",
+        "selection": {
+          "marginPct": 21.4,
+          "offers": ["off-0135-l5-s1"],
+          "reason": "Best fit (landed cost)"
+        }
+      },
+      {
+        "lineNo": 6,
+        "description": "Welding helmet, auto-darkening",
+        "qty": 6,
+        "unit": "pcs",
+        "packSize": 1,
+        "store": "Safety stores",
+        "impa": "311502",
+        "status": "Offer selected",
+        "confidence": 0.95,
+        "originalText": "WELDING HELMET AUTO DARKENING | — | 6 | PCS",
+        "selection": {
+          "marginPct": 21.4,
+          "offers": ["off-0135-l6-s1"],
+          "reason": "Best fit (landed cost)"
+        }
+      },
+      {
+        "lineNo": 7,
+        "description": "Wire brush, stainless",
+        "qty": 40,
+        "unit": "pcs",
+        "packSize": 1,
+        "store": "Deck stores",
+        "impa": "510118",
+        "status": "Offer selected",
+        "confidence": 0.95,
+        "originalText": "WIRE BRUSH STAINLESS | — | 40 | PCS",
+        "selection": {
+          "marginPct": 21.4,
+          "offers": ["off-0135-l7-s1"],
+          "reason": "Best fit (landed cost)"
+        }
+      },
+      {
+        "lineNo": 8,
+        "description": "Welding cable, 50 mm², 50 m drum",
+        "qty": 2,
+        "unit": "roll",
+        "packSize": 1,
+        "store": "Electrical stores",
+        "impa": "850711",
+        "status": "Awaiting supplier",
+        "confidence": 0.93,
+        "originalText": "WELDING CABLE 50MM2 X 50M | — | 2 | DRUM"
+      },
+      {
+        "lineNo": 9,
+        "description": "Electrode holder, 400 A, fully insulated",
+        "qty": 6,
+        "unit": "pcs",
+        "packSize": 1,
+        "store": "Engine stores",
+        "impa": "850812",
+        "status": "Awaiting supplier",
+        "confidence": 0.92,
+        "originalText": "ELECTRODE HOLDER 400A INSULATED | — | 6 | PCS"
+      }
+    ]
   },
   {
     "id": "gs-rfq-0133",
@@ -375,7 +1080,165 @@
       "noOffer": 0
     },
     "value": 18400,
-    "urgent": false
+    "urgent": false,
+    "currency": "EGP",
+    "items": [
+      {
+        "lineNo": 1,
+        "description": "Coverall FR, assorted sizes",
+        "product": "P6",
+        "qty": 40,
+        "unit": "EA",
+        "packSize": 1,
+        "store": "Safety stores",
+        "impa": "190451",
+        "status": "Received",
+        "confidence": 0.97,
+        "originalText": "COVERALL FR, ASSORTED SIZES | — | 40 | EA",
+        "selection": {
+          "marginPct": 30.3,
+          "offers": ["off-0133-l1-s1"],
+          "reason": "Best fit (landed cost)"
+        }
+      },
+      {
+        "lineNo": 2,
+        "description": "Safety gloves, leather palm (pairs)",
+        "qty": 200,
+        "unit": "pcs",
+        "packSize": 1,
+        "store": "Safety stores",
+        "impa": "190651",
+        "status": "Ordered",
+        "confidence": 0.97,
+        "originalText": "SAFETY GLOVES, LEATHER PALM (PAIRS) | — | 200 | PCS",
+        "selection": {
+          "marginPct": 30,
+          "offers": ["off-0133-l2-s1"],
+          "reason": "Best fit (landed cost)"
+        }
+      },
+      {
+        "lineNo": 3,
+        "description": "Safety helmet EN 397, white",
+        "product": "P5",
+        "qty": 10,
+        "unit": "EA",
+        "packSize": 1,
+        "store": "Safety stores",
+        "impa": "310102",
+        "status": "Ordered",
+        "confidence": 0.97,
+        "originalText": "SAFETY HELMET EN 397, WHITE | — | 10 | EA",
+        "selection": {
+          "marginPct": 34.6,
+          "offers": ["off-0133-l3-s4"],
+          "reason": "Best fit (landed cost)"
+        }
+      },
+      {
+        "lineNo": 4,
+        "description": "Hydraulic oil ISO VG 68, 208 L drum",
+        "qty": 6,
+        "unit": "drum",
+        "packSize": 1,
+        "store": "Engine stores",
+        "impa": "450568",
+        "status": "Received",
+        "confidence": 0.97,
+        "originalText": "HYDRAULIC OIL ISO VG 68, 208 L DRUM | — | 6 | DRUM",
+        "selection": {
+          "marginPct": 28,
+          "offers": ["off-0133-l4-s2"],
+          "reason": "Best fit (landed cost)"
+        }
+      },
+      {
+        "lineNo": 5,
+        "description": "Hydraulic hose assembly 1 in, 4SH, 10 m, with fittings",
+        "qty": 12,
+        "unit": "pcs",
+        "packSize": 1,
+        "store": "Engine stores",
+        "impa": "352104",
+        "status": "Received",
+        "confidence": 0.98,
+        "originalText": "HYDRAULIC HOSE ASSEMBLY 1 IN, 4SH, 10 M, WITH FITTINGS | — | 12 | PCS",
+        "selection": {
+          "marginPct": 25,
+          "offers": ["off-0133-l5-gs"],
+          "reason": "Own stock — reserved in Alexandria"
+        }
+      },
+      {
+        "lineNo": 6,
+        "description": "Round sling, polyester, 5 t × 6 m",
+        "qty": 20,
+        "unit": "pcs",
+        "packSize": 1,
+        "store": "Deck stores",
+        "impa": "232571",
+        "status": "Received",
+        "confidence": 0.98,
+        "originalText": "ROUND SLING, POLYESTER, 5 T × 6 M | — | 20 | PCS",
+        "selection": {
+          "marginPct": 25,
+          "offers": ["off-0133-l6-gs"],
+          "reason": "Own stock — reserved in Alexandria"
+        }
+      },
+      {
+        "lineNo": 7,
+        "description": "Chain block, 5 t, 6 m lift",
+        "qty": 4,
+        "unit": "pcs",
+        "packSize": 1,
+        "store": "Deck stores",
+        "impa": "590725",
+        "status": "Received",
+        "confidence": 0.98,
+        "originalText": "CHAIN BLOCK, 5 T, 6 M LIFT | — | 4 | PCS",
+        "selection": {
+          "marginPct": 25,
+          "offers": ["off-0133-l7-gs"],
+          "reason": "Own stock — reserved in Alexandria"
+        }
+      },
+      {
+        "lineNo": 8,
+        "description": "Fire extinguisher, CO2 5 kg, MED",
+        "qty": 10,
+        "unit": "pcs",
+        "packSize": 1,
+        "store": "Safety stores",
+        "impa": "330851",
+        "status": "Received",
+        "confidence": 0.98,
+        "originalText": "FIRE EXTINGUISHER, CO2 5 KG, MED | — | 10 | PCS",
+        "selection": {
+          "marginPct": 25,
+          "offers": ["off-0133-l8-gs"],
+          "reason": "Own stock — reserved in Alexandria"
+        }
+      },
+      {
+        "lineNo": 9,
+        "description": "Oil spill kit, 240 L wheeled bin",
+        "qty": 4,
+        "unit": "set",
+        "packSize": 1,
+        "store": "Deck stores",
+        "impa": "550901",
+        "status": "Received",
+        "confidence": 0.98,
+        "originalText": "OIL SPILL KIT, 240 L WHEELED BIN | — | 4 | SET",
+        "selection": {
+          "marginPct": 25,
+          "offers": ["off-0133-l9-gs"],
+          "reason": "Own stock — reserved in Alexandria"
+        }
+      }
+    ]
   },
   {
     "id": "gs-rfq-0131",
@@ -392,13 +1255,124 @@
     "nextAction": "Balance USD 4,200 due 30 Nov",
     "blocker": "",
     "lines": {
-      "ready": 7,
+      "ready": 4,
       "waiting": 0,
       "blocked": 0,
       "noOffer": 0
     },
     "value": 14200,
-    "urgent": false
+    "urgent": false,
+    "currency": "USD",
+    "customerRef": "HBC-REQ-2610-118",
+    "decision": "Won",
+    "pricing": {
+      "allocation": "value",
+      "discountPct": 0,
+      "fxRateUSD": 48.6,
+      "charges": [
+        {
+          "label": "Road freight Cairo → Suez",
+          "amountEGP": 4500,
+          "status": "Confirmed"
+        },
+        {
+          "label": "Launch delivery to vessel, Suez anchorage",
+          "amountEGP": 3800,
+          "status": "Confirmed"
+        },
+        {
+          "label": "Port agent fee & gate pass",
+          "amountEGP": 2000,
+          "status": "Confirmed"
+        },
+        {
+          "label": "Bank transfer charges",
+          "amountEGP": 350,
+          "status": "Confirmed"
+        }
+      ]
+    },
+    "handoverNote": "Handed over after delivery: DN-0131 signed by the Chief Engineer on 9 Nov. USD 10,000 received 12 Nov; balance USD 4,200 due 30 Nov. Claim CLM-0131-1 (2 cracked helmets) is open with Delta Marine.",
+    "items": [
+      {
+        "lineNo": 1,
+        "description": "Fuel injection valve nozzle, aux. engine Yanmar 6EY18ALW",
+        "brand": "Yanmar",
+        "exactBrand": true,
+        "partNo": "150P155",
+        "qty": 6,
+        "unit": "pcs",
+        "packSize": 1,
+        "store": "Engine stores",
+        "certificates": "Genuine maker's parts",
+        "status": "Invoiced",
+        "confidence": 0.96,
+        "originalText": "FUEL INJECTION VALVE NOZZLE, AUX. ENGINE YANMAR 6EY18ALW | 150P155 | 6 | PCS",
+        "selection": {
+          "marginPct": 24.27,
+          "offers": ["off-0131-l1-s1"],
+          "reason": "Best fit (landed cost): genuine parts, one supplier, one PO"
+        }
+      },
+      {
+        "lineNo": 2,
+        "description": "Piston ring set (one cylinder), Yanmar 6EY18ALW",
+        "brand": "Yanmar",
+        "exactBrand": true,
+        "partNo": "146673-22500",
+        "qty": 6,
+        "unit": "set",
+        "packSize": 1,
+        "store": "Engine stores",
+        "certificates": "Genuine maker's parts",
+        "status": "Invoiced",
+        "confidence": 0.96,
+        "originalText": "PISTON RING SET (ONE CYLINDER), YANMAR 6EY18ALW | 146673-22500 | 6 | SET",
+        "selection": {
+          "marginPct": 24.27,
+          "offers": ["off-0131-l2-s1"],
+          "reason": "Best fit (landed cost): genuine parts, one supplier, one PO"
+        }
+      },
+      {
+        "lineNo": 3,
+        "description": "Turbocharger overhaul kit, MAN NR20/S",
+        "brand": "MAN",
+        "exactBrand": true,
+        "partNo": "NR20S-OHK",
+        "qty": 1,
+        "unit": "set",
+        "packSize": 1,
+        "store": "Engine stores",
+        "certificates": "Genuine maker's parts",
+        "status": "Invoiced",
+        "confidence": 0.96,
+        "originalText": "TURBOCHARGER OVERHAUL KIT, MAN NR20/S | NR20S-OHK | 1 | SET",
+        "selection": {
+          "marginPct": 24.27,
+          "offers": ["off-0131-l3-s1"],
+          "reason": "Best fit (landed cost): genuine parts, one supplier, one PO"
+        }
+      },
+      {
+        "lineNo": 4,
+        "description": "Safety helmet EN 397, white, with chin strap",
+        "product": "P5",
+        "qty": 12,
+        "unit": "EA",
+        "packSize": 1,
+        "store": "Safety stores",
+        "impa": "310102",
+        "status": "Invoiced",
+        "confidence": 0.96,
+        "originalText": "SAFETY HELMET EN 397, WHITE, WITH CHIN STRAP | — | 12 | EA",
+        "selection": {
+          "marginPct": 24.27,
+          "offers": ["off-0131-l4-s1"],
+          "reason": "Best fit (landed cost): genuine parts, one supplier, one PO"
+        }
+      }
+    ]
   },
   {
     "id": "gs-rfq-0130",
@@ -421,6 +1395,91 @@
       "noOffer": 0
     },
     "value": 5200,
-    "urgent": false
+    "urgent": false,
+    "currency": "USD",
+    "items": [
+      {
+        "lineNo": 1,
+        "description": "Fire hose, 2.5 in × 20 m, with Storz couplings",
+        "qty": 12,
+        "unit": "pcs",
+        "packSize": 1,
+        "store": "Safety stores",
+        "impa": "330611",
+        "certificates": "MED type approval",
+        "status": "Offer selected",
+        "confidence": 0.95,
+        "originalText": "FIRE HOSE, 2.5 IN × 20 M, WITH STORZ COUPLINGS | — | 12 | PCS",
+        "selection": {
+          "marginPct": 28,
+          "offers": ["off-0130-l1-s1"],
+          "reason": "Best fit (landed cost)"
+        }
+      },
+      {
+        "lineNo": 2,
+        "description": "Fire hose nozzle, jet / spray, 2.5 in, Storz",
+        "qty": 12,
+        "unit": "pcs",
+        "packSize": 1,
+        "store": "Safety stores",
+        "impa": "330631",
+        "status": "Offer selected",
+        "confidence": 0.95,
+        "originalText": "FIRE HOSE NOZZLE, JET / SPRAY, 2.5 IN, STORZ | — | 12 | PCS",
+        "selection": {
+          "marginPct": 28,
+          "offers": ["off-0130-l2-s1"],
+          "reason": "Best fit (landed cost)"
+        }
+      },
+      {
+        "lineNo": 3,
+        "description": "Lifebuoy SOLAS, 2.5 kg, with light and smoke signal",
+        "qty": 6,
+        "unit": "pcs",
+        "packSize": 1,
+        "store": "Safety stores",
+        "impa": "330302",
+        "certificates": "SOLAS / MED wheelmark",
+        "status": "Offer selected",
+        "confidence": 0.95,
+        "originalText": "LIFEBUOY SOLAS, 2.5 KG, WITH LIGHT AND SMOKE SIGNAL | — | 6 | PCS",
+        "selection": {
+          "marginPct": 28,
+          "offers": ["off-0130-l3-s12"],
+          "reason": "Best fit (landed cost)"
+        }
+      },
+      {
+        "lineNo": 4,
+        "description": "Rags, white cotton",
+        "qty": 150,
+        "unit": "kg",
+        "packSize": 1,
+        "store": "Deck stores",
+        "impa": "232001",
+        "status": "Offer selected",
+        "confidence": 0.95,
+        "originalText": "RAGS, WHITE COTTON | — | 150 | KG",
+        "selection": {
+          "marginPct": 25,
+          "offers": ["off-0130-l4-s1"],
+          "reason": "Best fit (landed cost)"
+        }
+      }
+    ],
+    "pricing": {
+      "allocation": "value",
+      "discountPct": 0,
+      "fxRateUSD": 48.6,
+      "charges": [
+        {
+          "label": "Alexandria launch delivery to vessel",
+          "amountEGP": 2200,
+          "status": "Estimate"
+        }
+      ]
+    }
   }
 ]

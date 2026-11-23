@@ -99,6 +99,7 @@ describe("the default layout", () => {
     expect(problems.slice(0, 5)).toEqual([]);
   });
 
+  // Every sequence of up to 4 widgets on every board: seconds of work, more under a full run's load.
   it("is a layout: no overlap, on the board, inside the bounds, in order", () => {
     const problems: string[] = [];
     for (const lanes of LANES)
@@ -129,7 +130,7 @@ describe("the default layout", () => {
           });
         }
     expect(problems.slice(0, 5)).toEqual([]);
-  });
+  }, 30_000);
 
   it("weighs neighbours by a diamond: an edge 1, a corner ½, apart 0", () => {
     const a = { lane: 0, row: 0, span: 2, rows: 2 };

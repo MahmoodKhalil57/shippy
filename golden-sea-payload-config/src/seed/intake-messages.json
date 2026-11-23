@@ -18,7 +18,135 @@
         "note": "5 lines"
       }
     ],
-    "scenario": "helios-star"
+    "scenario": "helios-star",
+    "extraction": {
+      "header": [
+        {
+          "field": "Customer",
+          "value": "Helios Bulk Carriers",
+          "confidence": 0.99
+        },
+        {
+          "field": "Vessel",
+          "value": "MV Helios Star",
+          "confidence": 0.98
+        },
+        {
+          "field": "IMO",
+          "value": "9811204",
+          "confidence": 0.97
+        },
+        {
+          "field": "Port",
+          "value": "Suez (northbound transit)",
+          "confidence": 0.93
+        },
+        {
+          "field": "ETA",
+          "value": "19 Nov 2026",
+          "confidence": 0.9
+        },
+        {
+          "field": "Quote deadline",
+          "value": "18 Nov 2026 12:00",
+          "confidence": 0.95
+        },
+        {
+          "field": "Customer ref",
+          "value": "— not found",
+          "confidence": 0.2
+        },
+        {
+          "field": "Currency",
+          "value": "— not stated (default USD)",
+          "confidence": 0.45
+        }
+      ],
+      "lines": [
+        {
+          "description": "Mechanical seal for main SW pump, Grundfos NB 65-200",
+          "brand": "Grundfos",
+          "partNo": "96534915",
+          "qty": "2",
+          "unit": "pcs",
+          "brandRule": "Exact brand",
+          "confidence": 0.96,
+          "store": "Engine stores",
+          "source": "HeliosStar_engine_stores_RFQ.xlsx",
+          "originalText": "Mechanical seal main SW pump Grundfos NB 65-200 p/n 96534915 – 2 pcs (original only)"
+        },
+        {
+          "description": "V-belt SPB 2360",
+          "partNo": "SPB2360",
+          "impa": "450102",
+          "qty": "6",
+          "unit": "pcs",
+          "brandRule": "Any",
+          "confidence": 0.94,
+          "store": "Engine stores",
+          "source": "HeliosStar_engine_stores_RFQ.xlsx",
+          "originalText": "V-belt SPB 2360 – 6 pcs"
+        },
+        {
+          "description": "Rags, white cotton",
+          "impa": "232001",
+          "qty": "50",
+          "unit": "kg",
+          "brandRule": "Any",
+          "confidence": 0.92,
+          "store": "Deck stores",
+          "source": "Email body",
+          "originalText": "Rags, white cotton – 50 kg"
+        },
+        {
+          "description": "Hand cleaner gel, 4.5 L",
+          "impa": "550211",
+          "qty": "4",
+          "unit": "can",
+          "brandRule": "Any",
+          "confidence": 0.88,
+          "store": "Cabin stores",
+          "source": "Email body",
+          "originalText": "Hand cleaner gel, 4.5 L – 4 cans"
+        },
+        {
+          "description": "Thermometer bi-metal 0–120 °C, 100 mm dial",
+          "qty": "2",
+          "unit": "pcs",
+          "brandRule": "Any",
+          "confidence": 0.71,
+          "store": "Engine stores",
+          "source": "Email body",
+          "flag": "Stem length and connection thread not given",
+          "originalText": "Thermometer bi-metal 0–120 °C, 100 mm dial – 2 pcs"
+        }
+      ],
+      "missing": [
+        {
+          "item": "Customer reference"
+        },
+        {
+          "item": "Currency"
+        },
+        {
+          "item": "Line 5: stem length and thread"
+        }
+      ],
+      "clarification": "Dear Chief Engineer,\n\nThank you for your RFQ for MV Helios Star — registered as your case. Before we quote, please confirm:\n • Your requisition / reference number.\n • Quotation currency (we will quote USD unless advised).\n • Line 5 thermometer: stem length and connection thread.\n\nBest regards,\nSoaad Amer — Golden Sea for Trading & Marketing",
+      "assignment": {
+        "owner": "sa",
+        "backup": "ky",
+        "deadline": "2026-11-18T12:00:00.000Z",
+        "rule": "Helios Bulk account → owner Soaad Amer, backup Karim Youssef · urgent: vessel arrives in 2 days"
+      },
+      "acknowledgement": {
+        "subject": "We received your RFQ for MV Helios Star — MV Helios Star ((case number on creation))",
+        "body": "Dear Helios Bulk Carriers,\n\nThank you for your request for MV Helios Star at . It is registered with us as (case number on creation) (your reference for MV Helios Star), and Soaad Amer is looking after it.\n\nWe will send our quotation by Wed 18 Nov, 12:00. If anything changes on board — quantities, ETA or delivery point — simply reply to this email and it will reach the same case.\n\nKind regards,\nSoaad Amer\nGolden Sea for Trading & Marketing\nShip chandlers · Port Said · Suez · Alexandria · Damietta\n24/7 for urgent requests: +20 3 000 0000\n\nYour contact: Soaad Amer (backup Karim Youssef).\n\nGolden Sea for Trading & Marketing\nShip chandler · Port Said · Suez · Alexandria",
+        "manual": false
+      },
+      "model": "gs-extract (demo stub) · vision + spreadsheet reader",
+      "extractedAt": "2026-11-17T09:49:00.000Z"
+    }
   },
   {
     "id": "msg-horizon-reply",

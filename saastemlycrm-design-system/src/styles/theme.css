@@ -778,6 +778,8 @@
     0 2px 3px 0 color-mix(in oklab, var(--color-scrim) 25%, transparent),
     0 18px 40px -10px color-mix(in oklab, var(--color-scrim) 55%, transparent);
 
+  /* Clips its glint (`frame-glint`) to the window's box and corners. */
+  overflow: clip;
   :root[data-glass="refract"] & {
     backdrop-filter: url(#frame-slab-lens);
   }
@@ -787,6 +789,30 @@
   @media (prefers-contrast: more) {
     box-shadow: inset 0 0 0 1px var(--color-outline);
     backdrop-filter: none !important;
+  }
+}
+
+/* The slab's glint: a lamp above its top start corner, faint and broken up like a real reflection
+   (`#frame-slab-glint` in index.html), added over the lens's bent backdrop. A layer of its own, the
+   size of the largest window (the viewport, `frame.glint` in the layout algebra), at the window's
+   top start corner: the window clips it
+   (`frame-lip`), so as the window springs or the page scrolls the glint is only moved and clipped,
+   never drawn again (worked out with the lens on every repaint, it took a column's spring from 60
+   to about 30 frames a second). Only where refraction is drawn. */
+@utility frame-glint {
+  display: none;
+  :root[data-glass="refract"] & {
+    display: block;
+    filter: url(#frame-slab-glint);
+    mix-blend-mode: plus-lighter;
+    opacity: 0.45;
+    will-change: transform;
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    display: none !important;
+  }
+  @media (prefers-contrast: more) {
+    display: none !important;
   }
 }
 

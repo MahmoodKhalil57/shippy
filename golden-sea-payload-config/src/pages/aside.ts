@@ -45,7 +45,6 @@ const desk = (role: string | undefined, act: Counter[], watch: Counter[]): Widge
     size: "full",
     // As tall as its four lines (a label wraps to two at most): never cut, nothing left over.
     rows: ROWS,
-    fit: true,
     skeleton: "list",
     counts: { collection: items[0]!.collection, layout: "list", items },
   };

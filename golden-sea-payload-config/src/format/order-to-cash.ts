@@ -1,4 +1,4 @@
-import type { Action, Entry, KindData, Row, Stat } from "saastemlycrm-design-system/contracts";
+import type { Action, Entry, Figure, KindData, Row } from "saastemlycrm-design-system/contracts";
 import { caseDeliveryPath, etaAction } from "../actions/case-delivery.ts";
 import { caseOrderPath, readPo } from "../actions/case-order.ts";
 import type { Check } from "../endpoints/operations.ts";
@@ -25,11 +25,15 @@ const plural = (n: number, one: string, many = `${one}es`) => (n === 1 ? one : m
 
 /* ------------------------------------------------------------------------- the order at a glance */
 
+/** The order at a glance's figures, in order ("Supplier bills" only for those who see costs). */
+export const ORDER_FIGURES = ["Customer PO", "Supplier POs confirmed", "Received", "Supplier bills"] as const;
+export type OrderFigure = (typeof ORDER_FIGURES)[number];
+
 /**
  * The order at a glance: the customer's PO check, supplier POs confirmed, units received, and
  * (for those who see costs) supplier bills with any on hold.
  */
-export const orderFigures = (d: CaseOps): Stat[] => {
+export const orderFigures = (d: CaseOps): Figure<OrderFigure>[] => {
   const po = d.customerPo;
   const confirmed = d.purchaseOrders.filter((p) => !["Draft", "Awaiting approval", "Cancelled"].includes(p.status));
   const ordered = d.receipts.reduce((s, r) => s + r.ordered, 0);
@@ -64,7 +68,7 @@ export const orderFigures = (d: CaseOps): Stat[] => {
     ...(d.canSeeCosts
       ? [
           {
-            label: "Supplier bills",
+            label: "Supplier bills" as const,
             value: `${d.bills.length}`,
             note: held ? `${held} on hold — 3-way match` : "Matched to PO and receipt",
             share: d.bills.length
@@ -151,23 +155,51 @@ export const partialAward = (d: CaseOps): KindData<"list"> => {
 
 /**
  * The order was validated, or the customer's PO is expected, but there is no PO on the case:
- * `customerPoPending` says so where `customerPoCheck` would be.
+ * `customerPoPending` says so where the check would be.
  */
 export const customerPoAwaited = (d: CaseOps) => !d.customerPo && (d.orderConfirmed || d.poExpected);
 
 /**
+ * The customer PO check before there is a PO on the case: the order was already validated and
+ * confirmed, or the customer's PO has just arrived by email and waits to be read (`customerPoCheck`
+ * draws it over the check, in the same tile).
+ */
+const customerPoPending = (d: CaseOps): NonNullable<KindData<"table">["alerts"]>[number] =>
+  d.orderConfirmed
+    ? {
+        tone: "success",
+        text: "The customer's PO was checked against the approved quotation and validated — the sales order is confirmed.",
+      }
+    : {
+        tone: "info",
+        heading: "Nordvik's purchase order has just arrived by email.",
+        text: "The AI reads it and checks every line and commercial term against the quotation version it refers to. Nothing is committed until a person resolves each mismatch.",
+        actions: [readPo],
+      };
+
+/**
  * The customer's PO checked line by line against the approved quotation version: commitment stays
- * blocked until every mismatch has the customer's written agreement. Before a PO arrives it says
- * so (the PO that has just arrived, or a confirmed order, is `customerPoPending`).
+ * blocked until every mismatch has the customer's written agreement. Before a PO is on the case it
+ * says so in the same tile: the PO that has just arrived, or a confirmed order
+ * (`customerPoPending`), else that none has arrived yet.
  */
 export const customerPoCheck = (d: CaseOps): KindData<"table"> => {
   const po = d.customerPo;
   if (!po)
-    return {
-      columns: [],
-      rows: [],
-      empty: "No customer PO yet. When it arrives it is checked here against the approved quotation version.",
-    };
+    return customerPoAwaited(d)
+      ? {
+          alerts: [customerPoPending(d)],
+          columns: [],
+          rows: [],
+          empty: d.orderConfirmed
+            ? "Checked and validated when the sales order was confirmed."
+            : "Each line and term is checked here once the PO is read.",
+        }
+      : {
+          columns: [],
+          rows: [],
+          empty: "No customer PO yet. When it arrives it is checked here against the approved quotation version.",
+        };
   const blocked = po.status !== "Validated";
   const rows: Row[] = po.checks.map((c) => ({
     line: { text: c.lineNo ? `L${c.lineNo}` : "Header", strong: true },
@@ -221,24 +253,6 @@ export const customerPoCheck = (d: CaseOps): KindData<"table"> => {
         ],
   };
 };
-
-/**
- * The customer PO check before there is a PO on the case: the order was already validated and
- * confirmed, or the customer's PO has just arrived by email and waits to be read (`customerPoCheck`
- * shows the check itself, in the same place).
- */
-export const customerPoPending = (d: CaseOps): KindData<"alert"> =>
-  d.orderConfirmed
-    ? {
-        tone: "success",
-        text: "The customer's PO was checked against the approved quotation and validated — the sales order is confirmed.",
-      }
-    : {
-        tone: "info",
-        heading: "Nordvik's purchase order has just arrived by email.",
-        text: "The AI reads it and checks every line and commercial term against the quotation version it refers to. Nothing is committed until a person resolves each mismatch.",
-        actions: [readPo],
-      };
 
 /** An open mismatch on the customer's PO, with its place in the PO's checks. */
 export type OpenMismatch = { c: Check; i: number };
@@ -334,59 +348,41 @@ export const customerPoAiCheck = (d: CaseOps): KindData<"custom"> => {
 
 /* ---------------------------------------------------------------------- supplier purchase orders */
 
-/** How supplier POs are made and confirmed, over their table or over why there are none yet. */
-const purchaseOrdersNote = (d: CaseOps) =>
-  `Created from the confirmed sales order — split suppliers and scheduled quantities. Price, availability, FX and lead time are re-checked before a PO is confirmed; Karim Balbaa approves. Deposits go through payment approval.${d.canSeeCosts ? "" : " Supplier costs are hidden for Sales."}`;
-
 /**
- * The supplier POs before there is one: what has to happen first (the customer's PO validated,
- * then the sales order confirmed). The case's tab lists them (the purchase orders' own fields)
- * once they exist.
+ * The supplier POs still to confirm, re-checked with the supplier or not yet (one tile each, the
+ * same tile before and after its re-check: `recheck`). Supplier costs are hidden for Sales, so
+ * none for them.
  */
-export const noPurchaseOrders = (d: CaseOps): KindData<"alert"> => ({
-  head: { count: 0 },
-  note: purchaseOrdersNote(d),
-  tone: d.customerPo?.status === "Validated" ? "info" : "warning",
-  text:
-    d.customerPo?.status === "Validated"
-      ? "Confirm the sales order to prepare the supplier POs."
-      : "Blocked: no supplier PO is prepared until the customer's PO is validated.",
-});
-
-/**
- * The supplier POs still to confirm, re-checked with the supplier (`rechecked`) or not yet.
- * Supplier costs are hidden for Sales, so none for them.
- */
-export const purchaseOrdersToConfirm =
-  (rechecked: boolean) =>
-  (d: CaseOps): OpsPO[] =>
-    d.canSeeCosts
-      ? d.purchaseOrders.filter(
-          (p) => ["Draft", "Awaiting approval"].includes(p.status) && Boolean(p.recheckDone) === rechecked,
-        )
-      : [];
+export const purchaseOrdersToConfirm = (d: CaseOps): OpsPO[] =>
+  d.canSeeCosts ? d.purchaseOrders.filter((p) => ["Draft", "Awaiting approval"].includes(p.status)) : [];
 
 /** A supplier PO's re-check tile's title, the same before and after the re-check. */
 export const recheckTitle = (p: OpsPO) => `Re-check before confirming ${p.number}`;
 
+/** What a supplier PO's re-check compares, before and after it runs. */
+const recheckColumns = [
+  { key: "item", label: "Item" },
+  { key: "atQuotation", label: "At quotation" },
+  { key: "now", label: "Now" },
+  { key: "ok", label: "" },
+];
+
 /**
  * A supplier PO not re-checked yet: the button that re-checks price, availability, FX and lead
- * time with the supplier (the result is `recheckResult`).
+ * time with the supplier (the result is `recheckResult`, in the same tile).
  */
-export const recheckRequest = (p: OpsPO): KindData<"list"> => ({
+const recheckRequest = (p: OpsPO): KindData<"table"> => ({
   head: { tags: [{ label: p.status, tone: statusTone(p.status) }] },
-  items: [
+  note: `${p.number} · ${p.supplierName}: price, availability, FX and lead time are re-checked with the supplier before it is confirmed.`,
+  columns: recheckColumns,
+  rows: [],
+  empty: "Not re-checked yet.",
+  actions: [
     {
-      headline: `${p.number} · ${p.supplierName}`,
-      supporting: p.status,
-      dot: statusTone(p.status),
-      actions: [
-        {
-          label: "Re-check & confirm",
-          call: { path: "/operations/po-recheck", body: { po: p.id } },
-          done: `Re-checked price, availability, FX and lead time with ${p.supplierName}.`,
-        },
-      ],
+      label: "Re-check & confirm",
+      main: true,
+      call: { path: "/operations/po-recheck", body: { po: p.id } },
+      done: `Re-checked price, availability, FX and lead time with ${p.supplierName}.`,
     },
   ],
 });
@@ -395,7 +391,7 @@ export const recheckRequest = (p: OpsPO): KindData<"list"> => ({
  * A re-checked supplier PO still to confirm: what changed since the quotation (a shortfall becomes
  * a backorder) and the decision, Karim Balbaa's (management) or a request to him.
  */
-export const recheckResult = (p: OpsPO, d: CaseOps): KindData<"table"> => {
+const recheckResult = (p: OpsPO, d: CaseOps): KindData<"table"> => {
   const changed = p.recheck.filter((r) => r.ok === false);
   const decide: Action = d.isManagement
     ? {
@@ -423,12 +419,7 @@ export const recheckResult = (p: OpsPO, d: CaseOps): KindData<"table"> => {
   return {
     head: { tags: [{ label: p.status, tone: statusTone(p.status) }] },
     note: d.isManagement ? undefined : "Supplier POs are confirmed by Karim Balbaa (management).",
-    columns: [
-      { key: "item", label: "Item" },
-      { key: "atQuotation", label: "At quotation" },
-      { key: "now", label: "Now" },
-      { key: "ok", label: "" },
-    ],
+    columns: recheckColumns,
     rows: p.recheck.map((r) => ({
       item: r.item,
       atQuotation: r.atQuotation,
@@ -447,6 +438,10 @@ export const recheckResult = (p: OpsPO, d: CaseOps): KindData<"table"> => {
   };
 };
 
+/** A supplier PO still to confirm: its re-check to run (`recheckRequest`), then what it found (`recheckResult`). */
+export const recheck = (p: OpsPO, d: CaseOps): KindData<"table"> =>
+  p.recheckDone ? recheckResult(p, d) : recheckRequest(p);
+
 /* -------------------------------------------------------------------------------------- drops */
 
 /** A drop is delivered once its receipt is confirmed. */
@@ -458,9 +453,10 @@ export const nextDrop = (d: CaseOps): OpsDelivery | undefined =>
 
 /**
  * Across the top: the re-plan after the agent's ETA change (escalated to the owner and
- * management), else the case's blocker, else nothing.
+ * management), else the case's blocker, else that the delivery is on plan (its tile is there
+ * either way).
  */
-export const replanNotice = (d: CaseOps): KindData<"alert"> | null => {
+export const replanNotice = (d: CaseOps): KindData<"alert"> => {
   const eta = d.alerts.find((a) => /ETA change/.test(a.text));
   if (eta)
     return {
@@ -468,7 +464,9 @@ export const replanNotice = (d: CaseOps): KindData<"alert"> | null => {
       heading: `Re-planned after the agent's ETA change — escalated to ${person(d.case.owner)} and Karim Balbaa`,
       text: `${dayTime(eta.at)} · ${eta.text}`,
     };
-  return d.case.blocker ? { tone: "info", text: d.case.blocker } : null;
+  return d.case.blocker
+    ? { tone: "info", text: d.case.blocker }
+    : { tone: "success", text: "On plan: no ETA change from the agent and nothing blocking the delivery." };
 };
 
 /**

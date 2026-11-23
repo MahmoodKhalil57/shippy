@@ -110,7 +110,8 @@ seed data (`src/seed`). Entry points: `.` (the config, `src/config.ts`) and `./s
     per signed-in role), through `src/queries/visuals.ts` and `src/format/visuals.ts`. The cash
     bridge reads the cash forecast (`format/cash.ts` `bridge`) and the pricing tab's dial, bridge
     and what-if read the case's pricing, so each figure matches the one beside it. A shape with
-    nothing to draw is hidden (`hidden`: unpriced cases, roles without money).
+    nothing to draw shows its empty state in its box (`empty`: unpriced cases); one a role never
+    sees isn't placed for it (`visible`, `seesMoney`).
   - `tests/widget-files.test.ts` enforces this: no `src/widgets`, pages that never draw (no
     `render`, `source` or `block(`), formatters that import no queries, and only those imports.
 - **The AI log** (`ai-calls`, `src/collections/work.ts`): every AI call, what it read, how sure it

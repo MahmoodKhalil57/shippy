@@ -23,42 +23,50 @@ export const caseCompare = widgets({
     actions({
       size: "full",
       data: compare,
-      hidden: (c) => !c.lines.length,
+      empty: { when: (c) => !c.lines.length, heading: "No requested lines to compare yet." },
       format: fmt.compareBy,
     }),
-    // Refused for Sales (supplier costs).
+    // Refused for Sales (supplier costs). A tile per requested line: six, as a case's RFQ usually
+    // asks (more go in the last tile).
     table.each({
       data: compare,
       size: "l",
-      hidden: (c) => !c.lines.length,
+      tiles: 6,
+      empty: { heading: "No more requested lines on this case." },
       skeleton: "table",
       items: (c) => c.lines,
       key: (l: CmpLine) => `L${l.lineNo}`,
       title: (l: CmpLine) => `L${l.lineNo} · ${l.description}`,
       format: fmt.lineOffers,
     }),
+    // A tile per line with offers (most of a case's lines have some by the time they're compared).
     custom.each({
       data: compare,
       size: "s",
-      hidden: (c) => !c.lines.some((l) => fmt.currentOffers(l).length),
+      tiles: 4,
+      empty: { heading: "No more lines with offers to check." },
       items: (c) => c.lines.filter((l) => fmt.currentOffers(l).length),
       key: (l: CmpLine) => `L${l.lineNo}-check`,
       title: (l: CmpLine) => `Offer check · L${l.lineNo} · ${l.description}`,
       format: fmt.offerCheck,
     }),
+    // Usually one line still waits on a supplier; more go in the same tile.
     list.each({
       data: compare,
       size: "s",
-      hidden: (c) => !c.lines.some((l) => l.others.length),
+      tiles: 1,
+      empty: { heading: "No line is waiting on a supplier's offer." },
       items: (c) => c.lines.filter((l) => l.others.length),
       key: (l: CmpLine) => `L${l.lineNo}-others`,
       title: (l: CmpLine) => `Asked, no offer · L${l.lineNo} · ${l.description}`,
       format: fmt.askedNoOffer,
     }),
+    // Usually one offer to correct; more go in the same tile.
     message.each({
       data: compare,
       size: "m",
-      hidden: (c) => !fmt.corrections(c).length,
+      tiles: 1,
+      empty: { heading: "No offers need a correction request." },
       items: fmt.corrections,
       key: (x: fmt.Correction) => `${x.offer.id}-correction`,
       title: (x: fmt.Correction) => `Correction request · ${x.offer.supplier} v${x.offer.version}`,

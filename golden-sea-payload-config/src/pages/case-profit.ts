@@ -1,5 +1,6 @@
 import { alert, custom, figures, gauges, list, table, widgets } from "saastemlycrm-design-system/contracts";
 import * as fmt from "../format/profit.ts";
+import type { CaseProfit } from "../endpoints/profit.ts";
 import { caseProfit as profit } from "../queries/case-profit.ts";
 
 /**
@@ -8,20 +9,23 @@ import { caseProfit as profit } from "../queries/case-profit.ts";
  * Data and actions: /api/case-profit/:id (../endpoints/profit.ts). Sales is refused it (403).
  * Each widget is a design-system kind given a query and a formatter (../format/profit.ts).
  */
+/** Not costed yet (the expected profit waits for the customer PO): nothing to compare or claim. */
+const notCosted = (p: CaseProfit) => !p.costed;
+
 export const caseProfit = widgets({
   widgets: [
-    // Above everything; Sales is told the tab isn't for them.
+    // Above everything: closed, not costed yet, or the close checks still open. Sales is told the
+    // tab isn't for them.
     alert({
       size: "full",
       skeleton: "text",
       denied: "Profit, costs and margins are not visible to Sales.",
       data: profit,
-      hidden: (p) => !p.closed && p.costed,
       format: fmt.profitStatus,
     }),
     figures({
       data: profit,
-      hidden: (p) => !p.costed,
+      labels: fmt.PROFIT_FIGURES,
       format: fmt.profitFigures,
     }),
     gauges({
@@ -42,14 +46,14 @@ export const caseProfit = widgets({
       size: "s",
       skeleton: "list",
       data: profit,
-      hidden: (p) => !p.costed,
+      empty: { when: notCosted, heading: "No claims before the case is costed." },
       format: fmt.claims,
     }),
     custom({
       title: "Damage for a claim",
       size: "s",
       data: profit,
-      hidden: (p) => !p.costed,
+      empty: { when: notCosted, heading: "No delivery to claim against yet." },
       format: fmt.damageReader,
     }),
     table({
@@ -57,7 +61,11 @@ export const caseProfit = widgets({
       size: "l",
       skeleton: "table",
       data: profit,
-      hidden: (p) => !p.costed,
+      empty: {
+        when: notCosted,
+        heading: "No cost sheet yet.",
+        description: "Expected costs are fixed when the customer's PO is confirmed.",
+      },
       format: fmt.costLines,
     }),
     table({
@@ -65,7 +73,7 @@ export const caseProfit = widgets({
       size: "l",
       skeleton: "table",
       data: profit,
-      hidden: (p) => !p.costed,
+      empty: { when: notCosted, heading: "No receipts yet." },
       format: fmt.fxReceipts,
     }),
   ],

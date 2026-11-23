@@ -564,5 +564,65 @@
       "submittedAt": "2026-11-12T09:00:00.000Z"
     },
     "remarks": "Line 3 re-priced: supplier price of v1 expired."
+  },
+  {
+    "id": "q-0131-v1",
+    "number": "GS-Q-0131 v1",
+    "case": "gs-rfq-0131",
+    "version": 1,
+    "currency": "USD",
+    "fxRate": 48.6,
+    "discountPct": 0,
+    "status": "Submitted",
+    "decision": "Won",
+    "preparedBy": "ky",
+    "approvedBy": "kb",
+    "validUntil": "2026-11-05T00:00:00.000Z",
+    "paymentTerms": "20 days from invoice date",
+    "deliveryTerms": "On board at Suez anchorage on arrival",
+    "lines": [
+      {
+        "lineNo": 1,
+        "partNo": "150P155",
+        "description": "Fuel injection valve nozzle, aux. engine Yanmar 6EY18ALW",
+        "unit": "pcs",
+        "qty": 6,
+        "unitPrice": 402.17
+      },
+      {
+        "lineNo": 2,
+        "partNo": "146673-22500",
+        "description": "Piston ring set (one cylinder), Yanmar 6EY18ALW",
+        "unit": "set",
+        "qty": 6,
+        "unitPrice": 513.11
+      },
+      {
+        "lineNo": 3,
+        "partNo": "NR20S-OHK",
+        "description": "Turbocharger overhaul kit, MAN NR20/S",
+        "unit": "set",
+        "qty": 1,
+        "unitPrice": 8595.16
+      },
+      {
+        "lineNo": 4,
+        "partNo": "IMPA 310102",
+        "description": "Safety helmet EN 397, white, with chin strap",
+        "unit": "EA",
+        "qty": 12,
+        "unitPrice": 9.43
+      }
+    ],
+    "internal": {
+      "landedCostEGP": 522650,
+      "grossProfitEGP": 167470,
+      "marginPct": 24.3,
+      "exceptions": ""
+    },
+    "submission": {
+      "method": "Email from Odoo",
+      "submittedAt": "2026-10-26T10:30:00.000Z"
+    }
   }
 ]

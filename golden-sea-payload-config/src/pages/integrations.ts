@@ -43,6 +43,8 @@ export const integrationsPage = widgets({
     },
     details({
       title: "Email history import",
+      // Its subhead comes with the data; this line holds its place while it loads.
+      subhead: "Days of email imported",
       size: "s",
       skeleton: "card",
       data: integrationsGlobal,

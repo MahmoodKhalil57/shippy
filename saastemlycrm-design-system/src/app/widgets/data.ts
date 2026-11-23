@@ -314,7 +314,6 @@ function records({ records: r, ...w }: Kind<"records">, scope: WidgetScope): Dra
       w.skeleton ??
       (r.layout === "list" || r.layout === "timeline" ? "list" : r.layout === "entries" ? "entries" : "table"),
     source: of.source,
-    hidden: (data, s) => (r.hideEmpty && !of.rows(data).length) || !!w.hidden?.(data, s),
     head: (data, s) => ({
       count: of.count ? of.count(data) : of.rows(data).length,
       actions:
@@ -469,10 +468,7 @@ function metrics({ metrics: spec, ...w }: Kind<"metrics">): Widget<Record<string
       ]),
     ),
   };
-  const shown = (data: Record<string, Found>) => {
-    const figs = figuresOf(data);
-    return spec.hideEmpty && figs.every((f) => !f.count) ? [] : figs.map(({ count: _count, ...f }) => f);
-  };
+  const shown = (data: Record<string, Found>) => figuresOf(data).map(({ count: _count, ...f }) => f);
   const figuresOf = (data: Record<string, Found>) =>
     items.map((x) => {
       const got = data[x.key];
@@ -522,7 +518,12 @@ function metrics({ metrics: spec, ...w }: Kind<"metrics">): Widget<Record<string
         share,
       };
     });
-  return figures<Record<string, Found>>({ ...w, data: source, format: shown } as never) as never;
+  return figures<Record<string, Found>>({
+    ...w,
+    data: source,
+    labels: items.map((x) => x.label),
+    format: shown,
+  } as never) as never;
 }
 
 /** A date's bucket: its label and its sort key. */
@@ -683,10 +684,10 @@ function counts({ counts: spec, ...w }: Kind<"counts">): DrawingWidget<Record<st
       key: `k${i}`,
       href: dashboardPath("collections", x.collection ?? slug),
     }));
-  const hideEmpty = "field" in spec && spec.hideEmpty !== false;
   const noun = (c ? labels(c).plural : slug).toLowerCase();
+  // Every value has its tile, decided by the schema before the data (one with none reads 0).
   const shown = (n: Record<string, number>) => {
-    const list = items.filter((x) => !hideEmpty || (n[x.key] ?? 0) > 0);
+    const list = items;
     // Counts of one collection's values are parts of a whole: each its share of them all.
     const whole = "field" in spec ? list.reduce((t, x) => t + (n[x.key] ?? 0), 0) : 0;
     return list.map((x) => ({
@@ -737,7 +738,12 @@ function counts({ counts: spec, ...w }: Kind<"counts">): DrawingWidget<Record<st
           })),
         }),
     };
-  return figures<Record<string, number>>({ ...w, data: source, format: shown } as never) as never;
+  return figures<Record<string, number>>({
+    ...w,
+    data: source,
+    labels: items.map((x) => x.label),
+    format: shown,
+  } as never) as never;
 }
 
 function fields({ fields: spec, ...w }: Kind<"fields">, scope: WidgetScope): DrawingWidget<Doc> {

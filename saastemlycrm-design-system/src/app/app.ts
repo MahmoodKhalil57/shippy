@@ -89,7 +89,8 @@ export class DashboardApp extends LightElement {
   @state() private ready = false;
   @query("ui-app-shell") private _shell?: HTMLElementTagNameMap["ui-app-shell"];
   @state() private failure = "";
-  #prefs = new StoreController(this, preferences);
+  // The columns are all the app root reads from the preferences.
+  #prefs = new StoreController(this, preferences, undefined, { keys: ["navOpen", "asideOpen", "navExpanded"] });
   /** Navigation groups that have held the current page (kept open: navigating never closes a group). */
   #openedGroups = new Set<string>();
   #unread = new StoreController(this, notifications);

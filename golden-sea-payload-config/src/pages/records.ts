@@ -36,7 +36,7 @@ const treemap = (collection: string, by: string, title: string, sum: string): Wi
 const byStatus = (collection: string, field: string, skip?: string[]): Widget => ({
   size: "m",
   rows: 2,
-  counts: { collection, field, hideEmpty: true, ...(skip ? { skip } : {}) },
+  counts: { collection, field, ...(skip ? { skip } : {}) },
 });
 const overTime = (collection: string, by: string, title: string, bucket: "day" | "week" | "month"): Widget => ({
   title,

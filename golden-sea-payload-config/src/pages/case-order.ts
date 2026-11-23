@@ -1,4 +1,4 @@
-import { alert, attach, custom, figures, list, table, widgets } from "saastemlycrm-design-system/contracts";
+import { attach, custom, figures, list, table, widgets } from "saastemlycrm-design-system/contracts";
 import type { OpsPO } from "../endpoints/order-to-cash.ts";
 import * as fmt from "../format/order-to-cash.ts";
 import { caseOps, ofCase } from "../queries/case-ops.ts";
@@ -16,38 +16,38 @@ import { caseOps, ofCase } from "../queries/case-ops.ts";
  * delivery tab); writes: the POST endpoints there and in ../endpoints/order-to-cash.ts.
  */
 export const caseOrder = widgets({
-  // The PO check, before a PO (`customerPoPending`) or with it (the check, its open mismatches and
-  // the AI's second look); the supplier POs (or why there are none yet) and their re-checks.
+  // The PO check (before a PO, what it waits for; with it, the check, its open mismatches and the
+  // AI's second look); the supplier POs and their re-checks. Every tile is there before the data.
   widgets: [
+    // Supplier bills only for those who see costs.
     figures({
       data: caseOps,
+      labels: (s) => (s.user.role === "sales" ? fmt.ORDER_FIGURES.slice(0, 3) : fmt.ORDER_FIGURES),
       format: fmt.orderFigures,
     }),
     list({
       title: "Partial award",
       size: "s",
       data: caseOps,
-      hidden: (d) => !fmt.unorderedLines(d).length,
+      empty: { when: (d) => !fmt.unorderedLines(d).length, heading: "No partial award on this case." },
       format: fmt.partialAward,
     }),
+    // Before the PO is on the case, what it waits for (just arrived, or the order already confirmed);
+    // then the check itself, in the same tile.
     table({
       title: "Customer PO check",
+      // Its subhead comes with the data; this line holds its place while it loads.
+      subhead: "The customer's PO against the quotation",
       size: "l",
       data: caseOps,
-      hidden: fmt.customerPoAwaited,
-      expect: "shown",
       format: fmt.customerPoCheck,
     }),
-    alert({
-      title: "Customer PO check",
-      size: "l",
-      data: caseOps,
-      hidden: (d) => !fmt.customerPoAwaited(d),
-      format: fmt.customerPoPending,
-    }),
+    // A tile per open mismatch (a PO has had up to three; more go in the last tile).
     attach.each({
       data: caseOps,
       size: "s",
+      tiles: 3,
+      empty: { heading: "No open mismatch on the customer's PO." },
       items: fmt.openMismatches,
       key: ({ i }: fmt.OpenMismatch) => `amendment-${i}`,
       title: ({ c }: fmt.OpenMismatch) => `Customer amendment · ${c.lineNo ? `line ${c.lineNo}` : "header"}`,
@@ -57,7 +57,7 @@ export const caseOrder = widgets({
       title: "AI check of the customer PO",
       size: "s",
       data: caseOps,
-      hidden: (d) => !d.customerPo,
+      empty: { when: (d) => !d.customerPo, heading: "No customer PO to check yet." },
       format: fmt.customerPoAiCheck,
     }),
     // The case's supplier POs (their own fields: lines, route, deposit, progress). A deposit in
@@ -67,44 +67,32 @@ export const caseOrder = widgets({
       subhead:
         "Created from the confirmed sales order — split suppliers and scheduled quantities. Price, availability, FX and lead time are re-checked before a PO is confirmed; Karim Balbaa approves. Deposits go through payment approval. Supplier costs are hidden for Sales.",
       size: "l",
-      expect: "shown",
       records: {
         collection: "purchase-orders",
         where: ofCase,
         sort: "number",
         limit: 20,
-        hideEmpty: true,
         columns: ["number", "linesSummary", "deliverTo", "total", "deposit.text", "status"],
         supporting: { number: "supplier", "deposit.text": "deposit.note", status: "statusNote" },
         labels: { number: "PO", total: "Amount" },
+        empty:
+          "No supplier PO yet. They are prepared once the customer's PO is validated and the sales order is confirmed.",
       },
     },
-    alert({
-      title: "Supplier purchase orders",
-      size: "l",
-      skeleton: "table",
-      data: caseOps,
-      hidden: (d) => d.purchaseOrders.length > 0,
-      format: fmt.noPurchaseOrders,
-    }),
-    // A tile per supplier PO still to confirm: the re-check to run, then what it found.
-    list.each({
-      data: caseOps,
-      size: "m",
-      skeleton: "table",
-      items: fmt.purchaseOrdersToConfirm(false),
-      key: (p: OpsPO) => p.id,
-      title: fmt.recheckTitle,
-      format: fmt.recheckRequest,
-    }),
+    // A tile per supplier PO still to confirm, the same tile before and after its re-check: the
+    // re-check to run, then what it found. A confirmed order makes one PO per supplier (three for
+    // gs-rfq-0136; more go in the last tile). Sales sees no supplier costs, so none.
     table.each({
       data: caseOps,
       size: "m",
       skeleton: "table",
-      items: fmt.purchaseOrdersToConfirm(true),
+      visible: (s) => s.user.role !== "sales",
+      tiles: 3,
+      empty: { heading: "No supplier PO waiting to be confirmed." },
+      items: fmt.purchaseOrdersToConfirm,
       key: (p: OpsPO) => p.id,
       title: fmt.recheckTitle,
-      format: fmt.recheckResult,
+      format: fmt.recheck,
     }),
     // The case's supplier bills against PO and receipt (their own 3-way match and hold), for those
     // who see costs; finance books an incoming copy from a bill (the duplicate check refuses it).
@@ -119,10 +107,10 @@ export const caseOrder = widgets({
         where: ofCase,
         sort: "billNumber",
         limit: 20,
-        hideEmpty: true,
         columns: ["billNumber", "purchaseOrder", "matchLines", "amount", "dueDate", "status"],
         supporting: { billNumber: "supplier", status: "holdReason" },
         labels: { billNumber: "Bill", dueDate: "Due" },
+        empty: "No supplier bills on this case yet.",
       },
     },
     // The case's receipts: lot, expiry and quality check per line; a shortfall is a backorder (the
@@ -137,10 +125,10 @@ export const caseOrder = widgets({
         where: ofCase,
         sort: "lineNo",
         limit: 50,
-        hideEmpty: true,
         columns: ["item", "quantity", "warehouse", "lot", "qc", "shortfall"],
         supporting: { item: "from", warehouse: "receivedAt", lot: "expiry", qc: "claim", shortfall: "backorderDate" },
         labels: { lot: "Lot · expiry", shortfall: "Backorder" },
+        empty: "No receipts on this case yet.",
       },
     },
   ],

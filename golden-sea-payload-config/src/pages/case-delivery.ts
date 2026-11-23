@@ -18,6 +18,7 @@ import { caseOpenInvoices, caseOps, caseShortfalls, ofCase } from "../queries/ca
 export const caseDelivery = widgets({
   // The plan with the drops, the checks beside them, then the tables.
   widgets: [
+    // The re-plan, else the blocker, else that the delivery is on plan.
     alert({
       size: "full",
       skeleton: "text",
@@ -37,20 +38,25 @@ export const caseDelivery = widgets({
         "“Delivered” needs evidence: dispatch and confirmed receipt are separate, and a drop is confirmed only with the signed delivery note or photo from the vessel.",
       skeleton: "entries",
       data: caseOps,
-      hidden: (d) => !d.deliveries.length,
+      empty: { when: (d) => !d.deliveries.length, heading: "No deliveries planned yet." },
       format: fmt.dropEntries,
     }),
     actions({
       title: "Pre-dispatch check",
+      // Its subhead comes with the data; this line holds its place while it loads.
+      subhead: "The next drop out",
       size: "s",
       data: caseOps,
-      hidden: (d) => !fmt.nextDrop(d),
+      empty: { when: (d) => !fmt.nextDrop(d), heading: "No drop to dispatch yet." },
       format: fmt.preDispatchChecks,
     }),
     // The case's invoices added up (each in the case's currency): invoiced, received, the balance.
     {
       size: "s",
-      hidden: (d) => !Object.values(d as Record<string, { totalDocs: number }>).some((x) => x.totalDocs),
+      empty: {
+        when: (d) => !Object.values(d as Record<string, { totalDocs: number }>).some((x) => x.totalDocs),
+        heading: "No invoices on this case yet.",
+      },
       metrics: {
         collection: "invoices",
         items: [
@@ -77,7 +83,6 @@ export const caseDelivery = widgets({
         where: caseShortfalls,
         sort: "lineNo",
         limit: 50,
-        hideEmpty: true,
         columns: [
           "item",
           "shortfall",
@@ -88,6 +93,7 @@ export const caseDelivery = widgets({
           "backorder.risk",
         ],
         labels: { shortfall: "Short" },
+        empty: "No backorders on this case.",
       },
     },
     // The case's invoices with their e-invoice status and payments, and their own actions (sign &
@@ -110,7 +116,7 @@ export const caseDelivery = widgets({
           paid: "paymentsNote",
         },
         labels: { number: "Invoice", amount: "Amount · VAT", paid: "Paid · balance" },
-        empty: "No invoice yet — the first one is created from a delivery confirmed with a signed note.",
+        empty: "No invoice yet. The first one is created from a delivery confirmed with a signed note.",
       },
     },
   ],

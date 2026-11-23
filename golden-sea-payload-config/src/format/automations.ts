@@ -1,4 +1,4 @@
-import type { Action, IconName, KindData, Stat } from "saastemlycrm-design-system/contracts";
+import type { Action, Figure, IconName, KindData } from "saastemlycrm-design-system/contracts";
 import type { AutomationsView } from "../endpoints/platform.ts";
 
 /**
@@ -13,7 +13,8 @@ import type { AutomationsView } from "../endpoints/platform.ts";
  * The rules enabled and the AI-assisted ones (the automation-rules global's rows), each its share
  * of all the rules. What waits for review is the review queue beside them, with its count.
  */
-export const automationFigures = ({ stats: st }: AutomationsView): Stat[] => [
+export const AUTOMATION_FIGURES = ["Rules enabled", "AI-assisted"] as const;
+export const automationFigures = ({ stats: st }: AutomationsView): Figure<(typeof AUTOMATION_FIGURES)[number]>[] => [
   {
     label: "Rules enabled",
     value: String(st.enabled),

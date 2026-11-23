@@ -7,7 +7,8 @@ import { iconSvg, type IconName } from "../media/icon.ts";
 
 /**
  * Choice tile: one visual option to pick — a picture with its name over it (a background image,
- * a layout, a template), or an icon and a line of text (No image, Upload your own).
+ * a layout, a template), something live in the picture's place (its content: a preview of an
+ * animated background), or an icon and a line of text (No image, Upload your own).
  *
  * Purpose: Forms & input · Kind: primitive (Shippy)
  *
@@ -25,6 +26,8 @@ export const choiceTile = rcva(
   },
 );
 export const choiceTileImage = rcva("absolute inset-0 -z-10 size-full object-cover");
+/** Its content in the picture's place (a live preview). */
+export const choiceTilePreview = rcva("absolute inset-0 -z-10 overflow-hidden [--clips:media]");
 export const choiceTileLabel = rcva(
   `${inset["2"]} absolute inset-x-0 bottom-0 bg-neutral/65 py-1 text-start text-label-md text-neutral-content`,
 );
@@ -36,6 +39,7 @@ export const choiceTileCheck = rcva(
 /**
  * @example <ui-choice-tile image="/thumbs/harbour.jpg" label="Harbour" selected></ui-choice-tile>
  * @example <ui-choice-tile icon="upload" label="Upload your own" dashed></ui-choice-tile>
+ * @example <ui-choice-tile label="Waves"><ui-waves line-color="currentColor"></ui-waves></ui-choice-tile>
  */
 @customElement("ui-choice-tile")
 export class UiChoiceTile extends LightElement {
@@ -58,9 +62,12 @@ export class UiChoiceTile extends LightElement {
         this.image
           ? html`<img class=${choiceTileImage()} src=${this.image} alt="" loading="lazy" />
               <span class=${choiceTileLabel()}>${this.label}</span>`
-          : html`<span class=${choiceTileEmpty()}
-              >${this.icon ? iconSvg(this.icon, { size: "lg" }) : nothing}${this.label}</span
-            >`
+          : this.hasContent
+            ? html`<span class=${choiceTilePreview()} aria-hidden="true">${this.content}</span>
+                <span class=${choiceTileLabel()}>${this.label}</span>`
+            : html`<span class=${choiceTileEmpty()}
+                >${this.icon ? iconSvg(this.icon, { size: "lg" }) : nothing}${this.label}</span
+              >`
       }
       ${this.selected ? html`<span class=${choiceTileCheck()}>${iconSvg("check", { size: "xs" })}</span>` : nothing}
     </button>`;

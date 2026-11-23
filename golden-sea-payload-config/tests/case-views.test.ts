@@ -105,7 +105,8 @@ async function draw(page: WidgetPage, id: string, params: Record<string, string>
       out = [{ type: "alert", tone: "info", text: w.denied }];
     } else {
       expect(status, `${w.title ?? "widget"}: ${JSON.stringify(data)}`).toBe(200);
-      if (w.hidden?.(data, scope)) return [];
+      if (w.empty?.when?.(data, scope))
+        return [{ type: "card", heading: w.title, empty: true, blocks: [{ type: "empty", heading: w.empty.heading }] }];
       if (w.each) return (await all(eachTiles(w, data, scope).map((t) => t.widget as Widget))).flat();
       const r = w.render?.(data, scope);
       out = r ? (Array.isArray(r) ? r : [r]) : [];
@@ -214,7 +215,8 @@ describe("case tabs", () => {
   it("rfqs: draft, remove one and send the supplier RFQs kept on the server", async () => {
     const page = caseRfqs.clientProps.page;
     const before = await draw(page, "gs-rfq-0142");
-    expect(card(before, "Drafted supplier RFQs")).toBeFalsy();
+    // Its tile is there before anything is drafted, showing its empty state.
+    expect(card(before, "Drafted supplier RFQs").empty).toBe(true);
     const draft = blocks({ blocks: [card(before, "Draft supplier RFQs")] })
       .find((b) => b.type === "actions")
       .items.find((a: Json) => a.label === "Draft RFQs");
@@ -243,7 +245,7 @@ describe("case tabs", () => {
     const sent = await call("POST", `/api${send.call.path}`, send.call.body);
     expect(sent.status).toBe(201);
     expect(sent.body.sent).toHaveLength(n - 1);
-    expect(card(await draw(page, "gs-rfq-0142"), "Drafted supplier RFQs")).toBeFalsy();
+    expect(card(await draw(page, "gs-rfq-0142"), "Drafted supplier RFQs").empty).toBe(true);
     expect((await call("POST", `/api${send.call.path}`)).status).toBe(400);
   });
 

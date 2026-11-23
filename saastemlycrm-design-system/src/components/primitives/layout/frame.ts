@@ -49,6 +49,12 @@ import { motion } from "../../base/motion-queue.ts";
 export const appShellLayer = rcva("pointer-events-none absolute", {
   variants: {
     kind: {
+      /**
+       * A live background (`background`): under the chrome's glass and the slab, over the frame's
+       * own colour, the photo's place. What it draws in `currentColor` takes the page's quiet text
+       * colour, so it reads in light and dark alike.
+       */
+      live: "-z-10 inset-0 overflow-hidden [--clips:media] text-on-surface-variant",
       backdrop: "-z-10 inset-0 frame-liquid",
       shell: "-z-10 inset-0 frame-matte",
     },
@@ -286,6 +292,9 @@ export const appShellLip = rcva("pointer-events-none absolute inset-0 z-10 round
   variants: { compact: { true: "rounded-ss-lg" } },
 });
 
+/** The slab's glint over the lip's lens: drawn once, moved and clipped with the window (`frame-glint`). */
+export const appShellGlint = rcva("pointer-events-none absolute top-0 start-0 w-screen h-dvh frame-glint");
+
 /**
  * A drag handle on the main panel's start or end edge: drag it to open or close that column (the
  * panel's edge follows the pointer, then snaps to the nearer state), or focus it and press Enter,
@@ -422,6 +431,10 @@ export const appShellSlot = rcva("flex min-h-0 w-full flex-col gap-[calc(var(--t
 export const appShellNavList = rcva("motion-reduce:transition-none", {
   variants: {
     /**
+     * Always laid out at its open width (the column's, less the panel's padding), whatever width the
+     * column has on its way open or shut: the column clips it and reveals it, so nothing in it
+     * re-wraps, and no board in it changes its lanes, on any frame of the spring.
+     *
      * While its column's edge is dragged, the list shows over the rail and folds or unfolds with
      * the drag, its groups and panes held shut, as while the column opens and closes (they open
      * again once the column has sprung open). It's laid out open (`--menu-collapse` 0) and folds as
@@ -433,8 +446,8 @@ export const appShellNavList = rcva("motion-reduce:transition-none", {
      */
     side: {
       start:
-        "data-[drag-done]:[transition:none]! data-[drag]:[&_[data-menu-fold]]:transition-none! data-[drag]:[&_summary]:after:transition-none! data-[drag]:visible data-[drag]:[--menu-collapse:0] data-[drag]:[--menu-expanded:0] data-[drag]:[transition:none]! data-[drag]:[&_details::details-content]:[block-size:0]! data-[drag]:[&_li]:grow-0! data-[drag]:w-[calc(var(--frame-nav)_-_var(--frame-rail)_+_2.75rem)] data-[drag]:max-w-none",
-      end: "data-[drag-done]:[transition:none]! data-[drag]:[&_[data-menu-fold]]:transition-none! data-[drag]:[&_summary]:after:transition-none! data-[drag]:visible data-[drag]:[--menu-collapse:0] data-[drag]:[--menu-expanded:0] data-[drag]:[transition:none]! data-[drag]:[&_details::details-content]:[block-size:0]! data-[drag]:[&_li]:grow-0! data-[drag]:w-[calc(var(--frame-aside)_-_var(--frame-rail)_+_2.75rem)] data-[drag]:max-w-none",
+        "data-[drag-done]:[transition:none]! data-[drag]:[&_[data-menu-fold]]:transition-none! data-[drag]:[&_summary]:after:transition-none! data-[drag]:visible data-[drag]:[--menu-collapse:0] data-[drag]:[--menu-expanded:0] data-[drag]:[transition:none]! data-[drag]:[&_details::details-content]:[block-size:0]! data-[drag]:[&_li]:grow-0! w-[calc(var(--frame-nav)_-_var(--frame-rail)_+_2.75rem)]! max-w-none",
+      end: "data-[drag-done]:[transition:none]! data-[drag]:[&_[data-menu-fold]]:transition-none! data-[drag]:[&_summary]:after:transition-none! data-[drag]:visible data-[drag]:[--menu-collapse:0] data-[drag]:[--menu-expanded:0] data-[drag]:[transition:none]! data-[drag]:[&_details::details-content]:[block-size:0]! data-[drag]:[&_li]:grow-0! w-[calc(var(--frame-aside)_-_var(--frame-rail)_+_2.75rem)]! max-w-none",
     },
     state: {
       /**
@@ -493,15 +506,19 @@ for (const [name, initialValue] of [
 }
 
 /*
- * The drag's values (see `<ui-frame-main>`), registered as not inherited: they're set on the
- * elements that read them (the column, the main panel's box), so a pointer move restyles those two
- * elements, not every element under them.
+ * The drag's values (see `<ui-frame-main>`) and the main panel's push delays, registered as not
+ * inherited: they're set on the elements that read them (the column, the main panel's box), so a
+ * pointer move or a column opening restyles those elements, not every element under them (an
+ * inherited value set on the main panel's box restyled the whole page in it, about 60ms with the
+ * dashboard open).
  */
 for (const [name, syntax, initialValue] of [
   ["--drag-start", "<length>", "0px"],
   ["--drag-end", "<length>", "0px"],
   ["--drag-start-o", "<length>", "0px"],
   ["--drag-end-o", "<length>", "0px"],
+  ["--push-start-delay", "<time>", "0s"],
+  ["--push-end-delay", "<time>", "0s"],
 ] as const) {
   try {
     CSS.registerProperty({ name, syntax, inherits: false, initialValue });
@@ -532,6 +549,11 @@ export class UiFrame extends LightElement {
   @property() scrim = "";
   /** The scrim inside the main window, under its page plane, for text drawn on it (the page header). */
   @property() windowScrim = "";
+  /**
+   * A live background (an animated effect, `<ui-waves>` or `<ui-magnet-lines>`, src/components/base/
+   * appearance.ts), drawn where the background photo goes: under the glass, over the frame's colour.
+   */
+  @property({ attribute: false }) background: Renderable = nothing;
   /** Until the first paint: no transitions, so a reload shows the final layout at once. */
   @property({ type: Boolean }) settling = false;
   /** The screen's tiles across (src/components/base/tiles.ts): the frame centres that many tiles. */
@@ -551,6 +573,15 @@ export class UiFrame extends LightElement {
         // meet the screen's edges). Worked out here: a custom property's `var()`s resolve where
         // it's declared, so the root's would only ever see the root's column count.
         "--frame-slack": `max(0px, calc((100vw - ${this.cols} * var(--tile-w)) / 2))`,
+        // The page's side padding in the main panel: the slack, plus half a tile when the slack is
+        // under half a tile (less 0.01px), so the page always has at least half a tile each side and
+        // a board inside stays whole tiles on the frame's quarter lines. The clamp is that step: half
+        // a tile below the threshold, nothing from it on (a ramp 1/10000 of half a tile wide under
+        // it). Worked out from the same width as the slack, not read from the laid-out frame: read
+        // while the page was still being drawn, the frame was narrower for a moment (a scrollbar),
+        // and the padding painted from it moved every tile when the observer corrected it.
+        "--frame-pad-x":
+          "calc(var(--frame-slack) + clamp(0px, (var(--tile-w) / 2 - 0.01px - var(--frame-slack)) * 10000, var(--tile-w) / 2))",
         // The tiles between the rails, in quarters (in compact there is no end rail: its tile goes
         // to the page, and its quarters are 0 wide).
         "--frame-inner-quarters": String(4 * Math.max(1, this.cols - (this.compact ? 1 : 2))),
@@ -559,6 +590,13 @@ export class UiFrame extends LightElement {
         "--frame-actions-end": this.compact ? "-6" : undefined,
       })}
     >
+      ${
+        this.background === nothing || !this.background
+          ? nothing
+          : html`<div class=${appShellLayer({ kind: "live" })} aria-hidden="true" data-frame-layer data-frame-live>
+              ${this.background}
+            </div>`
+      }
       <div class=${appShellLayer({ kind: "backdrop" })} aria-hidden="true" data-frame-layer data-frame-backdrop></div>
       <div class=${appShellLayer({ kind: "shell" })} aria-hidden="true" data-frame-layer data-frame-shell></div>
       ${this.content}
@@ -614,14 +652,7 @@ export class UiFrame extends LightElement {
     const n = (v: number) => Math.round(v * 100) / 100;
     // The whole tiles that fit down the frame, in quarters (what's left over stays at the bottom,
     // under the footer).
-    const scale = parseFloat(getComputedStyle(document.documentElement).fontSize) / 16;
-    const tile = tileH(scale);
-    // The page's side padding: the slack (half of what the tiles leave over), plus half a tile when
-    // the slack is under half a tile, so the page always has at least half a tile each side and the
-    // board inside stays whole tiles on the frame's quarter lines.
-    const half = tileW(scale) / 2;
-    const slack = Math.max(0, (f.width - this.cols * tileW(scale)) / 2);
-    frame.style.setProperty("--frame-pad-x", `${n(slack < half - 0.01 ? slack + half : slack)}px`);
+    const tile = tileH(parseFloat(getComputedStyle(document.documentElement).fontSize) / 16);
     frame.style.setProperty("--frame-quarter-rows", String(4 * Math.max(3, Math.floor(f.height / tile + 1e-6))));
     const [x, y, w, h] = [r.left - f.left, r.top - f.top, r.width, r.height].map(n);
     const hole =
@@ -981,26 +1012,48 @@ export class UiFrameMain extends LightElement {
   protected updated(changed: PropertyValues<this>) {
     const moved = (k: "pushStart" | "pushEnd") => changed.has(k) && changed.get(k) !== undefined;
     if (!moved("pushStart") && !moved("pushEnd")) return;
+    // The springs exist once the browser has restyled for the change: on the next frame, where the
+    // style is already up to date. Read here, `getAnimations` restyled the whole page inside the
+    // click (about 28ms of a 44ms click with the dashboard open), before the frame did it again.
+    requestAnimationFrame(() => this.#expect());
+  }
+
+  /** The springs now playing, as input motion, and the width they leave the boards (`expectWidth`). */
+  #expect() {
     const springs = this.#springs();
     const settled = motion.input(springs);
-    // How much narrower the page will be once the panel's edges have sprung there (its margins'
-    // springs, from where they start to where they end): its boards place their tiles for that
-    // width from the start, so none is ever beyond the panel's edge (`UiBoard.expectWidth`).
+    // How much narrower the page will be once the panel's edges have sprung there: what its
+    // margins' springs have still to go, from where they are now (read a frame into the spring) to
+    // where they end. Its boards place their tiles for that width from the start, so none is ever
+    // beyond the panel's edge (`UiBoard.expectWidth`); the whole distance, taken from a panel
+    // already a frame on its way, came out a few px short, a lane short on a board exactly at one.
     const center = this.querySelector<HTMLElement>(":scope > div");
     let delta = 0;
+    let timing: { until: number; duration: number; easing: string } | undefined;
+    const now = center ? getComputedStyle(center) : undefined;
     for (const a of springs) {
       if ((a.effect as KeyframeEffect | null)?.target !== center || !a.transitionProperty.startsWith("margin"))
         continue;
+      // When the edge starts moving (what's left of its delay), and how: the boards' tiles slide on it.
+      const t = (a.effect as KeyframeEffect).getTiming();
+      const at = Number(a.currentTime ?? 0);
+      const wait = Number(t.delay ?? 0) - at;
+      timing = {
+        until: performance.now() + Math.max(0, wait),
+        duration: Number(t.duration ?? 0) + Math.min(0, wait),
+        easing: t.easing ?? "ease",
+      };
       const frames = (a.effect as KeyframeEffect).getKeyframes();
-      const value = (f?: Keyframe) =>
-        parseFloat(String(Object.entries(f ?? {}).find(([k]) => k.startsWith("margin"))?.[1] ?? 0));
-      delta += value(frames.at(-1)) - value(frames[0]);
+      const end = parseFloat(
+        String(Object.entries(frames.at(-1) ?? {}).find(([k]) => k.startsWith("margin"))?.[1] ?? 0),
+      );
+      const from = parseFloat(now?.getPropertyValue(a.transitionProperty) ?? "") || 0;
+      delta += end - from;
     }
     if (!delta) return;
-    for (const board of this.querySelectorAll<HTMLElement & { expectWidth?: (d: number, s: Promise<unknown>) => void }>(
-      "main > div ui-board",
-    ))
-      if (!board.parentElement?.closest("ui-board")) board.expectWidth?.(delta, settled);
+    type Expecting = HTMLElement & { expectWidth?: (d: number, s: Promise<unknown>, t?: typeof timing) => void };
+    for (const board of this.querySelectorAll<Expecting>("main > div ui-board"))
+      if (!board.parentElement?.closest("ui-board")) board.expectWidth?.(delta, settled, timing);
   }
 
   /** The column next to each edge's name ("Navigation", "Side panel"): the handles' accessible names. */
@@ -1230,7 +1283,9 @@ export class UiFrameMain extends LightElement {
         <main class=${appShellMain({ compact: this.compact })}>
           <div class=${appShellPage()}>${this.slotted()}</div>
         </main>
-        <div class=${appShellLip({ compact: this.compact })} aria-hidden="true" data-frame-lip></div>
+        <div class=${appShellLip({ compact: this.compact })} aria-hidden="true" data-frame-lip>
+          <div class=${appShellGlint()}></div>
+        </div>
       </div>
       ${this.hasSlotted("footer") ? html`<footer class=${appShellPageFooter()} data-frame-region>${this.slotted("footer")}</footer>` : nothing}
       ${this.#handle("start")} ${this.compact ? nothing : this.#handle("end")}

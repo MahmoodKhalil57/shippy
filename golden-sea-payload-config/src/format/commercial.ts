@@ -3,9 +3,9 @@ import type {
   Cell,
   Doc,
   DocumentSpec,
+  Figure,
   KindData,
   Row,
-  Stat,
   Tone,
   WidgetScope,
 } from "saastemlycrm-design-system/contracts";
@@ -458,16 +458,32 @@ export const howCompared = (c: CompareWithDrafts): KindData<"text"> => {
 
 /* ------------------------------------------------------------- the pricing */
 
+/** The pricing figures' labels, one tile each, in order (`pricingFigures`). */
+export const PRICING_FIGURES = [
+  "Landed cost (priced lines)",
+  "Selling total (excl. VAT)",
+  "Expected gross profit",
+  "Recoverable input VAT",
+  "Lines priced",
+] as const;
+
 /**
  * The case's price at a glance: landed cost, selling total, expected gross profit (red below
  * zero, amber under the policy minimum), recoverable input VAT and how many lines are priced, each
- * against its whole or target; none until a line is priced.
+ * against its whole or target; until a line is priced, only how many lines are.
  */
-export const pricingFigures = (P: Pricing): Stat[] => {
+export const pricingFigures = (P: Pricing): Figure<(typeof PRICING_FIGURES)[number]>[] => {
   const t = P.totals;
   const estimates = P.charges.filter((c) => c.status === "Estimate").length;
-  // Nothing priced yet: no figures (they would all read zero); the line pricing says what to do.
-  if (!t.landedEGP) return [];
+  const lines = P.rows.length + P.unpriced.length;
+  const linesPriced: Figure<"Lines priced"> = {
+    label: "Lines priced",
+    value: `${P.rows.length} / ${lines}`,
+    share: { value: lines ? P.rows.length / lines : 0, text: lines ? "of the lines" : "no lines requested yet" },
+    note: P.unpriced.length ? `${P.unpriced.length} to follow as a revision` : "all lines priced",
+  };
+  // Nothing priced yet: only the lines (the others would all read zero, so they show "—").
+  if (!t.landedEGP) return [linesPriced];
   return [
     {
       label: "Landed cost (priced lines)",
@@ -476,7 +492,7 @@ export const pricingFigures = (P: Pricing): Stat[] => {
       share: t.sellEGP ? { value: t.landedEGP / t.sellEGP, text: "of the selling price" } : undefined,
     },
     {
-      label: `Selling total (${P.currency}, excl. VAT)`,
+      label: "Selling total (excl. VAT)",
       value: priced(t.sellQuote, P.currency, 0),
       note: `${egp(t.sellEGP)} at ${P.currency}/EGP ${P.fx.toFixed(2)}${P.discountPct ? ` · after ${P.discountPct}% discount` : ""}`,
       share: t.sellEGP
@@ -499,15 +515,7 @@ export const pricingFigures = (P: Pricing): Stat[] => {
       note: "14% on local supplier bills — excluded from cost",
       share: t.landedEGP ? { value: t.inputVatEGP / t.landedEGP, text: "on top of landed cost" } : undefined,
     },
-    {
-      label: "Lines priced",
-      value: `${P.rows.length} / ${P.rows.length + P.unpriced.length}`,
-      share:
-        P.rows.length + P.unpriced.length
-          ? { value: P.rows.length / (P.rows.length + P.unpriced.length), text: "of the lines" }
-          : undefined,
-      note: P.unpriced.length ? `${P.unpriced.length} to follow as a revision` : "all lines priced",
-    },
+    linesPriced,
   ];
 };
 
@@ -520,12 +528,15 @@ export const pricingForSales = ({ docs }: { docs: Doc[] }): KindData<"actions"> 
   items: docs[0] ? [quoteLink(docs[0].id, "View quotation")] : [],
 });
 
+/** The margin and markup figures' labels, one tile each, in order (`marginVsMarkup`). */
+export const MARGIN_FIGURES = ["Margin = profit ÷ selling price", "Markup = profit ÷ landed cost"] as const;
+
 /**
  * The same profit read two ways, each a figure of its own: margin (on the selling price, what the
  * policy is set on) and markup (on landed cost), so nobody prices "cost + 25%" thinking it is a
- * 25% margin.
+ * 25% margin. Until a line is priced, both show "—".
  */
-export const marginVsMarkup = (P: Pricing): Stat[] => {
+export const marginVsMarkup = (P: Pricing): Figure<(typeof MARGIN_FIGURES)[number]>[] => {
   const t = P.totals;
   if (!t.landedEGP) return [];
   return [

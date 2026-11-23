@@ -8,6 +8,7 @@ import {
   treemap,
   waterfall,
   widgets,
+  type WidgetScope,
 } from "saastemlycrm-design-system/contracts";
 import * as shapes from "../format/visuals.ts";
 import { visuals } from "../queries/visuals.ts";
@@ -32,6 +33,9 @@ import {
  * the two-person bank-detail change with its call-back check, and cash in vs out for the next
  * 8 weeks. Each widget is a design-system kind given a query and a formatter (../format/cash.ts).
  */
+/** Payables, the cash forecast's outflows and bank-detail changes are never for Sales. */
+const notSales = (s: WidgetScope) => s.user.role !== "sales";
+
 export const cashPage = widgets({
   header: {
     eyebrow: "Finance · Tue 17 Nov",
@@ -54,7 +58,8 @@ export const cashPage = widgets({
       maxRows: 7,
       skeleton: "chart",
       data: visuals,
-      hidden: (v) => !v.money,
+      visible: shapes.seesMoney,
+      empty: { when: (v) => !v.receivables.length, heading: "No open receivables." },
       format: shapes.receivablesMap,
     }),
     waterfall({
@@ -64,7 +69,7 @@ export const cashPage = widgets({
       maxRows: 7,
       skeleton: "chart",
       data: cash,
-      hidden: (d) => !d.canSeePayables,
+      visible: notSales,
       format: fmt.bridge,
     }),
     month({
@@ -95,7 +100,7 @@ export const cashPage = widgets({
     },
     {
       size: "s",
-      visible: (s) => s.user.role !== "sales",
+      visible: notSales,
       metrics: {
         collection: "approvals",
         items: [
@@ -111,7 +116,7 @@ export const cashPage = widgets({
     // What we owe suppliers, in EGP at today's rates (each supplier PO's own `payable`).
     {
       size: "s",
-      visible: (s) => s.user.role !== "sales",
+      visible: notSales,
       metrics: {
         collection: "purchase-orders",
         items: [
@@ -129,6 +134,8 @@ export const cashPage = widgets({
     // The 8-week net, forecast by the cash endpoint (it spans invoices, POs, bills and payments).
     figures({
       data: cash,
+      visible: notSales,
+      labels: fmt.CASH_FIGURES,
       format: fmt.position,
     }),
     text({
@@ -144,7 +151,7 @@ export const cashPage = widgets({
       size: "s",
       subhead:
         "Every supplier payment needs the Financial Director or the CEO. Once approved, finance pays in the bank and records it here with the bank reference.",
-      visible: (s) => s.user.role !== "sales",
+      visible: notSales,
       records: {
         collection: "approvals",
         where: paymentApprovals,
@@ -156,7 +163,7 @@ export const cashPage = widgets({
         tags: ["type", "rule"],
         facts: ["payment.purchaseOrder", "payment.amount", "payment.kind", "progress"],
         text: "detail",
-        empty: "Nothing waiting.",
+        empty: "No payments waiting for approval.",
       },
     },
     {
@@ -167,6 +174,8 @@ export const cashPage = widgets({
     },
     chart({
       title: "Cash in vs out — next 8 weeks",
+      // Its subhead comes with the data; this line holds its place while it loads.
+      subhead: "EGP thousands, by week",
       size: "m",
       skeleton: "chart",
       data: cash,
@@ -175,9 +184,10 @@ export const cashPage = widgets({
     steps.each({
       data: payables,
       size: "m",
-      hidden: (d) => !d.bankChanges.length,
-      // A change in progress is the usual case here: its tile holds its place while loading.
-      expect: "shown",
+      visible: notSales,
+      // One change at a time is the usual case; another would share its tile, behind "Show all".
+      tiles: 1,
+      empty: { heading: "No bank-detail changes in progress." },
       items: (d) => d.bankChanges,
       key: (b: BankChange) => b.id,
       title: (b: BankChange) => b.title,
@@ -187,7 +197,9 @@ export const cashPage = widgets({
     details.each({
       data: payables,
       size: "s",
-      hidden: (d) => !d.bankChanges.some((b) => b.request),
+      visible: notSales,
+      tiles: 1,
+      empty: { heading: "No bank-detail change requested." },
       items: (d) => d.bankChanges.filter((b) => b.request),
       key: (b: BankChange) => `${b.id}-request`,
       title: (b: BankChange) => `${b.supplierName}: requested change`,
@@ -219,6 +231,7 @@ export const cashPage = widgets({
         columns: ["number", "balance", "dueDate", "customer.contactRule", "eInvoice.status"],
         supporting: { number: "customer", balance: "amount", dueDate: "ageBucket" },
         labels: { "eInvoice.status": "E-invoice" },
+        empty: "No open invoices.",
       },
     },
     // What we owe on each supplier PO (its own `payable`: the supplier links to the case's order
@@ -228,7 +241,7 @@ export const cashPage = widgets({
       subhead:
         "Deposits paid against pro formas, balances due on delivery, and bills held when PO, receipt and bill don't match.",
       size: "l",
-      visible: (s) => s.user.role !== "sales",
+      visible: notSales,
       records: {
         collection: "purchase-orders",
         where: payablePurchaseOrders,

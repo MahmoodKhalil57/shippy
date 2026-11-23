@@ -37,6 +37,15 @@ export function yieldToMain(): Promise<void> {
   });
 }
 
+/**
+ * Resolves once the next frame has been painted: what a press changed (its ripple, its pressed
+ * look) shows first, and work too heavy for that frame (a modal dialog making the page inert
+ * restyles every element on it) runs right after it, so the press is answered in one frame.
+ */
+export function afterNextPaint(): Promise<void> {
+  return new Promise((resume) => requestAnimationFrame(() => void yieldToMain().then(resume)));
+}
+
 /** Runs `fn` as a background-priority task (after what the page is doing for the person). */
 function background(fn: () => unknown) {
   if (scheduler?.postTask) void scheduler.postTask(fn, { priority: "background" });

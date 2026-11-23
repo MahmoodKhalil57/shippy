@@ -60,7 +60,8 @@ describe("service usage", () => {
     expect(used["Support hours"]).toBe(7.5);
     expect(used["Change requests"]).toBe(3);
     expect(used["Emails processed"]).toBe(1120 + 8);
-    expect(u.measured.waitingForReview).toBe(2);
+    // ai-001, ai-012 and the MV Helios Star RFQ the AI has read (ai-025), waiting in the inbox.
+    expect(u.measured.waitingForReview).toBe(3);
   });
 
   it("counts a question asked now", async () => {

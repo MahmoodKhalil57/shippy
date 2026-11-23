@@ -54,16 +54,26 @@ const to =
   ({ user }: WidgetScope) =>
     roles.includes(user.role ?? "") || (roles.includes("desk") && !ROLES.includes(user.role ?? ""));
 
-/** A chart tile per /home chart in this slice of the day, titled by the chart. */
-const charts = (from: number, end?: number) => ({
-  size: "m" as const,
-  skeleton: "chart" as const,
-  data: home,
-  items: (h: Home) => fmt.homeCharts(h).slice(from, end),
-  key: (c: HomeChart) => c.title,
-  title: (c: HomeChart) => c.title,
-  format: fmt.homeChart,
-});
+/**
+ * A chart tile per /home chart in this slice of the day, titled by the chart: as many tiles as the
+ * role has charts there (`fmt.homeChartCount`), so the board is laid out before /home answers.
+ */
+const charts = (from: number, end?: number) => {
+  const tiles = (s: WidgetScope) => Math.min(end ?? Infinity, fmt.homeChartCount(s)) - from;
+  return {
+    size: "m" as const,
+    skeleton: "chart" as const,
+    data: home,
+    tiles,
+    visible: (s: WidgetScope) => tiles(s) > 0,
+    empty: { heading: "No chart for this yet." },
+    items: (h: Home) => fmt.homeCharts(h).slice(from, end),
+    key: (c: HomeChart) => c.title,
+    title: (c: HomeChart) => c.title,
+    subhead: (c: HomeChart) => c.sub,
+    format: fmt.homeChart,
+  };
+};
 
 /** A count in the strip of four, 5 tiles wide like the figures beside it. */
 const counts = (
@@ -162,8 +172,7 @@ export const homePage = widgets({
     figures({
       width: 5,
       data: home,
-      hidden: (h) => !fmt.homePart(h, "tiles"),
-      expect: "shown",
+      labels: fmt.homeFigureLabels,
       format: fmt.homeFigures,
     }),
     counts(to("operations"), "supplier-bills", [
@@ -186,12 +195,13 @@ export const homePage = widgets({
     chart.each(charts(0, 1)),
     list({
       title: "Next up",
+      // Its subhead comes with the data; this line holds its place while it loads.
+      subhead: "This week",
       size: "s",
       emphasis: "inverse",
       skeleton: "list",
       data: home,
-      hidden: (h) => !fmt.homePart(h, "agenda"),
-      expect: "shown",
+      empty: { when: (h) => !fmt.homePart(h, "agenda"), heading: "Nothing due this week." },
       format: fmt.agenda,
     }),
     // The first list: the decisions waiting for the approvers (tinted, so it reads first), the
@@ -267,12 +277,13 @@ export const homePage = widgets({
     // office everyone's follow-ups due today.
     list({
       title: "Daily briefing",
+      // Its subhead comes with the data; this line holds its place while it loads.
+      subhead: "This morning",
       size: "s",
       skeleton: "list",
       visible: (s) => s.user.role !== "office-admin",
       data: home,
-      hidden: (h) => !fmt.homePart(h, "briefing"),
-      expect: "shown",
+      empty: { when: (h) => !fmt.homePart(h, "briefing"), heading: "Nothing needs you this morning." },
       format: fmt.briefing,
     }),
     followUps(to("office-admin"), dueToday),

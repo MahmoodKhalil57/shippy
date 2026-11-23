@@ -15,6 +15,7 @@ import {
   componentOf,
   dashboardView,
   globalLabel,
+  formFields,
   globalOf,
   labels,
   rootViews,
@@ -62,7 +63,16 @@ import { miniBlocks, miniFigure, miniOpen, miniRows } from "./mini.ts";
 import type { Action, UndoCall, ViewBlock, ViewHeader } from "./schema.ts";
 import type { TileSize } from "./tile.ts";
 import { doneText, undoOf, type ActionReply } from "./undo.ts";
-import { eachTiles, fill, type Source, type Widget, type WidgetPage, type WidgetScope } from "./widget.ts";
+import {
+  eachSlots,
+  eachTiles,
+  fill,
+  KEPT_LINE,
+  type Source,
+  type Widget,
+  type WidgetPage,
+  type WidgetScope,
+} from "./widget.ts";
 // More blocks: the app's own (./blocks/*.ts), each registering itself with `defineBlock`.
 import.meta.glob("./blocks/*.ts", { eager: true });
 
@@ -122,8 +132,23 @@ export function leaves(list: Widget[], scope: WidgetScope): Widget[] {
 const asBlocks = (b: ViewBlock | ViewBlock[] | null | undefined): ViewBlock[] =>
   b ? (Array.isArray(b) ? b : [b]) : [];
 
-/** A collection's list's or a form's height in tiles unless its widget says (`rows`). */
+/** A collection's list's height in tiles unless its widget says (`rows`): a toolbar, a page of rows, a pager. */
 const PAGE_ROWS = 12;
+
+/**
+ * A page tile's height in tiles before its data, unless its widget says (`rows`): a collection's
+ * list `PAGE_ROWS`; a form by its fields (`FORM_FIELD_ROWS` a field, under a header), what's past
+ * its box scrolling inside it. Never from the record, so the record arriving moves nothing.
+ */
+const FORM_HEAD_ROWS = 3;
+const FORM_FIELD_ROWS = 1.5;
+const FORM_MAX_ROWS = 40;
+function pageRows(w: Widget): number {
+  if (w.collection) return PAGE_ROWS;
+  const config = w.document ? collectionOf(w.document.collection) : w.global ? globalOf(w.global.global) : undefined;
+  const fields = config ? formFields(config as never).length : 0;
+  return Math.min(FORM_MAX_ROWS, Math.max(PAGE_ROWS, Math.ceil(FORM_HEAD_ROWS + fields * FORM_FIELD_ROWS)));
+}
 
 /** A widget's skeleton: what it says, else a collection's list loads as a table and a form as a card. */
 const skeletonOf = (w: Widget): Widget["skeleton"] =>
@@ -255,7 +280,10 @@ export interface TileArrange {
 
 @customElement("app-widgets")
 export class AppWidgets extends LightElement {
-  #prefs = new StoreController(this, preferences);
+  // This board's own arrangement (what was added, moved, resized or hidden) and nothing else.
+  #prefs = new StoreController(this, preferences, undefined, {
+    changed: (s, p) => s.boards[this.#boardKey] !== p.boards[this.#boardKey],
+  });
   @property({ attribute: false }) page: WidgetPage = { widgets: [] };
   /** The root view's path parameters (`/cases/:id`): `$param.id`. */
   @property({ attribute: false }) params: Record<string, string> = {};
@@ -613,14 +641,11 @@ export class AppWidgets extends LightElement {
    * handles, and no tile moves in front of it).
    */
   #fixed = new Set<string>();
-  /** Tiles as tall as what they draw (the board's `rows: "fit"`): mini versions. */
-  #fitting = new Set<string>();
 
   #tiles(): WidgetItem[] {
     const out: WidgetItem[] = [];
     const tile = (key: string, size: TileSize, w: Widget) => {
       const memory = `${this.#boardKey}|${key}`;
-      const last = tileHeights.get(memory);
       // Its size in cells and the bounds it may be resized within (Android's target / min / max):
       // what it says, else its kind's. The same loading and loaded.
       // A collection's list or a form: 12 tiles high unless it says (a toolbar, about ten rows, a pager).
@@ -639,24 +664,18 @@ export class AppWidgets extends LightElement {
       // A kept widget's mini version, each of its items too (a widget drawn per item: its figures).
       const pinned = this.#pins.get(this.#sources.get(key)?.base ?? key);
       const mini = !!pinned;
-      // A page's own collection, record or setting is as tall as it is (never "Show all") until
-      // someone sizes it by hand: then that size, scrolling inside, within its bounds.
-      const mine = this.#prefs.value.boards[this.#boardKey];
-      const byHand =
-        mine?.rows?.[key] != null || this.live?.heights?.[key] != null || (this.live?.key === key && !!this.live.rows);
-      if (mini || w.fit || (page && !byHand)) this.#fitting.add(key);
-      else this.#fitting.delete(key);
+      // Every tile's box is decided before its data, a page's own collection, record or setting
+      // too (its rows, scrolling inside), so the data never moves the board.
       const b = mini
         ? (() => {
-            // The board's width; its height is what it draws (`rows: "fit"` on the board), the
-            // rows here only its first guess.
+            // The board's width; its height the most a mini version draws (`miniRows`).
             const rows = this.#sources.get(key)?.item !== undefined ? 2 : miniRows(!!w.title, skeletonOf(w));
             return boundsOf({ size: "full", minSize: "full", rows, minRows: rows, maxRows: rows });
           })()
         : boundsOf({
             ...w,
             size,
-            rows: w.rows ?? (page ? PAGE_ROWS : defaultRows(skeletonOf(w), size)),
+            rows: w.rows ?? (page ? pageRows(w) : defaultRows(skeletonOf(w), size)),
             // A collection's list or a form is a table's kind however it's drawn; else its skeleton's.
             kind: page ? "table" : skeletonOf(w),
           });
@@ -675,10 +694,6 @@ export class AppWidgets extends LightElement {
         maxRows: w.maxRows,
         // An exact width in tiles, inside its own bounds.
         span: w.width && Math.min(w.maxWidth ?? w.width, Math.max(w.minWidth ?? w.width, w.width)),
-        // Until it has drawn, a tile that draws nothing while loading (`<app-widget>`'s render: hidden
-        // last time, or a widget that may hide and doesn't `expect` to show) takes no lanes, so the
-        // tiles before it never move for it.
-        away: !this.sizes.has(key) && (last === 0 || (last === undefined && !!w.hidden && w.expect !== "shown")),
         content: html`<app-widget
           .widget=${expand(w, this.scope)}
           .host=${this}
@@ -712,21 +727,35 @@ export class AppWidgets extends LightElement {
       // An untitled `counts` is one widget per count (`figures`): expanded here, so each is a tile.
       if ((w.counts && !w.title) || w.metrics) w = expand(w, this.scope);
       const size = w.size ?? fallback ?? "s";
-      // One tile per item, once the data is in; a loading tile until then.
+      // Its tiles, decided before the data (`eachSlots`): loading tiles until the data is in, then
+      // each its item, in the same keys, places and boxes.
       if (w.each) {
         const got = this.#eachData(key, w);
-        if (!got)
-          return out.push({
-            key,
-            size,
-            rows: w.rows ?? defaultRows(w.skeleton, size),
-            // One that may come to nothing (`hidden`, not `expect`ed) holds no place while loading.
-            away: !!w.hidden && w.expect !== "shown",
-            content: html`<ui-tile .size=${size} loading></ui-tile>`,
+        if (!got || got.refused) {
+          const slots = eachSlots(w, this.scope);
+          slots.forEach((slot, i) => {
+            const k = i === 0 ? key : `${key}:${slot}`;
+            if (only !== undefined && slot !== only) return;
+            this.#sources.set(k, { base: key, item: slot });
+            // Sized and bounded as its item's tile will be (the widget's), drawn as a skeleton.
+            tile(k, size, w);
+            out[out.length - 1]!.content = got?.refused
+              ? html`<ui-tile .size=${size} .heading=${w.title ?? ""} ?bare=${!w.title}
+                  ><ui-alert tone="info">${w.denied ?? "You don't have access to this."}</ui-alert></ui-tile
+                >`
+              : html`<ui-tile
+                  .size=${size}
+                  .heading=${w.title ?? ""}
+                  .subhead=${w.each!.subhead ? KEPT_LINE : ""}
+                  ?bare=${!w.title}
+                  .kind=${w.skeleton}
+                  loading
+                ></ui-tile>`;
+            if (!w.title && w.each!.slots) this.#labels.set(k, slot);
           });
-        if (got.refused || w.hidden?.(got.data as never, this.scope)) return;
-        // The first item takes the loading tile's key, so it's the same tile on the board (in its
-        // place, its box), not one that goes and another that comes.
+          return;
+        }
+        // The first tile keeps the widget's key, each other its tile's name.
         eachTiles(w, got.data as never, this.scope).forEach((t, i) => {
           // A kept copy of one item shows that item alone, in its own key.
           if (only !== undefined && t.key !== only) return;
@@ -1064,10 +1093,7 @@ export class AppWidgets extends LightElement {
   render() {
     // Everything on the screen is a tile on the board, the header first.
     // A mini version fits what it draws: its tiles are measured, never cut or left with room over.
-    const items = this.#tiles().map((it) =>
-      this.#fitting.has(it.key) ? { ...it, rows: "fit" as const, remember: `${this.#boardKey}|${it.key}` } : it,
-    );
-    return html`<ui-board .items=${items} ?fit=${this.fit}></ui-board> ${this.#dialog()}`;
+    return html`<ui-board .items=${this.#tiles()} ?fit=${this.fit}></ui-board> ${this.#dialog()}`;
   }
 }
 
@@ -1534,8 +1560,6 @@ export class AppWidget extends LightElement {
     }
     this.#sized(w.size ?? "full");
     const list = w.collection ? this.#same("collection", fill(w.collection, this.host.scope)) : undefined;
-    // `hideEmpty`: nothing while the list holds no records.
-    if (list?.hideEmpty && this.count === 0) return nothing;
     // A list placed on another page links to its collection's own page ("All"), unless it is that page.
     const listPage =
       list && !list.home && !list.hide?.includes("all")
@@ -1615,18 +1639,16 @@ export class AppWidget extends LightElement {
     const scope = this.host.scope;
     if (w.header) return this.#headerTile(w);
     if (w.collection || w.document || w.global) return this.#pageTile(w);
-    // While loading, a tile that was hidden last time (or, on a first visit, a widget that may hide
-    // itself once its data is in and doesn't say it usually shows: `expect`) holds no skeleton,
-    // and a tile that draws nothing takes no lanes on the board: one that then vanished moved the
-    // tiles after it. If it does show, it comes in (a fade) and the tiles after it make room.
-    if (this.state === "loading") {
-      const last = tileHeights.get(this.memory);
-      if (last === 0 || (last === undefined && w.hidden && w.expect !== "shown")) return nothing;
-    }
-    if (this.state === "denied" && !w.denied) return this.#sized(null);
-    if (this.state === "ready" && w.hidden?.(this.data as never, scope)) return this.#sized(null);
+    // Its box is decided before its data and kept whatever the data says: with nothing to show it
+    // shows its empty state there (`empty`), refused it says so there, so the board never moves.
     if (this.state === "ready") this.#sized(w.size ?? "s");
-    const all = this.state === "ready" ? asBlocks(w.render?.(this.data as never, scope)) : [];
+    const nothingToShow = this.state === "ready" && !!w.empty?.when?.(this.data as never, scope);
+    const all =
+      this.state !== "ready"
+        ? []
+        : nothingToShow
+          ? [{ type: "empty", heading: w.empty!.heading, description: w.empty!.description } as ViewBlock]
+          : asBlocks(w.render?.(this.data as never, scope));
     const cut = this.mini ? miniBlocks(all) : all;
     // A mini figure: alone, bare, named by the widget's title (the tile fits it).
     const figure = this.mini ? miniFigure(cut, w.title) : undefined;
@@ -1643,13 +1665,14 @@ export class AppWidget extends LightElement {
       this.state === "loading"
         ? nothing
         : this.state === "denied"
-          ? html`<ui-alert tone="info">${w.denied}</ui-alert>`
+          ? html`<ui-alert tone="info">${w.denied ?? "You don't have access to this."}</ui-alert>`
           : this.state === "error"
             ? html`<ui-alert tone="error" heading="This couldn't load">${this.message}</ui-alert>`
             : renderBlocks(blocks, ctx);
     const head = this.state === "ready" ? w.head?.(this.data as never, scope) : undefined;
     // A mini version: its title and count, no subhead, tags or actions.
-    const subhead = this.mini ? "" : (head?.subhead ?? w.subhead ?? "");
+    // Its declared subhead while loading, the data's once in: one line either way (`tileSubhead`).
+    const subhead = this.mini ? "" : head?.subhead || w.subhead || "";
     // One trailing group, there from the first render: a slotted element is routed to the header
     // when the tile first draws, so what arrives with the data (tags, actions, the layout menu)
     // goes inside it rather than beside it.

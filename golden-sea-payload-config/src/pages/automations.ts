@@ -27,7 +27,7 @@ export const automationsPage = widgets({
   // The figures across the top, the review queue and what runs on its own (and what needs a person)
   // in a row, then the tables.
   widgets: [
-    figures({ data: automations, format: fmt.automationFigures }),
+    figures({ data: automations, labels: fmt.AUTOMATION_FIGURES, format: fmt.automationFigures }),
     // The exception queue's own counts, each linking to the list.
     {
       size: "s",

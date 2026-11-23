@@ -2,6 +2,7 @@ import type { VariantProps } from "class-variance-authority";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
+import { afterNextPaint } from "../../base/work-queue.ts";
 import { booleanAttribute, rcva } from "../../base/variants.ts";
 import { button } from "../actions/button.ts";
 import { iconButton } from "../actions/icon-button.ts";
@@ -17,7 +18,8 @@ import { iconSvg } from "../media/icon.ts";
  * Every variant is responsive, e.g. the docs' responsive modal (bottom sheet on
  * small screens, centred from `sm`): `placement="bottom sm:middle"`.
  */
-export const modal = rcva("modal", {
+/** Closing (`data-closing`): hidden at once, its backdrop too, while `close` waits for the frame to paint. */
+export const modal = rcva("modal data-closing:invisible data-closing:backdrop:invisible", {
   variants: {
     /**
      * Centred (M3 basic dialog), or `spotlight`: near the top, centred (command palettes), so the
@@ -126,17 +128,37 @@ export class UiModal extends LightElement {
 
   /** Close the dialog, optionally with a return value. */
   close(returnValue?: string) {
-    if (this._dialog?.open) this._dialog.close(returnValue);
+    // Closed after the next paint like any close (`updated`), with this return value.
+    if (this._dialog && returnValue !== undefined) this._dialog.returnValue = returnValue;
     this.open = false;
   }
+
+  /** Bumped each time it's asked to open, so a show that comes too late (closed since) does nothing. */
+  #opening = 0;
 
   protected updated(changed: PropertyValues<this>) {
     if (!changed.has("open") || !this._dialog) return;
     if (this.open && !this._dialog.open) {
-      this._dialog.showModal();
-      this.dispatchEvent(new CustomEvent("ui-open", { bubbles: true }));
+      // Opened after the press has painted: `showModal` makes the page behind inert, which restyles
+      // every element on it (about 45 to 90ms on a dashboard), and in the press's own frame that
+      // delayed its answer by as much. Still open, and not already: then shown.
+      const ticket = ++this.#opening;
+      void afterNextPaint().then(() => {
+        if (ticket !== this.#opening || !this.open || !this._dialog || this._dialog.open) return;
+        this._dialog.showModal();
+        this.dispatchEvent(new CustomEvent("ui-open", { bubbles: true }));
+      });
     } else if (!this.open && this._dialog.open) {
-      this._dialog.close();
+      // Hidden in the frame that answers the press (only the dialog restyles), closed once that
+      // frame is painted: `close` lifts the page's inertness, which restyles every element on it.
+      const ticket = ++this.#opening;
+      this._dialog.toggleAttribute("data-closing", true);
+      void afterNextPaint().then(() => {
+        const dialog = this._dialog;
+        if (ticket !== this.#opening || !dialog) return;
+        dialog.removeAttribute("data-closing");
+        if (!this.open && dialog.open) dialog.close();
+      });
     }
   }
 

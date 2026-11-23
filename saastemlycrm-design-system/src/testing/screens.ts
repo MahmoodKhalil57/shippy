@@ -2,6 +2,7 @@ import { stringify } from "qs-esm";
 import {
   designProblems,
   type DrawnTile,
+  eachSlots,
   eachTiles,
   fill,
   linkTarget,
@@ -112,8 +113,8 @@ async function draw(ctx: Ctx, page: WidgetPage, scope: WidgetScope, where: strin
   const problems: string[] = [];
   /** Each widget's tile as drawn, with its size, for the tile rules (`tileProblems`). */
   const tiles: DrawnTile[] = [];
-  /** Widgets that took no tile (hidden by their data, or refused with nothing to say). */
-  const gone = new WeakSet<Widget>();
+  /** The tiles that show their empty state with this data (`WidgetBase.empty`, an `each` tile with no item). */
+  const empties: string[] = [];
   const one = async (w: Widget): Promise<ViewBlock[]> => {
     if (w.visible && !w.visible(scope)) return [];
     if (w.grid) return [{ type: "grid", blocks: (await Promise.all(w.grid.map(one))).flat() }];
@@ -135,24 +136,42 @@ async function draw(ctx: Ctx, page: WidgetPage, scope: WidgetScope, where: strin
     // Data widgets (`records`, `counts`, `fields`) are drawn by the design system from the field config.
     if (!w.render && !w.each) return [];
     const { status, data } = w.source ? await load(ctx, fill(w.source, scope), scope) : { status: 200, data: null };
-    if (status === 403 && !w.denied) {
-      gone.add(w);
-      return [];
-    }
+    // Refused, it keeps its box and says so (its tile is there before its data either way).
     if (status === 403) return [];
     if (status !== 200) {
       problems.push(`${at}: its source answered ${status}`);
       return [];
     }
     try {
-      if (w.hidden?.(data as never, scope)) {
-        gone.add(w);
-        return [];
+      // Nothing to show: its empty state, in its box.
+      if (w.empty?.when?.(data as never, scope)) {
+        empties.push(`${at}: ${w.empty.heading}`);
+        const blocks: ViewBlock[] = [{ type: "empty", heading: w.empty.heading, description: w.empty.description }];
+        tiles.push({ title: w.title, size: w.size, emphasis: w.emphasis, blocks });
+        return w.title ? [{ type: "card", heading: w.title, blocks }] : blocks;
+      }
+      // Its tiles are decided before the data: every item should have one of its own.
+      if (w.each) {
+        const slots = eachSlots(w, scope);
+        const items = w.each.items(data as never, scope);
+        const unnamed = w.each.slotOf
+          ? items.map((x, i) => w.each!.slotOf!(x, i)).filter((n) => !slots.includes(n))
+          : [];
+        for (const n of unnamed) problems.push(`${at}: "${n}" isn't one of its labels (\`labels\`)`);
+        if (!w.each.slotOf && items.length > slots.length)
+          problems.push(`${at}: ${items.length} items for ${slots.length} tiles; give it more \`tiles\``);
       }
       // One tile per item: each drawn as a titled widget of its own.
       if (w.each)
-        return eachTiles(w, data as never, scope).map(({ widget: t }): ViewBlock => {
+        return eachTiles(w, data as never, scope).map(({ key, widget: t }): ViewBlock => {
           const r = t.render(data as never, scope);
+          if (t.head?.(data as never, scope)?.subhead && !w.each!.subhead)
+            problems.push(
+              `${at}: its subhead comes from its data (\`head\`); give it with \`subhead\` so its line is there while it loads`,
+            );
+          const first = r ? [r].flat()[0] : undefined;
+          if (first?.type === "empty" || (first?.type === "stats" && first.items[0]?.value === "—"))
+            empties.push(`${at} [${key}]: ${first.type === "empty" ? first.heading : "no value"}`);
           const head = t.head?.(data as never, scope);
           tiles.push({
             title: t.title,
@@ -170,6 +189,10 @@ async function draw(ctx: Ctx, page: WidgetPage, scope: WidgetScope, where: strin
         });
       const r = w.render!(data as never, scope);
       const blocks = r ? (Array.isArray(r) ? r : [r]) : [];
+      if (w.title && w.head?.(data as never, scope)?.subhead && !w.subhead)
+        problems.push(
+          `${at}: its subhead comes from its data (\`head\`); declare \`subhead\`, the line it shows while it loads`,
+        );
       tiles.push({ title: w.title, size: w.size, emphasis: w.emphasis, blocks });
       if (!w.title) return blocks;
       const head = w.head?.(data as never, scope);
@@ -193,14 +216,13 @@ async function draw(ctx: Ctx, page: WidgetPage, scope: WidgetScope, where: strin
       ];
     const sized = { ...w, size: w.size ?? fallback ?? "s" } as Widget;
     const b = await one(sized);
-    if (gone.has(sized)) return b;
     const n = w.each ? b.length : 1;
     for (let i = 0; i < n; i++) items.push({ size: sized.size!, rows: rowsOf(sized), span: sized.width });
     return b;
   };
   const blocks: ViewBlock[] = [];
   for (const w of page.widgets) blocks.push(...(await top(w)));
-  return { blocks, problems, tiles };
+  return { blocks, problems, tiles, empties };
 }
 
 /** Every `href` in drawn blocks (actions, cells, list items, entries, stats…), however deep. */
@@ -301,10 +323,22 @@ async function* drawn(options: ScreenCheckOptions) {
         doc = { id: String(id), slug: screen.docOf };
       }
       const scope: WidgetScope = { user: me, doc, params: { ...screen.page.params } };
-      const { blocks, problems, tiles } = await draw(ctx, screen.page, scope, screen.name);
-      yield { who, screen, blocks, tiles, problems, ctx };
+      const { blocks, problems, tiles, empties } = await draw(ctx, screen.page, scope, screen.name);
+      yield { who, screen, blocks, tiles, problems, empties, ctx };
     }
   }
+}
+
+/**
+ * Every tile that shows its empty state with the seed's data, as every user: "<user> · <screen> ›
+ * <widget>: <what it says>". A widget's box is there before its data, so nothing moves when it has
+ * nothing to show; this lists where the data (or the widget) leaves it with nothing.
+ */
+export async function screenEmptyStates(options: ScreenCheckOptions): Promise<string[]> {
+  const out: string[] = [];
+  for await (const { who, screen, empties } of drawn(options))
+    if (screen) for (const e of empties ?? []) out.push(`${who} · ${e}`);
+  return out;
 }
 
 /**

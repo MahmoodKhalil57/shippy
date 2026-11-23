@@ -94,9 +94,27 @@
     "lines": [
       {
         "lineNo": 1,
-        "description": "Engine spares — 7 lines (per GS-Q-0131 v1)",
+        "description": "Fuel injection valve nozzle, aux. engine Yanmar 6EY18ALW",
+        "qty": 6,
+        "unitPrice": 14500
+      },
+      {
+        "lineNo": 2,
+        "description": "Piston ring set (one cylinder), Yanmar 6EY18ALW",
+        "qty": 6,
+        "unitPrice": 18500
+      },
+      {
+        "lineNo": 3,
+        "description": "Turbocharger overhaul kit, MAN NR20/S",
         "qty": 1,
-        "unitPrice": 512000
+        "unitPrice": 309920
+      },
+      {
+        "lineNo": 4,
+        "description": "Safety helmet EN 397, white, with chin strap",
+        "qty": 12,
+        "unitPrice": 340
       }
     ],
     "supplierSide": {

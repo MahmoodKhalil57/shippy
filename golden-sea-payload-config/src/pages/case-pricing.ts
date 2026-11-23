@@ -25,8 +25,12 @@ import { latestQuotation, pricing } from "../queries/commercial.ts";
  * /api/commercial/cases/:id/pricing and /request-approval (../endpoints/commercial.ts). Each widget
  * is a design-system kind given a query and a formatter (../format/commercial.ts).
  */
-/** Nothing priced yet: the shapes would only draw zeros. */
-const unpriced = (P: Pricing) => !P.totals.landedEGP;
+/** Nothing priced yet: the shapes would only draw zeros, so they say so in their own boxes. */
+const NOT_PRICED = {
+  when: (P: Pricing) => !P.totals.landedEGP,
+  heading: "No lines priced yet.",
+  description: "Select an offer for a line to price it.",
+};
 
 export const casePricing = widgets({
   widgets: [
@@ -41,11 +45,13 @@ export const casePricing = widgets({
     // The totals with the checks beside them, the levers and the lines, the build-up, the charges.
     figures({
       data: pricing,
+      labels: fmt.PRICING_FIGURES,
       format: fmt.pricingFigures,
     }),
     // Margin and markup, the same profit read two ways: a figure each.
     figures({
       data: pricing,
+      labels: fmt.MARGIN_FIGURES,
       format: fmt.marginVsMarkup,
     }),
     list({
@@ -71,7 +77,7 @@ export const casePricing = widgets({
       maxRows: 5,
       skeleton: "stats",
       data: pricing,
-      hidden: unpriced,
+      empty: NOT_PRICED,
       format: shapes.marginDial,
     }),
     waterfall({
@@ -81,7 +87,7 @@ export const casePricing = widgets({
       maxRows: 7,
       skeleton: "chart",
       data: pricing,
-      hidden: unpriced,
+      empty: NOT_PRICED,
       format: shapes.priceBuildUp,
     }),
     whatif({
@@ -91,7 +97,7 @@ export const casePricing = widgets({
       maxRows: 9,
       skeleton: "card",
       data: pricing,
-      hidden: unpriced,
+      empty: NOT_PRICED,
       format: shapes.pricingWhatIf,
     }),
     form({

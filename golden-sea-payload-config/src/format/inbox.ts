@@ -287,17 +287,21 @@ export const extractPrompt = ({ d }: Open): KindData<"text"> => {
  * What became of a message settled without a draft: an RFQ's case (or marked "not an RFQ"), or a
  * reply or forward a person marked not related, and who did.
  */
-export const messageOutcome = ({ d }: Open): KindData<"alert"> => {
+export const messageOutcome = ({ d }: Open): KindData<"text"> => {
   const m = d.message!;
+  const settled = { muted: true, text: "Nothing more to do with this message." };
   if (!d.rfq)
-    return { tone: "info", text: `Marked not related${m.match?.reviewedBy ? ` by ${m.match.reviewedBy}` : ""}.` };
+    return {
+      ...settled,
+      alerts: [{ tone: "info", text: `Marked not related${m.match?.reviewedBy ? ` by ${m.match.reviewedBy}` : ""}.` }],
+    };
   return m.createdCase
     ? {
-        tone: "success",
-        text: `Case ${m.createdCase.caseId} was created from this message.`,
+        ...settled,
+        alerts: [{ tone: "success", text: `Case ${m.createdCase.caseId} was created from this message.` }],
         actions: [{ label: "Open case", href: link.doc("cases", m.createdCase.id) }],
       }
-    : { tone: "info", text: "Marked “not an RFQ”." };
+    : { ...settled, alerts: [{ tone: "info", text: "Marked “not an RFQ”." }] };
 };
 
 /**
@@ -311,6 +315,49 @@ export const matchPrompt = ({ d }: Open): KindData<"text"> => ({
     { label: "Match reply", icon: "sparkles", main: true, call: { path: path(d.message!.id, "match") }, reply: true },
   ],
 });
+
+/**
+ * A reply or forward whose match is tried: an uncertain one waits for a person (its candidate
+ * cases are in "Reply match"), a linked one says its case.
+ */
+const matchState = ({ d }: Open): KindData<"text"> | null => {
+  const m = reply(d);
+  if (m?.status === "Needs review")
+    return {
+      muted: true,
+      text: "The match is uncertain, so it isn't linked. Pick its case under Reply match, or mark it not related.",
+    };
+  const c = m?.status === "Linked" ? m.match?.case : undefined;
+  return c
+    ? {
+        muted: true,
+        alerts: [
+          {
+            tone: "success",
+            text: `Linked to case ${c.caseId}${m!.match!.reviewedBy ? ` by ${m!.match!.reviewedBy}` : ""}.`,
+          },
+        ],
+        text: "Its offer and files are on the case.",
+        actions: [{ label: "Open case", href: link.doc("cases", c.id) }],
+      }
+    : null;
+};
+
+/**
+ * The open message's next step, whichever applies, in one tile (so the reading pane keeps its
+ * shape whichever message is open): read an RFQ into a draft case, create the case from the draft
+ * (or open the one made), match a reply (or what its match is), or what became of a message
+ * settled without a draft. Nothing when no message is open.
+ */
+export const nextStep = (o: OpenWithPeople): KindData<"text"> | null => {
+  const { d } = o;
+  if (!d.message) return null;
+  if (unreadRfq(o)) return extractPrompt(o);
+  if (draft(d)) return d.message.createdCase ? caseCreated(o) : createCase(o);
+  if (settledWithoutDraft(o)) return messageOutcome(o);
+  if (unmatchedReply(o)) return matchPrompt(o);
+  return matchState(o);
+};
 
 /* -------- the draft case an RFQ makes */
 
@@ -365,11 +412,12 @@ export const createCase = ({ d, users }: OpenWithPeople): KindData<"text"> => {
 };
 
 /** The case made from this message, with its next step: sending the supplier RFQs. */
-export const caseCreated = ({ d }: Open): KindData<"alert"> => {
+export const caseCreated = ({ d }: Open): KindData<"text"> => {
   const c = d.message!.createdCase!;
   return {
-    tone: "success",
-    text: `Case ${c.caseId} created from this message and linked to it.`,
+    alerts: [{ tone: "success", text: `Case ${c.caseId} created from this message and linked to it.` }],
+    muted: true,
+    text: "Next: send the supplier RFQs for its lines.",
     actions: [
       { label: "Send supplier RFQs", main: true, href: link.doc("cases", c.id, "rfqs") },
       { label: "Open case", href: link.doc("cases", c.id) },
@@ -425,22 +473,18 @@ export const draftLines = ({ d }: Open): KindData<"table"> => {
   };
 };
 
-/** What the draft couldn't read or found unclear (the clarification request is `clarification`). */
-export const draftMissing = ({ d }: Open): KindData<"alert"> => ({
-  tone: "warning",
-  text: d.extraction!.missing.join(" · "),
-});
-
 /**
- * The clarification request the AI drafted for what is missing or unclear (`draftMissing`), to
- * the sender: drafted, never sent by itself.
+ * What the draft couldn't read or found unclear, over the clarification request the AI drafted for
+ * it to the sender: drafted, never sent by itself.
  */
 export const clarification = ({ d }: Open): KindData<"message"> => {
   const m = d.message!;
+  const x = d.extraction!;
   return {
+    alerts: [{ tone: "warning", text: x.missing.join(" · ") }],
     meta: [`To: ${m.fromName} <${m.from}>`],
-    subject: "Clarification request — drafted, not sent",
-    body: d.extraction!.clarification,
+    subject: "Clarification request, drafted and not sent",
+    body: x.clarification || "No clarification request was drafted for these.",
   };
 };
 

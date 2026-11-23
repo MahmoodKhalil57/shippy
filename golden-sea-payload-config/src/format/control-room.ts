@@ -1,13 +1,15 @@
 import {
   formatNumber,
+  type Figure,
   type KindData,
   type NumberFormat,
-  type Stat,
   type ViewHeader,
+  type WidgetScope,
 } from "saastemlycrm-design-system/contracts";
 import type { Briefing } from "../endpoints/assistant.ts";
 import type { ControlRoom, CrChart, CrRanked, CrWidget, Unit } from "../endpoints/control-room.ts";
 import * as link from "../links.ts";
+import { seesMoney } from "./visuals.ts";
 
 /**
  * The management dashboards (GET /api/control-room, ../endpoints/control-room.ts) and the 07:00
@@ -39,6 +41,13 @@ const dashboards =
 export const roomCharts = dashboards("chart");
 /** Every ranking the role may see. */
 export const roomRankings = dashboards("ranked");
+/**
+ * How many trend charts and rankings the endpoint sends, by who is looking (its sections: pipeline
+ * 3 charts and 2 rankings, speed 3 charts, delivery 1 chart; profit & cash, for the money roles,
+ * 4 charts and 3 rankings): one tile each, placed before the data.
+ */
+export const roomChartTiles = (scope: WidgetScope) => (seesMoney(scope) ? 11 : 7);
+export const roomRankingTiles = (scope: WidgetScope) => (seesMoney(scope) ? 5 : 2);
 
 /**
  * The control room's header: "The business, live.", with the way to approvals and all cases, and
@@ -55,22 +64,41 @@ export const roomHeader = (d: ControlRoom): ViewHeader => ({
   ],
 });
 
-/** The key figures for the last four weeks, each with its trend; the first is the headline (tinted). */
-export const roomFigures = (d: ControlRoom): Stat[] =>
-  d.tiles.map((t, i) => ({
-    main: i === 0,
-    label: t.label,
-    value: t.value,
-    note: t.note,
-    tone: t.tone,
-    href: t.href,
-    share: t.share,
-    trend: t.trend && {
-      labels: t.trend.labels,
-      values: scaled(t.trend.unit, t.trend.values),
-      format: CR_FORMAT[t.trend.unit],
-    },
-  }));
+/** The key figures' labels, one tile each, in order; the money roles see profit and receivables too. */
+const ROOM_FIGURES = ["Open RFQs", "Avg time to quote", "Win rate", "Waiting on suppliers"] as const;
+const MONEY_FIGURES = ["Gross profit", "Receivables open"] as const;
+type RoomFigure = (typeof ROOM_FIGURES)[number] | (typeof MONEY_FIGURES)[number];
+export const roomFigureLabels = (scope: WidgetScope): readonly RoomFigure[] =>
+  seesMoney(scope) ? [...ROOM_FIGURES, ...MONEY_FIGURES] : ROOM_FIGURES;
+const isRoomFigure = (label: string): label is RoomFigure =>
+  (ROOM_FIGURES as readonly string[]).includes(label) || (MONEY_FIGURES as readonly string[]).includes(label);
+
+/**
+ * The key figures for the last four weeks, each with its trend; the first is the headline (tinted).
+ * The month's gross profit ("Gross profit Oct") is filed under "Gross profit", its month in the note.
+ */
+export const roomFigures = (d: ControlRoom): Figure<RoomFigure>[] =>
+  d.tiles.flatMap((t, i) => {
+    const month = /^Gross profit (.+)$/.exec(t.label)?.[1];
+    const label = month ? "Gross profit" : t.label;
+    if (!isRoomFigure(label)) return [];
+    return [
+      {
+        main: i === 0,
+        label,
+        value: t.value,
+        note: month ? `${month}: ${t.note ?? ""}` : t.note,
+        tone: t.tone,
+        href: t.href,
+        share: t.share,
+        trend: t.trend && {
+          labels: t.trend.labels,
+          values: scaled(t.trend.unit, t.trend.values),
+          format: CR_FORMAT[t.trend.unit],
+        },
+      },
+    ];
+  });
 
 /**
  * The 07:00 AI briefing: read aloud, its sources linked; "Summarise" re-reads the live records.

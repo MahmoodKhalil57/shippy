@@ -1,14 +1,4 @@
-import {
-  actions,
-  alert,
-  assists,
-  details,
-  message,
-  table,
-  text,
-  tiles,
-  widgets,
-} from "saastemlycrm-design-system/contracts";
+import { actions, assists, details, message, table, text, tiles, widgets } from "saastemlycrm-design-system/contracts";
 import { simulations } from "../actions/inbox.ts";
 import * as fmt from "../format/inbox.ts";
 import { RFQ_KINDS, inbox, liveMessages, messagesToReview, message as open, openMessage } from "../queries/inbox.ts";
@@ -37,7 +27,9 @@ export const inboxPage = widgets({
     actions: simulations,
   },
   // Master–detail: the message list beside the reading pane, then the side cards, then the open
-  // message's next steps (only the ones that apply to it take a tile).
+  // message's next step, its match and its draft case. Every tile is there whichever message is
+  // open: one that doesn't apply to it says so in its place, so picking a message never moves the
+  // screen.
   widgets: [
     // The list, the message, and beside it the list's order and what the device reads in the
     // message, then the review queue: small tiles of their own, which the board puts one under
@@ -65,11 +57,13 @@ export const inboxPage = widgets({
         layout: "list",
         select: { param: "message" },
         actions: false,
-        empty: "Nothing here.",
+        empty: "No messages match this filter.",
       },
     },
     message({
       title: "Original message",
+      // Its subhead comes with the data; this line holds its place while it loads.
+      subhead: "The message as it arrived",
       // The message itself, as tall as the list beside it.
       rows: 15,
       // `m`: beside the message list (`s`) on a 3-lane board, master and detail together. Always
@@ -79,16 +73,14 @@ export const inboxPage = widgets({
       data: open,
       format: fmt.originalMessage,
     }),
-    // Short reads beside the message, each a few assists. The pane opens the newest message when
-    // none is picked: these usually show.
+    // Short reads beside the message, each a few assists.
     assists({
       title: "What this message is",
       rows: 3,
       size: "s",
       skeleton: "text",
       data: open,
-      expect: "shown",
-      hidden: ({ d }) => !d.message?.body,
+      empty: { when: ({ d }) => !d.message?.body, heading: "No text to read in this message." },
       format: fmt.messageAssists(fmt.kindAssists),
     }),
     assists({
@@ -97,8 +89,7 @@ export const inboxPage = widgets({
       size: "s",
       skeleton: "text",
       data: open,
-      expect: "shown",
-      hidden: ({ d }) => !d.message?.body,
+      empty: { when: ({ d }) => !d.message?.body, heading: "No text to check for warnings." },
       format: fmt.messageAssists(fmt.flagAssists),
     }),
     assists({
@@ -107,8 +98,7 @@ export const inboxPage = widgets({
       size: "s",
       skeleton: "text",
       data: open,
-      expect: "shown",
-      hidden: ({ d }) => !d.message,
+      empty: { when: ({ d }) => !d.message, heading: "No message open.", description: "Pick a message in the list." },
       format: fmt.messageAssists(fmt.offerAssists),
     }),
     {
@@ -127,7 +117,7 @@ export const inboxPage = widgets({
         dot: "status",
         select: { param: "message" },
         actions: false,
-        empty: "Nothing waiting — every reply is matched.",
+        empty: "Nothing waiting for review. Every reply is matched.",
       },
     },
     text({
@@ -137,85 +127,53 @@ export const inboxPage = widgets({
       data: inbox,
       format: fmt.connectedChannels,
     }),
-    // The open message's next step (one of these shows), beside the draft it makes.
+    // The open message's next step, whichever applies to it: read an RFQ into a draft case, create
+    // the case (or open the one made), match a reply (or where its match stands), or what became of
+    // it. One tile for all of them.
     text({
-      title: "Read it into a draft case",
+      title: "Next step",
       size: "m",
+      rows: 3,
       skeleton: "text",
       data: open,
-      hidden: (o) => !fmt.unreadRfq(o),
-      format: fmt.extractPrompt,
+      empty: { when: (o) => !fmt.nextStep(o), heading: "No next step for this message." },
+      format: fmt.nextStep,
     }),
-    alert({
-      title: "Outcome",
-      size: "m",
-      skeleton: "text",
-      data: open,
-      hidden: (o) => !fmt.settledWithoutDraft(o),
-      format: fmt.messageOutcome,
-    }),
-    text({
-      title: "Match this message",
-      size: "m",
-      skeleton: "text",
-      data: open,
-      hidden: (o) => !fmt.unmatchedReply(o),
-      format: fmt.matchPrompt,
-    }),
-    // The open message's match, when a person decides it or it's decided: why it matched, and the
-    // collection's actions (a "Link to…" per candidate case, "Not related"; the case's links).
+    // A reply's match, when a person decides it or it's decided: an uncertain one, a duplicate or a
+    // matched reply, why it matched and the collection's actions (a "Link to…" per candidate case,
+    // "Not related"; the case's links).
     {
-      title: "Needs a person",
-      subhead: "Uncertain match — not linked automatically.",
-      size: "m",
-      records: {
-        collection: "intake-messages",
-        where: { ...openMessage, ...messagesToReview },
-        layout: "entries",
-        columns: ["subject", "status", "fromName", "receivedAt"],
-        tags: ["match.confidencePct"],
-        notes: "match.basis",
-        notice: "uncertain",
-        hideEmpty: true,
-      },
-    },
-    {
-      title: "Duplicate detected",
-      subhead: "No new case and no second acknowledgement — kept with the message already in.",
-      size: "m",
-      records: {
-        collection: "intake-messages",
-        where: { ...openMessage, classification: { equals: "Duplicate" }, status: { equals: "Linked" } },
-        layout: "entries",
-        columns: ["subject", "status", "match.case"],
-        tags: ["match.confidencePct"],
-        notes: "match.basis",
-        hideEmpty: true,
-      },
-    },
-    {
-      title: "Reply matched",
+      title: "Reply match",
+      subhead:
+        "Why it matched and who decided. Below 85% a person picks the case; a duplicate stays with the message already in.",
       size: "m",
       records: {
         collection: "intake-messages",
         where: {
           ...openMessage,
-          classification: { not_in: ["Duplicate", ...RFQ_KINDS] },
-          status: { equals: "Linked" },
+          ...liveMessages,
+          classification: { not_in: RFQ_KINDS },
+          status: { in: ["Needs review", "Linked"] },
         },
         layout: "entries",
-        columns: ["subject", "status", "match.case", "match.reference", "match.reviewedBy"],
+        columns: ["subject", "status", "fromName", "match.case", "match.reference", "match.reviewedBy"],
         tags: ["match.confidencePct"],
         notes: "match.basis",
-        hideEmpty: true,
+        notice: "uncertain",
+        empty: "No match to show. A new request is read into a draft case, and a new reply is matched first.",
       },
     },
+    // The draft case an RFQ is read into.
     tiles({
       title: "Draft case",
       size: "m",
       skeleton: "text",
       data: open,
-      hidden: ({ d }) => !fmt.draft(d),
+      empty: {
+        when: ({ d }) => !fmt.draft(d),
+        heading: "No draft case for this message.",
+        description: "Only a request for quotation is read into one.",
+      },
       format: fmt.draftHeader,
     }),
     details({
@@ -223,47 +181,29 @@ export const inboxPage = widgets({
       size: "s",
       skeleton: "text",
       data: open,
-      hidden: ({ d }) => !fmt.draft(d),
+      empty: {
+        when: ({ d }) => !fmt.draft(d),
+        heading: "No owner suggested yet.",
+        description: "The assignment rules suggest one once a request is read into a draft case.",
+      },
       format: fmt.draftAssignment,
-    }),
-    text({
-      title: "Create the case",
-      size: "s",
-      skeleton: "text",
-      data: open,
-      hidden: ({ d }) => !(fmt.draft(d) && !d.message!.createdCase),
-      format: fmt.createCase,
-    }),
-    alert({
-      title: "Case created",
-      size: "s",
-      skeleton: "text",
-      data: open,
-      hidden: ({ d }) => !(fmt.draft(d) && d.message!.createdCase),
-      format: fmt.caseCreated,
     }),
     table({
       title: "Draft lines",
       size: "l",
       skeleton: "table",
       data: open,
-      hidden: ({ d }) => !fmt.draft(d)?.lines.length,
+      empty: { when: ({ d }) => !fmt.draft(d)?.lines.length, heading: "No draft lines for this message." },
       format: fmt.draftLines,
     }),
-    alert({
+    // What's missing or unclear, over the clarification request drafted for it.
+    message({
       title: "Missing or unclear",
       size: "l",
+      rows: 4,
       skeleton: "text",
       data: open,
-      hidden: ({ d }) => !fmt.draft(d)?.missing.length,
-      format: fmt.draftMissing,
-    }),
-    message({
-      title: "Clarification request",
-      size: "l",
-      skeleton: "text",
-      data: open,
-      hidden: ({ d }) => !(fmt.draft(d)?.missing.length && d.extraction!.clarification),
+      empty: { when: ({ d }) => !fmt.draft(d)?.missing.length, heading: "Nothing to clarify with the sender." },
       format: fmt.clarification,
     }),
     message({
@@ -271,7 +211,11 @@ export const inboxPage = widgets({
       size: "l",
       skeleton: "text",
       data: open,
-      hidden: ({ d }) => !fmt.draft(d),
+      empty: {
+        when: ({ d }) => !fmt.draft(d),
+        heading: "No acknowledgement for this message.",
+        description: "A new request gets one, from the approved template.",
+      },
       format: fmt.acknowledgement,
     }),
   ],

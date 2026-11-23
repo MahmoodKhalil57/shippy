@@ -15,6 +15,9 @@ import { roles, routing } from "../queries/roles.ts";
  * /api/on-call/route (../endpoints/platform.ts). Formatters: ../format/roles.ts.
  */
 export const rolesPage = widgets({
+  // The simulator opens after hours (tonight 21:40 Cairo), so "Who is alerted" shows the chain;
+  // its presets include office hours, when no one is.
+  params: { at: "2026-11-17T19:40:00.000Z" },
   header: {
     eyebrow: "Team · access",
     heading: "Roles & permissions",
@@ -71,7 +74,12 @@ export const rolesPage = widgets({
       size: "m",
       skeleton: "text",
       data: routing,
-      hidden: (r) => !r.routedTo,
+      // In office hours nobody is alerted: the tile keeps its place and says so.
+      empty: {
+        when: (r) => !r.routedTo,
+        heading: "No one is alerted in office hours.",
+        description: "The case owner picks the RFQ up.",
+      },
       format: fmt.escalation,
     }),
     details({

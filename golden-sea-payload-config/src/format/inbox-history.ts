@@ -1,4 +1,4 @@
-import type { Cell, KindData, Stat, ViewHeader } from "saastemlycrm-design-system/contracts";
+import type { Cell, Figure, KindData, ViewHeader } from "saastemlycrm-design-system/contracts";
 import { organise } from "../actions/inbox-history.ts";
 import type { HistoryPayload } from "../endpoints/sourcing.ts";
 
@@ -77,7 +77,8 @@ export const dedup = (d: HistoryPayload): KindData<"gauges"> => ({
 });
 
 /** The business messages left once de-duplication is done: what "Organise" reads. */
-export const kept = (d: HistoryPayload): Stat[] => [
+export const KEPT = ["Business messages kept"] as const;
+export const kept = (d: HistoryPayload): Figure<(typeof KEPT)[number]>[] => [
   {
     label: "Business messages kept",
     value: count(d.kept),
@@ -122,9 +123,9 @@ export const importApproval = (d: HistoryPayload): KindData<"text"> => {
 };
 
 /** Once management approved the import: what was saved, and examples of the new records to open. */
-export const importApproved = (d: HistoryPayload): KindData<"alert"> => ({
-  tone: "success",
-  text: `Approved by ${d.approvedBy}. Your history is searchable from day one: ${totalsText(d.totals)} and ${count(d.totals.prices)} dated prices.`,
+export const importApproved = (d: HistoryPayload): KindData<"text"> => ({
+  alerts: [{ tone: "success", text: `Approved by ${d.approvedBy}.` }],
+  text: `Your history is searchable from day one: ${totalsText(d.totals)} and ${count(d.totals.prices)} dated prices.`,
   actions: d.created.map((c) => ({ label: `${c.kind}: ${c.name}`, href: c.href })),
 });
 
@@ -132,8 +133,16 @@ export const importApproved = (d: HistoryPayload): KindData<"alert"> => ({
 export const organiseCall = (): KindData<"text"> => ({
   muted: true,
   text: "Press Organise: the AI reads the kept messages and builds your customers, vessels, suppliers and dated prices. Anything it isn't sure of comes to you first.",
+  note: "Then management approves the import. Nothing from the history becomes a record before.",
   actions: [organise],
 });
+
+/**
+ * The import's next step, in one tile whatever stage it is at (so the screen keeps its shape):
+ * "Organise" until the history is organised, then management's approval, then what was saved.
+ */
+export const importNext = (d: HistoryPayload): KindData<"text"> =>
+  d.approved ? importApproved(d) : d.organised ? importApproval(d) : organiseCall();
 
 /** Every mailbox and WhatsApp export the import reads, with its years, messages and attachments. */
 export const mailboxes = (d: HistoryPayload): KindData<"table"> => ({
@@ -155,13 +164,21 @@ export const mailboxes = (d: HistoryPayload): KindData<"table"> => ({
   })),
 });
 
-/** After "Organise": what was found, one figure each. */
-export const foundTotals = (d: HistoryPayload): Stat[] => [
-  { label: "Customers", value: count(d.totals.customers), note: "ship managers & owners" },
-  { label: "Vessels", value: count(d.totals.vessels), note: "IMO · fleet · ports" },
-  { label: "Suppliers", value: count(d.totals.suppliers), note: "who quoted what" },
-  { label: "Dated prices", value: count(d.totals.prices), note: `${count(d.totals.pricesWithoutPo)} with no PO` },
-];
+/** After "Organise": what was found, one figure each (before it, each label with no value). */
+export const FOUND_TOTALS = ["Customers", "Vessels", "Suppliers", "Dated prices"] as const;
+export const foundTotals = (d: HistoryPayload): Figure<(typeof FOUND_TOTALS)[number]>[] =>
+  d.organised
+    ? [
+        { label: "Customers", value: count(d.totals.customers), note: "ship managers & owners" },
+        { label: "Vessels", value: count(d.totals.vessels), note: "IMO · fleet · ports" },
+        { label: "Suppliers", value: count(d.totals.suppliers), note: "who quoted what" },
+        {
+          label: "Dated prices",
+          value: count(d.totals.prices),
+          note: `${count(d.totals.pricesWithoutPo)} with no PO`,
+        },
+      ]
+    : [];
 
 /** After "Organise": the ship managers found in the history, top 5 by RFQs, new ones tagged. */
 export const foundCustomers = (d: HistoryPayload): KindData<"table"> => ({

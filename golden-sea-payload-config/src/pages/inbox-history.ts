@@ -1,14 +1,4 @@
-import {
-  alert,
-  chart,
-  figures,
-  gauges,
-  header,
-  steps,
-  table,
-  text,
-  widgets,
-} from "saastemlycrm-design-system/contracts";
+import { chart, figures, gauges, header, steps, table, text, widgets } from "saastemlycrm-design-system/contracts";
 import * as fmt from "../format/inbox-history.ts";
 import { history } from "../queries/inbox-history.ts";
 
@@ -19,8 +9,11 @@ import { history } from "../queries/inbox-history.ts";
  * where no PO followed. What the organiser is unsure of waits in a review queue, and nothing is
  * saved before management (Karim Balbaa) approves the import.
  * Data and actions: /api/inbox-history (../endpoints/sourcing.ts). Each widget is a design-system
- * kind given a query and a formatter (../format/inbox-history.ts).
+ * kind given a query and a formatter (../format/inbox-history.ts). Every tile is there from the
+ * start: what "Organise" finds fills them, it never adds them.
  */
+const NOT_ORGANISED = "Press Organise to read them from the kept messages.";
+
 export const inboxHistoryPage = widgets({
   header: header({ data: history, format: fmt.historyHeader }),
   // The import's progress and its years in one column, its checks beside them, then what it found.
@@ -45,41 +38,22 @@ export const inboxHistoryPage = widgets({
       data: history,
       format: fmt.dedup,
     }),
-    figures({ data: history, format: fmt.kept }),
+    figures({ data: history, labels: fmt.KEPT, format: fmt.kept }),
+    // Organise, then management's approval, then what was saved: one tile through every stage.
     text({
-      title: "Import approval",
+      title: "Organise and approve",
       size: "s",
+      rows: 4,
       skeleton: "text",
       data: history,
-      hidden: (d) => d.approved,
-      // An import waits for approval until it's given: it holds its place while loading.
-      expect: "shown",
-      format: fmt.importApproval,
-    }),
-    alert({
-      title: "Import approval",
-      size: "s",
-      skeleton: "text",
-      data: history,
-      hidden: (d) => !d.approved,
-      format: fmt.importApproved,
-    }),
-    text({
-      title: "Years of emails, RFQs, offers and quotes · scattered",
-      size: "s",
-      skeleton: "text",
-      data: history,
-      hidden: (d) => d.organised,
-      // Until someone organises the import, which is where it starts: it holds its place while loading.
-      expect: "shown",
-      format: fmt.organiseCall,
+      format: fmt.importNext,
     }),
     // What the organiser wasn't sure of (the history import's messages), each with its proposal,
     // confirmed or rejected by a person and changeable until the import is approved (the
     // collection's actions). None before "Organise".
     {
       title: "Uncertain items",
-      subhead: "Reviewed with you before they are saved — confirm the proposal or reject it.",
+      subhead: "Reviewed with you before they are saved: confirm the proposal or reject it.",
       size: "s",
       rows: 12,
       records: {
@@ -92,7 +66,7 @@ export const inboxHistoryPage = widgets({
         text: "history.question",
         facts: ["history.proposal", "match.reviewedBy"],
         tags: ["history.kind", "history.confidencePct", "history.decision"],
-        hideEmpty: true,
+        empty: "Nothing to review yet. What the organiser isn't sure of comes here after Organise.",
       },
     },
     table({
@@ -102,13 +76,14 @@ export const inboxHistoryPage = widgets({
       data: history,
       format: fmt.mailboxes,
     }),
-    figures({ data: history, hidden: (d) => !d.organised, format: fmt.foundTotals }),
+    // What "Organise" found: each figure "—" and each table its empty state until then.
+    figures({ data: history, labels: fmt.FOUND_TOTALS, format: fmt.foundTotals }),
     table({
       title: "Customers — ship managers",
       size: "l",
       skeleton: "table",
       data: history,
-      hidden: (d) => !d.organised,
+      empty: { when: (d) => !d.organised, heading: "No customers found yet.", description: NOT_ORGANISED },
       format: fmt.foundCustomers,
     }),
     table({
@@ -116,7 +91,7 @@ export const inboxHistoryPage = widgets({
       size: "l",
       skeleton: "table",
       data: history,
-      hidden: (d) => !d.organised,
+      empty: { when: (d) => !d.organised, heading: "No vessels found yet.", description: NOT_ORGANISED },
       format: fmt.foundVessels,
     }),
     table({
@@ -124,7 +99,7 @@ export const inboxHistoryPage = widgets({
       size: "l",
       skeleton: "table",
       data: history,
-      hidden: (d) => !d.organised,
+      empty: { when: (d) => !d.organised, heading: "No suppliers found yet.", description: NOT_ORGANISED },
       format: fmt.foundSuppliers,
     }),
     table({
@@ -132,7 +107,7 @@ export const inboxHistoryPage = widgets({
       size: "l",
       skeleton: "table",
       data: history,
-      hidden: (d) => !d.organised,
+      empty: { when: (d) => !d.organised, heading: "No dated prices found yet.", description: NOT_ORGANISED },
       format: fmt.foundPrices,
     }),
   ],

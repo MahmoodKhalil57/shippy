@@ -46,11 +46,13 @@ export const projectPage = widgets({
       format: fmt.milestoneWeeks,
     }),
     tiles({ title: "Milestones", size: "m", data: plan, format: fmt.milestones }),
-    // One tile per phase of the plan, in order.
+    // One tile per phase of the plan, in order: the plan has four (discovery to go-live).
     list.each({
       size: "s",
       skeleton: "list",
       data: plan,
+      tiles: 4,
+      empty: { heading: "No phase planned here." },
       items: (d) => d.phases,
       key: (p: fmt.Phase) => p.key,
       title: (p: fmt.Phase) => p.name,

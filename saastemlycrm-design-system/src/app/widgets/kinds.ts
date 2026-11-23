@@ -1,5 +1,14 @@
 import type { Action, Tag, ViewBlock, ViewBlocks, ViewHeader } from "./schema.ts";
-import type { Source, Widget, WidgetBase, WidgetHead, WidgetHeader, WidgetScope } from "./widget.ts";
+import type {
+  EachSpec,
+  Source,
+  Widget,
+  WidgetBase,
+  WidgetEmpty,
+  WidgetHead,
+  WidgetHeader,
+  WidgetScope,
+} from "./widget.ts";
 
 /**
  * Widget kinds: reusable widgets named for what they draw (`chart`, `table`, `list`, `steps`…),
@@ -89,9 +98,16 @@ export type KindWidget<T, D> = Omit<WidgetBase<T>, "source" | "head"> & {
   format(data: T, scope: WidgetScope): D | null | undefined;
 };
 
-/** One tile per item of the data (a card per order), each of the kind. */
-export type KindEach<T, I, D> = Omit<WidgetBase<T>, "source" | "head" | "title" | "subhead"> & {
+/**
+ * One tile per item of the data (a card per order), each of the kind: `tiles` of them, decided
+ * before the data, and what a tile with no item says (`empty`).
+ */
+export type KindEach<T, I, D> = Omit<WidgetBase<T>, "source" | "head" | "title" | "subhead" | "empty"> & {
   data?: Query<T>;
+  /** How many tiles it takes: fixed, or from who is looking (never from the data). */
+  tiles: EachSpec<T, I>["tiles"];
+  /** What a tile with no item says (fewer items than tiles), and when there are none at all. */
+  empty: WidgetEmpty<T>;
   items(data: T, scope: WidgetScope): I[];
   /** The same for the same item (its tile keeps its place). */
   key(item: I, index: number): string;
@@ -132,11 +148,12 @@ export function kind<K extends keyof ViewBlocks>(type: K) {
       },
     }) as Widget<T>;
   return Object.assign(make, {
-    each: <T, I>({ data, items, key, title, subhead, format, ...w }: KindEach<T, I, KindData<K>>): Widget<T> =>
+    each: <T, I>({ data, tiles, items, key, title, subhead, format, ...w }: KindEach<T, I, KindData<K>>): Widget<T> =>
       ({
         ...w,
         source: data,
         each: {
+          tiles,
           items,
           key,
           title,

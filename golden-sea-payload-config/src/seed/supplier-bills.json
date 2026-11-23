@@ -52,6 +52,31 @@
     "currency": "EGP",
     "dueDate": "2026-11-05T00:00:00.000Z",
     "status": "Paid",
-    "match": [{ "lineNo": 1, "ordered": 1, "received": 1, "billed": 1 }]
+    "match": [
+      {
+        "lineNo": 1,
+        "ordered": 6,
+        "received": 6,
+        "billed": 6
+      },
+      {
+        "lineNo": 2,
+        "ordered": 6,
+        "received": 6,
+        "billed": 6
+      },
+      {
+        "lineNo": 3,
+        "ordered": 1,
+        "received": 1,
+        "billed": 1
+      },
+      {
+        "lineNo": 4,
+        "ordered": 12,
+        "received": 12,
+        "billed": 12
+      }
+    ]
   }
 ]

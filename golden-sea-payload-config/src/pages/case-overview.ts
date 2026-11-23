@@ -27,6 +27,8 @@ export const caseOverview = widgets({
   widgets: [
     steps({
       title: "Lifecycle — first email to last payment",
+      // Its subhead comes with the data; this line holds its place while it loads.
+      subhead: "Where the case is now",
       // Across the screen: the steps read as one strip.
       size: "full",
       data: overview,
@@ -49,7 +51,7 @@ export const caseOverview = widgets({
       title: "Line progress",
       subhead: "Each line moves on its own. A case is never “done” until every line is.",
       size: "s",
-      hidden: (d) => !(d as { lineCount?: unknown }).lineCount,
+      empty: { when: (d) => !(d as { lineCount?: unknown }).lineCount, heading: "No lines on this case yet." },
       fields: {
         fields: [
           "lineCount.readyPct",
@@ -71,7 +73,7 @@ export const caseOverview = widgets({
     {
       title: "Last handover note",
       size: "s",
-      hidden: (d) => !(d as { handoverNote?: string }).handoverNote,
+      empty: { when: (d) => !(d as { handoverNote?: string }).handoverNote, heading: "No handover on this case yet." },
       fields: { fields: ["handoverNote"], actions: false },
     },
     // The case's open tasks, soonest due first.
@@ -96,14 +98,14 @@ export const caseOverview = widgets({
         field: "items",
         columns: ["lineNo", "description", "status", "aiRead"],
         labels: { lineNo: "#", description: "Line" },
-        hideEmpty: true,
+        empty: "No lines on this case yet.",
       },
     },
     gauges({
       title: "After the order",
       size: "s",
       data: overview,
-      hidden: ({ fulfilment: f }) => !f.started,
+      empty: { when: ({ fulfilment: f }) => !f.started, heading: "Nothing ordered on this case yet." },
       format: fmt.fulfilment,
     }),
     // The customer's contact rule, read through the case, and what it means: strict customers get

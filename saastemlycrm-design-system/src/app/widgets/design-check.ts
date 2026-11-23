@@ -80,9 +80,9 @@ export interface DrawnTile {
 }
 
 /**
- * Blocks that may stand bare (an untitled tile): what steers the screen, an alert, or a strip of
- * key figures, where each figure is a labelled cell of its own (the header HIG asks a list or
- * table for is on every cell).
+ * Blocks that may stand bare (an untitled tile): what steers the screen, an alert, a strip of key
+ * figures, where each figure is a labelled cell of its own (the header HIG asks a list or table
+ * for is on every cell), or an empty state, which is its own heading.
  */
 const BARE: ReadonlySet<ViewBlock["type"]> = new Set<ViewBlock["type"]>([
   "choice",
@@ -90,6 +90,7 @@ const BARE: ReadonlySet<ViewBlock["type"]> = new Set<ViewBlock["type"]>([
   "alert",
   "document",
   "stats",
+  "empty",
 ]);
 
 /**
@@ -209,7 +210,8 @@ export function designProblems(blocks: ViewBlock[], where: string, tiles?: Drawn
           const here = `${at} › ${b.heading ?? "card"}`;
           if (b.heading && b.heading.length > MAX_HEADING)
             out.push(`${here}: heading is ${b.heading.length} characters`);
-          if (!b.blocks.length && b.count === undefined) out.push(`${here}: an empty card; hide it (\`hidden\`)`);
+          if (!b.blocks.length && b.count === undefined)
+            out.push(`${here}: an empty card; give its widget an empty state (\`empty\`)`);
           if (depth >= 2) out.push(`${here}: a card three levels deep; flatten it or use \`entries\``);
           walk(b.blocks, here, depth + 1);
           break;

@@ -22,6 +22,6 @@ export const valuePage = widgets({
   },
   widgets: [
     whatif({ title: "When it pays for itself", size: "l", rows: 9, data: usage, format: fmt.payback }),
-    figures({ data: usage, format: fmt.measured }),
+    figures({ data: usage, labels: fmt.MEASURED, format: fmt.measured }),
   ],
 });

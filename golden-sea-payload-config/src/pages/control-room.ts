@@ -54,7 +54,7 @@ export const controlRoom = widgets({
   header: header({ data: room, format: fmt.roomHeader }),
   // The figures, the briefing beside "Ask", the trend charts two a row, the rankings, then the tables.
   widgets: [
-    figures({ data: room, format: fmt.roomFigures }),
+    figures({ data: room, labels: fmt.roomFigureLabels, format: fmt.roomFigures }),
     text({
       title: "07:00 · daily AI briefing",
       size: "s",
@@ -134,25 +134,32 @@ export const controlRoom = widgets({
       maxRows: 4,
       skeleton: "list",
       data: room,
-      hidden: (d) => !d.money,
+      visible: shapes.seesMoney,
+      empty: { when: (d) => !d.visuals.ageing.length, heading: "No open receivables." },
       format: fmt.ageingRing,
     }),
     chart.each({
       size: "m",
       skeleton: "chart",
       data: room,
+      tiles: fmt.roomChartTiles,
+      empty: { heading: "No trend to show." },
       items: fmt.roomCharts,
       key: (w: CrChart) => w.title,
       title: (w: CrChart) => w.title,
+      subhead: (w: CrChart) => w.sub,
       format: fmt.trendChart,
     }),
     gauges.each({
       size: "s",
       skeleton: "list",
       data: room,
+      tiles: fmt.roomRankingTiles,
+      empty: { heading: "No ranking to show." },
       items: fmt.roomRankings,
       key: (r: CrRanked) => r.title,
       title: (r: CrRanked) => r.title,
+      subhead: (r: CrRanked) => r.sub,
       format: fmt.rankedGauges,
     }),
     // Who carries the load: every live case by its owner, the busiest first.
@@ -170,7 +177,7 @@ export const controlRoom = widgets({
       size: "s",
       skeleton: "text",
       data: room,
-      hidden: (d) => d.money,
+      visible: (scope) => !shapes.seesMoney(scope),
       format: fmt.moneyWithheld,
     }),
     // Where the money sits and where the profit went (management and finance).
@@ -181,7 +188,8 @@ export const controlRoom = widgets({
       maxRows: 7,
       skeleton: "chart",
       data: visuals,
-      hidden: (v) => !v.money,
+      visible: shapes.seesMoney,
+      empty: { when: (v) => !v.receivables.length, heading: "No open receivables." },
       format: shapes.receivablesMap,
     }),
     waterfall({
@@ -191,7 +199,8 @@ export const controlRoom = widgets({
       maxRows: 7,
       skeleton: "chart",
       data: visuals,
-      hidden: (v) => !v.money,
+      visible: shapes.seesMoney,
+      empty: { when: (v) => !v.gp.length, heading: "No gross profit to bridge yet." },
       format: shapes.gpBridge,
     }),
     // The suppliers on two measures at once (who's reliable and fast, who's neither), and ranked by

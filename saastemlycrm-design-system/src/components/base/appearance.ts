@@ -46,11 +46,35 @@ export function applyScheme(id: string) {
   else delete document.documentElement.dataset.scheme;
 }
 
-/** Show a background image behind the app (`null` for none); the app shell paints `--app-background`. */
-export function applyBackground(src: string | null) {
+/**
+ * Live backgrounds: animated effects drawn behind the app instead of a photo (`<ui-waves>`,
+ * `<ui-magnet-lines>`); the app shell renders the one chosen (`liveBackground`,
+ * src/components/composed/actions/live-background.ts).
+ */
+export const LIVE_BACKGROUNDS = [
+  { id: "live-waves", label: "Waves" },
+  { id: "live-magnet-lines", label: "Magnet lines" },
+] as const;
+export type LiveBackground = (typeof LIVE_BACKGROUNDS)[number]["id"];
+export const isLiveBackground = (id: string | null | undefined): id is LiveBackground =>
+  LIVE_BACKGROUNDS.some((b) => b.id === id);
+
+/** The live background chosen now (`data-background` on <html>), if any. */
+export const liveBackgroundNow = (): LiveBackground | undefined => {
+  const id = document.documentElement.dataset.background;
+  return isLiveBackground(id) ? id : undefined;
+};
+
+/**
+ * Show a background behind the app: an image (`src`), a live effect (`live`, `data-background` on
+ * <html>), or neither. The app shell paints `--app-background` and renders the live effect.
+ */
+export function applyBackground(src: string | null, live?: LiveBackground | null) {
   const root = document.documentElement.style;
   if (src) root.setProperty("--app-background", `url("${src}")`);
   else root.removeProperty("--app-background");
+  if (live) document.documentElement.dataset.background = live;
+  else delete document.documentElement.dataset.background;
   // The app shell re-measures its text contrast against the new image.
   window.dispatchEvent(new Event("ui-background"));
 }

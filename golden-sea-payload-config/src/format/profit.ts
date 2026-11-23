@@ -1,4 +1,4 @@
-import type { Action, KindData, Row, Stat } from "saastemlycrm-design-system/contracts";
+import type { Action, Figure, KindData, Row } from "saastemlycrm-design-system/contracts";
 import { checkAction, profitActions } from "../actions/case-profit.ts";
 import type { CaseProfit, LineState } from "../endpoints/profit.ts";
 
@@ -41,10 +41,11 @@ const checksGreen = (p: CaseProfit) => {
 };
 
 /**
- * Above everything: the case closed and settled, or not costed yet (the expected profit is fixed
- * at the customer PO).
+ * Above everything: the case closed and settled, not costed yet (the expected profit is fixed at
+ * the customer PO), or costed and on its way to close (how many close checks are still open).
  */
-export const profitStatus = (p: CaseProfit): KindData<"alert"> | null => {
+export const profitStatus = (p: CaseProfit): KindData<"alert"> => {
+  const open = p.checks.filter((k) => !k.ok).length;
   const said = [
     ...(p.closed
       ? [
@@ -65,15 +66,25 @@ export const profitStatus = (p: CaseProfit): KindData<"alert"> | null => {
           },
         ]),
   ];
-  const main = said.at(-1);
-  return main ? { ...main, alerts: said.slice(0, -1) } : null;
+  const main = said.at(-1) ?? {
+    tone: open ? ("warning" as const) : ("success" as const),
+    heading: open ? `${open} close check${open === 1 ? "" : "s"} open` : "Every close check is green",
+    text: open
+      ? "The actual profit is final once every cost is confirmed against its bill and the case is closed."
+      : "Quantities, documents, claims and balances reconcile: the case can be closed.",
+  };
+  return { ...main, alerts: said.slice(0, -1) };
 };
+
+/** The profit figures' labels, one tile each, in order (`profitFigures`). */
+export const PROFIT_FIGURES = ["Expected gross profit", "Actual gross profit", "Difference", "FX difference"] as const;
 
 /**
  * The case's profit: expected at quotation, actual so far (or final), the difference in money and
- * margin points, and the FX difference on receipts.
+ * margin points, and the FX difference on receipts. Until the case is costed, all show "—".
  */
-export const profitFigures = (p: CaseProfit): Stat[] => {
+export const profitFigures = (p: CaseProfit): Figure<(typeof PROFIT_FIGURES)[number]>[] => {
+  if (!p.costed) return [];
   const diff = p.actual.profit - p.expected.profit;
   const open = p.checks.filter((k) => !k.ok).length;
   return [
@@ -84,9 +95,9 @@ export const profitFigures = (p: CaseProfit): Stat[] => {
       share: { value: Math.max(0, p.expected.margin) / 100, text: `${pct(p.expected.margin)} margin` },
     },
     {
-      label: p.actual.final ? "Actual gross profit" : "Actual gross profit so far",
+      label: "Actual gross profit",
       value: egp(p.actual.profit),
-      note: `${pct(p.actual.margin)} margin · ${p.actual.final ? "final, every cost is actual" : `${open} close check${open === 1 ? "" : "s"} open`}`,
+      note: `${pct(p.actual.margin)} margin · ${p.actual.final ? "final, every cost is actual" : `so far, ${open} close check${open === 1 ? "" : "s"} open`}`,
       tone: p.actual.margin < 15 ? "error" : undefined,
       share:
         p.expected.profit > 0

@@ -164,7 +164,11 @@ export const tileMenuItem = rcva(
 );
 /** Its label: one line (the popover is as wide as it, in whole tiles, up to 6). */
 export const tileMenuLabel = rcva(text.line);
-export const tileSubhead = rcva(`${text.prose} text-body-sm text-on-surface-variant`);
+/**
+ * One line, whatever it says (the rest in its tooltip): its height is decided before its words,
+ * so a subhead that comes with the data never moves the body under it.
+ */
+export const tileSubhead = rcva(`${text.line} text-body-sm text-on-surface-variant`);
 
 export type TileEmphasis = "inverse" | "tinted";
 export type TileVariants = VariantProps<typeof tile>;
@@ -307,7 +311,14 @@ export class UiTile extends LightElement {
       data-tile-root
     >
       <div class=${cardBody({ class: tileCardBody() })}>
-        ${header} ${this.subhead ? html`<p class=${tileSubhead()}>${this.subhead}</p>` : nothing}
+        ${header}
+        ${
+          this.subhead
+            ? html`<p class=${tileSubhead()} title=${typeof this.subhead === "string" ? this.subhead : nothing}>
+                ${this.subhead}
+              </p>`
+            : nothing
+        }
         <div class=${tileBodyBox()}>
           <div
             class=${tileBody({

@@ -504,8 +504,9 @@ function evalOffer(ctx: Ctx, item: Item, o: RawOffer, all: RawOffer[]): CmpOffer
       text: `Shelf life: ${left} months left, vessel asked for ${need}`,
       type: "Shelf life",
     });
-  // Lead time against the vessel's ETA.
-  if (o.leadDays > ctx.daysToEta && !has("Lead time vs ETA")) {
+  // Lead time against the vessel's ETA (once the ETA has passed the goods have gone on board, so
+  // there is nothing left to be late for).
+  if (ctx.daysToEta >= 0 && o.leadDays > ctx.daysToEta && !has("Lead time vs ETA")) {
     blocked = true;
     flags.push({
       tone: "error",
@@ -925,7 +926,7 @@ export async function pricing(ctx: Ctx): Promise<Pricing> {
         ? `${item.description} — supplied as ${altPack?.packLabel ? str(altPack.packLabel) : "alternative pack"} (alternative pack${accepted ? ", accepted" : ""})`
         : item.description,
       partNo: item.partNo && item.partNo !== "local" ? item.partNo : item.impa ? `IMPA ${item.impa}` : "",
-      lead: ready <= ctx.daysToEta ? "On arrival" : `${ready} days`,
+      lead: ready <= ctx.daysToEta || ctx.daysToEta < 0 ? "On arrival" : `${ready} days`,
       alternative: Boolean(alt),
       accepted,
       inputVatEGP: round(

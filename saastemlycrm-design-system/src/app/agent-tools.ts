@@ -199,7 +199,8 @@ async function pageText(
             : headerText(hw);
         }
         const data = w.source ? await load(w.source) : null;
-        if (w.hidden?.(data as never, scope)) return [];
+        if (w.empty?.when?.(data as never, scope))
+          return [w.title ? `${w.title}: ${w.empty.heading}` : w.empty.heading];
         // One tile per item: each read like a widget of its own.
         if (w.each)
           return eachTiles(w, data as never, scope).flatMap(({ widget: t }) => [

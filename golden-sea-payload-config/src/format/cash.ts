@@ -1,4 +1,4 @@
-import type { KindData, Stat, WidgetScope, Action } from "saastemlycrm-design-system/contracts";
+import type { Figure, KindData, WidgetScope, Action } from "saastemlycrm-design-system/contracts";
 import { decideActions, decisionLines } from "../actions/cash.ts";
 import type { BankChange, Cash, CashPayables } from "../endpoints/cash.ts";
 import { statusTone } from "./index.ts";
@@ -11,11 +11,14 @@ import { statusTone } from "./index.ts";
  * answers), what a kind draws out.
  */
 
+/** The cash position's labels, one tile each (`position`). */
+export const CASH_FIGURES = ["Net cash, 8 weeks"] as const;
+
 /**
  * The net cash for the next 8 weeks: a forecast across invoices, supplier POs, bills, payments and
  * the budget's fixed costs (receivables and payables are the invoices' and POs' own figures).
  */
-export const position = (d: Cash): Stat[] => {
+export const position = (d: Cash): Figure<(typeof CASH_FIGURES)[number]>[] => {
   const net = d.cashIn.reduce((s, v) => s + v, 0) - d.cashOut.reduce((s, v) => s + v, 0);
   if (!d.canSeePayables) return [];
   return [

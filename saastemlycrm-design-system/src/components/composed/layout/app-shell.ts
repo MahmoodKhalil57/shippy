@@ -4,6 +4,8 @@ import { customElement, property, state } from "lit/decorators.js";
 import { cssLuminance, lumaOf, sampleBehind, type Luma, type Rect } from "../../base/legibility.ts";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
 import { auditContrast } from "../../base/contrast.ts";
+import { liveBackgroundNow } from "../../base/appearance.ts";
+import { liveBackground } from "../actions/live-background.ts";
 import {
   closeColumn,
   frameSizesAt,
@@ -157,7 +159,11 @@ export class UiAppShell extends LightElement {
   #regions = new ResizeObserver(() => this._measureSoon());
   #content = new MutationObserver(() => this._measureSoon());
 
+  /** The live background chosen (`data-background` on <html>), drawn under the frame's glass. */
+  @state() private _live = liveBackgroundNow();
+
   private _onBackground = async () => {
+    this._live = liveBackgroundNow();
     const value = getComputedStyle(document.documentElement).getPropertyValue("--app-background").trim();
     const src = /^url\((['"]?)(.*)\1\)$/.exec(value)?.[2];
     if (!src) {
@@ -474,6 +480,7 @@ export class UiAppShell extends LightElement {
       .cols=${this._cols}
       .scrim=${this._scrim}
       .windowScrim=${this._windowScrim}
+      .background=${liveBackground(this._live)}
     >
       <ui-frame-header
         .brand=${this.brand}

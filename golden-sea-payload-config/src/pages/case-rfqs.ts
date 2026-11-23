@@ -60,7 +60,6 @@ export const caseRfqs = widgets({
       collection: {
         collection: "intake-messages",
         key: "replies-matched",
-        hideEmpty: true,
         layout: "list",
         where: repliesOnCase,
         sort: "-receivedAt",
@@ -81,14 +80,16 @@ export const caseRfqs = widgets({
         tags: ["match.confidencePct"],
         notes: "match.basis",
         notice: "uncertain",
-        hideEmpty: true,
+        empty: "Nothing waiting for a person.",
       },
     },
     list.each({
       data: rfqs,
       size: "s",
       skeleton: "list",
-      hidden: (d) => !d.newSuppliers.length,
+      // One new supplier is what a case usually brings; more share its tile, behind "Show all".
+      tiles: 1,
+      empty: { heading: "No new suppliers from replies yet." },
       items: (d) => d.newSuppliers,
       key: (s: fmt.NewSupplier) => s.id,
       title: (s: fmt.NewSupplier) => s.name,
@@ -116,7 +117,7 @@ export const caseRfqs = widgets({
       title: "Replies arriving",
       size: "m",
       data: rfqs,
-      hidden: (d) => !d.arrivals.length,
+      empty: { when: (d) => !d.arrivals.length, heading: "No supplier replies yet." },
       format: fmt.replyArrivals,
     }),
     text({
@@ -128,7 +129,9 @@ export const caseRfqs = widgets({
     steps.each({
       data: rfqs,
       size: "m",
-      hidden: (d) => !d.rfqs.some(fmt.chased),
+      // Usually one supplier is still being chased; any others share its tile, behind "Show all".
+      tiles: 1,
+      empty: { heading: "No supplier is being chased." },
       items: (d) => d.rfqs.filter(fmt.chased),
       key: (r: CaseRfqRow) => `${r.id}-reminders`,
       title: (r: CaseRfqRow) => `${r.supplier.name} · ${r.reference}`,
@@ -144,13 +147,19 @@ export const caseRfqs = widgets({
       title: "Drafted supplier RFQs",
       size: "l",
       data: rfqs,
-      hidden: (d) => !d.plan?.drafts.length,
+      empty: {
+        when: (d) => !d.plan?.drafts.length,
+        heading: "No drafts waiting to be sent.",
+        description: "Draft RFQs keeps them here to check before they go out.",
+      },
       format: fmt.rfqDrafts,
     }),
     message.each({
       data: rfqs,
       size: "l",
-      hidden: (d) => !d.plan?.drafts.length,
+      // The first draft's email; the others follow it in the same tile, behind "Show all".
+      tiles: 1,
+      empty: { heading: "No draft emails to preview." },
       items: (d) => d.plan?.drafts ?? [],
       key: (r: RfqDraft) => `${r.reference}-preview`,
       title: (r: RfqDraft) => `${r.supplierName} · ${r.reference}`,

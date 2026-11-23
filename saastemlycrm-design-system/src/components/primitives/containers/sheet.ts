@@ -2,6 +2,7 @@ import type { VariantProps } from "class-variance-authority";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
+import { afterNextPaint } from "../../base/work-queue.ts";
 import { rcva } from "../../base/variants.ts";
 import { iconButton } from "../actions/icon-button.ts";
 import { floating, floatingHeight, inset, row, rowFill, stack, text } from "../layout/algebra.ts";
@@ -30,7 +31,10 @@ import { iconSvg } from "../media/icon.ts";
  *
  * A native `<dialog>` opened with `showModal()`: focus stays inside, the page behind is inert.
  */
-export const sheet = rcva(`modal modal-end ${inset["4"]} py-4 max-sm:px-0 max-sm:py-0`);
+/** Closing (`data-closing`): hidden at once, its backdrop too, while `close` waits for the frame to paint. */
+export const sheet = rcva(
+  `modal modal-end ${inset["4"]} py-4 max-sm:px-0 max-sm:py-0 data-closing:invisible data-closing:backdrop:invisible`,
+);
 export const sheetBox = rcva(
   `modal-box liquid-glass-surface shadow-elevation-1 ${stack} ${floatingHeight.sheet} max-h-full max-w-none overflow-hidden [--clips:surface] rounded-lg p-0 max-sm:h-full max-sm:w-full max-sm:rounded-none motion-reduce:transition-none`,
   {
@@ -106,13 +110,32 @@ export class UiSheet extends LightElement {
     if (this.dispatchEvent(new CustomEvent("ui-dismiss", { bubbles: true, cancelable: true }))) this.open = false;
   }
 
+  /** Bumped each time it's asked to open, so a show that comes too late (closed since) does nothing. */
+  #opening = 0;
+
   protected updated(changed: PropertyValues<this>) {
     if (!changed.has("open") || !this._dialog) return;
     if (this.open && !this._dialog.open) {
-      this._dialog.showModal();
-      this.dispatchEvent(new CustomEvent("ui-open", { bubbles: true }));
+      // Opened after the press has painted: `showModal` makes the page behind inert, which restyles
+      // every element on it (about 45 to 90ms on a dashboard), and in the press's own frame that
+      // delayed its answer by as much. Still open, and not already: then shown.
+      const ticket = ++this.#opening;
+      void afterNextPaint().then(() => {
+        if (ticket !== this.#opening || !this.open || !this._dialog || this._dialog.open) return;
+        this._dialog.showModal();
+        this.dispatchEvent(new CustomEvent("ui-open", { bubbles: true }));
+      });
     } else if (!this.open && this._dialog.open) {
-      this._dialog.close();
+      // Hidden in the frame that answers the press (only the dialog restyles), closed once that
+      // frame is painted: `close` lifts the page's inertness, which restyles every element on it.
+      const ticket = ++this.#opening;
+      this._dialog.toggleAttribute("data-closing", true);
+      void afterNextPaint().then(() => {
+        const dialog = this._dialog;
+        if (ticket !== this.#opening || !dialog) return;
+        dialog.removeAttribute("data-closing");
+        if (!this.open && dialog.open) dialog.close();
+      });
     }
   }
 

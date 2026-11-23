@@ -84,17 +84,35 @@ export function createStore<T extends object>(initial: T, options: StoreOptions<
   };
 }
 
-/** Re-renders a Lit host whenever the store (or the selected slice) changes. */
+/**
+ * Re-renders a Lit host whenever the store (or the selected slice) changes. A store shared by much
+ * of the app (the preferences: columns, tables, boards...) should say what its host reads:
+ * `changed(state, previous)` (or the `keys` it reads) decides whether a change concerns it, so
+ * opening the side panel doesn't re-render every list and board on screen. `value` stays the
+ * selected state either way.
+ */
 export class StoreController<T extends object, S = T> implements ReactiveController {
   #unsubscribe?: () => void;
   readonly host: ReactiveControllerHost;
   readonly store: Store<T>;
   readonly select: (state: T) => S;
+  readonly #changed: (state: T, previous: T) => boolean;
 
-  constructor(host: ReactiveControllerHost, store: Store<T>, select: (state: T) => S = (s) => s as unknown as S) {
+  constructor(
+    host: ReactiveControllerHost,
+    store: Store<T>,
+    select: (state: T) => S = (s) => s as unknown as S,
+    only: { keys?: (keyof T)[]; changed?: (state: T, previous: T) => boolean } = {},
+  ) {
     this.host = host;
     this.store = store;
     this.select = select;
+    const { keys, changed } = only;
+    this.#changed =
+      changed ??
+      (keys
+        ? (s, p) => keys.some((k) => !Object.is(s[k], p[k]))
+        : (s, p) => !Object.is(this.select(s), this.select(p)));
     host.addController(this);
   }
 
@@ -104,7 +122,7 @@ export class StoreController<T extends object, S = T> implements ReactiveControl
 
   hostConnected() {
     this.#unsubscribe = this.store.subscribe((state, previous) => {
-      if (!Object.is(this.select(state), this.select(previous))) this.host.requestUpdate();
+      if (this.#changed(state, previous)) this.host.requestUpdate();
     });
   }
 

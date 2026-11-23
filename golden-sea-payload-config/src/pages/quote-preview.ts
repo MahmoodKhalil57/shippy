@@ -69,7 +69,11 @@ export const quotePreview = widgets({
       title: "Portal submission check",
       size: "m",
       data: quotation,
-      hidden: (v) => !v.can.portalCheck && !fmt.portalRows(v).length,
+      empty: {
+        when: (v) => !v.can.portalCheck && !fmt.portalRows(v).length,
+        heading: "No portal submission to check.",
+        description: "Only quotations sent through a customer's procurement portal are checked here.",
+      },
       format: fmt.portalCheck,
     }),
     // It heads the copy, which is customer-facing.

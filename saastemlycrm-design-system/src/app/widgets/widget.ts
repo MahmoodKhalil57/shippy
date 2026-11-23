@@ -100,8 +100,6 @@ export interface RecordsSpec {
    * default): master–detail, a detail widget's query reads `$param.<param>`.
    */
   select?: { param: string; value?: string };
-  /** Draw nothing (the tile hides) when there are no rows. */
-  hideEmpty?: boolean;
   /** Show the collection's actions on each document (default true). */
   actions?: boolean;
   /**
@@ -121,8 +119,6 @@ export interface RecordsSpec {
  */
 export interface MetricsSpec {
   collection: string;
-  /** Show none of the figures when none of them has any documents (a case with no invoices yet). */
-  hideEmpty?: boolean;
   items: {
     label: string;
     where?: Record<string, unknown>;
@@ -195,8 +191,6 @@ export type CountsSpec = {
   | /** One per value of a select field, in the value's tone. `skip` leaves values out. */ {
       field: string;
       skip?: string[];
-      /** Hide values with no documents. */
-      hideEmpty?: boolean;
     }
   | {
       /** Each a count of its own `where` (in its own `collection` if set), with an optional `note` under it. */
@@ -298,8 +292,6 @@ export interface CollectionViewSpec {
   };
   /** The columns it starts with (field names; the title stays first). */
   columns?: string[];
-  /** Draw nothing (the tile hides) while it holds no records: a case's purchase orders before there are any. */
-  hideEmpty?: boolean;
   /** Parts to leave out: the header (the tile's heading), "All" (the link to the collection's own page), search, filters, the column picker, the layout switch, export, the pager, selection (and bulk delete), Create, the widgets around the list (`beforeList` / `afterList`). */
   hide?: (
     | "header"
@@ -349,21 +341,22 @@ export interface WidgetBase<T> {
    * `skeleton: "entries"` to load in that shape).
    */
   title?: string;
+  /**
+   * The line under its title. One whose subhead comes from its data (`head`) declares one here: it
+   * shows while the data loads, so the line is there from the first frame.
+   */
   subhead?: string;
   /** Tags, count and actions in the card's header, from the data. */
   head?(data: T, scope: WidgetScope): WidgetHead;
   /** Show it only when this says so (layout by role; the data's own access rules still apply). */
   visible?: (scope: WidgetScope) => boolean;
-  /** Hide it once its data is in, when this says so (a section with nothing to show yet). */
-  hidden?(data: T, scope: WidgetScope): boolean;
   /**
-   * For a widget with `hidden`, whether it usually shows, while its data loads the first time on
-   * a screen: `"shown"` holds its skeleton in its lanes (nothing moves when it does show), the
-   * default holds nothing (nothing moves when it hides). On later visits the board remembers what it
-   * did last time. A tile's lanes follow the tiles before it, so a wrong guess moves the tiles after
-   * it in the rows: put the tiles that may hide after the ones that always show.
+   * What it shows when it has nothing to show, in its own box: a widget's box is decided before its
+   * data (its size and `rows`), so the data never removes it, adds it or moves the tiles around it.
+   * `when` says, once the data is in, that there is nothing (no warnings in this message); an
+   * `each` widget's tile with no item says it too.
    */
-  expect?: "shown";
+  empty?: WidgetEmpty<T>;
   /** Where its data comes from. */
   source?: Source;
   /**
@@ -373,11 +366,6 @@ export interface WidgetBase<T> {
    * else its size's. What doesn't fit fades behind "Show all".
    */
   rows?: number;
-  /**
-   * Its tile as tall as what it draws once its data is in (whole tiles, measured), `rows` its height
-   * while loading: for a short list of a known few lines in a side panel, never cut or left with room.
-   */
-  fit?: boolean;
   /**
    * Its width in tiles (53px each at the default text size), when a size (`s` 6, `m` 12, `l` 18,
    * `full` all) isn't what it needs. Never more than the board has.
@@ -415,6 +403,15 @@ export interface WidgetBase<T> {
   emphasis?: TileEmphasis;
 }
 
+/** A widget's empty state (`WidgetBase.empty`). */
+export interface WidgetEmpty<T = unknown> {
+  /** Whether, with this data, there is nothing to show. */
+  when?(data: T, scope: WidgetScope): boolean;
+  /** What it says then ("No warnings in this message."). */
+  heading: string;
+  description?: string;
+}
+
 /** The surface a tile can take to stand apart (`<ui-tile emphasis>`). */
 export type TileEmphasis = "inverse" | "tinted";
 
@@ -429,9 +426,22 @@ export interface WidgetHead {
 
 /**
  * One tile per item of the data (an offer comparison per requested line, a card per purchase
- * order): the number of tiles follows the data, each the widget's `size`, titled by its item.
+ * order), each the widget's `size`, titled by its item. How many tiles it takes is decided before
+ * the data (`tiles`), so the board's arrangement never depends on it: the items fill the tiles in
+ * order, items past the last tile are drawn in the last one, in one card ("2 more", behind its
+ * "Show all"), and a tile with no item shows the widget's `empty` state.
  */
 export interface EachSpec<T, I = any> {
+  /** How many tiles it takes: fixed, or from who is looking (never from the data). */
+  tiles: number | ((scope: WidgetScope) => number);
+  /**
+   * Named tiles instead of numbered ones (figures: their labels), from who is looking: each item
+   * goes to the tile `slotOf` names, and one named by no tile goes to the last.
+   */
+  slots?(scope: WidgetScope): readonly string[];
+  slotOf?(item: I, index: number): string;
+  /** What a named tile with no item draws (a figure's label with no value), else `empty`'s words. */
+  vacant?(slot: string, scope: WidgetScope): ViewBlock | ViewBlock[];
   items(data: T, scope: WidgetScope): I[];
   /** Stays the same for the same item (its tile keeps its place and state). */
   key(item: I, index: number): string;
@@ -551,14 +561,25 @@ export function fill<T>(value: T, scope: WidgetScope): T {
 /** A widget that draws its data with `render`. */
 export type DrawingWidget<T = unknown> = Extract<Widget<T>, { render(data: T, scope: WidgetScope): unknown }>;
 
+/** A figure under one of a `figures` widget's labels (`labels`): its formatter returns these. */
+export type Figure<L extends string> = Stat & { label: L };
+
 /** A strip of figures from one source (`figures`). */
-export type FiguresSpec<T> = Omit<WidgetBase<T>, "title" | "subhead" | "head" | "size" | "source"> & {
+export type FiguresSpec<T, L extends string = string> = Omit<
+  WidgetBase<T>,
+  "title" | "subhead" | "head" | "size" | "source" | "empty"
+> & {
   /** 6 tiles across by default (`s`), 4 tiles wide (`width`), 3 high (a figure's `stats` rows). */
   size?: TileSize;
   /** The query that feeds them. */
   data?: Query<T>;
-  /** The figures, in order; each becomes a tile of its own (its `label` is its key on the board). */
-  format(data: T, scope: WidgetScope): Stat[];
+  /**
+   * The figures' labels, in order: one tile each, its key on the board, decided before the data
+   * (fixed, or from who is looking). A figure the data has no value for shows its label and "-".
+   */
+  labels: readonly L[] | ((scope: WidgetScope) => readonly L[]);
+  /** The figures, each under one of `labels`. */
+  format(data: T, scope: WidgetScope): Figure<L>[];
 };
 
 /**
@@ -569,7 +590,15 @@ export type FiguresSpec<T> = Omit<WidgetBase<T>, "title" | "subhead" | "head" | 
  *
  * @example figures({ data: query.endpoint<Cash>("/cash"), format: (d) => [{ label: "Overdue", value: String(d.overdue), main: true }, …] })
  */
-export function figures<T>({ format: of, data, ...w }: FiguresSpec<T>): Widget<T> {
+export function figures<T, L extends string = string>({
+  format: of,
+  data,
+  labels,
+  ...w
+}: FiguresSpec<T, L>): Widget<T> {
+  const named = (scope: WidgetScope) => (typeof labels === "function" ? labels(scope) : labels);
+  // A tile one row high draws the figure on one line.
+  const size = w.rows === 1 ? "sm" : "md";
   return {
     size: "s",
     width: 4,
@@ -577,11 +606,14 @@ export function figures<T>({ format: of, data, ...w }: FiguresSpec<T>): Widget<T
     ...w,
     source: data,
     each: {
+      tiles: (scope: WidgetScope) => named(scope).length,
+      slots: named,
+      slotOf: (f: Stat) => f.label,
+      vacant: (label: string) => ({ type: "stats", size, items: [{ label, value: "\u2014" }] }),
       items: (data: T, scope: WidgetScope) => of(data, scope),
       key: (f: Stat, i: number) => f.label || String(i),
       title: () => "",
-      // A tile one row high draws the figure on one line.
-      render: (f: Stat) => ({ type: "stats", size: w.rows === 1 ? "sm" : "md", items: [f] }),
+      render: (f: Stat) => ({ type: "stats", size, items: [f] }),
     },
   } as Widget<T>;
 }
@@ -676,33 +708,100 @@ export const globalPage = (
   };
 };
 
+/** A subhead line kept with nothing in it (a no-break space): the line's height, no words. */
+export const KEPT_LINE = "\u00a0";
+
+/** An `each` widget's tiles, named, before its data: numbered ("1", "2"...) or its `slots`. */
+export function eachSlots(w: Widget, scope: WidgetScope): string[] {
+  const e = w.each;
+  if (!e) return [];
+  if (e.slots) return [...e.slots(scope)];
+  const n = Math.max(1, Math.floor(typeof e.tiles === "function" ? e.tiles(scope) : e.tiles));
+  return Array.from({ length: n }, (_, i) => String(i + 1));
+}
+
 /**
- * An `each` widget's tiles once its data is in: one drawing widget per item, the widget's size,
- * titled by the item, with a key that stays the same for the same item. Pure, so the host, the
- * agent tools and the design check expand it alike.
+ * An `each` widget's tiles once its data is in: exactly its tiles (`eachSlots`), the same before
+ * and after the data, each drawing its item; items past the last tile are drawn in the last one, a
+ * tile with no item its empty state. The key is the tile's name, so it never depends on the data.
+ * Pure, so the host, the agent tools and the design check expand it alike.
  */
 export function eachTiles<T>(w: Widget<T>, data: T, scope: WidgetScope): { key: string; widget: DrawingWidget<T> }[] {
   const e = w.each;
   if (!e) return [];
-  return e.items(data, scope).map((item, i) => ({
-    key: e.key(item, i),
-    widget: {
-      title: e.title(item, i),
-      size: w.size,
-      // Each item's tile takes the widget's size and bounds, and is arranged on its own.
-      rows: w.rows,
-      width: w.width,
-      minWidth: w.minWidth,
-      maxWidth: w.maxWidth,
-      minSize: w.minSize,
-      maxSize: w.maxSize,
-      minRows: w.minRows,
-      maxRows: w.maxRows,
-      emphasis: w.emphasis,
-      skeleton: w.skeleton,
-      subhead: e.subhead?.(item, data, scope),
-      head: e.head ? () => e.head!(item, data, scope) : undefined,
-      render: () => e.render(item, data, scope),
-    } as DrawingWidget<T>,
-  }));
+  const slots = eachSlots(w as Widget, scope);
+  const held: unknown[][] = slots.map(() => []);
+  e.items(data, scope).forEach((item, i) => {
+    const named = e.slotOf ? slots.indexOf(e.slotOf(item, i)) : -1;
+    const at = e.slotOf ? (named >= 0 ? named : slots.length - 1) : Math.min(i, slots.length - 1);
+    held[at]!.push(item);
+  });
+  const base = {
+    size: w.size,
+    // Each item's tile takes the widget's size and bounds, and is arranged on its own.
+    rows: w.rows,
+    width: w.width,
+    minWidth: w.minWidth,
+    maxWidth: w.maxWidth,
+    minSize: w.minSize,
+    maxSize: w.maxSize,
+    minRows: w.minRows,
+    maxRows: w.maxRows,
+    emphasis: w.emphasis,
+    skeleton: w.skeleton,
+  };
+  const blocks = (x: ViewBlock | ViewBlock[] | null | undefined): ViewBlock[] => (x ? [x].flat() : []);
+  return slots.map((key, at) => {
+    const items = held[at]!;
+    const [first, ...more] = items;
+    if (first === undefined) {
+      const vacant = e.vacant?.(key, scope);
+      if (vacant) return { key, widget: { ...base, title: "", render: () => vacant } as DrawingWidget<T> };
+      // Its empty state, which is its own heading (under the widget's title, if it has one).
+      const words: ViewBlock = {
+        type: "empty",
+        heading: w.empty?.heading ?? "Nothing here yet.",
+        description: w.empty?.description,
+      };
+      return {
+        key,
+        widget: {
+          ...base,
+          title: w.title ?? "",
+          // Its subhead line kept, as its items' tiles have it (one line, decided before the data).
+          subhead: e.subhead ? KEPT_LINE : undefined,
+          render: () => [words],
+        } as DrawingWidget<T>,
+      };
+    }
+    const index = (item: unknown) => items.indexOf(item);
+    return {
+      key,
+      widget: {
+        ...base,
+        title: e.title(first, index(first)),
+        subhead: e.subhead ? e.subhead(first, data, scope) || KEPT_LINE : undefined,
+        head: e.head ? () => e.head!(first, data, scope) : undefined,
+        // The items past the last tile: one card after the tile's own item, each item under its own
+        // heading in it, so the tile holds one block more than its item whatever the data holds
+        // (what doesn't fit is behind "Show all").
+        render: () => [
+          ...blocks(e.render(first, data, scope)),
+          ...(more.length
+            ? [
+                {
+                  type: "card",
+                  heading: `${more.length} more`,
+                  blocks: more.flatMap((item, i): ViewBlock[] => [
+                    ...(i ? [{ type: "divider" } as ViewBlock] : []),
+                    { type: "heading", text: e.title(item, index(item)) },
+                    ...blocks(e.render(item, data, scope)),
+                  ]),
+                } as ViewBlock,
+              ]
+            : []),
+        ],
+      } as DrawingWidget<T>,
+    };
+  });
 }
