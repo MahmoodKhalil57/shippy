@@ -2,6 +2,7 @@ import { details, list, steps, text, widgets } from "saastemlycrm-design-system/
 import * as fmt from "../format/roles.ts";
 import * as link from "../links.ts";
 import { roles, routing } from "../queries/roles.ts";
+import { IS_TEMP_MOCK, TempMockError } from "../flags.ts";
 import { m } from "../i18n/paraglide/messages.js";
 
 /**
@@ -15,10 +16,22 @@ import { m } from "../i18n/paraglide/messages.js";
  * GET /api/on-call/route?at=; actions: POST /api/roles/permission, /api/roles/roster,
  * /api/on-call/route (../endpoints/platform.ts). Formatters: ../format/roles.ts.
  */
+/** The time the routing simulator opens on. */
+function simulatorStart(): string {
+  if (IS_TEMP_MOCK) {
+    // TODO replace temporary mock logic with proper polished logic
+    // Tonight 21:40 Cairo on the demo's day.
+    return "2026-11-17T19:40:00.000Z";
+  } else {
+    // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+    throw new TempMockError("the routing simulator's start: this evening after hours, not 17 Nov 2026 21:40 Cairo");
+  }
+}
+
 export const rolesPage = widgets({
   // The simulator opens after hours (tonight 21:40 Cairo), so "Who is alerted" shows the chain;
   // its presets include office hours, when no one is.
-  params: { at: "2026-11-17T19:40:00.000Z" },
+  params: { at: simulatorStart() },
   header: {
     eyebrow: m.page_roles_eyebrow(),
     heading: m.page_roles_heading(),

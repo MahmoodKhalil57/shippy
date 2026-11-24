@@ -2,6 +2,7 @@ import { formatNumber, type KindData, type WidgetScope } from "saastemlycrm-desi
 import type { Pricing } from "../endpoints/commercial.ts";
 import type { Visuals } from "../endpoints/visuals.ts";
 import { m } from "../i18n/paraglide/messages.js";
+import { IS_TEMP_MOCK, TempMockError } from "../flags.ts";
 import * as link from "../links.ts";
 import { count, money, numberFormat } from "./index.ts";
 
@@ -29,10 +30,22 @@ const usdK = (v: number) => m.index_money_k({ currency: "USD", amount: fixed(v, 
 const egpK = (v: number) => m.index_money_k({ currency: "EGP", amount: plain(Math.round(Math.abs(v) / 1000)) });
 const signedK = (v: number) => `${v < 0 ? "−" : "+"}${egpK(v)}`;
 
+/** The moment the countdowns count from. */
+function countdownNow(today: string): string {
+  if (IS_TEMP_MOCK) {
+    // TODO replace temporary mock logic with proper polished logic
+    // The demo's morning, 09:30 on its day.
+    return `${today}T09:30:00.000Z`;
+  } else {
+    // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+    throw new TempMockError("the countdowns' start: the current time, not 09:30 on the demo's day");
+  }
+}
+
 /** Quote deadlines and arrivals, soonest first, each draining live. */
 export const deadlines = (v: Visuals): KindData<"countdown"> => ({
   label: m.visuals_deadlines(),
-  now: `${v.today}T09:30:00.000Z`,
+  now: countdownNow(v.today),
   items: v.deadlines,
 });
 

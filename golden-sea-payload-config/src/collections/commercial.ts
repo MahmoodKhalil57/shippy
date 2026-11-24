@@ -17,6 +17,7 @@ import {
 import { words } from "./shared.ts";
 import { formats, tones, type CollectionSettings } from "saastemlycrm-design-system/contracts";
 import * as link from "../links.ts";
+import { IS_MOCK, IS_TEMP_MOCK, NotConnectedError, TempMockError } from "../flags.ts";
 import { quotePreview } from "../pages/quote-preview.ts";
 import { APPROVAL_STATUS_AR, CASE_PLACEHOLDER, PO_STATUS_AR, arabic, labelled } from "./fulfilment.ts";
 
@@ -997,6 +998,33 @@ export async function approvalView(a: Json, req: PayloadRequest): Promise<Approv
   return view;
 }
 
+/** Where a bank-detail-change approval's "Supplier record" action leads. */
+function bankChangeSupplierHref(): string {
+  if (IS_TEMP_MOCK) {
+    // TODO replace temporary mock logic with proper polished logic
+    return link.doc("suppliers", "S3");
+  } else {
+    // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+    throw new TempMockError(
+      'the bank-detail-change approval\'s "Supplier record" action opens supplier S3 whatever the request: link the approval to its supplier and open that one',
+    );
+  }
+}
+
+/** The bank reference recording a supplier payment starts from. */
+function outgoingBankReference(a: Json): string {
+  if (IS_MOCK) {
+    // TODO implement mock only logic to simulate third party connections
+    // A sample bank reference, fixed per request.
+    return `TRX-88${scalar(a.id).slice(-3)}`;
+  } else {
+    // TODO implement actual prod third party connections
+    throw new NotConnectedError(
+      "bank: the reference of the outgoing transfer that paid this approval, from the bank statement or feed",
+    );
+  }
+}
+
 async function compute(
   a: Json,
   req: PayloadRequest,
@@ -1117,26 +1145,42 @@ async function compute(
         : ["Open quotations re-checked", `${open.length} (prices in USD stay as approved; EGP costs move)`],
     );
   } else if (type === "Bank detail change") {
-    if (ar) {
-      evidence.push(["المورّد", "Port Said Welding Co. (S3) · مورّد معتمد منذ 2019"]);
-      evidence.push(["الطلب", "حساب مستفيد جديد وصل بالبريد الإلكتروني، 16 نوفمبر 14:02"]);
-      evidence.push(["الاتصال للتحقق", decisions[0]?.reason ?? "اتصل بالرقم المسجّل قبل الاعتماد"]);
-      evidence.push(["القاعدة", "شخصان: المالية + الرئيس التنفيذي. المدفوعات إلى S3 موقوفة حتى يعتمد الاثنان."]);
+    if (IS_TEMP_MOCK) {
+      // TODO replace temporary mock logic with proper polished logic
+      if (ar) {
+        evidence.push(["المورّد", "Port Said Welding Co. (S3) · مورّد معتمد منذ 2019"]);
+        evidence.push(["الطلب", "حساب مستفيد جديد وصل بالبريد الإلكتروني، 16 نوفمبر 14:02"]);
+        evidence.push(["الاتصال للتحقق", decisions[0]?.reason ?? "اتصل بالرقم المسجّل قبل الاعتماد"]);
+        evidence.push(["القاعدة", "شخصان: المالية + الرئيس التنفيذي. المدفوعات إلى S3 موقوفة حتى يعتمد الاثنان."]);
+      } else {
+        evidence.push(["Supplier", "Port Said Welding Co. (S3) · approved supplier since 2019"]);
+        evidence.push(["Request", "New beneficiary account received by email, 16 Nov 14:02"]);
+        evidence.push(["Call-back", decisions[0]?.reason ?? "Call the number on file before approving"]);
+        evidence.push(["Rule", "Two people: finance + CEO. Payments to S3 on hold until both approve."]);
+      }
     } else {
-      evidence.push(["Supplier", "Port Said Welding Co. (S3) · approved supplier since 2019"]);
-      evidence.push(["Request", "New beneficiary account received by email, 16 Nov 14:02"]);
-      evidence.push(["Call-back", decisions[0]?.reason ?? "Call the number on file before approving"]);
-      evidence.push(["Rule", "Two people: finance + CEO. Payments to S3 on hold until both approve."]);
+      // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+      throw new TempMockError(
+        "a bank-detail-change approval's evidence is fixed text about supplier S3: read the supplier, the request (when and how it came in) and the approval rule from the records",
+      );
     }
   } else if (/alternative/i.test(type)) {
-    if (ar) {
-      evidence.push(["المطلوب", "أقطاب Lincoln Omnia 46، 3.2 مم (مواصفة العميل)"]);
-      evidence.push(["المقترح", "ESAB OK 46.00، 3.2 مم — نفس فئة AWS E6013، مع شهادة المصنع"]);
-      evidence.push(["العميل", "طلب الإصدار 2 مع بديل ESAB (بريد 12 نوفمبر)"]);
+    if (IS_TEMP_MOCK) {
+      // TODO replace temporary mock logic with proper polished logic
+      if (ar) {
+        evidence.push(["المطلوب", "أقطاب Lincoln Omnia 46، 3.2 مم (مواصفة العميل)"]);
+        evidence.push(["المقترح", "ESAB OK 46.00، 3.2 مم — نفس فئة AWS E6013، مع شهادة المصنع"]);
+        evidence.push(["العميل", "طلب الإصدار 2 مع بديل ESAB (بريد 12 نوفمبر)"]);
+      } else {
+        evidence.push(["Requested", "Lincoln Omnia 46 electrodes, 3.2 mm (customer's spec)"]);
+        evidence.push(["Proposed", "ESAB OK 46.00, 3.2 mm — same AWS E6013 class, mill certificate attached"]);
+        evidence.push(["Customer", "Asked for v2 with the ESAB alternative (email 12 Nov)"]);
+      }
     } else {
-      evidence.push(["Requested", "Lincoln Omnia 46 electrodes, 3.2 mm (customer's spec)"]);
-      evidence.push(["Proposed", "ESAB OK 46.00, 3.2 mm — same AWS E6013 class, mill certificate attached"]);
-      evidence.push(["Customer", "Asked for v2 with the ESAB alternative (email 12 Nov)"]);
+      // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+      throw new TempMockError(
+        "an alternative-product approval's evidence is fixed text (Lincoln Omnia 46 → ESAB OK 46.00): read the requested and proposed items and the customer's request from the case",
+      );
     }
   }
 
@@ -1179,16 +1223,24 @@ async function compute(
       kind: deposit ? "Deposit / advance" : "Balance",
       recorded,
       open: status !== "Rejected" && !(status === "Approved" && recorded),
-      // A sample bank reference, fixed per request.
-      reference: `TRX-88${scalar(a.id).slice(-3)}`,
+      reference: outgoingBankReference(a),
     };
   }
-  if (/deposit|payment/i.test(type))
-    evidence.push(
-      ar
-        ? ["البيانات البنكية", "لم تتغير منذ 2025 — لا حاجة لاتصال تحقق"]
-        : ["Bank details", "Unchanged since 2025 — no call-back needed"],
-    );
+  if (/deposit|payment/i.test(type)) {
+    if (IS_TEMP_MOCK) {
+      // TODO replace temporary mock logic with proper polished logic
+      evidence.push(
+        ar
+          ? ["البيانات البنكية", "لم تتغير منذ 2025 — لا حاجة لاتصال تحقق"]
+          : ["Bank details", "Unchanged since 2025 — no call-back needed"],
+      );
+    } else {
+      // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+      throw new TempMockError(
+        "a payment approval's \"Bank details\" evidence is fixed text (unchanged since 2025): read when the supplier's bank details last changed and whether they are verified",
+      );
+    }
+  }
   if (a.detail) evidence.push([say("Note from requester", "ملاحظة مقدّم الطلب"), scalar(a.detail)]);
 
   const deciders = approvers.map((x) => x.name).join(a.twoPerson ? " + " : or);
@@ -1263,7 +1315,7 @@ export const Approvals: CollectionConfig = {
       },
       {
         label: words({ en: "Supplier record", ar: "سجل المورّد" }),
-        href: link.doc("suppliers", "S3"),
+        href: bankChangeSupplierHref(),
         when: { type: { equals: "Bank detail change" } },
       },
       {

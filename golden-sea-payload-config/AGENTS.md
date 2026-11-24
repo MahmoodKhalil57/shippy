@@ -52,6 +52,18 @@ seed data (`src/seed`). Entry points: `.` (the config, `src/config.ts`) and `./s
   a server. It defines no custom elements. `tests/template.test.ts` enforces all of this, and that
   the design system and the backend import neither other package. Only `app/`, `vite.config.ts`
   and `tests/` import the dashboard and the backend (lint `overrides` allow it there).
+- **Going to production: two flags** (`src/flags.ts`, from the environment, both on by default):
+  - `IS_TEMP_MOCK`: temporary logic written for the demo that production must not run (a stub AI
+    answer, the demo's fixed clock, canned figures or text standing in for a calculation). Each is
+    `if (IS_TEMP_MOCK) { // TODO replace temporary mock logic with proper polished logic … } else
+    { // TODO … the if/else should be melted; throw new TempMockError("what") }`.
+  - `IS_MOCK`: a simulated third party (mailboxes and WhatsApp, suppliers' and agents' replies,
+    the tax authority's e-invoicing, the bank, the AI model, the Odoo import). Each is
+    `if (IS_MOCK) { // TODO implement mock only logic to simulate third party connections … } else
+    { // TODO implement actual prod third party connections; throw new NotConnectedError("what") }`.
+  - Production is both off; a polished mock is `IS_MOCK` on, `IS_TEMP_MOCK` off; production with
+    temporary logic is refused at startup. The work left is `grep -rn "IS_TEMP_MOCK\|IS_MOCK" src`.
+    `tests/flags.test.ts` keeps every use in that shape (an else is what production runs).
 - **English and Arabic** (the design system's AGENTS.md, "Language", has the rules and the tools):
   - **Config text** (collection and global labels, field labels, hints, placeholders, option labels,
     `custom.about`, navigation groups, view titles) is Payload's `{ en, ar }`; `fieldProblems`

@@ -1,4 +1,5 @@
 import { m } from "../i18n/paraglide/messages.js";
+import { IS_TEMP_MOCK, TempMockError } from "../flags.ts";
 import { type Lang, intlLocale } from "./insights-shared.ts";
 
 /**
@@ -6,7 +7,23 @@ import { type Lang, intlLocale } from "./insights-shared.ts";
  * real deployment reads from its reporting tables. Illustrative figures for the demo; today's
  * counts on the dashboards come from the live collections, these only draw the trends.
  */
-export const history = {
+/**
+ * The illustrative series. Production reads them from its reporting tables (weekly and monthly
+ * aggregates of the collections over time), the same for the mock and for production.
+ */
+function demoHistory() {
+  if (IS_TEMP_MOCK) {
+    // TODO replace temporary mock logic with proper polished logic
+    return DEMO_HISTORY;
+  } else {
+    // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+    throw new TempMockError(
+      "trend history (weekly and monthly series) read from reporting tables, not illustrative figures",
+    );
+  }
+}
+
+const DEMO_HISTORY = {
   weeks: [
     "1 Sep",
     "8 Sep",
@@ -118,6 +135,8 @@ export const history = {
   } as Record<string, number[]>,
 };
 
+export const history = demoHistory();
+
 /** The history's words in Arabic (its English is the label itself). */
 const WORDS: Record<string, (i: object, o: { locale: Lang }) => string> = {
   Price: m.api_history_price,
@@ -183,18 +202,26 @@ export function historyLabel(label: string, lang: Lang): string {
  * every time. A day is `{ date, value }`, oldest first.
  */
 export function inquiriesDaily(today: Date): { date: string; value: number }[] {
-  // Sun … Sat: how much of a week's inquiries a day takes.
-  const share = [0.21, 0.21, 0.2, 0.19, 0.15, 0.01, 0.03];
-  const wobble = [1, 0.8, 1.25, 0.9, 1.1, 0.7, 1.3, 1.05, 0.85, 1.2, 0.95];
-  const DAY = 86_400_000;
-  const end = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
-  const weeks = history.weeks.map((w) => Date.parse(`${w} 2026 UTC`));
-  return Array.from({ length: 84 }, (_, i) => {
-    const t = end - (83 - i) * DAY;
-    // The week it falls in (before the first, the first's).
-    const k = Math.max(0, weeks.filter((w) => w <= t).length - 1);
-    const day = new Date(t).getUTCDay();
-    const value = Math.max(0, Math.round(history.inquiries[k]! * share[day]! * wobble[i % wobble.length]!));
-    return { date: new Date(t).toISOString().slice(0, 10), value };
-  });
+  if (IS_TEMP_MOCK) {
+    // TODO replace temporary mock logic with proper polished logic
+    // Sun … Sat: how much of a week's inquiries a day takes.
+    const share = [0.21, 0.21, 0.2, 0.19, 0.15, 0.01, 0.03];
+    const wobble = [1, 0.8, 1.25, 0.9, 1.1, 0.7, 1.3, 1.05, 0.85, 1.2, 0.95];
+    const DAY = 86_400_000;
+    const end = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+    const weeks = history.weeks.map((w) => Date.parse(`${w} 2026 UTC`));
+    return Array.from({ length: 84 }, (_, i) => {
+      const t = end - (83 - i) * DAY;
+      // The week it falls in (before the first, the first's).
+      const k = Math.max(0, weeks.filter((w) => w <= t).length - 1);
+      const day = new Date(t).getUTCDay();
+      const value = Math.max(0, Math.round(history.inquiries[k]! * share[day]! * wobble[i % wobble.length]!));
+      return { date: new Date(t).toISOString().slice(0, 10), value };
+    });
+  } else {
+    // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+    throw new TempMockError(
+      "inquiries per day: counted from the intake messages (the reporting tables) instead of spread from the illustrative weekly series",
+    );
+  }
 }

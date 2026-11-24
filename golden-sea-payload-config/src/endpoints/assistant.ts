@@ -30,6 +30,7 @@ import {
   unauthorized,
 } from "./insights-shared.ts";
 import { logAiCall } from "../collections/shared.ts";
+import { IS_MOCK, NotConnectedError } from "../flags.ts";
 import * as link from "../links.ts";
 
 /**
@@ -959,6 +960,30 @@ export async function ask(req: PayloadRequest, question: string): Promise<Answer
 
 /* ---------------------------------------------------------------- endpoints */
 
+/** The briefing as the AI model writes it (simulated: composed by rules from the same records). */
+async function writeBriefing(req: PayloadRequest, refresh: boolean): Promise<Briefing> {
+  if (IS_MOCK) {
+    // TODO implement mock only logic to simulate third party connections
+    return briefing(req, refresh);
+  } else {
+    // TODO implement actual prod third party connections
+    throw new NotConnectedError("the AI model writing the daily briefing, grounded on the records it reads");
+  }
+}
+
+/** A question answered by the AI model (simulated: intent matching answered from the records). */
+async function answer(req: PayloadRequest, question: string): Promise<Answer> {
+  if (IS_MOCK) {
+    // TODO implement mock only logic to simulate third party connections
+    return ask(req, question);
+  } else {
+    // TODO implement actual prod third party connections
+    throw new NotConnectedError(
+      'the AI model answering an "Ask Golden Sea" question, grounded on the records it cites',
+    );
+  }
+}
+
 /** When each person last pressed "Summarise" (until the service worker restarts). */
 const summarised = new Map<string, string>();
 
@@ -970,7 +995,7 @@ export const assistantEndpoints: Endpoint[] = [
       if (!meOf(req)) return unauthorized(langOf(req));
       const q = (req.query ?? {}) as Record<string, unknown>;
       const again = summarised.get(String(meOf(req)!.id));
-      const b = await briefing(req, Boolean(q.refresh));
+      const b = await writeBriefing(req, Boolean(q.refresh));
       return Response.json(again && !q.refresh ? { ...b, at: again } : b);
     },
   },
@@ -981,7 +1006,7 @@ export const assistantEndpoints: Endpoint[] = [
     handler: async (req) => {
       const o = { locale: langOf(req) };
       if (!meOf(req)) return unauthorized(o.locale);
-      const b = await briefing(req, true);
+      const b = await writeBriefing(req, true);
       summarised.set(String(meOf(req)!.id), b.at);
       await logAiCall(req, {
         task: "Write the briefing",
@@ -1004,7 +1029,7 @@ export const assistantEndpoints: Endpoint[] = [
       const question = str((await body(req)).question).slice(0, 500);
       if (!question.trim())
         return Response.json({ errors: [{ message: m.api_assistant_ask_a_question({}, o) }] }, { status: 400 });
-      const a = await ask(req, question);
+      const a = await answer(req, question);
       await logAiCall(req, {
         task: "Answer a question",
         subject: question,

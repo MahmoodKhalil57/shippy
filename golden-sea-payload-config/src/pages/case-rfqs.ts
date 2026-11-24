@@ -1,5 +1,5 @@
 import { list, message, steps, text, timeline, widgets } from "saastemlycrm-design-system/contracts";
-import { simulateReplies } from "../actions/sourcing.ts";
+import { replyActions } from "../actions/sourcing.ts";
 import type { CaseRfqRow, RfqDraft } from "../endpoints/sourcing.ts";
 import * as fmt from "../format/sourcing.ts";
 import {
@@ -102,7 +102,7 @@ export const caseRfqs = widgets({
       title: m.page_rfqs_supplier_rfqs(),
       subhead: m.page_rfqs_list_subhead(),
       size: "l",
-      head: () => ({ actions: [simulateReplies] }),
+      head: () => ({ actions: replyActions() }),
       records: {
         collection: "supplier-rfqs",
         where: caseSupplierRfqs,

@@ -2,6 +2,7 @@ import type { Action, PromptField } from "saastemlycrm-design-system/contracts";
 import type { ExtractionResult, InboxMessage } from "../endpoints/sourcing.ts";
 import { SIMULATED_FORWARD, SIMULATED_REPLY, SIMULATED_RFQ } from "../endpoints/sourcing-data.ts";
 import { m } from "../i18n/paraglide/messages.js";
+import { IS_MOCK } from "../flags.ts";
 
 /**
  * The inbox: what people can do from its widgets (POST /api/inbox/…, ../endpoints/sourcing.ts):
@@ -22,15 +23,34 @@ const simulate = (kind: "rfq" | "forward" | "reply", label: string, done: string
 });
 
 /** The demo's new arrivals: an RFQ email, a forwarded copy of one, a supplier's reply. */
-export const simulations: Action[] = [
-  simulate("rfq", m.action_inbox_simulate_email(), m.action_inbox_new_email({ subject: SIMULATED_RFQ.subject }), true),
-  simulate(
-    "forward",
-    m.action_inbox_simulate_forward(),
-    m.action_inbox_new_email({ subject: SIMULATED_FORWARD.subject }),
-  ),
-  simulate("reply", m.action_inbox_simulate_reply(), m.action_inbox_new_reply({ subject: SIMULATED_REPLY.subject })),
-];
+function simulationActions(): Action[] {
+  if (IS_MOCK) {
+    // TODO implement mock only logic to simulate third party connections
+    return [
+      simulate(
+        "rfq",
+        m.action_inbox_simulate_email(),
+        m.action_inbox_new_email({ subject: SIMULATED_RFQ.subject }),
+        true,
+      ),
+      simulate(
+        "forward",
+        m.action_inbox_simulate_forward(),
+        m.action_inbox_new_email({ subject: SIMULATED_FORWARD.subject }),
+      ),
+      simulate(
+        "reply",
+        m.action_inbox_simulate_reply(),
+        m.action_inbox_new_reply({ subject: SIMULATED_REPLY.subject }),
+      ),
+    ];
+  } else {
+    // TODO implement actual prod third party connections
+    // The mailboxes, the website form and WhatsApp deliver new messages: nothing to simulate.
+    return [];
+  }
+}
+export const simulations: Action[] = simulationActions();
 
 /** Set a message aside: not an RFQ, or not related to any case. */
 export const notRelated = (msg: InboxMessage, label: string): Action => ({

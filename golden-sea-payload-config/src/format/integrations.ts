@@ -1,5 +1,6 @@
 import { formatNumber, type KindData, type Tone, type WidgetScope } from "saastemlycrm-design-system/contracts";
 import type { IntegrationsView } from "../endpoints/platform.ts";
+import { IS_TEMP_MOCK, TempMockError } from "../flags.ts";
 import { m } from "../i18n/paraglide/messages.js";
 import * as link from "../links.ts";
 import { count, formatDate } from "./index.ts";
@@ -123,6 +124,19 @@ const importItem = (label: string, v: unknown, note: string, tone?: Tone) => ({
   note,
 });
 
+/** The mailboxes the email-history import scanned. */
+function scannedMailboxes(): string {
+  if (IS_TEMP_MOCK) {
+    // TODO replace temporary mock logic with proper polished logic
+    return "sales@, purchasing@, Gmail";
+  } else {
+    // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+    throw new TempMockError(
+      "the mailboxes the email-history import scanned, from the integrations global's connections, not a fixed list",
+    );
+  }
+}
+
 /**
  * The email-history import's dry run: what it scanned and found (RFQ threads, duplicates,
  * exceptions, confidential mail), over the window in its subhead. Nothing is imported before approval.
@@ -134,7 +148,7 @@ export const emailImport = ({ emailImport: i = {} }: IntegrationsGlobal): KindDa
   },
   items: [
     // The mailboxes are addresses, the same in any language.
-    importItem(m.integrations_emails_scanned(), i.scanned, "sales@, purchasing@, Gmail"),
+    importItem(m.integrations_emails_scanned(), i.scanned, scannedMailboxes()),
     importItem(m.integrations_rfq_threads(), i.rfqThreads, m.integrations_rfq_threads_note()),
     importItem(m.integrations_duplicates(), i.duplicates, m.integrations_duplicates_note()),
     importItem(m.integrations_exceptions(), i.exceptions, m.integrations_exceptions_note(), "warning"),

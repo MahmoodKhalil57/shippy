@@ -2,6 +2,7 @@ import type { Endpoint, PayloadRequest } from "payload";
 import { payableOf } from "../collections/fulfilment.ts";
 import { idOf, related } from "../collections/shared.ts";
 import { withdrawal } from "./commercial.ts";
+import { IS_MOCK, NotConnectedError } from "../flags.ts";
 import { forward } from "./forward.ts";
 import { cash, collectionDraftFor, operationsEndpoints } from "./operations.ts";
 import * as link from "../links.ts";
@@ -194,6 +195,15 @@ export const cashEndpoints: Endpoint[] = [
     if (!x) return fail(m.api_cash_invoice_not_found({}, o), 404);
     const text = s(b.body).trim() || x.body;
     const internal = x.mode === "internal";
+    if (!internal) {
+      if (IS_MOCK) {
+        // TODO implement mock only logic to simulate third party connections
+        // Sending is simulated: the reminder is recorded as sent, and no email leaves.
+      } else {
+        // TODO implement actual prod third party connections
+        throw new NotConnectedError("emailing the collection reminder to the customer's accounts contact (mailbox)");
+      }
+    }
     await create(req, "tasks", {
       title: x.title,
       type: internal ? "Internal reminder" : "Customer follow-up",

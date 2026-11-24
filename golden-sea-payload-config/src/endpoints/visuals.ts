@@ -1,6 +1,7 @@
 import type { Endpoint, PayloadRequest } from "payload";
 import type { Doc } from "saastemlycrm-design-system/contracts";
 import { history as H } from "./history.ts";
+import { IS_TEMP_MOCK, TempMockError } from "../flags.ts";
 import { m } from "../i18n/paraglide/messages.js";
 import {
   DAY,
@@ -63,6 +64,30 @@ const last = (a: number[]) => a[a.length - 1] ?? 0;
 const sum = (a: number[]) => a.reduce((t, v) => t + v, 0);
 const iso = (d: Date) => d.toISOString();
 const dayOf = (d: Date) => iso(d).slice(0, 10);
+
+/** Last month's gross profit, from what the quotes expected to what the bills made it. */
+function gpBridge(o: { locale: "en" | "ar" }) {
+  if (IS_TEMP_MOCK) {
+    // TODO replace temporary mock logic with proper polished logic
+    // October's, illustrative: the steps between are fixed amounts, the recovered step closes the gap.
+    const expected = H.gpExpectedK.at(-2)!;
+    const actual = H.gpActualK.at(-2)!;
+    return [
+      // The start is a step (a total adds nothing, so a first total would stand at zero).
+      { label: m.api_visuals_gp_at_quote({}, o), value: expected * 1000 },
+      { label: m.api_visuals_gp_freight({}, o), value: -12_000 },
+      { label: m.api_visuals_gp_supplier_prices({}, o), value: -9_000 },
+      { label: m.api_visuals_gp_fx({}, o), value: -6_000 },
+      { label: m.api_visuals_gp_recovered({}, o), value: (actual - expected + 27) * 1000 },
+      { label: m.api_visuals_gp_actual({}, o), value: actual * 1000, total: true },
+    ];
+  } else {
+    // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+    throw new TempMockError(
+      "the gross profit bridge: freight, supplier price, FX and recovered steps summed from last month's closed cases (actual vs quote-time cost), not fixed amounts",
+    );
+  }
+}
 
 export function visuals(
   role: string,
@@ -202,20 +227,7 @@ export function visuals(
   const receivables = money
     ? H.ageingByCustomer.map(([label, buckets]) => ({ label, value: Math.round(sum(buckets) * 10) / 10 }))
     : [];
-  // October's gross profit, from what the quotes expected to what the bills made it (illustrative).
-  const expected = H.gpExpectedK.at(-2)!;
-  const actual = H.gpActualK.at(-2)!;
-  const gp = money
-    ? [
-        // The start is a step (a total adds nothing, so a first total would stand at zero).
-        { label: m.api_visuals_gp_at_quote({}, o), value: expected * 1000 },
-        { label: m.api_visuals_gp_freight({}, o), value: -12_000 },
-        { label: m.api_visuals_gp_supplier_prices({}, o), value: -9_000 },
-        { label: m.api_visuals_gp_fx({}, o), value: -6_000 },
-        { label: m.api_visuals_gp_recovered({}, o), value: (actual - expected + 27) * 1000 },
-        { label: m.api_visuals_gp_actual({}, o), value: actual * 1000, total: true },
-      ]
-    : [];
+  const gp = money ? gpBridge(o) : [];
 
   return {
     today: dayOf(NOW),

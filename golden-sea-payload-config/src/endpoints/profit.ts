@@ -1,6 +1,7 @@
 import type { Endpoint, PayloadRequest } from "payload";
 import type { Doc } from "saastemlycrm-design-system/contracts";
 import { logActivity } from "../collections/shared.ts";
+import { IS_MOCK, NotConnectedError } from "../flags.ts";
 import {
   FINANCE_ROLES,
   type Source,
@@ -239,6 +240,19 @@ export interface CaseProfit {
 
 /* ---------------------------------------------------------------- building it */
 
+/** A case's costing from the accounting: its quote-time cost sheet, pre-go-live bills, receipt rates and claims. */
+function costingOf(caseId: string): Costing | undefined {
+  if (IS_MOCK) {
+    // TODO implement mock only logic to simulate third party connections
+    return COSTING[caseId];
+  } else {
+    // TODO implement actual prod third party connections
+    throw new NotConnectedError(
+      "Odoo accounting: a case's quote-time cost sheet, the supplier bills booked before go-live, receipt FX and supplier claims",
+    );
+  }
+}
+
 const CLOSED = "Closed — settled";
 const MATCHED = ["Matched", "Approved for payment", "Paid"];
 
@@ -257,7 +271,7 @@ export async function caseProfit(req: PayloadRequest, id: string): Promise<CaseP
   const lang = langOf(req);
   const o = { locale: lang };
   const role = str(meOf(req)?.role);
-  const costing = COSTING[c.id];
+  const costing = costingOf(c.id);
   const [invoicesAll, paymentsAll, posAll, billsAll, deliveriesAll, suppliers, fx] = await Promise.all([
     all(req, "invoices", 0),
     all(req, "payments", 0),
@@ -678,11 +692,22 @@ export const profitEndpoints: Endpoint[] = [
       if (p instanceof Response) return p;
       if (!p.receipt) return fail(400, m.api_profit_no_single_balance({}, { locale: langOf(req) }));
       const input = await body(req);
+      let reference = str(input.reference);
+      if (!reference) {
+        if (IS_MOCK) {
+          // TODO implement mock only logic to simulate third party connections
+          // The simulated bank movement's reference.
+          reference = "TRX-77984";
+        } else {
+          // TODO implement actual prod third party connections
+          throw new NotConnectedError("the bank feed: the reference of the customer's incoming transfer");
+        }
+      }
       await req.payload.create({
         collection: "payments" as never,
         data: {
           direction: "in",
-          reference: str(input.reference) || "TRX-77984",
+          reference,
           paidAt: new Date().toISOString(),
           amount: p.receipt.amount,
           currency: p.receipt.currency,
@@ -704,7 +729,7 @@ export const profitEndpoints: Endpoint[] = [
       const p = await guarded(req, true);
       if (p instanceof Response) return p;
       const ref = str(req.routeParams?.ref);
-      const claim = COSTING[p.id]?.claims.find((cl) => cl.ref === ref);
+      const claim = costingOf(p.id)?.claims.find((cl) => cl.ref === ref);
       const o = { locale: langOf(req) };
       if (!claim) return fail(404, m.api_profit_claim_not_found({}, o));
       if (p.claims.find((cl) => cl.ref === ref)?.settled) return respond(req, p.id);

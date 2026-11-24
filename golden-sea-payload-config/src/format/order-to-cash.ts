@@ -3,6 +3,7 @@ import { caseDeliveryPath, etaAction } from "../actions/case-delivery.ts";
 import { caseOrderPath, readPo } from "../actions/case-order.ts";
 import type { Check } from "../endpoints/operations.ts";
 import type { CaseOps, OpsDelivery, OpsPO } from "../endpoints/order-to-cash.ts";
+import { IS_MOCK } from "../flags.ts";
 import { m } from "../i18n/paraglide/messages.js";
 import { dayTime, person, statusTone } from "./index.ts";
 
@@ -335,7 +336,7 @@ export const customerAmendment = ({ c, i }: OpenMismatch, d: CaseOps): KindData<
         collection: "media",
         data: { alt: `${po.number} amendment, line ${c.lineNo}`, kind: "Customer PO" },
       },
-      sample: {
+      sample: sample({
         filename: `${po.number}-amendment-L${c.lineNo}.pdf`,
         // `{resolution}` stays a placeholder: the sample is filled with the form's value.
         lines: [
@@ -343,7 +344,7 @@ export const customerAmendment = ({ c, i }: OpenMismatch, d: CaseOps): KindData<
           m.order_to_cash_sample_re({ number: po.number, line: c.lineNo }),
           "{resolution}",
         ],
-      },
+      }),
     },
     call: { path: "/operations/po-amend", body: { po: po.id, index: i } },
     confirmLabel: m.order_to_cash_amendment_confirm(),
@@ -647,7 +648,7 @@ function dropEntry(d: CaseOps, x: OpsDelivery): Entry {
               hint: m.order_to_cash_proof_hint(),
               required: true,
               upload: { collection: "media", data: { alt: `${x.number} signed`, kind: "Delivery note / POD" } },
-              sample: {
+              sample: sample({
                 label: m.order_to_cash_sample_scan(),
                 filename: `${x.number}-signed.pdf`,
                 // `{signedBy}` stays a placeholder: the sample is filled with the form's value.
@@ -655,7 +656,7 @@ function dropEntry(d: CaseOps, x: OpsDelivery): Entry {
                   m.order_to_cash_sample_note({ number: x.number }),
                   m.order_to_cash_sample_received({ signedBy: "{signedBy}" }),
                 ],
-              },
+              }),
             },
             fields: [
               {
@@ -730,3 +731,15 @@ export const dropEntries = (d: CaseOps): KindData<"entries"> => ({
   },
   items: d.deliveries.map((x) => dropEntry(d, x)),
 });
+
+/** A sample of the customer's or the vessel's document the presenter can attach in its place. */
+function sample<T>(s: T): T | undefined {
+  if (IS_MOCK) {
+    // TODO implement mock only logic to simulate third party connections
+    return s;
+  } else {
+    // TODO implement actual prod third party connections
+    // The person attaches the document they received.
+    return undefined;
+  }
+}

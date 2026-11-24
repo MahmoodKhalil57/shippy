@@ -1,6 +1,7 @@
 import type { Action } from "saastemlycrm-design-system/contracts";
 import type { CaseProfit, CloseCheck } from "../endpoints/profit.ts";
 import { numberFormat } from "../format/index.ts";
+import { IS_MOCK } from "../flags.ts";
 import { egp, pct } from "../format/profit.ts";
 import { m } from "../i18n/paraglide/messages.js";
 
@@ -12,6 +13,19 @@ import { m } from "../i18n/paraglide/messages.js";
 
 /** An amount in its currency, as received, in the interface's language: "USD 12,480.5". */
 const money = (amount: number, currency: string) => m.action_money({ currency, amount: numberFormat().format(amount) });
+
+/** The bank reference the receipt form starts with. */
+function receiptReference(): string | undefined {
+  if (IS_MOCK) {
+    // TODO implement mock only logic to simulate third party connections
+    // The simulated bank movement's reference, filled in for the presenter.
+    return "TRX-77984";
+  } else {
+    // TODO implement actual prod third party connections
+    // The person types the reference from the bank statement.
+    return undefined;
+  }
+}
 
 export function profitActions(p: CaseProfit) {
   const base = `/case-profit/${encodeURIComponent(p.id)}`;
@@ -48,7 +62,7 @@ export function profitActions(p: CaseProfit) {
         name: "reference",
         label: m.action_profit_bank_reference(),
         required: true,
-        defaultValue: "TRX-77984",
+        defaultValue: receiptReference(),
         admin: {
           description:
             r.currency === "EGP"

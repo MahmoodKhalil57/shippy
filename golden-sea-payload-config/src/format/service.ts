@@ -1,6 +1,7 @@
 import type { Figure, KindData } from "saastemlycrm-design-system/contracts";
 import type { UsageView } from "../endpoints/service.ts";
 import { m } from "../i18n/paraglide/messages.js";
+import { IS_TEMP_MOCK, TempMockError } from "../flags.ts";
 import { money as amount, numberFormat } from "./index.ts";
 
 /**
@@ -104,45 +105,70 @@ export const measured = ({ measured: u }: UsageView): Figure<MeasuredFigure>[] =
  * (5 orders of EGP 56,417 at 20%; 5 people saving 5 hours a week at EGP 150 an hour), to replace
  * with Golden Sea's own figures. Nothing is saved.
  */
-export const payback = (u: UsageView): KindData<"whatif"> => ({
-  label: m.service_payback(),
-  note: m.service_payback_note({ documents: count(u.measured.documents), hours: count(u.measured.hoursSaved) }),
-  inputs: [
-    { key: "orders", label: m.service_extra_orders(), min: 0, max: 20, step: 1, value: 5 },
-    {
-      key: "value",
-      label: m.service_order_value(),
-      min: 10000,
-      max: 250000,
-      step: 1,
-      value: 56417,
-      format: { unit: "money", currency: "EGP" },
+/** Where the payback what-if starts: extra orders, their value and margin, people, hours saved and their cost. */
+function paybackStart() {
+  if (IS_TEMP_MOCK) {
+    // TODO replace temporary mock logic with proper polished logic
+    // The proposal's illustration.
+    return { orders: 5, value: 56417, margin: 20, people: 5, hours: 5, rate: 150 };
+  } else {
+    // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+    throw new TempMockError(
+      "the payback what-if's starting values from Golden Sea's own figures (order value and margin from closed cases, hours saved from the AI log), not the proposal's illustration",
+    );
+  }
+}
+
+export const payback = (u: UsageView): KindData<"whatif"> => {
+  const start = paybackStart();
+  return {
+    label: m.service_payback(),
+    note: m.service_payback_note({ documents: count(u.measured.documents), hours: count(u.measured.hoursSaved) }),
+    inputs: [
+      { key: "orders", label: m.service_extra_orders(), min: 0, max: 20, step: 1, value: start.orders },
+      {
+        key: "value",
+        label: m.service_order_value(),
+        min: 10000,
+        max: 250000,
+        step: 1,
+        value: start.value,
+        format: { unit: "money", currency: "EGP" },
+      },
+      {
+        key: "margin",
+        label: m.service_gross_margin(),
+        min: 5,
+        max: 40,
+        step: 0.5,
+        value: start.margin,
+        format: { unit: "pct" },
+      },
+      { key: "people", label: m.service_people(), min: 1, max: 20, step: 1, value: start.people },
+      { key: "hours", label: m.service_hours_per_person(), min: 0, max: 15, step: 0.5, value: start.hours },
+      {
+        key: "rate",
+        label: m.service_hour_cost(),
+        min: 50,
+        max: 600,
+        step: 10,
+        value: start.rate,
+        format: { unit: "money", currency: "EGP" },
+      },
+    ],
+    compute: ({ orders = 0, value = 0, margin = 0, people = 0, hours = 0, rate = 0 }) => {
+      const won = orders * value * (margin / 100);
+      const weeks = 52 / 12;
+      const hoursMonth = people * hours * weeks;
+      const time = hoursMonth * rate;
+      const total = won + time;
+      const h = Math.round(hoursMonth);
+      return [
+        { label: m.service_margin_month(), value: money(won) },
+        { label: m.service_time_month(), value: money(time), note: m.service_hours({ n: h, hours: count(h) }) },
+        { label: m.service_value_month(), value: money(total), tone: total > 0 ? "success" : undefined },
+        { label: m.service_value_year(), value: money(total * 12) },
+      ];
     },
-    { key: "margin", label: m.service_gross_margin(), min: 5, max: 40, step: 0.5, value: 20, format: { unit: "pct" } },
-    { key: "people", label: m.service_people(), min: 1, max: 20, step: 1, value: 5 },
-    { key: "hours", label: m.service_hours_per_person(), min: 0, max: 15, step: 0.5, value: 5 },
-    {
-      key: "rate",
-      label: m.service_hour_cost(),
-      min: 50,
-      max: 600,
-      step: 10,
-      value: 150,
-      format: { unit: "money", currency: "EGP" },
-    },
-  ],
-  compute: ({ orders = 0, value = 0, margin = 0, people = 0, hours = 0, rate = 0 }) => {
-    const won = orders * value * (margin / 100);
-    const weeks = 52 / 12;
-    const hoursMonth = people * hours * weeks;
-    const time = hoursMonth * rate;
-    const total = won + time;
-    const h = Math.round(hoursMonth);
-    return [
-      { label: m.service_margin_month(), value: money(won) },
-      { label: m.service_time_month(), value: money(time), note: m.service_hours({ n: h, hours: count(h) }) },
-      { label: m.service_value_month(), value: money(total), tone: total > 0 ? "success" : undefined },
-      { label: m.service_value_year(), value: money(total * 12) },
-    ];
-  },
-});
+  };
+};

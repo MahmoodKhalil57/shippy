@@ -14,6 +14,7 @@ import type { InboxDetail, InboxMessage, InboxPayload } from "../endpoints/sourc
 import { m as t } from "../i18n/paraglide/messages.js";
 import * as link from "../links.ts";
 import { dateFormat } from "./index.ts";
+import { IS_TEMP_MOCK, TempMockError } from "../flags.ts";
 
 /**
  * The inbox, read for the widgets that show it (../pages/inbox.ts): the message list's filters and
@@ -41,7 +42,16 @@ const FULL: Intl.DateTimeFormatOptions = {
   timeZone: "UTC",
 };
 /** Today's messages by their time, older ones by their day (the demo is set on 17 Nov). */
-export const when = (v: string) => (v ? dateFormat(v.startsWith("2026-11-17") ? TIME : DAY).format(new Date(v)) : "");
+export function when(v: string): string {
+  if (!v) return "";
+  if (IS_TEMP_MOCK) {
+    // TODO replace temporary mock logic with proper polished logic
+    return dateFormat(v.startsWith("2026-11-17") ? TIME : DAY).format(new Date(v));
+  } else {
+    // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+    throw new TempMockError("the inbox's times: today's messages by today's date, not the demo's fixed 17 Nov");
+  }
+}
 export const full = (v: string) => (v ? dateFormat(FULL).format(new Date(v)) : "");
 export const pct = (c: number) => formatNumber(Math.round(c * 100), { unit: "pct", decimals: 0 });
 const confTone = (c: number): Tone => (c >= 0.85 ? "success" : c >= 0.6 ? "warning" : "error");

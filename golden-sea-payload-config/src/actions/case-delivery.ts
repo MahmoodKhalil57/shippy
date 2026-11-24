@@ -2,6 +2,7 @@ import type { Action } from "saastemlycrm-design-system/contracts";
 import { m } from "../i18n/paraglide/messages.js";
 import { day, dayTime, person } from "../format/index.ts";
 import type { CaseOps } from "../endpoints/order-to-cash.ts";
+import { IS_MOCK } from "../flags.ts";
 
 /**
  * A case's delivery and billing: what people can do from the delivery widgets (POST
@@ -29,6 +30,18 @@ const AGENT_EMAIL: Record<string, { from: string; subject: string; body: string;
 
 /** The agent's ETA email arriving: what it moves (open drops, backorders), applied on confirm. */
 export function etaAction(d: CaseOps): Action | undefined {
+  if (IS_MOCK) {
+    // TODO implement mock only logic to simulate third party connections
+    return simulatedEta(d);
+  } else {
+    // TODO implement actual prod third party connections
+    // The agent's email arrives in the inbox and re-plans from there: no button to receive it.
+    return undefined;
+  }
+}
+
+/** The presenter "receives" the agent's email (AGENT_EMAIL). */
+function simulatedEta(d: CaseOps): Action | undefined {
   const email = AGENT_EMAIL[d.case.id];
   if (!email) return undefined;
   const open = d.deliveries.filter((x) => !/confirmed|Cancelled|Dispatched/.test(x.status));

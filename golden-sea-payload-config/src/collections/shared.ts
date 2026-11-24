@@ -1,4 +1,5 @@
 import type { Access, CollectionConfig, Field, PayloadRequest } from "payload";
+import { IS_MOCK, IS_TEMP_MOCK, NotConnectedError, TempMockError } from "../flags.ts";
 
 /** Shared vocabulary and access rules for the sourcing-desk data model. */
 
@@ -216,7 +217,20 @@ export const costVisible = ({ req }: { req: PayloadRequest }) => Boolean(req.use
 /* ---------------------------------------------------------------- the demo's clock */
 
 /** The day the demo's records are set on (a Tuesday morning): what "today" and "overdue" count from. */
-export const TODAY = new Date("2026-11-17T09:30:00.000Z");
+export const TODAY = demoToday();
+
+/** The demo's fixed clock: the seed's dates are written against this morning. */
+function demoToday(): Date {
+  if (IS_TEMP_MOCK) {
+    // TODO replace temporary mock logic with proper polished logic
+    return new Date("2026-11-17T09:30:00.000Z");
+  } else {
+    // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+    throw new TempMockError(
+      'TODAY is the demo\'s fixed clock (17 Nov 2026 09:30 UTC): "today", "overdue" and $today in widget queries need the real clock, and the data\'s dates real ones',
+    );
+  }
+}
 export const DAY = 86_400_000;
 /** Whole days from `iso` to today: positive once it's past, negative before. */
 export const daysSince = (iso: unknown) =>
@@ -247,7 +261,7 @@ export const computed = <F extends Field>(
 export async function fxRates(req: PayloadRequest): Promise<Record<string, number>> {
   const ctx = (req.context ??= {}) as { fx?: Promise<Record<string, number>> };
   ctx.fx ??= (async () => {
-    const out: Record<string, number> = { EGP: 1, USD: 48.6, EUR: 52.9 };
+    const out: Record<string, number> = { EGP: 1, ...fallbackRates() };
     try {
       const g = (await req.payload.findGlobal({
         locale: req.locale,
@@ -264,6 +278,19 @@ export async function fxRates(req: PayloadRequest): Promise<Record<string, numbe
     return out;
   })();
   return ctx.fx;
+}
+
+/** The rates used for a currency with no active approved rate. */
+function fallbackRates(): Record<string, number> {
+  if (IS_TEMP_MOCK) {
+    // TODO replace temporary mock logic with proper polished logic
+    return { USD: 48.6, EUR: 52.9 };
+  } else {
+    // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+    throw new TempMockError(
+      "fxRates falls back to fixed USD/EGP 48.6 and EUR/EGP 52.9: a currency with no active approved rate needs a decided behaviour (refuse, or ask finance), not a hard-coded rate",
+    );
+  }
 }
 
 /** A related document, populated or by id (read as the request's user). */
@@ -433,14 +460,36 @@ export async function logAiCall(
         case: entry.case ?? undefined,
         confidence: entry.confidence,
         values: entry.values,
-        seconds: 0.4,
-        model: "Demo stub (no live AI)",
+        seconds: aiCallSeconds(),
+        model: aiModel(),
         outcome: entry.outcome ?? "Applied automatically",
       } as never,
       req,
     });
   } catch {
     /* logging never blocks the call it logs */
+  }
+}
+
+/** The model and version that answered an AI call, as the AI log records it. */
+function aiModel(): string {
+  if (IS_MOCK) {
+    // TODO implement mock only logic to simulate third party connections
+    return "Demo stub (no live AI)";
+  } else {
+    // TODO implement actual prod third party connections
+    throw new NotConnectedError("AI model: logAiCall records the model and version the real AI call answered with");
+  }
+}
+
+/** How long an AI call took, as the AI log records it. */
+function aiCallSeconds(): number {
+  if (IS_TEMP_MOCK) {
+    // TODO replace temporary mock logic with proper polished logic
+    return 0.4;
+  } else {
+    // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+    throw new TempMockError("logAiCall records a fixed 0.4 s: the caller should pass the call's measured duration");
   }
 }
 

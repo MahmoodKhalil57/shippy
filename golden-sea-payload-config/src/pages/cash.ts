@@ -10,6 +10,7 @@ import {
   widgets,
   type WidgetScope,
 } from "saastemlycrm-design-system/contracts";
+import { IS_TEMP_MOCK, TempMockError } from "../flags.ts";
 import * as shapes from "../format/visuals.ts";
 import { visuals } from "../queries/visuals.ts";
 import type { BankChange } from "../endpoints/cash.ts";
@@ -36,10 +37,17 @@ import { m } from "../i18n/paraglide/messages.js";
  * 8 weeks. Each widget is a design-system kind given a query and a formatter (../format/cash.ts).
  */
 /** The demo's day (`TODAY`, ../collections/shared.ts) in the interface's language: "Tue 17 Nov". */
-const demoDay = () =>
-  dateFormat({ weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }).format(
-    new Date("2026-11-17T09:30:00.000Z"),
-  );
+function demoDay(): string {
+  if (IS_TEMP_MOCK) {
+    // TODO replace temporary mock logic with proper polished logic
+    return dateFormat({ weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }).format(
+      new Date("2026-11-17T09:30:00.000Z"),
+    );
+  } else {
+    // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+    throw new TempMockError("the cash page's day: today, not the demo's Tue 17 Nov 2026");
+  }
+}
 
 /** Payables, the cash forecast's outflows and bank-detail changes are never for Sales. */
 const notSales = (s: WidgetScope) => s.user.role !== "sales";

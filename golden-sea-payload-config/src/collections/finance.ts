@@ -14,6 +14,7 @@ import {
   scalar,
 } from "./shared.ts";
 import { words } from "./shared.ts";
+import { IS_MOCK, IS_TEMP_MOCK, NotConnectedError, TempMockError } from "../flags.ts";
 import { formats, tones, type CollectionAction, type CollectionSettings } from "saastemlycrm-design-system/contracts";
 import { CASE_PLACEHOLDER, FINANCE_ROLES, arabic, dayText, findAll, labelled, moneyText, once } from "./fulfilment.ts";
 
@@ -57,6 +58,23 @@ const longDay = {
  * in, written in `locale` (English unless "ar").
  */
 export function reminderDraft(
+  inv: Record<string, unknown>,
+  customer: Record<string, unknown> | null,
+  locale?: string | null,
+) {
+  if (IS_TEMP_MOCK) {
+    // TODO replace temporary mock logic with proper polished logic
+    return cannedReminderDraft(inv, customer, locale);
+  } else {
+    // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+    throw new TempMockError(
+      "reminderDraft is canned template text with a fixed confidence (0.92) and a hard-coded escalation contact (Karim Balbaa): the AI's draft, its confidence and the account's escalation owner",
+    );
+  }
+}
+
+/** The demo's reminder draft: template text standing in for the AI's. */
+function cannedReminderDraft(
   inv: Record<string, unknown>,
   customer: Record<string, unknown> | null,
   locale?: string | null,
@@ -133,6 +151,20 @@ Golden Sea — Accounts`,
   };
 }
 import { widgets } from "saastemlycrm-design-system/contracts";
+
+/** The bank reference recording a customer payment starts from. */
+function incomingBankReference(inv: Record<string, unknown>): string {
+  if (IS_MOCK) {
+    // TODO implement mock only logic to simulate third party connections
+    // A fixed sample reference, so the action is the same on every read.
+    return `TRX-77${scalar(inv.number).replace(/\D/g, "").slice(-3).padStart(3, "0")}`;
+  } else {
+    // TODO implement actual prod third party connections
+    throw new NotConnectedError(
+      "bank: the reference of the customer's incoming transfer for this invoice, from the bank statement or feed",
+    );
+  }
+}
 
 /** Customer invoices: from delivered quantities, never billing the same quantity twice. */
 export const Invoices: CollectionConfig = {
@@ -901,8 +933,7 @@ export const Invoices: CollectionConfig = {
       (inv, req) =>
         Number(inv.balance) > 0
           ? {
-              // A fixed sample reference, so the action is the same on every read.
-              reference: `TRX-77${scalar(inv.number).replace(/\D/g, "").slice(-3).padStart(3, "0")}`,
+              reference: incomingBankReference(inv),
               note: arabic(req)
                 ? `الرصيد ${moneyText(Number(inv.balance), scalar(inv.currency))} · مستحق ${dayText(inv.dueDate, "ar")}. يُسجَّل بعد وصول المبلغ إلى البنك — النظام لا يحوّل أموالًا أبدًا.`
                 : `Balance ${moneyText(Number(inv.balance), scalar(inv.currency))} · due ${dayText(inv.dueDate)}. Recorded after the money is in the bank — the system never moves money.`,

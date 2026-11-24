@@ -1,8 +1,21 @@
 import type { Endpoint, PayloadRequest } from "payload";
 import { bodyOf, failWith, forward } from "./forward.ts";
 import { operationsEndpoints, type BookLine, type Check } from "./operations.ts";
+import { IS_MOCK, IS_TEMP_MOCK, NotConnectedError, TempMockError } from "../flags.ts";
 import { m } from "../i18n/paraglide/messages.js";
 import { langOf } from "./insights-shared.ts";
+
+/** Who approves a supplier PO re-checked outside management. */
+function supplierPoApprover(): string {
+  if (IS_TEMP_MOCK) {
+    // TODO replace temporary mock logic with proper polished logic
+    // Karim Balbaa, the demo's CEO.
+    return "kb";
+  } else {
+    // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+    throw new TempMockError("the supplier PO approver from the approval-rules global, not the demo user kb");
+  }
+}
 
 /** The request's language, as Paraglide's options. */
 const loc = (req: PayloadRequest) => ({ locale: langOf(req) });
@@ -168,7 +181,7 @@ export const orderToCashEndpoints: Endpoint[] = [
               detail: po.recheck.some((r) => !r.ok)
                 ? m.api_order_to_cash_approval_detail_flagged({ number: po.number }, loc(req))
                 : m.api_order_to_cash_approval_detail_clean({ number: po.number }, loc(req)),
-              approvers: ["kb"],
+              approvers: [supplierPoApprover()],
               subject: { relationTo: "purchase-orders", value: po.id },
             } as never,
           });
@@ -180,7 +193,7 @@ export const orderToCashEndpoints: Endpoint[] = [
             ...as,
             collection: "notifications" as never,
             data: {
-              user: "kb",
+              user: supplierPoApprover(),
               title: m.api_order_to_cash_notification_title({ number: po.number }, loc(req)),
               detail: `${po.supplierName} · ${d.case.caseId}`,
               kind: "Approval",
@@ -203,6 +216,15 @@ export const orderToCashEndpoints: Endpoint[] = [
         .findByID({ collection: "supplier-bills" as never, id: String(id), depth: 0, req, overrideAccess: false })
         .catch(() => null)) as Record<string, unknown> | null;
       if (!bill) return failWith(m.api_order_to_cash_no_bill({}, loc(req)), 404);
+      if (IS_MOCK) {
+        // TODO implement mock only logic to simulate third party connections
+        // The supplier's email with the same bill, simulated: booked again from the bill on file.
+      } else {
+        // TODO implement actual prod third party connections
+        throw new NotConnectedError(
+          "a supplier's bill arriving by email (mailbox): in production it is booked from the email, not resent from a button",
+        );
+      }
       try {
         await req.payload.create({
           req,

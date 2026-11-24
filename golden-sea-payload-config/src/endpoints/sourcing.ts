@@ -3,6 +3,7 @@ import type { Doc } from "saastemlycrm-design-system/contracts";
 import { idOf, logActivity, scalar } from "../collections/shared.ts";
 import { urgencyOf } from "../collections/sourcing.ts";
 import { DEMO_NOW } from "./home.ts";
+import { IS_MOCK, IS_TEMP_MOCK, NotConnectedError, TempMockError } from "../flags.ts";
 import {
   HISTORY_CUSTOMERS,
   HISTORY_DEDUP,
@@ -64,6 +65,31 @@ const OPEN_RFQ = ["Sent", "Awaiting reply", "Partial reply", "Clarification need
 const ANSWERED_RFQ = ["Replied", "Revised offer received", "Declined"];
 
 const iso = (t: number) => new Date(t).toISOString();
+
+/** "Now" for the sourcing desk (ms): the demo's fixed clock. */
+function now(): number {
+  if (IS_TEMP_MOCK) {
+    // TODO replace temporary mock logic with proper polished logic
+    return DEMO_NOW.getTime();
+  } else {
+    // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+    throw new TempMockError("the sourcing desk's clock: the current time instead of the demo's fixed DEMO_NOW");
+  }
+}
+
+/**
+ * An email out of Golden Sea's mailbox (a customer's acknowledgement, a supplier RFQ, a reminder).
+ * The mock sends nothing: what was sent is kept where it was written (the case's activity, the RFQ).
+ */
+function sendEmail(what: string): void {
+  if (IS_MOCK) {
+    // TODO implement mock only logic to simulate third party connections
+  } else {
+    // TODO implement actual prod third party connections
+    throw new NotConnectedError(`outgoing email (Outlook/Gmail mailbox): send ${what}`);
+  }
+}
+
 const role = (req: Req) => scalar((req.user as { role?: unknown } | null)?.role);
 const userId = (req: Req) => idOf(req.user) ?? undefined;
 const isSales = (req: Req) => role(req) === "sales";
@@ -133,9 +159,7 @@ async function notify(
   kind = "Update",
 ) {
   if (!user) return;
-  await create(req, "notifications", { user, title, detail, href, kind, at: iso(DEMO_NOW.getTime()) }).catch(
-    () => undefined,
-  );
+  await create(req, "notifications", { user, title, detail, href, kind, at: iso(now()) }).catch(() => undefined);
 }
 
 const DATE_OPTIONS: Intl.DateTimeFormatOptions = { day: "2-digit", month: "short", timeZone: "UTC" };
@@ -171,12 +195,20 @@ async function userName(req: Req, id: unknown): Promise<string> {
 
 /** "Now" in the demo's timeline, nudged forward so new records sort after the seeded ones. */
 async function demoNow(req: Req, offsetMinutes = 0) {
-  const { totalDocs } = await req.payload.count({
-    collection: "intake-messages" as never,
-    where: { messageId: { like: "sim-" } } as never,
-    req,
-  });
-  return DEMO_NOW.getTime() + (25 + totalDocs * 3 + offsetMinutes) * 60_000;
+  if (IS_TEMP_MOCK) {
+    // TODO replace temporary mock logic with proper polished logic
+    const { totalDocs } = await req.payload.count({
+      collection: "intake-messages" as never,
+      where: { messageId: { like: "sim-" } } as never,
+      req,
+    });
+    return DEMO_NOW.getTime() + (25 + totalDocs * 3 + offsetMinutes) * 60_000;
+  } else {
+    // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+    throw new TempMockError(
+      "the time a new message arrives: the current time instead of the demo's clock nudged by the simulated messages",
+    );
+  }
 }
 
 /* ------------------------------------------------------------------ supplier knowledge */
@@ -189,7 +221,17 @@ const KNOWN_DOMAINS: Record<string, string> = {
   S4: "nile-safety.example",
   S5: "horizon-trading.example",
 };
-const domainOf = (s: Doc) => str(s.emailDomain) || KNOWN_DOMAINS[s.id] || "";
+function domainOf(s: Doc): string {
+  if (IS_TEMP_MOCK) {
+    // TODO replace temporary mock logic with proper polished logic
+    return str(s.emailDomain) || KNOWN_DOMAINS[s.id] || "";
+  } else {
+    // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+    throw new TempMockError(
+      "a supplier's email domain: every supplier's `emailDomain` on its record instead of the fixed KNOWN_DOMAINS list",
+    );
+  }
+}
 const senderDomain = (from: unknown) => str(from).split("@")[1]?.toLowerCase() ?? "";
 
 /** The supplier category a requested line is sourced in (what suppliers are asked for). */
@@ -313,6 +355,19 @@ async function caseIdOf(req: Req, id: unknown) {
   return str((await byId(req, "cases", cid))?.caseId) || cid;
 }
 
+/** How likely the `i`-th case a known sender was asked on is the one its reply is about. */
+function candidateConfidence(i: number): number {
+  if (IS_TEMP_MOCK) {
+    // TODO replace temporary mock logic with proper polished logic
+    return Math.max(0.3, 0.62 - i * 0.21);
+  } else {
+    // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+    throw new TempMockError(
+      "a candidate case's match confidence: scored from the reply (lines, dates, open RFQs) instead of fixed by its rank",
+    );
+  }
+}
+
 /**
  * Matches an incoming message to a case: supplier-RFQ reference anywhere in the subject or body
  * (subjects change all the time), identical attachments or customer reference (duplicates),
@@ -406,7 +461,7 @@ export async function matchMessage(req: Req, msg: Doc): Promise<MatchResult> {
       candidates.push({
         case: cid,
         caseId: await caseIdOf(req, cid),
-        confidence: Math.max(0.3, 0.62 - i * 0.21),
+        confidence: candidateConfidence(i),
         reason: m.api_sourcing_was_asked_on(
           {
             name: str(sender.name),
@@ -465,7 +520,7 @@ async function saveOffers(req: Req, rfq: Doc, supplierId: string, lines: OfferLi
         packSize: l.packSize,
         packLabel: l.packLabel,
         leadDays: l.leadDays,
-        validUntil: iso(DEMO_NOW.getTime() + l.validDays * DAY),
+        validUntil: iso(now() + l.validDays * DAY),
         paymentTerms: m.api_sourcing_cash_terms({}, loc(req)),
         deliveryBasis: "Delivered to port",
         source: "Email",
@@ -486,13 +541,21 @@ async function saveOffers(req: Req, rfq: Doc, supplierId: string, lines: OfferLi
 
 /** The offer lines a reply to `rfq` contains (deterministic stub of the offer reader). */
 async function replyLines(req: Req, rfq: Doc, supplierId: string): Promise<OfferLine[]> {
-  const c = await byId(req, "cases", str(idOf(rfq.case)));
-  const items = list<Json>(c?.items).filter((i) => list<number>(rfq.lineNos).includes(num(i.lineNo)));
-  return items.map((item) =>
-    supplierId === "S3" && /E6013/i.test(str(item.description))
-      ? offerFor(supplierId, item, { price: 980, leadDays: 3, validDays: 7, packLabel: "Box 5 kg" })
-      : offerFor(supplierId, item),
-  );
+  if (IS_MOCK) {
+    // TODO implement mock only logic to simulate third party connections
+    const c = await byId(req, "cases", str(idOf(rfq.case)));
+    const items = list<Json>(c?.items).filter((i) => list<number>(rfq.lineNos).includes(num(i.lineNo)));
+    return items.map((item) =>
+      supplierId === "S3" && /E6013/i.test(str(item.description))
+        ? offerFor(supplierId, item, { price: 980, leadDays: 3, validDays: 7, packLabel: "Box 5 kg" })
+        : offerFor(supplierId, item),
+    );
+  } else {
+    // TODO implement actual prod third party connections
+    throw new NotConnectedError(
+      `AI model (offer reader): read the offer lines (price, pack, lead time, validity) from the reply to ${str(rfq.reference)}`,
+    );
+  }
 }
 
 /* ------------------------------------------------------------------ inbox: extraction */
@@ -500,8 +563,35 @@ async function replyLines(req: Req, rfq: Doc, supplierId: string): Promise<Offer
 const UNIT_MAP: Record<string, string> = { coil: "roll", sheet: "pcs", box: "pack", ltr: "L", litre: "L" };
 const caseUnit = (u: string) => UNIT_MAP[u.toLowerCase()] ?? u;
 
+/** What the extraction model reads from a message and its attachments (the demo's canned scenarios). */
 function scenarioOf(msg: Doc): Scenario | undefined {
-  return SCENARIOS[str(msg.scenario) || SCENARIO_BY_ID[msg.id] || ""];
+  if (IS_MOCK) {
+    // TODO implement mock only logic to simulate third party connections
+    return SCENARIOS[str(msg.scenario) || SCENARIO_BY_ID[msg.id] || ""];
+  } else {
+    // TODO implement actual prod third party connections
+    throw new NotConnectedError(
+      "AI model (extraction): read the message and its attachments into header values, lines, missing items and a clarification",
+    );
+  }
+}
+
+/** Who a new case goes to and by when, and the rule that says so. */
+function draftAssignment(req: Req, draft: Scenario["draft"] | undefined) {
+  if (IS_TEMP_MOCK) {
+    // TODO replace temporary mock logic with proper polished logic
+    return {
+      owner: draft?.owner ?? userId(req) ?? "ky",
+      backup: draft?.backup ?? "ky",
+      deadline: draft?.deadline ?? iso(now() + DAY),
+      rule: draft?.rule,
+    };
+  } else {
+    // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+    throw new TempMockError(
+      "a new case's owner, backup and quote deadline: from the assignment rules instead of the canned scenario's draft and the fixed user ky",
+    );
+  }
 }
 
 function fill(text: string, vars: Record<string, string>) {
@@ -528,13 +618,11 @@ async function extraction(req: Req, msg: Doc): Promise<ExtractionResult> {
   const lang = t.locale;
   const s = scenarioOf(msg);
   const draft = s?.draft;
-  const owner = draft?.owner ?? userId(req) ?? "ky";
-  const backup = draft?.backup ?? "ky";
+  const { owner, backup, deadline, rule } = draftAssignment(req, draft);
   const ownerName = await userName(req, owner);
   const backupName = await userName(req, backup);
   const customer = draft?.customer ? await byId(req, "customers", draft.customer) : null;
   const customerName = str(customer?.name) || draft?.newCustomer?.name || str(msg.fromName) || str(msg.from);
-  const deadline = draft?.deadline ?? iso(DEMO_NOW.getTime() + DAY);
   const templates = list<Json>(
     obj(await req.payload.findGlobal({ slug: "message-templates" as never, req })).templates,
   );
@@ -573,7 +661,7 @@ async function extraction(req: Req, msg: Doc): Promise<ExtractionResult> {
       backup,
       backupName,
       deadline,
-      rule: draft?.rule ? canned(draft.rule, lang) : m.api_sourcing_no_rule({}, t),
+      rule: rule ? canned(rule, lang) : m.api_sourcing_no_rule({}, t),
     },
     acknowledgement: {
       subject: fill(tplSubject || m.api_sourcing_ack_default_subject({}, t), vars),
@@ -624,7 +712,7 @@ async function saveExtraction(req: Req, msg: Doc, x: ExtractionResult) {
         manual: x.acknowledgement.manual,
       },
       model: x.model,
-      extractedAt: iso(DEMO_NOW.getTime()),
+      extractedAt: iso(now()),
     },
   });
 }
@@ -666,7 +754,16 @@ async function applyMatch(req: Req, msg: Doc, match: MatchResult) {
 async function createCaseFrom(req: Req, msg: Doc, input: Json) {
   const t = loc(req);
   const lang = t.locale;
-  const s = scenarioOf(msg);
+  let s: Scenario | undefined;
+  if (IS_TEMP_MOCK) {
+    // TODO replace temporary mock logic with proper polished logic
+    s = scenarioOf(msg);
+  } else {
+    // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+    throw new TempMockError(
+      "creating a case: from the message's saved extraction and the person's edits instead of the canned scenario read again",
+    );
+  }
   if (!s) throw Object.assign(new Error(m.api_sourcing_nothing_extracted({}, t)), { status: 400 });
   const d = s.draft;
   let customer = d.customer;
@@ -759,11 +856,12 @@ async function createCaseFrom(req: Req, msg: Doc, input: Json) {
   const x = await extraction(req, msg);
   const manual = x.acknowledgement.manual;
   const firstAck = !msg.acknowledgedAt && !manual;
+  if (firstAck) sendEmail(`the acknowledgement "${x.acknowledgement.subject}" to ${str(msg.from)}`);
   await update(req, "intake-messages", msg.id, {
     status: "Case created",
     createdCase: c.id,
     classification: d.caseType === "service" ? "Service request" : "New RFQ",
-    ...(firstAck ? { acknowledgedAt: iso(DEMO_NOW.getTime()) } : {}),
+    ...(firstAck ? { acknowledgedAt: iso(now()) } : {}),
   });
   const who = str((req.user as { name?: unknown } | null)?.name) || m.api_sourcing_a_person({}, t);
   await logActivity(req, {
@@ -881,6 +979,33 @@ export interface InboxPayload {
 
 /* ------------------------------------------------------------------ inbox history */
 
+/**
+ * The mailboxes' history as the import scanned it (Outlook, Gmail, WhatsApp exports) and as the AI
+ * organised it: counts, de-duplication, customers, vessels, suppliers, dated prices and the
+ * uncertain items (./sourcing-data.ts).
+ */
+function scannedHistory() {
+  if (IS_MOCK) {
+    // TODO implement mock only logic to simulate third party connections
+    return {
+      mailboxes: HISTORY_MAILBOXES,
+      perYear: HISTORY_PER_YEAR,
+      dedup: HISTORY_DEDUP,
+      totals: HISTORY_TOTALS,
+      customers: HISTORY_CUSTOMERS,
+      vessels: HISTORY_VESSELS,
+      suppliers: HISTORY_SUPPLIERS,
+      prices: HISTORY_PRICES,
+      uncertain: HISTORY_UNCERTAIN,
+    };
+  } else {
+    // TODO implement actual prod third party connections
+    throw new NotConnectedError(
+      "mailbox import (Outlook/Gmail, WhatsApp exports) and the AI model: scan the mailboxes' history and organise it into customers, vessels, suppliers and prices",
+    );
+  }
+}
+
 async function historyMessages(req: Req) {
   return all(req, "intake-messages", { source: { equals: "History import" } }, "receivedAt");
 }
@@ -923,6 +1048,7 @@ export interface HistoryPayload {
 }
 
 export async function historyPayload(req: Req): Promise<HistoryPayload> {
+  const scan = scannedHistory();
   const integrations = obj(await req.payload.findGlobal({ slug: "integrations" as never, req }));
   const imp = obj(integrations.emailImport);
   const status = str(imp.status) || "Dry run ready";
@@ -946,19 +1072,29 @@ export async function historyPayload(req: Req): Promise<HistoryPayload> {
       reviewedBy: await userName(req, obj(m.match).reviewedBy),
     });
   }
-  const scanned = HISTORY_MAILBOXES.reduce((n, m) => n + m.emails, 0);
-  const kept = scanned - HISTORY_DEDUP.reduce((n, d) => n + d.count, 0);
+  const scanned = scan.mailboxes.reduce((n, m) => n + m.emails, 0);
+  const kept = scanned - scan.dedup.reduce((n, d) => n + d.count, 0);
   const created: HistoryPayload["created"] = [];
   if (approved) {
-    for (const s of HISTORY_SUPPLIERS.filter((x) => !x.known)) {
+    for (const s of scan.suppliers.filter((x) => !x.known)) {
       const [doc] = await all(req, "suppliers", { name: { equals: s.name } });
       if (doc) created.push({ kind: "Supplier", name: s.name, href: link.doc("suppliers", doc.id) });
     }
-    for (const c of [...HISTORY_CUSTOMERS.filter((x) => !x.known).map((x) => x.name), "Petro Delta"]) {
+    let newCustomers: string[];
+    if (IS_TEMP_MOCK) {
+      // TODO replace temporary mock logic with proper polished logic
+      newCustomers = [...scan.customers.filter((x) => !x.known).map((x) => x.name), "Petro Delta"];
+    } else {
+      // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+      throw new TempMockError(
+        "the customers the history import created: read from the import's own records instead of the fixed Petro Delta",
+      );
+    }
+    for (const c of newCustomers) {
       const [doc] = await all(req, "customers", { name: { equals: c } });
       if (doc) created.push({ kind: "Customer", name: c, href: link.doc("customers", doc.id) });
     }
-    for (const v of HISTORY_VESSELS.filter((x) => !x.known)) {
+    for (const v of scan.vessels.filter((x) => !x.known)) {
       const [doc] = await all(req, "vessels", { imo: { equals: v.imo } });
       if (doc) created.push({ kind: "Vessel", name: `${v.name} (IMO ${v.imo})`, href: link.doc("vessels", doc.id) });
     }
@@ -970,16 +1106,16 @@ export async function historyPayload(req: Req): Promise<HistoryPayload> {
     organised: msgs.length > 0,
     canApprove: role(req) === "management",
     canSeePrices: !isSales(req),
-    mailboxes: canned(HISTORY_MAILBOXES, langOf(req)),
-    perYear: HISTORY_PER_YEAR,
+    mailboxes: canned(scan.mailboxes, langOf(req)),
+    perYear: scan.perYear,
     scanned,
-    dedup: canned(HISTORY_DEDUP, langOf(req)),
+    dedup: canned(scan.dedup, langOf(req)),
     kept,
-    totals: HISTORY_TOTALS,
-    customers: HISTORY_CUSTOMERS,
-    vessels: HISTORY_VESSELS,
-    suppliers: HISTORY_SUPPLIERS,
-    prices: HISTORY_PRICES.map((p) => (isSales(req) ? { ...p, price: undefined } : p)),
+    totals: scan.totals,
+    customers: scan.customers,
+    vessels: scan.vessels,
+    suppliers: scan.suppliers,
+    prices: scan.prices.map((p) => (isSales(req) ? { ...p, price: undefined } : p)),
     review,
     pending: review.filter((r) => !r.decision).length,
     created,
@@ -993,72 +1129,82 @@ async function supplierByName(req: Req, name: string) {
 
 /** Approval commits the import: new customers, vessels, suppliers and dated prices become records. */
 async function commitHistory(req: Req) {
+  const scan = scannedHistory();
   const decisions = new Map(
     (await historyMessages(req)).map((m) => [str(m.messageId).replace(/^history-/, ""), str(obj(m.history).decision)]),
   );
   const customerIds = new Map<string, string>();
-  for (const c of HISTORY_CUSTOMERS.filter((x) => !x.known)) {
-    const [found] = await all(req, "customers", { name: { equals: c.name } });
-    const doc =
-      found ??
-      (await create(req, "customers", {
-        name: c.name,
-        country: c.country,
-        type: "Ship manager",
-        segment: "Marine",
-        accountOwner: "sa",
-      }));
-    customerIds.set(c.name, doc.id);
-  }
-  if (decisions.get("petro-delta") === "Confirmed") {
-    const [found] = await all(req, "customers", { name: { equals: "Petro Delta" } });
-    if (!found)
-      await create(req, "customers", {
-        name: "Petro Delta",
-        country: "Egypt",
-        type: "Offshore / oil & gas",
-        segment: "Offshore",
-        contactEmail: "purchasing@petro-delta.example",
-        accountOwner: "ah",
+  let prices: typeof scan.prices;
+  if (IS_TEMP_MOCK) {
+    // TODO replace temporary mock logic with proper polished logic
+    for (const c of scan.customers.filter((x) => !x.known)) {
+      const [found] = await all(req, "customers", { name: { equals: c.name } });
+      const doc =
+        found ??
+        (await create(req, "customers", {
+          name: c.name,
+          country: c.country,
+          type: "Ship manager",
+          segment: "Marine",
+          accountOwner: "sa",
+        }));
+      customerIds.set(c.name, doc.id);
+    }
+    if (decisions.get("petro-delta") === "Confirmed") {
+      const [found] = await all(req, "customers", { name: { equals: "Petro Delta" } });
+      if (!found)
+        await create(req, "customers", {
+          name: "Petro Delta",
+          country: "Egypt",
+          type: "Offshore / oil & gas",
+          segment: "Offshore",
+          contactEmail: "purchasing@petro-delta.example",
+          accountOwner: "ah",
+        });
+    }
+    for (const v of scan.vessels.filter((x) => !x.known)) {
+      const [found] = await all(req, "vessels", { imo: { equals: v.imo } });
+      const customer = customerIds.get(v.fleet);
+      if (!found && customer)
+        await create(req, "vessels", {
+          name: v.name,
+          imo: v.imo,
+          vesselType: "Reefer",
+          customer,
+          notes: m.api_sourcing_vessel_history_note({ calls: v.calls, ports: v.ports }, loc(req)),
+        });
+    }
+    for (const s of scan.suppliers.filter((x) => !x.known)) {
+      if (await supplierByName(req, s.name)) continue;
+      await create(req, "suppliers", {
+        name: s.name,
+        city: s.city,
+        categories: s.categories.startsWith("Paints") ? ["Paints"] : ["Deck stores"],
+        emailDomain: s.domain,
+        status: "New",
+        kind: "local",
+        source: m.api_sourcing_supplier_history_source({ quoted: s.quoted }, loc(req)),
       });
-  }
-  for (const v of HISTORY_VESSELS.filter((x) => !x.known)) {
-    const [found] = await all(req, "vessels", { imo: { equals: v.imo } });
-    const customer = customerIds.get(v.fleet);
-    if (!found && customer)
-      await create(req, "vessels", {
-        name: v.name,
-        imo: v.imo,
-        vesselType: "Reefer",
-        customer,
-        notes: m.api_sourcing_vessel_history_note({ calls: v.calls, ports: v.ports }, loc(req)),
+    }
+    prices = [...scan.prices];
+    if (decisions.get("loctite-currency") === "Confirmed")
+      prices.push({
+        item: "LOCTITE 243 threadlocker 50 ml",
+        product: "P2",
+        supplier: "Suez Industrial Supply",
+        price: 1_950,
+        currency: "EGP",
+        per: "EA",
+        quotedAt: "2024-03-11T00:00:00.000Z",
+        validDays: 14,
+        ordered: false,
       });
+  } else {
+    // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+    throw new TempMockError(
+      "committing the history import: records from the organised items and each confirmed proposal (types, owners, categories from the data), not the fixed defaults, Petro Delta and the LOCTITE price",
+    );
   }
-  for (const s of HISTORY_SUPPLIERS.filter((x) => !x.known)) {
-    if (await supplierByName(req, s.name)) continue;
-    await create(req, "suppliers", {
-      name: s.name,
-      city: s.city,
-      categories: s.categories.startsWith("Paints") ? ["Paints"] : ["Deck stores"],
-      emailDomain: s.domain,
-      status: "New",
-      kind: "local",
-      source: m.api_sourcing_supplier_history_source({ quoted: s.quoted }, loc(req)),
-    });
-  }
-  const prices = [...HISTORY_PRICES];
-  if (decisions.get("loctite-currency") === "Confirmed")
-    prices.push({
-      item: "LOCTITE 243 threadlocker 50 ml",
-      product: "P2",
-      supplier: "Suez Industrial Supply",
-      price: 1_950,
-      currency: "EGP",
-      per: "EA",
-      quotedAt: "2024-03-11T00:00:00.000Z",
-      validDays: 14,
-      ordered: false,
-    });
   let saved = 0;
   for (const p of prices) {
     const sup = await supplierByName(req, p.supplier);
@@ -1097,10 +1243,10 @@ async function commitHistory(req: Req) {
     text: m.api_sourcing_history_approved_activity(
       {
         name: await userName(req, userId(req)),
-        customers: HISTORY_TOTALS.customers,
-        vessels: HISTORY_TOTALS.vessels,
-        suppliers: HISTORY_TOTALS.suppliers,
-        prices: HISTORY_TOTALS.prices.toLocaleString(intlLocale(langOf(req), "en-US")),
+        customers: scan.totals.customers,
+        vessels: scan.totals.vessels,
+        suppliers: scan.totals.suppliers,
+        prices: scan.totals.prices.toLocaleString(intlLocale(langOf(req), "en-US")),
         saved,
       },
       loc(req),
@@ -1326,8 +1472,8 @@ export interface RfqPlan {
 }
 
 function rfqDueAt(caseDoc: Doc) {
-  const deadline = Date.parse(str(caseDoc.deadline)) || DEMO_NOW.getTime() + 2 * DAY;
-  return iso(Math.max(DEMO_NOW.getTime() + 3 * HOUR, Math.min(DEMO_NOW.getTime() + DAY, deadline - 3 * HOUR)));
+  const deadline = Date.parse(str(caseDoc.deadline)) || now() + 2 * DAY;
+  return iso(Math.max(now() + 3 * HOUR, Math.min(now() + DAY, deadline - 3 * HOUR)));
 }
 
 /** The anonymised email a supplier receives: no client, vessel, reference or customer files. */
@@ -1452,11 +1598,12 @@ async function remind(req: Req, rfq: Doc): Promise<ReplyEvent> {
   const supplier = await byId(req, "suppliers", str(idOf(rfq.supplier)));
   const escalate = reminders >= ESCALATE_AFTER;
   const t = loc(req);
+  sendEmail(`reminder ${reminders} for ${str(rfq.reference)} to ${str(supplier?.contact) || str(supplier?.name)}`);
   await update(req, "supplier-rfqs", rfq.id, {
     reminders,
     status: escalate && num(rfq.reminders) >= ESCALATE_AFTER ? "No response" : "Awaiting reply",
     escalated: escalate || Boolean(rfq.escalated),
-    nextReminderAt: escalate ? null : iso(DEMO_NOW.getTime() + DAY),
+    nextReminderAt: escalate ? null : iso(now() + DAY),
     lastEvent: escalate
       ? m.api_sourcing_reminder_escalated_event({ n: reminders, after: ESCALATE_AFTER }, t)
       : m.api_sourcing_reminder_sent_event({ n: reminders }, t),
@@ -1498,7 +1645,21 @@ async function replyMessage(req: Req, data: Json) {
   return existing ?? create(req, "intake-messages", data);
 }
 
+/** The suppliers' replies to a case's open RFQs (the presenter's "Simulate replies"). */
 export async function simulateReplies(req: Req, caseDoc: Doc): Promise<ReplyEvent[]> {
+  if (IS_MOCK) {
+    // TODO implement mock only logic to simulate third party connections
+    return simulatedReplies(req, caseDoc);
+  } else {
+    // TODO implement actual prod third party connections
+    throw new NotConnectedError(
+      "suppliers' replies: they arrive in the purchasing mailbox and are matched there; there is nothing to simulate",
+    );
+  }
+}
+
+/** Replies, declines, reminders and a new supplier's offer, as suppliers would send them. */
+async function simulatedReplies(req: Req, caseDoc: Doc): Promise<ReplyEvent[]> {
   const onCase = await all(req, "supplier-rfqs", { case: { equals: caseDoc.id } }, "reference");
   const rfqs = onCase.filter((r) => ["Sent", "Awaiting reply"].includes(str(r.status)));
   const events: ReplyEvent[] = [];
@@ -1731,11 +1892,23 @@ export async function inboxPayload(req: Req): Promise<InboxPayload> {
     .filter((c) => /mailbox|Website/.test(str(c.kind)))
     .map((c) => ({ kind: str(c.kind), account: str(c.account), status: str(c.status) }));
   connections.push({ kind: "WhatsApp", account: m.api_sourcing_forwarded_by_staff({}, loc(req)), status: "Manual" });
+  let processedToday: number;
+  let duplicates: number;
+  if (IS_TEMP_MOCK) {
+    // TODO replace temporary mock logic with proper polished logic
+    processedToday = 14 + docs.filter((m) => str(m.messageId).startsWith("sim-")).length;
+    duplicates = 2 + docs.filter((m) => m.classification === "Duplicate").length;
+  } else {
+    // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+    throw new TempMockError(
+      "the inbox's figures for today: the messages received and the duplicates found today, without the fixed 14 and 2",
+    );
+  }
   return {
     connections,
     stats: {
-      processedToday: 14 + docs.filter((m) => str(m.messageId).startsWith("sim-")).length,
-      duplicates: 2 + docs.filter((m) => m.classification === "Duplicate").length,
+      processedToday,
+      duplicates,
       review: docs.filter((m) => m.status === "Needs review").length,
       newCount: docs.filter((m) => m.status === "New").length,
     },
@@ -1761,10 +1934,20 @@ export async function inboxDetail(req: Req, id: string): Promise<InboxDetail> {
   if (!doc) return { message: null, rfq: false, extraction: null };
   const rfq = isRfqMessage(doc);
   const read = list(obj(doc.extraction).header).length > 0;
+  let draft: ExtractionResult | null;
+  if (IS_TEMP_MOCK) {
+    // TODO replace temporary mock logic with proper polished logic
+    draft = rfq && read ? await extraction(req, doc) : null;
+  } else {
+    // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+    throw new TempMockError(
+      "the reading pane's draft case: the extraction saved on the message instead of reading the message again",
+    );
+  }
   return {
     message: await toInboxMessage(req, doc),
     rfq,
-    extraction: rfq && read ? await extraction(req, doc) : null,
+    extraction: draft,
   };
 }
 
@@ -1812,22 +1995,30 @@ export const sourcingEndpoints: Endpoint[] = [
     path: "/inbox/simulate",
     method: "post",
     handler: guard(async (req) => {
-      const kind = str((await body(req)).kind) || "rfq";
-      const t = await demoNow(req);
-      const { totalDocs } = await req.payload.count({
-        collection: "intake-messages" as never,
-        where: { messageId: { like: "sim-" } } as never,
-        req,
-      });
-      const base = kind === "forward" ? SIMULATED_FORWARD : kind === "reply" ? SIMULATED_REPLY : SIMULATED_RFQ;
-      const doc = await create(req, "intake-messages", {
-        ...base,
-        receivedAt: iso(t),
-        messageId: `sim-${kind}-${totalDocs + 1}@${senderDomain(base.from)}`,
-        source: "Live",
-      });
-      // `href` opens the new message on the inbox (`?message=`), as a fresh arrival would be.
-      return json({ doc: await toInboxMessage(req, doc), href: `?message=${encodeURIComponent(doc.id)}` }, 201);
+      if (IS_MOCK) {
+        // TODO implement mock only logic to simulate third party connections
+        const kind = str((await body(req)).kind) || "rfq";
+        const t = await demoNow(req);
+        const { totalDocs } = await req.payload.count({
+          collection: "intake-messages" as never,
+          where: { messageId: { like: "sim-" } } as never,
+          req,
+        });
+        const base = kind === "forward" ? SIMULATED_FORWARD : kind === "reply" ? SIMULATED_REPLY : SIMULATED_RFQ;
+        const doc = await create(req, "intake-messages", {
+          ...base,
+          receivedAt: iso(t),
+          messageId: `sim-${kind}-${totalDocs + 1}@${senderDomain(base.from)}`,
+          source: "Live",
+        });
+        // `href` opens the new message on the inbox (`?message=`), as a fresh arrival would be.
+        return json({ doc: await toInboxMessage(req, doc), href: `?message=${encodeURIComponent(doc.id)}` }, 201);
+      } else {
+        // TODO implement actual prod third party connections
+        throw new NotConnectedError(
+          "incoming mail and WhatsApp: the mailboxes, the website form and WhatsApp deliver new messages; there is nothing to simulate",
+        );
+      }
     }),
   },
   {
@@ -1909,7 +2100,7 @@ export const sourcingEndpoints: Endpoint[] = [
       if (decision === "not-related") {
         await update(req, "intake-messages", msg.id, {
           status: "Ignored",
-          match: { ...match, reviewedBy: userId(req), reviewedAt: iso(DEMO_NOW.getTime()) },
+          match: { ...match, reviewedBy: userId(req), reviewedAt: iso(now()) },
         });
         return json({
           message: await toInboxMessage(req, (await byId(req, "intake-messages", msg.id))!),
@@ -1922,7 +2113,7 @@ export const sourcingEndpoints: Endpoint[] = [
       if (!c) return fail(400, m.api_sourcing_pick_case({}, t));
       await update(req, "intake-messages", msg.id, {
         status: "Linked",
-        match: { ...match, case: c.id, reviewedBy: userId(req), reviewedAt: iso(DEMO_NOW.getTime()) },
+        match: { ...match, case: c.id, reviewedBy: userId(req), reviewedAt: iso(now()) },
       });
       // Offers read from the reply: saved now, against this supplier's RFQ on the chosen case.
       const rfqId = idOf(match.supplierRfq);
@@ -2020,7 +2211,8 @@ export const sourcingEndpoints: Endpoint[] = [
     handler: guard(async (req) => {
       const existing = await historyMessages(req);
       const t = loc(req);
-      for (const u of HISTORY_UNCERTAIN) {
+      const scan = scannedHistory();
+      for (const u of scan.uncertain) {
         if (existing.some((m) => m.messageId === `history-${u.key}`)) continue;
         await create(req, "intake-messages", {
           channel: "Email",
@@ -2046,18 +2238,27 @@ export const sourcingEndpoints: Endpoint[] = [
           },
         });
       }
+      // Who approves the import: management.
+      let approver: string;
+      if (IS_TEMP_MOCK) {
+        // TODO replace temporary mock logic with proper polished logic
+        approver = "kb";
+      } else {
+        // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+        throw new TempMockError("who approves the history import: the management users instead of the fixed user kb");
+      }
       if (!existing.length)
         await notify(
           req,
-          "kb",
+          approver,
           m.api_sourcing_history_ready({}, t),
           m.api_sourcing_history_ready_detail(
             {
-              customers: HISTORY_TOTALS.customers,
-              vessels: HISTORY_TOTALS.vessels,
-              suppliers: HISTORY_TOTALS.suppliers,
-              prices: HISTORY_TOTALS.prices.toLocaleString(intlLocale(t.locale, "en-US")),
-              uncertain: HISTORY_UNCERTAIN.length,
+              customers: scan.totals.customers,
+              vessels: scan.totals.vessels,
+              suppliers: scan.totals.suppliers,
+              prices: scan.totals.prices.toLocaleString(intlLocale(t.locale, "en-US")),
+              uncertain: scan.uncertain.length,
             },
             t,
           ),
@@ -2096,7 +2297,7 @@ export const sourcingEndpoints: Endpoint[] = [
       await update(req, "intake-messages", msg.id, {
         status: decision === "Confirmed" ? "Linked" : "Ignored",
         history: { ...obj(msg.history), decision },
-        match: { ...obj(msg.match), reviewedBy: userId(req), reviewedAt: iso(DEMO_NOW.getTime()) },
+        match: { ...obj(msg.match), reviewedBy: userId(req), reviewedAt: iso(now()) },
       });
       return json({ ...(await historyPayload(req)), undo: { path, body: { decision: "reopen" } } });
     }),
@@ -2205,11 +2406,14 @@ export const sourcingEndpoints: Endpoint[] = [
       if (!drafts.length) return fail(400, m.api_sourcing_nothing_to_send({}, t));
       const mode = str(input.mode || (given.length ? "" : kept?.mode)) === "full" ? "Full list" : "Split by category";
       const due = str(input.dueAt) || (given.length ? "" : str(kept?.dueAt)) || rfqDueAt(c);
-      const sentAt = DEMO_NOW.getTime() + 5 * 60_000;
+      const sentAt = now() + 5 * 60_000;
       const sent: Doc[] = [];
       for (const d of drafts) {
         const lineNos = list<number>(d.lineNos).map(num).filter(Boolean);
         if (!lineNos.length || !str(d.supplier)) continue;
+        sendEmail(
+          `the supplier RFQ ${str(d.reference)} to ${str(obj(d.preview).to) || str(d.supplierName) || str(d.supplier)}`,
+        );
         sent.push(
           await create(req, "supplier-rfqs", {
             case: c.id,

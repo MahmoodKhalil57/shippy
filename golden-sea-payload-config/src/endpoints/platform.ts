@@ -3,6 +3,7 @@ import type { Doc } from "saastemlycrm-design-system/contracts";
 import { HANDOVER_ROLES, bucketOf, lineCounts, mayReassign, type LineBucket } from "../collections/cases.ts";
 import { CONTACT_RULE_OPTIONS, ROLE_OPTIONS, logAiCall } from "../collections/shared.ts";
 import { PERMISSIONS } from "../globals/index.ts";
+import { IS_MOCK, IS_TEMP_MOCK, NotConnectedError, TempMockError } from "../flags.ts";
 import { DEMO_NOW } from "./home.ts";
 import * as link from "../links.ts";
 import { m } from "../i18n/paraglide/messages.js";
@@ -121,6 +122,19 @@ export const LIFECYCLE = [
   ["Collect / pay", "Collection reminders, payment approvals, two-person bank-change check.", 2],
   ["Close", "Actual vs expected profit, FX differences, claims.", 3],
 ] as const;
+
+/** The lifecycle's steps, as the overview's ring draws them. */
+function lifecycle(): typeof LIFECYCLE {
+  if (IS_TEMP_MOCK) {
+    // TODO replace temporary mock logic with proper polished logic
+    return LIFECYCLE;
+  } else {
+    // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+    throw new TempMockError(
+      "the lifecycle's steps, descriptions and phases from data (a global), not the fixed LIFECYCLE",
+    );
+  }
+}
 
 /** Where each case stage sits on the lifecycle (index into LIFECYCLE). */
 export const STAGE_STEP: Record<string, number> = {
@@ -345,7 +359,7 @@ export async function overview(req: Req, id: string): Promise<CaseOverview | nul
           : fmtWhen(deadline, lang)
       : "—",
     stage,
-    steps: LIFECYCLE.map(([label, detail, phase]) => ({
+    steps: lifecycle().map(([label, detail, phase]) => ({
       label: fixed(label, lang),
       detail: fixed(detail, lang),
       phase,
@@ -501,7 +515,14 @@ const handover: Endpoint = {
       case: o.id,
       outcome: "Waiting for review",
     });
-    return json(handoverDraft(o, target.name, t.locale));
+    if (IS_MOCK) {
+      // TODO implement mock only logic to simulate third party connections
+      // The AI's draft, simulated: a fixed template filled from the case, with a fixed confidence.
+      return json(handoverDraft(o, target.name, t.locale));
+    } else {
+      // TODO implement actual prod third party connections
+      throw new NotConnectedError("the AI model drafting the handover summary from the case overview");
+    }
   },
 };
 
@@ -686,6 +707,13 @@ export async function safeRetry(req: Req, id: string) {
   const detail = (x.payload as Record<string, unknown> | undefined) ?? {};
   let message: string;
   if (key.startsWith("mailbox:")) {
+    if (IS_MOCK) {
+      // TODO implement mock only logic to simulate third party connections
+      // Re-syncing is simulated: the mailbox is marked connected and the waiting emails counted as imported.
+    } else {
+      // TODO implement actual prod third party connections
+      throw new NotConnectedError("re-syncing a mailbox (Outlook / Gmail) and importing the emails waiting, once each");
+    }
     const account = key.slice("mailbox:".length);
     const pending = Number(detail.pending ?? (str(x.impact).match(/\d+/)?.[0] || 0));
     const linked = Number(detail.alreadyLinked ?? 0);
@@ -705,6 +733,15 @@ export async function safeRetry(req: Req, id: string) {
     );
     await req.payload.updateGlobal({ slug: "integrations", data: { connections } as never });
   } else if (key.startsWith("invoice:")) {
+    if (IS_MOCK) {
+      // TODO implement mock only logic to simulate third party connections
+      // Resubmitting is simulated: the invoice is recorded as submitted once.
+    } else {
+      // TODO implement actual prod third party connections
+      throw new NotConnectedError(
+        "resubmitting an invoice to the Egyptian Tax Authority's e-invoicing API (same idempotency key)",
+      );
+    }
     const no = key.slice("invoice:".length);
     message = detail.submitted
       ? m.api_platform_invoice_already_accepted({ key }, t)
@@ -892,6 +929,20 @@ export interface RolesView {
   checks: { label: string; pass: boolean; detail: string }[];
 }
 
+/** The bank-change rule names both Finance and the CEO. */
+function financeAndCeo(approvers: (string | undefined)[]): boolean {
+  if (IS_TEMP_MOCK) {
+    // TODO replace temporary mock logic with proper polished logic
+    // The demo's finance director (mh) and CEO (kb).
+    return approvers.includes("kb") && approvers.includes("mh");
+  } else {
+    // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+    throw new TempMockError(
+      "the bank-change check: Finance and the CEO among the approvers by their roles, not the demo users kb and mh",
+    );
+  }
+}
+
 const roles: Endpoint = {
   path: "/roles",
   method: "get",
@@ -935,7 +986,7 @@ const roles: Endpoint = {
         },
         {
           label: m.api_platform_check_bank_two_people({}, t),
-          pass: bank?.twoPerson === true && bankApprovers.includes("kb") && bankApprovers.includes("mh"),
+          pass: bank?.twoPerson === true && financeAndCeo(bankApprovers),
           detail: m.api_platform_check_bank_detail(
             {
               type: bank?.type
@@ -964,6 +1015,15 @@ const route: Endpoint = {
     if (Number.isNaN(when.getTime())) return deny(m.api_platform_valid_time({}, t), 400);
     const r = await routeUrgent(req, when);
     if (simulate && r.routedTo) {
+      if (IS_MOCK) {
+        // TODO implement mock only logic to simulate third party connections
+        // An urgent RFQ "arrives" at that time: only its routing runs (the person is notified, it's logged).
+      } else {
+        // TODO implement actual prod third party connections
+        throw new NotConnectedError(
+          "simulating an urgent RFQ email arriving: in production it comes in from the mailbox",
+        );
+      }
       await notify(req, r.routedTo.id, {
         kind: "Alert",
         title: m.api_platform_on_call_title({ at: r.atText }, t),
@@ -1085,18 +1145,11 @@ export interface IntegrationsView {
 const fill = (t: string, vars: Record<string, string>) =>
   t.replace(/\{\{(\w+)\}\}/g, (_, k: string) => vars[k] ?? `{{${k}}}`);
 
-const integrations: Endpoint = {
-  path: "/integrations/status",
-  method: "get",
-  handler: async (req) => {
-    if (!req.user) return deny(m.api_platform_sign_in({}, loc(req)), 401);
-    const [templates, settings, { name }] = await Promise.all([
-      req.payload.findGlobal({ locale: req.locale, slug: "message-templates", depth: 0 } as never),
-      req.payload.findGlobal({ locale: req.locale, slug: "settings", depth: 0 } as never),
-      people(req),
-    ]);
-    const ack =
-      ((templates.templates as Record<string, unknown>[] | undefined) ?? []).find((t) => t.key === "rfq-ack") ?? {};
+/** The case the acknowledgement preview is filled in for: its words and its customer's address. */
+async function ackExample(req: Req, name: (v: unknown) => string) {
+  if (IS_TEMP_MOCK) {
+    // TODO replace temporary mock logic with proper polished logic
+    // The flagship case, with its customer's contact and address written in.
     const c = (await req.payload.findByID({
       locale: req.locale,
       collection: "cases",
@@ -1115,6 +1168,28 @@ const integrations: Endpoint = {
       dueAt: fmtWhen(deadline),
       customer: "Nordvik Ship Management",
     };
+    return { deadline, vars, to: "purchasing@nordvik.example" };
+  } else {
+    // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+    throw new TempMockError(
+      "the acknowledgement preview: a case picked from the data, with its customer's name, contact and email looked up, not gs-rfq-0142 with fixed names",
+    );
+  }
+}
+
+const integrations: Endpoint = {
+  path: "/integrations/status",
+  method: "get",
+  handler: async (req) => {
+    if (!req.user) return deny(m.api_platform_sign_in({}, loc(req)), 401);
+    const [templates, settings, { name }] = await Promise.all([
+      req.payload.findGlobal({ locale: req.locale, slug: "message-templates", depth: 0 } as never),
+      req.payload.findGlobal({ locale: req.locale, slug: "settings", depth: 0 } as never),
+      people(req),
+    ]);
+    const ack =
+      ((templates.templates as Record<string, unknown>[] | undefined) ?? []).find((t) => t.key === "rfq-ack") ?? {};
+    const { deadline, vars, to } = await ackExample(req, name);
     const role = str(me(req)?.role);
     const view: IntegrationsView = {
       ack: {
@@ -1126,7 +1201,7 @@ const integrations: Endpoint = {
         version: Number(ack.version) || 1,
         status: str(ack.status),
         approvedBy: name(ack.approvedBy),
-        to: "purchasing@nordvik.example",
+        to,
         from: "sales@goldensea.com.eg",
       },
       language: {
@@ -1154,6 +1229,13 @@ const reconnect: Endpoint = {
     const list = (g.connections as Record<string, unknown>[] | undefined) ?? [];
     const conn = list.find((c) => c.id === str(id));
     if (!conn) return deny(m.api_platform_connection_not_found({}, t), 404);
+    if (IS_MOCK) {
+      // TODO implement mock only logic to simulate third party connections
+      // Signing in is simulated: the mailbox is marked connected with a fresh 90-day token.
+    } else {
+      // TODO implement actual prod third party connections
+      throw new NotConnectedError("signing a mailbox (Outlook / Gmail) back in over OAuth and refreshing its token");
+    }
     // A mailbox with a failed sync: the safe retry imports what was waiting, once.
     const exceptions = await all(req, "integration-exceptions", {
       idempotencyKey: { equals: `mailbox:${str(conn.account)}` },
@@ -1193,6 +1275,13 @@ const staging: Endpoint = {
     const t = loc(req);
     if (!req.user) return deny(m.api_platform_sign_in({}, t), 401);
     if (str(me(req)?.role) !== "management") return deny(m.api_platform_staging_management({}, t));
+    if (IS_MOCK) {
+      // TODO implement mock only logic to simulate third party connections
+      // Refreshing is simulated: only the time is recorded.
+    } else {
+      // TODO implement actual prod third party connections
+      throw new NotConnectedError("refreshing the staging copy from production (Odoo database and files)");
+    }
     const g = await req.payload.findGlobal({ locale: req.locale, slug: "integrations", depth: 0 } as never);
     const at = new Date().toISOString();
     await req.payload.updateGlobal({
@@ -1744,12 +1833,20 @@ const project: Endpoint = {
   method: "get",
   handler: async (req) => {
     if (!req.user) return deny(m.api_platform_sign_in({}, loc(req)), 401);
-    const view: ProjectView = {
-      ...fixed(PLAN, langOf(req)),
-      acceptance: await acceptance(req),
-      checkedAt: new Date().toISOString(),
-    };
-    return json(view);
+    if (IS_TEMP_MOCK) {
+      // TODO replace temporary mock logic with proper polished logic
+      const view: ProjectView = {
+        ...fixed(PLAN, langOf(req)),
+        acceptance: await acceptance(req),
+        checkedAt: new Date().toISOString(),
+      };
+      return json(view);
+    } else {
+      // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+      throw new TempMockError(
+        "the project page: the delivery plan from data, not the fixed PLAN, and acceptance scenarios that don't read the demo's seeded cases (gs-rfq-0142, 0139, 0136, 0133, 0131) and customer (atlas)",
+      );
+    }
   },
 };
 

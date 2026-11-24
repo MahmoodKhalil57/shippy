@@ -1,5 +1,6 @@
 import type { PayloadRequest } from "payload";
 import type { Doc } from "saastemlycrm-design-system/contracts";
+import { TempMockError, IS_TEMP_MOCK } from "../flags.ts";
 import { m } from "../i18n/paraglide/messages.js";
 
 /**
@@ -9,7 +10,20 @@ import { m } from "../i18n/paraglide/messages.js";
  */
 
 /** The demo's "now" (same morning as GET /api/home: Tue 17 Nov 2026 09:30 UTC). */
-export const NOW = new Date("2026-11-17T09:30:00.000Z");
+export const NOW = demoNow();
+
+/** The demo's fixed clock, the insights' copy of TODAY (../collections/shared.ts). */
+function demoNow(): Date {
+  if (IS_TEMP_MOCK) {
+    // TODO replace temporary mock logic with proper polished logic
+    return new Date("2026-11-17T09:30:00.000Z");
+  } else {
+    // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+    throw new TempMockError(
+      'NOW, the insights\' fixed clock (17 Nov 2026 09:30 UTC): "today", "overdue" and deadlines need the real clock',
+    );
+  }
+}
 export const DAY = 86_400_000;
 
 export type Tone = "error" | "warning" | "info" | "success" | "neutral";

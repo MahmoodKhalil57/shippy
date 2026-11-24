@@ -2,8 +2,9 @@ import type { Endpoint, PayloadRequest } from "payload";
 import type { ApprovalView } from "../collections/commercial.ts";
 import { idOf, logActivity } from "../collections/shared.ts";
 import type { Doc } from "saastemlycrm-design-system/contracts";
+import { IS_MOCK, IS_TEMP_MOCK, NotConnectedError, TempMockError } from "../flags.ts";
 import { DEMO_NOW } from "./home.ts";
-import { BANK_REQUESTS } from "./operations.ts";
+import { bankRequest } from "./operations.ts";
 import { m } from "../i18n/paraglide/messages.js";
 import { type Lang, intlLocale, langOf, optionLabel } from "./insights-shared.ts";
 
@@ -127,8 +128,18 @@ async function fxRates(req: PayloadRequest) {
   const rates = g.rates ?? [];
   const fx: Record<string, number> = { EGP: 1 };
   for (const r of rates) if (r.status === "Active" && r.currency) fx[r.currency] = num(r.egpPerUnit, 1);
-  fx.USD ??= 48.6;
-  fx.EUR ??= 52.9;
+  if (fx.USD === undefined || fx.EUR === undefined) {
+    if (IS_TEMP_MOCK) {
+      // TODO replace temporary mock logic with proper polished logic
+      fx.USD ??= 48.6;
+      fx.EUR ??= 52.9;
+    } else {
+      // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+      throw new TempMockError(
+        "an active USD and EUR rate in the fx-rates global, with no fixed fallback (48.60, 52.90)",
+      );
+    }
+  }
   return { fx, rates, label: m.api_commercial_fx_label({ usd: fx.USD.toFixed(2), eur: fx.EUR.toFixed(2) }, loc(req)) };
 }
 
@@ -1421,7 +1432,7 @@ async function withdrawBlock(req: PayloadRequest, a: Doc): Promise<string> {
     if (paid.length) return m.api_commercial_payment_recorded_cant_withdraw({}, t);
   }
   if (type === "Bank detail change") {
-    const request = BANK_REQUESTS[a.id];
+    const request = bankRequest(a.id);
     const supplier = request ? await one(req, "suppliers", request.supplier) : null;
     const bank = (supplier?.bank as { iban?: string; verified?: boolean } | undefined) ?? {};
     if (request && bank.verified && bank.iban === request.requested.iban)
@@ -1493,6 +1504,54 @@ async function withdraw(req: PayloadRequest, id: string) {
     entity: `approvals/${id}`,
   });
   return updated;
+}
+
+/** The AI's reading of the customer portal's screenshot, field by field against the approved quotation. */
+function portalCheck(q: Doc, t: { locale: Lang }) {
+  if (IS_MOCK) {
+    // TODO implement mock only logic to simulate third party connections
+    // The simulated reading: every field as quoted, except the portal's default payment terms.
+    const total = num(q.totalExVat).toLocaleString(intlLocale(t.locale, "en-US"), {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    return [
+      {
+        field: m.api_commercial_field_quotation_no({}, t),
+        portal: str(q.number),
+        quote: str(q.number),
+        matches: true,
+      },
+      {
+        field: m.api_commercial_field_currency({}, t),
+        portal: str(q.currency),
+        quote: str(q.currency),
+        matches: true,
+      },
+      { field: m.api_commercial_field_total({}, t), portal: total, quote: total, matches: true },
+      {
+        field: m.api_commercial_field_line_count({}, t),
+        portal: String(((q.lines as unknown[]) ?? []).length),
+        quote: String(((q.lines as unknown[]) ?? []).length),
+        matches: true,
+      },
+      {
+        field: m.api_commercial_field_validity({}, t),
+        portal: fmtDay(q.validUntil, t.locale),
+        quote: fmtDay(q.validUntil, t.locale),
+        matches: true,
+      },
+      {
+        field: m.api_commercial_field_payment_terms({}, t),
+        portal: m.api_commercial_portal_default_terms({}, t),
+        quote: str(q.paymentTerms),
+        matches: false,
+      },
+    ];
+  } else {
+    // TODO implement actual prod third party connections
+    throw new NotConnectedError("the AI model reading the customer portal's screenshot against the approved quotation");
+  }
 }
 
 /* ---------------------------------------------------------------- correction requests */
@@ -1830,6 +1889,13 @@ export const commercialEndpoints: Endpoint[] = [
         const corrected = ctx.offers.find((o) => idOf(o.supersedes) === offer.id);
         const draft = correctionDraft(ctx, offer);
         if (b.send && !corrected) {
+          if (IS_MOCK) {
+            // TODO implement mock only logic to simulate third party connections
+            // Sending is simulated: the request is recorded as sent, and no email leaves.
+          } else {
+            // TODO implement actual prod third party connections
+            throw new NotConnectedError("sending the correction request email to the supplier (mailbox)");
+          }
           await update(req, "offers", offer.id, { compliance: "Awaiting corrected offer" });
           await logActivity(req, {
             case: ctx.c.id,
@@ -1992,6 +2058,16 @@ export const commercialEndpoints: Endpoint[] = [
       } else if (action === "send") {
         if (q.status !== "Approved") return fail(400, m.api_commercial_only_approved_to_customer({}, t));
         const portal = b.method === "portal";
+        // On the portal a person uploads it; by email the system sends it.
+        if (!portal) {
+          if (IS_MOCK) {
+            // TODO implement mock only logic to simulate third party connections
+            // Sending is simulated: the quotation is recorded as emailed, and no email leaves.
+          } else {
+            // TODO implement actual prod third party connections
+            throw new NotConnectedError("emailing the approved quotation PDF to the customer (Odoo mail)");
+          }
+        }
         await update(req, "quotations", id, {
           status: "Submitted",
           decision: "Awaiting customer decision",
@@ -2094,45 +2170,8 @@ export const commercialEndpoints: Endpoint[] = [
           ),
         });
       } else if (action === "portal-check") {
-        // AI stub: reads the portal screenshot and compares it with the approved quotation.
         const sub = (q.submission as Record<string, unknown> | undefined) ?? {};
-        const total = num(q.totalExVat).toLocaleString(intlLocale(t.locale, "en-US"), {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        });
-        const rows = [
-          {
-            field: m.api_commercial_field_quotation_no({}, t),
-            portal: str(q.number),
-            quote: str(q.number),
-            matches: true,
-          },
-          {
-            field: m.api_commercial_field_currency({}, t),
-            portal: str(q.currency),
-            quote: str(q.currency),
-            matches: true,
-          },
-          { field: m.api_commercial_field_total({}, t), portal: total, quote: total, matches: true },
-          {
-            field: m.api_commercial_field_line_count({}, t),
-            portal: String(((q.lines as unknown[]) ?? []).length),
-            quote: String(((q.lines as unknown[]) ?? []).length),
-            matches: true,
-          },
-          {
-            field: m.api_commercial_field_validity({}, t),
-            portal: fmtDay(q.validUntil, t.locale),
-            quote: fmtDay(q.validUntil, t.locale),
-            matches: true,
-          },
-          {
-            field: m.api_commercial_field_payment_terms({}, t),
-            portal: m.api_commercial_portal_default_terms({}, t),
-            quote: str(q.paymentTerms),
-            matches: false,
-          },
-        ];
+        const rows = portalCheck(q, t);
         await update(req, "quotations", id, {
           submission: { ...sub, method: "Customer procurement portal", portalCheck: rows },
         });

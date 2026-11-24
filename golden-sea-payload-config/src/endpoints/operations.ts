@@ -3,6 +3,7 @@ import { reminderDraft } from "../collections/finance.ts";
 import { backorderOf, payableOf } from "../collections/fulfilment.ts";
 import { idOf, logActivity } from "../collections/shared.ts";
 import type { Doc } from "saastemlycrm-design-system/contracts";
+import { IS_MOCK, IS_TEMP_MOCK, NotConnectedError, TempMockError } from "../flags.ts";
 import { DEMO_NOW } from "./home.ts";
 import * as link from "../links.ts";
 import { m } from "../i18n/paraglide/messages.js";
@@ -422,6 +423,105 @@ export const BANK_REQUESTS: Record<
 /** Fixed weekly outgoings from the budget (payroll, rent, fleet), in EGP: part of the cash forecast. */
 const FIXED_WEEKLY_EGP = 165000;
 
+/** A case's order book: what it sells at what price, and from which suppliers. */
+function orderBook(caseId: string): Plan | undefined {
+  if (IS_TEMP_MOCK) {
+    // TODO replace temporary mock logic with proper polished logic
+    return ORDER_BOOK[caseId];
+  } else {
+    // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+    throw new TempMockError(
+      "a case's order book (sell prices, supplier sources and costs, routes) from its approved quotation and selected offers, not the fixed ORDER_BOOK",
+    );
+  }
+}
+
+/** The customer's PO waiting to be read for a case: its number, billing entity and the AI's line checks. */
+function incomingCustomerPo(caseId: string): Plan["incomingPo"] {
+  if (IS_MOCK) {
+    // TODO implement mock only logic to simulate third party connections
+    // The PO that "arrives" for the flagship case, already read: the order book's `incomingPo`.
+    return orderBook(caseId)?.incomingPo;
+  } else {
+    // TODO implement actual prod third party connections
+    throw new NotConnectedError(
+      "the customer's PO from the mailbox, and the AI model reading it against the approved quotation",
+    );
+  }
+}
+
+/** The AI's wording for the amendment that resolves a PO mismatch (a person records it). */
+function amendmentSuggestion(key: string, lang: Lang): string | undefined {
+  if (IS_MOCK) {
+    // TODO implement mock only logic to simulate third party connections
+    return SUGGESTIONS[key]?.[lang];
+  } else {
+    // TODO implement actual prod third party connections
+    throw new NotConnectedError("the AI model drafting the amendment wording for a customer PO mismatch");
+  }
+}
+
+/** The shipping agent's latest ETA email for a case (none: nothing new). */
+function agentEtaUpdate(caseId: string): { eta: string; from: string; text: string } | undefined {
+  if (IS_MOCK) {
+    // TODO implement mock only logic to simulate third party connections
+    return ETA_UPDATES[caseId];
+  } else {
+    // TODO implement actual prod third party connections
+    throw new NotConnectedError("the shipping agent's ETA email from the mailbox, read into the vessel's new ETA");
+  }
+}
+
+/** The request behind a bank-detail change approval: the supplier, its current and requested account, how it came in. */
+export function bankRequest(approval: string): (typeof BANK_REQUESTS)[string] | undefined {
+  if (IS_TEMP_MOCK) {
+    // TODO replace temporary mock logic with proper polished logic
+    return BANK_REQUESTS[approval];
+  } else {
+    // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+    throw new TempMockError(
+      "a bank-detail change request (supplier, current and requested account, the message it came in, the phones) stored with its approval, not the fixed BANK_REQUESTS",
+    );
+  }
+}
+
+/** The fixed weekly outgoings (payroll, rent, fleet) in EGP. */
+function fixedWeeklyEgp(): number {
+  if (IS_TEMP_MOCK) {
+    // TODO replace temporary mock logic with proper polished logic
+    return FIXED_WEEKLY_EGP;
+  } else {
+    // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+    throw new TempMockError(
+      "the fixed weekly outgoings (payroll, rent, fleet) from the budget, not a fixed EGP 165,000",
+    );
+  }
+}
+
+/** The Monday the cash forecast's eight weeks start on. */
+function forecastStart(): number {
+  if (IS_TEMP_MOCK) {
+    // TODO replace temporary mock logic with proper polished logic
+    // Monday 16 Nov (the demo's week).
+    return new Date("2026-11-16T00:00:00.000Z").getTime();
+  } else {
+    // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+    throw new TempMockError("the cash forecast's first week: the Monday of the current week, not Monday 16 Nov 2026");
+  }
+}
+
+/** A supplier's side of a new PO (its deposit terms). */
+function supplierTerms(supplier: string): Record<string, unknown> {
+  if (IS_TEMP_MOCK) {
+    // TODO replace temporary mock logic with proper polished logic
+    // Horizon Trading, the new supplier, asks 50% in advance.
+    return supplier === "S5" ? { depositPct: 50 } : {};
+  } else {
+    // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+    throw new TempMockError("a supplier's deposit terms from its record or its selected offer, not 50% for S5");
+  }
+}
+
 /* ---------------------------------------------------------------- helpers */
 
 type U = { id?: string; role?: string; name?: string } | null | undefined;
@@ -485,7 +585,7 @@ async function attempt(fn: () => Promise<Response>): Promise<Response> {
 
 /** Active FX rates (EGP per unit), from the fx-rates global. */
 async function fxRates(req: PayloadRequest): Promise<Record<Cur, number>> {
-  const out: Record<Cur, number> = { EGP: 1, USD: 48.6, EUR: 52.9 };
+  const out: Partial<Record<Cur, number>> = { EGP: 1 };
   try {
     const g = (await req.payload.findGlobal({ locale: req.locale, slug: "fx-rates" as never, depth: 0 } as never)) as {
       rates?: { currency?: string; egpPerUnit?: number; status?: string }[];
@@ -494,7 +594,19 @@ async function fxRates(req: PayloadRequest): Promise<Record<Cur, number>> {
   } catch {
     /* defaults */
   }
-  return out;
+  if (out.USD === undefined || out.EUR === undefined) {
+    if (IS_TEMP_MOCK) {
+      // TODO replace temporary mock logic with proper polished logic
+      out.USD ??= 48.6;
+      out.EUR ??= 52.9;
+    } else {
+      // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+      throw new TempMockError(
+        "an active USD and EUR rate in the fx-rates global, with no fixed fallback (48.60, 52.90)",
+      );
+    }
+  }
+  return out as Record<Cur, number>;
 }
 
 const supplierNames = async (req: PayloadRequest) =>
@@ -518,7 +630,7 @@ async function notify(
 }
 
 function planFor(caseId: string, sales: boolean): Plan | undefined {
-  const p = ORDER_BOOK[caseId];
+  const p = orderBook(caseId);
   if (!p || !sales) return p;
   return { ...p, lines: p.lines.map(({ sources: _s, ...l }) => l), recheck: undefined };
 }
@@ -656,7 +768,7 @@ async function caseOps(req: PayloadRequest) {
   const quotedLines = plan?.lines ?? [];
   const checks = ((cpo?.checks as Check[] | undefined) ?? []).map((ch) => ({
     ...ch,
-    suggestion: SUGGESTIONS[`${str(cpo?.number)}|${ch.lineNo}|${ch.field}`]?.[t.locale],
+    suggestion: amendmentSuggestion(`${str(cpo?.number)}|${ch.lineNo}|${ch.field}`, t.locale),
   }));
 
   return Response.json({
@@ -690,7 +802,7 @@ async function caseOps(req: PayloadRequest) {
           unawarded: cpo.unawarded ?? [],
         }
       : null,
-    poExpected: Boolean(ORDER_BOOK[id]?.incomingPo) && !cpo,
+    poExpected: Boolean(incomingCustomerPo(id)) && !cpo,
     orderConfirmed: /sales order confirmed|Purchasing|Delivering|Delivered|Invoiced|Closed/.test(str(c.stage)),
     purchaseOrders,
     bills: supplierBills,
@@ -719,7 +831,7 @@ async function poCheck(req: PayloadRequest) {
     return Response.json({ doc, created: false, confidence: 0.96 });
   }
   const t = loc(req);
-  const incoming = ORDER_BOOK[id]?.incomingPo;
+  const incoming = incomingCustomerPo(id);
   if (!incoming) return fail(m.api_operations_no_customer_po_yet({}, t));
   const doc = await create(req, "customer-pos", {
     number: incoming.number,
@@ -886,7 +998,7 @@ async function confirmOrder(req: PayloadRequest) {
   const po = (await find(req, "customer-pos", { case: { equals: id } }))[0];
   if (!po) return fail(m.api_operations_no_customer_po({}, t));
   if (po.status !== "Validated") return fail(m.api_operations_commitment_blocked_by({ n: num(po.openMismatches) }, t));
-  const plan = ORDER_BOOK[id];
+  const plan = orderBook(id);
   const existing = await find(req, "purchase-orders", { case: { equals: id } });
   const created: Doc[] = [];
   if (plan && !existing.length) {
@@ -911,7 +1023,7 @@ async function confirmOrder(req: PayloadRequest) {
           deliverTo: dropship ? "Direct to vessel (dropship)" : "Alexandria",
           status: "Awaiting approval",
           recheckDone: false,
-          supplierSide: supplier === "S5" ? { depositPct: 50 } : {},
+          supplierSide: supplierTerms(supplier),
         }),
       );
     }
@@ -931,6 +1043,35 @@ async function confirmOrder(req: PayloadRequest) {
   return Response.json({ created: created.map((p) => p.number) });
 }
 
+/** What a supplier says now about a PO's price, availability and lead time, against the quotation. */
+function supplierRecheck(caseId: string, supplier: string, t: { locale: Lang }) {
+  if (IS_MOCK) {
+    // TODO implement mock only logic to simulate third party connections
+    // The supplier's answers, from the order book; any other supplier confirms everything unchanged.
+    return (
+      ORDER_BOOK[caseId]?.recheck?.[supplier] ?? [
+        {
+          item: m.api_operations_recheck_price({}, t),
+          atQuotation: m.api_operations_as_quoted({}, t),
+          now: m.api_operations_unchanged({}, t),
+          ok: true,
+        },
+        {
+          item: m.api_operations_recheck_availability({}, t),
+          atQuotation: m.api_operations_as_quoted({}, t),
+          now: m.api_operations_confirmed_by_phone({}, t),
+          ok: true,
+        },
+      ]
+    );
+  } else {
+    // TODO implement actual prod third party connections
+    throw new NotConnectedError(
+      "the supplier's reconfirmation of price, availability and lead time before a PO is confirmed (email or portal)",
+    );
+  }
+}
+
 /** POST /api/operations/po-recheck { po } — re-checks price, availability, FX and lead time before confirming. */
 async function poRecheck(req: PayloadRequest) {
   if (!req.user) return signIn(req);
@@ -939,20 +1080,7 @@ async function poRecheck(req: PayloadRequest) {
   const { po: poId } = await body(req);
   const po = await byId(req, "purchase-orders", str(poId));
   if (!po) return fail(m.api_operations_po_not_found({}, t), 404);
-  const rows = ORDER_BOOK[str(idOf(po.case))]?.recheck?.[str(idOf(po.supplier))] ?? [
-    {
-      item: m.api_operations_recheck_price({}, t),
-      atQuotation: m.api_operations_as_quoted({}, t),
-      now: m.api_operations_unchanged({}, t),
-      ok: true,
-    },
-    {
-      item: m.api_operations_recheck_availability({}, t),
-      atQuotation: m.api_operations_as_quoted({}, t),
-      now: m.api_operations_confirmed_by_phone({}, t),
-      ok: true,
-    },
-  ];
+  const rows = supplierRecheck(str(idOf(po.case)), str(idOf(po.supplier)), t);
   const doc = await update(req, "purchase-orders", po.id, {
     recheck: rows,
     recheckDone: true,
@@ -983,7 +1111,7 @@ async function etaChange(req: PayloadRequest) {
   const id = str(caseId);
   const t = loc(req);
   const c = await byId(req, "cases", id);
-  const upd = ETA_UPDATES[id];
+  const upd = agentEtaUpdate(id);
   if (!c || !upd) return fail(m.api_operations_no_eta_update({}, t));
   if (str(c.eta) === upd.eta) return Response.json({ changed: 0, message: m.api_operations_eta_up_to_date({}, t) });
   const deltaMs = new Date(upd.eta).getTime() - new Date(str(c.eta) || upd.eta).getTime();
@@ -1098,7 +1226,7 @@ async function invoiceDelivery(req: PayloadRequest) {
     find(req, "deliveries", { case: { equals: caseId } }),
   ]);
   const customer = c ? await byId(req, "customers", str(idOf(c.customer))) : null;
-  const plan = ORDER_BOOK[caseId];
+  const plan = orderBook(caseId);
   if (!c || !customer || !plan) return fail(m.api_operations_no_order_book({}, t));
   const confirmed = all.filter((x) => x.status === "Delivered — confirmed");
   const deliveredTotal = (lineNo: number) =>
@@ -1175,6 +1303,26 @@ async function eInvoice(req: PayloadRequest) {
   const billing = { ...(inv.billing as Record<string, unknown> | undefined) };
   if (e.status === "Valid")
     return Response.json({ doc: inv, result: "already-valid", message: m.api_operations_already_accepted({}, t) });
+  if (IS_MOCK) {
+    // TODO implement mock only logic to simulate third party connections
+    return simulatedEInvoice(req, inv, e, billing, str(b.taxId), t);
+  } else {
+    // TODO implement actual prod third party connections
+    throw new NotConnectedError(
+      "the Egyptian Tax Authority's e-invoicing API: signing and submitting an invoice, and reading back its status",
+    );
+  }
+}
+
+/** The tax authority's answers, simulated: Submitted, then Valid on the next call; a 14% invoice without a 9-digit tax ID is rejected. */
+async function simulatedEInvoice(
+  req: PayloadRequest,
+  inv: Doc,
+  e: Record<string, unknown>,
+  billing: Record<string, unknown>,
+  taxId: string,
+  t: { locale: Lang },
+) {
   if (e.status === "Submitted") {
     const doc = await update(req, "invoices", inv.id, { eInvoice: { ...e, status: "Valid", error: null } });
     await logActivity(req, {
@@ -1188,7 +1336,7 @@ async function eInvoice(req: PayloadRequest) {
       message: m.api_operations_einvoice_valid({ number: str(inv.number) }, t),
     });
   }
-  if (b.taxId) billing.taxId = str(b.taxId);
+  if (taxId) billing.taxId = taxId;
   // The rejected one: the buyer's tax registration number must have 9 digits.
   if (inv.vatTreatment === "14% standard" && !/^\d{9}$/.test(str(billing.taxId).replace(/\D/g, ""))) {
     const doc = await update(req, "invoices", inv.id, {
@@ -1277,8 +1425,8 @@ export async function cash(req: PayloadRequest) {
     }))
     .sort((a, b) => b.daysOverdue - a.daysOverdue);
 
-  // Weeks starting Monday 16 Nov (the demo's week), eight of them.
-  const start = new Date("2026-11-16T00:00:00.000Z").getTime();
+  // Eight weeks, from the forecast's first Monday.
+  const start = forecastStart();
   const weeks = Array.from({ length: 8 }, (_, k) => new Date(start + k * 7 * DAY));
   const weekOf = (iso: string) => {
     const t = new Date(iso).getTime();
@@ -1324,7 +1472,8 @@ export async function cash(req: PayloadRequest) {
 
   // Committed payments: what each supplier PO's payable has to pay now, by its due week (a bill on
   // hold is left out until it matches). The payable itself is the PO's (../collections/fulfilment.ts).
-  const outflow = Array.from({ length: 8 }, () => FIXED_WEEKLY_EGP / 1000);
+  const fixed = fixedWeeklyEgp();
+  const outflow = Array.from({ length: 8 }, () => fixed / 1000);
   for (const po of pos) {
     const p = payableOf(po, { bills, payments, approvals });
     if (p && p.stage !== "Bill on hold") outflow[Math.min(7, weekOf(p.due))] += toEgp(p.toPay, p.currency) / 1000;
@@ -1381,7 +1530,7 @@ export async function cash(req: PayloadRequest) {
   const bankChanges = approvals
     .filter((a) => a.type === "Bank detail change")
     .map((a) => {
-      const reqInfo = BANK_REQUESTS[a.id];
+      const reqInfo = bankRequest(a.id);
       const decisions = (
         (a.decisions as { user?: unknown; decision?: string; reason?: string; at?: string }[] | undefined) ?? []
       ).map((d) => ({
@@ -1421,7 +1570,7 @@ export async function cash(req: PayloadRequest) {
     bankChanges,
     cashIn: inflow.map(Math.round),
     cashOut: outflow.map(Math.round),
-    fixedWeeklyEgp: FIXED_WEEKLY_EGP,
+    fixedWeeklyEgp: fixed,
   });
 }
 

@@ -1,5 +1,6 @@
 import type { Tone } from "saastemlycrm-design-system/contracts";
 import { m } from "../i18n/paraglide/messages.js";
+import { IS_TEMP_MOCK, TempMockError } from "../flags.ts";
 import { getLocale } from "../i18n/paraglide/runtime.js";
 
 /**
@@ -61,7 +62,19 @@ export const USERS: Record<string, string> = {
   em: "Esraa Mohamed",
   ne: "Nancy Elsobhy",
 };
-export const person = (id: string) => USERS[id] ?? id;
+/** A user's name from their id. */
+export function person(id: string): string {
+  if (IS_TEMP_MOCK) {
+    // TODO replace temporary mock logic with proper polished logic
+    // The demo's seeded users, written in (USERS).
+    return USERS[id] ?? id;
+  } else {
+    // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+    throw new TempMockError(
+      "a user's name from the users collection (the data the widget reads), not the fixed USERS map",
+    );
+  }
+}
 
 /** A status word's tone: problems red, waiting amber, in progress blue, done green, ended grey. */
 export function statusTone(status = ""): Tone {

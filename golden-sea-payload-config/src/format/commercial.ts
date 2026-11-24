@@ -10,6 +10,7 @@ import {
   type Tone,
   type WidgetScope,
 } from "saastemlycrm-design-system/contracts";
+import { IS_TEMP_MOCK, TempMockError } from "../flags.ts";
 import type {
   CmpLine,
   CmpOffer,
@@ -999,7 +1000,7 @@ function quoteActions(v: QuoteView, me: string): Action[] {
     );
   }
   if (v.can.send) {
-    const portal = Boolean(v.case.portal && /portal/i.test(v.case.portal) && !/Nordvik/.test(v.case.customer));
+    const portal = sendsByPortal(v.case);
     out.push({
       label: m.commercial_send_to_customer(),
       main: true,
@@ -1187,7 +1188,7 @@ function paper(v: QuoteView, lang: Lang, egpOn: boolean): DocumentSpec {
   const discount = Number(q.discountPct) || 0;
   const total = gross * (1 - discount / 100);
   const draft = !["Approved", "Submitted"].includes(String(q.status)) && q.status !== "Superseded";
-  const created = new Date(String(q.createdAt ?? "2026-11-17T09:30:00.000Z"));
+  const created = new Date(String(q.createdAt ?? unsavedQuoteDate()));
   const ymd = `${String(created.getUTCDate()).padStart(2, "0")}/${String(created.getUTCMonth() + 1).padStart(2, "0")}/${created.getUTCFullYear()}`;
   return {
     lang,
@@ -1264,7 +1265,7 @@ function paper(v: QuoteView, lang: Lang, egpOn: boolean): DocumentSpec {
         ? m.commercial_paper_signature({ name: v.approvedBy }, locale)
         : m.commercial_paper_signature_pending({}, locale),
     },
-    contact: ["+20 10 0000 0000 · Sales@goldensea.com.eg", m.commercial_paper_address({}, locale)],
+    contact: [letterheadContact(), m.commercial_paper_address({}, locale)],
   };
 }
 
@@ -1289,3 +1290,40 @@ export const customerCopy = (v: QuoteView, { params }: WidgetScope): KindData<"d
     ...paper(v, lang, params.currency === "EGP"),
   };
 };
+
+/** The date on a quotation not saved yet. */
+function unsavedQuoteDate(): string {
+  if (IS_TEMP_MOCK) {
+    // TODO replace temporary mock logic with proper polished logic
+    // The demo's morning.
+    return "2026-11-17T09:30:00.000Z";
+  } else {
+    // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+    throw new TempMockError("the date on an unsaved quotation: today, not the demo's 17 Nov 2026");
+  }
+}
+
+/** The phone and email on the quotation's letterhead. */
+function letterheadContact(): string {
+  if (IS_TEMP_MOCK) {
+    // TODO replace temporary mock logic with proper polished logic
+    return "+20 10 0000 0000 · Sales@goldensea.com.eg";
+  } else {
+    // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+    throw new TempMockError("the letterhead's phone and email from the branding global, not a placeholder number");
+  }
+}
+
+/** A quotation goes through the customer's procurement portal (else by email). */
+function sendsByPortal(c: { portal?: string; customer: string }): boolean {
+  if (IS_TEMP_MOCK) {
+    // TODO replace temporary mock logic with proper polished logic
+    // Nordvik has a portal on file but takes this quotation by email in the demo's story.
+    return Boolean(c.portal && /portal/i.test(c.portal) && !/Nordvik/.test(c.customer));
+  } else {
+    // TODO Throw error, polished logic should be implemented for mock and prod and the if/else should be melted
+    throw new TempMockError(
+      "how a customer takes quotations (portal or email) from its record, not an exception for Nordvik by name",
+    );
+  }
+}
