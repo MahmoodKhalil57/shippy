@@ -530,6 +530,8 @@ export const Tours: CollectionConfig = {
             {
               name: "click",
               type: "text",
+              // The button's words in the page's language (it's found by them).
+              localized: true,
               label: { en: "Click the button with text", ar: "النقر على الزر الذي نصه" },
               admin: {
                 width: "66%",
@@ -560,6 +562,8 @@ export const Tours: CollectionConfig = {
             {
               name: "text",
               type: "text",
+              // On-screen words in the page's language (the spotlight finds its element by them).
+              localized: true,
               label: { en: "Element with text", ar: "عنصر بنص" },
               admin: {
                 description: { en: "Text the highlighted element contains.", ar: "النص الذي يحتويه العنصر المُبرز." },

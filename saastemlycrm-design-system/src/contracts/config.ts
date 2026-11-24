@@ -1,6 +1,7 @@
 import type { CollectionConfig, Endpoint, GlobalConfig } from "payload";
 import type { Action, NumberFormat } from "../app/widgets/schema.ts";
 import type { Widget } from "../app/widgets/widget.ts";
+import type { Localizable } from "../i18n/index.ts";
 
 /**
  * The mock backend's config: the parts of a Payload config that describe the
@@ -304,9 +305,12 @@ export interface DashboardSettings {
   today?: string;
 }
 
-/** What to spotlight: the smallest element matching `sel` (default: a card) whose text includes `text`. */
+/**
+ * What to spotlight: the smallest element matching `sel` (default: a card) whose text includes
+ * `text`: on-screen words, so given in each language (`{ en, ar }`, a localized field).
+ */
 export interface TourTarget {
-  text: string;
+  text: Localizable;
   sel?: string;
 }
 
@@ -317,8 +321,8 @@ export interface TourStep {
   go?: string;
   /** Open a side column first (its sections hold the target). */
   open?: "aside" | "nav";
-  /** Click the button or link whose text includes this, then wait for the page to react. */
-  click?: string;
+  /** Click the button or link whose text includes this (in each language), then wait for the page to react. */
+  click?: Localizable;
   /** Milliseconds to wait after the click (default 900). */
   wait?: number;
   target?: TourTarget;

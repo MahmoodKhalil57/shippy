@@ -273,7 +273,8 @@ export class DashboardApp extends LightElement {
   /** Guided tours: sign in as a seeded user by id (a tour step's `as`). */
   private _switchToId = async (id: string) => {
     const u = seedUsers.find((x) => x.id === id);
-    if (u) await this._switchTo(u);
+    // Quietly: the tour's card says who's signed in (a toast would sit on its buttons).
+    if (u) await this._switchTo(u, true);
   };
 
   /** Guided tours: open a side column (its sections hold the step's target). */
@@ -285,12 +286,12 @@ export class DashboardApp extends LightElement {
    * Demo: become another user in place (sign out, sign in as them behind the scenes; no login
    * page). Users keep their own role — this changes who you are, never anyone's role.
    */
-  private async _switchTo(u: SeedUser) {
+  private async _switchTo(u: SeedUser, quiet = false) {
     if (u.email === this.user?.email) return;
     try {
       // Signing in replaces the session; no logout first, so a failure leaves you signed in.
       await api.login(userSlug, u.email, u.password);
-      toast(m.app_switched_user({ name: u.name ?? u.email, role: roleLabel(u.role) }), "info");
+      if (!quiet) toast(m.app_switched_user({ name: u.name ?? u.email, role: roleLabel(u.role) }), "info");
       await this._refresh();
     } catch (e) {
       toast(m.app_switch_user_failed({ name: u.name ?? u.email, error: (e as Error).message }), "error");

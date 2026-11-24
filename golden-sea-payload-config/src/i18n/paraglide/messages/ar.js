@@ -4521,7 +4521,7 @@ export const api_home_continue = /** @type {(inputs: Api_Home_ContinueInputs) =>
 };
 
 export const api_home_daily_briefing = /** @type {(inputs: Api_Home_Daily_BriefingInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`الملخص اليومي`)
+	return /** @type {LocalizedString} */ (`الموجز اليومي`)
 };
 
 export const api_home_days = /** @type {(inputs: Api_Home_DaysInputs) => LocalizedString} */ (i) => {

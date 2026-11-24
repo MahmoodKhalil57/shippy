@@ -387,7 +387,7 @@
   "api_home_cash_title": "التدفق الداخل مقابل الخارج، الأسابيع الثمانية القادمة",
   "api_home_commitment_blocked": "الالتزام موقوف حتى يطابق أمر الشراء عرض السعر المعتمد.",
   "api_home_continue": "متابعة {caseId}",
-  "api_home_daily_briefing": "الملخص اليومي",
+  "api_home_daily_briefing": "الموجز اليومي",
   "api_home_days": "{n} يوم",
   "api_home_decisions_waiting": "{n, plural, zero {لا توجد قرارات تنتظر} one {قرار واحد ينتظر} two {قراران ينتظران} few {{n} قرارات تنتظر} many {{n} قرارًا ينتظر} other {{n} قرار ينتظر}}",
   "api_home_deliveries": "التسليمات",

@@ -9,7 +9,7 @@ import { roleLabel } from "./demo-users.ts";
 import { navigate } from "./shared.ts";
 import type { Tour, TourStep, TourTarget } from "../contracts/config.ts";
 import { loadTours } from "./site.ts";
-import { m } from "../i18n/index.ts";
+import { localize, m } from "../i18n/index.ts";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -24,10 +24,18 @@ const visible = (el: Element) => {
   return !!r && r.width > 0 && r.height > 0;
 };
 
+/** Text as compared: its runs of white space as one space (markup breaks lines between words). */
+const words = (s: string | null | undefined) => (s ?? "").replace(/\s+/g, " ").trim();
+/** Whether an element shows `text` (on-screen words in the page's language: `{ en, ar }` or one). */
+const shows = (e: Element, text: unknown) => {
+  const want = words(localize(text));
+  return !!want && words(e.textContent).includes(want);
+};
+
 /** The smallest visible tile or card matching the target (so a card wins over the page around it). */
 function find(t: TourTarget): Element | null {
   const matches = [...document.querySelectorAll(t.sel ?? "ui-tile, ui-card")].filter(
-    (e) => !e.closest("ui-coachmark") && (e.textContent ?? "").includes(t.text) && visible(e),
+    (e) => !e.closest("ui-coachmark") && shows(e, t.text) && visible(e),
   );
   return matches.sort((a, b) => (a.textContent ?? "").length - (b.textContent ?? "").length)[0] ?? null;
 }
@@ -109,7 +117,7 @@ export class DashboardTour extends LightElement {
       const button = await waitFor(
         () =>
           [...document.querySelectorAll("button, a")].find(
-            (b) => !b.closest("ui-coachmark") && (b.textContent ?? "").includes(step.click!) && visible(b),
+            (b) => !b.closest("ui-coachmark") && shows(b, step.click) && visible(b),
           ) ?? null,
       );
       (button as HTMLElement | null)?.click();
