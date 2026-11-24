@@ -43,8 +43,26 @@ seed data (`src/seed`). Entry points: `.` (the config, `src/config.ts`) and `./s
   (`startDashboard` from `saastemlycrm-design-system/app`); `vite.config.ts` adds
   `designSystem()` and `mockBackend({ config: "./src/config.ts", seed: "./src/seed.ts" })`, sets the
   base (`/shippy/` for the build) and writes the page's title from the `branding` seed. `public/`
-  is the site's static files. `vp dev` runs it (`bun run dev` at the root); `vp build` writes the
-  demo to `../docs`. The OpenAI key meta in `index.html` stays empty in the repository.
+  is the site's static files. `bun run mock:dev` runs it; `bun run mock:build` writes the
+  demo to `../docs`; `bun run mock:preview` serves that build. The OpenAI key meta in `index.html` stays empty in the repository.
+
+- **On Cloudflare** (cf-runner, `PUBLIC_BACKEND=cf`): the same app, its API served from D1 by the Worker
+  that serves its pages (`worker/index.ts`, `wrangler.jsonc`; no service worker, sessions in
+  Payload's cookie). `bun run cf:migrate` (the D1 schema), `bun run cf:seed` (the seed as SQL,
+  `cf-seed.ts`; only what's missing, `--reset` to start over), `bun run cf:dev` (Vite with the
+  Worker on a local D1), `bun run cf:preview` (the built Worker), `bun run cf:deploy`; the
+  `:remote` scripts do the same to the deployed database. The first deploy creates the D1
+  database and R2 bucket; set `PAYLOAD_SECRET` with `wrangler secret put`. The build keeps both
+  languages in one bundle (the one-language builds are the GitHub Pages demo's).
+
+- **Environment** (`src/env.ts`, zod): one file per mode, picked with `--mode` by every script:
+  `.env.mock` (the `mock:*` scripts), `.env.cf.local` (`cf:dev`, `cf:preview`, `cf:seed`) and
+  `.env.cf.remote` (`cf:build`, `cf:deploy`, `cf:seed:remote`). `PUBLIC_` names (`PUBLIC_BACKEND`,
+  `PUBLIC_IS_MOCK`, `PUBLIC_IS_TEMP_MOCK`) are the browser's: `envPrefix` puts only them in
+  `import.meta.env`, in the pages, the mock's service worker and the Worker alike. The rest
+  (`D1_TARGET`, and `I18N_LOCALE` / `I18N_APPEND` from build-locales.ts) stay in the build and Node
+  scripts. A new variable is declared in the schema first; the files hold no secrets
+  (`PAYLOAD_SECRET` is a Wrangler secret). `tests/env.test.ts` holds every file to the schema.
 
 - **Contracts:** it imports only `saastemlycrm-design-system/contracts` (and `/payload`): the config
   types, `tones`, `CollectionSettings`, `widgets()` and the block vocabulary. Never the design
@@ -52,7 +70,8 @@ seed data (`src/seed`). Entry points: `.` (the config, `src/config.ts`) and `./s
   a server. It defines no custom elements. `tests/template.test.ts` enforces all of this, and that
   the design system and the backend import neither other package. Only `app/`, `vite.config.ts`
   and `tests/` import the dashboard and the backend (lint `overrides` allow it there).
-- **Going to production: two flags** (`src/flags.ts`, from the environment, both on by default):
+- **Going to production: two flags** (`src/flags.ts`, from `PUBLIC_IS_TEMP_MOCK` and `PUBLIC_IS_MOCK` in
+  `src/env.ts`, both on by default):
   - `IS_TEMP_MOCK`: temporary logic written for the demo that production must not run (a stub AI
     answer, the demo's fixed clock, canned figures or text standing in for a calculation). Each is
     `if (IS_TEMP_MOCK) { // TODO replace temporary mock logic with proper polished logic … } else
@@ -91,7 +110,7 @@ seed data (`src/seed`). Entry points: `.` (the config, `src/config.ts`) and `./s
   - **Actions** (`custom.actions`): their label, confirm heading, text and button, fields, `done`,
     `prompt` and `reason` are `{ en, ar }` too (`fieldProblems`); a value that is only `$row.…`
     is the record's own text, already in the reader's language.
-  - **The build is one per language** (`build-locales.ts`, `bun run build`): Arabic, then English
+  - **The build is one per language** (`build-locales.ts`, `bun run mock:build`): Arabic, then English
     into `../docs` (the worker, built last, precaches both); `index.html` loads the page's
     language's entry (the first-paint script preloads it). Each page carries only its own words.
   - **People's language** is the users' `language` field: it follows them to another browser, and

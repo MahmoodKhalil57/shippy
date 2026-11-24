@@ -3,20 +3,24 @@ import path from "node:path";
 import { describe, expect, it } from "vite-plus/test";
 
 /**
- * The three packages keep their roles:
+ * The four packages keep their roles:
  * - saastemlycrm-design-system draws any project: it imports neither other package and never
  *   names a business.
  * - mock-runner is a Payload-compatible backend for any config: it imports neither other package
  *   and never names a business. A real backend (D1, Workers) can replace it.
+ * - cf-runner is that backend on Cloudflare (D1, Workers), on mock-runner's engine: it imports
+ *   neither the design system nor the project, and never names a business.
  * - golden-sea-payload-config is the project and its app. Its config (src/) implements the design
  *   system's contracts (`/contracts`, `/payload`, pure) and nothing else, stays pure (it also runs
- *   in a service worker or on a server) and defines no UI. Only its app entry (app/), its
- *   vite.config.ts and its tests join the dashboard and the backend.
+ *   in a service worker or on a server) and defines no UI. Only its app entry (app/), its Worker
+ *   (worker/), its build scripts, its vite.config.ts and its tests join the dashboard and the
+ *   backends.
  */
 
 const workspace = path.resolve(import.meta.dirname, "../..");
 const DS = path.join(workspace, "saastemlycrm-design-system");
 const MR = path.join(workspace, "mock-runner");
+const CF = path.join(workspace, "cf-runner");
 const GS = path.join(workspace, "golden-sea-payload-config");
 
 const files = (dir: string): string[] =>
@@ -49,7 +53,7 @@ describe("saastemlycrm-design-system stands alone", () => {
   const dsFiles = [...files(path.join(DS, "src")), ...files(path.join(DS, "vite")), ...files(path.join(DS, "lint"))];
   it.each(dsFiles.map((f) => [rel(f), f]))("%s imports neither other package", (_, file) => {
     expect(
-      foreign(file, DS, ["golden-sea-payload-config", "mock-runner"]),
+      foreign(file, DS, ["golden-sea-payload-config", "mock-runner", "cf-runner"]),
       "a project hands itself over with startDashboard({ config })",
     ).toEqual([]);
   });
@@ -67,7 +71,7 @@ describe("mock-runner stands alone", () => {
   ];
   it.each(mrFiles.map((f) => [rel(f), f]))("%s imports neither other package", (_, file) => {
     expect(
-      foreign(file, MR, ["golden-sea-payload-config", "saastemlycrm-design-system"]),
+      foreign(file, MR, ["golden-sea-payload-config", "saastemlycrm-design-system", "cf-runner"]),
       "an app passes its config with mockBackend({ config, seed })",
     ).toEqual([]);
   });
@@ -77,6 +81,34 @@ describe("mock-runner stands alone", () => {
   });
   it("depends on neither other package", () => {
     const pkg = JSON.parse(readFileSync(path.join(MR, "package.json"), "utf8")) as Record<
+      string,
+      Record<string, string>
+    >;
+    const deps = { ...pkg.dependencies, ...pkg.devDependencies, ...pkg.peerDependencies };
+    expect(
+      Object.keys(deps).filter((d) => d === "golden-sea-payload-config" || d === "saastemlycrm-design-system"),
+    ).toEqual([]);
+  });
+});
+
+describe("cf-runner stands alone (on mock-runner's engine)", () => {
+  const cfFiles = [...files(path.join(CF, "src")), ...files(path.join(CF, "tests")), path.join(CF, "vite.ts")];
+  it.each(cfFiles.map((f) => [rel(f), f]))("%s imports neither the design system nor the project", (_, file) => {
+    // Its tests read mock-runner's fixture project (never a real one).
+    const own = file.includes(`${path.sep}tests${path.sep}`) ? workspace : CF;
+    expect(
+      foreign(file, own, ["golden-sea-payload-config", "saastemlycrm-design-system"]).filter(
+        (s) => !s.startsWith("../../mock-runner/tests/"),
+      ),
+      "an app passes its config with createWorker({ config })",
+    ).toEqual([]);
+  });
+  it.each(cfFiles.map((f) => [rel(f), f]))("%s doesn't name the business", (_, file) => {
+    if (!brand) return;
+    expect(readFileSync(file, "utf8").includes(brand), `"${brand}" belongs in the project`).toBe(false);
+  });
+  it("depends on neither the design system nor the project", () => {
+    const pkg = JSON.parse(readFileSync(path.join(CF, "package.json"), "utf8")) as Record<
       string,
       Record<string, string>
     >;
@@ -98,6 +130,7 @@ describe("golden-sea-payload-config implements the contracts", () => {
         s === "lit" ||
         s.startsWith("lit/") ||
         s.startsWith("mock-runner") ||
+        s.startsWith("cf-runner") ||
         // Relative imports stay inside the package.
         (s.startsWith(".") && !path.resolve(path.dirname(file), s).startsWith(GS + path.sep)),
     );

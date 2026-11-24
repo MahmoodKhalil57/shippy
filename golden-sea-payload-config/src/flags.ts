@@ -31,32 +31,26 @@
  *   }
  *   ```
  *
- * Both are on unless the environment says otherwise (`IS_MOCK=false`, `IS_TEMP_MOCK=false`; in a
- * browser build `VITE_IS_MOCK` / `VITE_IS_TEMP_MOCK`). Production is `IS_MOCK=false` and
- * `IS_TEMP_MOCK=false`; a polished mock is `IS_MOCK=true` and `IS_TEMP_MOCK=false`. Production
- * running temporary mock logic (`IS_MOCK=false`, `IS_TEMP_MOCK=true`) is refused as this loads.
+ * Both come from the environment (src/env.ts: `PUBLIC_IS_MOCK`, `PUBLIC_IS_TEMP_MOCK`, set in each
+ * mode's `.env.<mode>` file; on unless it says otherwise), the same in the pages, the backend and
+ * Node. Production is `PUBLIC_IS_MOCK=false` and `PUBLIC_IS_TEMP_MOCK=false`; a polished mock is
+ * `PUBLIC_IS_MOCK=true` and `PUBLIC_IS_TEMP_MOCK=false`. Production running temporary mock logic
+ * (`PUBLIC_IS_MOCK=false`, `PUBLIC_IS_TEMP_MOCK=true`) is refused as the environment loads.
  * `tests/flags.test.ts` keeps every use in that shape.
  */
 
-/** A flag from the environment: the server's (`process.env`), else a browser build's (`VITE_<name>`). */
-function flag(name: string, fallback: boolean): boolean {
-  const server = typeof process !== "undefined" ? process.env?.[name] : undefined;
-  const browser = (import.meta as { env?: Record<string, string | undefined> }).env?.[`VITE_${name}`];
-  const v = (server ?? browser)?.trim().toLowerCase();
-  if (v === undefined || v === "") return fallback;
-  return !["false", "0", "no", "off"].includes(v);
-}
+import { env } from "./env.ts";
 
 /** Temporary demo logic may run (see above). Off: each such path throws `TempMockError`. */
-export const IS_TEMP_MOCK: boolean = flag("IS_TEMP_MOCK", true);
+export const IS_TEMP_MOCK: boolean = env.PUBLIC_IS_TEMP_MOCK;
 
 /** The third parties are simulated (see above). Off: the real connections run (`NotConnectedError` until written). */
-export const IS_MOCK: boolean = flag("IS_MOCK", true);
+export const IS_MOCK: boolean = env.PUBLIC_IS_MOCK;
 
 /** A temporary mock path reached with `IS_TEMP_MOCK` off: its polished logic isn't written yet. */
 export class TempMockError extends Error {
   constructor(what: string) {
-    super(`Not implemented without IS_TEMP_MOCK: ${what}`);
+    super(`Not implemented without PUBLIC_IS_TEMP_MOCK: ${what}`);
     this.name = "TempMockError";
   }
 }
@@ -64,10 +58,7 @@ export class TempMockError extends Error {
 /** A third party reached with `IS_MOCK` off: its production connection isn't written yet. */
 export class NotConnectedError extends Error {
   constructor(what: string) {
-    super(`No production connection yet (IS_MOCK is off): ${what}`);
+    super(`No production connection yet (PUBLIC_IS_MOCK is off): ${what}`);
     this.name = "NotConnectedError";
   }
 }
-
-if (!IS_MOCK && IS_TEMP_MOCK)
-  throw new Error("Production (IS_MOCK=false) can't run temporary mock logic: set IS_TEMP_MOCK=false.");

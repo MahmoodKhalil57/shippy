@@ -1,3 +1,4 @@
+import type { RestOptions } from "./mock/runtime/rest.ts";
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import type { BackendConfig } from "./types.ts";
@@ -18,6 +19,7 @@ import { MemoryStore } from "./mock/runtime/store.ts";
  */
 
 export { Engine, MemoryStore, RestApi, seedsFromGlob, type Seeds };
+export type { RestOptions, SessionMode } from "./mock/runtime/rest.ts";
 
 /** A response, with its body parsed (JSON, else text) for loose API-test assertions. */
 export interface TestResponse {
@@ -90,10 +92,10 @@ async function read(res: Response): Promise<TestResponse> {
 export function testBackend(
   config: BackendConfig,
   seedInput: SeedInput = { collections: {}, globals: {} },
-  { origin = "http://mock.test" }: { origin?: string } = {},
+  { origin = "http://mock.test", rest }: { origin?: string; rest?: RestOptions } = {},
 ): TestBackend {
   const seeds = toSeeds(seedInput);
-  let api = new RestApi(new Engine(config, new MemoryStore()), seeds);
+  let api = new RestApi(new Engine(config, new MemoryStore()), seeds, rest);
 
   const call: TestBackend["call"] = async (method, url, payload, headers = {}) => {
     const init: RequestInit = { method, headers: { ...headers } };
@@ -107,7 +109,11 @@ export function testBackend(
 
   const reset = (options: ResetOptions = {}) => {
     const store = options.store ?? new MemoryStore();
-    api = new RestApi(new Engine(options.config ?? config, store), options.seeds ? toSeeds(options.seeds) : seeds);
+    api = new RestApi(
+      new Engine(options.config ?? config, store),
+      options.seeds ? toSeeds(options.seeds) : seeds,
+      rest,
+    );
     return api;
   };
 

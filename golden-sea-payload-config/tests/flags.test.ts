@@ -107,24 +107,24 @@ describe("the flags' values", () => {
   const load = () => import("../src/flags.ts");
 
   it("are on by default: the demo runs as it is", async () => {
-    vi.stubEnv("IS_MOCK", "");
-    vi.stubEnv("IS_TEMP_MOCK", "");
+    vi.stubEnv("PUBLIC_IS_MOCK", "");
+    vi.stubEnv("PUBLIC_IS_TEMP_MOCK", "");
     const f = await load();
     expect([f.IS_MOCK, f.IS_TEMP_MOCK]).toEqual([true, true]);
   });
 
   it("read the environment: a polished mock, and production", async () => {
-    vi.stubEnv("IS_TEMP_MOCK", "false");
+    vi.stubEnv("PUBLIC_IS_TEMP_MOCK", "false");
     expect((await load()).IS_TEMP_MOCK).toBe(false);
     vi.resetModules();
-    vi.stubEnv("IS_MOCK", "0");
+    vi.stubEnv("PUBLIC_IS_MOCK", "0");
     const f = await load();
     expect([f.IS_MOCK, f.IS_TEMP_MOCK]).toEqual([false, false]);
   });
 
   it("refuse production running temporary mock logic", async () => {
-    vi.stubEnv("IS_MOCK", "false");
-    vi.stubEnv("IS_TEMP_MOCK", "true");
+    vi.stubEnv("PUBLIC_IS_MOCK", "false");
+    vi.stubEnv("PUBLIC_IS_TEMP_MOCK", "true");
     await expect(load()).rejects.toThrow(/can't run temporary mock logic/);
   });
 });

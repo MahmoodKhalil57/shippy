@@ -111,6 +111,11 @@ export default function mockBackend(options: MockBackendOptions): Plugin[] {
           configFile: false,
           root: config.root,
           base: config.base,
+          // The app's mode and environment, so the config reads the same variables in the
+          // worker as in the pages (`import.meta.env`).
+          mode: config.mode,
+          envDir: config.envDir,
+          envPrefix: config.envPrefix,
           logLevel: "warn",
           plugins: [backendModule(paths)],
           define: { __PRECACHE__: JSON.stringify(await precacheOf(out)) },

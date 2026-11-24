@@ -1,4 +1,4 @@
-// The demo site, one build per language (`bun run build`): each language's page loads only its own
+// The demo site, one build per language (`bun run mock:build`): each language's page loads only its own
 // messages (Paraglide's static locale, saastemlycrm-design-system/vite/i18n.ts), from one address.
 //
 // 1. Arabic, then English, into ../docs: the English build adds its files beside the Arabic ones,
@@ -18,7 +18,7 @@ const LOCALES = ["ar", "en"] as const;
 
 const entries: Record<string, string> = {};
 for (const [i, locale] of LOCALES.entries()) {
-  const run = spawnSync("vp", ["build"], {
+  const run = spawnSync("vp", ["build", "--mode", "mock"], {
     cwd: root,
     stdio: "inherit",
     shell: true,

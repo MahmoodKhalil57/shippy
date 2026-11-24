@@ -1,0 +1,23 @@
+// Golden Sea on Cloudflare (cf-runner): one Worker for the API (worker/index.ts) and the pages
+// (static assets). `bun run cf:dev` runs it locally (local D1 and R2 in .wrangler/); the first
+// `bun run cf:deploy` creates the database and the bucket (their ids are written back here).
+{
+  "$schema": "../cf-runner/node_modules/wrangler/config-schema.json",
+  "name": "golden-sea",
+  "main": "./worker/index.ts",
+  "compatibility_date": "2026-11-24",
+  "assets": {
+    // A dashboard path (/collections/cases/…) gets the app, which routes it; /api is the Worker's.
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"],
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "golden-sea",
+      "migrations_dir": "../cf-runner/migrations",
+    },
+  ],
+  "r2_buckets": [{ "binding": "FILES", "bucket_name": "golden-sea-files" }],
+  "observability": { "enabled": true, "traces": { "enabled": true } },
+}

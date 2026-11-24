@@ -9,6 +9,7 @@
     "./client": "./src/start.ts",
     "./testing": "./src/testing.ts",
     "./payload": "./src/payload/index.ts",
+    "./server": "./src/server.ts",
     "./package.json": "./package.json"
   },
   "scripts": {

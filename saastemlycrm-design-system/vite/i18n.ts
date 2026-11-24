@@ -28,7 +28,7 @@ export const I18N_OPTIONS = {
   emitTsDeclarations: true,
   // One output for dev, build and tests (it is committed): Vite replaces the flag, so a build
   // drops the runtime's development checks.
-  isDevelopment: "import.meta.env.DEV",
+  isDevelopment: "import.meta.env?.DEV === true",
   // As the Vite plugin sets it (so the plugin and `compile` write the same output).
   isServer: "import.meta.env?.SSR ?? typeof window === 'undefined'",
   // A build for one language (`STATIC_LOCALE` defines this as it): every message is that

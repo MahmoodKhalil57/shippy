@@ -115,7 +115,7 @@ export function getServerAsyncLocalStorage() {
 export const disableAsyncLocalStorage = false;
 export const isServer = import.meta.env?.SSR ?? typeof window === 'undefined';
 /** Controls development-only runtime diagnostics. */
-export const isDevelopment = import.meta.env.DEV;
+export const isDevelopment = import.meta.env?.DEV === true;
 /** @type {Locale | undefined} */
 export const experimentalStaticLocale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__;
 /**

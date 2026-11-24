@@ -371,3 +371,26 @@ describe("seed top-up: languages a seed gains later", () => {
     expect((await engine.store.get("categories", "weekly"))!.blurb).toBe("Edited by someone");
   });
 });
+
+describe("REST: a server's session (Payload's payload-token cookie)", () => {
+  const server = testBackend(fixture, seeds, { rest: { session: "cookie", tools: false } });
+  beforeEach(() => {
+    server.reset();
+  });
+
+  it("sets an HTTP-only cookie on login, reads it on each request, and clears it on logout", async () => {
+    const login = await server.login("ada@fixture.test", "secret");
+    const set = login.res.headers.get("set-cookie") ?? "";
+    expect(set).toMatch(/^payload-token=[^;]+; Path=\/; HttpOnly; Secure; SameSite=Lax; Max-Age=\d+$/);
+    const cookie = set.split(";")[0]!;
+    // Each browser has its own session: none without the cookie, the user with it.
+    expect((await server.call("GET", "/api/users/me")).body.user).toBeNull();
+    expect((await server.call("GET", "/api/users/me", undefined, { cookie })).body.user).toMatchObject({ id: "ada" });
+    const out = await server.call("POST", "/api/users/logout", undefined, { cookie });
+    expect(out.res.headers.get("set-cookie")).toMatch(/^payload-token=; .*Max-Age=0$/);
+  });
+
+  it("keeps the mock tools off a public server", async () => {
+    expect((await server.call("POST", "/api/_mock/reset")).status).toBe(404);
+  });
+});

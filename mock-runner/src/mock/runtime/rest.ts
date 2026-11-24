@@ -22,10 +22,38 @@ import { APIError, isObject, notFound, unauthorized } from "../../payload/index.
  *   custom `endpoints` (collection-level at /:collection/<path>, root-level at /<path>)
  *   /_mock/status · /_mock/export · /_mock/import · /_mock/reset  (seed & snapshot tools)
  *
- * Browsers don't let a Service Worker set cookies, so the session works like
- * Payload's `payload-token` cookie by other means: login stores the token, and
- * requests without an `Authorization` header use it.
+ * The session (`session` option): on a server, Payload's own `payload-token` cookie (HTTP-only,
+ * set by login, refresh and first-register, cleared by logout), one per browser. In a Service
+ * Worker, which can't set cookies, `store`: login keeps the token in the store and requests
+ * without an `Authorization` header use it (one browser, one session).
  */
+
+/** How a request's session is kept: the store (a Service Worker) or Payload's cookie (a server). */
+export type SessionMode = "store" | "cookie";
+
+export interface RestOptions {
+  /** Default `store` (the browser's backend). A server uses `cookie`. */
+  session?: SessionMode;
+  /** The `/_mock/*` tools (status, export, import, reset). Default true; a public server turns them off. */
+  tools?: boolean;
+  /**
+   * Seed the store on its first request (and top it up when the seed grows). Default true; a
+   * server whose database is seeded ahead of time (cf-runner's `seedSql`) turns it off.
+   */
+  seed?: boolean;
+}
+
+const COOKIE = "payload-token";
+
+/** The `payload-token` cookie for a token (`null`: cleared), as Payload sets it. */
+const cookie = (token: string | null, maxAge = 7200) =>
+  token
+    ? `${COOKIE}=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`
+    : `${COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
+
+/** The token in a request's `payload-token` cookie. */
+const cookieToken = (request: Request) =>
+  /(?:^|;\s*)payload-token=([^;]+)/.exec(request.headers.get("cookie") ?? "")?.[1];
 
 const SESSION = "session";
 
@@ -93,13 +121,28 @@ export class RestApi {
   readonly seeds: Seeds;
   private seeded?: Promise<void>;
 
-  constructor(engine: Engine, seeds: Seeds = { collections: {}, globals: {} }) {
+  readonly options: Required<RestOptions>;
+
+  constructor(engine: Engine, seeds: Seeds = { collections: {}, globals: {} }, options: RestOptions = {}) {
     this.engine = engine;
     this.seeds = seeds;
+    this.options = { session: options.session ?? "store", tools: options.tools ?? true, seed: options.seed ?? true };
+  }
+
+  /** Keeps a session (`null`: ends it): in the store, or as the response's cookie. */
+  private async keep(token: string | null, response: Response, exp?: number) {
+    if (this.options.session === "store") {
+      await this.engine.store.setMeta(SESSION, token);
+      return response;
+    }
+    const maxAge = exp ? Math.max(0, Math.round(exp - Date.now() / 1000)) : undefined;
+    response.headers.append("set-cookie", cookie(token, maxAge));
+    return response;
   }
 
   /** Loads the seed on first use (empty store); later, adds seed documents the store never loaded. */
   ready() {
+    if (!this.options.seed) return Promise.resolve();
     this.seeded ??= (async () => {
       if (!(await this.engine.store.getMeta("seededAt"))) await seedStore(this.engine, this.seeds);
       else await topUpSeed(this.engine, this.seeds);
@@ -148,7 +191,10 @@ export class RestApi {
             : undefined,
     };
 
-    if (first === "_mock") return this.mockTools(second, method, request);
+    if (first === "_mock") {
+      if (!this.options.tools) throw notFound();
+      return this.mockTools(second, method, request);
+    }
     if (first === "access" && segments.length === 1) return json(await e.permissions(req));
 
     if (first === "globals" && second && e.hasGlobal(second)) {
@@ -251,7 +297,9 @@ export class RestApi {
   private async makeRequest(request: Request, query: Record<string, unknown>): Promise<MockRequest> {
     const header = request.headers.get("authorization") ?? "";
     const bearer = /^(?:JWT|Bearer)\s+(.+)$/i.exec(header)?.[1];
-    const token = bearer ?? (await this.engine.store.getMeta<string>(SESSION));
+    const token =
+      bearer ??
+      (this.options.session === "cookie" ? cookieToken(request) : await this.engine.store.getMeta<string>(SESSION));
     const user = await this.engine.userFromToken(token);
     return {
       payload: this.engine,
@@ -297,12 +345,10 @@ export class RestApi {
     if (action === "login" && method === "POST") {
       const { data } = await readBody(request);
       const result = await e.login({ collection: slug, data: data as { email?: string; password?: string } });
-      await e.store.setMeta(SESSION, result.token);
-      return json({ message: "Auth Passed", ...result });
+      return this.keep(result.token, json({ message: "Auth Passed", ...result }), result.exp);
     }
     if (action === "logout" && method === "POST") {
-      await e.store.setMeta(SESSION, null);
-      return json({ message: "You have been logged out successfully." });
+      return this.keep(null, json({ message: "You have been logged out successfully." }));
     }
     if (action === "me" && method === "GET") {
       if (!req.user || req.user.collection !== slug) return json({ user: null });
@@ -312,8 +358,11 @@ export class RestApi {
     if (action === "refresh-token" && method === "POST") {
       if (!req.user) throw unauthorized();
       const { token, exp } = await e.refresh(req.user);
-      await e.store.setMeta(SESSION, token);
-      return json({ message: "Token refresh successful", refreshedToken: token, exp, user: req.user });
+      return this.keep(
+        token,
+        json({ message: "Token refresh successful", refreshedToken: token, exp, user: req.user }),
+        exp,
+      );
     }
     if (action === "init" && method === "GET") {
       return json({ initialized: (await e.count({ collection: slug })).totalDocs > 0 });
@@ -323,8 +372,7 @@ export class RestApi {
       const { data } = await readBody(request);
       await e.create({ collection: slug, data });
       const result = await e.login({ collection: slug, data: data as { email?: string; password?: string } });
-      await e.store.setMeta(SESSION, result.token);
-      return json({ message: "Successfully registered first user.", ...result });
+      return this.keep(result.token, json({ message: "Successfully registered first user.", ...result }), result.exp);
     }
     return null;
   }
