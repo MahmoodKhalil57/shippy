@@ -19,7 +19,7 @@
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
-    "typeRoots": ["../node_modules/@types", "./node_modules/@types", "../node_modules", "./node_modules"]
+    "typeRoots": ["./node_modules/@types", "./node_modules"]
   },
   "include": ["src", "tests", "vite.ts", "vite.config.ts"]
 }

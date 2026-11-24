@@ -19,6 +19,7 @@
     "mock:dev": "vp dev --mode mock",
     "mock:build": "tsc -p tsconfig.json && vpx build-locales.ts",
     "mock:preview": "vp preview --mode mock",
+    "mock:publish": "vpx publish.ts mock",
     "check": "vp check",
     "test": "vp test",
     "cf:dev": "vp dev --mode cf.local",
@@ -28,17 +29,19 @@
     "cf:preview": "vp build --mode cf.local && wrangler dev -c dist/golden_sea/wrangler.json --persist-to .wrangler/state",
     "cf:migrate:remote": "wrangler d1 migrations apply golden-sea --remote",
     "cf:seed:remote": "vpx cf-seed.ts --mode cf.remote",
-    "cf:deploy": "vp build --mode cf.remote && wrangler deploy"
+    "cf:deploy": "vp build --mode cf.remote && wrangler deploy",
+    "cf:publish": "vpx publish.ts cf"
   },
   "dependencies": {
     "@inlang/paraglide-js": "^3.2.2",
-    "cf-runner": "workspace:*",
-    "mock-runner": "workspace:*",
+    "cf-runner": "link:cf-runner",
+    "mock-runner": "link:mock-runner",
     "qs-esm": "^8.0.2",
-    "saastemlycrm-design-system": "workspace:*",
+    "saastemlycrm-design-system": "link:saastemlycrm-design-system",
     "zod": "4.6.7"
   },
   "devDependencies": {
+    "@inlang/plugin-icu1": "^1.3.8",
     "@types/node": "^26.6.6",
     "payload": "3.94.0",
     "typescript": "~7.0.2",

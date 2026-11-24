@@ -2,7 +2,7 @@
 // (static assets). `bun run cf:dev` runs it locally (local D1 and R2 in .wrangler/); the first
 // `bun run cf:deploy` creates the database and the bucket (their ids are written back here).
 {
-  "$schema": "../cf-runner/node_modules/wrangler/config-schema.json",
+  "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "golden-sea",
   "main": "./worker/index.ts",
   "compatibility_date": "2026-11-24",

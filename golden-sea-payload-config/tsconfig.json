@@ -20,5 +20,5 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "app", "tests", "vite.config.ts", "build-locales.ts", "worker", "cf-seed.ts"]
+  "include": ["src", "app", "tests", "vite.config.ts", "build-locales.ts", "worker", "cf-seed.ts", "publish.ts"]
 }

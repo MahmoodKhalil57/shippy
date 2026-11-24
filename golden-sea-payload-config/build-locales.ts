@@ -1,7 +1,7 @@
 // The demo site, one build per language (`bun run mock:build`): each language's page loads only its own
 // messages (Paraglide's static locale, saastemlycrm-design-system/vite/i18n.ts), from one address.
 //
-// 1. Arabic, then English, into ../docs: the English build adds its files beside the Arabic ones,
+// 1. Arabic, then English, into mock/ (the GitHub Pages site): the English build adds its files beside the Arabic ones,
 //    so the backend's worker, built last, precaches both for offline use (mock-runner's
 //    `precacheOf` lists the folder). The worker itself keeps every language: it answers each
 //    request in its own.
@@ -13,7 +13,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 const root = import.meta.dirname;
-const out = path.join(root, "../docs");
+const out = path.join(root, "mock");
 const LOCALES = ["ar", "en"] as const;
 
 const entries: Record<string, string> = {};

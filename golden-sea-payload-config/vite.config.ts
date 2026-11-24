@@ -11,7 +11,7 @@ import { readBuildEnv, readPublicEnv } from "./src/env.ts";
  * Golden Sea's app: this Payload config (src) drawn by the design system's dashboard, with the
  * mock runner as its backend in the browser (`--mode mock`), or cf-runner's Worker on Cloudflare
  * (`--mode cf.local`, `--mode cf.remote`). `bun run mock:dev` runs it; `bun run mock:build` writes
- * the demo site to ../docs. The design system and the backend know nothing of this project: this file joins them.
+ * the demo site to mock/ (GitHub Pages). The design system and the backend know nothing of this project: this file joins them.
  */
 
 const branding = JSON.parse(readFileSync(new URL("./src/seed/globals/branding.json", import.meta.url), "utf8")) as {
@@ -61,7 +61,7 @@ export default defineConfig(({ command, isPreview, mode }) => {
   return {
     // Only `PUBLIC_` variables reach the browser's `import.meta.env` (src/env.ts).
     envPrefix: "PUBLIC_",
-    // The build is the demo website: GitHub Pages serves the repository's docs/ folder at /shippy/.
+    // The build is the demo website: GitHub Pages serves mock/ at /shippy/ (.github/workflows/pages.yml).
     // The base lives here, not as a `--base` flag: Git Bash rewrites `/shippy/` on a command line
     // into a Windows path ("C:/Program Files/Git/shippy/"), which broke every asset URL once. On
     // Cloudflare the app is the whole site.
@@ -82,8 +82,8 @@ export default defineConfig(({ command, isPreview, mode }) => {
       brandedPage,
     ],
     build: {
-      // The demo site is ../docs; Cloudflare's build is dist/ (the Worker and its assets).
-      outDir: cf ? "dist" : "../docs",
+      // The demo site is mock/ (GitHub Pages); Cloudflare's build is dist/ (the Worker and its assets).
+      outDir: cf ? "dist" : "mock",
       // build-locales.ts builds one language after another into it: the second adds its files.
       emptyOutDir: cf || !build.I18N_APPEND,
       // Make the production hardening explicit so a default can't silently regress: oxc minifies
@@ -96,12 +96,12 @@ export default defineConfig(({ command, isPreview, mode }) => {
     },
     fmt: {
       // src/i18n/paraglide: compiled from messages/*.json (saastemlycrm-design-system/vite/i18n.ts).
-      ignorePatterns: ["bun.lock", "src/i18n/paraglide/**", "project.inlang/cache/**"],
+      ignorePatterns: ["bun.lock", "src/i18n/paraglide/**", "project.inlang/cache/**", "mock/**", "dist/**"],
       printWidth: 120,
       sortPackageJson: true,
     },
     lint: {
-      ignorePatterns: ["src/i18n/paraglide/**", "project.inlang/cache/**"],
+      ignorePatterns: ["src/i18n/paraglide/**", "project.inlang/cache/**", "mock/**", "dist/**"],
       // The design system's rules for a project (saastemlycrm-design-system/lint): the import
       // boundary, pure widgets, endpoints that return data, and the block conventions.
       jsPlugins: [
