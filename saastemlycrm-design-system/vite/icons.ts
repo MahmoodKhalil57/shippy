@@ -1,3 +1,5 @@
+import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
 import Icons from "unplugin-icons/vite";
 
 /**
@@ -14,10 +16,23 @@ import Icons from "unplugin-icons/vite";
  */
 export const ICON_COLLECTIONS = ["line-md", "material-symbols", "devicon", "logos"] as const;
 
+/**
+ * The icon collections and Lit are this package's dependencies, so they're found from its own
+ * folder, not from the app that builds it (an app installs only its own dependencies). A compiled
+ * icon imports Lit by its path here: the same file the components load, so there is one Lit.
+ */
+const HERE = fileURLToPath(new URL("..", import.meta.url));
+const LIT = JSON.stringify(
+  createRequire(import.meta.url)
+    .resolve("lit")
+    .replaceAll("\\", "/"),
+);
+
 const escapeTemplate = (s: string) => s.replace(/\\/g, "\\\\").replace(/`/g, "\\`").replace(/\$\{/g, "\\${");
 
 export default function icons() {
   return Icons({
+    collectionsNodeResolvePath: HERE,
     compiler: {
       compiler: (svg: string, collection: string, icon: string) => {
         if (!(ICON_COLLECTIONS as readonly string[]).includes(collection))
@@ -34,7 +49,7 @@ export default function icons() {
         // Animated (SMIL `<animate>`, `<animateTransform>`, `<set>`): `iconSvg` holds and paces these
         // (src/components/base/icon-motion.ts) rather than letting every copy start at once.
         const animated = /<(animate|animateTransform|animateMotion|set)\b/.test(svg);
-        return `import { svg } from "lit";\nexport default { viewBox: ${JSON.stringify(viewBox)}, animated: ${animated}, body: (uid) => svg\`${body}\` };\n`;
+        return `import { svg } from ${LIT};\nexport default { viewBox: ${JSON.stringify(viewBox)}, animated: ${animated}, body: (uid) => svg\`${body}\` };\n`;
       },
     },
   });

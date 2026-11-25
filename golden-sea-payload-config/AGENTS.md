@@ -44,10 +44,13 @@ seed data (`src/seed`). Entry points: `.` (the config, `src/config.ts`) and `./s
   `designSystem()` and `mockBackend({ config: "./src/config.ts", seed: "./src/seed.ts" })`, sets the
   base (`/shippy/` for the build) and writes the page's title from the `branding` seed. `public/`
   is the site's static files. `bun run mock:dev` runs it; `bun run mock:build` writes the
-  demo to `mock/` (ignored); `bun run mock:publish` builds it and commits only `mock/` to the
-  `mock-build` branch, which GitHub Pages serves (`publish.ts`; `cf:publish` does the same with
-  the Cloudflare build's `dist/` on `cf-build`; neither touches the working tree or pushes, and a
-  build holding an OpenAI key is refused); `bun run mock:preview` serves that build. The OpenAI key meta in `index.html` stays empty in the repository.
+  demo to `mock/` (ignored); `bun run mock:publish` builds HEAD in a temporary worktree
+  (uncommitted changes never ship; its packages installed and linked to each other there, the
+  `.env.*` files copied in), commits only `mock/` to the `mock-build` branch, which GitHub Pages
+  serves, tags it `mock-build-<short hash>`, pushes both and removes the worktree (`publish.ts`;
+  `cf:publish` does the same with the Cloudflare build's `dist/` on `cf-build`; `--no-push` keeps
+  them local; a commit already tagged isn't rebuilt, only pushed; a build holding an OpenAI key is
+  refused); `bun run mock:preview` serves that build. The OpenAI key meta in `index.html` stays empty in the repository.
 
 - **On Cloudflare** (cf-runner, `PUBLIC_BACKEND=cf`): the same app, its API served from D1 by the Worker
   that serves its pages (`worker/index.ts`, `wrangler.jsonc`; no service worker, sessions in
