@@ -1,0 +1,143 @@
+[
+  {
+    "id": "cpo-0136",
+    "number": "NSM-PO-77104",
+    "case": "gs-rfq-0136",
+    "quotation": "q-0136-v2",
+    "receivedAt": "2026-11-16T10:20:00.000Z",
+    "billingEntity": "Nordvik Ship Management AS · VAT NO 999 000 111",
+    "checks": [
+      {
+        "lineNo": 1,
+        "field": "Pack size",
+        "matches": false,
+        "po": "L1 Electrical contact cleaner — 96 × 200 ml (old pack)",
+        "quote": "48 × 400 ml can (same 19.2 L)"
+      },
+      {
+        "lineNo": 2,
+        "field": "Price",
+        "matches": true,
+        "po": "L2 LOCTITE 243, 50 ml — 6 EA × USD 48.50",
+        "quote": "6 EA × USD 48.50"
+      },
+      {
+        "lineNo": 3,
+        "field": "Price",
+        "matches": false,
+        "po": "L3 Safety helmet EN 397 — USD 10.75 (v1 price, expired 10 Nov)",
+        "quote": "USD 11.20 (v2, valid to 21 Nov)"
+      },
+      {
+        "lineNo": 3,
+        "field": "Quantity",
+        "matches": false,
+        "po": "L3 Safety helmet EN 397 — 15 EA",
+        "quote": "10 EA"
+      },
+      {
+        "lineNo": 5,
+        "field": "Price",
+        "matches": true,
+        "po": "L5 Degreaser, water based, 25 L — 2 drums × USD 96.00",
+        "quote": "2 drums × USD 96.00"
+      },
+      { "lineNo": 0, "field": "Currency", "matches": true, "po": "USD · excl. VAT", "quote": "USD · excl. VAT" },
+      { "lineNo": 0, "field": "Payment terms", "matches": true, "po": "60 days", "quote": "60 days from invoice date" },
+      {
+        "lineNo": 0,
+        "field": "Delivery terms",
+        "matches": true,
+        "po": "Delivered on board, Port Said",
+        "quote": "On board at Port Said on arrival"
+      },
+      {
+        "lineNo": 0,
+        "field": "Billing entity",
+        "matches": true,
+        "po": "Nordvik Ship Management AS",
+        "quote": "Nordvik Ship Management AS"
+      },
+      {
+        "lineNo": 0,
+        "field": "Quote validity",
+        "matches": true,
+        "po": "PO dated 16 Nov",
+        "quote": "v2 valid to 21 Nov"
+      }
+    ]
+  },
+  {
+    "id": "cpo-0131",
+    "number": "HBC-PO-2610-0457",
+    "case": "gs-rfq-0131",
+    "quotation": "q-0131-v1",
+    "receivedAt": "2026-10-27T08:40:00.000Z",
+    "billingEntity": "Helios Bulk Carriers Ltd · Limassol",
+    "checks": [
+      {
+        "lineNo": 1,
+        "field": "Price",
+        "matches": true,
+        "po": "L1 Fuel injection valve nozzle — 6 pcs × USD 402.17",
+        "quote": "6 pcs × USD 402.17"
+      },
+      {
+        "lineNo": 2,
+        "field": "Price",
+        "matches": true,
+        "po": "L2 Piston ring set (one cylinder) — 6 set × USD 513.11",
+        "quote": "6 set × USD 513.11"
+      },
+      {
+        "lineNo": 3,
+        "field": "Price",
+        "matches": true,
+        "po": "L3 Turbocharger overhaul kit — 1 set × USD 8,595.16",
+        "quote": "1 set × USD 8,595.16"
+      },
+      {
+        "lineNo": 4,
+        "field": "Price",
+        "matches": true,
+        "po": "L4 Safety helmet EN 397 — 12 EA × USD 9.43",
+        "quote": "12 EA × USD 9.43"
+      },
+      {
+        "lineNo": 0,
+        "field": "Currency",
+        "matches": true,
+        "po": "USD · excl. VAT",
+        "quote": "USD · excl. VAT"
+      },
+      {
+        "lineNo": 0,
+        "field": "Payment terms",
+        "matches": true,
+        "po": "20 days",
+        "quote": "20 days from invoice date"
+      },
+      {
+        "lineNo": 0,
+        "field": "Delivery terms",
+        "matches": true,
+        "po": "Delivered on board, Suez anchorage",
+        "quote": "On board at Suez anchorage on arrival"
+      },
+      {
+        "lineNo": 0,
+        "field": "Billing entity",
+        "matches": true,
+        "po": "Helios Bulk Carriers Ltd",
+        "quote": "Helios Bulk Carriers Ltd"
+      },
+      {
+        "lineNo": 0,
+        "field": "Quote validity",
+        "matches": true,
+        "po": "PO dated 27 Oct",
+        "quote": "v1 valid to 5 Nov"
+      }
+    ]
+  }
+]

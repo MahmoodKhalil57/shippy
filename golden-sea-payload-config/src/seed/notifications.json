@@ -1,0 +1,514 @@
+[
+  {
+    "id": "n-ky-1",
+    "user": "ky",
+    "kind": "Reply",
+    "title": {
+      "en": "Mare Nostrum: corrected offer received (RAL 7038)",
+      "ar": "Mare Nostrum: وصل العرض المصحَّح (RAL 7038)"
+    },
+    "detail": {
+      "en": "GS-RFQ-0140 · line 4 can be priced again",
+      "ar": "GS-RFQ-0140 · يمكن تسعير البند 4 مجددًا"
+    },
+    "href": "/collections/cases/gs-rfq-0140",
+    "at": "2026-11-17T08:52:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-ky-2",
+    "user": "ky",
+    "kind": "Reminder",
+    "title": {
+      "en": "Port Said Welding hasn't replied",
+      "ar": "لم يرد Port Said Welding"
+    },
+    "detail": {
+      "en": "GS-SRFQ-0142-E · reminder 2 goes out at 15:00",
+      "ar": "GS-SRFQ-0142-E · يُرسل التذكير 2 الساعة 15:00"
+    },
+    "href": "/collections/supplier-rfqs/srfq-0142-e",
+    "at": "2026-11-17T08:30:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-ky-3",
+    "user": "ky",
+    "kind": "Alert",
+    "title": {
+      "en": "Customer PO mismatch on GS-RFQ-0136",
+      "ar": "عدم تطابق أمر شراء العميل في GS-RFQ-0136"
+    },
+    "detail": {
+      "en": "Line 3 uses the expired v1 price — commitment blocked",
+      "ar": "البند 3 يستخدم سعر v1 المنتهي — الالتزام متوقف"
+    },
+    "href": "/collections/cases/gs-rfq-0136",
+    "at": "2026-11-17T07:45:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-ky-4",
+    "user": "ky",
+    "kind": "Reply",
+    "title": {
+      "en": "Capt. Erik forwarded the Aurora Crest requisition",
+      "ar": "حوّل الكابتن Erik طلب توريد Aurora Crest"
+    },
+    "detail": {
+      "en": "Matched to GS-RFQ-0142 by message thread",
+      "ar": "طوبق مع GS-RFQ-0142 بسلسلة الرسائل"
+    },
+    "href": "/collections/intake-messages/msg-nordvik-fw",
+    "at": "2026-11-16T17:10:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-ky-5",
+    "user": "ky",
+    "kind": "Update",
+    "title": {
+      "en": "Soaad Amer is your backup on GS-RFQ-0142",
+      "ar": "سعاد عامر هي احتياطيك في GS-RFQ-0142"
+    },
+    "detail": {
+      "en": "Handover note added",
+      "ar": "أُضيفت مذكرة تسليم"
+    },
+    "href": "/collections/cases/gs-rfq-0142",
+    "at": "2026-11-16T15:02:00.000Z",
+    "read": true
+  },
+  {
+    "id": "n-kb-1",
+    "user": "kb",
+    "kind": "Approval",
+    "title": {
+      "en": "Margin exception: Mare Nostrum quote v2 at 12.4%",
+      "ar": "استثناء هامش: عرض Mare Nostrum v2 بنسبة 12.4%"
+    },
+    "detail": {
+      "en": "Requested by Soaad Amer · policy minimum 15%",
+      "ar": "طلبته سعاد عامر · الحد الأدنى في السياسة 15%"
+    },
+    "href": "/collections/approvals/ap-margin-0137",
+    "at": "2026-11-17T08:40:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-kb-2",
+    "user": "kb",
+    "kind": "Approval",
+    "title": {
+      "en": "Bank change for Port Said Welding needs your second approval",
+      "ar": "تغيير بنك Port Said Welding يحتاج موافقتك الثانية"
+    },
+    "detail": {
+      "en": "Mohamed Helmy approved after the call-back",
+      "ar": "وافق محمد حلمي بعد معاودة الاتصال"
+    },
+    "href": "/collections/approvals/ap-bank-s3",
+    "at": "2026-11-17T09:12:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-kb-3",
+    "user": "kb",
+    "kind": "Approval",
+    "title": {
+      "en": "Supplier deposit: 50% advance to Delta Marine Stores",
+      "ar": "دفعة مقدمة لمورّد: 50% مقدمًا إلى Delta Marine Stores"
+    },
+    "detail": {
+      "en": "EGP 96,400 · requested by Ahmedy",
+      "ar": "EGP 96,400 · طلبه أحمدي"
+    },
+    "href": "/collections/approvals/ap-deposit-0133",
+    "at": "2026-11-16T16:20:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-kb-4",
+    "user": "kb",
+    "kind": "Approval",
+    "title": {
+      "en": "New USD rate 48.95 (from 48.60)",
+      "ar": "سعر USD جديد 48.95 (بدلًا من 48.60)"
+    },
+    "detail": {
+      "en": "Proposed by Ahmedy for this week's quotes",
+      "ar": "اقترحه أحمدي لعروض هذا الأسبوع"
+    },
+    "href": "/collections/approvals/ap-fx-usd",
+    "at": "2026-11-17T07:05:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-kb-5",
+    "user": "kb",
+    "kind": "Alert",
+    "title": {
+      "en": "Two quotes are past their deadline",
+      "ar": "عرضان تجاوزا موعدهما النهائي"
+    },
+    "detail": {
+      "en": "DOS Falcon (GS-RFQ-0135) and MT Atlas Pearl (GS-RFQ-0139)",
+      "ar": "DOS Falcon (GS-RFQ-0135) وMT Atlas Pearl (GS-RFQ-0139)"
+    },
+    "href": "/collections/cases",
+    "at": "2026-11-17T07:00:00.000Z",
+    "read": true
+  },
+  {
+    "id": "n-sa-1",
+    "user": "sa",
+    "kind": "Update",
+    "title": {
+      "en": "Your margin exception is with Karim Balbaa",
+      "ar": "استثناء الهامش الخاص بك لدى كريم بلباع"
+    },
+    "detail": {
+      "en": "Quote v2 to Mare Nostrum · 12.4% vs 15% minimum",
+      "ar": "العرض v2 إلى Mare Nostrum · 12.4% مقابل حد أدنى 15%"
+    },
+    "href": "/collections/approvals/ap-margin-0137",
+    "at": "2026-11-17T08:41:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-sa-2",
+    "user": "sa",
+    "kind": "Reply",
+    "title": {
+      "en": "Helios Bulk sent a new urgent RFQ",
+      "ar": "أرسلت Helios Bulk طلب عرض عاجلًا جديدًا"
+    },
+    "detail": {
+      "en": "MV Helios Star · engine stores · in the inbox",
+      "ar": "MV Helios Star · مستلزمات المحركات · في صندوق الوارد"
+    },
+    "href": "/collections/intake-messages/msg-helios-star",
+    "at": "2026-11-17T09:48:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-sa-3",
+    "user": "sa",
+    "kind": "Reminder",
+    "title": {
+      "en": "Baltic Reefer: quote MV Polar Bay by tomorrow",
+      "ar": "Baltic Reefer: سعّر MV Polar Bay قبل الغد"
+    },
+    "detail": {
+      "en": "Pipeline next step",
+      "ar": "الخطوة التالية في المسار"
+    },
+    "href": "/collections/opportunities/op-baltic",
+    "at": "2026-11-17T07:00:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-sa-4",
+    "user": "sa",
+    "kind": "Alert",
+    "title": {
+      "en": "DOS Falcon quote is 6 days overdue",
+      "ar": "عرض DOS Falcon متأخر 6 أيام"
+    },
+    "detail": {
+      "en": "GS-RFQ-0135 · prepare v2 with the ESAB alternative",
+      "ar": "GS-RFQ-0135 · إعداد v2 مع بديل ESAB"
+    },
+    "href": "/collections/cases/gs-rfq-0135",
+    "at": "2026-11-17T07:00:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-sa-5",
+    "user": "sa",
+    "kind": "Update",
+    "title": {
+      "en": "Quick-quote request from the website",
+      "ar": "طلب عرض سريع من الموقع"
+    },
+    "detail": {
+      "en": "Petro Delta · Lalizas life jackets for the Abu Qir rig",
+      "ar": "Petro Delta · سترات نجاة Lalizas لحفار أبو قير"
+    },
+    "href": "/collections/intake-messages/msg-web-petro",
+    "at": "2026-11-16T19:32:00.000Z",
+    "read": true
+  },
+  {
+    "id": "n-ah-1",
+    "user": "ah",
+    "kind": "Alert",
+    "title": {
+      "en": "Outlook: purchasing@ mailbox token expired",
+      "ar": "Outlook: انتهى رمز صندوق بريد purchasing@"
+    },
+    "detail": {
+      "en": "12 emails not imported yet · safe retry available",
+      "ar": "12 رسالة لم تُستورد بعد · إعادة محاولة آمنة متاحة"
+    },
+    "href": "/collections/integration-exceptions/ex-outlook",
+    "at": "2026-11-17T06:12:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-ah-2",
+    "user": "ah",
+    "kind": "Alert",
+    "title": {
+      "en": "E-invoice INV/2026/0419 not submitted",
+      "ar": "الفاتورة الإلكترونية INV/2026/0419 لم تُقدَّم"
+    },
+    "detail": {
+      "en": "Signature service unreachable · retry queued",
+      "ar": "تعذّر الوصول إلى خدمة التوقيع · إعادة المحاولة في الانتظار"
+    },
+    "href": "/collections/integration-exceptions/ex-eta",
+    "at": "2026-11-17T06:40:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-ah-3",
+    "user": "ah",
+    "kind": "Update",
+    "title": {
+      "en": "DN-0001 dispatched to DOS Falcon",
+      "ar": "أُرسل DN-0001 إلى DOS Falcon"
+    },
+    "detail": {
+      "en": "Drop 1 of 2 · proof of delivery still missing",
+      "ar": "الدفعة 1 من 2 · إثبات التسليم لا يزال ناقصًا"
+    },
+    "href": "/collections/deliveries/dn-0133-1",
+    "at": "2026-11-14T08:30:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-ah-4",
+    "user": "ah",
+    "kind": "Approval",
+    "title": {
+      "en": "Your deposit request is waiting for approval",
+      "ar": "طلب الدفعة المقدمة الخاص بك بانتظار الموافقة"
+    },
+    "detail": {
+      "en": "Delta Marine Stores · EGP 96,400",
+      "ar": "Delta Marine Stores · EGP 96,400"
+    },
+    "href": "/collections/approvals/ap-deposit-0133",
+    "at": "2026-11-16T16:21:00.000Z",
+    "read": true
+  },
+  {
+    "id": "n-ah-5",
+    "user": "ah",
+    "kind": "Payment",
+    "title": {
+      "en": "Helios Bulk paid USD 10,000",
+      "ar": "دفعت Helios Bulk مبلغ USD 10,000"
+    },
+    "detail": {
+      "en": "TRX-77120 reconciled to INV/2026/0412",
+      "ar": "سُوّيت TRX-77120 مع INV/2026/0412"
+    },
+    "href": "/collections/payments/pay-helios-1",
+    "at": "2026-11-12T11:05:00.000Z",
+    "read": true
+  },
+  {
+    "id": "n-mh-1",
+    "user": "mh",
+    "kind": "Approval",
+    "title": {
+      "en": "Supplier deposit: 50% advance to Delta Marine Stores",
+      "ar": "دفعة مقدمة لمورّد: 50% مقدمًا إلى Delta Marine Stores"
+    },
+    "detail": {
+      "en": "EGP 96,400 · two-person approval with Karim Balbaa",
+      "ar": "EGP 96,400 · موافقة شخصين مع كريم بلباع"
+    },
+    "href": "/collections/approvals/ap-deposit-0133",
+    "at": "2026-11-16T16:20:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-mh-2",
+    "user": "mh",
+    "kind": "Update",
+    "title": {
+      "en": "Bank change: your approval is recorded",
+      "ar": "تغيير البنك: سُجّلت موافقتك"
+    },
+    "detail": {
+      "en": "Waiting for Karim Balbaa's second approval",
+      "ar": "بانتظار الموافقة الثانية من كريم بلباع"
+    },
+    "href": "/collections/approvals/ap-bank-s3",
+    "at": "2026-11-17T09:10:00.000Z",
+    "read": true
+  },
+  {
+    "id": "n-mh-3",
+    "user": "mh",
+    "kind": "Payment",
+    "title": {
+      "en": "Helios Bulk paid USD 10,000",
+      "ar": "دفعت Helios Bulk مبلغ USD 10,000"
+    },
+    "detail": {
+      "en": "USD 4,200 balance due 30 Nov",
+      "ar": "رصيد USD 4,200 مستحق 30 نوفمبر"
+    },
+    "href": "/collections/invoices/inv-0412",
+    "at": "2026-11-12T11:05:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-mh-4",
+    "user": "mh",
+    "kind": "Alert",
+    "title": {
+      "en": "E-invoice INV/2026/0419 not submitted to the tax authority",
+      "ar": "الفاتورة الإلكترونية INV/2026/0419 لم تُقدَّم إلى مصلحة الضرائب"
+    },
+    "detail": {
+      "en": "Signature service unreachable",
+      "ar": "تعذّر الوصول إلى خدمة التوقيع"
+    },
+    "href": "/collections/integration-exceptions/ex-eta",
+    "at": "2026-11-17T06:40:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-em-1",
+    "user": "em",
+    "kind": "Reply",
+    "title": {
+      "en": "4 new messages to file",
+      "ar": "4 رسائل جديدة للتصنيف"
+    },
+    "detail": {
+      "en": "Helios Bulk, Petro Delta, Capt. Erik, Delta Marine Stores",
+      "ar": "Helios Bulk، Petro Delta، الكابتن Erik، Delta Marine Stores"
+    },
+    "href": "/collections/intake-messages",
+    "at": "2026-11-17T09:50:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-em-2",
+    "user": "em",
+    "kind": "Alert",
+    "title": {
+      "en": "Delta Marine reply needs review",
+      "ar": "رد Delta Marine يحتاج مراجعة"
+    },
+    "detail": {
+      "en": "\"prices as requested\" — AI isn't sure which case it belongs to",
+      "ar": "«prices as requested» — الذكاء الاصطناعي غير متأكد من الملف الذي تتبعه"
+    },
+    "href": "/collections/intake-messages/msg-delta-uncertain",
+    "at": "2026-11-17T08:15:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-em-3",
+    "user": "em",
+    "kind": "Reminder",
+    "title": {
+      "en": "Spares for MV Aurora Crest arrive by DHL",
+      "ar": "قطع غيار MV Aurora Crest تصل عبر DHL"
+    },
+    "detail": {
+      "en": "AWB 41 2233 9081 · clear and deliver with the stores",
+      "ar": "AWB 41 2233 9081 · تخليص وتسليم مع المستلزمات"
+    },
+    "href": "/collections/intake-messages/msg-awb",
+    "at": "2026-11-16T14:00:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-em-4",
+    "user": "em",
+    "kind": "Alert",
+    "title": {
+      "en": "Outlook: purchasing@ mailbox token expired",
+      "ar": "Outlook: انتهى رمز صندوق بريد purchasing@"
+    },
+    "detail": {
+      "en": "12 emails not imported yet",
+      "ar": "12 رسالة لم تُستورد بعد"
+    },
+    "href": "/collections/integration-exceptions/ex-outlook",
+    "at": "2026-11-17T06:12:00.000Z",
+    "read": true
+  },
+  {
+    "id": "n-ne-1",
+    "user": "ne",
+    "kind": "Reply",
+    "title": {
+      "en": "4 new messages to file",
+      "ar": "4 رسائل جديدة للتصنيف"
+    },
+    "detail": {
+      "en": "Helios Bulk, Petro Delta, Capt. Erik, Delta Marine Stores",
+      "ar": "Helios Bulk، Petro Delta، الكابتن Erik، Delta Marine Stores"
+    },
+    "href": "/collections/intake-messages",
+    "at": "2026-11-17T09:50:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-ne-2",
+    "user": "ne",
+    "kind": "Alert",
+    "title": {
+      "en": "Delta Marine reply needs review",
+      "ar": "رد Delta Marine يحتاج مراجعة"
+    },
+    "detail": {
+      "en": "\"prices as requested\" — AI isn't sure which case it belongs to",
+      "ar": "«prices as requested» — الذكاء الاصطناعي غير متأكد من الملف الذي تتبعه"
+    },
+    "href": "/collections/intake-messages/msg-delta-uncertain",
+    "at": "2026-11-17T08:15:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-ne-3",
+    "user": "ne",
+    "kind": "Reminder",
+    "title": {
+      "en": "Spares for MV Aurora Crest arrive by DHL",
+      "ar": "قطع غيار MV Aurora Crest تصل عبر DHL"
+    },
+    "detail": {
+      "en": "AWB 41 2233 9081 · clear and deliver with the stores",
+      "ar": "AWB 41 2233 9081 · تخليص وتسليم مع المستلزمات"
+    },
+    "href": "/collections/intake-messages/msg-awb",
+    "at": "2026-11-16T14:00:00.000Z",
+    "read": false
+  },
+  {
+    "id": "n-ne-4",
+    "user": "ne",
+    "kind": "Alert",
+    "title": {
+      "en": "Outlook: purchasing@ mailbox token expired",
+      "ar": "Outlook: انتهى رمز صندوق بريد purchasing@"
+    },
+    "detail": {
+      "en": "12 emails not imported yet",
+      "ar": "12 رسالة لم تُستورد بعد"
+    },
+    "href": "/collections/integration-exceptions/ex-outlook",
+    "at": "2026-11-17T06:12:00.000Z",
+    "read": true
+  }
+]

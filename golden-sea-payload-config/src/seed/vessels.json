@@ -1,0 +1,52 @@
+[
+  {
+    "id": "aurora-crest",
+    "name": "MV Aurora Crest",
+    "imo": "9734512",
+    "vesselType": "Bulk carrier",
+    "customer": "nordvik",
+    "manager": "Nordvik Limassol"
+  },
+  {
+    "id": "nordic-tern",
+    "name": "MV Nordic Tern",
+    "imo": "9690011",
+    "vesselType": "Bulk carrier",
+    "customer": "nordvik"
+  },
+  {
+    "id": "helios-star",
+    "name": "MV Helios Star",
+    "imo": "9811204",
+    "vesselType": "Bulk carrier",
+    "customer": "helios"
+  },
+  {
+    "id": "helios-dawn",
+    "name": "MV Helios Dawn",
+    "imo": "9811216",
+    "vesselType": "Bulk carrier",
+    "customer": "helios"
+  },
+  {
+    "id": "atlas-pearl",
+    "name": "MT Atlas Pearl",
+    "imo": "9755001",
+    "vesselType": "Tanker",
+    "customer": "atlas"
+  },
+  {
+    "id": "corallo",
+    "name": "MV Corallo",
+    "imo": "9700456",
+    "vesselType": "General cargo",
+    "customer": "mare-nostrum"
+  },
+  {
+    "id": "dos-falcon",
+    "name": "DOS Falcon (rig support)",
+    "imo": "9600777",
+    "vesselType": "Offshore supply",
+    "customer": "delta-offshore"
+  }
+]

@@ -1,0 +1,77 @@
+[
+  {
+    "id": "ex-outlook",
+    "occurredAt": "2026-11-17T06:12:00.000Z",
+    "source": "Outlook",
+    "summary": {
+      "en": "purchasing@ mailbox token expired",
+      "ar": "انتهى رمز صندوق بريد purchasing@"
+    },
+    "impact": {
+      "en": "12 emails not yet imported",
+      "ar": "12 رسالة لم تُستورد بعد"
+    },
+    "idempotencyKey": "mailbox:purchasing@",
+    "payload": {
+      "pending": 12,
+      "alreadyLinked": 0
+    },
+    "retries": 3,
+    "lastRetryAt": "2026-11-17T06:20:00.000Z",
+    "status": "Open"
+  },
+  {
+    "id": "ex-eta",
+    "occurredAt": "2026-11-16T18:40:00.000Z",
+    "source": "E-invoicing",
+    "summary": {
+      "en": "INV/2026/0419 — signature service unreachable",
+      "ar": "INV/2026/0419 — تعذّر الوصول إلى خدمة التوقيع"
+    },
+    "impact": {
+      "en": "Invoice not submitted to tax authority",
+      "ar": "لم تُقدَّم الفاتورة إلى مصلحة الضرائب"
+    },
+    "idempotencyKey": "invoice:INV/2026/0419",
+    "payload": {
+      "submitted": false
+    },
+    "retries": 3,
+    "lastRetryAt": "2026-11-16T19:10:00.000Z",
+    "status": "Open"
+  },
+  {
+    "id": "ex-dup",
+    "occurredAt": "2026-11-16T10:05:00.000Z",
+    "source": "Outlook",
+    "summary": {
+      "en": "Duplicate email reprocessed (message-id already linked)",
+      "ar": "أُعيدت معالجة بريد مكرر (معرّف الرسالة مرتبط بالفعل)"
+    },
+    "impact": {
+      "en": "None — no new case, no second acknowledgement",
+      "ar": "لا شيء — لا ملف جديد ولا إشعار استلام ثانٍ"
+    },
+    "idempotencyKey": "<n2@nordvik.example>",
+    "status": "Auto-resolved"
+  },
+  {
+    "id": "ex-ai-polarbay",
+    "occurredAt": "2026-11-15T14:22:00.000Z",
+    "source": "AI extraction",
+    "summary": {
+      "en": "Low confidence on 3 fields (PolarBay .docx)",
+      "ar": "ثقة منخفضة في 3 حقول (PolarBay .docx)"
+    },
+    "impact": {
+      "en": "Fields left blank for review — nothing overwritten",
+      "ar": "تُركت الحقول فارغة للمراجعة — لم يُستبدل شيء"
+    },
+    "idempotencyKey": "attachment:polarbay-req-1115.docx",
+    "payload": {
+      "fields": ["IMPA line 4", "Unit line 7", "Delivery date"],
+      "confidence": [0.62, 0.55, 0.7]
+    },
+    "status": "Waiting for review"
+  }
+]

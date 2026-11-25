@@ -1,0 +1,140 @@
+{
+  "plan": [
+    {
+      "line": "AI usage",
+      "measure": {
+        "en": "Documents read",
+        "ar": "المستندات المقروءة"
+      },
+      "source": "AI log: reading",
+      "fullUse": 1500,
+      "earlier": 260
+    },
+    {
+      "line": "AI usage",
+      "measure": {
+        "en": "Questions answered",
+        "ar": "الأسئلة المُجاب عنها"
+      },
+      "source": "AI log: questions",
+      "fullUse": 600,
+      "earlier": 70
+    },
+    {
+      "line": "AI usage",
+      "measure": {
+        "en": "Briefings written",
+        "ar": "الملخصات المكتوبة"
+      },
+      "source": "AI log: briefings",
+      "fullUse": 60,
+      "earlier": 28
+    },
+    {
+      "line": "Hosting",
+      "measure": {
+        "en": "Emails processed",
+        "ar": "الرسائل المعالجة"
+      },
+      "source": "Inbox",
+      "fullUse": 3000,
+      "earlier": 1120
+    },
+    {
+      "line": "Support & care",
+      "measure": {
+        "en": "Support hours",
+        "ar": "ساعات الدعم"
+      },
+      "source": "Support log",
+      "fullUse": 20,
+      "earlier": 0
+    },
+    {
+      "line": "Continuous improvement",
+      "measure": {
+        "en": "Change requests",
+        "ar": "طلبات التغيير"
+      },
+      "source": "Change requests",
+      "fullUse": 4,
+      "earlier": 0
+    }
+  ],
+  "support": [
+    {
+      "date": "2026-11-03T00:00:00.000Z",
+      "hours": 1.5,
+      "kind": "Fix",
+      "topic": {
+        "en": "Mailbox rule for purchasing@ after the domain change",
+        "ar": "قاعدة بريد لـ purchasing@ بعد تغيير النطاق"
+      }
+    },
+    {
+      "date": "2026-11-06T00:00:00.000Z",
+      "hours": 2,
+      "kind": "Training",
+      "topic": {
+        "en": "Soaad Amer and the growth board",
+        "ar": "سعاد عامر ولوحة النمو"
+      }
+    },
+    {
+      "date": "2026-11-10T00:00:00.000Z",
+      "hours": 0.5,
+      "kind": "Security patch",
+      "topic": {
+        "en": "Mail reader library updated",
+        "ar": "تحديث مكتبة قارئ البريد"
+      }
+    },
+    {
+      "date": "2026-11-12T00:00:00.000Z",
+      "hours": 1,
+      "kind": "Question",
+      "topic": {
+        "en": "Splitting one RFQ across two supplier categories",
+        "ar": "تقسيم طلب عرض واحد على فئتي موردين"
+      }
+    },
+    {
+      "date": "2026-11-15T00:00:00.000Z",
+      "hours": 2.5,
+      "kind": "Fix",
+      "topic": {
+        "en": "E-invoice signing service unreachable, retried with finance",
+        "ar": "تعذّر الوصول إلى خدمة توقيع الفاتورة الإلكترونية، أُعيدت المحاولة مع المالية"
+      }
+    }
+  ],
+  "changes": [
+    {
+      "requestedAt": "2026-11-08T00:00:00.000Z",
+      "requestedBy": "ah",
+      "status": "Done",
+      "title": {
+        "en": "The port agent's phone on every delivery card",
+        "ar": "هاتف الوكيل البحري على كل بطاقة تسليم"
+      }
+    },
+    {
+      "requestedAt": "2026-11-13T00:00:00.000Z",
+      "requestedBy": "kb",
+      "status": "Approved",
+      "title": {
+        "en": "Arabic quotation footer with the company stamp",
+        "ar": "تذييل عرض السعر بالعربية مع ختم الشركة"
+      }
+    },
+    {
+      "requestedAt": "2026-11-16T00:00:00.000Z",
+      "requestedBy": "kb",
+      "status": "Estimated",
+      "title": {
+        "en": "Weekly supplier scorecard by email",
+        "ar": "بطاقة أداء أسبوعية للموردين بالبريد"
+      }
+    }
+  ]
+}

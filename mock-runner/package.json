@@ -1,0 +1,42 @@
+{
+  "name": "mock-runner",
+  "version": "0.0.0",
+  "private": true,
+  "description": "A Payload-compatible backend that runs in the browser: a service worker serves a Payload config's REST API from IndexedDB. Knows no project and no dashboard.",
+  "type": "module",
+  "exports": {
+    "./vite": "./plugins/mock-backend.ts",
+    "./client": "./src/start.ts",
+    "./payload": "./src/payload/index.ts",
+    "./server": "./src/server.ts",
+    "./node": "./src/node.ts",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "check": "vp check"
+  },
+  "dependencies": {
+    "qs-esm": "^8.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "payload": "3.94.0",
+    "typescript": "~7.0.2",
+    "vite": "npm:@voidzero-dev/vite-plus-core@8.3.8000",
+    "vite-plus": "1.7.0"
+  },
+  "peerDependencies": {
+    "payload": "3.94.0",
+    "vite-plus": "1.7.0"
+  },
+  "overrides": {
+    "vite": "npm:@voidzero-dev/vite-plus-core@8.3.8000"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "bun",
+      "version": "1.4.5",
+      "onFail": "download"
+    }
+  }
+}

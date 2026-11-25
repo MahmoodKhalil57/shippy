@@ -1,0 +1,76 @@
+{
+  "name": "Golden Sea",
+  "description": "Golden Sea marine supply: sourcing, quotations, fulfilment and finance in one workspace.",
+  "icon": "anchor",
+  "loginIntro": {
+    "en": "Golden Sea dashboard. A demo user is filled in; switch roles any time from the dashboard.",
+    "ar": "لوحة تحكم Golden Sea. بيانات مستخدم تجريبي معبأة؛ بدّل الأدوار في أي وقت من لوحة التحكم."
+  },
+  "poweredBy": "SaastemlyCRM",
+  "backgrounds": [
+    {
+      "path": "goldensea/Slider1",
+      "label": {
+        "en": "Container port at dusk",
+        "ar": "ميناء حاويات عند الغسق"
+      }
+    },
+    {
+      "path": "goldensea/Slider7",
+      "label": {
+        "en": "Ships in harbour",
+        "ar": "سفن في الميناء"
+      }
+    },
+    {
+      "path": "goldensea/Slider8",
+      "label": {
+        "en": "Bollard at sunset",
+        "ar": "مربط عند الغروب"
+      }
+    },
+    {
+      "path": "goldensea/Slider6",
+      "label": {
+        "en": "Mooring line",
+        "ar": "حبل رسو"
+      }
+    },
+    {
+      "path": "backgrounds/waves",
+      "label": {
+        "en": "Ocean waves",
+        "ar": "أمواج المحيط"
+      }
+    },
+    {
+      "path": "backgrounds/night-ship",
+      "label": {
+        "en": "Ship at night",
+        "ar": "سفينة ليلًا"
+      }
+    },
+    {
+      "path": "backgrounds/seaport",
+      "label": {
+        "en": "Seaport at sunset",
+        "ar": "ميناء بحري عند الغروب"
+      }
+    },
+    {
+      "path": "backgrounds/lighthouse",
+      "label": {
+        "en": "Lighthouse storm",
+        "ar": "منارة في عاصفة"
+      }
+    },
+    {
+      "path": "backgrounds/fluid",
+      "label": {
+        "en": "Fluid",
+        "ar": "انسيابي"
+      }
+    }
+  ],
+  "backgroundCredit": "Photos: Golden Sea, Pexels"
+}

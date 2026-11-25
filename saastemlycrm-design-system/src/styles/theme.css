@@ -1,0 +1,677 @@
+@plugin "daisyui" {
+  exclude: themecontroller, rootscrolllock, rootscrollgutter;
+}
+@import "./motion.css";
+
+@theme static {
+  --spacing: 4px;
+
+  --radius-*: initial;
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-lg-increased: 20px;
+  --radius-xl: 28px;
+  --radius-xl-increased: 32px;
+  --radius-2xl: 48px;
+
+  --shadow-*: initial;
+  --shadow-elevation-1: 0 1px 2px 0 rgb(0 0 0 / 0.3), 0 1px 3px 1px rgb(0 0 0 / 0.15);
+  --shadow-elevation-2: 0 1px 2px 0 rgb(0 0 0 / 0.3), 0 2px 6px 2px rgb(0 0 0 / 0.15);
+  --shadow-elevation-3: 0 1px 3px 0 rgb(0 0 0 / 0.3), 0 4px 8px 3px rgb(0 0 0 / 0.15);
+  --shadow-elevation-4: 0 2px 3px 0 rgb(0 0 0 / 0.3), 0 6px 10px 4px rgb(0 0 0 / 0.15);
+  --shadow-elevation-5: 0 4px 4px 0 rgb(0 0 0 / 0.3), 0 8px 12px 6px rgb(0 0 0 / 0.15);
+
+  --color-scrim: #000;
+  --color-shadow: #000;
+}
+@theme static {
+  --space-0: 0px;
+  --space-25: 2px;
+  --space-50: 4px;
+  --space-75: 6px;
+  --space-100: 8px;
+  --space-125: 10px;
+  --space-150: 12px;
+  --space-175: 14px;
+  --space-200: 16px;
+  --space-250: 20px;
+  --space-300: 24px;
+  --space-400: 32px;
+  --space-450: 36px;
+  --space-500: 40px;
+  --space-600: 48px;
+  --space-700: 56px;
+  --space-800: 64px;
+  --space-900: 72px;
+}
+
+@utility rounded-inner {
+  border-radius: max(
+    var(--radius-xs),
+    calc(var(--outer-radius, calc(var(--radius-field) + var(--outer-padding, 0px))) - var(--outer-padding, 0px))
+  );
+}
+
+@utility scrim-cutout {
+  box-shadow: 0 0 0 200vmax color-mix(in oklab, var(--color-scrim) 32%, transparent);
+}
+
+@keyframes m3-morph {
+  0% {
+    border-radius: 50%;
+    rotate: 0deg;
+    animation-timing-function: var(--ease-spatial);
+  }
+  25% {
+    border-radius: 42% 58% 70% 30% / 45% 45% 55% 55%;
+    rotate: 90deg;
+    animation-timing-function: var(--ease-spatial);
+  }
+  50% {
+    border-radius: 28%;
+    rotate: 180deg;
+    animation-timing-function: var(--ease-spatial);
+  }
+  75% {
+    border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+    rotate: 270deg;
+    animation-timing-function: var(--ease-spatial);
+  }
+  100% {
+    border-radius: 50%;
+    rotate: 360deg;
+  }
+}
+@keyframes field-shake {
+  0%,
+  100% {
+    translate: 0;
+  }
+  20%,
+  60% {
+    translate: -3px;
+  }
+  40%,
+  80% {
+    translate: 3px;
+  }
+}
+
+@keyframes field-pop {
+  0% {
+    scale: 1;
+  }
+  45% {
+    scale: 1.18;
+  }
+  100% {
+    scale: 1;
+  }
+}
+
+@keyframes m3-pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@theme inline {
+  --color-primary-ink: color-mix(in oklab, var(--color-primary) 35%, var(--color-base-content));
+  --color-secondary-ink: color-mix(in oklab, var(--color-secondary) 35%, var(--color-base-content));
+  --color-accent-ink: color-mix(in oklab, var(--color-accent) 35%, var(--color-base-content));
+  --color-info-ink: color-mix(in oklab, var(--color-info) 35%, var(--color-base-content));
+  --color-success-ink: color-mix(in oklab, var(--color-success) 35%, var(--color-base-content));
+  --color-warning-ink: color-mix(in oklab, var(--color-warning) 35%, var(--color-base-content));
+  --color-error-ink: color-mix(in oklab, var(--color-error) 35%, var(--color-base-content));
+}
+
+@theme inline {
+  --color-on-surface: var(--color-base-content);
+  --color-on-surface-variant: color-mix(in oklab, var(--color-base-content) 80%, transparent);
+  --color-on-surface-disabled: color-mix(in oklab, var(--color-base-content) 38%, transparent);
+
+  --color-outline: color-mix(in oklab, var(--color-base-content) 50%, transparent);
+  --color-outline-variant: color-mix(in oklab, var(--color-base-content) 12%, transparent);
+
+  --color-surface: var(--color-base-100);
+  --color-surface-container-lowest: light-dark(
+    var(--color-base-100),
+    color-mix(in oklab, var(--color-base-100), black 25%)
+  );
+  --color-surface-container-low: light-dark(
+    color-mix(in oklab, var(--color-base-100), var(--color-base-content) 3%),
+    color-mix(in oklab, var(--color-base-100), var(--color-base-content) 4%)
+  );
+  --color-surface-container: light-dark(
+    color-mix(in oklab, var(--color-base-100), var(--color-base-content) 5%),
+    color-mix(in oklab, var(--color-base-100), var(--color-base-content) 7%)
+  );
+  --color-surface-container-high: light-dark(
+    color-mix(in oklab, var(--color-base-100), var(--color-base-content) 7%),
+    color-mix(in oklab, var(--color-base-100), var(--color-base-content) 11%)
+  );
+  --color-surface-container-highest: light-dark(
+    color-mix(in oklab, var(--color-base-100), var(--color-base-content) 10%),
+    color-mix(in oklab, var(--color-base-100), var(--color-base-content) 15%)
+  );
+
+  --color-primary-container: color-mix(in oklab, var(--color-primary) 16%, var(--color-base-100));
+  --color-on-primary-container: var(--color-primary-ink);
+  --color-secondary-container: color-mix(in oklab, var(--color-secondary) 16%, var(--color-base-100));
+  --color-on-secondary-container: var(--color-secondary-ink);
+  --color-accent-container: color-mix(in oklab, var(--color-accent) 16%, var(--color-base-100));
+  --color-on-accent-container: var(--color-accent-ink);
+  --color-info-container: color-mix(in oklab, var(--color-info) 16%, var(--color-base-100));
+  --color-on-info-container: var(--color-info-ink);
+  --color-success-container: color-mix(in oklab, var(--color-success) 16%, var(--color-base-100));
+  --color-on-success-container: var(--color-success-ink);
+  --color-warning-container: color-mix(in oklab, var(--color-warning) 16%, var(--color-base-100));
+  --color-on-warning-container: var(--color-warning-ink);
+  --color-error-container: color-mix(in oklab, var(--color-error) 16%, var(--color-base-100));
+  --color-on-error-container: var(--color-error-ink);
+}
+
+@property --inverse-surface {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #000;
+}
+@property --inverse-on-surface {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #fff;
+}
+@property --tinted-surface {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #fff;
+}
+@property --tinted-on-surface {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #000;
+}
+:root {
+  --inverse-surface: light-dark(
+    color-mix(in oklab, var(--color-base-content), black 40%),
+    color-mix(in oklab, var(--color-base-100), var(--color-base-content) 12%)
+  );
+  --inverse-on-surface: light-dark(var(--color-base-100), white);
+  --tinted-surface: color-mix(in oklab, var(--color-primary) 16%, var(--color-base-100));
+  --tinted-on-surface: color-mix(in oklab, var(--color-base-content), light-dark(black, white) 60%);
+}
+@utility surface-inverse {
+  --color-base-100: var(--inverse-surface);
+  --color-base-200: color-mix(in oklab, var(--inverse-surface), var(--inverse-on-surface) 5%);
+  --color-base-300: color-mix(in oklab, var(--inverse-surface), var(--inverse-on-surface) 12%);
+  --color-base-content: var(--inverse-on-surface);
+  --theme-base-content: var(--inverse-on-surface);
+  color-scheme: dark;
+  background-color: var(--color-base-100);
+  color: var(--color-base-content);
+}
+@utility surface-tinted {
+  --color-base-100: var(--tinted-surface);
+  --color-base-200: color-mix(in oklab, var(--tinted-surface), var(--tinted-on-surface) 5%);
+  --color-base-300: color-mix(in oklab, var(--tinted-surface), var(--tinted-on-surface) 12%);
+  --color-base-content: var(--tinted-on-surface);
+  --theme-base-content: var(--tinted-on-surface);
+  color-scheme: light;
+  :root[data-theme="dark"] & {
+    color-scheme: dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) & {
+      color-scheme: dark;
+    }
+  }
+  background-color: var(--color-base-100);
+  color: var(--color-base-content);
+}
+[data-surface="inverse"] {
+  @apply surface-inverse;
+}
+[data-surface="tinted"] {
+  @apply surface-tinted;
+}
+
+@theme inline {
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+  --color-chart-muted: var(--chart-muted);
+}
+@keyframes chart-reveal {
+  from {
+    clip-path: inset(-0.5rem 100% -0.5rem -0.5rem);
+  }
+  to {
+    clip-path: inset(-0.5rem);
+  }
+}
+
+@property --ring-sweep {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 360deg;
+}
+@keyframes ring-sweep {
+  from {
+    --ring-sweep: 0deg;
+  }
+}
+
+@keyframes cell-in {
+  from {
+    opacity: 0;
+    scale: 0.6;
+  }
+}
+
+@theme static {
+  --state-hover: 8%;
+  --state-focus: 10%;
+  --state-pressed: 10%;
+  --state-dragged: 16%;
+  --state-disabled-content: 38%;
+  --state-disabled-container: 12%;
+}
+@property --state-layer {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 0%;
+}
+@utility state-layer {
+  :where(&) {
+    transition: --state-layer var(--duration-effects-fast) var(--ease-effects-fast);
+  }
+  background-image: linear-gradient(
+    color-mix(in oklab, currentColor var(--state-layer), transparent),
+    color-mix(in oklab, currentColor var(--state-layer), transparent)
+  );
+  @media (hover: hover) {
+    &:hover {
+      --state-layer: var(--state-hover);
+    }
+  }
+  &:focus-visible,
+  &:has(> :focus-visible) {
+    --state-layer: var(--state-focus);
+  }
+  &:active {
+    --state-layer: var(--state-pressed);
+  }
+  &:disabled,
+  &[aria-disabled="true"] {
+    --state-layer: 0%;
+  }
+}
+
+@utility touch-target {
+  :where(&) {
+    position: relative;
+  }
+  &::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, 24px);
+    height: max(100%, 24px);
+    translate: -50% -50%;
+  }
+  @media (pointer: coarse) {
+    &::before {
+      width: max(100%, 48px);
+      height: max(100%, 48px);
+    }
+  }
+}
+
+@theme static {
+  --text-display-lg: 3.5625rem;
+  --text-display-lg--line-height: 4rem;
+  --text-display-lg--letter-spacing: -0.016rem;
+  --text-display-lg--font-weight: 400;
+  --text-display-md: 2.8125rem;
+  --text-display-md--line-height: 3.25rem;
+  --text-display-md--letter-spacing: -0.01rem;
+  --text-display-md--font-weight: 400;
+  --text-display-sm: 2.25rem;
+  --text-display-sm--line-height: 2.75rem;
+  --text-display-sm--letter-spacing: -0.005rem;
+  --text-display-sm--font-weight: 400;
+
+  --text-headline-lg: 2rem;
+  --text-headline-lg--line-height: 2.5rem;
+  --text-headline-lg--font-weight: 600;
+  --text-headline-md: 1.75rem;
+  --text-headline-md--line-height: 2.25rem;
+  --text-headline-md--font-weight: 600;
+  --text-headline-sm: 1.5rem;
+  --text-headline-sm--line-height: 2rem;
+  --text-headline-sm--font-weight: 600;
+
+  --text-page-title: clamp(1.5rem, 1.2rem + 1.2cqi, 1.75rem);
+  --text-page-title--line-height: 1.2;
+  --text-page-title--letter-spacing: -0.01em;
+  --text-page-title--font-weight: 600;
+
+  --text-title-lg: 1.375rem;
+  --text-title-lg--line-height: 1.75rem;
+  --text-title-lg--font-weight: 600;
+  --text-title-md: 1rem;
+  --text-title-md--line-height: 1.5rem;
+  --text-title-md--font-weight: 600;
+  --text-title-sm: 0.875rem;
+  --text-title-sm--line-height: 1.25rem;
+  --text-title-sm--font-weight: 600;
+
+  --text-body-lg: 1rem;
+  --text-body-lg--line-height: 1.5rem;
+  --text-body-lg--font-weight: 400;
+  --text-body-md: 0.875rem;
+  --text-body-md--line-height: 1.25rem;
+  --text-body-md--font-weight: 400;
+  --text-body-sm: 0.75rem;
+  --text-body-sm--line-height: 1rem;
+  --text-body-sm--font-weight: 400;
+
+  --text-label-lg: 0.875rem;
+  --text-label-lg--line-height: 1.25rem;
+  --text-label-lg--font-weight: 500;
+  --text-label-md: 0.75rem;
+  --text-label-md--line-height: 1rem;
+  --text-label-md--letter-spacing: 0.01rem;
+  --text-label-md--font-weight: 500;
+  --text-label-sm: 0.6875rem;
+  --text-label-sm--line-height: 1rem;
+  --text-label-sm--letter-spacing: 0.02rem;
+  --text-label-sm--font-weight: 500;
+}
+
+@property --menu-collapse {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+@property --menu-expanded {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+
+:root {
+  --tile-w: 3.3125rem;
+  --tile-h: 3.5rem;
+  --frame-cols: 6;
+  --main-min: 265px;
+  --main-comfort: 318px;
+  --frame-header: var(--tile-h);
+  --frame-rail: calc(1 * var(--tile-w));
+  --frame-nav: calc(4 * var(--tile-w));
+  --frame-aside: calc(4 * var(--tile-w));
+  --frame-gap: 0px;
+  --frame-edge: 0px;
+  --frame-slack: max(0px, calc((100vw - var(--frame-cols) * var(--tile-w)) / 2));
+}
+
+:root {
+  --glass-shine: light-dark(rgb(255 255 255 / 0.7), rgb(255 255 255 / 0.22));
+  --glass-shine-soft: light-dark(rgb(255 255 255 / 0.45), rgb(255 255 255 / 0.08));
+  --glass-edge: light-dark(rgb(0 0 0 / 0.06), rgb(255 255 255 / 0.06));
+  --glass-sheen: light-dark(rgb(255 255 255 / 0.35), rgb(255 255 255 / 0.05));
+  --glass-refraction: url(#liquid-glass-refraction);
+  --frame-refraction: url(#frame-glass-refraction);
+  --theme-base-content: var(--color-base-content);
+}
+
+@utility liquid-glass {
+  --color-base-content: var(--theme-base-content);
+  color: var(--color-base-content);
+  background-color: color-mix(in oklab, var(--color-base-100) 45%, transparent);
+  background-image: radial-gradient(140% 70% at 30% -10%, var(--glass-sheen), transparent 60%);
+  -webkit-backdrop-filter: blur(8px) saturate(170%);
+  backdrop-filter: blur(8px) saturate(170%);
+  --tw-inset-shadow: inset 2px 2px 1px 0 var(--glass-shine), inset -1px -1px 1px 1px var(--glass-shine-soft);
+  --tw-inset-ring-shadow: inset 0 0 0 1px var(--glass-edge);
+  :where(&) {
+    --tw-shadow: var(--shadow-elevation-2);
+  }
+  box-shadow:
+    var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow, 0 0 #0000),
+    var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+
+  :root[data-glass="refract"] & {
+    backdrop-filter: blur(6px) saturate(170%) var(--glass-refraction);
+  }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    background-color: color-mix(in oklab, var(--color-base-100) 97%, transparent);
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    background-color: var(--color-base-100);
+    background-image: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none !important;
+  }
+  @media (prefers-contrast: more) {
+    background-color: var(--color-base-100);
+    background-image: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none !important;
+    --tw-inset-ring-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-base-content) 45%, transparent);
+  }
+}
+
+@utility frame-liquid {
+  background-color: color-mix(in oklab, var(--color-base-100) 45%, transparent);
+  background-image: radial-gradient(140% 70% at 30% -10%, var(--glass-sheen), transparent 60%);
+  -webkit-backdrop-filter: blur(8px) saturate(170%);
+  backdrop-filter: blur(8px) saturate(170%);
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    background-color: color-mix(in oklab, var(--color-base-100) 85%, transparent);
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    background-color: transparent;
+    background-image: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none !important;
+  }
+  @media (prefers-contrast: more) {
+    background-color: var(--color-base-100);
+    background-image: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none !important;
+  }
+}
+
+@utility frame-matte {
+  background-color: color-mix(in oklab, var(--color-base-100) 22%, transparent);
+  background-image: linear-gradient(135deg, var(--glass-sheen), transparent 45%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  backdrop-filter: blur(14px) saturate(160%);
+
+  :root[data-glass="refract"] & {
+    backdrop-filter: var(--frame-refraction) blur(6px) saturate(160%);
+  }
+
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    background-color: color-mix(in oklab, var(--color-base-100) 85%, transparent);
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    background-color: var(--color-base-100);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  @media (prefers-contrast: more) {
+    background-color: var(--color-base-100);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+@utility liquid-glass-well {
+  --color-base-content: var(--theme-base-content);
+  color: var(--color-base-content);
+  background-color: color-mix(in oklab, var(--color-base-100) 30%, transparent);
+
+  @media (prefers-reduced-transparency: reduce) {
+    background-color: var(--color-base-100);
+  }
+  @media (prefers-contrast: more) {
+    background-color: var(--color-base-100);
+  }
+}
+@utility frame-lip {
+  box-shadow:
+    inset 1px 1px 0 0 var(--glass-shine-soft),
+    inset 0 0 0 1px var(--glass-edge),
+    inset -12px -12px 18px -12px color-mix(in oklab, var(--color-scrim) 45%, transparent),
+    1px 1.5px 0 0 color-mix(in oklab, var(--color-scrim) 35%, transparent),
+    0 2px 3px 0 color-mix(in oklab, var(--color-scrim) 25%, transparent),
+    0 18px 40px -10px color-mix(in oklab, var(--color-scrim) 55%, transparent);
+
+  overflow: clip;
+  :root[data-glass="refract"] & {
+    backdrop-filter: url(#frame-slab-lens);
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    backdrop-filter: none !important;
+  }
+  @media (prefers-contrast: more) {
+    box-shadow: inset 0 0 0 1px var(--color-outline);
+    backdrop-filter: none !important;
+  }
+}
+
+@utility frame-glint {
+  display: none;
+  :root[data-glass="refract"] & {
+    display: block;
+    filter: url(#frame-slab-glint);
+    mix-blend-mode: plus-lighter;
+    opacity: 0.45;
+    will-change: transform;
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    display: none !important;
+  }
+  @media (prefers-contrast: more) {
+    display: none !important;
+  }
+}
+
+@utility liquid-glass-surface {
+  --color-base-content: var(--theme-base-content);
+  color: var(--color-base-content);
+  background-color: color-mix(in oklab, var(--color-base-100) 62%, transparent);
+  -webkit-backdrop-filter: blur(32px) saturate(170%);
+  backdrop-filter: blur(32px) saturate(170%);
+  --tw-inset-shadow: inset 1px 1px 1px 0 var(--glass-shine-soft), inset -1px -1px 1px 0 var(--glass-shine-soft);
+  --tw-inset-ring-shadow: inset 0 0 0 1px var(--glass-edge);
+  :where(&) {
+    --tw-shadow: var(--shadow-elevation-1);
+  }
+  box-shadow:
+    var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow, 0 0 #0000),
+    var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    background-color: var(--color-base-100);
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    background-color: var(--color-base-100);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  @media (prefers-contrast: more) {
+    background-color: var(--color-base-100);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@utility liquid-glass-clear {
+  background-color: color-mix(in oklab, var(--color-base-100) 22%, transparent);
+  background-image: radial-gradient(140% 80% at 30% -20%, var(--glass-sheen), transparent 60%);
+  -webkit-backdrop-filter: blur(3px) saturate(160%);
+  backdrop-filter: blur(3px) saturate(160%);
+  --tw-inset-shadow: inset 2px 2px 1px 0 var(--glass-shine), inset -1px -1px 1px 1px var(--glass-shine-soft);
+  --tw-inset-ring-shadow: inset 0 0 0 1px var(--glass-edge);
+  :where(&) {
+    --tw-shadow: var(--shadow-elevation-1);
+  }
+  box-shadow:
+    var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow, 0 0 #0000),
+    var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+
+  :root[data-glass="refract"] & {
+    backdrop-filter: blur(2px) saturate(160%) var(--glass-refraction);
+  }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    background-color: color-mix(in oklab, var(--color-base-100) 92%, transparent);
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    background-color: var(--color-base-100);
+    background-image: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none !important;
+  }
+  @media (prefers-contrast: more) {
+    background-color: var(--color-base-100);
+    background-image: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none !important;
+    --tw-inset-ring-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-base-content) 45%, transparent);
+  }
+}
+
+@utility shimmer {
+  background-image: linear-gradient(
+    100deg,
+    color-mix(in oklab, var(--color-base-content) 70%, transparent) 40%,
+    var(--color-base-content) 50%,
+    color-mix(in oklab, var(--color-base-content) 70%, transparent) 60%
+  );
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: ui-shimmer calc(var(--duration-extra-long3) * 2) linear infinite;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+    background-image: none;
+    color: color-mix(in oklab, var(--color-base-content) 80%, transparent);
+  }
+}
+
+@keyframes ui-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -150% 0;
+  }
+}
+
+@property --dial-angle {
+  syntax: "<angle>";
+  inherits: true;
+  initial-value: 0deg;
+}
+@keyframes dial-sweep {
+  from {
+    --dial-angle: 0deg;
+  }
+}
+
+@keyframes share-in {
+  from {
+    opacity: 0;
+    scale: 0 1;
+  }
+}

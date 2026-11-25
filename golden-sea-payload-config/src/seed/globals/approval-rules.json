@@ -1,0 +1,61 @@
+{
+  "rules": [
+    {
+      "type": "Customer quotation",
+      "approvers": ["kb"],
+      "always": true
+    },
+    {
+      "type": "Customer discount",
+      "approvers": ["kb"],
+      "always": false,
+      "note": {
+        "en": "Above the policy's max discount",
+        "ar": "أعلى من الحد الأقصى للخصم في السياسة"
+      }
+    },
+    {
+      "type": "Supplier PO",
+      "approvers": ["kb"],
+      "always": true
+    },
+    {
+      "type": "Supplier deposit (payment)",
+      "approvers": ["kb", "mh"],
+      "always": true
+    },
+    {
+      "type": "Bank detail change",
+      "approvers": ["kb", "mh"],
+      "twoPerson": true,
+      "always": true,
+      "note": {
+        "en": "Call-back to number on file first",
+        "ar": "معاودة الاتصال بالرقم المسجّل أولًا"
+      }
+    },
+    {
+      "type": "Exchange rate",
+      "approvers": ["kb"],
+      "always": true
+    },
+    {
+      "type": "Quotation margin exception",
+      "approvers": ["kb"],
+      "always": true,
+      "note": {
+        "en": "Below the policy's minimum margin",
+        "ar": "أقل من الحد الأدنى للهامش في السياسة"
+      }
+    },
+    {
+      "type": "Alternative product (internal)",
+      "approvers": ["kb"],
+      "always": true,
+      "note": {
+        "en": "Technical equivalence confirmed by a person",
+        "ar": "التكافؤ الفني يؤكده شخص"
+      }
+    }
+  ]
+}

@@ -1,0 +1,337 @@
+@layer utilities {
+  @layer daisyui {
+    @media (prefers-reduced-motion: no-preference) {
+      .btn {
+        transition:
+          color var(--duration-effects-fast) var(--ease-effects-fast),
+          background-color var(--duration-effects-fast) var(--ease-effects-fast),
+          border-color var(--duration-effects-fast) var(--ease-effects-fast),
+          outline-color var(--duration-effects-fast) var(--ease-effects-fast),
+          box-shadow var(--duration-effects-fast) var(--ease-effects-fast),
+          border-radius var(--duration-spatial-fast) var(--ease-spatial-fast),
+          transform var(--duration-spatial-fast) var(--ease-spatial-fast),
+          translate var(--duration-spatial-fast) var(--ease-spatial-fast),
+          scale var(--duration-spatial-fast) var(--ease-spatial-fast);
+      }
+
+      .toggle {
+        transition:
+          color var(--duration-effects-fast) var(--ease-effects-fast),
+          grid-template-columns var(--duration-spatial-fast) var(--ease-spatial-fast);
+      }
+      .toggle > * {
+        transition:
+          opacity var(--duration-effects-fast) var(--ease-effects-fast),
+          rotate var(--duration-spatial-fast) var(--ease-spatial-fast);
+      }
+      .toggle:before {
+        transition:
+          background-color var(--duration-effects-fast) var(--ease-effects-fast),
+          translate var(--duration-spatial-fast) var(--ease-spatial-fast),
+          inset-inline-start var(--duration-spatial-fast) var(--ease-spatial-fast);
+      }
+
+      .checkbox {
+        transition:
+          background-color var(--duration-effects-fast) var(--ease-effects-fast),
+          box-shadow var(--duration-effects-fast) var(--ease-effects-fast);
+      }
+      .checkbox:before {
+        transition:
+          clip-path var(--duration-spatial-fast) var(--ease-spatial-fast) var(--settle-effects-fast),
+          opacity var(--duration-effects-fast) var(--ease-effects-fast) var(--settle-effects-fast),
+          rotate var(--duration-spatial-fast) var(--ease-spatial-fast) var(--settle-effects-fast),
+          translate var(--duration-spatial-fast) var(--ease-spatial-fast) var(--settle-effects-fast);
+      }
+      .radio:checked,
+      .radio[aria-checked="true"] {
+        animation: radio var(--duration-spatial-fast) var(--ease-spatial-fast);
+      }
+      .rating * {
+        animation: rating var(--duration-spatial-fast) var(--ease-spatial-fast);
+      }
+      .rating :focus-visible {
+        transition: scale var(--duration-spatial-fast) var(--ease-spatial-fast);
+      }
+
+      .swap > * {
+        transition:
+          transform var(--duration-spatial-fast) var(--ease-spatial-fast),
+          rotate var(--duration-spatial-fast) var(--ease-spatial-fast),
+          opacity var(--duration-effects-fast) var(--ease-effects-fast);
+      }
+
+      .tabs-border > .tab:before,
+      .file-input-ghost,
+      .select-ghost,
+      .otp > span {
+        transition:
+          background-color var(--duration-effects-fast) var(--ease-effects-fast),
+          border-color var(--duration-effects-fast) var(--ease-effects-fast);
+      }
+      :is(.select, .select select) option {
+        transition:
+          color var(--duration-effects-fast) var(--ease-effects-fast),
+          background-color var(--duration-effects-fast) var(--ease-effects-fast);
+      }
+
+      .card {
+        transition: outline-color var(--duration-effects) var(--ease-effects);
+      }
+
+      .floating-label ::placeholder,
+      .floating-label > span {
+        transition:
+          top var(--duration-spatial-fast) var(--ease-spatial-fast),
+          translate var(--duration-spatial-fast) var(--ease-spatial-fast),
+          scale var(--duration-spatial-fast) var(--ease-spatial-fast),
+          opacity var(--duration-effects-fast) var(--ease-effects-fast);
+      }
+
+      .filter input {
+        transition:
+          visibility var(--duration-spatial-fast) allow-discrete,
+          margin var(--duration-spatial-fast) var(--ease-spatial-fast),
+          padding var(--duration-spatial-fast) var(--ease-spatial-fast),
+          border-width var(--duration-spatial-fast) var(--ease-spatial-fast),
+          opacity var(--duration-effects-fast) var(--ease-effects-fast);
+      }
+
+      .dock > :not(:where(script, style, template)) {
+        transition: opacity var(--duration-effects-fast) var(--ease-effects-fast);
+      }
+      .dock > :not(:where(script, style, template)):after {
+        transition:
+          background-color var(--duration-effects-fast) var(--ease-effects-fast),
+          width var(--duration-spatial-fast) var(--ease-spatial-fast);
+      }
+
+      .menu :where(li:not(.menu-title) > :not(ul, menu, details, .menu-title, .btn)),
+      .menu :where(li:not(.menu-title) > details > summary:not(.menu-title)) {
+        transition:
+          color var(--duration-effects-fast) var(--ease-effects-fast),
+          background-color var(--duration-effects-fast) var(--ease-effects-fast),
+          box-shadow var(--duration-effects-fast) var(--ease-effects-fast);
+      }
+      :is(.menu :where(li > details > summary), .menu :where(li > .menu-dropdown-toggle)):after {
+        transition:
+          rotate var(--duration-spatial-fast) var(--ease-spatial-fast),
+          translate var(--duration-spatial-fast) var(--ease-spatial-fast);
+      }
+      .menu details::details-content {
+        transition:
+          block-size var(--duration-spatial) var(--ease-spatial),
+          content-visibility var(--duration-spatial) allow-discrete;
+      }
+
+      .collapse:not(td, tr, colgroup) {
+        transition: grid-template-rows var(--duration-spatial) var(--ease-spatial);
+      }
+      .collapse:not(td, tr, colgroup) > input:is([type="checkbox"], [type="radio"]),
+      .collapse-title {
+        transition: background-color var(--duration-effects-fast) var(--ease-effects-fast);
+      }
+      .collapse-content,
+      .collapse:not(td, tr, colgroup):is(details)::details-content {
+        transition:
+          overflow var(--duration-spatial) allow-discrete var(--overflow-delay),
+          content-visibility var(--duration-spatial) allow-discrete,
+          visibility var(--duration-spatial) allow-discrete,
+          min-height var(--duration-spatial) var(--ease-spatial) allow-discrete,
+          padding var(--duration-spatial) var(--ease-spatial),
+          background-color var(--duration-effects) var(--ease-effects);
+      }
+      .collapse-arrow > .collapse-title:after,
+      .collapse-plus > .collapse-title:after {
+        transition:
+          rotate var(--duration-spatial-fast) var(--ease-spatial-fast),
+          transform var(--duration-spatial-fast) var(--ease-spatial-fast),
+          opacity var(--duration-effects-fast) var(--ease-effects-fast);
+      }
+
+      .progress::-webkit-progress-value,
+      .progress::-moz-progress-bar {
+        transition: inline-size var(--duration-effects-slow) var(--ease-effects-slow);
+      }
+      .radial-progress {
+        transition: --radialprogress var(--duration-effects-slow) var(--ease-effects-slow);
+      }
+      .radial-progress:after {
+        transition: transform var(--duration-effects-slow) var(--ease-effects-slow);
+      }
+      .countdown > * {
+        transition: width var(--duration-spatial) var(--ease-spatial);
+      }
+
+      .dropdown[popover],
+      .dropdown .dropdown-content,
+      .menu-horizontal:not(.menu-paged) > li:not(.menu-title) > details > :is(ul, menu),
+      .megamenu [popover],
+      .megamenu-vertical {
+        transition:
+          opacity var(--duration-short2) var(--ease-emphasized-accelerate),
+          scale var(--duration-short3) var(--ease-emphasized-accelerate),
+          translate var(--duration-short3) var(--ease-emphasized-accelerate),
+          display var(--duration-short3) allow-discrete,
+          overlay var(--duration-short3) allow-discrete;
+        animation: none;
+      }
+      .dropdown[popover]:popover-open,
+      .dropdown.dropdown-open .dropdown-content,
+      .dropdown:is(details[open], .dropdown-hover:hover, :focus-within) .dropdown-content,
+      .menu-horizontal:not(.menu-paged) > li:not(.menu-title) > details[open] > :is(ul, menu),
+      .megamenu [popover]:popover-open,
+      .megamenu-vertical:popover-open {
+        transition:
+          opacity var(--duration-short3) var(--ease-emphasized-decelerate),
+          scale var(--duration-medium1) var(--ease-emphasized-decelerate),
+          translate var(--duration-medium1) var(--ease-emphasized-decelerate),
+          display var(--duration-medium1) allow-discrete,
+          overlay var(--duration-medium1) allow-discrete;
+      }
+      .dropdown.dropdown-close .dropdown-content,
+      .dropdown:not(details, .dropdown-open, .dropdown-hover:hover, :focus-within) .dropdown-content,
+      .dropdown.dropdown-hover:not(:hover) [tabindex]:first-child:focus:not(:focus-visible) ~ .dropdown-content,
+      :is(.dropdown[popover].dropdown-close, .dropdown[popover]:not(.dropdown-open, :popover-open)),
+      .menu-horizontal:not(.menu-paged) > li:not(.menu-title) > details:not([open]) > :is(ul, menu) {
+        scale: 1 0.8;
+      }
+      @starting-style {
+        .dropdown[popover],
+        .dropdown .dropdown-content,
+        .menu-horizontal:not(.menu-paged) > li:not(.menu-title) > details > :is(ul, menu) {
+          scale: 1 0.8;
+        }
+      }
+      .dropdown.dropdown-top :is(.dropdown-content, [popover]),
+      .dropdown-top[popover] {
+        transform-origin: bottom;
+      }
+
+      .tooltip > .tooltip-content,
+      .tooltip[data-tip]:before,
+      .tooltip:after {
+        transition:
+          opacity var(--duration-short2) var(--ease-standard-accelerate),
+          transform var(--duration-short2) var(--ease-standard-accelerate);
+      }
+      :is(
+          .tooltip:is([data-tip]:not([data-tip=""]), :has(.tooltip-content:not(:empty))).tooltip-open,
+          .tooltip:is([data-tip]:not([data-tip=""]), :has(.tooltip-content:not(:empty))):hover,
+          .tooltip:is([data-tip]:not([data-tip=""]), :has(.tooltip-content:not(:empty))):has(:focus-visible)
+        )
+        > .tooltip-content,
+      :is(
+        .tooltip:is([data-tip]:not([data-tip=""]), :has(.tooltip-content:not(:empty))).tooltip-open,
+        .tooltip:is([data-tip]:not([data-tip=""]), :has(.tooltip-content:not(:empty))):hover,
+        .tooltip:is([data-tip]:not([data-tip=""]), :has(.tooltip-content:not(:empty))):has(:focus-visible)
+      ):is([data-tip]:before, :after) {
+        transition:
+          opacity var(--duration-short3) var(--ease-standard-decelerate) var(--duration-short2),
+          transform var(--duration-short4) var(--ease-emphasized-decelerate) var(--duration-short2);
+      }
+
+      .modal {
+        transition:
+          overlay var(--duration-short4) allow-discrete,
+          visibility var(--duration-short4) allow-discrete,
+          background-color var(--duration-short4) var(--ease-emphasized-accelerate),
+          opacity var(--duration-short3) var(--ease-emphasized-accelerate);
+      }
+      .modal:popover-open,
+      .modal.modal-open,
+      .modal[open],
+      .modal:target,
+      .modal-toggle:checked + .modal {
+        transition:
+          visibility 0s allow-discrete,
+          background-color var(--duration-medium2) var(--ease-emphasized-decelerate),
+          opacity var(--duration-short3) var(--ease-emphasized-decelerate);
+      }
+      .modal[popover]::backdrop {
+        transition: background-color var(--duration-medium2) var(--ease-emphasized-decelerate);
+      }
+      .modal-box {
+        transition:
+          translate var(--duration-short4) var(--ease-emphasized-accelerate),
+          scale var(--duration-short4) var(--ease-emphasized-accelerate),
+          opacity var(--duration-short3) var(--ease-emphasized-accelerate),
+          box-shadow var(--duration-short4) var(--ease-emphasized-accelerate);
+      }
+      :is(.modal:popover-open, .modal.modal-open, .modal[open], .modal:target, .modal-toggle:checked + .modal)
+        > .modal-box {
+        transition:
+          translate var(--duration-medium2) var(--ease-emphasized-decelerate),
+          scale var(--duration-medium2) var(--ease-emphasized-decelerate),
+          opacity var(--duration-short3) var(--ease-emphasized-decelerate),
+          box-shadow var(--duration-medium2) var(--ease-emphasized-decelerate);
+      }
+
+      .drawer-side {
+        transition:
+          opacity var(--duration-short4) var(--ease-emphasized-accelerate) allow-discrete,
+          visibility var(--duration-short4) allow-discrete;
+      }
+      .drawer-side > :not(.drawer-overlay) {
+        transition:
+          translate var(--duration-short4) var(--ease-emphasized-accelerate),
+          width var(--duration-spatial) var(--ease-spatial);
+      }
+      .drawer-toggle:checked ~ .drawer-side {
+        transition:
+          opacity var(--duration-medium2) var(--ease-emphasized-decelerate) allow-discrete,
+          visibility 0s allow-discrete;
+      }
+      .drawer-toggle:checked ~ .drawer-side > :not(.drawer-overlay) {
+        transition:
+          translate var(--duration-medium2) var(--ease-emphasized-decelerate),
+          width var(--duration-spatial) var(--ease-spatial);
+      }
+
+      .toast > * {
+        animation: m3-expand var(--duration-medium1) var(--ease-emphasized-decelerate);
+        transform-origin: bottom;
+      }
+      .toast-top > * {
+        transform-origin: top;
+      }
+
+      .fab > [tabindex]:first-child {
+        transition:
+          opacity var(--duration-effects-fast) var(--ease-effects-fast),
+          visibility var(--duration-effects-fast) allow-discrete,
+          rotate var(--duration-spatial-fast) var(--ease-spatial-fast);
+      }
+      .fab > :nth-child(n + 2) {
+        transition:
+          opacity var(--duration-short3) var(--ease-emphasized-decelerate),
+          scale var(--duration-medium1) var(--ease-emphasized-decelerate),
+          visibility var(--duration-short3) allow-discrete;
+      }
+
+      .skeleton {
+        animation: skeleton-pulse calc(var(--duration-extra-long4) * 2) var(--ease-standard) infinite;
+      }
+    }
+  }
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@keyframes m3-expand {
+  from {
+    opacity: 0;
+    scale: 1 0.6;
+  }
+  40% {
+    opacity: 1;
+  }
+}

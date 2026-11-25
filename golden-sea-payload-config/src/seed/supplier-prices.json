@@ -1,0 +1,142 @@
+[
+  {
+    "id": "sp-1",
+    "product": "P1",
+    "supplier": "S5",
+    "price": 9.8,
+    "currency": "USD",
+    "per": "EA",
+    "quotedAt": "2026-11-16T00:00:00.000Z",
+    "validUntil": "2026-11-26T00:00:00.000Z",
+    "source": "Email reply",
+    "case": "gs-rfq-0142"
+  },
+  {
+    "id": "sp-2",
+    "product": "P4",
+    "supplier": "S1",
+    "price": 1010,
+    "currency": "EGP",
+    "per": "Pack 5 kg",
+    "quotedAt": "2026-09-02T00:00:00.000Z",
+    "validUntil": "2026-09-09T00:00:00.000Z",
+    "source": "Purchase order",
+    "ordered": true
+  },
+  {
+    "id": "sp-3",
+    "product": "P2",
+    "supplier": "S1",
+    "price": 412,
+    "currency": "EGP",
+    "per": "Bottle 50 ml",
+    "quotedAt": "2026-11-16T00:00:00.000Z",
+    "validUntil": "2026-11-30T00:00:00.000Z",
+    "source": "Email reply",
+    "case": "gs-rfq-0142"
+  },
+  {
+    "id": "sp-4",
+    "product": "P2",
+    "supplier": "S2",
+    "price": 395,
+    "currency": "EGP",
+    "per": "Bottle 50 ml",
+    "quotedAt": "2026-10-21T00:00:00.000Z",
+    "validUntil": "2026-11-04T00:00:00.000Z",
+    "source": "Email reply"
+  },
+  {
+    "id": "sp-5",
+    "product": "P5",
+    "supplier": "S4",
+    "price": 310,
+    "currency": "EGP",
+    "per": "EA",
+    "quotedAt": "2026-11-15T00:00:00.000Z",
+    "validUntil": "2026-12-15T00:00:00.000Z",
+    "source": "Email reply",
+    "case": "gs-rfq-0142"
+  },
+  {
+    "id": "sp-6",
+    "product": "P5",
+    "supplier": "S12",
+    "price": 298,
+    "currency": "EGP",
+    "per": "EA",
+    "quotedAt": "2026-08-11T00:00:00.000Z",
+    "validUntil": "2026-09-10T00:00:00.000Z",
+    "source": "Purchase order",
+    "ordered": true
+  },
+  {
+    "id": "sp-7",
+    "product": "P6",
+    "supplier": "S4",
+    "price": 1450,
+    "currency": "EGP",
+    "per": "EA",
+    "quotedAt": "2026-11-15T00:00:00.000Z",
+    "validUntil": "2026-12-15T00:00:00.000Z",
+    "source": "Email reply",
+    "case": "gs-rfq-0142"
+  },
+  {
+    "id": "sp-8",
+    "product": "P3",
+    "supplier": "S1",
+    "price": 185,
+    "currency": "EGP",
+    "per": "Can 250 ml",
+    "quotedAt": "2026-11-16T00:00:00.000Z",
+    "validUntil": "2026-11-24T00:00:00.000Z",
+    "source": "Email reply",
+    "case": "gs-rfq-0142"
+  },
+  {
+    "id": "sp-9",
+    "product": "P1",
+    "supplier": "S5",
+    "price": 9.4,
+    "currency": "USD",
+    "per": "EA",
+    "quotedAt": "2026-07-03T00:00:00.000Z",
+    "validUntil": "2026-07-31T00:00:00.000Z",
+    "source": "Email reply"
+  },
+  {
+    "id": "sp-10",
+    "product": "P4",
+    "supplier": "S3",
+    "price": 980,
+    "currency": "EGP",
+    "per": "Pack 5 kg",
+    "quotedAt": "2026-10-02T00:00:00.000Z",
+    "validUntil": "2026-10-16T00:00:00.000Z",
+    "source": "Email reply"
+  },
+  {
+    "id": "sp-11",
+    "product": "P7",
+    "supplier": "S2",
+    "price": 3.9,
+    "currency": "USD",
+    "per": "kg",
+    "quotedAt": "2026-09-18T00:00:00.000Z",
+    "validUntil": "2026-10-02T00:00:00.000Z",
+    "source": "WhatsApp / phone"
+  },
+  {
+    "id": "sp-12",
+    "product": "P8",
+    "supplier": "S5",
+    "price": 215,
+    "currency": "USD",
+    "per": "Carton 200",
+    "quotedAt": "2026-06-24T00:00:00.000Z",
+    "validUntil": "2026-07-24T00:00:00.000Z",
+    "source": "Purchase order",
+    "ordered": true
+  }
+]

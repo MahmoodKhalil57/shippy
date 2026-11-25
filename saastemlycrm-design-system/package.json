@@ -1,0 +1,71 @@
+{
+  "name": "saastemlycrm-design-system",
+  "version": "0.0.0",
+  "private": true,
+  "description": "SaastemlyCRM's design system (Lit + daisyUI, Material Design 3 roles), the dashboard app and the contracts a Payload project implements.",
+  "files": [
+    "lint",
+    "src",
+    "vite"
+  ],
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./app": "./src/app/index.ts",
+    "./contracts": "./src/contracts/index.ts",
+    "./payload": "./src/payload/index.ts",
+    "./client": "./src/api/client.ts",
+    "./lint": {
+      "types": "./lint/index.d.ts",
+      "default": "./lint/index.js"
+    },
+    "./styles.css": "./src/index.css",
+    "./vite": "./vite/index.ts",
+    "./src/*": "./src/*",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "check": "vp check",
+    "i18n": "vpx vite/compile-i18n.ts"
+  },
+  "dependencies": {
+    "@faker-js/faker": "10.6.0",
+    "@floating-ui/dom": "^1.8.0",
+    "@iconify-json/devicon": "^1.2.82",
+    "@iconify-json/line-md": "^1.2.16",
+    "@iconify-json/logos": "^1.2.20",
+    "@inlang/paraglide-js": "^3.2.2",
+    "@tailwindcss/vite": "^4.3.5",
+    "class-variance-authority": "^0.7.1",
+    "daisyui": "^5.8.1",
+    "lit": "^3.3.3",
+    "postcss": "^8.5.33",
+    "qs-esm": "^8.0.2",
+    "tailwindcss": "^4.3.5",
+    "unplugin-icons": "^24.0.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@iconify-json/material-symbols": "^1.2.101",
+    "@inlang/plugin-icu1": "^1.3.8",
+    "@types/node": "^26.6.6",
+    "magic-string": "^1.4.5",
+    "payload": "3.94.0",
+    "typescript": "~7.0.2",
+    "vite": "npm:@voidzero-dev/vite-plus-core@8.3.8000",
+    "vite-plus": "1.7.0"
+  },
+  "peerDependencies": {
+    "payload": "3.94.0"
+  },
+  "overrides": {
+    "vite": "npm:@voidzero-dev/vite-plus-core@8.3.8000"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "bun",
+      "version": "1.4.5",
+      "onFail": "download"
+    }
+  }
+}
