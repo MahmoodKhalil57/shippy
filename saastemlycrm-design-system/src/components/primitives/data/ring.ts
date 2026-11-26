@@ -1,11 +1,12 @@
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
-import { formatInt, intl, m } from "../../../i18n/index.ts";
+import { formatInt, intl } from "../../../lib/i18n/index.ts";
 import { LightElement } from "../../base/light-element.ts";
-import { motion } from "../../base/motion-queue.ts";
-import { rcva } from "../../base/variants.ts";
-import { fixed, fixedWidth, row, rowFill, rowLine, stack, text, tiles } from "../layout/algebra.ts";
+import { motion } from "../../../lib/base/motion-queue.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { fixed, fixedWidth, row, rowFill, stack, text, tiles } from "../../../styles/algebra.ts";
+import { foldParts, slotColor, TRACK, type Slot } from "../../../lib/base/visual-math.ts";
 
 export const ring = rcva(`${row} w-full items-center gap-4`);
 export const ringDial = rcva(`${tiles["2"]} relative aspect-square`);
@@ -18,29 +19,30 @@ export const ringMiddle = rcva(
 export const ringValue = rcva(`${text.label} max-w-full text-title-sm tabular-nums text-on-surface`);
 export const ringCaption = rcva(`${text.label} line-clamp-2 text-label-sm text-on-surface-variant`);
 export const ringLegend = rcva(`${stack} ${rowFill} gap-0.5`);
-export const ringItem = rcva(
-  `${row} items-center gap-2 rounded-field px-1 py-0.5 ${text.label} text-body-sm [transition:opacity_var(--duration-short4)_var(--ease-standard)]`,
+export const ringItem = rcva(`${row} items-center gap-2 rounded-field px-1 py-0.5 ${text.label} text-body-sm`, {
+  variants: {
+    link: { true: "cursor-pointer hover:underline", false: "" },
+  },
+});
+/** Focusing a part dims the other parts' marks; legend text keeps full contrast. */
+export const ringDot = rcva(
+  `${fixed["2.5"]} rounded-full [transition:opacity_var(--duration-short4)_var(--ease-standard)]`,
   {
     variants: {
-      dim: { true: "opacity-50", false: "" },
-      link: { true: "cursor-pointer hover:underline", false: "" },
+      dim: { true: "opacity-30", false: "" },
+      slot: {
+        "0": "bg-chart-1",
+        "1": "bg-chart-2",
+        "2": "bg-chart-3",
+        "3": "bg-chart-4",
+        "4": "bg-chart-5",
+        "5": "bg-chart-6",
+        muted: "bg-chart-muted",
+      },
     },
   },
 );
-export const ringDot = rcva(`${fixed["2.5"]} rounded-full`, {
-  variants: {
-    slot: {
-      "0": "bg-chart-1",
-      "1": "bg-chart-2",
-      "2": "bg-chart-3",
-      "3": "bg-chart-4",
-      "4": "bg-chart-5",
-      "5": "bg-chart-6",
-      muted: "bg-chart-muted",
-    },
-  },
-});
-export const ringLabel = rcva(`${rowLine} text-on-surface`);
+export const ringLabel = rcva(`${rowFill} ${text.line} text-on-surface`);
 export const ringAmount = rcva(`${text.label} tabular-nums text-on-surface`);
 export const ringShare = rcva(`${fixedWidth["10"]} ${text.label} text-end tabular-nums text-on-surface-variant`);
 
@@ -51,17 +53,12 @@ export interface RingPart {
   href?: string;
 }
 
-type Slot = "0" | "1" | "2" | "3" | "4" | "5" | "muted";
 interface Drawn extends RingPart {
   slot: Slot;
   from: number;
   to: number;
 }
 
-const hue = (slot: Slot, faded: boolean) => {
-  const c = slot === "muted" ? "var(--chart-muted)" : `var(--chart-${Number(slot) + 1})`;
-  return faded ? `color-mix(in oklab, ${c} 30%, transparent)` : c;
-};
 const GAP = 1.5;
 
 @customElement("ui-ring")
@@ -74,23 +71,15 @@ export class UiRing extends LightElement {
   @state() private _active = -1;
   #revealed = false;
 
-  #shown(): (RingPart & { other?: boolean })[] {
-    const p = this.parts.filter((x) => x.value > 0);
-    if (p.length <= 6) return p;
-    const rest = p.slice(5);
-    return [...p.slice(0, 5), { label: m.visual_other(), value: rest.reduce((t, x) => t + x.value, 0), other: true }];
-  }
-
   #drawn(): { parts: Drawn[]; whole: number; sum: number } {
-    const shown = this.#shown();
-    const sum = shown.reduce((t, x) => t + x.value, 0);
+    const shown = foldParts(this.parts);
+    const sum = shown.reduce((t, x) => t + x.part.value, 0);
     const whole = Math.max(sum, this.max ?? 0) || 1;
     let at = 0;
-    const parts = shown.map((x, i): Drawn => {
+    const parts = shown.map(({ part, slot }): Drawn => {
       const from = at;
-      at += (x.value / whole) * 360;
-      const slot: Slot = x.other ? "muted" : (String(i) as Slot);
-      return { ...x, slot, from, to: at };
+      at += (part.value / whole) * 360;
+      return { ...part, slot, from, to: at };
     });
     return { parts, whole, sum };
   }
@@ -99,12 +88,11 @@ export class UiRing extends LightElement {
     const gap = parts.length > 1 || (this.max ?? 0) > 0 ? GAP : 0;
     const stops = parts.flatMap((p, i) => {
       const end = Math.max(p.from, p.to - gap);
-      const c = hue(p.slot, this._active >= 0 && this._active !== i);
+      const c = slotColor(p.slot, this._active >= 0 && this._active !== i);
       return [`${c} ${p.from}deg ${end}deg`, `transparent ${end}deg ${p.to}deg`];
     });
     const last = parts.at(-1)?.to ?? 0;
-    if (last < 360)
-      stops.push(`color-mix(in oklab, var(--color-base-100), var(--color-base-content) 10%) ${last}deg 360deg`);
+    if (last < 360) stops.push(`${TRACK} ${last}deg 360deg`);
     return `conic-gradient(${stops.join(", ")})`;
   }
 
@@ -136,7 +124,7 @@ export class UiRing extends LightElement {
     const { parts, whole, sum } = this.#drawn();
     const active = parts[this._active];
     const share = (v: number) =>
-      intl.number({ style: "percent", maximumFractionDigits: 0 }).format(v / (this.max ? whole : sum || 1));
+      intl.number({ style: "percent", maximumFractionDigits: 0 }).format(v / (this.max ? whole : sum));
     return html`<div class=${ring()}>
       <div class=${ringDial()}>
         <div
@@ -159,11 +147,12 @@ export class UiRing extends LightElement {
       </div>
       <ul class=${ringLegend()} aria-label=${this.label || nothing}>
         ${parts.map((p, i) => {
-          const body = html`<span class=${ringDot({ slot: p.slot })}></span>
+          const dim = this._active >= 0 && this._active !== i;
+          const body = html`<span class=${ringDot({ slot: p.slot, dim })}></span>
             <span class=${ringLabel()}>${p.label}</span>
             <span class=${ringAmount()}>${p.valueText ?? formatInt(p.value)}</span>
             <span class=${ringShare()}>${share(p.value)}</span>`;
-          const cls = ringItem({ dim: this._active >= 0 && this._active !== i, link: !!p.href });
+          const cls = ringItem({ link: !!p.href });
           const on = () => this.#set(i);
           const off = () => this.#set(-1);
           return html`<li>

@@ -3,11 +3,12 @@ import { html, nothing } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { live } from "lit/directives/live.js";
-import { LightElement, uid, type Renderable } from "../../base/light-element.ts";
+import { LightElement, type Renderable } from "../../base/light-element.ts";
+import { uid } from "../../../lib/base/uid.ts";
 import { iconSvg, type IconName } from "../media/icon.ts";
-import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
-import { tiles } from "../layout/algebra.ts";
-import { fieldsetField, type FieldsetVariants } from "./fieldset.ts";
+import { rcva, responsiveBoolean, type Responsive } from "../../../lib/base/variants.ts";
+import { tiles } from "../../../styles/algebra.ts";
+import { fieldLabels, fieldsetField, legendLabel, type FieldsetVariants } from "./fieldset.ts";
 import { label as labelRecipe } from "./label.ts";
 
 const TYPED_TEXT = new Set<TextInputType>(["text", "email", "password", "search", "url", "tel"]);
@@ -145,6 +146,10 @@ export class UiTextInput extends LightElement {
     this.value = (e.target as HTMLInputElement).value;
   }
 
+  private _captioned() {
+    return !!this.label || !!this.legend || fieldLabels(this, this.inputId);
+  }
+
   private _field(cls: string) {
     const listId = this.suggestions.length ? `${this.inputId}-list` : undefined;
     return html`<input
@@ -168,7 +173,12 @@ export class UiTextInput extends LightElement {
         inputmode=${ifDefined(this.inputmode)}
         title=${ifDefined(this.patternTitle)}
         list=${ifDefined(listId)}
-        aria-label=${ifDefined(this.ariaLabelText ?? (!this.label && !this.legend ? (this.placeholder ?? this.leading) : undefined))}
+        aria-label=${ifDefined(this.ariaLabelText ?? (this._captioned() ? undefined : (this.placeholder ?? this.leading)))}
+        aria-labelledby=${ifDefined(
+          this.ariaLabelText
+            ? undefined
+            : legendLabel({ legend: this.legend, label: this.label, controlId: this.inputId }),
+        )}
         @input=${this._onInput}
       />${
         listId

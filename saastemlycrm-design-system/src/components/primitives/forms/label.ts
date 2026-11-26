@@ -2,7 +2,7 @@ import type { VariantProps } from "class-variance-authority";
 import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
+import { rcva } from "../../../lib/base/variants.ts";
 
 export const label = rcva("", {
   variants: {

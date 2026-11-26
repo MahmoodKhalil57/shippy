@@ -1,22 +1,27 @@
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
-import { intl, m } from "../../../i18n/index.ts";
+import { intl, m } from "../../../lib/i18n/index.ts";
 import { LightElement } from "../../base/light-element.ts";
-import { motion } from "../../base/motion-queue.ts";
-import { rcva } from "../../base/variants.ts";
-import { row, rowLine, stack, text } from "../layout/algebra.ts";
+import { motion } from "../../../lib/base/motion-queue.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { row, rowLine, stack, text } from "../../../styles/algebra.ts";
 
 export const funnel = rcva(`${stack} w-full gap-1`);
 export const funnelCaption = rcva(`${text.label} text-label-md text-on-surface-variant`);
-export const funnelStage = rcva(
-  `${stack} gap-1 rounded-field px-1 py-1 [transition:opacity_var(--duration-short4)_var(--ease-standard)]`,
-  { variants: { dim: { true: "opacity-50", false: "" }, link: { true: "cursor-pointer", false: "" } } },
-);
+export const funnelStage = rcva(`${stack} gap-1 rounded-field px-1 py-1`, {
+  variants: { link: { true: "cursor-pointer", false: "" } },
+});
 export const funnelHead = rcva(`${row} items-baseline gap-2`);
 export const funnelLabel = rcva(`${rowLine} text-body-md text-on-surface`);
 export const funnelValue = rcva(`${text.label} text-title-sm tabular-nums text-on-surface`);
-export const funnelTrack = rcva(`${row} h-3 w-full justify-center`);
+/** Focusing a stage dims the other stages' bars; their text keeps full contrast. */
+export const funnelTrack = rcva(
+  `${row} h-3 w-full justify-center [transition:opacity_var(--duration-short4)_var(--ease-standard)]`,
+  {
+    variants: { dim: { true: "opacity-40", false: "" } },
+  },
+);
 export const funnelBar = rcva(
   "h-full w-(--fill) max-w-full rounded-full bg-chart-1 [transition:width_var(--duration-long2)_var(--ease-emphasized-decelerate)] [transition-delay:calc(var(--i)*var(--duration-short2))] starting:w-0 motion-reduce:transition-none",
 );
@@ -69,12 +74,12 @@ export class UiFunnel extends LightElement {
       }
       <ol class=${stack} aria-label=${this.label || nothing}>
         ${s.map((x, i) => {
-          const cls = funnelStage({ dim: this._active >= 0 && this._active !== i, link: !!x.href });
+          const cls = funnelStage({ link: !!x.href });
           const body = html`<span class=${funnelHead()}>
               <span class=${funnelLabel()}>${x.label}</span>
               <span class=${funnelValue()}>${x.valueText ?? String(x.value)}</span>
             </span>
-            <span class=${funnelTrack()} aria-hidden="true">
+            <span class=${funnelTrack({ dim: this._active >= 0 && this._active !== i })} aria-hidden="true">
               <span
                 class=${funnelBar()}
                 style=${styleMap({ "--fill": `${first > 0 ? Math.max(2, (x.value / first) * 100) : 0}%`, "--i": String(i) })}

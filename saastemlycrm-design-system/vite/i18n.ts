@@ -27,7 +27,18 @@ export function i18nCompileOptions(root: string, outdir = "src/i18n/paraglide"):
 }
 
 export function i18n(root: string, outdir?: string) {
-  return paraglideVitePlugin(i18nCompileOptions(root, outdir) as never);
+  const generated = path.normalize(i18nCompileOptions(root, outdir).outdir) + path.sep;
+  return [
+    paraglideVitePlugin(i18nCompileOptions(root, outdir) as never),
+    {
+      name: "saastemly:i18n-unmapped",
+      apply: "serve" as const,
+      transform(code: string, id: string) {
+        if (!path.normalize(id.split("?")[0]).startsWith(generated)) return null;
+        return { code, map: { mappings: "" } };
+      },
+    },
+  ];
 }
 
 export const STATIC_LOCALE = "globalThis.__PARAGLIDE_STATIC_LOCALE__";

@@ -1,19 +1,19 @@
-import { cssTime } from "../../base/css-time.ts";
-import { tileH, tileW } from "../../base/tiles.ts";
+import { cssTime } from "../../../lib/base/css-time.ts";
+import { tileH, tileW } from "../../../lib/base/tiles.ts";
 import type { VariantProps } from "class-variance-authority";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
-import { backdrop } from "./algebra.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { backdrop } from "../../../styles/algebra.ts";
 import { button } from "../actions/button.ts";
 import { iconButton } from "../actions/icon-button.ts";
 import { iconSvg, type IconName } from "../media/icon.ts";
 import { menuFoldTween, type MenuFoldTween } from "../navigation/menu.ts";
-import { motion } from "../../base/motion-queue.ts";
-import { m } from "../../../i18n/index.ts";
+import { motion } from "../../../lib/base/motion-queue.ts";
+import { m } from "../../../lib/i18n/index.ts";
 
 export const appShellLayer = rcva("pointer-events-none absolute", {
   variants: {
@@ -26,14 +26,16 @@ export const appShellLayer = rcva("pointer-events-none absolute", {
 });
 
 export const appShell = rcva(
-  "group/shell @container/frame relative isolate grid h-dvh [--main-radius:var(--radius-lg)] grid grid-rows-[repeat(var(--frame-quarter-rows,12),calc(var(--tile-h)/4))_minmax(0,1fr)] grid-cols-[repeat(4,calc(var(--tile-w)/4))_var(--frame-slack,0px)_repeat(var(--frame-inner-quarters,16),calc(var(--tile-w)/4))_var(--frame-slack,0px)_repeat(4,var(--frame-end-quarter,calc(var(--tile-w)/4)))] overflow-hidden [--clips:frame] " +
+  "group/shell @container/frame relative isolate grid [--main-radius:var(--radius-lg)] grid grid-rows-[repeat(var(--frame-quarter-rows,12),calc(var(--tile-h)/4))_minmax(0,1fr)] grid-cols-[repeat(4,calc(var(--tile-w)/4))_var(--frame-slack,0px)_repeat(var(--frame-inner-quarters,16),calc(var(--tile-w)/4))_var(--frame-slack,0px)_repeat(4,var(--frame-end-quarter,calc(var(--tile-w)/4)))] overflow-hidden [--clips:frame] " +
     backdrop +
     " text-on-surface",
   {
     variants: {
       settling: { true: "[&_*]:transition-none!" },
       compact: { true: "[--frame-gap:0px]" },
+      embedded: { true: "h-full", false: "h-dvh" },
     },
+    defaultVariants: { embedded: false },
   },
 );
 
@@ -316,16 +318,22 @@ export class UiFrame extends LightElement {
   @property({ type: Boolean }) settling = false;
   @property({ type: Number }) cols = 6;
   @property({ type: Boolean }) compact = false;
+  /**
+   * Sizes the frame to its parent (which must have a height) instead of the viewport, for a frame that isn't the
+   * page shell, e.g. a preview; the slack beside the columns then comes from the frame's own width.
+   */
+  @property({ type: Boolean, reflect: true }) embedded = false;
+  @state() private _width = 0;
 
   render() {
     return html`<div
       data-frame
-      class=${appShell({ settling: this.settling, compact: this.compact })}
+      class=${appShell({ settling: this.settling, compact: this.compact, embedded: this.embedded })}
       style=${styleMap({
         "--app-scrim": this.scrim || undefined,
         "--app-window-scrim": this.windowScrim || undefined,
         "--frame-cols": String(this.cols),
-        "--frame-slack": `max(0px, calc((100vw - ${this.cols} * var(--tile-w)) / 2))`,
+        "--frame-slack": `max(0px, calc((${this.embedded ? `${this._width}px` : "100vw"} - ${this.cols} * var(--tile-w)) / 2))`,
         "--frame-pad-x":
           "calc(var(--frame-slack) + clamp(0px, (var(--tile-w) / 2 - 0.01px - var(--frame-slack)) * 10000, var(--tile-w) / 2))",
         "--frame-inner-quarters": String(4 * Math.max(1, this.cols - (this.compact ? 1 : 2))),
@@ -347,7 +355,11 @@ export class UiFrame extends LightElement {
   }
 
   #window: HTMLElement | null = null;
-  #sizes = new ResizeObserver(() => this.#cut());
+  #sizes = new ResizeObserver(() => {
+    const width = this.querySelector<HTMLElement>("[data-frame]")?.clientWidth ?? 0;
+    if (this.embedded && width !== this._width) this._width = width;
+    this.#cut();
+  });
 
   watchWindow(window: HTMLElement) {
     this.#window = window;
@@ -366,13 +378,13 @@ export class UiFrame extends LightElement {
 
   #cut() {
     const frame = this.querySelector<HTMLElement>("[data-frame]");
-    const shell = this.querySelector<HTMLElement>("[data-frame-shell]");
-    const backdrop = this.querySelector<HTMLElement>("[data-frame-backdrop]");
+    if (!frame) return;
+    const shell = frame.querySelector<HTMLElement>("[data-frame-shell]")!;
+    const backdrop = frame.querySelector<HTMLElement>("[data-frame-backdrop]")!;
     const window = this.#window;
-    if (!frame || !shell) return;
     if (!window?.isConnected) {
       shell.style.clipPath = "";
-      if (backdrop) backdrop.style.clipPath = "";
+      backdrop.style.clipPath = "";
       return;
     }
     const f = frame.getBoundingClientRect();
@@ -393,7 +405,7 @@ export class UiFrame extends LightElement {
       `V${n(y + h - br!)}A${br} ${br} 0 0 1 ${n(x + w - br!)} ${n(y + h)}` +
       `H${n(x + bl!)}A${bl} ${bl} 0 0 1 ${x} ${n(y + h - bl!)}V${n(y + tl!)}A${tl} ${tl} 0 0 1 ${n(x + tl!)} ${y}Z`;
     shell.style.clipPath = `path("${hole}")`;
-    if (backdrop) backdrop.style.clipPath = `path(evenodd, "M0 0H${n(f.width)}V${n(f.height)}H0Z${hole}")`;
+    backdrop.style.clipPath = `path(evenodd, "M0 0H${n(f.width)}V${n(f.height)}H0Z${hole}")`;
   }
 }
 
@@ -480,11 +492,10 @@ export class UiFrameColumn extends LightElement {
   }
 
   #fold(open: boolean) {
-    const list = this.querySelector<HTMLElement>("[data-frame-list]");
-    const rail = this.querySelector<HTMLElement>("[data-frame-rail]");
-    const panel = this.querySelector<HTMLElement>("[data-frame-panel]");
-    const region = this.querySelector<HTMLElement>("[data-frame-region]");
-    if (!list || !rail || !panel || !region) return;
+    const list = this.querySelector<HTMLElement>("[data-frame-list]")!;
+    const rail = this.querySelector<HTMLElement>("[data-frame-rail]")!;
+    const panel = this.querySelector<HTMLElement>("[data-frame-panel]")!;
+    const region = this.querySelector<HTMLElement>("[data-frame-region]")!;
     const current = listFolds.get(list);
     if (list.hasAttribute("data-drag") && !(current && columnFolds.has(current))) return;
     current?.cancel();
@@ -653,11 +664,11 @@ export class UiFrameMain extends LightElement {
   #springs() {
     const frame = this.#frame();
     const boxes = [
-      this.querySelector<HTMLElement>(":scope > div"),
+      this.querySelector<HTMLElement>(":scope > div")!,
       ...(frame?.querySelectorAll<HTMLElement>("[data-frame-region]:is(nav, aside), [data-frame-panel]") ?? []),
     ];
     return boxes
-      .flatMap((el) => el?.getAnimations() ?? [])
+      .flatMap((el) => el.getAnimations())
       .filter((a): a is CSSTransition => a instanceof CSSTransition && /^(?:width|margin)/.test(a.transitionProperty));
   }
 
@@ -670,26 +681,24 @@ export class UiFrameMain extends LightElement {
   #expect() {
     const springs = this.#springs();
     const settled = motion.input(springs);
-    const center = this.querySelector<HTMLElement>(":scope > div");
+    const center = this.querySelector<HTMLElement>(":scope > div")!;
     let delta = 0;
     let timing: { until: number; duration: number; easing: string } | undefined;
-    const now = center ? getComputedStyle(center) : undefined;
+    const now = getComputedStyle(center);
     for (const a of springs) {
-      if ((a.effect as KeyframeEffect | null)?.target !== center || !a.transitionProperty.startsWith("margin"))
-        continue;
-      const t = (a.effect as KeyframeEffect).getTiming();
-      const at = Number(a.currentTime ?? 0);
-      const wait = Number(t.delay ?? 0) - at;
+      const effect = a.effect as KeyframeEffect;
+      if (effect.target !== center || !a.transitionProperty.startsWith("margin")) continue;
+      const t = effect.getTiming();
+      const wait = Number(t.delay) - Number(a.currentTime);
       timing = {
         until: performance.now() + Math.max(0, wait),
-        duration: Number(t.duration ?? 0) + Math.min(0, wait),
-        easing: t.easing ?? "ease",
+        duration: Number(t.duration) + Math.min(0, wait),
+        easing: t.easing!,
       };
-      const frames = (a.effect as KeyframeEffect).getKeyframes();
       const end = parseFloat(
-        String(Object.entries(frames.at(-1) ?? {}).find(([k]) => k.startsWith("margin"))?.[1] ?? 0),
+        String(Object.entries(effect.getKeyframes().at(-1)!).find(([k]) => k.startsWith("margin"))![1]),
       );
-      const from = parseFloat(now?.getPropertyValue(a.transitionProperty) ?? "") || 0;
+      const from = parseFloat(now.getPropertyValue(a.transitionProperty)) || 0;
       delta += end - from;
     }
     if (!delta) return;

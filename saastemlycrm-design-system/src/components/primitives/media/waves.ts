@@ -1,11 +1,27 @@
 import { html } from "lit";
-import { customElement, property, query } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
+import { keyed } from "lit/directives/keyed.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { LightElement } from "../../base/light-element.ts";
-import { liveColors } from "../../base/live-colors.ts";
-import { booleanAttribute, rcva } from "../../base/variants.ts";
+import { liveColors } from "../../../lib/base/live-colors.ts";
+import { booleanAttribute, rcva } from "../../../lib/base/variants.ts";
 
-export const waves = rcva("absolute inset-0 overflow-hidden [--clips:media]");
+export const waves = rcva("overflow-hidden [--clips:media]", {
+  variants: {
+    position: {
+      fill: "absolute inset-0",
+      own: "relative h-full w-full",
+    },
+  },
+  defaultVariants: { position: "fill" },
+});
+
+/** True when an ancestor below the root is positioned, so `absolute inset-0` fills that box rather than the page. */
+function positionedAncestor(el: Element): boolean {
+  for (let at = el.parentElement; at && at !== document.body && at !== document.documentElement; at = at.parentElement)
+    if (getComputedStyle(at).position !== "static") return true;
+  return false;
+}
 export const wavesCanvas = rcva("absolute inset-0 block size-full");
 
 export type WavesLineStyle = "solid" | "dashed";
@@ -232,20 +248,16 @@ const smootherstep = (value: number) => {
 };
 
 const compile = (gl: WebGL2RenderingContext, type: number, source: string) => {
-  const shader = gl.createShader(type);
-  if (!shader) return null;
+  const shader = gl.createShader(type)!;
   gl.shaderSource(shader, source);
   gl.compileShader(shader);
-  if (gl.getShaderParameter(shader, gl.COMPILE_STATUS)) return shader;
-  gl.deleteShader(shader);
-  return null;
+  return shader;
 };
 
 const link = (gl: WebGL2RenderingContext): Program | null => {
+  const program = gl.createProgram();
   const vertex = compile(gl, gl.VERTEX_SHADER, VERTEX);
   const fragment = compile(gl, gl.FRAGMENT_SHADER, FRAGMENT);
-  const program = gl.createProgram();
-  if (!vertex || !fragment || !program) return null;
   gl.attachShader(program, vertex);
   gl.attachShader(program, fragment);
   gl.linkProgram(program);
@@ -258,15 +270,16 @@ const link = (gl: WebGL2RenderingContext): Program | null => {
   const uniforms: Record<string, WebGLUniformLocation | null> = {};
   const count = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
   for (let i = 0; i < count; i++) {
-    const info = gl.getActiveUniform(program, i);
-    if (info) uniforms[info.name] = gl.getUniformLocation(program, info.name);
+    const info = gl.getActiveUniform(program, i)!;
+    uniforms[info.name] = gl.getUniformLocation(program, info.name);
   }
   return { program, uniforms };
 };
 
 @customElement("ui-waves")
 export class UiWaves extends LightElement {
-  @property({ attribute: "line-color" }) lineColor = "#ffffff";
+  /** Defaults to the inherited text colour (the surface's on-colour role), so lines show in light and dark themes. */
+  @property({ attribute: "line-color" }) lineColor = "currentColor";
   @property({ attribute: "accent-color" }) accentColor = "";
   @property({ attribute: "background-color" }) backgroundColor = "transparent";
   @property({ attribute: "line-style" }) lineStyle: WavesLineStyle = "solid";
@@ -290,6 +303,8 @@ export class UiWaves extends LightElement {
   @property({ type: Boolean, attribute: "light-mode" }) lightMode = false;
   @property({ type: Boolean }) paused = false;
   @property({ type: Number }) dpr?: number;
+  @state() private _fills = true;
+  @state() private _surface = 0;
 
   @query("[data-waves]") private _box?: HTMLDivElement;
   @query("[data-waves] > canvas") private _canvasEl?: HTMLCanvasElement;
@@ -338,6 +353,7 @@ export class UiWaves extends LightElement {
 
   connectedCallback() {
     super.connectedCallback();
+    this._fills = positionedAncestor(this);
     this.#colors.connect();
     if (this.hasUpdated) void this.updateComplete.then(() => this.#run());
   }
@@ -359,16 +375,16 @@ export class UiWaves extends LightElement {
 
   #run() {
     if (this.#stop || !this.isConnected) return;
-    const container = this.#box;
-    const canvas = this.#canvas;
-    const gl = canvas?.getContext("webgl2", {
+    const container = this.#box!;
+    const canvas = this.#canvas!;
+    const gl = canvas.getContext("webgl2", {
       alpha: true,
       premultipliedAlpha: true,
       antialias: false,
       depth: false,
       stencil: false,
     });
-    if (!container || !canvas || !gl) return;
+    if (!gl) return;
 
     const program = link(gl);
     if (!program) return;
@@ -383,22 +399,19 @@ export class UiWaves extends LightElement {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
 
-    const probe = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
-    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    const probe = document.createElement("canvas").getContext("2d", { willReadFrequently: true })!;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const colors = new Map<string, number[]>();
     const parse = (value: string): number[] => {
       value = this.#color(value);
       const cached = colors.get(value);
       if (cached) return cached;
-      let rgb = [1, 1, 1];
-      if (probe) {
-        probe.clearRect(0, 0, 1, 1);
-        probe.fillStyle = "#ffffff";
-        probe.fillStyle = value;
-        probe.fillRect(0, 0, 1, 1);
-        const [r, g, b] = probe.getImageData(0, 0, 1, 1).data;
-        rgb = [r / 255, g / 255, b / 255];
-      }
+      probe.clearRect(0, 0, 1, 1);
+      probe.fillStyle = "#ffffff";
+      probe.fillStyle = value;
+      probe.fillRect(0, 0, 1, 1);
+      const [r, g, b] = probe.getImageData(0, 0, 1, 1).data;
+      const rgb = [r / 255, g / 255, b / 255];
       colors.set(value, rgb);
       return rgb;
     };
@@ -665,15 +678,29 @@ export class UiWaves extends LightElement {
       else last = 0;
     };
 
+    let lost = false;
     const wake = () => {
-      if (!raf && visible && !document.hidden) raf = requestAnimationFrame(frame);
+      if (!lost && !raf && visible && !document.hidden) raf = requestAnimationFrame(frame);
     };
+    const onLost = (event: Event) => {
+      event.preventDefault();
+      lost = true;
+      cancelAnimationFrame(raf);
+      raf = 0;
+    };
+    const onRestored = () => {
+      this.#stop?.();
+      this.#stop = null;
+      this.#run();
+    };
+    canvas.addEventListener("webglcontextlost", onLost);
+    canvas.addEventListener("webglcontextrestored", onRestored);
 
     const resize = () => {
       const s = this.#settings();
       const width = Math.max(1, container.clientWidth);
       const height = Math.max(1, container.clientHeight);
-      const ratio = Math.min(s.dpr || window.devicePixelRatio || 1, 2);
+      const ratio = Math.min(s.dpr || window.devicePixelRatio, 2);
       view.width = width;
       view.height = height;
       canvas.width = Math.max(1, Math.round(width * ratio));
@@ -763,6 +790,8 @@ export class UiWaves extends LightElement {
     this.#stop = () => {
       cancelAnimationFrame(raf);
       this.#poke = null;
+      canvas.removeEventListener("webglcontextlost", onLost);
+      canvas.removeEventListener("webglcontextrestored", onRestored);
       resizeObserver.disconnect();
       intersection.disconnect();
       window.removeEventListener("pointermove", onPointerMove);
@@ -774,13 +803,20 @@ export class UiWaves extends LightElement {
       gl.deleteProgram(program.program);
       gl.deleteVertexArray(vao);
       gl.deleteTexture(texture);
-      if (!canvas.isConnected) gl.getExtension("WEBGL_lose_context")?.loseContext();
+      if (!canvas.isConnected) {
+        gl.getExtension("WEBGL_lose_context")?.loseContext();
+        this._surface++;
+      }
     };
   }
 
   render() {
-    return html`<div class=${waves()} data-waves style=${styleMap({ backgroundColor: this.backgroundColor })}>
-      <canvas class=${wavesCanvas()} aria-hidden="true"></canvas>
+    return html`<div
+      class=${waves({ position: this._fills ? "fill" : "own" })}
+      data-waves
+      style=${styleMap({ backgroundColor: this.backgroundColor })}
+    >
+      ${keyed(this._surface, html`<canvas class=${wavesCanvas()} aria-hidden="true"></canvas>`)}
     </div>`;
   }
 }

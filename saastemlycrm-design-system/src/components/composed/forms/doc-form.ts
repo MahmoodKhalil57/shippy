@@ -1,13 +1,13 @@
 import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import type { Where } from "payload";
-import { matches } from "../../../payload/query.ts";
-import type { FieldLike } from "../../../contracts/config.ts";
-import { fieldError, inputOf } from "../../../contracts/fields.ts";
+import { matches } from "../../../lib/payload/query.ts";
+import type { FieldLike } from "../../../lib/contracts/config.ts";
+import { fieldError, inputOf } from "../../../lib/contracts/fields.ts";
 import type { DropdownItem } from "../../primitives/actions/dropdown.ts";
 import { LightElement } from "../../base/light-element.ts";
-import { AI_CHANGE } from "../../../agent/ai-polyfill.ts";
-import { suggest, supported, type SuggestField } from "../../../agent/built-in-ai.ts";
+import { AI_CHANGE } from "../../../lib/agent/ai-polyfill.ts";
+import { suggest, supported, type SuggestField } from "../../../lib/agent/built-in-ai.ts";
 import "../../primitives/actions/button.ts";
 import "../../primitives/actions/dropdown.ts";
 import "../../primitives/data/table.ts";
@@ -17,6 +17,8 @@ import "../../primitives/navigation/link.ts";
 import "../../primitives/containers/card.ts";
 import "../../primitives/containers/collapse.ts";
 import "../../primitives/data/badge.ts";
+import "../../primitives/data/tag.ts";
+import "../../primitives/feedback/empty-state.ts";
 import "../../primitives/forms/checkbox.ts";
 import "../../primitives/actions/button-group.ts";
 import "../../primitives/forms/date-input.ts";
@@ -37,7 +39,8 @@ import "../../primitives/layout/flex.ts";
 import "../../primitives/layout/grid.ts";
 import "../../primitives/navigation/tabs.ts";
 import "../../primitives/typography/text.ts";
-import { intl, m } from "../../../i18n/index.ts";
+import { intl, m } from "../../../lib/i18n/index.ts";
+import { setIn } from "../../../lib/base/set-in.ts";
 
 type Data = Record<string, unknown>;
 type Path = (string | number)[];
@@ -88,16 +91,6 @@ const isObj = (v: unknown): v is Data => typeof v === "object" && v !== null && 
 const newId = () =>
   Array.from(crypto.getRandomValues(new Uint8Array(12)), (b) => b.toString(16).padStart(2, "0")).join("");
 
-export function setIn(root: Data, path: Path, value: unknown): Data {
-  const [head, ...rest] = path;
-  const copy: Data | unknown[] = Array.isArray(root) ? [...(root as unknown[])] : { ...root };
-  const current = (copy as Record<string | number, unknown>)[head];
-  (copy as Record<string | number, unknown>)[head] = rest.length
-    ? setIn((current ?? (typeof rest[0] === "number" ? [] : {})) as Data, rest, value)
-    : value;
-  return copy as Data;
-}
-
 const DATE_INPUT = { dayOnly: "date", dayAndTime: "datetime-local", timeOnly: "time", monthOnly: "month" } as const;
 type DateAppearance = keyof typeof DATE_INPUT;
 const appearanceOf = (f: FieldLike): DateAppearance => {
@@ -121,8 +114,8 @@ const fromInputDate = (v: string, appearance: DateAppearance, previous: unknown)
   if (!v) return null;
   if (appearance === "timeOnly") {
     const day = typeof previous === "string" && previous ? new Date(previous) : new Date();
-    const [h, min] = v.split(":").map(Number);
-    day.setHours(h ?? 0, min ?? 0, 0, 0);
+    const [h, min] = v.split(":").map(Number) as [number, number];
+    day.setHours(h, min, 0, 0);
     return day.toISOString();
   }
   return new Date(appearance === "monthOnly" ? `${v}-01T00:00` : v).toISOString();
@@ -134,10 +127,7 @@ interface SuggestSpec {
   label: (x: string | number | boolean) => string;
 }
 type Suggestion = { busy: true } | { value: unknown; label: string } | { note: string };
-const dateLabel = (iso: string) => {
-  const d = new Date(`${iso}T00:00`);
-  return Number.isNaN(d.getTime()) ? iso : intl.date({ dateStyle: "medium" }).format(d);
-};
+const dateLabel = (iso: string) => intl.date({ dateStyle: "medium" }).format(new Date(`${iso}T00:00`));
 
 const valueFields = (fields: FieldLike[]): FieldLike[] =>
   fields.flatMap((f) =>
@@ -225,7 +215,7 @@ export class UiDocForm extends LightElement {
         const byLabel = new Map(options.map((o) => [String(o.label), o.value]));
         return {
           field: { ...base, type: "string", options: [...byLabel.keys()] },
-          toValue: (x) => byLabel.get(String(x)) ?? null,
+          toValue: (x) => byLabel.get(String(x)),
           label: words,
         };
       }
@@ -294,10 +284,9 @@ export class UiDocForm extends LightElement {
     try {
       const today = this.today || new Date().toISOString().slice(0, 10);
       const x = await suggest(spec.field, this.what || "record", this._known(key), today);
-      const value = x == null ? null : spec.toValue(x);
       this._suggestion(
         key,
-        x == null || value == null ? { note: m.doc_form_suggest_nothing() } : { value, label: spec.label(x) },
+        x == null ? { note: m.doc_form_suggest_nothing() } : { value: spec.toValue(x), label: spec.label(x) },
       );
     } catch (e) {
       console.warn("Suggestion failed", e);
@@ -457,7 +446,7 @@ export class UiDocForm extends LightElement {
         next.splice(i + (action === "up" ? -1 : 1), 0, row!);
       } else if (action === "duplicate") {
         next.splice(i + 1, 0, { ...structuredClone(rows[i]!), id: newId() });
-      } else if (action === "remove") next.splice(i, 1);
+      } else next.splice(i, 1);
       this._set(at, next);
     };
     const range =
@@ -492,9 +481,10 @@ export class UiDocForm extends LightElement {
         const open = isOpen(row, i);
         const errors = this._errorsIn([...at, i]);
         const kind = f.type === "blocks" ? blockLabel(text(row.blockType)) : singular;
+        const number = text(i + 1).padStart(2, "0");
         const name =
           (f.type === "blocks" && typeof row.blockName === "string" && row.blockName) ||
-          [this._rowLabel(fields, row)].find((l) => l !== String(i + 1) && l !== text(i + 1).padStart(2, "0")) ||
+          [this._rowLabel(fields, row)].find((l) => l !== String(i + 1) && l !== number) ||
           "";
         const menu: DropdownItem[] = [
           ...(sortable && i > 0 ? [{ label: m.doc_form_move_up(), value: "up", icon: "arrow-up" as const }] : []),
@@ -512,13 +502,11 @@ export class UiDocForm extends LightElement {
               <ui-button
                 size="xs"
                 variant="text"
-                .label=${open ? m.doc_form_collapse_row({ kind, number: i + 1 }) : m.doc_form_expand_row({ kind, number: i + 1 })}
+                .label=${`${open ? m.doc_form_collapse_row({ kind, number }) : m.doc_form_expand_row({ kind, number })}${name ? ` ${name}` : ""}`}
                 @click=${() => (this._folded = new Map(this._folded).set(rowId(row, i), !open))}
               >
                 <ui-icon name=${open ? "chevron-down" : "chevron-right"} size="sm"></ui-icon>
-                <ui-text as="span" variant="title-sm"
-                  >${m.doc_form_row_title({ kind, number: text(i + 1).padStart(2, "0") })}</ui-text
-                >
+                <ui-text as="span" variant="title-sm">${m.doc_form_row_title({ kind, number })}</ui-text>
                 ${name ? html`<ui-text as="span" variant="body-md" color="muted" truncate>${name}</ui-text>` : nothing}
               </ui-button>
               <ui-flex align="center" gap="1">
@@ -551,6 +539,7 @@ export class UiDocForm extends LightElement {
                       ? html`<ui-text-input
                           size="sm"
                           width="full"
+                          aria-label=${m.doc_form_block_name()}
                           .leading=${m.doc_form_block_name()}
                           .placeholder=${m.doc_form_optional()}
                           .value=${typeof row.blockName === "string" ? row.blockName : ""}
@@ -668,18 +657,18 @@ export class UiDocForm extends LightElement {
       ?suggesting=${!!s && "busy" in s}
       .suggestion=${s && "label" in s ? s.label : ""}
       .suggestNote=${s && "note" in s ? s.note : ""}
-      @ui-suggest=${() => spec && this._suggest(key, spec)}
+      @ui-suggest=${() => this._suggest(key, spec!)}
       @ui-suggestion=${(e: CustomEvent<{ accept: boolean }>) => {
-        const got = this._suggestions.get(key);
+        const got = this._suggestions.get(key) as { value: unknown };
         this._suggestion(key);
-        if (e.detail.accept && got && "value" in got) set(got.value);
+        if (e.detail.accept) set(got.value);
       }}
       >${control}</ui-field
     >`;
   }
 
   private _control(f: FieldLike, v: unknown, set: (x: unknown) => void, data: Data, invalid: boolean) {
-    const label = labelOf(f);
+    const label = labelOf(f) || humanize(f.name!);
     const placeholder = textOf(f.admin?.placeholder);
     const disabled = this.readonly || !!f.admin?.readOnly;
     const color = invalid ? ("error" as const) : undefined;
@@ -715,8 +704,8 @@ export class UiDocForm extends LightElement {
             disabled,
             ...(toned ? { tone: f.custom!.tones![o.value] ?? "neutral" } : { hue: o.i }),
           }))}
-          @ui-change=${(e: CustomEvent<{ value?: string; values?: string[] }>) =>
-            set(kind === "chips" ? (e.detail.values ?? []) : (e.detail.value ?? null))}
+          @ui-change=${(e: CustomEvent<{ value: string; values: string[] }>) =>
+            set(kind === "chips" ? e.detail.values : e.detail.value)}
         ></ui-button-group>`;
       case "rating":
         return html`<ui-rating
@@ -804,7 +793,7 @@ export class UiDocForm extends LightElement {
           .label=${label}
           ?time=${appearance === "dayAndTime"}
           .today=${this.today}
-          ?future=${/due|deadline|eta|arriv|expir|until|by$|valid/i.test(f.name ?? "")}
+          ?future=${/due|deadline|eta|arriv|expir|until|by$|valid/i.test(f.name!)}
           .min=${bound(f.admin?.date?.minDate)}
           .max=${bound(f.admin?.date?.maxDate)}
           .value=${toInputDate(v, appearance)}
@@ -924,7 +913,8 @@ export class UiDocForm extends LightElement {
       }
       case "checkbox":
         return html`<ui-checkbox
-          .label=${label}
+          .label=${labelOf(f)}
+          aria-label=${labelOf(f) ? nothing : label}
           .checked=${v === true}
           .disabled=${disabled}
           @change=${(e: Event) => set(target(e).checked)}
@@ -953,7 +943,7 @@ export class UiDocForm extends LightElement {
       case "radio":
       case "relationship":
       case "upload":
-        return this._choice(f, v, set, label, "", disabled, color, placeholder, data);
+        return this._choice(f, v, set, label, disabled, color, placeholder, data);
       default:
         return html`<ui-text variant="body-md" color="muted"
           >${m.doc_form_unsupported({ label, type: String(f.type) })}</ui-text
@@ -1001,7 +991,6 @@ export class UiDocForm extends LightElement {
     v: unknown,
     set: (x: unknown) => void,
     label: string,
-    hint: unknown,
     disabled: boolean,
     color: "error" | undefined,
     placeholder: string | undefined,
@@ -1025,7 +1014,6 @@ export class UiDocForm extends LightElement {
     if (f.type === "radio") {
       return html`<ui-radio
         aria-label=${label}
-        .hint=${hint ?? ""}
         direction=${f.admin?.layout === "vertical" ? "vertical" : "horizontal"}
         .options=${options}
         .value=${toOption(v)}
@@ -1038,7 +1026,7 @@ export class UiDocForm extends LightElement {
     const field = (fieldHint: unknown) =>
       html`<ui-combobox
         aria-label=${label}
-        .hint=${fieldHint ?? ""}
+        .hint=${fieldHint}
         .options=${options}
         .value=${picked}
         ?multiple=${!!f.hasMany}
@@ -1051,7 +1039,7 @@ export class UiDocForm extends LightElement {
           set(Array.isArray(e.detail.value) ? e.detail.value.map(fromOption) : fromOption(e.detail.value))}
       ></ui-combobox>`;
 
-    if (f.type !== "relationship" && f.type !== "upload") return field(hint);
+    if (f.type !== "relationship" && f.type !== "upload") return field("");
 
     const ids = (Array.isArray(picked) ? picked : [picked]).filter(Boolean);
     const target = (id: string) => (poly ? id.slice(0, id.indexOf(":")) : (f.relationTo as string));
@@ -1066,7 +1054,7 @@ export class UiDocForm extends LightElement {
       href && !poly && f.admin?.allowCreate !== false && !disabled
         ? html`<ui-link href=${href(f.relationTo as string)} target="_blank">${m.doc_form_new()}</ui-link>`
         : undefined;
-    const parts = [hint || undefined, open, create].filter((x) => x != null);
+    const parts = [open, create].filter((x) => x != null);
     const fieldHint = parts.length ? html`${parts.map((x, i) => html`${i ? " · " : ""}${x}`)}` : "";
     const previews =
       f.type === "upload" ? ids.map((id) => option(id)).filter((o): o is RelationOption => !!o?.image) : [];

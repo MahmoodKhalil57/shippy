@@ -1,17 +1,18 @@
 import { html, nothing } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
-import { inlineStart } from "../../base/inline-start.ts";
+import { inlineStart } from "../../../lib/base/inline-start.ts";
 import { LightElement } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
-import { floating, floatingHeight, inset, pad, row, scrollRoom, stack, text } from "../layout/algebra.ts";
-import { auditContrast, type ContrastIssue } from "../../base/contrast.ts";
-import { auditProminence, type ProminenceIssue } from "../../base/prominence.ts";
-import { auditLayers, type LayoutIssue } from "../../base/layout.ts";
-import { intl, m } from "../../../i18n/index.ts";
+import { afterNextPaint, whenIdle } from "../../../lib/base/work-queue.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { floating, floatingHeight, inset, pad, row, scrollRoom, stack, text } from "../../../styles/algebra.ts";
+import { auditContrast, type ContrastIssue } from "../../../lib/base/contrast.ts";
+import { auditProminence, type ProminenceIssue } from "../../../lib/base/prominence.ts";
+import { auditLayers, type LayoutIssue } from "../../../lib/base/layout.ts";
+import { intl, m } from "../../../lib/i18n/index.ts";
 
-export { auditContrast, type ContrastIssue } from "../../base/contrast.ts";
-export { auditLayers, auditLayout, type LayoutIssue } from "../../base/layout.ts";
+export { auditContrast, type ContrastIssue } from "../../../lib/base/contrast.ts";
+export { auditLayers, auditLayout, type LayoutIssue } from "../../../lib/base/layout.ts";
 
 export const contrastAuditBox = rcva(
   "pointer-events-none fixed z-[70] rounded-xs ring-2 ring-offset-1 ring-offset-base-100 top-(--top) start-(--left) h-(--h) w-(--w) max-w-full",
@@ -75,7 +76,16 @@ export class UiContrastAudit extends LightElement {
     addEventListener("ui-contrast-audit", this.#toggle);
     addEventListener("scroll", this.#reflow, { capture: true, passive: true });
     addEventListener("resize", this.#reflow, { passive: true });
-    if (new URLSearchParams(location.search).has("audit")) setTimeout(() => this.run(), 1500);
+    if (new URLSearchParams(location.search).has("audit")) void this.#runWhenSettled();
+  }
+
+  /** With ?audit in the URL, audits once the page has loaded, its fonts are in and the browser is idle. */
+  async #runWhenSettled() {
+    if (document.readyState !== "complete")
+      await new Promise<void>((done) => addEventListener("load", () => done(), { once: true }));
+    await document.fonts.ready;
+    await afterNextPaint();
+    whenIdle(this, () => this.isConnected && this.run());
   }
 
   disconnectedCallback() {
@@ -88,10 +98,6 @@ export class UiContrastAudit extends LightElement {
 
   measure(): ContrastIssue[] {
     return auditContrast();
-  }
-
-  measureLayout(): LayoutIssue[] {
-    return auditLayers();
   }
 
   run() {

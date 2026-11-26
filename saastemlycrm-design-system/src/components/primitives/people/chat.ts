@@ -3,7 +3,7 @@ import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
+import { rcva } from "../../../lib/base/variants.ts";
 
 export const chat = rcva("chat", {
   variants: {
@@ -32,7 +32,7 @@ export const chatBubble = rcva("chat-bubble", {
 
 export const chatImage = rcva("chat-image avatar");
 export const chatHeader = rcva("chat-header");
-export const chatFooter = rcva("chat-footer opacity-50");
+export const chatFooter = rcva("chat-footer text-on-surface-variant");
 export const chatAvatar = rcva("w-10 rounded-full");
 export const chatTime = rcva("min-w-0 [overflow-wrap:anywhere] text-body-sm text-on-surface-variant");
 export const chatLog = rcva("w-full");

@@ -1,13 +1,25 @@
 import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
-import { m } from "../../../i18n/index.ts";
+import { m } from "../../../lib/i18n/index.ts";
 import { LightElement } from "../../base/light-element.ts";
-import { monogramHue, monogramLetters } from "../../base/monogram.ts";
-import { motion } from "../../base/motion-queue.ts";
-import { rcva } from "../../base/variants.ts";
+import { monogramHue, monogramLetters } from "../../../lib/base/monogram.ts";
+import { motion } from "../../../lib/base/motion-queue.ts";
+import { rcva } from "../../../lib/base/variants.ts";
 import { iconSvg } from "../media/icon.ts";
-import { fixed, grid, inlineRow, inset, row, rowEnd, rowGrow, rowLine, stack, text } from "../layout/algebra.ts";
+import {
+  fixed,
+  grid,
+  inlineRow,
+  inset,
+  row,
+  rowEnd,
+  rowFill,
+  rowGrow,
+  rowLine,
+  stack,
+  text,
+} from "../../../styles/algebra.ts";
 import type { Tone } from "./tag.ts";
 
 export interface RecordFact {
@@ -93,7 +105,7 @@ export const recordCard = rcva(
   {
     variants: {
       link: {
-        true: "cursor-pointer [transition:translate_var(--duration-spatial-fast)_var(--ease-spatial-fast),box-shadow_var(--duration-effects-fast)_var(--ease-effects-fast),border-color_var(--duration-effects-fast)_var(--ease-effects-fast)] hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-elevation-2 motion-reduce:transition-none",
+        true: "cursor-pointer has-[[data-record-link]:focus-visible]:outline-2 has-[[data-record-link]:focus-visible]:-outline-offset-2 has-[[data-record-link]:focus-visible]:outline-primary [transition:translate_var(--duration-spatial-fast)_var(--ease-spatial-fast),box-shadow_var(--duration-effects-fast)_var(--ease-effects-fast),border-color_var(--duration-effects-fast)_var(--ease-effects-fast)] hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-elevation-2 motion-reduce:transition-none",
         false: "",
       },
     },
@@ -124,7 +136,7 @@ export const recordInitials = rcva(
   `${fixed["6"]} grid place-items-center rounded-full bg-surface-container-highest text-label-sm text-on-surface`,
 );
 export const recordGo = rcva(
-  `${rowEnd} text-primary opacity-0 -translate-x-1 [transition:opacity_var(--duration-short4)_var(--ease-standard),translate_var(--duration-short4)_var(--ease-standard)] group-hover/record:translate-x-0 group-hover/record:opacity-100 group-focus-visible/record:opacity-100 motion-reduce:transition-none rtl:translate-x-1`,
+  `${rowEnd} text-primary opacity-0 -translate-x-1 [transition:opacity_var(--duration-short4)_var(--ease-standard),translate_var(--duration-short4)_var(--ease-standard)] group-hover/record:translate-x-0 group-hover/record:opacity-100 group-has-[[data-record-link]:focus-visible]/record:translate-x-0 group-has-[[data-record-link]:focus-visible]/record:opacity-100 motion-reduce:transition-none rtl:translate-x-1`,
 );
 
 export const recordList = rcva(`${stack} w-full gap-1`);
@@ -133,15 +145,17 @@ export const recordRow = rcva(
   {
     variants: {
       link: {
-        true: "cursor-pointer touch-target state-layer",
+        true: "cursor-pointer touch-target state-layer has-[[data-record-link]:focus-visible]:outline-2 has-[[data-record-link]:focus-visible]:-outline-offset-2 has-[[data-record-link]:focus-visible]:outline-primary",
         false: "",
       },
     },
   },
 );
-export const recordRowTitle = rcva(`${text.line} text-body-lg text-on-surface`);
+export const recordRowNames = rcva(`${stack} ${rowFill} gap-0.5`);
+export const recordRowTitle = rcva(`${text.label} line-clamp-2 text-body-lg text-on-surface`);
 export const recordRowSupporting = rcva(`${text.line} text-body-sm text-on-surface-variant`);
 export const recordRowEnd = rcva(`${row} ${rowEnd} items-center justify-end gap-x-3 gap-y-1`);
+export const recordRowChevron = rcva("text-on-surface-variant");
 export const recordRowFigure = rcva(`${text.label} text-title-sm tabular-nums text-on-surface`);
 
 export const recordChips = rcva(`${row} w-full items-center gap-2`);
@@ -150,7 +164,7 @@ export const recordChip = rcva(
   {
     variants: {
       link: {
-        true: "cursor-pointer touch-target state-layer [transition:border-color_var(--duration-short4)_var(--ease-standard)] hover:border-primary/40 motion-reduce:transition-none",
+        true: "cursor-pointer touch-target state-layer has-[[data-record-link]:focus-visible]:outline-2 has-[[data-record-link]:focus-visible]:-outline-offset-2 has-[[data-record-link]:focus-visible]:outline-primary [transition:border-color_var(--duration-short4)_var(--ease-standard)] hover:border-primary/40 motion-reduce:transition-none",
         false: "",
       },
     },
@@ -187,22 +201,26 @@ const status = (s: RecordItem["status"]) =>
 
 const initials = (name: string) => monogramLetters(name);
 
-export const recordCover = rcva("absolute inset-0 z-0 rounded-field");
+export const recordLink = rcva(
+  "text-inherit no-underline outline-none [--focus:host] after:absolute after:inset-0 after:content-['']",
+);
 export const recordActions = rcva(`${row} relative z-10 items-center gap-1`);
 
-const box = (r: RecordItem, cls: string, i: number, label: string, body: TemplateResult) => {
-  const style = styleMap({ "--i": String(i) });
-  if (r.href && r.actions)
-    return html`<div class=${cls} style=${style}>
-      <a class=${recordCover()} href=${r.href} aria-label=${label}></a>${body}
-    </div>`;
-  return r.href
-    ? html`<a class=${cls} href=${r.href} aria-label=${label} style=${style}>${body}</a>`
-    : html`<div class=${cls} aria-label=${label} style=${style}>${body}</div>`;
-};
-const actionsOf = (r: RecordItem) => (r.actions ? html`<span class=${recordActions()}>${r.actions}</span>` : nothing);
+/** The title is the record's link, stretched over the whole box, so its name starts with the visible title. */
+const titled = (r: RecordItem) =>
+  r.href
+    ? html`<a
+        class=${recordLink()}
+        href=${r.href}
+        aria-label=${r.status ? m.record_named({ title: r.title, status: r.status.label }) : nothing}
+        data-record-link
+        >${r.title}</a
+      >`
+    : r.title;
 
-const named = (r: RecordItem) => (r.status ? m.record_named({ title: r.title, status: r.status.label }) : r.title);
+const box = (cls: string, i: number, body: TemplateResult) =>
+  html`<div class=${cls} style=${styleMap({ "--i": String(i) })}>${body}</div>`;
+const actionsOf = (r: RecordItem) => (r.actions ? html`<span class=${recordActions()}>${r.actions}</span>` : nothing);
 
 abstract class RecordsBase extends LightElement {
   #shown = false;
@@ -233,7 +251,7 @@ export class UiRecordCards extends RecordsBase {
             ${monogram(r.monogram ?? r.title, "md")}
             <span class=${recordNames()}>
               ${r.eyebrow ? html`<span class=${recordEyebrow()}>${r.eyebrow}</span>` : nothing}
-              <span class=${recordTitle()}>${r.title}</span>
+              <span class=${recordTitle()}>${titled(r)}</span>
               ${r.supporting ? html`<span class=${recordSupporting()}>${r.supporting}</span>` : nothing}
             </span>
           </span>
@@ -251,10 +269,10 @@ export class UiRecordCards extends RecordsBase {
               ? html`<dl class=${recordFacts()}>
                   ${r.facts.map(
                     (f) =>
-                      html`<span class=${recordFact()}
-                        ><dt class=${recordFactLabel()}>${f.label}</dt>
-                        <dd class=${recordFactValue()}>${f.value}</dd></span
-                      >`,
+                      html`<div class=${recordFact()}>
+                        <dt class=${recordFactLabel()}>${f.label}</dt>
+                        <dd class=${recordFactValue()}>${f.value}</dd>
+                      </div>`,
                   )}
                 </dl>`
               : nothing
@@ -279,7 +297,7 @@ export class UiRecordCards extends RecordsBase {
             ${actionsOf(r)}
             ${r.href ? html`<span class=${recordGo()} aria-hidden="true">${iconSvg("arrow-right", { size: "sm" })}</span>` : nothing}
           </span>`;
-        return html`<li class=${stack}>${box(r, recordCard({ link: !!r.href }), i, named(r), body)}</li>`;
+        return html`<li class=${stack}>${box(recordCard({ link: !!r.href }), i, body)}</li>`;
       })}
     </ul>`;
   }
@@ -298,8 +316,8 @@ export class UiRecordList extends RecordsBase {
       ${this.records.map((r, i) => {
         const under = [r.eyebrow, r.supporting, ...(r.facts ?? []).map((f) => f.value)].filter(Boolean).join(" · ");
         const body = html`${monogram(r.monogram ?? r.title, "sm")}
-          <span class=${recordNames()}>
-            <span class=${recordRowTitle()}>${r.title}</span>
+          <span class=${recordRowNames()}>
+            <span class=${recordRowTitle()}>${titled(r)}</span>
             ${under ? html`<span class=${recordRowSupporting()}>${under}</span>` : nothing}
             ${
               r.progress !== undefined
@@ -322,9 +340,9 @@ export class UiRecordList extends RecordsBase {
             }
             ${status(r.status)} ${r.figure ? html`<span class=${recordRowFigure()}>${r.figure.value}</span>` : nothing}
             ${actionsOf(r)}
-            ${r.href && !r.actions ? html`<span class="text-on-surface-variant" aria-hidden="true">${iconSvg("chevron-right", { size: "sm" })}</span>` : nothing}
+            ${r.href && !r.actions ? html`<span class=${recordRowChevron()} aria-hidden="true">${iconSvg("chevron-right", { size: "sm" })}</span>` : nothing}
           </span>`;
-        return html`<li class=${stack}>${box(r, recordRow({ link: !!r.href }), i, named(r), body)}</li>`;
+        return html`<li class=${stack}>${box(recordRow({ link: !!r.href }), i, body)}</li>`;
       })}
     </ul>`;
   }
@@ -341,12 +359,10 @@ export class UiRecordChips extends RecordsBase {
   render() {
     return html`<ul class=${recordChips()} aria-label=${this.label || nothing}>
       ${this.records.map((r, i) => {
-        const body = html`${monogram(r.monogram ?? r.title, "xs")}<span class=${recordChipName()}>${r.title}</span>${
+        const body = html`${monogram(r.monogram ?? r.title, "xs")}<span class=${recordChipName()}>${titled(r)}</span>${
             r.status ? html`<span class=${recordDot({ tone: r.status.tone })} aria-hidden="true"></span>` : nothing
           }`;
-        return html`<li class=${inlineRow}>
-          ${box({ ...r, actions: undefined }, recordChip({ link: !!r.href }), i, named(r), body)}
-        </li>`;
+        return html`<li class=${inlineRow}>${box(recordChip({ link: !!r.href }), i, body)}</li>`;
       })}
     </ul>`;
   }
@@ -385,10 +401,10 @@ export class UiRecordHero extends RecordsBase {
           ? html`<dl class=${recordHeroFigures()}>
               ${this.figures.map(
                 (f, i) =>
-                  html`<span class=${recordHeroFigure()} style=${styleMap({ "--i": String(i) })}
-                    ><dt class=${recordFigureLabel()}>${f.label}</dt>
-                    <dd class=${recordFigureValue()}>${f.value}</dd></span
-                  >`,
+                  html`<div class=${recordHeroFigure()} style=${styleMap({ "--i": String(i) })}>
+                    <dt class=${recordFigureLabel()}>${f.label}</dt>
+                    <dd class=${recordFigureValue()}>${f.value}</dd>
+                  </div>`,
               )}
             </dl>`
           : nothing

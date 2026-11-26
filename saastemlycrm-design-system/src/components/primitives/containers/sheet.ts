@@ -2,12 +2,13 @@ import type { VariantProps } from "class-variance-authority";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
-import { afterNextPaint } from "../../base/work-queue.ts";
-import { rcva } from "../../base/variants.ts";
+import { uid } from "../../../lib/base/uid.ts";
+import { afterNextPaint } from "../../../lib/base/work-queue.ts";
+import { rcva } from "../../../lib/base/variants.ts";
 import { iconButton } from "../actions/icon-button.ts";
-import { floating, floatingHeight, inset, row, rowFill, stack, text } from "../layout/algebra.ts";
+import { floating, floatingHeight, inset, row, rowFill, stack, text } from "../../../styles/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
-import { m } from "../../../i18n/index.ts";
+import { m } from "../../../lib/i18n/index.ts";
 
 export const sheet = rcva(
   `modal modal-end ${inset["4"]} py-4 max-sm:px-0 max-sm:py-0 data-closing:invisible data-closing:backdrop:invisible`,
@@ -51,6 +52,7 @@ export class UiSheet extends LightElement {
 
   @query("dialog") private _dialog!: HTMLDialogElement;
   #pressedOutside = false;
+  #headingId = uid("sheet-heading");
 
   show() {
     this.open = true;
@@ -67,11 +69,11 @@ export class UiSheet extends LightElement {
   #opening = 0;
 
   protected updated(changed: PropertyValues<this>) {
-    if (!changed.has("open") || !this._dialog) return;
+    if (!changed.has("open")) return;
     if (this.open && !this._dialog.open) {
       const ticket = ++this.#opening;
       void afterNextPaint().then(() => {
-        if (ticket !== this.#opening || !this.open || !this._dialog || this._dialog.open) return;
+        if (ticket !== this.#opening || !this.open || !this.isConnected) return;
         this._dialog.showModal();
         this.dispatchEvent(new CustomEvent("ui-open", { bubbles: true }));
       });
@@ -80,7 +82,7 @@ export class UiSheet extends LightElement {
       this._dialog.toggleAttribute("data-closing", true);
       void afterNextPaint().then(() => {
         const dialog = this._dialog;
-        if (ticket !== this.#opening || !dialog) return;
+        if (ticket !== this.#opening) return;
         dialog.removeAttribute("data-closing");
         if (!this.open && dialog.open) dialog.close();
       });
@@ -100,11 +102,11 @@ export class UiSheet extends LightElement {
   }
 
   render() {
-    const label = typeof this.heading === "string" && this.heading ? this.heading : this.label || nothing;
     const titled = !!(this.heading || this.subhead);
     return html`<dialog
       class=${sheet()}
-      aria-label=${label}
+      aria-labelledby=${this.heading ? this.#headingId : nothing}
+      aria-label=${this.heading ? nothing : this.label || nothing}
       @cancel=${this._onCancel}
       @close=${this._onClose}
       @pointerdown=${(e: PointerEvent) => (this.#pressedOutside = e.target === e.currentTarget)}
@@ -113,7 +115,7 @@ export class UiSheet extends LightElement {
       <div class=${sheetBox({ size: this.size })}>
         <header class=${sheetHeader({ titled })}>
           <div class=${sheetHeadings()}>
-            ${titled ? html`<h2 class=${sheetHeading()}>${this.heading}</h2>` : nothing}
+            ${this.heading ? html`<h2 id=${this.#headingId} class=${sheetHeading()}>${this.heading}</h2>` : nothing}
             ${this.subhead ? html`<p class=${sheetSubhead()}>${this.subhead}</p>` : nothing}
           </div>
           ${this.hasSlotted("trailing") ? html`<div class=${sheetTrailing()}>${this.slotted("trailing")}</div>` : nothing}

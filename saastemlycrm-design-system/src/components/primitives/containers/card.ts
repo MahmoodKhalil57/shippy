@@ -2,8 +2,8 @@ import type { VariantProps } from "class-variance-authority";
 import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
-import { cardInset, padEnd, row, text } from "../layout/algebra.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { cardInset, padEnd, row, text } from "../../../styles/algebra.ts";
 import { badge, type BadgeVariants } from "../data/badge.ts";
 import { iconSvg } from "../media/icon.ts";
 

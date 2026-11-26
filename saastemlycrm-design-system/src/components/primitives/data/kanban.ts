@@ -1,10 +1,13 @@
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
-import { m } from "../../../i18n/index.ts";
+import { m } from "../../../lib/i18n/index.ts";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
-import { fixed, grid, inset, row, rowFill, rowLine, stack, text } from "../layout/algebra.ts";
+import { afterMs } from "../../../lib/base/motion-queue.ts";
+import { inlineStep } from "../../../lib/base/reading.ts";
+import { yieldToMain } from "../../../lib/base/work-queue.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { fixed, grid, inset, row, rowFill, rowLine, stack, text } from "../../../styles/algebra.ts";
 import { badge } from "./badge.ts";
 
 export const kanban = rcva(`${grid.xs} items-start gap-3`);
@@ -20,7 +23,7 @@ export const kanbanHeader = rcva(`${row} items-center justify-between gap-2 px-1
 export const kanbanHeading = rcva(`${text.label} text-title-sm`);
 export const kanbanList = rcva(`${stack} min-h-11 gap-2`);
 export const kanbanCard = rcva(
-  `${stack} ${inset["3"]} touch-target state-layer relative gap-1.5 rounded-md bg-surface-container-highest py-2.5 text-start text-on-surface has-[a:focus-visible]:outline-2 has-[a:focus-visible]:-outline-offset-2 has-[a:focus-visible]:outline-primary [transition:translate_var(--duration-spatial-fast)_var(--ease-spatial-fast),box-shadow_var(--duration-effects-fast)_var(--ease-effects-fast),background-color_var(--duration-effects)_var(--ease-effects),--state-layer_var(--duration-effects-fast)_var(--ease-effects-fast)]`,
+  `${stack} ${inset["3"]} touch-target state-layer relative gap-1.5 rounded-md bg-surface-container-highest py-2.5 text-start text-on-surface has-[a:focus-visible]:outline-2 has-[a:focus-visible]:-outline-offset-2 has-[a:focus-visible]:outline-primary focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary [transition:translate_var(--duration-spatial-fast)_var(--ease-spatial-fast),box-shadow_var(--duration-effects-fast)_var(--ease-effects-fast),background-color_var(--duration-effects)_var(--ease-effects),--state-layer_var(--duration-effects-fast)_var(--ease-effects-fast)]`,
   {
     variants: {
       link: { true: "cursor-pointer" },
@@ -28,6 +31,7 @@ export const kanbanCard = rcva(
       dragging: {
         true: "pointer-events-none z-10 cursor-grabbing shadow-elevation-4 [--state-layer:var(--state-dragged)]",
       },
+      lifted: { true: "z-10 shadow-elevation-4 [--state-layer:var(--state-dragged)]" },
       landed: { true: "bg-primary-container text-on-primary-container" },
     },
   },
@@ -72,6 +76,7 @@ interface Drag {
   key: string;
   from: string;
   over: string;
+  keyboard?: boolean;
 }
 
 @customElement("ui-kanban")
@@ -79,11 +84,12 @@ export class UiKanban extends LightElement {
   @property({ attribute: false }) columns: KanbanColumn[] = [];
   @property({ type: Boolean }) movable = false;
   @property() label?: string;
+  @property({ type: Number }) level: 2 | 3 = 3;
 
   @state() private _drag?: Drag;
   @state() private _landed?: string;
   @state() private _announce = "";
-  private _landedTimer?: ReturnType<typeof setTimeout>;
+  private _landedTimer?: () => void;
   private _scrollFrame = 0;
   private _held?: { card: HTMLElement; grabX: number; grabY: number; x: number; y: number; dx: number; dy: number };
   private _swallowClick = false;
@@ -104,7 +110,7 @@ export class UiKanban extends LightElement {
 
   disconnectedCallback() {
     super.disconnectedCallback();
-    clearTimeout(this._landedTimer);
+    this._landedTimer?.();
     cancelAnimationFrame(this._scrollFrame);
   }
 
@@ -123,13 +129,13 @@ export class UiKanban extends LightElement {
       this._announce = m.kanban_dragging({ card: item.headline });
       this._autoScroll();
     };
-    const timer = touch
-      ? window.setTimeout(() => {
+    const cancelHold = touch
+      ? afterMs(350, () => {
           armed = true;
           begin();
           navigator.vibrate?.(10);
-        }, 350)
-      : 0;
+        })
+      : undefined;
     const move = (ev: PointerEvent) => {
       if (ev.pointerId !== e.pointerId) return;
       if (!this._drag) {
@@ -163,7 +169,7 @@ export class UiKanban extends LightElement {
       if (dragging) this._drop(false);
     };
     const stop = () => {
-      clearTimeout(timer);
+      cancelHold?.();
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", end);
       window.removeEventListener("pointercancel", end);
@@ -180,8 +186,8 @@ export class UiKanban extends LightElement {
   }
 
   private _dragTo(x: number, y: number) {
-    const h = this._held;
-    if (!this._drag || !h) return;
+    const h = this._held!;
+    const d = this._drag!;
     h.x = x;
     h.y = y;
     const r = h.card.getBoundingClientRect();
@@ -189,7 +195,7 @@ export class UiKanban extends LightElement {
     h.dy = y - h.grabY - (r.top - h.dy);
     h.card.style.translate = `${h.dx}px ${h.dy}px`;
     const over = this._columnAt(x, y);
-    if (over && over !== this._drag.over) this._drag = { ...this._drag, over };
+    if (over && over !== d.over) this._drag = { ...d, over };
   }
 
   private _columnAt(x: number, y: number) {
@@ -210,10 +216,9 @@ export class UiKanban extends LightElement {
       !(/(auto|scroll)/.test(getComputedStyle(scroller).overflowY) && scroller.scrollHeight > scroller.clientHeight)
     )
       scroller = scroller.parentElement;
-    const box = scroller ?? document.scrollingElement;
+    const box = (scroller ?? document.scrollingElement)!;
     const step = () => {
-      const h = this._held;
-      if (!this._drag || !h || !box) return;
+      const h = this._held!;
       const r = scroller ? box.getBoundingClientRect() : { top: 0, bottom: window.innerHeight };
       const edge = 56;
       const v =
@@ -230,7 +235,7 @@ export class UiKanban extends LightElement {
 
   private _drop(commit: boolean) {
     cancelAnimationFrame(this._scrollFrame);
-    const d = this._drag;
+    const d = this._drag!;
     const h = this._held;
     this._drag = undefined;
     this._held = undefined;
@@ -238,9 +243,10 @@ export class UiKanban extends LightElement {
       h.card.style.transition = "";
       h.card.style.translate = "";
     }
-    this._swallowClick = true;
-    setTimeout(() => (this._swallowClick = false));
-    if (!d) return;
+    if (!d.keyboard) {
+      this._swallowClick = true;
+      void yieldToMain().then(() => (this._swallowClick = false));
+    }
     const name = (key: string) => this.columns.find((c) => c.key === key)?.label ?? key;
     if (!commit || d.over === d.from) {
       this._announce = m.kanban_not_moved();
@@ -253,20 +259,63 @@ export class UiKanban extends LightElement {
 
   land(key: string) {
     this._landed = key;
-    clearTimeout(this._landedTimer);
-    this._landedTimer = setTimeout(() => (this._landed = undefined), 900);
+    this._landedTimer?.();
+    this._landedTimer = afterMs(900, () => (this._landed = undefined));
+  }
+
+  private _cardKey(e: KeyboardEvent, column: KanbanColumn, item: KanbanItem) {
+    if (!this.movable || e.target !== e.currentTarget || e.altKey || e.ctrlKey || e.metaKey) return;
+    const d = this._drag;
+    const pick = e.key === " " || e.key === "Enter";
+    if (!d) {
+      if (!pick) return;
+      e.preventDefault();
+      this._drag = { key: item.key, from: column.key, over: column.key, keyboard: true };
+      this._announce = m.kanban_dragging({ card: item.headline });
+      return;
+    }
+    if (!d.keyboard || d.key !== item.key) return;
+    if (pick || e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
+      this._drop(pick);
+      void this._refocus(item.key);
+      return;
+    }
+    const step = inlineStep(e.key, e.currentTarget as HTMLElement) || { ArrowDown: 1, ArrowUp: -1 }[e.key];
+    if (!step) return;
+    e.preventDefault();
+    const keys = this.columns.map((c) => c.key);
+    const at = keys.indexOf(d.over) + step;
+    const over = keys[Math.min(keys.length - 1, Math.max(0, at))]!;
+    if (over === d.over) return;
+    this._drag = { ...d, over };
+    const to = this.columns.find((c) => c.key === over)!;
+    const count = to.items.length + (over === d.from ? 0 : 1);
+    this._announce = m.kanban_column({ column: to.label, count });
+  }
+
+  private async _refocus(key: string) {
+    await this.updateComplete;
+    this.querySelector<HTMLElement>(`[data-kanban-card="${CSS.escape(key)}"]`)?.focus();
   }
 
   private _card(column: KanbanColumn, item: KanbanItem) {
-    const dragging = this._drag?.key === item.key;
-    const landed = this._landed === item.key && !dragging;
+    const held = this._drag?.key === item.key;
+    const dragging = held && !this._drag?.keyboard;
+    const lifted = held && !!this._drag?.keyboard;
+    const landed = this._landed === item.key && !held;
     const title = item.href
       ? html`<a class=${kanbanCardTitle({ link: true })} href=${item.href} draggable="false">${item.headline}</a>`
       : html`<span class=${kanbanCardTitle()}>${item.headline}</span>`;
     return html`<div
       role="listitem"
-      class=${kanbanCard({ link: !!item.href && !this.movable, movable: this.movable, dragging, landed })}
+      class=${kanbanCard({ link: !!item.href && !this.movable, movable: this.movable, dragging, lifted, landed })}
+      data-kanban-card=${item.key}
+      tabindex=${this.movable ? "0" : nothing}
       @pointerdown=${(e: PointerEvent) => this._press(e, column, item)}
+      @keydown=${(e: KeyboardEvent) => this._cardKey(e, column, item)}
+      @blur=${() => this._drag?.keyboard && this._drag.key === item.key && this._drop(false)}
     >
       <div class=${kanbanCardTop()}>
         ${title}
@@ -300,7 +349,11 @@ export class UiKanban extends LightElement {
             data-kanban-column=${c.key}
           >
             <div class=${kanbanHeader()}>
-              <h3 class=${kanbanHeading()}>${c.heading ?? c.label}</h3>
+              ${
+                this.level === 2
+                  ? html`<h2 class=${kanbanHeading()}>${c.heading ?? c.label}</h2>`
+                  : html`<h3 class=${kanbanHeading()}>${c.heading ?? c.label}</h3>`
+              }
               <span class=${badge({ kind: "count" })}>${c.items.length}</span>
             </div>
             <div class=${kanbanList()} role="list">

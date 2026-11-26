@@ -1,10 +1,10 @@
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { formatInt, m } from "../../../i18n/index.ts";
+import { formatInt, m } from "../../../lib/i18n/index.ts";
 import { LightElement } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
+import { rcva } from "../../../lib/base/variants.ts";
 import { range } from "../forms/range.ts";
-import { inlineRow, inset, pad, row, rowFill, rowLine, stack, text } from "../layout/algebra.ts";
+import { inlineRow, inset, pad, row, rowFill, rowLine, stack, text } from "../../../styles/algebra.ts";
 
 export const whatif = rcva(`${stack} w-full gap-3`);
 export const whatifInputs = rcva(`${stack} gap-2`);
@@ -76,7 +76,7 @@ export class UiWhatif extends LightElement {
   protected updated() {
     for (const el of this.querySelectorAll<HTMLElement>("[data-output]")) {
       const key = el.dataset.output!;
-      const now = el.dataset.value ?? "";
+      const now = el.dataset.value!;
       const was = this.#was.get(key);
       this.#was.set(key, now);
       if (was === undefined || was === now) continue;
@@ -98,8 +98,7 @@ export class UiWhatif extends LightElement {
     const initial = this.#initial();
     const moved = this.inputs.some((i) => values[i.key] !== initial[i.key]);
     const outputs = this.compute(values);
-    const read = (i: WhatifInput) =>
-      i.format ? i.format(values[i.key] ?? i.value) : formatInt(values[i.key] ?? i.value);
+    const read = (i: WhatifInput) => (i.format ? i.format(values[i.key]!) : formatInt(values[i.key]!));
     return html`<div class=${whatif()} role="group" aria-label=${this.label || nothing}>
       <div class=${whatifInputs()}>
         ${this.inputs.map(
@@ -115,7 +114,7 @@ export class UiWhatif extends LightElement {
                 min=${i.min}
                 max=${i.max}
                 step=${i.step}
-                .value=${String(values[i.key] ?? i.value)}
+                .value=${String(values[i.key])}
                 aria-label=${i.label}
                 aria-valuetext=${read(i)}
                 @input=${(e: Event) =>

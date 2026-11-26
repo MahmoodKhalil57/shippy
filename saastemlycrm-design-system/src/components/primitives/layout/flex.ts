@@ -2,7 +2,7 @@ import type { VariantProps } from "class-variance-authority";
 import { customElement, property } from "lit/decorators.js";
 import { html, literal, type StaticValue } from "lit/static-html.js";
 import { LightElement } from "../../base/light-element.ts";
-import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
+import { rcva, responsiveBoolean, type Responsive } from "../../../lib/base/variants.ts";
 
 export const flex = rcva("", {
   variants: {
@@ -89,6 +89,11 @@ export class UiFlex extends LightElement {
   @property() align: FlexVariants["align"];
   @property() justify: FlexVariants["justify"];
   @property() padding: FlexVariants["padding"];
+  /**
+   * Kept for compatibility. Wrapping is fixed by the layout algebra: a row always wraps when it runs out of room
+   * (a row that can't wrap could overflow its box) and a column never does (it would start columns beside itself),
+   * so `wrap` doesn't change the layout; the layout proof rejects the alternatives at build time.
+   */
   @property({ converter: responsiveBoolean }) wrap: Responsive<boolean> = false;
   @property({ converter: responsiveBoolean }) grow: Responsive<boolean> = false;
   @property({ converter: responsiveBoolean }) shrink: Responsive<boolean> = false;

@@ -1,8 +1,9 @@
 import { html } from "lit";
-import { customElement, property, query } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
+import { keyed } from "lit/directives/keyed.js";
 import { LightElement } from "../../base/light-element.ts";
-import { liveColors } from "../../base/live-colors.ts";
-import { booleanAttribute, rcva } from "../../base/variants.ts";
+import { liveColors } from "../../../lib/base/live-colors.ts";
+import { booleanAttribute, rcva } from "../../../lib/base/variants.ts";
 
 export const magnetLines = rcva("relative size-full overflow-hidden [--clips:media]");
 export const magnetLinesCanvas = rcva("absolute block pointer-events-none");
@@ -13,7 +14,6 @@ type Shape = "line" | "arrow" | "needle";
 type Matrix = number[];
 
 interface Settings {
-  square: boolean;
   spacing: number;
   rows: number;
   columns: number;
@@ -47,8 +47,6 @@ interface Settings {
 interface View {
   forward: Matrix;
   inverse: Matrix;
-  minScale: number;
-  maxScale: number;
 }
 
 interface Range {
@@ -72,15 +70,12 @@ interface Linking {
 interface Field {
   width: number;
   height: number;
-  pad: number;
   ratio: number;
   view: View | null;
   length: number;
   thickness: number;
-  fill: boolean;
   edgePad: number;
   minScale: number;
-  maxScale: number;
   introSpeed: number;
   bounds: number[];
   span: number[];
@@ -273,46 +268,27 @@ const seedFor = (column: number, row: number) => {
   return (((hash ^ (hash >>> 16)) >>> 0) / 4294967296) * 2 - 1;
 };
 
-const parseColor = (value: string): number[] => {
-  const text = String(value || "").trim();
-  const hex = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(text);
-  if (hex) {
-    const full = hex[1].length === 3 ? hex[1].replace(/./g, (digit) => digit + digit) : hex[1];
-    return [0, 2, 4].map((index) => parseInt(full.slice(index, index + 2), 16) / 255);
-  }
-  const rgb = /^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)/i.exec(text);
-  if (rgb) return [rgb[1], rgb[2], rgb[3]].map((channel) => clamp(parseFloat(channel) / 255, 0, 1));
-  if (typeof document !== "undefined") {
-    const context = document.createElement("canvas").getContext("2d");
-    if (context) {
-      context.fillStyle = "#000000";
-      context.fillStyle = text;
-      const normal = String(context.fillStyle);
-      if (normal !== "#000000" || /^(#0{3}|#0{6}|black)$/i.test(text)) return parseColor(normal);
-    }
-  }
-  return [0.94, 0.94, 0.94];
-};
+const parseColor = (rgb: string): number[] =>
+  rgb
+    .match(/\d+/g)!
+    .slice(0, 3)
+    .map((channel) => Number(channel) / 255);
+
+const NEEDLE_ACCENT = [0xf4 / 255, 0x3f / 255, 0x5e / 255];
 
 const lightness = (rgb: number[]) => (Math.max(...rgb) + Math.min(...rgb)) / 2;
 
 const compile = (gl: WebGL2RenderingContext, type: number, source: string) => {
-  const shader = gl.createShader(type);
-  if (!shader) return null;
+  const shader = gl.createShader(type)!;
   gl.shaderSource(shader, source);
   gl.compileShader(shader);
   return shader;
 };
 
-const link = (gl: WebGL2RenderingContext): Linking | null => {
+const link = (gl: WebGL2RenderingContext): Linking => {
   const vertex = compile(gl, gl.VERTEX_SHADER, VERTEX);
   const fragment = compile(gl, gl.FRAGMENT_SHADER, FRAGMENT);
-  const program = vertex && fragment ? gl.createProgram() : null;
-  if (!vertex || !fragment || !program) {
-    if (vertex) gl.deleteShader(vertex);
-    if (fragment) gl.deleteShader(fragment);
-    return null;
-  }
+  const program = gl.createProgram();
   gl.attachShader(program, vertex);
   gl.attachShader(program, fragment);
   gl.linkProgram(program);
@@ -339,8 +315,8 @@ const finish = (gl: WebGL2RenderingContext, { program, vertex, fragment }: Linki
   const uniforms: Program["uniforms"] = {};
   const count = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
   for (let index = 0; index < count; index++) {
-    const info = gl.getActiveUniform(program, index);
-    if (info) uniforms[info.name] = gl.getUniformLocation(program, info.name);
+    const info = gl.getActiveUniform(program, index)!;
+    uniforms[info.name] = gl.getUniformLocation(program, info.name);
   }
   return { program, uniforms };
 };
@@ -381,7 +357,7 @@ const apply = (m: Matrix, x: number, y: number) => {
   return [(m[0] * x + m[1] * y + m[2]) / w, (m[3] * x + m[4] * y + m[5]) / w, w];
 };
 
-const viewFor = (tiltX: number, tiltY: number, width: number, height: number, fill: boolean): View => {
+const viewFor = (tiltX: number, tiltY: number, width: number, height: number): View => {
   const ax = (tiltX * Math.PI) / 180;
   const ay = (tiltY * Math.PI) / 180;
   const depth = Math.max(width, height) * 1.25;
@@ -396,30 +372,11 @@ const viewFor = (tiltX: number, tiltY: number, width: number, height: number, fi
     -Math.sin(ax) / depth,
     1,
   ];
-  if (fill) {
-    const forward = multiply([1, 0, width / 2, 0, 1, height / 2, 0, 0, 1], tilt);
-    return { forward, inverse: invert(forward), minScale: 1, maxScale: 1 };
-  }
-  const corners = [
-    [-width / 2, -height / 2],
-    [width / 2, -height / 2],
-    [width / 2, height / 2],
-    [-width / 2, height / 2],
-  ].map(([x, y]) => apply(tilt, x, y));
-  const xs = corners.map((point) => point[0]);
-  const ys = corners.map((point) => point[1]);
-  const spanX = Math.max(...xs) - Math.min(...xs);
-  const spanY = Math.max(...ys) - Math.min(...ys);
-  const fit = Math.min(1, width / Math.max(1, spanX), height / Math.max(1, spanY));
-  const midX = (Math.max(...xs) + Math.min(...xs)) / 2;
-  const midY = (Math.max(...ys) + Math.min(...ys)) / 2;
-  const place = [fit, 0, width / 2 - midX * fit, 0, fit, height / 2 - midY * fit, 0, 0, 1];
-  const forward = multiply(place, tilt);
-  const scales = corners.map((point) => fit / Math.abs(point[2]));
-  return { forward, inverse: invert(forward), minScale: Math.min(...scales), maxScale: Math.max(...scales) };
+  const forward = multiply([1, 0, width / 2, 0, 1, height / 2, 0, 0, 1], tilt);
+  return { forward, inverse: invert(forward) };
 };
 
-const visibleRange = (view: View, width: number, height: number, cellX: number, cellY: number): Range | null => {
+const visibleRange = (view: View, width: number, height: number, cellX: number, cellY: number): Range => {
   const inverse = view.inverse;
   const edge = Math.max(cellX, cellY) * 2;
   const corners = [
@@ -440,7 +397,6 @@ const visibleRange = (view: View, width: number, height: number, cellX: number, 
       hull.push([from[0] + (to[0] - from[0]) * t, from[1] + (to[1] - from[1]) * t]);
     }
   });
-  if (hull.length < 3) return null;
   let minX = Infinity;
   let minY = Infinity;
   let maxX = -Infinity;
@@ -468,7 +424,7 @@ const nearestFirst = (depths: Float64Array) => {
     near = Math.min(near, depths[index]);
     far = Math.max(far, depths[index]);
   }
-  const scale = far > near ? (total - 1) / (far - near) : 0;
+  const scale = (total - 1) / (far - near);
   const starts = new Uint32Array(total + 1);
   for (let index = 0; index < total; index++) starts[Math.floor((depths[index] - near) * scale) + 1] += 1;
   for (let index = 0; index < total; index++) starts[index + 1] += starts[index];
@@ -520,6 +476,8 @@ export class UiMagnetLines extends LightElement {
   @query("[data-magnet-lines] > canvas") private _canvasEl?: HTMLCanvasElement;
   @query("[data-magnet-lines] > span") private _probe?: HTMLSpanElement;
 
+  @state() private _surface = 0;
+
   #poke: (() => void) | null = null;
   #stop: (() => void) | null = null;
   #generation = 0;
@@ -530,7 +488,6 @@ export class UiMagnetLines extends LightElement {
     const accent = this.accentColor ? parseColor(this.#colors.resolve(this.accentColor)) : null;
     const shape = this.shape;
     return {
-      square: false,
       spacing: Math.max(4, Number(this.spacing) || 30),
       rows: this.rows ? clamp(Math.round(this.rows), 1, 400) : 0,
       columns: this.columns ? clamp(Math.round(this.columns), 1, 400) : 0,
@@ -540,7 +497,7 @@ export class UiMagnetLines extends LightElement {
       mode: MODES.includes(this.mode) ? this.mode : "orbit",
       shape: SHAPES[shape] !== undefined ? shape : "line",
       color,
-      accent: accent ?? (shape === "needle" ? parseColor("#f43f5e") : color),
+      accent: accent ?? (shape === "needle" ? NEEDLE_ACCENT : color),
       accentMix: accent ? 1 : 0,
       rainbow: this.rainbow,
       tone: clamp(lightness(color), 0.42, 0.66),
@@ -585,10 +542,9 @@ export class UiMagnetLines extends LightElement {
 
   #run() {
     if (this.#stop || !this.isConnected) return;
-    const container = this._box;
-    const canvas = this._canvasEl;
-    const probe = this._probe;
-    if (!container || !canvas || !probe) return;
+    const container = this._box!;
+    const canvas = this._canvasEl!;
+    const probe = this._probe!;
     const generation = this.#generation;
 
     const gl = canvas.getContext("webgl2", {
@@ -599,10 +555,11 @@ export class UiMagnetLines extends LightElement {
       stencil: false,
       powerPreference: "default",
     });
-    const parallel = gl ? gl.getExtension("KHR_parallel_shader_compile") : null;
-    const linking = gl ? link(gl) : null;
-    let program = gl && linking && !parallel ? finish(gl, linking) : null;
-    if (!gl || !linking || (!parallel && !program)) return;
+    if (!gl) return;
+    const parallel = gl.getExtension("KHR_parallel_shader_compile");
+    const linking = link(gl);
+    let program = parallel ? null : finish(gl, linking);
+    if (!parallel && !program) return;
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -629,15 +586,12 @@ export class UiMagnetLines extends LightElement {
     const field: Field = {
       width: 1,
       height: 1,
-      pad: 0,
       ratio: 1,
       view: null,
       length: 20,
       thickness: 2,
-      fill: true,
       edgePad: 1,
       minScale: 1,
-      maxScale: 1,
       introSpeed: INTRO_SPEED,
       bounds: [0, 0, 0, 0],
       span: [0, 0, 0, 0],
@@ -693,7 +647,6 @@ export class UiMagnetLines extends LightElement {
       const slack = 0.49 * Math.min(cellX, cellY);
       const scan = (visit: Visit | null) => {
         let seen = 0;
-        if (!range) return seen;
         for (let row = range.fromRow; row <= range.toRow; row++) {
           const y = (row + 0.5) * cellY - height / 2;
           for (let column = range.fromColumn; column <= range.toColumn; column++) {
@@ -745,7 +698,6 @@ export class UiMagnetLines extends LightElement {
         pending: new Uint8Array(total),
       };
       let farthest = 0;
-      let nearest = Infinity;
       let deepest = 0;
       const bounds = [Infinity, Infinity, -Infinity, -Infinity];
       const span = [Infinity, Infinity, -Infinity, -Infinity];
@@ -760,7 +712,6 @@ export class UiMagnetLines extends LightElement {
         next.reveal[index] = distance;
         next.seeds[index] = seedFor(column, row);
         farthest = Math.max(farthest, distance);
-        nearest = Math.min(nearest, w);
         deepest = Math.max(deepest, w);
         bounds[0] = Math.min(bounds[0], x);
         bounds[1] = Math.min(bounds[1], y);
@@ -787,14 +738,13 @@ export class UiMagnetLines extends LightElement {
       ({ centers, cells, reveal, seeds, rests, angles, speeds, seenX, seenY, pending } = next);
       state = new Float32Array(total * 4);
       field.introSpeed = Math.max(INTRO_SPEED, farthest / INTRO_TIME);
-      field.bounds = total ? bounds : [0, 0, 0, 0];
-      field.span = total ? [span[0], span[1], span[2] - span[0] + 1, span[3] - span[1] + 1] : [0, 0, 0, 0];
-      field.minScale = total ? 1 / deepest : 1;
-      field.maxScale = total ? 1 / nearest : 1;
+      field.bounds = bounds;
+      field.span = [span[0], span[1], span[2] - span[0] + 1, span[3] - span[1] + 1];
+      field.minScale = 1 / deepest;
       gl.bindBuffer(gl.ARRAY_BUFFER, centerBuffer);
       gl.bufferData(gl.ARRAY_BUFFER, centers, gl.STATIC_DRAW);
       gl.bindBuffer(gl.ARRAY_BUFFER, stateBuffer);
-      gl.bufferData(gl.ARRAY_BUFFER, state.byteLength || 16, gl.DYNAMIC_DRAW);
+      gl.bufferData(gl.ARRAY_BUFFER, state.byteLength, gl.DYNAMIC_DRAW);
     };
 
     const rebuild = () => {
@@ -804,10 +754,9 @@ export class UiMagnetLines extends LightElement {
       const height = Math.max(1, rect.height);
       const length = Math.max(1, measure(s.lineHeight));
       const thickness = Math.max(0.25, measure(s.lineWidth));
-      const fill = !s.square;
-      const tiled = fill && (s.tiltX !== 0 || s.tiltY !== 0);
-      const view = viewFor(s.tiltX, s.tiltY, width, height, fill);
-      const ratio = Math.min(window.devicePixelRatio || 1, s.maxRatio);
+      const tiled = s.tiltX !== 0 || s.tiltY !== 0;
+      const view = viewFor(s.tiltX, s.tiltY, width, height);
+      const ratio = Math.min(window.devicePixelRatio, s.maxRatio);
 
       let columnCount = Math.max(1, Math.round(s.columns || (s.rows ? (s.rows * width) / height : width / s.spacing)));
       let rowCount = Math.max(1, Math.round(s.rows || (s.columns ? (s.columns * height) / width : height / s.spacing)));
@@ -818,7 +767,7 @@ export class UiMagnetLines extends LightElement {
       }
 
       const key = [
-        fill,
+        true,
         columnCount,
         rowCount,
         width.toFixed(1),
@@ -830,17 +779,12 @@ export class UiMagnetLines extends LightElement {
         layout(width, height, view, columnCount, rowCount, tiled);
       }
 
-      const minScale = fill ? field.minScale : view.minScale;
-      const maxScale = fill ? field.maxScale : view.maxScale;
-      const pad = fill ? 0 : Math.ceil((length * (1 + s.stretch) + thickness * 2) * Math.max(1, maxScale) + 8);
-      const canvasWidth = width + pad * 2;
-      const canvasHeight = height + pad * 2;
-      canvas.style.left = `${-pad}px`;
-      canvas.style.top = `${-pad}px`;
-      canvas.style.width = `${canvasWidth}px`;
-      canvas.style.height = `${canvasHeight}px`;
-      const pixelWidth = Math.max(1, Math.round(canvasWidth * ratio));
-      const pixelHeight = Math.max(1, Math.round(canvasHeight * ratio));
+      canvas.style.left = "0px";
+      canvas.style.top = "0px";
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      const pixelWidth = Math.max(1, Math.round(width * ratio));
+      const pixelHeight = Math.max(1, Math.round(height * ratio));
       if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
         canvas.width = pixelWidth;
         canvas.height = pixelHeight;
@@ -848,13 +792,11 @@ export class UiMagnetLines extends LightElement {
       Object.assign(field, {
         width,
         height,
-        pad,
         ratio,
         view,
         length,
         thickness,
-        fill,
-        edgePad: 2 / (ratio * Math.max(0.05, minScale)),
+        edgePad: 2 / (ratio * Math.max(0.05, field.minScale)),
       });
     };
 
@@ -878,10 +820,9 @@ export class UiMagnetLines extends LightElement {
 
     const frame = (now: number) => {
       raf = 0;
-      if (lost) return;
       if (!program) {
-        if (!parallel || gl.isContextLost()) return;
-        if (!gl.getProgramParameter(linking.program, parallel.COMPLETION_STATUS_KHR)) {
+        if (gl.isContextLost()) return;
+        if (!gl.getProgramParameter(linking.program, parallel!.COMPLETION_STATUS_KHR)) {
           last = Math.max(last, now);
           if (visible && pageVisible) raf = requestAnimationFrame(frame);
           return;
@@ -893,7 +834,7 @@ export class UiMagnetLines extends LightElement {
         }
       }
       const s = this.#settings();
-      const dt = clamp((now - last) / 1000 || 0, 0, 0.05);
+      const dt = clamp((now - last) / 1000, 0, 0.05);
       last = Math.max(last, now);
       clock += dt;
       if (dirty) rebuild();
@@ -1014,40 +955,38 @@ export class UiMagnetLines extends LightElement {
         state[index * 4 + 2] = Math.min(1, flash * 0.9) * shown;
         state[index * 4 + 3] = shown;
       }
-      if (introLive && !introBusy && clock - introStart > 0.2) introLive = false;
+      if (introLive && !introBusy) introLive = false;
       if (Math.abs(px - target.x) + Math.abs(py - target.y) > 0.05) moving = true;
 
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
       gl.viewport(0, 0, canvas.width, canvas.height);
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
-      if (count && field.view) {
-        const u = program.uniforms;
-        gl.useProgram(program.program);
-        gl.uniformMatrix3fv(u.uView, true, field.view.forward);
-        gl.uniform2f(u.uCanvas, field.width + field.pad * 2, field.height + field.pad * 2);
-        gl.uniform2f(u.uOffset, field.pad, field.pad);
-        gl.uniform2f(u.uLine, field.length / 2, field.thickness / 2);
-        gl.uniform1f(u.uStretch, s.stretch);
-        gl.uniform1f(u.uHead, s.shape === "needle" ? 0.16 : s.shape === "arrow" ? 0.32 : 0);
-        gl.uniform1f(u.uPad, field.edgePad);
-        gl.uniform1f(u.uFar, field.fill ? FAR : 1e6);
-        gl.uniform3fv(u.uColor, s.color);
-        gl.uniform3fv(u.uAccent, s.accent);
-        gl.uniform1f(u.uAccentMix, s.accentMix);
-        gl.uniform1f(u.uOpacity, 1);
-        gl.uniform1f(u.uFade, s.fade);
-        gl.uniform1i(u.uShape, SHAPES[s.shape]);
-        gl.uniform1f(u.uRainbow, s.rainbow ? 1 : 0);
-        gl.uniform1f(u.uTone, s.tone);
-        gl.uniform1f(u.uPeriod, period);
-        gl.uniform2f(u.uPixels, canvas.width, canvas.height);
-        gl.uniform2f(u.uEdge, s.edgeFade * 0.34 * field.width, s.edgeFade * 0.44 * field.height);
-        gl.bindVertexArray(vao);
-        gl.bindBuffer(gl.ARRAY_BUFFER, stateBuffer);
-        gl.bufferSubData(gl.ARRAY_BUFFER, 0, state);
-        gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, count);
-      }
+      const u = program.uniforms;
+      gl.useProgram(program.program);
+      gl.uniformMatrix3fv(u.uView, true, field.view!.forward);
+      gl.uniform2f(u.uCanvas, field.width, field.height);
+      gl.uniform2f(u.uOffset, 0, 0);
+      gl.uniform2f(u.uLine, field.length / 2, field.thickness / 2);
+      gl.uniform1f(u.uStretch, s.stretch);
+      gl.uniform1f(u.uHead, s.shape === "needle" ? 0.16 : s.shape === "arrow" ? 0.32 : 0);
+      gl.uniform1f(u.uPad, field.edgePad);
+      gl.uniform1f(u.uFar, FAR);
+      gl.uniform3fv(u.uColor, s.color);
+      gl.uniform3fv(u.uAccent, s.accent);
+      gl.uniform1f(u.uAccentMix, s.accentMix);
+      gl.uniform1f(u.uOpacity, 1);
+      gl.uniform1f(u.uFade, s.fade);
+      gl.uniform1i(u.uShape, SHAPES[s.shape]);
+      gl.uniform1f(u.uRainbow, s.rainbow ? 1 : 0);
+      gl.uniform1f(u.uTone, s.tone);
+      gl.uniform1f(u.uPeriod, period);
+      gl.uniform2f(u.uPixels, canvas.width, canvas.height);
+      gl.uniform2f(u.uEdge, s.edgeFade * 0.34 * field.width, s.edgeFade * 0.44 * field.height);
+      gl.bindVertexArray(vao);
+      gl.bindBuffer(gl.ARRAY_BUFFER, stateBuffer);
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, state);
+      gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, count);
 
       const busy = moving || introLive || pulses.length > 0 || wandering;
       if (busy && visible && pageVisible) raf = requestAnimationFrame(frame);
@@ -1096,10 +1035,7 @@ export class UiMagnetLines extends LightElement {
       if (!s.clickPulse || reduced || !count) return;
       const spot = toPlane(event.clientX, event.clientY);
       if (!spot) return;
-      const inside = field.fill
-        ? spot.inside
-        : Math.abs(spot.x) <= field.width / 2 && Math.abs(spot.y) <= field.height / 2;
-      if (!inside) return;
+      if (!spot.inside) return;
       const [minX, minY, maxX, maxY] = field.bounds;
       const farthest = Math.max(
         Math.hypot(spot.x - minX, spot.y - minY),
@@ -1183,15 +1119,17 @@ export class UiMagnetLines extends LightElement {
         gl.deleteBuffer(centerBuffer);
         gl.deleteBuffer(stateBuffer);
         gl.deleteVertexArray(vao);
-        if (!canvas.isConnected) gl.getExtension("WEBGL_lose_context")?.loseContext();
-        else if (!lost) retire(gl, parallel, linking);
+        if (!canvas.isConnected) {
+          gl.getExtension("WEBGL_lose_context")!.loseContext();
+          this._surface++;
+        } else if (!lost) retire(gl, parallel, linking);
       }
     };
   }
 
   render() {
     return html`<div class=${magnetLines()} data-magnet-lines>
-      <canvas class=${magnetLinesCanvas()} aria-hidden="true"></canvas>
+      ${keyed(this._surface, html`<canvas class=${magnetLinesCanvas()} aria-hidden="true"></canvas>`)}
       <span class=${magnetLinesProbe()} aria-hidden="true"></span>
     </div>`;
   }

@@ -3,9 +3,9 @@ import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
-import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
-import { inset, pad, row, text, tileCap } from "../layout/algebra.ts";
-import { formatInt } from "../../../i18n/index.ts";
+import { rcva, responsiveBoolean, type Responsive } from "../../../lib/base/variants.ts";
+import { inset, pad, row, text, tileCap } from "../../../styles/algebra.ts";
+import { formatInt } from "../../../lib/i18n/index.ts";
 
 export const range = rcva("range", {
   variants: {
@@ -87,7 +87,7 @@ export const rangeMeasure = rcva(`${row} ${inset["2.5"]} ${text.label} justify-b
 
 export const rangeBubbled = rcva("relative pt-9");
 export const rangeBubble = rcva(
-  `${text.line} ${pad["2.5"]} pointer-events-none absolute top-0 start-[calc(var(--p)*(100%_-_1.5rem)+0.75rem)] w-max max-w-full -translate-x-1/2 rtl:translate-x-1/2 rounded-full bg-primary py-0.5 text-label-lg tabular-nums text-on-primary shadow-elevation-1 [transition:scale_var(--duration-spatial-fast)_var(--ease-spatial-fast)] origin-bottom [:has(>input:active)>&]:scale-110 [:has(>input:focus-visible)>&]:scale-110 motion-reduce:transition-none`,
+  `${text.line} ${pad["2.5"]} pointer-events-none absolute top-0 start-[calc(var(--p)*(100%_-_1.5rem)+0.75rem)] w-max max-w-full -translate-x-1/2 rtl:translate-x-1/2 rounded-full bg-primary py-0.5 text-label-lg tabular-nums text-primary-content shadow-elevation-1 [transition:scale_var(--duration-spatial-fast)_var(--ease-spatial-fast)] origin-bottom [:has(>input:active)>&]:scale-110 [:has(>input:focus-visible)>&]:scale-110 motion-reduce:transition-none`,
 );
 
 export type RangeVariants = VariantProps<typeof range>;
@@ -136,10 +136,10 @@ export class UiRange extends LightElement {
         trackColor: this.trackColor,
         thumbColor: this.thumbColor,
       })}
-      .value=${String(this.value)}
       min=${this.min}
       max=${this.max}
       step=${ifDefined(this.step)}
+      .value=${String(this.value)}
       name=${ifDefined(this.name)}
       aria-label=${ifDefined(this.label)}
       aria-valuetext=${ifDefined(this.format?.(this.value))}

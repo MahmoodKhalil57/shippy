@@ -1,10 +1,10 @@
 import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
-import { inset, pad, padStart, row, stack, text } from "../layout/algebra.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { inset, pad, padStart, row, stack, text } from "../../../styles/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
-import { m } from "../../../i18n/index.ts";
+import { m } from "../../../lib/i18n/index.ts";
 
 export const sources = rcva(`${text.label} group/sources text-body-sm`);
 export const sourcesSummary = rcva(
@@ -30,7 +30,9 @@ export class UiSources extends LightElement {
   @property({ type: Boolean }) open = false;
 
   render() {
-    const unique = [...new Map(this.items.map((s) => [s.href, s])).values()];
+    const first = new Map<string, Source>();
+    for (const s of this.items) if (!first.has(s.href)) first.set(s.href, s);
+    const unique = [...first.values()];
     if (!unique.length) return html``;
     return html`<details class=${sources()} ?open=${this.open}>
       <summary class=${sourcesSummary()}>
@@ -40,16 +42,17 @@ export class UiSources extends LightElement {
       <div class=${sourcesList()} role="list">
         ${unique.map((s) => {
           const external = !s.href.startsWith("/");
-          return html`<a
-            role="listitem"
-            class=${sourcesLink()}
-            href=${s.href}
-            target=${external ? "_blank" : "_self"}
-            rel=${external ? "noreferrer noopener" : ""}
-          >
-            ${iconSvg(external ? "external" : "link", { size: "xs" })}
-            <span class=${sourcesLabel()}>${s.label}</span>
-          </a>`;
+          return html`<div role="listitem">
+            <a
+              class=${sourcesLink()}
+              href=${s.href}
+              target=${external ? "_blank" : "_self"}
+              rel=${external ? "noreferrer noopener" : ""}
+            >
+              ${iconSvg(external ? "external" : "link", { size: "xs" })}
+              <span class=${sourcesLabel()}>${s.label}</span>
+            </a>
+          </div>`;
         })}
       </div>
     </details>`;

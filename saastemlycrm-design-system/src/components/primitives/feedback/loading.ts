@@ -2,8 +2,8 @@ import type { VariantProps } from "class-variance-authority";
 import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
-import { m } from "../../../i18n/index.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { m } from "../../../lib/i18n/index.ts";
 
 export const loading = rcva("loading", {
   variants: {

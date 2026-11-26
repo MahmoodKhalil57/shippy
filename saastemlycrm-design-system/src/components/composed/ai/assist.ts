@@ -3,7 +3,7 @@ import { customElement, property, state } from "lit/decorators.js";
 import { LightElement } from "../../base/light-element.ts";
 import "../../primitives/actions/button.ts";
 import "../../primitives/ai/markdown.ts";
-import "../../primitives/data/badge.ts";
+import "../../primitives/data/tag.ts";
 import "../../primitives/feedback/alert.ts";
 import "../../primitives/feedback/loading.ts";
 import "../../primitives/forms/textarea.ts";
@@ -36,9 +36,9 @@ import {
   type Classification,
   type MediaKind,
   type SummaryType,
-} from "../../../agent/built-in-ai.ts";
-import { AI_CHANGE, usingLocalModel } from "../../../agent/ai-polyfill.ts";
-import { intl, locale, m } from "../../../i18n/index.ts";
+} from "../../../lib/agent/built-in-ai.ts";
+import { AI_CHANGE, usingLocalModel } from "../../../lib/agent/ai-polyfill.ts";
+import { intl, locale, m } from "../../../lib/i18n/index.ts";
 
 const RTL = new Set(["ar", "he", "fa", "ur"]);
 
@@ -220,8 +220,9 @@ export class UiAiSummary extends AssistElement {
     if (!changed.has("text")) return;
     this.summary = "";
     if (this.auto && this.text.trim() && supported("Summarizer") && (await availability("Summarizer")) === "available")
-      this.summary =
-        (await summarize(this.text, { type: this.type, context: this.context || undefined }).catch(() => "")) ?? "";
+      this.summary = await summarize(this.text, { type: this.type, context: this.context || undefined }).catch(
+        () => "",
+      );
   }
 
   private async _run() {
@@ -270,8 +271,7 @@ export class UiAiTools extends AssistElement {
   }
 
   private _undo() {
-    if (this.previous == null) return;
-    const value = this.previous;
+    const value = this.previous!;
     this.previous = null;
     this.done = "";
     this.value = value;
@@ -417,9 +417,9 @@ export class UiAiClassify extends AssistElement {
                   )
                 : nothing
             }`
-          : this.working || this.error
+          : this.working
             ? this.status()
-            : aiButton("sparkles", m.assist_suggest_category(), () => void this._run())
+            : html`${aiButton("sparkles", m.assist_suggest_category(), () => void this._run())} ${this.status()}`
       }`,
     );
   }

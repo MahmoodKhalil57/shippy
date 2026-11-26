@@ -1,10 +1,11 @@
 import type { VariantProps } from "class-variance-authority";
 import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import { formatInt, m } from "../../../i18n/index.ts";
+import { formatInt, m } from "../../../lib/i18n/index.ts";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
-import { row, rowFill, text, tiles } from "../layout/algebra.ts";
+import { uid } from "../../../lib/base/uid.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { row, rowFill, text, tiles } from "../../../styles/algebra.ts";
 
 export const gauge = rcva("flex min-w-0 flex-col gap-1", {
   variants: {
@@ -46,16 +47,18 @@ export class UiGauge extends LightElement {
   @property() label = "";
   @property() heading: Renderable = "";
   @property({ attribute: "value-text" }) valueText: Renderable = "";
+  private _id = uid("gauge");
 
   render() {
     const span = this.max - this.min;
     const pct = span > 0 ? Math.min(100, Math.max(0, ((this.value - this.min) / span) * 100)) : 0;
-    const head = this.heading || this.valueText || this.hasSlotted("heading");
+    const named = !!this.heading || this.hasSlotted("heading");
+    const head = named || this.valueText;
     return html`<div class=${gauge({ width: this.width })}>
       ${
         head
           ? html`<div class=${gaugeHead()} aria-hidden="true">
-              <span class=${gaugeHeading()}
+              <span class=${gaugeHeading()} id=${this._id}
                 >${this.hasSlotted("heading") ? this.slotted("heading") : this.heading}</span
               >
               ${this.valueText ? html`<span class=${gaugeValue()}>${this.valueText}</span>` : nothing}
@@ -68,8 +71,9 @@ export class UiGauge extends LightElement {
         aria-valuenow=${this.value}
         aria-valuemin=${this.min}
         aria-valuemax=${this.max}
-        aria-label=${this.label || (typeof this.heading === "string" ? this.heading : "") || m.gauge_label()}
-        aria-valuetext=${this.label || m.gauge_value_of({ value: formatInt(this.value), max: formatInt(this.max) })}
+        aria-label=${this.label || (named ? nothing : m.gauge_label())}
+        aria-labelledby=${!this.label && named ? this._id : nothing}
+        aria-valuetext=${m.gauge_value_of({ value: formatInt(this.value), max: formatInt(this.max) })}
       >
         <div class=${gaugeFill({ tone: this.tone })} style="--fill:${pct}%"></div>
       </div>

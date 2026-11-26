@@ -3,14 +3,14 @@ import { html, nothing, svg, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { keyed } from "lit/directives/keyed.js";
 import { styleMap } from "lit/directives/style-map.js";
-import { axisOf, labelBoxes, labelStep, niceScale, pointAt, smoothPath, type Point } from "../../base/chart.ts";
+import { axisOf, labelBoxes, labelStep, niceScale, pointAt, smoothPath, type Point } from "../../../lib/base/chart.ts";
 import { floating as float } from "../../base/floating.ts";
-import { formatInt, m } from "../../../i18n/index.ts";
-import { inlineStep, isRtl } from "../../base/reading.ts";
+import { formatInt, m } from "../../../lib/i18n/index.ts";
+import { inlineStep, isRtl } from "../../../lib/base/reading.ts";
 import { LightElement } from "../../base/light-element.ts";
-import { whenIdle } from "../../base/work-queue.ts";
-import { motion } from "../../base/motion-queue.ts";
-import { rcva } from "../../base/variants.ts";
+import { whenIdle } from "../../../lib/base/work-queue.ts";
+import { motion } from "../../../lib/base/motion-queue.ts";
+import { rcva } from "../../../lib/base/variants.ts";
 import { buttonGroup, buttonGroupItem } from "../actions/button-group.ts";
 import {
   fixed,
@@ -23,7 +23,7 @@ import {
   stack,
   stackReverse,
   text,
-} from "../layout/algebra.ts";
+} from "../../../styles/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
 
 export const chart = rcva(
@@ -91,11 +91,15 @@ export const chartBand = rcva("fill-current stroke-none opacity-40", { variants:
 export const chartBars = rcva(`${row} absolute inset-0 items-end gap-0.5`);
 export const chartBarSlot = rcva(`${row} h-full min-w-0 flex-1 items-end justify-center gap-0.5`);
 const GROW =
-  "origin-bottom [transition:scale_var(--duration-long2)_var(--ease-emphasized-decelerate)_calc(var(--d)*var(--duration-short4)),color_var(--duration-effects)_var(--ease-effects)] motion-reduce:transition-none starting:scale-y-0";
-export const chartBar = rcva(`h-(--bar) max-w-12 min-w-0 flex-1 rounded-t-sm bg-current ${GROW}`, {
-  variants: { series: SERIES },
+  "[transition:scale_var(--duration-long2)_var(--ease-emphasized-decelerate)_calc(var(--d)*var(--duration-short4)),color_var(--duration-effects)_var(--ease-effects)] motion-reduce:transition-none starting:scale-y-0";
+export const chartBar = rcva(`relative bottom-(--base) h-(--bar) max-w-12 min-w-0 flex-1 bg-current ${GROW}`, {
+  variants: {
+    series: SERIES,
+    negative: { true: "origin-top rounded-b-sm", false: "origin-bottom rounded-t-sm" },
+  },
+  defaultVariants: { negative: false },
 });
-export const chartStack = rcva(`${stackReverse} h-full w-full max-w-12 min-w-0 ${GROW}`);
+export const chartStack = rcva(`${stackReverse} h-full w-full max-w-12 min-w-0 origin-bottom ${GROW}`);
 export const chartSegment = rcva(
   "h-(--bar) w-full border-b-2 border-transparent bg-current bg-clip-padding first:border-b-0 [transition:color_var(--duration-effects)_var(--ease-effects)] motion-reduce:transition-none",
   { variants: { series: SERIES, top: { true: "rounded-t-sm", false: "" } } },
@@ -107,12 +111,15 @@ export const chartValue = rcva(
 export const chartTarget = rcva(
   "pointer-events-none absolute inset-x-0 bottom-(--at) border-t border-dashed border-outline",
 );
+export const chartZero = rcva("pointer-events-none absolute inset-x-0 bottom-(--at) border-t border-outline");
 export const chartTargetLabel = rcva("absolute end-0 bottom-0.5 rounded-xs bg-surface/80 px-1 text-label-sm");
 
 export const chartColumn = rcva(
   "pointer-events-none absolute inset-y-0 start-(--a) end-(--b) rounded-t-xs bg-on-surface/(--state-hover)",
 );
-export const chartCrosshair = rcva("pointer-events-none absolute inset-y-0 start-(--x) border-s border-outline");
+export const chartCrosshair = rcva("pointer-events-none absolute inset-y-0 start-(--x) border-s border-outline", {
+  variants: { end: { true: "-translate-x-full rtl:translate-x-full", false: "" } },
+});
 export const chartDot = rcva(
   "pointer-events-none absolute start-(--x) bottom-(--y) size-2.5 -translate-x-1/2 translate-y-1/2 rounded-full bg-current ring-2 ring-surface rtl:translate-x-1/2",
   { variants: { series: SERIES } },
@@ -142,6 +149,7 @@ export const chartAxisLabel = rcva("absolute top-0 start-(--a) end-(--b) truncat
 export const chartAxisSizer = rcva("invisible absolute start-0 top-0 w-fit");
 export const chartAxisLine = rcva("invisible");
 export const chartTable = rcva("sr-only");
+export const chartReadout = rcva("sr-only");
 
 export type ChartVariants = VariantProps<typeof chart>;
 
@@ -164,6 +172,7 @@ interface View {
   tops: number[][];
   totals: number[];
   top: number;
+  bottom: number;
   step: number;
   ticks: number[];
 }
@@ -191,6 +200,7 @@ export class UiChart extends LightElement {
   @state() private _points?: number;
   @state() private _step = 1;
   @state() private _table = false;
+  @state() private _keyed = false;
 
   connectedCallback() {
     super.connectedCallback();
@@ -202,9 +212,9 @@ export class UiChart extends LightElement {
   #labelWidth = 0;
   #resize = new ResizeObserver((entries) => {
     for (const e of entries) {
-      const width = e.borderBoxSize?.[0]?.inlineSize ?? e.contentRect.width;
+      const width = e.borderBoxSize[0]!.inlineSize;
       if ((e.target as HTMLElement).hasAttribute("data-chart-sizer")) this.#labelWidth = width;
-      else this.#axisWidth = e.contentBoxSize?.[0]?.inlineSize ?? e.contentRect.width;
+      else this.#axisWidth = e.contentBoxSize[0]!.inlineSize;
     }
     this._fit();
   });
@@ -225,7 +235,7 @@ export class UiChart extends LightElement {
   #revealed = false;
 
   protected updated() {
-    if (!this.#revealed && this.querySelector("svg, [data-chart-plot]")) {
+    if (!this.#revealed) {
       this.#revealed = true;
       const reveal = this.getAnimations({ subtree: true }).filter(
         (a) =>
@@ -283,9 +293,12 @@ export class UiChart extends LightElement {
     const tops = shown.map((s) => s.values.map((v, i) => (stacked ? (running[i] = running[i]! + Math.max(0, v)) : v)));
     const totals = Array.from({ length: n }, (_, i) => shown.reduce((sum, s) => sum + Math.max(0, s.values[i]!), 0));
     const peak = Math.max(0, this.target ?? 0, ...tops.flat());
+    const low = Math.min(0, this.target ?? 0, ...tops.flat());
     const whole = [this.target ?? 0, ...shown.flatMap((s) => s.values)].every(Number.isInteger);
     const scale =
-      this.kind === "spark" ? { top: peak === 0 ? 1 : peak * 1.08, step: 0, ticks: [] } : niceScale(peak, whole);
+      this.kind === "spark"
+        ? { top: peak === 0 && low === 0 ? 1 : peak * 1.08, bottom: low * 1.08, step: 0, ticks: [] }
+        : this._scale(peak, low, whole);
     return {
       n,
       labels: Array.from({ length: n }, (_, i) => this.labels[from + i]),
@@ -298,6 +311,21 @@ export class UiChart extends LightElement {
     };
   }
 
+  private _scale(peak: number, low: number, whole: boolean) {
+    const up = niceScale(peak - low, whole);
+    if (low === 0) return { ...up, bottom: 0 };
+    const { step } = up;
+    const clean = (t: number) => Number(t.toPrecision(12));
+    const below = Math.ceil(-low / step - 1e-9);
+    const above = Math.ceil(peak / step - 1e-9);
+    const ticks = Array.from({ length: below + above + 1 }, (_, i) => clean((i - below) * step));
+    return { top: clean(above * step), bottom: clean(-below * step), step, ticks };
+  }
+
+  private _y(v: View, value: number) {
+    return ((value - v.bottom) / (v.top - v.bottom)) * 100;
+  }
+
   private _x(i: number, n: number) {
     return pointAt(i, axisOf(n, this.kind === "bars"));
   }
@@ -307,6 +335,7 @@ export class UiChart extends LightElement {
     const r = el.getBoundingClientRect();
     const across = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
     const f = isRtl(el) ? 1 - across : across;
+    this._keyed = false;
     this._hover = this.kind === "bars" ? Math.min(n - 1, Math.floor(f * n)) : Math.round(f * (n - 1));
   }
 
@@ -318,6 +347,7 @@ export class UiChart extends LightElement {
     else if (e.key === "End") this._hover = n - 1;
     else if (e.key === "Escape") this._hover = -1;
     else return;
+    this._keyed = true;
     e.preventDefault();
   }
 
@@ -393,7 +423,8 @@ export class UiChart extends LightElement {
   }
 
   private _lines(v: View) {
-    const y = (value: number) => 100 - (value / v.top) * 100;
+    const y = (value: number) => 100 - this._y(v, value);
+    const zero = y(0);
     const points = (values: number[]): Point[] => values.map((value, i) => [this._x(i, v.n), y(value)]);
     const line = (pts: Point[]) =>
       pts.length === 1 ? `M${pts[0]![0]},${pts[0]![1]} L${pts[0]![0]},${pts[0]![1]}` : smoothPath(pts);
@@ -404,7 +435,7 @@ export class UiChart extends LightElement {
       const pts = points(v.tops[at]!);
       const fill = `${this.#uid}-${s.k}`;
       const under =
-        v.stacked && at > 0 ? smoothPath(points(v.tops[at - 1]!).reverse(), true) : `L${end},100 L${start},100`;
+        v.stacked && at > 0 ? smoothPath(points(v.tops[at - 1]!).reverse(), true) : `L${end},${zero} L${start},${zero}`;
       const area =
         pts.length < 2
           ? nothing
@@ -426,7 +457,8 @@ export class UiChart extends LightElement {
   }
 
   private _bars(v: View) {
-    const height = (value: number) => `${(Math.max(0, value) / v.top) * 100}%`;
+    const height = (value: number) => `${(Math.max(0, value) / (v.top - v.bottom)) * 100}%`;
+    const base = (value: number) => `${this._y(v, Math.min(0, value))}%`;
     const highlight = this.highlightLast && v.shown.length === 1;
     return html`<div class=${chartBars()} aria-hidden="true">
       ${Array.from({ length: v.n }, (_, i) => {
@@ -449,8 +481,16 @@ export class UiChart extends LightElement {
           ${v.shown.map(
             (s) =>
               html`<div
-                class=${chartBar({ series: highlight && i !== v.n - 1 && i !== this._hover ? "muted" : slot(s.k) })}
-                style=${styleMap({ "--bar": height(s.values[i]!), "--d": String(d) })}
+                class=${chartBar({
+                  series: highlight && i !== v.n - 1 && i !== this._hover ? "muted" : slot(s.k),
+                  negative: s.values[i]! < 0,
+                })}
+                data-chart-bar
+                style=${styleMap({
+                  "--bar": height(Math.abs(s.values[i]!)),
+                  "--base": base(s.values[i]!),
+                  "--d": String(d),
+                })}
               ></div>`,
           )}
         </div>`;
@@ -475,12 +515,16 @@ export class UiChart extends LightElement {
               data-chart-anchor
               style=${styleMap({ "--a": `${x - half}%`, "--b": `${100 - x - half}%` })}
             ></div>`
-          : html`<div class=${chartCrosshair()} data-chart-anchor style=${styleMap({ "--x": `${x}%` })}></div>
+          : html`<div
+                class=${chartCrosshair({ end: x >= 100 })}
+                data-chart-anchor
+                style=${styleMap({ "--x": `${x}%` })}
+              ></div>
               ${v.shown.map(
                 (s, k) =>
                   html`<div
                     class=${chartDot({ series: slot(s.k) })}
-                    style=${styleMap({ "--x": `${x}%`, "--y": `${(v.tops[k]![i]! / v.top) * 100}%` })}
+                    style=${styleMap({ "--x": `${x}%`, "--y": `${this._y(v, v.tops[k]![i]!)}%` })}
                   ></div>`,
               )}`
       }
@@ -492,7 +536,7 @@ export class UiChart extends LightElement {
           anchor: () => this.querySelector("[data-chart-anchor]"),
         })}
         data-chart-tip
-        role="status"
+        aria-hidden="true"
       >
         ${label ? html`<span class=${chartTooltipTitle()}>${label}</span>` : nothing}
         ${v.shown.map(
@@ -523,6 +567,22 @@ export class UiChart extends LightElement {
         }
       </div>
     `;
+  }
+
+  private _readout(v: View) {
+    const i = this._hover;
+    if (!this._keyed || i < 0 || i >= v.n) return "";
+    const parts = [
+      v.labels[i],
+      ...v.shown.map((s) => `${s.name} ${this.format(s.values[i]!)}`),
+      v.stacked ? `${m.chart_total()} ${this.format(v.totals[i]!)}` : undefined,
+      this.target !== undefined
+        ? this.targetLabel
+          ? this.targetLabel
+          : `${m.chart_target()} ${this.format(this.target)}`
+        : undefined,
+    ];
+    return parts.filter(Boolean).join(", ");
   }
 
   private _axis(v: View) {
@@ -563,11 +623,16 @@ export class UiChart extends LightElement {
     >
       ${v.ticks
         .slice(1)
-        .map((t) => html`<div class=${chartGridline()} style=${styleMap({ "--at": `${(t / v.top) * 100}%` })}></div>`)}
+        .map((t) => html`<div class=${chartGridline()} style=${styleMap({ "--at": `${this._y(v, t)}%` })}></div>`)}
+      ${
+        v.bottom < 0
+          ? html`<div class=${chartZero()} data-chart-zero style=${styleMap({ "--at": `${this._y(v, 0)}%` })}></div>`
+          : nothing
+      }
       ${bars ? this._bars(v) : this._lines(v)}
       ${
         this.target !== undefined
-          ? html`<div class=${chartTarget()} style=${styleMap({ "--at": `${(this.target / v.top) * 100}%` })}>
+          ? html`<div class=${chartTarget()} style=${styleMap({ "--at": `${this._y(v, this.target)}%` })}>
               ${this.targetLabel && !spark ? html`<span class=${chartTargetLabel()}>${this.targetLabel}</span>` : nothing}
             </div>`
           : nothing
@@ -578,7 +643,7 @@ export class UiChart extends LightElement {
               class=${chartValue()}
               aria-hidden="true"
               style=${styleMap({
-                "--y": `${(Math.max(0, v.shown[0]!.values[v.n - 1]!) / v.top) * 100}%`,
+                "--y": `${this._y(v, Math.max(0, v.shown[0]!.values[v.n - 1]!))}%`,
                 "--e": `calc(${50 / v.n}% - min(${50 / v.n}%, 1.5rem))`,
               })}
               >${this.format(v.shown[0]!.values[v.n - 1]!)}</span
@@ -599,6 +664,7 @@ export class UiChart extends LightElement {
               <div class=${chartBody()}>${plot} ${v.n ? this._axis(v) : nothing}</div>
             </div>`
       }
+      <p class=${chartReadout()} role="status">${this._readout(v)}</p>
       <table class=${chartTable()}>
         <caption>
           ${this.label}
@@ -606,7 +672,7 @@ export class UiChart extends LightElement {
         ${
           this._table
             ? html`<tr>
-                  <th></th>
+                  <td></td>
                   ${v.shown.map((s) => html`<th>${s.name}</th>`)}
                 </tr>
                 ${Array.from(

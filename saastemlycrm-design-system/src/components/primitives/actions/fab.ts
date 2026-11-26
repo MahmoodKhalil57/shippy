@@ -3,10 +3,10 @@ import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
-import { floating, floatingHeight, inset, row, stack } from "../layout/algebra.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { floating, floatingHeight, inset, row, stack } from "../../../styles/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
-import { m } from "../../../i18n/index.ts";
+import { m } from "../../../lib/i18n/index.ts";
 import { iconButton } from "./icon-button.ts";
 
 export const fab = rcva(
@@ -26,9 +26,15 @@ export const fab = rcva(
   },
 );
 
-export const fabDock = rcva(
-  `fixed end-4 bottom-4 z-[60] ${stack} items-end gap-3 pointer-events-none [&>*]:pointer-events-auto`,
-);
+export const fabDock = rcva(`${stack} items-end gap-3`, {
+  variants: {
+    position: {
+      fixed: "fixed end-4 bottom-4 z-[60] pointer-events-none [&>*]:pointer-events-auto",
+      inline: "relative w-fit max-w-full",
+    },
+  },
+  defaultVariants: { position: "fixed" },
+});
 export const fabPanel = rcva(
   `liquid-glass ${stack} ${floating["8"]} ${floatingHeight.panel} overflow-hidden [--clips:surface] rounded-box origin-bottom-right starting:scale-50 starting:opacity-0 motion-reduce:scale-100`,
   {
@@ -49,6 +55,7 @@ export const fabPanelBody = rcva(
 export const fabPanelFooter = rcva(`${inset["3"]} border-t border-outline-variant py-2.5`);
 
 export type FabVariants = VariantProps<typeof fab>;
+export type FabPosition = "fixed" | "inline";
 
 @customElement("ui-fab")
 export class UiFab extends LightElement {
@@ -59,6 +66,7 @@ export class UiFab extends LightElement {
   @property({ type: Boolean }) panel = false;
   @property({ type: Boolean, reflect: true }) open = false;
   @property() heading: Renderable = "";
+  @property({ reflect: true }) position: FabPosition = "fixed";
 
   private _toggle(open = !this.open) {
     this.open = open;
@@ -69,7 +77,7 @@ export class UiFab extends LightElement {
     const trigger = this.hasSlotted("trigger") ? this.slotted("trigger") : this.trigger;
     const cls = fab({ color: this.color, size: this.size });
     if (!this.panel)
-      return html`<div class=${fabDock()}>
+      return html`<div class=${fabDock({ position: this.position })}>
         <button
           type="button"
           class=${cls}
@@ -79,7 +87,7 @@ export class UiFab extends LightElement {
           ${trigger}
         </button>
       </div>`;
-    return html`<div class=${fabDock()}>
+    return html`<div class=${fabDock({ position: this.position })}>
       <section class=${fabPanel({ hidden: !this.open })} role="dialog" aria-label=${ifDefined(this.triggerLabel)}>
         <header class=${fabPanelHead()}>
           <span class=${fabPanelTitle()}>${this.heading}</span>

@@ -2,8 +2,9 @@ import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { keyed } from "lit/directives/keyed.js";
 import { floating } from "../../base/floating.ts";
-import { LightElement, uid, type Renderable } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
+import { LightElement, type Renderable } from "../../base/light-element.ts";
+import { uid } from "../../../lib/base/uid.ts";
+import { rcva } from "../../../lib/base/variants.ts";
 import {
   fixed,
   floatingFit,
@@ -16,9 +17,10 @@ import {
   rowGrow,
   stack,
   text,
-} from "../layout/algebra.ts";
+} from "../../../styles/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
-import { formatInt, m } from "../../../i18n/index.ts";
+import { fieldLabelId } from "./fieldset.ts";
+import { formatInt, m } from "../../../lib/i18n/index.ts";
 
 export const field = rcva(
   `${stack} ${padStart["3"]} relative gap-1 rounded-field py-1 [transition:background-color_var(--duration-effects)_var(--ease-effects)] before:absolute before:inset-y-1.5 before:start-0 before:w-1 before:rounded-full before:bg-primary before:scale-y-0 before:[transition:scale_var(--duration-spatial-fast)_var(--ease-spatial-fast)] motion-reduce:before:transition-none`,
@@ -86,7 +88,7 @@ export const fieldSuggestionTake = rcva(
 export const fieldSuggestionIcon = rcva(`${inlineRow} text-primary-ink`);
 export const fieldSuggestionText = rcva(`${rowGrow} ${text.prose} text-body-lg`);
 export const fieldSuggestionUse = rcva(
-  `${inlineRow} ${text.line} items-center rounded-full bg-primary px-2 py-0.5 text-label-md text-on-primary`,
+  `${inlineRow} ${text.line} items-center rounded-full bg-primary px-2 py-0.5 text-label-md text-primary-content`,
 );
 export const fieldSuggestionDismiss = rcva(
   `${inlineRow} ${fixed["10"]} touch-target state-layer cursor-pointer items-center justify-center self-center rounded-full text-on-surface-variant`,
@@ -178,7 +180,10 @@ export class UiField extends LightElement {
       <div class=${fieldTop()}>
         ${
           this.label
-            ? html`<label class=${fieldLabel({ readonly: this.readonly })} for=${this.controlId ?? nothing}
+            ? html`<label
+                class=${fieldLabel({ readonly: this.readonly })}
+                for=${this.controlId ?? nothing}
+                id=${this.controlId ? fieldLabelId(this.controlId) : nothing}
                 >${this.label}</label
               >`
             : nothing

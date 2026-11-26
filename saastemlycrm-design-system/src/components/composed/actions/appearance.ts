@@ -16,10 +16,10 @@ import {
   STORAGE,
   THEMES,
   type ThemeChoice,
-} from "../../base/appearance.ts";
+} from "../../../lib/base/appearance.ts";
 import { LightElement } from "../../base/light-element.ts";
-import { LANGUAGES, LOCALES, locale, m, setLanguage, type Locale } from "../../../i18n/index.ts";
-import { pickFile } from "../../base/pick-file.ts";
+import { LANGUAGES, LOCALES, locale, m, setLanguage, type Locale } from "../../../lib/i18n/index.ts";
+import { pickFile } from "../../../lib/base/pick-file.ts";
 import { liveBackground } from "./live-background.ts";
 import { SCHEMES, type Scheme } from "../../../styles/schemes.ts";
 import "../../primitives/actions/button.ts";
@@ -48,6 +48,9 @@ export type AppearanceKind = "theme" | "scheme" | "background" | "language" | "a
 
 const GATHERED = ["theme", "language", "scheme", "background"] as const;
 type Single = (typeof GATHERED)[number];
+type Stored = Exclude<Single, "language">;
+
+const NONE: Record<Stored, string> = { theme: "system", scheme: "default", background: "none" };
 
 const THEME_ICON: Record<ThemeChoice, IconName> = { system: "contrast", dark: "moon", light: "sun" };
 const THEME_NAME: Record<ThemeChoice, () => string> = {
@@ -68,18 +71,12 @@ export class UiAppearance extends LightElement {
 
   #from: { x: number; y: number } | null = null;
 
-  private get _key() {
-    return this.#keyOf(this.kind === "all" ? "theme" : this.kind);
+  #keyOf(kind: Stored) {
+    return STORAGE[kind];
   }
 
-  #keyOf(kind: Single) {
-    return STORAGE[kind === "theme" || kind === "language" ? "theme" : kind];
-  }
-
-  #valueOf(kind: Single): string {
-    if (kind === this.kind) return this.value;
-    if (kind === "language") return locale();
-    return remembered(this.#keyOf(kind)) ?? "";
+  #valueOf(kind: Stored): string {
+    return kind === this.kind ? this.value : (remembered(this.#keyOf(kind)) ?? "");
   }
 
   connectedCallback() {
@@ -87,7 +84,7 @@ export class UiAppearance extends LightElement {
     this.addEventListener("pointerdown", (e) => (this.#from = { x: e.clientX, y: e.clientY }));
     if (this.kind === "language") this.value = locale();
     if (!this.persist || this.kind === "language" || this.kind === "all") return;
-    const saved = remembered(this._key);
+    const saved = remembered(this.#keyOf(this.kind));
     if (saved == null) return;
     if (this.kind === "background") {
       this.value = saved;
@@ -101,33 +98,24 @@ export class UiAppearance extends LightElement {
     }
   }
 
-  private get _none() {
-    return this.kind === "background"
-      ? "none"
-      : this.kind === "theme"
-        ? "system"
-        : this.kind === "language"
-          ? locale()
-          : "default";
-  }
-
   options(): { selected: string; choices: { id: string; label: string }[] } {
+    const kind: Single = this.kind === "all" ? "theme" : this.kind;
+    if (kind === "language")
+      return { selected: locale(), choices: LOCALES.map((id) => ({ id, label: LANGUAGES[id].name })) };
     const choices =
-      this.kind === "theme"
+      kind === "theme"
         ? THEMES.map((id) => ({ id, label: THEME_NAME[id]() }))
-        : this.kind === "language"
-          ? LOCALES.map((id) => ({ id, label: LANGUAGES[id].name }))
-          : this.kind === "scheme"
-            ? [
-                { id: "default", label: m.appearance_scheme_default() },
-                ...this.schemes.map((s) => ({ id: s.id, label: s.label })),
-              ]
-            : [
-                { id: "none", label: m.appearance_background_none() },
-                ...this.backgrounds.map((b) => ({ id: b.id, label: b.label })),
-                ...this.#live().map((b) => ({ id: b.id, label: b.label() })),
-              ];
-    return { selected: this.value || this._none, choices };
+        : kind === "scheme"
+          ? [
+              { id: "default", label: m.appearance_scheme_default() },
+              ...this.schemes.map((s) => ({ id: s.id, label: s.label })),
+            ]
+          : [
+              { id: "none", label: m.appearance_background_none() },
+              ...this.backgrounds.map((b) => ({ id: b.id, label: b.label })),
+              ...this.#live().map((b) => ({ id: b.id, label: b.label() })),
+            ];
+    return { selected: this.#valueOf(kind) || NONE[kind], choices };
   }
 
   async select(id: string): Promise<boolean> {
@@ -325,8 +313,7 @@ export class UiAppearance extends LightElement {
         .items=${items}
         @ui-select=${(e: CustomEvent<{ item: MenuItem }>) => {
           e.stopPropagation();
-          const id = e.detail.item.value;
-          if (typeof id === "string") void this._pick(id, null, kind);
+          void this._pick(String(e.detail.item.value), null, kind);
         }}
       ></ui-menu>`;
     return html`<ui-dropdown
@@ -385,8 +372,7 @@ export class UiAppearance extends LightElement {
         .items=${items}
         @ui-select=${(e: CustomEvent<{ item: MenuItem }>) => {
           e.stopPropagation();
-          const id = e.detail.item.value;
-          if (typeof id === "string") void this._pick(id);
+          void this._pick(String(e.detail.item.value));
         }}
       ></ui-menu>
     </ui-dropdown>`;

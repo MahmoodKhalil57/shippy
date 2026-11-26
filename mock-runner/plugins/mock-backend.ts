@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { copyFile, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { build, type Plugin, type ResolvedConfig } from "vite-plus";
+import { build, normalizePath, type Plugin, type ResolvedConfig } from "vite-plus";
 
 const SW_ENTRY = path.resolve(import.meta.dirname, "../src/mock/sw.ts");
 const BACKEND_MODULE = "virtual:mock-backend";
@@ -50,6 +50,7 @@ export default function mockBackend(options: MockBackendOptions): Plugin[] {
 
       configResolved(resolved) {
         config = resolved;
+        resolved.server.fs.allow.push(normalizePath(path.resolve(import.meta.dirname, "..")));
       },
 
       configureServer(server) {

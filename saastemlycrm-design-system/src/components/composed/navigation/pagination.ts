@@ -1,13 +1,17 @@
 import { html, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { LightElement, uid } from "../../base/light-element.ts";
+import { LightElement } from "../../base/light-element.ts";
+import { uid } from "../../../lib/base/uid.ts";
+import { rcva } from "../../../lib/base/variants.ts";
 import type { ButtonVariants } from "../../primitives/actions/button.ts";
 import type { JoinVariants } from "../../primitives/layout/join.ts";
 import "../../primitives/actions/button.ts";
 import "../../primitives/layout/join.ts";
 import "../../primitives/media/icon.ts";
-import { pageSlots, type PageSlot } from "../../base/page-slots.ts";
-import { m } from "../../../i18n/index.ts";
+import { pageSlots, type PageSlot } from "../../../lib/base/page-slots.ts";
+import { m } from "../../../lib/i18n/index.ts";
+
+export const paginationSr = rcva("sr-only");
 
 export type PaginationMode = "numbers" | "radio" | "prev-next";
 
@@ -56,7 +60,8 @@ export class UiPagination extends LightElement {
 
   private _fit() {
     if (this.mode !== "numbers" || !this.parentElement) return;
-    if (!this._narrow) this._fullWidth = this.querySelector("nav")?.scrollWidth ?? 0;
+    if (!this._narrow)
+      this._fullWidth = [...this.querySelectorAll<HTMLElement>("nav button")].reduce((w, b) => w + b.offsetWidth, 0);
     const narrow = this._fullWidth > this.parentElement.clientWidth;
     if (narrow !== this._narrow) this._narrow = narrow;
   }
@@ -123,11 +128,13 @@ export class UiPagination extends LightElement {
     if (this._narrow)
       return html`<ui-join as="nav" .label=${this.label}>
         ${this._arrow(-1)}
-        ${this._button(`${this.page} / ${Math.max(1, this.total)}`, {
-          active: true,
-          current: "page",
-          label: m.pagination_page_of({ page: this.page, total: Math.max(1, this.total) }),
-        })}
+        ${this._button(
+          html`<span aria-hidden="true">${this.page} / ${Math.max(1, this.total)}</span
+            ><span class=${paginationSr()}
+              >${m.pagination_page_of({ page: this.page, total: Math.max(1, this.total) })}</span
+            >`,
+          { active: true, current: "page" },
+        )}
         ${this._arrow(1)}
       </ui-join>`;
 

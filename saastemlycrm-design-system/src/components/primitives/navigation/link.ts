@@ -3,19 +3,19 @@ import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
+import { rcva } from "../../../lib/base/variants.ts";
 
 export const link = rcva("link", {
   variants: {
     color: {
       neutral: "link-neutral",
-      primary: "link-primary",
-      secondary: "link-secondary",
-      accent: "link-accent",
-      success: "link-success",
-      info: "link-info",
-      warning: "link-warning",
-      error: "link-error",
+      primary: "text-primary-ink",
+      secondary: "text-secondary-ink",
+      accent: "text-accent-ink",
+      success: "text-success-ink",
+      info: "text-info-ink",
+      warning: "text-warning-ink",
+      error: "text-error-ink",
     },
     variant: {
       hover: "link-hover",

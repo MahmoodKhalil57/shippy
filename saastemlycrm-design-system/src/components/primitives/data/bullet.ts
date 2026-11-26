@@ -1,13 +1,13 @@
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
-import { formatInt, m } from "../../../i18n/index.ts";
-import { isRtl } from "../../base/reading.ts";
+import { formatInt, m } from "../../../lib/i18n/index.ts";
+import { isRtl } from "../../../lib/base/reading.ts";
 import { LightElement } from "../../base/light-element.ts";
-import { motion } from "../../base/motion-queue.ts";
-import { rcva } from "../../base/variants.ts";
-import { row, rowLine, stack, text } from "../layout/algebra.ts";
-import { bandsOf, fraction, indexAt, percentOf, percentText, type Quality } from "./visual-math.ts";
+import { motion } from "../../../lib/base/motion-queue.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { row, rowLine, stack, text } from "../../../styles/algebra.ts";
+import { bandsOf, fraction, indexAt, percentOf, percentText, type Quality } from "../../../lib/base/visual-math.ts";
 
 export const bullet = rcva(`${stack} w-full gap-1`);
 export const bulletHead = rcva(`${row} items-baseline gap-x-2`);

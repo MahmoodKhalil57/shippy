@@ -1,11 +1,12 @@
 import type { VariantProps } from "class-variance-authority";
-import { html } from "lit";
+import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { live } from "lit/directives/live.js";
-import { LightElement, uid, type Renderable } from "../../base/light-element.ts";
-import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
-import { fieldsetField, fieldsetLabel, type FieldsetVariants } from "./fieldset.ts";
+import { LightElement, type Renderable } from "../../base/light-element.ts";
+import { uid } from "../../../lib/base/uid.ts";
+import { rcva, responsiveBoolean, type Responsive } from "../../../lib/base/variants.ts";
+import { fieldsetField, fieldsetLabel, groupName, legendLabel, type FieldsetVariants } from "./fieldset.ts";
 
 export const radio = rcva("radio", {
   variants: {
@@ -66,9 +67,16 @@ export class UiRadio extends LightElement {
   @property({ attribute: "field-surface" }) fieldSurface: FieldsetVariants["surface"];
   @property({ attribute: "field-width" }) fieldWidth: FieldsetVariants["width"];
   @property({ attribute: "aria-label" }) ariaLabelText?: string;
+  @property({ attribute: "input-id" }) inputId = uid("radio-input");
 
-  private _input(value: string, checked: boolean, disabled: boolean, aria?: string) {
+  private _input(
+    value: string,
+    checked: boolean,
+    disabled: boolean,
+    a: { id?: string; label?: string; labelledby?: string; describedby?: string } = {},
+  ) {
     return html`<input
+      id=${ifDefined(a.id)}
       type="radio"
       class=${radio({ color: this.color, size: this.size, validator: this.validator })}
       name=${this.name}
@@ -76,7 +84,9 @@ export class UiRadio extends LightElement {
       .checked=${live(checked)}
       ?disabled=${disabled || this.disabled}
       ?required=${this.required}
-      aria-label=${ifDefined(aria)}
+      aria-label=${ifDefined(a.label)}
+      aria-labelledby=${ifDefined(a.labelledby)}
+      aria-describedby=${ifDefined(a.describedby)}
       @change=${(e: Event) => {
         const t = e.target as HTMLInputElement;
         if (this.options.length) this.value = t.value;
@@ -85,14 +95,28 @@ export class UiRadio extends LightElement {
     />`;
   }
 
-  private _labelled(input: unknown, text: Renderable) {
-    return html`<label class=${fieldsetLabel({ control: true })}>${input} ${text}</label>`;
+  private _labelled(input: unknown, text: Renderable, textId?: string) {
+    return html`<label class=${fieldsetLabel({ control: true })}
+      >${input} <span id=${textId ?? nothing}>${text}</span></label
+    >`;
   }
 
   render() {
     let control;
     if (this.options.length) {
-      control = html`<div class=${radioGroup({ direction: this.direction })} role="radiogroup">
+      const name = groupName(this, {
+        ariaLabel: this.ariaLabelText,
+        label: this.label,
+        legend: this.legend,
+        controlId: this.inputId,
+      });
+      control = html`<div
+        class=${radioGroup({ direction: this.direction })}
+        id=${this.inputId}
+        role="radiogroup"
+        aria-label=${name.label ?? nothing}
+        aria-labelledby=${name.labelledby ?? nothing}
+      >
         ${this.options.map((o) => {
           const opt = typeof o === "string" ? { label: o, value: o, disabled: false } : o;
           return this._labelled(this._input(opt.value, opt.value === this.value, !!opt.disabled), opt.label);
@@ -100,14 +124,22 @@ export class UiRadio extends LightElement {
       </div>`;
     } else {
       const text = this.label || (this.hasContent ? this.slotted() : "");
-      const input = this._input(this.value || "on", this.checked, false, text ? undefined : this.ariaLabelText);
-      control = text ? this._labelled(input, text) : input;
+      const textId = `${this.inputId}-text`;
+      const input = this._input(this.value || "on", this.checked, false, {
+        id: this.inputId,
+        label: this.ariaLabelText,
+        labelledby:
+          this.ariaLabelText || text ? undefined : legendLabel({ legend: this.legend, controlId: this.inputId }),
+        describedby: this.ariaLabelText && text ? textId : undefined,
+      });
+      control = text ? this._labelled(input, text, textId) : input;
     }
     return fieldsetField(
       {
         legend: this.legend,
         hint: this.hint,
         validatorHint: this.validatorHint,
+        controlId: this.inputId,
         surface: this.fieldSurface,
         width: this.fieldWidth,
       },

@@ -1,13 +1,13 @@
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
-import { formatInt, m } from "../../../i18n/index.ts";
-import { isRtl } from "../../base/reading.ts";
+import { formatInt, m } from "../../../lib/i18n/index.ts";
+import { isRtl } from "../../../lib/base/reading.ts";
 import { LightElement } from "../../base/light-element.ts";
-import { motion } from "../../base/motion-queue.ts";
-import { heightOf, median, paddedExtent, position, quadrantOf, sizeStep } from "../../base/quadrant.ts";
-import { rcva } from "../../base/variants.ts";
-import { row, rowLine, stack, text } from "../layout/algebra.ts";
+import { motion } from "../../../lib/base/motion-queue.ts";
+import { heightOf, median, paddedExtent, position, quadrantOf, sizeStep } from "../../../lib/base/quadrant.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { row, rowLine, stack, text } from "../../../styles/algebra.ts";
 
 export const quadrant = rcva(`${stack} w-full gap-1`);
 export const quadrantYLabel = rcva(`${text.line} text-label-sm text-on-surface-variant`);
@@ -17,7 +17,7 @@ export const quadrantPlot = rcva(
 export const quadrantMidX = rcva("pointer-events-none absolute inset-y-0 start-(--x) border-s border-outline-variant");
 export const quadrantMidY = rcva("pointer-events-none absolute inset-x-0 bottom-(--y) border-t border-outline-variant");
 export const quadrantCaption = rcva(
-  `${text.line} pointer-events-none absolute max-w-[45%] text-label-sm text-on-surface-variant opacity-60`,
+  `${text.line} pointer-events-none absolute max-w-[45%] text-label-sm text-on-surface-variant`,
   {
     variants: {
       corner: {
@@ -102,20 +102,28 @@ export class UiQuadrant extends LightElement {
     return p.map((_, i) => i).sort((a, b) => p[a]!.x - p[b]!.x || p[a]!.y - p[b]!.y);
   }
 
+  #rise(): number[] {
+    const p = this.points;
+    const h = (d: QuadrantPoint) => (this.invertY ? -d.y : d.y);
+    return p.map((_, i) => i).sort((a, b) => h(p[a]!) - h(p[b]!) || p[a]!.x - p[b]!.x);
+  }
+
   #key = (e: KeyboardEvent) => {
     const order = this.#order();
     const marks = [...this.querySelectorAll<HTMLElement>("[data-point]")];
     const focused = marks.indexOf(document.activeElement as HTMLElement);
-    if (!order.length || focused < 0) return;
     const at = order.indexOf(focused);
     const rtl = isRtl(this);
-    const step: Record<string, number> = {
-      ArrowLeft: rtl ? 1 : -1,
-      ArrowRight: rtl ? -1 : 1,
-      ArrowUp: 1,
-      ArrowDown: -1,
-    };
+    const step: Record<string, number> = { ArrowLeft: rtl ? 1 : -1, ArrowRight: rtl ? -1 : 1 };
+    const climb: Record<string, number> = { ArrowUp: 1, ArrowDown: -1 };
     let next: number;
+    if (e.key in climb) {
+      e.preventDefault();
+      const rise = this.#rise();
+      const to = rise[rise.indexOf(focused) + climb[e.key]!];
+      if (to !== undefined) marks[to]?.focus();
+      return;
+    }
     if (e.key in step) next = (at + step[e.key]! + order.length) % order.length;
     else if (e.key === "Home") next = 0;
     else if (e.key === "End") next = order.length - 1;
@@ -207,7 +215,7 @@ export class UiQuadrant extends LightElement {
         })}
       </ul>
       <div class=${quadrantFoot()}>
-        <p class=${quadrantReadout()} aria-live="polite">${readout}</p>
+        <div class=${quadrantReadout()} aria-live="polite">${readout}</div>
         ${this.xLabel ? html`<span class=${quadrantXLabel()} aria-hidden="true">${m.quadrant_x_axis({ measure: this.xLabel })}</span>` : nothing}
       </div>
     </div>`;

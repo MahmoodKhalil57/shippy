@@ -1,9 +1,9 @@
 import type { VariantProps } from "class-variance-authority";
 import { html } from "lit";
-import { customElement, property } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
-import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
+import { rcva, responsiveBoolean, type Responsive } from "../../../lib/base/variants.ts";
 
 export const grid = rcva("grid min-w-0", {
   variants: {
@@ -90,6 +90,13 @@ export const grid = rcva("grid min-w-0", {
 
 export const gridBox = rcva("@container w-full");
 
+/** True when an ancestor is a size query container, so `@min-[…]` column and span breakpoints have something to answer to. */
+function inContainer(el: Element): boolean {
+  for (let at = el.parentElement; at; at = at.parentElement)
+    if (getComputedStyle(at).containerType !== "normal") return true;
+  return false;
+}
+
 export const gridItem = rcva("", {
   variants: {
     role: {
@@ -136,6 +143,17 @@ export class UiGrid extends LightElement {
   @property() flow: GridVariants["flow"];
   @property() padding: GridVariants["padding"];
   @property({ attribute: false }) items: GridItem[] = [];
+  @state() private _contained = true;
+
+  connectedCallback() {
+    super.connectedCallback();
+    this._contained = inContainer(this);
+  }
+
+  /** Fixed columns and item spans query a container; with none above, the grid provides its own. */
+  private get _ownBox() {
+    return !!this.balance || (!this._contained && (!!this.cols || this.items.some((i) => i.span !== undefined)));
+  }
 
   render() {
     const cls = grid({
@@ -161,7 +179,12 @@ export class UiGrid extends LightElement {
           : this.content
       }
     </div>`;
-    return this.balance ? html`<div class=${gridBox()}>${body}</div>` : body;
+    const boxed = this._ownBox ? html`<div class=${gridBox()}>${body}</div>` : body;
+    // With items the children are replaced: they are kept, hidden, so a parent template can still update them.
+    return this.items.length && this.hasContent
+      ? html`${boxed}
+          <div hidden>${this.content}</div>`
+      : boxed;
   }
 }
 

@@ -3,8 +3,8 @@ import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
 import { LightElement } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
-import { m } from "../../../i18n/index.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { m } from "../../../lib/i18n/index.ts";
 
 export const avatar = rcva("avatar", {
   variants: {

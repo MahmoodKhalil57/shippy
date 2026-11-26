@@ -4,7 +4,7 @@ import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { live } from "lit/directives/live.js";
 import { LightElement } from "../../base/light-element.ts";
-import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
+import { rcva, responsiveBoolean, type Responsive } from "../../../lib/base/variants.ts";
 
 export const button = rcva(
   "btn touch-target max-w-full h-auto min-h-(--size) whitespace-normal [text-wrap:balance] active:scale-[0.94] motion-reduce:active:scale-100 active:rounded-[min(var(--radius-sm),var(--radius-field))]",
@@ -111,7 +111,12 @@ export class UiButton extends LightElement {
         aria-label=${ifDefined(this.label)}
         .checked=${live(this.checked)}
         ?disabled=${this.disabled}
-        @change=${(e: Event) => (this.checked = (e.target as HTMLInputElement).checked)}
+        @change=${(e: Event) => {
+          this.checked = (e.target as HTMLInputElement).checked;
+          if (this.type !== "radio") return;
+          for (const other of (this.getRootNode() as ParentNode).querySelectorAll<UiButton>("ui-button"))
+            if (other.type === "radio") other.checked = other.querySelector("input")!.checked;
+        }}
       />`;
     }
     if (this.href) {
@@ -129,6 +134,8 @@ export class UiButton extends LightElement {
     return html`<button
       class=${cls}
       type=${this.type}
+      name=${ifDefined(this.name)}
+      value=${ifDefined(this.value)}
       ?disabled=${this.disabled || this.loading}
       aria-busy=${ifDefined(this.loading ? "true" : undefined)}
       aria-label=${ifDefined(this.label)}

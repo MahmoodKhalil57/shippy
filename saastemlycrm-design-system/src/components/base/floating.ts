@@ -63,6 +63,7 @@ const originOf = (placement: Placement) => {
 export function place(anchor: ReferenceElement, panel: HTMLElement, o: FloatOptions = {}): () => void {
   const padding = 8;
   panel.style.visibility = "hidden";
+  let stopped = false;
   const update = async () => {
     const { x, y, placement, middlewareData } = await computePosition(anchor, panel, {
       strategy: "fixed",
@@ -79,16 +80,21 @@ export function place(anchor: ReferenceElement, panel: HTMLElement, o: FloatOpti
             panel.style.setProperty("--anchor-w", `${rects.reference.width}px`);
           },
         }),
-        hide({ padding }),
+        hide(),
       ],
     });
+    if (stopped) return;
     panel.style.left = `${x}px`;
     panel.style.top = `${y}px`;
     panel.style.setProperty("--float-origin", originOf(placement));
     panel.dataset.placement = placement;
-    panel.style.visibility = middlewareData.hide?.referenceHidden ? "hidden" : "";
+    panel.style.visibility = middlewareData.hide!.referenceHidden ? "hidden" : "";
   };
-  return autoUpdate(anchor, panel, update);
+  const cleanup = autoUpdate(anchor, panel, update);
+  return () => {
+    stopped = true;
+    cleanup();
+  };
 }
 
 const triggerOf = (panel: HTMLElement) =>
@@ -130,7 +136,7 @@ class FloatDirective extends Directive {
         else panel.style.visibility = "";
       });
     }
-    return nothing;
+    return this.render(options);
   }
 }
 

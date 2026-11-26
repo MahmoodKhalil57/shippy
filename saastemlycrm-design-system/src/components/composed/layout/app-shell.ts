@@ -1,10 +1,10 @@
-import { whenIdle } from "../../base/work-queue.ts";
-import { html } from "lit";
+import { whenIdle } from "../../../lib/base/work-queue.ts";
+import { html, type LitElement } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { cssLuminance, lumaOf, sampleBehind, type Luma, type Rect } from "../../base/legibility.ts";
+import { cssLuminance, lumaOf, sampleBehind, type Luma, type Rect } from "../../../lib/base/legibility.ts";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
-import { auditContrast } from "../../base/contrast.ts";
-import { liveBackgroundNow } from "../../base/appearance.ts";
+import { auditContrast } from "../../../lib/base/contrast.ts";
+import { liveBackgroundNow } from "../../../lib/base/appearance.ts";
 import { liveBackground } from "../actions/live-background.ts";
 import {
   closeColumn,
@@ -15,15 +15,15 @@ import {
   type FrameSizes,
   type FrameState,
   type Side,
-} from "../../base/frame-fit.ts";
+} from "../../../lib/base/frame-fit.ts";
 import type { PageTransition } from "../../primitives/layout/frame.ts";
 import "../../primitives/layout/frame.ts";
 import type { IconName } from "../../primitives/media/icon.ts";
-import { m } from "../../../i18n/index.ts";
+import { m } from "../../../lib/i18n/index.ts";
 
 export type { PageTransition } from "../../primitives/layout/frame.ts";
 
-const ANCHORS = typeof CSS !== "undefined" && CSS.supports("anchor-name: --a");
+const anchors = () => CSS.supports("anchor-name: --a");
 
 const textScale = () => parseFloat(getComputedStyle(document.documentElement).fontSize) / 16 || 1;
 
@@ -56,14 +56,16 @@ export class UiAppShell extends LightElement {
     return [...this.querySelectorAll("[data-frame-region]")];
   }
 
-  protected firstUpdated() {
+  protected async firstUpdated() {
     requestAnimationFrame(() => requestAnimationFrame(() => (this._settling = false)));
+    this._report();
+    const parts = this.querySelectorAll<LitElement>("ui-frame, ui-frame-header, ui-frame-column, ui-frame-main");
+    await Promise.all([...parts].map((el) => el.updateComplete));
     for (const el of this._regions) {
       this.#regions.observe(el);
       this.#content.observe(el, { childList: true, subtree: true, characterData: true });
     }
     void this._onBackground();
-    this._report();
   }
 
   @state() private _scrim = "";
@@ -114,8 +116,8 @@ export class UiAppShell extends LightElement {
   #measured = "";
 
   private _measure(force = false) {
-    const shell = this._root;
-    if (!this.#luma || !shell) return;
+    if (!this.#luma) return;
+    const shell = this._root!;
     const root = document.documentElement;
     const seen = [
       innerWidth,
@@ -133,8 +135,8 @@ export class UiAppShell extends LightElement {
       a > 0.05 ? `color-mix(in oklab, var(--color-base-200) ${(a * 100).toFixed(1)}%, transparent)` : "";
     this.#scrim.alpha = this._leastScrim(this._regions, (a) => (this.#scrim.alpha = a));
     this._scrim = mix(this.#scrim.alpha);
-    const main = this.querySelector("main");
-    this.#scrim.window = main && ANCHORS ? this._leastScrim([main], (a) => (this.#scrim.window = a)) : 0;
+    const main = this.querySelector("main")!;
+    this.#scrim.window = anchors() ? this._leastScrim([main], (a) => (this.#scrim.window = a)) : 0;
     this._windowScrim = mix(this.#scrim.window);
   }
 
@@ -157,12 +159,12 @@ export class UiAppShell extends LightElement {
     return hi;
   }
 
-  #scrim: { ink: number; surface: number; alpha?: number; window: number } = { ink: 0, surface: 0, window: 0 };
+  #scrim = { ink: 0, surface: 0, alpha: 0, window: 0 };
 
   backdropAt(rect: Rect, blur = 0): number[] | null {
-    const shell = this._root;
-    if (!this.#luma || !shell || this.#scrim.alpha == null) return null;
-    const window = ANCHORS ? this.querySelector("main")?.getBoundingClientRect() : undefined;
+    if (!this.#luma) return null;
+    const shell = this._root!;
+    const window = anchors() ? this.querySelector("main")!.getBoundingClientRect() : undefined;
     const inWindow =
       !!window &&
       rect.x >= window.left &&
@@ -245,14 +247,12 @@ export class UiAppShell extends LightElement {
   }
 
   private async _toSheet(side: "start" | "end") {
-    const was = side === "start" ? this._navSheet : this._asideSheet;
     if (side === "start") this._navSheet = true;
     else this._asideSheet = true;
-    if (was) return;
     await this.updateComplete;
-    const column = this.querySelector<HTMLElementTagNameMap["ui-frame-column"]>(`ui-frame-column[side="${side}"]`);
-    await column?.updateComplete;
-    column?.prepareSheet();
+    const column = this.querySelector<HTMLElementTagNameMap["ui-frame-column"]>(`ui-frame-column[side="${side}"]`)!;
+    await column.updateComplete;
+    column.prepareSheet();
   }
 
   private _refit = () => {
@@ -261,6 +261,7 @@ export class UiAppShell extends LightElement {
     this._cols = sizes.cols;
     this._compact = next.compact;
     this._navSheet = next.navSheet;
+    this._asideSheet = next.asideSheet;
     this._set(next.navOpen, next.asideOpen);
   };
   #resize = new ResizeObserver(() => this._refit());

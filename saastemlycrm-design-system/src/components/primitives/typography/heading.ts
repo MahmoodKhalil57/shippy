@@ -2,7 +2,7 @@ import type { VariantProps } from "class-variance-authority";
 import { customElement, property } from "lit/decorators.js";
 import { html, literal, type StaticValue } from "lit/static-html.js";
 import { LightElement } from "../../base/light-element.ts";
-import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
+import { rcva, responsiveBoolean, type Responsive } from "../../../lib/base/variants.ts";
 
 export const heading = rcva("min-w-0 [overflow-wrap:anywhere]", {
   variants: {

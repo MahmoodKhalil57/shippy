@@ -2,9 +2,10 @@ import type { VariantProps } from "class-variance-authority";
 import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
-import { LightElement, uid, type Renderable } from "../../base/light-element.ts";
-import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
-import { text } from "../layout/algebra.ts";
+import { LightElement, type Renderable } from "../../base/light-element.ts";
+import { uid } from "../../../lib/base/uid.ts";
+import { rcva, responsiveBoolean, type Responsive } from "../../../lib/base/variants.ts";
+import { text } from "../../../styles/algebra.ts";
 
 export const collapse = rcva("collapse !visible", {
   variants: {
@@ -16,7 +17,8 @@ export const collapse = rcva("collapse !visible", {
       open: "collapse-open",
       close: "collapse-close",
     },
-    bordered: { true: "bg-surface border border-outline-variant" },
+    bordered: { true: "border border-outline-variant" },
+    surface: { true: "bg-surface" },
     color: {
       primary: "bg-primary text-primary-content focus:bg-secondary focus:text-secondary-content",
     },
@@ -82,6 +84,7 @@ export class UiCollapse extends LightElement {
       icon: this.icon,
       force: this.force,
       bordered: this.bordered,
+      surface: this.color && !checkbox ? false : this.bordered,
       color: checkbox ? undefined : this.color,
     });
     const title = this._title();
@@ -111,7 +114,7 @@ export class UiCollapse extends LightElement {
                 type=${input}
                 name=${ifDefined(this.name)}
                 class=${this.color || this.closeOutside ? collapseToggle() : nothing}
-                aria-label=${ifDefined(typeof title === "string" && title ? title : undefined)}
+                aria-labelledby=${`${this._id}-title`}
                 autocomplete="off"
                 .checked=${this.open}
                 @change=${(e: Event) => this._toggle((e.target as HTMLInputElement).checked)}
@@ -119,7 +122,7 @@ export class UiCollapse extends LightElement {
               ${this.closeOutside ? html`<label for=${this._id} class=${collapseOutside()}></label>` : nothing}`
           : nothing
       }
-      <div class=${titleCls}>${title}</div>
+      <div id=${`${this._id}-title`} class=${titleCls}>${title}</div>
       <div class=${contentCls}>${this.slotted()}</div>
     </div>`;
   }

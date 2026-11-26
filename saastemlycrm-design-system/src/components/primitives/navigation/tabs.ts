@@ -1,11 +1,12 @@
 import type { VariantProps } from "class-variance-authority";
-import { scrollRoom } from "../layout/algebra.ts";
+import { scrollRoom } from "../../../styles/algebra.ts";
 import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
-import { LightElement, uid, type Renderable } from "../../base/light-element.ts";
-import { booleanAttribute, rcva } from "../../base/variants.ts";
-import { inlineStep } from "../../base/reading.ts";
+import { LightElement, type Renderable } from "../../base/light-element.ts";
+import { uid } from "../../../lib/base/uid.ts";
+import { booleanAttribute, rcva } from "../../../lib/base/variants.ts";
+import { inlineStep } from "../../../lib/base/reading.ts";
 
 export const tabs = rcva("tabs min-w-0 [overflow-wrap:anywhere] [&>.tab:not(.tab-active)]:text-on-surface-variant", {
   variants: {
@@ -117,8 +118,8 @@ export class UiTabs extends LightElement {
     return tabs({ variant: this.variant ?? "primary", size: this.size, scroll: !!this.scrollArea });
   }
 
-  private _panel() {
-    return tabsPanel({ surface: this.surface, padding: this.padding, scroll: this.scrollArea });
+  private _panel(inScroll = true) {
+    return tabsPanel({ surface: this.surface, padding: this.padding, scroll: inScroll ? this.scrollArea : undefined });
   }
 
   private _renderTabs() {
@@ -166,12 +167,13 @@ export class UiTabs extends LightElement {
             role="tabpanel"
             id="${this._id}-panel"
             aria-labelledby="${this._id}-${this.active}"
-            class=${this._panel()}
+            class=${this._panel(false)}
           >
             ${activeItem.content}
           </div>`
         : nothing;
-    return html`${list}${panel}`;
+    const scroller = this.scrollArea ? html`<div class=${tabsScroll({ width: this.scrollArea })}>${list}</div>` : list;
+    return html`${scroller}${panel}`;
   }
 
   private _renderRadio() {

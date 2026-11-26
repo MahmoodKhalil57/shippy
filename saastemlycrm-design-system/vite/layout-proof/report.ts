@@ -3,7 +3,6 @@ import path from "node:path";
 import { formatViolations, widthViolations } from "./check.ts";
 
 export const PRIMITIVES = path.resolve(import.meta.dirname, "../../src/components/primitives");
-export const EXEMPT = new Set(["layout/algebra.ts"]);
 
 const files = (d: string): string[] =>
   readdirSync(d, { withFileTypes: true }).flatMap((e) =>
@@ -14,7 +13,6 @@ export function allViolations() {
   const out = new Map<string, ReturnType<typeof widthViolations>>();
   for (const f of files(PRIMITIVES)) {
     const rel = path.relative(PRIMITIVES, f).split(path.sep).join("/");
-    if (EXEMPT.has(rel)) continue;
     const vs = widthViolations(readFileSync(f, "utf8"), f);
     if (vs.length) out.set(rel, vs);
   }

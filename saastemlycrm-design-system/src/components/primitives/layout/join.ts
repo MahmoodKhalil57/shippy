@@ -3,7 +3,7 @@ import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement } from "../../base/light-element.ts";
-import { booleanAttribute, rcva } from "../../base/variants.ts";
+import { booleanAttribute, rcva } from "../../../lib/base/variants.ts";
 
 export const join = rcva("join", {
   variants: {
@@ -11,8 +11,12 @@ export const join = rcva("join", {
       vertical: "join-vertical",
       horizontal: "join-horizontal",
     },
-    auto: { true: "[&>:not([data-ui])]:join-item [&>[data-ui]>*]:join-item" },
-    equal: { true: "flex flex-row flex-wrap max-w-full [&>*]:flex-1 [&>[data-ui]>*]:flex-1" },
+    auto: {
+      true: "[&>:not([data-ui])]:join-item [&>[data-ui]>:not([data-tip])]:join-item [&>[data-ui]>[data-tip]>*]:join-item",
+    },
+    equal: {
+      true: "flex flex-row flex-wrap max-w-full [&>*]:flex-1 [&>[data-ui]>*]:flex-1 [&>[data-ui]>[data-tip]>*]:flex-1",
+    },
     surface: {
       "base-100": "bg-surface",
       "base-200": "bg-surface-container",

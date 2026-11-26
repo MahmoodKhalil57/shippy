@@ -6,3 +6,7 @@ dist
 !.vscode/
 !.vscode/settings.json
 !.vscode/extensions.json
+storybook-static
+coverage
+.vitest/attachments/
+

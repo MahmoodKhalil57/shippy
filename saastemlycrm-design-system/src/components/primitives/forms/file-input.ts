@@ -3,7 +3,9 @@ import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
+import { uid } from "../../../lib/base/uid.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { legendId, legendLabel } from "./fieldset.ts";
 
 export const fileInput = rcva("file-input", {
   variants: {
@@ -50,6 +52,7 @@ export class UiFileInput extends LightElement {
   @property({ type: Boolean }) multiple = false;
   @property({ type: Boolean }) required = false;
   @property({ type: Boolean }) disabled = false;
+  @property({ attribute: "input-id" }) inputId = uid("file");
 
   files: FileList | null = null;
 
@@ -60,12 +63,14 @@ export class UiFileInput extends LightElement {
 
   render() {
     const input = html`<input
+      id=${this.inputId}
       type="file"
       class=${fileInput({ variant: this.variant, color: this.color, size: this.size })}
       name=${ifDefined(this.name)}
       accept=${ifDefined(this.accept)}
       capture=${ifDefined(this.capture)}
-      aria-label=${ifDefined(this.label)}
+      aria-label=${ifDefined(this.label || undefined)}
+      aria-labelledby=${ifDefined(legendLabel({ legend: this.legend, label: this.label, controlId: this.inputId }))}
       ?multiple=${this.multiple}
       ?required=${this.required}
       ?disabled=${this.disabled}
@@ -73,8 +78,8 @@ export class UiFileInput extends LightElement {
     />`;
     if (!this.legend && !this.hint) return input;
     return html`<fieldset class=${fileInputFieldset()}>
-      ${this.legend ? html`<legend class=${fileInputLegend()}>${this.legend}</legend>` : nothing} ${input}
-      ${this.hint ? html`<label class=${fileInputHint()}>${this.hint}</label>` : nothing}
+      ${this.legend ? html`<legend class=${fileInputLegend()} id=${legendId(this.inputId)}>${this.legend}</legend>` : nothing}
+      ${input} ${this.hint ? html`<label class=${fileInputHint()}>${this.hint}</label>` : nothing}
     </fieldset>`;
   }
 }

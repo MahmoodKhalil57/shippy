@@ -1,8 +1,8 @@
 import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
-import { inset } from "../layout/algebra.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { inset } from "../../../styles/algebra.ts";
 import { iconSvg, type IconName } from "../media/icon.ts";
 
 export const choiceTile = rcva(
@@ -35,8 +35,7 @@ export class UiChoiceTile extends LightElement {
   render() {
     return html`<button
       type="button"
-      role="option"
-      aria-selected=${this.selected ? "true" : "false"}
+      aria-pressed=${this.selected ? "true" : "false"}
       class=${choiceTile({ selected: this.selected, dashed: this.dashed && !this.selected })}
     >
       ${

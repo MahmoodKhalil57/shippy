@@ -1,13 +1,13 @@
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
-import { formatInt, m } from "../../../i18n/index.ts";
-import { isRtl } from "../../base/reading.ts";
+import { formatInt, m } from "../../../lib/i18n/index.ts";
+import { isRtl } from "../../../lib/base/reading.ts";
 import { LightElement } from "../../base/light-element.ts";
-import { motion } from "../../base/motion-queue.ts";
-import { rcva } from "../../base/variants.ts";
-import { bridge, bridgeAt, bridgeDomain, bridgeFit, type BridgeColumn } from "../../base/waterfall.ts";
-import { fixed, row, stack, text } from "../layout/algebra.ts";
+import { motion } from "../../../lib/base/motion-queue.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { bridge, bridgeAt, bridgeDomain, bridgeFit, type BridgeColumn } from "../../../lib/base/waterfall.ts";
+import { fixed, row, stack, text } from "../../../styles/algebra.ts";
 
 export const waterfall = rcva(`${stack} w-full gap-2`);
 export const waterfallPlot = rcva("relative h-40 w-full");
@@ -93,7 +93,6 @@ export class UiWaterfall extends LightElement {
     const n = this.steps.length;
     const marks = [...this.querySelectorAll<HTMLElement>("[data-step]")];
     const at = marks.indexOf(document.activeElement as HTMLElement);
-    if (!n || at < 0) return;
     const rtl = isRtl(this);
     const step: Record<string, number> = { ArrowLeft: rtl ? 1 : -1, ArrowRight: rtl ? -1 : 1 };
     let next: number;

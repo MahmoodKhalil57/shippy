@@ -2,8 +2,8 @@ import type { VariantProps } from "class-variance-authority";
 import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
-import { fixedWidth, inset, row, rowEnd, rowFill, rowGrow, rowLine, stack, text } from "../layout/algebra.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { fixedWidth, inset, row, rowEnd, rowFill, rowGrow, rowLine, stack, text } from "../../../styles/algebra.ts";
 
 export const list = rcva(stack, {
   variants: {

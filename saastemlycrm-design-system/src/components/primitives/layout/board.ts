@@ -1,6 +1,6 @@
-import { motion as motionQueue } from "../../base/motion-queue.ts";
-import { cssTime } from "../../base/css-time.ts";
-import { tileH, tileW } from "../../base/tiles.ts";
+import { motion as motionQueue } from "../../../lib/base/motion-queue.ts";
+import { cssTime } from "../../../lib/base/css-time.ts";
+import { tileH, tileW } from "../../../lib/base/tiles.ts";
 import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
@@ -16,11 +16,11 @@ import {
   stretch,
   type Placed,
   type TileSize,
-} from "../../base/board.ts";
-import { pack, type PackInput } from "../../base/pack.ts";
+} from "../../../lib/base/board.ts";
+import { pack, type PackInput } from "../../../lib/base/pack.ts";
 import { LightElement } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
-import { board as layout, inlineRow, text } from "./algebra.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { board as layout, inlineRow, text } from "../../../styles/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
 
 for (const name of [
@@ -58,7 +58,7 @@ export const boardFit = rcva(layout.fit);
 const FIT_KEY = "ui-board-fit";
 const FIT_KEPT = 400;
 const fitMemory = new Map<string, number>(readFits());
-function readFits(): [string, number][] {
+export function readFits(): [string, number][] {
   try {
     const saved: unknown = JSON.parse(localStorage.getItem(FIT_KEY) ?? "[]");
     return Array.isArray(saved)
@@ -86,12 +86,8 @@ function rememberFit(key: string, rows: number) {
   });
 }
 
-const tokens = new Map<string, string>();
-const motion = (name: string) => {
-  let v = tokens.get(name);
-  if (v === undefined) tokens.set(name, (v = getComputedStyle(document.documentElement).getPropertyValue(name).trim()));
-  return v;
-};
+const motion = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const rootScale = () => parseFloat(getComputedStyle(document.documentElement).fontSize) / 16 || 1;
 
 export interface BoardItem {
   key: string;
@@ -145,8 +141,9 @@ async function flushSlides() {
   UiBoard.slideAll(batch);
 }
 function slideSoon(board: UiBoard) {
-  if (!sliding.size) void flushSlides();
+  const idle = !sliding.size;
   sliding.add(board);
+  if (idle) void flushSlides();
 }
 
 @customElement("ui-board")
@@ -163,7 +160,7 @@ export class UiBoard extends LightElement {
 
   #fitLanes() {
     if (!this.#width) return;
-    const scale = parseFloat(getComputedStyle(document.documentElement).fontSize) / 16 || 1;
+    const scale = rootScale();
     if (this.fit) {
       const lanes = Math.max(1, Math.round(this.#width / tileW(scale)));
       if (lanes !== this._lanes) this._lanes = lanes;
@@ -180,7 +177,7 @@ export class UiBoard extends LightElement {
     this.#springTiming = timing;
     if (!this.#width || !delta) return;
     const then = this.#widthWhenPanelIs(delta);
-    if (lanesFor(then, this.#scale()) === lanesFor(this.#width, this.#scale())) return;
+    if (lanesFor(then, rootScale()) === lanesFor(this.#width, rootScale())) return;
     this.#expected = then;
     this.#springing = true;
     this.#fitLanes();
@@ -193,10 +190,6 @@ export class UiBoard extends LightElement {
   }
   #springing = false;
   #springTiming?: { until: number; duration: number; easing: string };
-
-  #scale() {
-    return parseFloat(getComputedStyle(document.documentElement).fontSize) / 16 || 1;
-  }
 
   #widthWhenPanelIs(delta: number): number {
     const boxed = (from: Element | null | undefined) => {
@@ -221,14 +214,14 @@ export class UiBoard extends LightElement {
   @state() private _open = new Map<string, number>();
   @state() private _fit = new Map<string, number>();
   #fits = new ResizeObserver((entries) => {
-    const scale = parseFloat(getComputedStyle(document.documentElement).fontSize) / 16 || 1;
+    const scale = rootScale();
     let next: Map<string, number> | undefined;
     for (const e of entries) {
       const el = e.target as HTMLElement;
       const key = el.dataset.fit!;
       const remember = el.dataset.remember || undefined;
       const inset = el.dataset.flush !== undefined ? 0 : 8;
-      const rows = rowsFor((e.borderBoxSize?.[0]?.blockSize ?? e.contentRect.height) + inset, scale);
+      const rows = rowsFor(e.borderBoxSize[0]!.blockSize + inset, scale);
       if (remember) rememberFit(remember, rows);
       if ((next ?? this._fit).get(key) !== rows) (next ??= new Map(this._fit)).set(key, rows);
     }
@@ -242,7 +235,7 @@ export class UiBoard extends LightElement {
     for (const e of entries)
       if (e.target === lanesEl && lanesEl.checkVisibility()) {
         resized = true;
-        this.#width = e.borderBoxSize?.[0]?.inlineSize ?? e.contentRect.width;
+        this.#width = e.borderBoxSize[0]!.inlineSize;
         this.#fitLanes();
       }
     this._slide(resized);
@@ -270,7 +263,7 @@ export class UiBoard extends LightElement {
   }
 
   #cellSize() {
-    const scale = parseFloat(getComputedStyle(document.documentElement).fontSize) / 16 || 1;
+    const scale = rootScale();
     return { w: this.fit && this._laneW ? this._laneW : tileW(scale), h: tileH(scale) };
   }
 
@@ -315,8 +308,8 @@ export class UiBoard extends LightElement {
 
   hold(key: string, how: "move" | "resize", pointer: BoardPoint) {
     const cell = this.#cell(key);
-    const lanes = this._lanesEl;
-    if (!cell || !lanes) return;
+    if (!cell) return;
+    const lanes = this._lanesEl!;
     for (const a of cell.getAnimations()) a.cancel();
     const r = cell.getBoundingClientRect();
     const l = lanes.getBoundingClientRect();
@@ -397,10 +390,10 @@ export class UiBoard extends LightElement {
   }
 
   #lift() {
-    const h = this.#held;
-    const lanes = this._lanesEl;
-    const cell = h && this.#cell(h.key);
-    if (!h || !lanes || !cell) return;
+    const h = this.#held!;
+    const cell = this.#cell(h.key);
+    if (!cell) return;
+    const lanes = this._lanesEl!;
     const { width: w, height: ht } = h.size ?? h.box;
     let x: number;
     let y: number;
@@ -422,16 +415,16 @@ export class UiBoard extends LightElement {
   }
 
   #remember(tile: HTMLElement) {
-    const scale = parseFloat(getComputedStyle(document.documentElement).fontSize) / 16 || 1;
+    const scale = rootScale();
     const qw = this.#quarterW(scale);
     const qh = tileH(scale) / 4;
-    const span = Number(tile.style.getPropertyValue("--span")) || 0;
-    const rows = Number(tile.style.getPropertyValue("--rows")) || 0;
+    const span = Number(tile.style.getPropertyValue("--span"));
+    const rows = Number(tile.style.getPropertyValue("--rows"));
     this.#at.set(tile.dataset.key!, { ...this.#placeOf(tile), span, rows, w: span * qw, h: rows * qh });
   }
 
   #placeOf(el: HTMLElement) {
-    const lanes = this._lanesEl;
+    const lanes = this._lanesEl!;
     const at = (e: HTMLElement | null) => {
       let x = 0;
       let y = 0;
@@ -442,7 +435,7 @@ export class UiBoard extends LightElement {
       return { x, y };
     };
     const a = at(el);
-    const o = lanes ? at(lanes) : { x: 0, y: 0 };
+    const o = at(lanes);
     return { x: a.x - o.x, y: a.y - o.y };
   }
 
@@ -479,16 +472,15 @@ export class UiBoard extends LightElement {
   protected updated() {
     if (!this.#looked) {
       this.#looked = true;
-      const lanes = this._lanesEl;
-      const width = lanes?.checkVisibility() ? lanes.getBoundingClientRect().width : 0;
+      const lanes = this._lanesEl!;
+      const width = lanes.checkVisibility() ? lanes.getBoundingClientRect().width : 0;
       if (width) {
         this.#width = width;
         this.#fitLanes();
       }
       this.requestUpdate();
     }
-    const watch = [this._lanesEl, ...this._tiles].filter((e): e is HTMLElement => !!e);
-    for (const el of watch)
+    for (const el of [this._lanesEl!, ...this._tiles])
       if (!this.#observed.has(el)) {
         this.#observed.add(el);
         this.#resize.observe(el);
@@ -528,14 +520,14 @@ export class UiBoard extends LightElement {
     const duration = spring?.duration ?? cssTime(motion(`--duration-spatial${fast}`));
     const easing = spring?.easing ?? (motion(`--ease-spatial${fast}`) || "ease");
     const delay = spring ? Math.max(0, spring.until - performance.now()) : 0;
-    const scale = parseFloat(getComputedStyle(document.documentElement).fontSize) / 16 || 1;
+    const scale = rootScale();
     const qw = this.#quarterW(scale);
     const qh = tileH(scale) / 4;
     const tiles: SlidePlan["tiles"] = [];
     for (const tile of this._tiles) {
       if (tile.hasAttribute("data-empty") || !tile.style.getPropertyValue("--lane")) continue;
-      const span = Number(tile.style.getPropertyValue("--span")) || 0;
-      const rows = Number(tile.style.getPropertyValue("--rows")) || 0;
+      const span = Number(tile.style.getPropertyValue("--span"));
+      const rows = Number(tile.style.getPropertyValue("--rows"));
       const now = { ...this.#placeOf(tile), span, rows, w: span * qw, h: rows * qh };
       const playing = this.#sizing.get(tile);
       const shown = playing?.playState === "running" ? { w: tile.offsetWidth, h: tile.offsetHeight } : undefined;
@@ -549,7 +541,7 @@ export class UiBoard extends LightElement {
         content = content.firstElementChild as HTMLElement | null;
       tiles.push({ tile, key: tile.dataset.key!, now, shown, inner, content });
     }
-    const markEl = this._lanesEl?.querySelector<HTMLElement>(":scope > [data-board-drop]") ?? undefined;
+    const markEl = this._lanesEl!.querySelector<HTMLElement>(":scope > [data-board-drop]") ?? undefined;
     const mark = markEl && {
       el: markEl,
       now: { ...this.#placeOf(markEl), w: markEl.offsetWidth, h: markEl.offsetHeight },

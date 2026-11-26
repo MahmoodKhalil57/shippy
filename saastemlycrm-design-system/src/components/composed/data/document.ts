@@ -3,7 +3,7 @@ import { customElement, property } from "lit/decorators.js";
 import { LightElement } from "../../base/light-element.ts";
 import type { TableColumn } from "../../primitives/data/table.ts";
 import "../../primitives/index.ts";
-import type { DocumentSpec } from "../../base/document-spec.ts";
+import type { DocumentSpec } from "../../../lib/base/document-spec.ts";
 
 @customElement("ui-document")
 export class UiDocument extends LightElement {
@@ -47,19 +47,13 @@ export class UiDocument extends LightElement {
                 <ui-box surface="primary" padding="2" rounded="field"
                   ><ui-text variant="title-sm">${d.party.title}</ui-text></ui-box
                 >
-                <ui-table
-                  size="sm"
-                  .columns=${[
-                    {
-                      key: "label",
-                      label: "",
-                      render: (r: Record<string, unknown>) =>
-                        html`<ui-text variant="title-sm" color="primary">${r.label}</ui-text>`,
-                    },
-                    { key: "value", label: "" },
-                  ]}
-                  .rows=${d.party.rows}
-                ></ui-table>
+                <ui-description-list
+                  layout="inline"
+                  .items=${d.party.rows.map((r) => ({
+                    label: html`<ui-text variant="title-sm" color="primary">${r.label}</ui-text>`,
+                    value: r.value,
+                  }))}
+                ></ui-description-list>
               </ui-flex>`
             : nothing
         }

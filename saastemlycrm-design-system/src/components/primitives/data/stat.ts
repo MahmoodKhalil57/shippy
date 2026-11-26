@@ -2,17 +2,17 @@ import type { VariantProps } from "class-variance-authority";
 import { styleMap } from "lit/directives/style-map.js";
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { cssTime } from "../../base/css-time.ts";
-import { figureAt, readFigure, settle } from "../../base/count-up.ts";
-import { motion } from "../../base/motion-queue.ts";
-import { m } from "../../../i18n/index.ts";
+import { cssTime } from "../../../lib/base/css-time.ts";
+import { figureAt, readFigure, settle } from "../../../lib/base/count-up.ts";
+import { motion } from "../../../lib/base/motion-queue.ts";
+import { m } from "../../../lib/i18n/index.ts";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
+import { rcva } from "../../../lib/base/variants.ts";
 import { card, cardBody, cardLinkIcon } from "../containers/card.ts";
-import { fixedWidth, padEnd, row, rowFill, rowGrow, rowLine, stack, text } from "../layout/algebra.ts";
+import { fixedWidth, padEnd, row, rowFill, rowGrow, rowLine, stack, text } from "../../../styles/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
 import { tag } from "./tag.ts";
-import { percentText } from "./visual-math.ts";
+import { percentText } from "../../../lib/base/visual-math.ts";
 
 export const statSurface = rcva("border", {
   variants: {
@@ -145,7 +145,7 @@ export class UiStat extends LightElement {
     cancelAnimationFrame(this.#frame);
     this._counting = figureAt(from, to, 0);
     const tick = () => {
-      const t = Number(carrier.currentTime ?? 0) / duration;
+      const t = Number(carrier.currentTime) / duration;
       if (carrier.playState === "finished" || t >= 1) {
         this._counting = undefined;
         return;

@@ -1,8 +1,9 @@
 import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
-import { LightElement, uid, type Renderable } from "../../base/light-element.ts";
-import { booleanAttribute } from "../../base/variants.ts";
+import { LightElement, type Renderable } from "../../base/light-element.ts";
+import { uid } from "../../../lib/base/uid.ts";
+import { booleanAttribute } from "../../../lib/base/variants.ts";
 import type { CollapseVariants } from "../../primitives/containers/collapse.ts";
 import "../../primitives/containers/collapse.ts";
 import "../../primitives/layout/flex.ts";
@@ -23,7 +24,19 @@ export class UiAccordion extends LightElement {
   @property({ converter: booleanAttribute }) bordered = true;
   @property() name = uid("accordion");
 
-  private _changed(index: number) {
+  #current = -1;
+
+  protected willUpdate(changed: Map<string, unknown>) {
+    if (changed.has("items")) this.#current = this.items.findIndex((i) => i.open);
+  }
+
+  private _toggled(index: number, open: boolean) {
+    if (!open) {
+      if (index === this.#current) this.#current = -1;
+      return;
+    }
+    if (index === this.#current) return;
+    this.#current = index;
     this.dispatchEvent(new CustomEvent("ui-change", { detail: { index }, bubbles: true }));
   }
 
@@ -35,7 +48,7 @@ export class UiAccordion extends LightElement {
       .bordered=${this.bordered}
       .heading=${item.heading}
       .open=${index === firstOpen}
-      @ui-toggle=${(e: CustomEvent<{ open: boolean }>) => e.detail.open && this._changed(index)}
+      @ui-toggle=${(e: CustomEvent<{ open: boolean }>) => this._toggled(index, e.detail.open)}
       >${item.content}</ui-collapse
     >`;
   }

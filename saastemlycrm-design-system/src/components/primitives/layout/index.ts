@@ -8,3 +8,4 @@ export * from "./grid.ts";
 export * from "./indicator.ts";
 export * from "./join.ts";
 export * from "./page-header.ts";
+export * from "../../base/scroll-focus.ts";

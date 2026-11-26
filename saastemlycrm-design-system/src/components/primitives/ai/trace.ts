@@ -1,12 +1,13 @@
 import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
-import { inset, padStart, row, stack, text } from "../layout/algebra.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { inset, padStart, row, stack, text } from "../../../styles/algebra.ts";
 import { iconSvg, type IconName } from "../media/icon.ts";
 
 export const trace = rcva(`${stack} ${padStart["1"]} gap-0.5 border-s-2 border-outline-variant`);
 
+export const traceItem = rcva("min-w-0");
 export const traceLine = rcva(`${text.label} group/trace text-body-sm`);
 export const traceSummary = rcva(
   `touch-target ${row} ${inset["2"]} min-h-7 items-center gap-2 rounded-field py-1 list-none [&::-webkit-details-marker]:hidden`,
@@ -82,10 +83,12 @@ export class UiTraceLine extends LightElement {
         ${this.description ? html`<span class=${traceDescription()}>${this.description}</span>` : nothing}
         ${interactive ? html`<span class=${traceChevron()}>${iconSvg("chevron-down", { size: "xs" })}</span>` : nothing}`;
     return this.hasContent
-      ? html`<details class=${traceLine()} role="listitem" ?open=${this.open}>
-          <summary class=${traceSummary({ interactive: true })}>${summary(true)}</summary>
-          <div class=${traceContent()}>${this.content}</div>
-        </details>`
+      ? html`<div class=${traceItem()} role="listitem">
+          <details class=${traceLine()} ?open=${this.open}>
+            <summary class=${traceSummary({ interactive: true })}>${summary(true)}</summary>
+            <div class=${traceContent()}>${this.content}</div>
+          </details>
+        </div>`
       : html`<div class=${traceLine()} role="listitem"><div class=${traceSummary()}>${summary(false)}</div></div>`;
   }
 }

@@ -2,8 +2,8 @@ import type { VariantProps } from "class-variance-authority";
 import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
-import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
-import { text } from "../layout/algebra.ts";
+import { rcva, responsiveBoolean, type Responsive } from "../../../lib/base/variants.ts";
+import { text } from "../../../styles/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
 
 export const timeline = rcva("timeline", {

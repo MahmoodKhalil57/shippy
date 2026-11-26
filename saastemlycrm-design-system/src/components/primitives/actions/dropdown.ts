@@ -3,13 +3,14 @@ import { html, nothing } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { atWidth, floating as float, placementOf } from "../../base/floating.ts";
-import { LightElement, uid, type Renderable } from "../../base/light-element.ts";
-import { isOn, rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
-import { floating, floatingHeight, floatMotion, row, stack, text } from "../layout/algebra.ts";
+import { LightElement, type Renderable } from "../../base/light-element.ts";
+import { uid } from "../../../lib/base/uid.ts";
+import { isOn, rcva, responsiveBoolean, type Responsive } from "../../../lib/base/variants.ts";
+import { floating, floatingHeight, floatMotion, row, stack, text } from "../../../styles/algebra.ts";
 import { button, type ButtonVariants } from "./button.ts";
 import { iconButton, type IconButtonVariants } from "./icon-button.ts";
 import { iconSvg, type IconName } from "../media/icon.ts";
-import { m } from "../../../i18n/index.ts";
+import { m } from "../../../lib/i18n/index.ts";
 
 export type DropdownSide = "top" | "bottom" | "left" | "right";
 export type DropdownAlign = "start" | "center" | "end";
@@ -191,9 +192,15 @@ export class UiDropdown extends LightElement {
 
   protected override updated(changed: Map<string, unknown>) {
     super.updated?.(changed);
-    if (!changed.has("force") || !this.force) return;
-    if (this.force === "open") this.show();
-    else this.hide();
+    if (changed.has("force") && this.force) {
+      if (this.force === "open") this.show();
+      else this.hide();
+      return;
+    }
+    if (!changed.has("open")) return;
+    const shown = !!this._popover?.matches(":popover-open");
+    if (this.open && !shown) this.show();
+    else if (!this.open && shown) this.hide();
   }
 
   private _menuKey(e: KeyboardEvent) {
@@ -226,6 +233,12 @@ export class UiDropdown extends LightElement {
     );
   }
 
+  private _selectKey(item: DropdownItem, index: number, e: KeyboardEvent) {
+    if ((e.key !== "Enter" && e.key !== " ") || item.href) return;
+    e.preventDefault();
+    this._select(item, index, e);
+  }
+
   private _select(item: DropdownItem, index: number, e: Event) {
     if (item.disabled) {
       e.preventDefault();
@@ -241,7 +254,11 @@ export class UiDropdown extends LightElement {
   }
 
   private get _menuName() {
-    return this.triggerLabel ?? (typeof this.label === "string" ? this.label : undefined);
+    return this.triggerLabel ?? (typeof this.label === "string" && this.label ? this.label : undefined);
+  }
+
+  private get _triggerName() {
+    return this.triggerLabel ?? (this.hasSlotted("trigger") ? this._menuName : undefined);
   }
 
   private get _kind(): DropdownPanelKind {
@@ -307,7 +324,7 @@ export class UiDropdown extends LightElement {
               aria-disabled=${ifDefined(item.disabled ? "true" : undefined)}
               class=${dropdownItem({ destructive: !!item.destructive })}
               @click=${(e: Event) => this._select(item, i, e)}
-              @keydown=${(e: KeyboardEvent) => (e.key === "Enter" || e.key === " ") && !item.href && this._select(item, i, e)}
+              @keydown=${(e: KeyboardEvent) => this._selectKey(item, i, e)}
             >
               ${item.icon ? iconSvg(item.icon, { size: "sm" }) : nothing}
               <span class=${dropdownItemText()}
@@ -331,15 +348,13 @@ export class UiDropdown extends LightElement {
       placement: placementOf(this.side, this.align),
       gap: this.hover
         ? 0
-        : (({ "1": 4, "2": 8, "4": 16 } as Record<string, number>)[
-            atWidth(this.panelOffset as string | undefined) ?? "1"
-          ] ?? 4),
+        : (({ "2": 8, "4": 16 } as Record<string, number>)[atWidth(this.panelOffset as string | undefined) ?? ""] ?? 4),
     });
     return html`<button
         data-trigger
         type="button"
-        aria-label=${ifDefined(this.triggerLabel)}
-        title=${ifDefined(this.triggerLabel)}
+        aria-label=${ifDefined(this._triggerName)}
+        title=${ifDefined(this._triggerName)}
         class=${this._triggerCls()}
         popovertarget=${this._id}
         aria-haspopup=${isMenu ? "menu" : "dialog"}

@@ -2,8 +2,8 @@ import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { LightElement } from "../../base/light-element.ts";
 import "../../primitives/index.ts";
-import type { AskAnswer } from "../../base/ask-spec.ts";
-import { m } from "../../../i18n/index.ts";
+import type { AskAnswer } from "../../../lib/base/ask-spec.ts";
+import { m } from "../../../lib/i18n/index.ts";
 
 const READING_MS = 900;
 

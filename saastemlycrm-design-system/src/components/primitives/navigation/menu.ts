@@ -1,12 +1,12 @@
-import { cssTime } from "../../base/css-time.ts";
+import { cssTime } from "../../../lib/base/css-time.ts";
 import type { VariantProps } from "class-variance-authority";
 import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
-import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
-import { inlineRow, stack, row, text } from "../layout/algebra.ts";
-import { isRtl } from "../../base/reading.ts";
+import { rcva, responsiveBoolean, type Responsive } from "../../../lib/base/variants.ts";
+import { inlineRow, stack, row, text } from "../../../styles/algebra.ts";
+import { isRtl } from "../../../lib/base/reading.ts";
 
 export const menu = rcva(
   "menu [&_.menu-active]:bg-primary-container [&_.menu-active]:text-on-surface [&_.menu-active]:shadow-none",
@@ -60,7 +60,7 @@ export const menuIconAction = rcva(
   `${inlineRow} touch-target state-layer absolute start-0 top-0.5 z-1 h-[calc(var(--tile-h)*0.75_-_4px)] w-11 cursor-pointer items-center justify-center rounded-inner text-current hover:bg-transparent`,
 );
 
-export const menuTitle = rcva("menu-title");
+export const menuTitle = rcva("menu-title text-on-surface-variant");
 
 export const menuGroupContent = rcva("ms-0! ps-0! before:hidden!");
 
@@ -170,7 +170,7 @@ export function menuFoldTween(list: Element) {
 }
 export type MenuFoldTween = ReturnType<typeof menuFoldTween>;
 
-export const menuRailHeading = rcva(`invisible block ${text.line}`);
+export const menuRailHeading = rcva(`invisible block w-0 overflow-hidden whitespace-nowrap ${text.line}`);
 
 export const menuCardHead = rcva(`${row} items-start gap-2`);
 export const menuCardTitle = rcva("min-w-0 flex-1 text-label-lg leading-snug [overflow-wrap:break-word]");
@@ -196,7 +196,7 @@ export const menuBadge = rcva("badge badge-xs", {
       warning: "badge-warning",
       error: "badge-error",
     },
-    card: { true: "mt-0.5 min-w-0 truncate" },
+    card: { true: "mt-0.5 h-auto min-w-0 truncate" },
     end: { true: "ms-auto" },
   },
 });
@@ -294,11 +294,7 @@ export class UiMenu extends LightElement {
 
   private _shown = new WeakMap<MenuItem, boolean>();
 
-  private _select(item: MenuItem, path: number[], e: Event) {
-    if (item.disabled) {
-      e.preventDefault();
-      return;
-    }
+  private _select(item: MenuItem, path: number[]) {
     this.dispatchEvent(new CustomEvent("ui-select", { detail: { item, path }, bubbles: true }));
   }
 
@@ -325,9 +321,13 @@ export class UiMenu extends LightElement {
     ${item.badge != null ? html`<span class=${menuBadge({ color: item.badgeColor, end: this.layout === "nav" })} data-menu-fold="fade">${item.badge}</span>` : nothing}`;
   }
 
+  private _iconOnly(item: MenuItem) {
+    return this.layout === "rail" || (this.iconOnly && !!item.icon);
+  }
+
   private _link(item: MenuItem, path: number[]) {
     const rail = this.layout === "rail";
-    const iconOnly = rail || (this.iconOnly && !!item.icon);
+    const iconOnly = this._iconOnly(item);
     const side = rail ? "right" : iconOnly && this.tooltip !== "none" ? this.tooltip : undefined;
     const tipSide = side === "right" && isRtl(this) ? "left" : side;
     const cls = menuLink({
@@ -347,7 +347,7 @@ export class UiMenu extends LightElement {
         data-tip-side=${ifDefined(dataTip ? tipSide : undefined)}
         aria-label=${ifDefined(ariaLabel)}
         aria-current=${ifDefined(item.active ? "page" : undefined)}
-        @click=${(e: Event) => this._select(item, path, e)}
+        @click=${() => this._select(item, path)}
         >${this._label(item)}</a
       >`;
     }
@@ -359,20 +359,22 @@ export class UiMenu extends LightElement {
       data-tip=${ifDefined(dataTip)}
       data-tip-side=${ifDefined(dataTip ? tipSide : undefined)}
       aria-label=${ifDefined(ariaLabel)}
-      @click=${(e: Event) => this._select(item, path, e)}
+      aria-current=${ifDefined(item.active ? "true" : undefined)}
+      @click=${() => this._select(item, path)}
     >
       ${this._label(item)}
     </button>`;
   }
 
   private _opening = (e: Event) => {
-    const details = (e.currentTarget as HTMLElement).parentElement;
-    if (!(details instanceof HTMLDetailsElement)) return;
+    const details = (e.currentTarget as HTMLElement).parentElement as HTMLDetailsElement;
     this._follow();
     if (details.open) return;
     details.setAttribute("data-opening", "");
     const ms = cssTime(getComputedStyle(details).getPropertyValue("--duration-short2"), 100);
-    setTimeout(() => details.removeAttribute("data-opening"), ms);
+    const opening = details.animate([], { duration: ms });
+    const done = () => details.removeAttribute("data-opening");
+    opening.finished.then(done, done);
   };
 
   private _toggled(item: MenuItem, path: number[], e: Event) {
@@ -471,6 +473,7 @@ export class UiMenu extends LightElement {
       >
         <summary
           class=${menuLink({ anchor: this._anchor(item, path), split: !!item.iconAction })}
+          aria-label=${ifDefined(this._iconOnly(item) && typeof item.label === "string" ? item.label : undefined)}
           @click=${this._opening}
         >
           ${this._label(item)}
@@ -501,7 +504,7 @@ export class UiMenu extends LightElement {
       })}
     >
       ${this.items.length ? this._list(this.items, []) : this.content}
-      ${this.layout === "nav" && !this.panes ? html`<li class=${menuIndicator()} role="presentation" data-menu-highlight></li>` : nothing}
+      ${this.layout === "nav" && !this.panes ? html`<li class=${menuIndicator()} aria-hidden="true" data-menu-highlight></li>` : nothing}
     </ul>`;
   }
 }

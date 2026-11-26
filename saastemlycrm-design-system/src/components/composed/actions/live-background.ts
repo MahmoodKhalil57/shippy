@@ -1,5 +1,5 @@
 import { html, nothing } from "lit";
-import type { LiveBackground } from "../../base/appearance.ts";
+import type { LiveBackground } from "../../../lib/base/appearance.ts";
 import "../../primitives/media/magnet-lines.ts";
 import "../../primitives/media/waves.ts";
 

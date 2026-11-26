@@ -3,8 +3,8 @@ import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { LightElement } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
-import { inlineRow } from "../layout/algebra.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { inlineRow } from "../../../styles/algebra.ts";
 import { iconSvg, type IconName } from "../media/icon.ts";
 
 export const iconButton = rcva(

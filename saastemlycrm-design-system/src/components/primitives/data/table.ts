@@ -1,11 +1,19 @@
 import type { VariantProps } from "class-variance-authority";
 import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { clampColumnWidth, COLUMN_MAX_WIDTH, COLUMN_MIN_WIDTH, moveColumn, orderColumns } from "../../base/columns.ts";
-import { formatInt, m } from "../../../i18n/index.ts";
-import { isRtl } from "../../base/reading.ts";
+import {
+  clampColumnWidth,
+  COLUMN_MAX_WIDTH,
+  COLUMN_MIN_WIDTH,
+  moveColumn,
+  orderColumns,
+} from "../../../lib/base/columns.ts";
+import { formatInt, m } from "../../../lib/i18n/index.ts";
+import { isRtl } from "../../../lib/base/reading.ts";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
-import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
+import { afterMs } from "../../../lib/base/motion-queue.ts";
+import { yieldToMain } from "../../../lib/base/work-queue.ts";
+import { rcva, responsiveBoolean, type Responsive } from "../../../lib/base/variants.ts";
 import { button } from "../actions/button.ts";
 import {
   fixed,
@@ -18,7 +26,7 @@ import {
   scrollX,
   stack,
   text,
-} from "../layout/algebra.ts";
+} from "../../../styles/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
 import { tag } from "./tag.ts";
 
@@ -26,7 +34,7 @@ export const table = rcva(
   [
     "table",
     "[&_thead_tr]:border-b [&_thead_tr]:border-outline-variant [&_thead_th]:bg-surface-container-low [&_thead_th]:text-label-md [&_thead_th]:tracking-wide [&_thead_th]:uppercase [&_:where(thead,tfoot)]:text-on-surface-variant",
-    "[&_tbody_tr]:border-outline-variant [&_tbody_tr:last-child]:border-b-0 [&_tbody_tr]:state-layer",
+    "[&_tbody_tr]:border-outline-variant [&_tbody_tr:last-child]:border-b-0 [&_tbody_tr:has(td:first-of-type_a)]:state-layer",
     "[&_td]:text-on-surface-variant [&_td_a]:no-underline [&_td_a]:underline-offset-2 [&_td_a:hover]:underline [&_td_a:hover]:text-on-surface [&_td:first-of-type_a]:font-medium [&_td:first-of-type_a]:text-on-surface",
     "[&_tbody_tr]:relative [&_tbody_td:first-of-type_a]:after:absolute [&_tbody_td:first-of-type_a]:after:inset-0 [&_tbody_td:first-of-type_a]:after:content-[''] [&_tbody_tr:has(td:first-of-type_a)]:cursor-pointer [&_tbody_td:not(:first-of-type)_:is(a,button,label,input)]:relative [&_tbody_td:not(:first-of-type)_:is(a,button,label,input)]:z-1 [&_tbody_th_:is(a,button,label,input)]:relative [&_tbody_th_:is(a,button,label,input)]:z-1 [--focus:host] [&_tbody_td:first-of-type_a]:focus-visible:outline-none [&_tbody_tr:has(td:first-of-type_a:focus-visible)]:outline-2 [&_tbody_tr:has(td:first-of-type_a:focus-visible)]:-outline-offset-2 [&_tbody_tr:has(td:first-of-type_a:focus-visible)]:outline-primary",
   ].join(" "),
@@ -52,7 +60,6 @@ export const table = rcva(
         one: "[&_thead_th_button]:min-w-max [&_tbody_tr]:h-11 [&_tbody_:is(td,th)]:max-w-80 [&_tbody_:is(td,th)]:py-1.5 [&_tbody_td]:truncate [&_tbody_td_*]:text-nowrap [&_thead_th]:py-2 [&_thead_th]:whitespace-nowrap [&_thead_th]:bg-transparent! [&_thead_th]:text-label-sm!",
       },
       surface: { true: "bg-surface-container" },
-      nowrap: { true: "" },
     },
     compoundVariants: [
       { lines: "one", density: "-1", class: "[&_tbody_tr]:h-10! [&_tbody_:is(td,th)]:py-1!" },
@@ -122,6 +129,7 @@ export const tableDropMark = rcva("pointer-events-none absolute top-0 z-3 w-0.5 
   variants: { edge: { start: "-start-px", end: "-end-px" } },
 });
 export const tableAnnounce = rcva("sr-only");
+export const tableHidden = rcva("sr-only");
 
 export const tableSort = rcva(
   `${inlineRow} group/sort touch-target items-center gap-1 rounded-field py-0.5 font-[inherit] text-[inherit] tracking-[inherit] uppercase state-layer hover:text-on-surface [transition:background-color_var(--duration-effects-fast)_var(--ease-effects-fast),color_var(--duration-effects-fast)_var(--ease-effects-fast)]`,
@@ -142,8 +150,8 @@ export const tableSortIcon = rcva(
 );
 export const tableSortOrder = rcva("text-label-sm leading-none font-semibold text-primary-ink tabular-nums");
 
-export const tableBody = rcva("[transition:opacity_var(--duration-effects)_var(--ease-effects)]", {
-  variants: { busy: { true: "opacity-50" } },
+export const tableBody = rcva("[&_td]:[transition:color_var(--duration-effects)_var(--ease-effects)]", {
+  variants: { busy: { true: "[&_td]:text-on-surface-variant [&_img]:grayscale" } },
 });
 export const tableSkeleton = rcva(`skeleton h-4 ${fixedWidth["16"]} rounded-field`);
 export const tableEmpty = rcva("py-10 text-center text-on-surface-variant");
@@ -226,6 +234,21 @@ export class UiTable extends LightElement {
   @state() private _drag?: { key: string; dx: number; target: number; height: number };
   @state() private _resizing?: string;
   @state() private _announce = "";
+  @state() private _measured: Record<string, number> = {};
+  #sizes = new ResizeObserver((entries) => {
+    const next = { ...this._measured };
+    let changed = false;
+    for (const e of entries) {
+      const key = (e.target as HTMLElement).dataset.key!;
+      const width = clampColumnWidth(Math.round(e.borderBoxSize[0]!.inlineSize));
+      if (next[key] !== width) {
+        next[key] = width;
+        changed = true;
+      }
+    }
+    if (changed) this._measured = next;
+  });
+  #sized = new WeakSet<Element>();
   private _geom = { mids: [] as number[], x0: 0, fixed: 0 };
   private _lastX = 0;
   private _scrollFrame = 0;
@@ -243,6 +266,21 @@ export class UiTable extends LightElement {
       },
       true,
     );
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.#sizes.disconnect();
+    this.#sized = new WeakSet();
+  }
+
+  protected updated() {
+    if (!this.resizable) return;
+    for (const th of this.querySelectorAll<HTMLElement>("thead th[data-key]"))
+      if (!this.#sized.has(th)) {
+        this.#sized.add(th);
+        this.#sizes.observe(th);
+      }
   }
 
   private get _ordered() {
@@ -304,17 +342,16 @@ export class UiTable extends LightElement {
 
   private _press(e: PointerEvent, c: TableColumn) {
     if (!this.reorderable || c.fixed || e.button !== 0 || this._drag) return;
-    if ((e.target as Element).closest('[role="separator"]')) return;
     const touch = e.pointerType === "touch";
     const start = { x: e.clientX, y: e.clientY };
     let armed = !touch;
-    const timer = touch
-      ? window.setTimeout(() => {
+    const cancelHold = touch
+      ? afterMs(350, () => {
           armed = true;
           this._beginDrag(c.key, start.x);
           navigator.vibrate?.(10);
-        }, 350)
-      : 0;
+        })
+      : undefined;
     const move = (ev: PointerEvent) => {
       if (ev.pointerId !== e.pointerId) return;
       const dx = ev.clientX - start.x;
@@ -345,7 +382,7 @@ export class UiTable extends LightElement {
       if (dragging) this._drop(false);
     };
     const stop = () => {
-      clearTimeout(timer);
+      cancelHold?.();
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", end);
       window.removeEventListener("pointercancel", end);
@@ -358,14 +395,12 @@ export class UiTable extends LightElement {
   }
 
   private _beginDrag(key: string, x: number) {
-    const table = this.querySelector("table");
-    if (!table) return;
-    const t = table.getBoundingClientRect();
+    const t = this.querySelector("table")!.getBoundingClientRect();
     const cols = this._columns;
     this._geom = {
       mids: cols.map((c) => {
-        const r = this._th(c.key)?.getBoundingClientRect();
-        return r ? r.left - t.left + r.width / 2 : 0;
+        const r = this._th(c.key)!.getBoundingClientRect();
+        return r.left - t.left + r.width / 2;
       }),
       x0: x - t.left,
       fixed: cols.filter((c) => c.fixed).length,
@@ -376,30 +411,26 @@ export class UiTable extends LightElement {
   }
 
   private _dragTo(x: number) {
-    const table = this.querySelector("table");
-    if (!this._drag || !table) return;
+    const d = this._drag!;
     this._lastX = x;
-    const tx = x - table.getBoundingClientRect().left;
+    const tx = x - this.querySelector("table")!.getBoundingClientRect().left;
     const rtl = this._rtl;
     const passed = this._geom.mids.filter((mid) => (rtl ? mid > tx : mid < tx)).length;
-    this._drag = { ...this._drag, dx: tx - this._geom.x0, target: Math.max(this._geom.fixed, passed) };
+    this._drag = { ...d, dx: tx - this._geom.x0, target: Math.max(this._geom.fixed, passed) };
   }
 
   private _autoScroll() {
     cancelAnimationFrame(this._scrollFrame);
     const step = () => {
-      if (!this._drag) return;
-      const wrap = this.firstElementChild as HTMLElement | null;
-      if (wrap) {
-        const r = wrap.getBoundingClientRect();
-        const edge = 48;
-        const x = this._lastX;
-        const v = x < r.left + edge ? -(r.left + edge - x) / 3 : x > r.right - edge ? (x - (r.right - edge)) / 3 : 0;
-        if (v) {
-          const before = wrap.scrollLeft;
-          wrap.scrollLeft += v;
-          if (wrap.scrollLeft !== before) this._dragTo(x);
-        }
+      const wrap = this.firstElementChild as HTMLElement;
+      const r = wrap.getBoundingClientRect();
+      const edge = 48;
+      const x = this._lastX;
+      const v = x < r.left + edge ? -(r.left + edge - x) / 3 : x > r.right - edge ? (x - (r.right - edge)) / 3 : 0;
+      if (v) {
+        const before = wrap.scrollLeft;
+        wrap.scrollLeft += v;
+        if (wrap.scrollLeft !== before) this._dragTo(x);
       }
       this._scrollFrame = requestAnimationFrame(step);
     };
@@ -408,11 +439,11 @@ export class UiTable extends LightElement {
 
   private _drop(commit: boolean) {
     cancelAnimationFrame(this._scrollFrame);
-    const d = this._drag;
+    const d = this._drag!;
     this._drag = undefined;
     this._swallowClick = true;
-    setTimeout(() => (this._swallowClick = false));
-    if (!d || !commit) return;
+    void yieldToMain().then(() => (this._swallowClick = false));
+    if (!commit) return;
     const cols = this._columns;
     const i = cols.findIndex((c) => c.key === d.key);
     const t = d.target;
@@ -422,8 +453,7 @@ export class UiTable extends LightElement {
 
   private _startResize(e: PointerEvent, c: TableColumn) {
     if (e.button !== 0) return;
-    const th = this._th(c.key);
-    if (!th) return;
+    const th = this._th(c.key)!;
     e.preventDefault();
     e.stopPropagation();
     try {
@@ -435,7 +465,7 @@ export class UiTable extends LightElement {
     let frame = 0;
     this._resizing = c.key;
     const apply = () => {
-      if (width !== undefined) this.columnWidths = { ...this.columnWidths, [c.key]: width };
+      this.columnWidths = { ...this.columnWidths, [c.key]: width! };
     };
     const move = (ev: PointerEvent) => {
       if (ev.pointerId !== e.pointerId) return;
@@ -469,7 +499,7 @@ export class UiTable extends LightElement {
     const shrink = this._rtl ? "ArrowRight" : "ArrowLeft";
     if (e.key !== grow && e.key !== shrink) return;
     e.preventDefault();
-    const from = this.columnWidths[c.key] ?? this._th(c.key)?.getBoundingClientRect().width ?? 160;
+    const from = this.columnWidths[c.key] ?? this._th(c.key)!.getBoundingClientRect().width;
     const width = clampColumnWidth(from + (e.shiftKey ? 48 : 8) * (e.key === grow ? 1 : -1));
     this._emitColumns(undefined, { ...this.columnWidths, [c.key]: width });
     this._announce = m.table_column_width({ column: this._name(c), width });
@@ -505,7 +535,7 @@ export class UiTable extends LightElement {
   }
 
   private _headCell(c: TableColumn, index: number, live: boolean) {
-    const label = c.label ?? (c.kind === "button" ? "" : c.key);
+    const label = c.label ?? (c.kind === "button" ? html`<span class=${tableHidden()}>${c.key}</span>` : c.key);
     const sized = this.columnWidths[c.key] !== undefined;
     const drag = live ? this._drag : undefined;
     const dragging = drag?.key === c.key;
@@ -536,7 +566,7 @@ export class UiTable extends LightElement {
             aria-label=${m.table_resize_column({ column: this._name(c) })}
             aria-valuemin=${COLUMN_MIN_WIDTH}
             aria-valuemax=${COLUMN_MAX_WIDTH}
-            aria-valuenow=${this.columnWidths[c.key] ?? nothing}
+            aria-valuenow=${this.columnWidths[c.key] ?? this._measured[c.key] ?? COLUMN_MIN_WIDTH}
             title=${m.table_resize_hint()}
             class=${tableResize({ last, active: this._resizing === c.key })}
             @pointerdown=${(e: PointerEvent) => this._startResize(e, c)}
@@ -599,24 +629,22 @@ export class UiTable extends LightElement {
     return html`<tr>
       ${
         this.selectable
-          ? html`<th>
-              ${
-                withSelectAll
-                  ? html`<label>
-                      <input
-                        type="checkbox"
-                        class="checkbox"
-                        aria-label=${m.table_select_all()}
-                        .checked=${total > 0 && this.selected.length === total}
-                        @change=${(e: Event) => this._toggleAll((e.target as HTMLInputElement).checked)}
-                      />
-                    </label>`
-                  : nothing
-              }
-            </th>`
+          ? withSelectAll
+            ? html`<th>
+                <label>
+                  <input
+                    type="checkbox"
+                    class="checkbox"
+                    aria-label=${m.table_select_all()}
+                    .checked=${total > 0 && this.selected.length === total}
+                    @change=${(e: Event) => this._toggleAll((e.target as HTMLInputElement).checked)}
+                  />
+                </label>
+              </th>`
+            : html`<td></td>`
           : nothing
       }
-      ${this.indexColumn ? html`<th></th>` : nothing}
+      ${this.indexColumn ? (withSelectAll ? html`<th><span class=${tableHidden()}>#</span></th>` : html`<td></td>`) : nothing}
       ${this._columns.map((c, i) => this._headCell(c, i, withSelectAll))}
     </tr>`;
   }
@@ -706,7 +734,7 @@ export class UiTable extends LightElement {
   private _body() {
     if (this.groups.length) {
       let offset = 0;
-      return this.groups.map((g) => {
+      const groups = this.groups.map((g) => {
         const start = offset;
         offset += g.rows.length;
         return html`<thead>
@@ -718,6 +746,10 @@ export class UiTable extends LightElement {
             ${g.rows.map((r, i) => this._row(r, start + i))}
           </tbody>`;
       });
+      return html`<thead>
+          ${this._headRow(true)}
+        </thead>
+        ${groups}`;
     }
     return html`<thead>
         ${this._headRow(true)}
@@ -735,7 +767,7 @@ export class UiTable extends LightElement {
                   { length: this.skeletonRows },
                   () =>
                     html`<tr>
-                      ${this.selectable ? html`<th></th>` : nothing} ${this.indexColumn ? html`<th></th>` : nothing}
+                      ${this.selectable ? html`<td></td>` : nothing} ${this.indexColumn ? html`<td></td>` : nothing}
                       ${this._columns.map((c) => html`<td class=${tableCell({ align: c.align }) || nothing} style=${this._widthStyle(c.key) || nothing}><div class=${tableSkeleton()}></div></td>`)}
                     </tr>`,
                 )
@@ -751,7 +783,7 @@ export class UiTable extends LightElement {
 
   private _hint = (e: Event) => {
     if (this.lines !== "one") return;
-    const cell = (e.target as Element).closest?.("td");
+    const cell = (e.target as Element).closest("td");
     if (!cell) return;
     const cut = [cell, ...cell.querySelectorAll<HTMLElement>("div")].some((el) => el.scrollWidth > el.clientWidth + 1);
     if (cut) cell.title = cell.innerText.trim();
@@ -783,7 +815,6 @@ export class UiTable extends LightElement {
       density: this.density,
       lines: this.lines,
       surface: this.surface,
-      nowrap: this.nowrap,
     });
     return html`<div
       class=${tableWrapper({ bordered: this.bordered, height: this.height, width: this.width, nowrap: this.nowrap })}

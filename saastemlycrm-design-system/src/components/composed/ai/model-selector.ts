@@ -7,7 +7,7 @@ import "../../primitives/media/icon.ts";
 import type { MenuItem } from "../../primitives/navigation/menu.ts";
 import "../../primitives/navigation/menu.ts";
 import "../../primitives/typography/text.ts";
-import { m } from "../../../i18n/index.ts";
+import { m } from "../../../lib/i18n/index.ts";
 
 export interface ModelOption {
   id: string;
@@ -59,8 +59,8 @@ export class UiModelSelector extends LightElement {
         .items=${items}
         @ui-select=${(e: CustomEvent<{ item: MenuItem }>) => {
           e.stopPropagation();
-          const value = e.detail.item.value;
-          if (typeof value !== "string" || this.disabled) return;
+          const value = e.detail.item.value as string;
+          if (this.disabled) return;
           this.value = value;
           this.dispatchEvent(new CustomEvent("ui-change", { detail: { value }, bubbles: true }));
           this.querySelector("ui-dropdown")?.hide();

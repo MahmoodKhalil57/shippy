@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { definePlugin, defineRule } from "vite-plus/lint/plugins";
 
 /** @typedef {import("vite-plus/lint/plugins").ESTree.Node} Node */
@@ -536,6 +537,93 @@ const noRawHrefs = defineRule({
   },
 });
 
+const RENDERING_BASES = new Set(["LitElement", "Directive", "AsyncDirective"]);
+
+const componentsHaveStories = defineRule({
+  meta: {
+    type: "problem",
+    docs: { description: "Every module in components renders UI and has a story; logic and its tests live in lib." },
+    messages: {
+      noTests:
+        "Components are tested by their stories. Move this test into `{{stories}}`, or move the logic it tests into src/lib.",
+      noStory: "Every component module has a story: add `{{stories}}`.",
+      renders: "This module renders nothing. Modules in components render UI; move it into src/lib.",
+      noModule: "A stories file sits next to the module it shows: `{{module}}` does not exist.",
+    },
+    schema: [{ type: "object", properties: { dir: { type: "string" } }, additionalProperties: false }],
+    defaultOptions: [{ dir: "src/components" }],
+  },
+  create(context) {
+    const options = /** @type {{ dir?: string }} */ (context.options[0] ?? {});
+    const file = pathOf(context);
+    if (!file.includes(`/${options.dir ?? "src/components"}/`)) return {};
+    const slash = file.lastIndexOf("/");
+    const dir = file.slice(0, slash + 1);
+    const name = file.slice(slash + 1);
+    if (name === "index.ts" || name.endsWith(".d.ts") || !name.endsWith(".ts")) return {};
+    const stem = name.slice(0, name.indexOf("."));
+    let renders = false;
+    return {
+      TaggedTemplateExpression(/** @type {any} */ node) {
+        if (node.tag.type === "Identifier" && (node.tag.name === "html" || node.tag.name === "svg")) renders = true;
+      },
+      ClassDeclaration(/** @type {any} */ node) {
+        if (node.superClass?.type === "Identifier" && RENDERING_BASES.has(node.superClass.name)) renders = true;
+      },
+      Decorator(/** @type {any} */ node) {
+        const e = node.expression;
+        if (e.type === "CallExpression" && e.callee.type === "Identifier" && e.callee.name === "customElement")
+          renders = true;
+      },
+      CallExpression(/** @type {any} */ node) {
+        const c = node.callee;
+        if (
+          c.type === "MemberExpression" &&
+          c.object.type === "Identifier" &&
+          c.object.name === "customElements" &&
+          c.property.type === "Identifier" &&
+          c.property.name === "define"
+        )
+          renders = true;
+      },
+      "Program:exit"(/** @type {any} */ node) {
+        if (name.endsWith(".test.ts")) {
+          context.report({ node, messageId: "noTests", data: { stories: `${stem}.stories.ts` } });
+        } else if (name.endsWith(".stories.ts")) {
+          if (!existsSync(dir + stem + ".ts"))
+            context.report({ node, messageId: "noModule", data: { module: `${stem}.ts` } });
+        } else {
+          if (!existsSync(dir + stem + ".stories.ts"))
+            context.report({ node, messageId: "noStory", data: { stories: `${stem}.stories.ts` } });
+          if (!renders) context.report({ node, messageId: "renders" });
+        }
+      },
+    };
+  },
+});
+
+const templatesInComponents = defineRule({
+  meta: {
+    type: "problem",
+    docs: { description: "Lit templates live in components and their stories, or in the Storybook setup." },
+    messages: {
+      template:
+        "Only src/components and .storybook render lit templates. Move this markup into a component or a story, or build the DOM this test needs with document.createElement.",
+    },
+    schema: [],
+  },
+  create(context) {
+    const file = pathOf(context);
+    if (file.includes("/src/components/") || file.includes("/.storybook/")) return {};
+    return {
+      TaggedTemplateExpression(/** @type {any} */ node) {
+        if (node.tag.type === "Identifier" && (node.tag.name === "html" || node.tag.name === "svg"))
+          context.report({ node, messageId: "template" });
+      },
+    };
+  },
+});
+
 const plugin = definePlugin({
   meta: { name: "saastemly" },
   rules: {
@@ -546,6 +634,8 @@ const plugin = definePlugin({
     "sentence-case-titles": sentenceCaseTitles,
     "max-blocks": maxBlocks,
     "no-raw-hrefs": noRawHrefs,
+    "components-have-stories": componentsHaveStories,
+    "templates-in-components": templatesInComponents,
   },
 });
 

@@ -3,13 +3,14 @@ import { html, nothing } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { floating as float } from "../../base/floating.ts";
-import { LightElement, uid, type Renderable } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
+import { LightElement, type Renderable } from "../../base/light-element.ts";
+import { uid } from "../../../lib/base/uid.ts";
+import { rcva } from "../../../lib/base/variants.ts";
 import { chip, chipRemove } from "../data/chip.ts";
-import { floating, floatingHeight, inset, row, rowEnd, stack, text } from "../layout/algebra.ts";
+import { floating, floatingHeight, inset, row, rowEnd, stack, text } from "../../../styles/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
-import { m } from "../../../i18n/index.ts";
-import { fieldsetField, type FieldsetVariants } from "./fieldset.ts";
+import { m } from "../../../lib/i18n/index.ts";
+import { fieldsetField, legendLabel, type FieldsetVariants } from "./fieldset.ts";
 
 export const combobox = rcva(
   "input h-auto min-h-(--size) min-w-0 max-w-full flex-wrap items-center gap-1 py-1 [anchor-scope:--combobox]",
@@ -80,6 +81,7 @@ export class UiCombobox extends LightElement {
   @property({ attribute: "field-width" }) fieldWidth: FieldsetVariants["width"];
   @property() inputmode?: string;
   @property({ attribute: "aria-label" }) ariaLabelText?: string;
+  @property({ attribute: "input-id" }) inputId = uid("combobox");
 
   @state() private _query = "";
   @state() private _open = false;
@@ -87,7 +89,9 @@ export class UiCombobox extends LightElement {
   @query("input") private _input?: HTMLInputElement;
   @query("[popover]") private _list?: HTMLElement;
 
-  private _id = uid("combobox");
+  private get _id() {
+    return this.inputId;
+  }
 
   private get _values(): string[] {
     return Array.isArray(this.value) ? this.value : this.value ? [this.value] : [];
@@ -118,7 +122,9 @@ export class UiCombobox extends LightElement {
       0,
       this._matches.findIndex((o) => this._values.includes(o.value)),
     );
-    void this.updateComplete.then(() => this._list?.showPopover?.());
+    void this.updateComplete.then(() => {
+      if (this._open) this._list?.showPopover?.();
+    });
   }
 
   private _hide() {
@@ -232,7 +238,12 @@ export class UiCombobox extends LightElement {
           id=${this._id}
           class=${comboboxInput()}
           role="combobox"
-          aria-label=${ifDefined(!this.legend && !this.label ? this.ariaLabelText : undefined)}
+          aria-label=${ifDefined(this.ariaLabelText)}
+          aria-labelledby=${ifDefined(
+            this.ariaLabelText
+              ? undefined
+              : legendLabel({ legend: this.legend, label: this.label, controlId: this._id }),
+          )}
           autocomplete="off"
           dir="auto"
           inputmode=${ifDefined(this.inputmode)}
@@ -271,46 +282,50 @@ export class UiCombobox extends LightElement {
           ${locked ? nothing : iconSvg("unfold", { size: "sm" })}
         </span>
       </div>
-      <ul
-        id=${listId}
+      <div
         popover="manual"
-        role="listbox"
-        aria-multiselectable=${this.multiple ? "true" : "false"}
         class=${comboboxList()}
         ${float({ placement: "bottom-start", fallbacks: ["top-start"], anchor: () => this.querySelector("[data-control]") })}
         @mousedown=${(e: Event) => e.preventDefault()}
       >
         ${
           this._open && !matches.length
-            ? html`<li class=${comboboxEmpty()} role="presentation">
+            ? html`<p class=${comboboxEmpty()} role="status">
                 ${this.options.length ? m.combobox_no_matches() : this.creatable ? m.combobox_type_to_add() : m.combobox_nothing()}
-              </li>`
+              </p>`
             : nothing
         }
-        ${matches.map((o, i) => {
-          const heading =
-            o.group && o.group !== lastGroup
-              ? html`<li class=${comboboxGroup()} role="presentation">${o.group}</li>`
-              : nothing;
-          lastGroup = o.group;
-          const selected = values.includes(o.value);
-          return html`${heading}
-            <li
-              id=${`${this._id}-${i}`}
-              role="option"
-              aria-selected=${selected ? "true" : "false"}
-              class=${comboboxOption({ active: i === this._active, selected })}
-              @mouseenter=${() => (this._active = i)}
-              @click=${() => this._pick(o)}
-            >
-              <span class=${comboboxCheck({ shown: selected })}>${iconSvg("check", { size: "sm" })}</span>
-              <span class=${comboboxOptionText()}>
-                <span>${o.label}</span>
-                ${o.description ? html`<span class=${comboboxOptionDescription()}>${o.description}</span>` : nothing}
-              </span>
-            </li>`;
-        })}
-      </ul>`;
+        <ul
+          id=${listId}
+          role="listbox"
+          aria-multiselectable=${this.multiple ? "true" : "false"}
+          ?hidden=${!matches.length}
+        >
+          ${matches.map((o, i) => {
+            const heading =
+              o.group && o.group !== lastGroup
+                ? html`<li class=${comboboxGroup()} role="presentation">${o.group}</li>`
+                : nothing;
+            lastGroup = o.group;
+            const selected = values.includes(o.value);
+            return html`${heading}
+              <li
+                id=${`${this._id}-${i}`}
+                role="option"
+                aria-selected=${selected ? "true" : "false"}
+                class=${comboboxOption({ active: i === this._active, selected })}
+                @mouseenter=${() => (this._active = i)}
+                @click=${() => this._pick(o)}
+              >
+                <span class=${comboboxCheck({ shown: selected })}>${iconSvg("check", { size: "sm" })}</span>
+                <span class=${comboboxOptionText()}>
+                  <span>${o.label}</span>
+                  ${o.description ? html`<span class=${comboboxOptionDescription()}>${o.description}</span>` : nothing}
+                </span>
+              </li>`;
+          })}
+        </ul>
+      </div>`;
     return fieldsetField(
       { legend: this.legend, label: this.label, hint: this.hint, controlId: this._id, width: this.fieldWidth },
       control,

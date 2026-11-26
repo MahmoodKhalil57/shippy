@@ -2,11 +2,11 @@ import type { VariantProps } from "class-variance-authority";
 import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
-import { row, stack, text } from "../layout/algebra.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { row, stack, text } from "../../../styles/algebra.ts";
 import { iconSvg, type IconName } from "../media/icon.ts";
 import { loading as loadingRecipe } from "./loading.ts";
-import { m } from "../../../i18n/index.ts";
+import { m } from "../../../lib/i18n/index.ts";
 
 export const emptyState = rcva(`${stack}`, {
   variants: {

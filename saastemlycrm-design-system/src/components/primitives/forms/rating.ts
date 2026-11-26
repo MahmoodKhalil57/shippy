@@ -1,12 +1,13 @@
 import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import { keyed } from "lit/directives/keyed.js";
 import { LightElement } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
-import { fixed, inlineRow, row, text } from "../layout/algebra.ts";
+import { uid } from "../../../lib/base/uid.ts";
+import { groupName } from "./fieldset.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { fixed, inlineRow, row, text } from "../../../styles/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
-import { inlineStep } from "../../base/reading.ts";
-import { m } from "../../../i18n/index.ts";
+import { inlineStep } from "../../../lib/base/reading.ts";
+import { m } from "../../../lib/i18n/index.ts";
 
 export const rating = rcva(`${row} items-center gap-x-3 gap-y-1`);
 export const ratingStars = rcva(
@@ -33,6 +34,8 @@ export class UiRating extends LightElement {
   @property({ attribute: false }) words: string[] = [];
   @property({ type: Boolean }) required = false;
   @property({ type: Boolean }) disabled = false;
+  @property({ attribute: "aria-label" }) ariaLabelText?: string;
+  @property({ attribute: "input-id" }) inputId = uid("rating");
 
   #picked = 0;
 
@@ -65,8 +68,16 @@ export class UiRating extends LightElement {
   render() {
     const v = this.value ?? 0;
     const words = v ? (this.words[v - 1] ?? m.rating_of({ value: v, max: this.max })) : m.rating_none();
+    const name = groupName(this, { ariaLabel: this.ariaLabelText, label: this.label, controlId: this.inputId });
     return html`<div class=${rating()}>
-      <div class=${ratingStars()} role="radiogroup" aria-label=${this.label || nothing} @keydown=${this._key}>
+      <div
+        class=${ratingStars()}
+        id=${this.inputId}
+        role="radiogroup"
+        aria-label=${name.label ?? nothing}
+        aria-labelledby=${name.labelledby ?? nothing}
+        @keydown=${this._key}
+      >
         ${Array.from({ length: this.max }, (_, i) => {
           const n = i + 1;
           const star = html`<button
@@ -81,7 +92,7 @@ export class UiRating extends LightElement {
           >
             ${iconSvg("star", { size: "md" })}
           </button>`;
-          return n === this.#picked ? keyed(`${n}:${v}`, star) : star;
+          return star;
         })}
       </div>
       <span class=${ratingWords()}>${words}</span>

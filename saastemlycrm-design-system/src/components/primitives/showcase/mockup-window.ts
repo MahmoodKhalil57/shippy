@@ -2,7 +2,7 @@ import type { VariantProps } from "class-variance-authority";
 import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement } from "../../base/light-element.ts";
-import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
+import { rcva, responsiveBoolean, type Responsive } from "../../../lib/base/variants.ts";
 
 export const mockupWindow = rcva("mockup-window", {
   variants: {

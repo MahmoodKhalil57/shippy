@@ -2,13 +2,13 @@ import type { VariantProps } from "class-variance-authority";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
-import { afterNextPaint } from "../../base/work-queue.ts";
-import { booleanAttribute, rcva } from "../../base/variants.ts";
+import { afterNextPaint } from "../../../lib/base/work-queue.ts";
+import { booleanAttribute, rcva } from "../../../lib/base/variants.ts";
 import { button } from "../actions/button.ts";
 import { iconButton } from "../actions/icon-button.ts";
-import { floating, floatingHeight, inset, row, text } from "../layout/algebra.ts";
+import { floating, floatingHeight, inset, row, text } from "../../../styles/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
-import { m } from "../../../i18n/index.ts";
+import { m } from "../../../lib/i18n/index.ts";
 
 export const modal = rcva("modal data-closing:invisible data-closing:backdrop:invisible", {
   variants: {
@@ -75,11 +75,11 @@ export class UiModal extends LightElement {
   #opening = 0;
 
   protected updated(changed: PropertyValues<this>) {
-    if (!changed.has("open") || !this._dialog) return;
+    if (!changed.has("open")) return;
     if (this.open && !this._dialog.open) {
       const ticket = ++this.#opening;
       void afterNextPaint().then(() => {
-        if (ticket !== this.#opening || !this.open || !this._dialog || this._dialog.open) return;
+        if (ticket !== this.#opening || !this.open || !this.isConnected) return;
         this._dialog.showModal();
         this.dispatchEvent(new CustomEvent("ui-open", { bubbles: true }));
       });
@@ -88,7 +88,7 @@ export class UiModal extends LightElement {
       this._dialog.toggleAttribute("data-closing", true);
       void afterNextPaint().then(() => {
         const dialog = this._dialog;
-        if (ticket !== this.#opening || !dialog) return;
+        if (ticket !== this.#opening) return;
         dialog.removeAttribute("data-closing");
         if (!this.open && dialog.open) dialog.close();
       });
@@ -100,6 +100,20 @@ export class UiModal extends LightElement {
   }
 
   #pressedOutside = false;
+
+  /** Confirm fires a cancelable `ui-confirm`; unless a listener calls `preventDefault()` the dialog then closes with returnValue "confirm". */
+  private _confirm() {
+    const confirm = new CustomEvent("ui-confirm", { bubbles: true, cancelable: true });
+    if (this.dispatchEvent(confirm)) this.close("confirm");
+  }
+
+  /** Any button in the actions slot closes the dialog with its value as returnValue, unless its click is cancelled. */
+  private _onAction(e: MouseEvent) {
+    if (e.defaultPrevented) return;
+    const btn = (e.target as Element | null)?.closest("button");
+    if (!btn || btn.disabled || btn.type === "submit" || btn.type === "reset") return;
+    this.close(btn.value);
+  }
 
   private _onClose() {
     this.open = false;
@@ -138,7 +152,9 @@ export class UiModal extends LightElement {
         ${
           this.hasSlotted("actions")
             ? html`<div class=${modalAction()}>
-                <form method="dialog" class=${modalActionForm()}>${this.slotted("actions")}</form>
+                <form method="dialog" class=${modalActionForm()} @click=${this._onAction}>
+                  ${this.slotted("actions")}
+                </form>
               </div>`
             : this.confirmLabel
               ? html`<div class=${modalAction()}>
@@ -149,7 +165,7 @@ export class UiModal extends LightElement {
                     type="button"
                     class=${button({ color: this.confirmTone, variant: "filled" })}
                     ?disabled=${this.confirmDisabled}
-                    @click=${() => this.dispatchEvent(new CustomEvent("ui-confirm", { bubbles: true }))}
+                    @click=${this._confirm}
                   >
                     ${this.confirmLabel}
                   </button>

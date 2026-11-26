@@ -2,10 +2,11 @@ import type { VariantProps } from "class-variance-authority";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
-import { LightElement, uid, type Renderable } from "../../base/light-element.ts";
-import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
-import { fixed, tiles } from "../layout/algebra.ts";
-import { fieldsetField, type FieldsetVariants } from "./fieldset.ts";
+import { LightElement, type Renderable } from "../../base/light-element.ts";
+import { uid } from "../../../lib/base/uid.ts";
+import { rcva, responsiveBoolean, type Responsive } from "../../../lib/base/variants.ts";
+import { fixed, tiles } from "../../../styles/algebra.ts";
+import { fieldLabels, fieldsetField, legendLabel, type FieldsetVariants } from "./fieldset.ts";
 import { label as labelRecipe } from "./label.ts";
 
 export const select = rcva("select min-w-0", {
@@ -102,6 +103,7 @@ export class UiSelect extends LightElement {
   @property() value = "";
   @property({ type: Boolean }) disabled = false;
   @property({ type: Boolean }) required = false;
+  @property({ type: Boolean }) readonly = false;
   @property() autocomplete?: string;
   @property() leading?: string;
 
@@ -127,11 +129,26 @@ export class UiSelect extends LightElement {
     return this.select?.reportValidity() ?? true;
   }
 
+  get selectedValue() {
+    return this.select?.value ?? this.value;
+  }
+
   protected updated(changed: PropertyValues) {
     super.updated(changed);
-    if (this.select && this.value && this.select.value !== this.value) this.select.value = this.value;
-    if (this.select && !this.value) this.value = this.select.value;
+    if (this.value && this.select.value !== this.value) this.select.value = this.value;
+    this.#shown = this.select.value;
   }
+
+  #shown = "";
+  private _onChange = (e: Event) => {
+    const el = e.target as HTMLSelectElement;
+    if (this.readonly) {
+      el.value = this.#shown;
+      e.stopImmediatePropagation();
+      return;
+    }
+    this.value = el.value;
+  };
 
   private _options() {
     if (!this.options.length) return this.content;
@@ -171,8 +188,19 @@ export class UiSelect extends LightElement {
         autocomplete=${ifDefined(this.autocomplete)}
         ?disabled=${this.disabled}
         ?required=${this.required}
-        aria-label=${ifDefined(this.ariaLabelText ?? (!this.label && !this.legend ? (this.leading ?? this.placeholder) : undefined))}
-        @change=${(e: Event) => (this.value = (e.target as HTMLSelectElement).value)}
+        aria-readonly=${this.readonly ? "true" : nothing}
+        aria-label=${ifDefined(
+          this.ariaLabelText ??
+            (this.label || this.legend || fieldLabels(this, this.inputId)
+              ? undefined
+              : (this.leading ?? this.placeholder)),
+        )}
+        aria-labelledby=${ifDefined(
+          this.ariaLabelText
+            ? undefined
+            : legendLabel({ legend: this.legend, label: this.label, controlId: this.inputId }),
+        )}
+        @change=${this._onChange}
       >
         ${
           this.placeholder

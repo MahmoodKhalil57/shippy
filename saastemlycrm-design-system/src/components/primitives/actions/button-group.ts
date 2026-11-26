@@ -2,10 +2,10 @@ import type { VariantProps } from "class-variance-authority";
 import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
-import { fixed, inlineRow } from "../layout/algebra.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { fixed, inlineRow } from "../../../styles/algebra.ts";
 import { iconSvg, type IconName } from "../media/icon.ts";
-import { inlineStep } from "../../base/reading.ts";
+import { inlineStep } from "../../../lib/base/reading.ts";
 
 export const buttonGroup = rcva(`${inlineRow} items-center gap-0.5`);
 export const buttonGroupItem = rcva(
@@ -65,7 +65,6 @@ export class UiButtonGroup extends LightElement {
   }
 
   private _pick(o: ButtonGroupOption) {
-    if (o.disabled) return;
     if (this.select === "multi") {
       this.values = this._on(o) ? this.values.filter((v) => v !== o.value) : [...this.values, o.value];
       this.dispatchEvent(new CustomEvent("ui-change", { detail: { values: this.values }, bubbles: true }));

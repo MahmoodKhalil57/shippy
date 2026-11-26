@@ -1,5 +1,5 @@
 import { parseSync } from "vite/rolldown/utils";
-import * as algebra from "../../src/components/primitives/layout/algebra.ts";
+import * as algebra from "../../src/styles/algebra.ts";
 import { at, parseClass, type Effect, type Len, type ParsedClass, type Size } from "./tokens.ts";
 
 type AstNode = { type: string; start: number; end: number; [key: string]: unknown };

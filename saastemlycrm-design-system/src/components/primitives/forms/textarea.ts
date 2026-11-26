@@ -3,10 +3,11 @@ import { html } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { live } from "lit/directives/live.js";
-import { LightElement, uid, type Renderable } from "../../base/light-element.ts";
-import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
-import { tiles } from "../layout/algebra.ts";
-import { fieldsetField, type FieldsetVariants } from "./fieldset.ts";
+import { LightElement, type Renderable } from "../../base/light-element.ts";
+import { uid } from "../../../lib/base/uid.ts";
+import { rcva, responsiveBoolean, type Responsive } from "../../../lib/base/variants.ts";
+import { tiles } from "../../../styles/algebra.ts";
+import { fieldLabels, fieldsetField, legendLabel, type FieldsetVariants } from "./fieldset.ts";
 import { label as labelRecipe } from "./label.ts";
 
 export const textarea = rcva("textarea min-w-0", {
@@ -132,7 +133,15 @@ export class UiTextarea extends LightElement {
       ?disabled=${this.disabled}
       ?required=${this.required}
       ?readonly=${this.readonly}
-      aria-label=${ifDefined(!this.label && !this.legend ? (this.ariaLabelText ?? this.placeholder) : undefined)}
+      aria-label=${ifDefined(
+        this.ariaLabelText ??
+          (this.label || this.legend || fieldLabels(this, this.inputId) ? undefined : this.placeholder),
+      )}
+      aria-labelledby=${ifDefined(
+        this.ariaLabelText
+          ? undefined
+          : legendLabel({ legend: this.legend, label: this.label, controlId: this.inputId }),
+      )}
       @input=${(e: Event) => (this.value = (e.target as HTMLTextAreaElement).value)}
     ></textarea>`;
 

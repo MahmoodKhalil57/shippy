@@ -3,7 +3,9 @@ import path from "node:path";
 import { formatViolations, widthViolations } from "./layout-proof/check.ts";
 import { booleanBindings, recipeVariants, responsiveSafelist, responsiveTokens } from "./recipes.ts";
 
-export default function componentCss(options: { dir?: string; reference?: string; scan?: string[] } = {}) {
+export default function componentCss(
+  options: { dir?: string; reference?: string; scan?: string[]; styled?: string[] } = {},
+) {
   let root = "";
   let componentsDir = "";
   let referenceFile = "";
@@ -34,12 +36,13 @@ export default function componentCss(options: { dir?: string; reference?: string
   const allTokens = () => new Set([...tokensByFile.values()].flatMap((t) => [...t]));
   const tokenKey = () => [...allTokens()].sort().join(" ");
 
+  let styled = new Set<string>();
   const isComponentModule = (file: string) => {
+    if (styled.has(path.normalize(file))) return true;
     const rel = path.relative(componentsDir, file);
     if (!rel || rel.startsWith("..") || path.isAbsolute(rel)) return false;
-    const parts = rel.split(path.sep);
-    const name = parts[parts.length - 1];
-    return parts[0] !== "base" && name.endsWith(".ts") && name !== "index.ts" && !name.endsWith(".d.ts");
+    const name = path.basename(rel);
+    return name.endsWith(".ts") && name !== "index.ts" && !name.endsWith(".d.ts") && !name.endsWith(".test.ts");
   };
 
   return {
@@ -52,6 +55,7 @@ export default function componentCss(options: { dir?: string; reference?: string
       referenceFile = path.resolve(config.root, options.reference ?? "src/styles/reference.css");
       scanDirs = (options.scan ?? ["src"]).map((d) => path.resolve(config.root, d));
       primitivesDir = path.join(componentsDir, "primitives");
+      styled = new Set((options.styled ?? []).map((f) => path.normalize(path.resolve(config.root, f))));
     },
 
     buildStart() {
@@ -86,7 +90,11 @@ export default function componentCss(options: { dir?: string; reference?: string
       const clean = source.split("?")[0];
       if (!clean.endsWith(SUFFIX)) return null;
       let file: string;
-      if (path.isAbsolute(clean) && path.normalize(clean).startsWith(componentsDir)) {
+      const own = path.normalize(clean);
+      if (
+        path.isAbsolute(clean) &&
+        (own.startsWith(componentsDir) || styled.has(own.slice(0, -SUFFIX.length) + ".ts"))
+      ) {
         file = clean;
       } else if (clean.startsWith("/@fs/")) {
         file = clean.slice("/@fs".length).replace(/^\/([A-Za-z]:)/, "$1");
@@ -111,11 +119,11 @@ export default function componentCss(options: { dir?: string; reference?: string
       if (!tokensByFile.size) for (const d of scanDirs) scanDir(d);
       const source = readFileSync(tsFile, "utf8");
       const primitives = path.join(componentsDir, "primitives");
-      if (path.normalize(tsFile).startsWith(primitives) && path.basename(tsFile) !== "algebra.ts") {
+      if (path.normalize(tsFile).startsWith(primitives)) {
         const violations = widthViolations(source, tsFile);
         if (violations.length)
           throw new Error(
-            `Layout proof: ${posix(path.relative(componentsDir, tsFile))} decides widths outside the layout algebra (src/components/primitives/layout/algebra.ts):
+            `Layout proof: ${posix(path.relative(componentsDir, tsFile))} decides widths outside the layout algebra (src/styles/algebra.ts):
 ${formatViolations(posix(path.relative(componentsDir, tsFile)), violations)}`,
           );
       }

@@ -2,11 +2,21 @@ import { html, nothing } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { keyed } from "lit/directives/keyed.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
+import { rcva } from "../../../lib/base/variants.ts";
 import { iconButton } from "../actions/icon-button.ts";
-import { fixed, floatingFit, floatingHeight, inset, padEnd, padStart, row, rowFill, text } from "../layout/algebra.ts";
+import {
+  fixed,
+  floatingFit,
+  floatingHeight,
+  inset,
+  padEnd,
+  padStart,
+  row,
+  rowFill,
+  text,
+} from "../../../styles/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
-import { m as t } from "../../../i18n/index.ts";
+import { m as t } from "../../../lib/i18n/index.ts";
 
 export const snackbar = rcva(
   `${row} ${inset["4"]} pointer-events-none fixed inset-x-0 top-auto bottom-[calc(var(--space-900)+var(--space-100))] z-[65] m-0 justify-center overflow-visible border-0 bg-transparent py-0 md:bottom-10`,
@@ -60,7 +70,8 @@ export class UiSnackbar extends LightElement {
   @state() private _shown: Message | null = null;
   @state() private _leaving: Message | null = null;
   private _next = 0;
-  private _timer?: ReturnType<typeof setTimeout>;
+  /** The dismissal timer: an effect-less Web Animation whose `finished` promise ends the message's lifetime. */
+  #timer?: Animation;
 
   push(message: Renderable, options: SnackbarOptions = {}): number {
     const id = ++this._next;
@@ -68,24 +79,34 @@ export class UiSnackbar extends LightElement {
     this._leaving = null;
     this._shown = { id, message, ...options };
     if (before) this.dispatchEvent(new CustomEvent("ui-close", { detail: { id: before.id }, bubbles: true }));
-    this._arm();
+    this._arm(this._shown);
     return id;
   }
 
   dismiss(id = this._shown?.id) {
     const m = this._shown;
     if (!m || m.id !== id) return;
-    clearTimeout(this._timer);
+    this.#stop();
     this._shown = null;
     this._leaving = m;
     this.dispatchEvent(new CustomEvent("ui-close", { detail: { id }, bubbles: true }));
   }
 
-  private _arm() {
-    clearTimeout(this._timer);
-    const m = this._shown;
-    const ms = m ? lifetime(m) : 0;
-    if (m && ms > 0) this._timer = setTimeout(() => this.dismiss(m.id), ms);
+  #stop = () => {
+    this.#timer?.cancel();
+    this.#timer = undefined;
+  };
+
+  private _arm(m: Message) {
+    this.#stop();
+    const ms = lifetime(m);
+    if (ms <= 0 || !this.isConnected) return;
+    const timer = this.animate([], { duration: ms });
+    this.#timer = timer;
+    timer.finished.then(
+      () => this.#timer === timer && this.dismiss(m.id),
+      () => undefined,
+    );
   }
 
   private _act(m: Message) {
@@ -109,19 +130,22 @@ export class UiSnackbar extends LightElement {
   connectedCallback() {
     super.connectedCallback();
     window.addEventListener("keydown", this._onKey);
+    if (this._shown) {
+      this._arm(this._shown);
+      this.requestUpdate();
+    }
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
     window.removeEventListener("keydown", this._onKey);
-    clearTimeout(this._timer);
+    this.#stop();
   }
 
   #raised = 0;
 
   protected updated() {
-    const box = this.querySelector<HTMLElement>("[data-snackbar]");
-    if (!box || typeof box.showPopover !== "function") return;
+    const box = this.querySelector<HTMLElement>("[data-snackbar]")!;
     const open = box.matches(":popover-open");
     if (!(this._shown ?? this._leaving)) {
       if (open) box.hidePopover();
@@ -139,10 +163,10 @@ export class UiSnackbar extends LightElement {
     return html`<div
       class=${snackbarBody({ leaving })}
       ?inert=${leaving}
-      @pointerenter=${leaving ? undefined : () => clearTimeout(this._timer)}
-      @pointerleave=${leaving ? undefined : () => this._arm()}
-      @focusin=${leaving ? undefined : () => clearTimeout(this._timer)}
-      @focusout=${leaving ? undefined : () => this._arm()}
+      @pointerenter=${leaving ? undefined : this.#stop}
+      @pointerleave=${leaving ? undefined : () => this._arm(m)}
+      @focusin=${leaving ? undefined : this.#stop}
+      @focusout=${leaving ? undefined : () => this._arm(m)}
       @keydown=${(e: KeyboardEvent) => e.key === "Escape" && this.dismiss(m.id)}
       @transitionend=${leaving ? (e: Event) => e.target === e.currentTarget && (this._leaving = null) : undefined}
       @transitioncancel=${leaving ? (e: Event) => e.target === e.currentTarget && (this._leaving = null) : undefined}

@@ -1,10 +1,10 @@
 import type { VariantProps } from "class-variance-authority";
 import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import { m } from "../../../i18n/index.ts";
+import { m } from "../../../lib/i18n/index.ts";
 import { LightElement } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
-import { inlineRow } from "../layout/algebra.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { inlineRow } from "../../../styles/algebra.ts";
 
 export const badge = rcva(`${inlineRow} items-center justify-center rounded-full align-middle tabular-nums`, {
   variants: {

@@ -1,12 +1,13 @@
 import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import { keyed } from "lit/directives/keyed.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { LightElement } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
-import { row, rowGrow, stack, text } from "../layout/algebra.ts";
-import { inlineStep } from "../../base/reading.ts";
-import { formatInt } from "../../../i18n/index.ts";
+import { uid } from "../../../lib/base/uid.ts";
+import { groupName } from "./fieldset.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { row, rowGrow, stack, text } from "../../../styles/algebra.ts";
+import { inlineStep } from "../../../lib/base/reading.ts";
+import { formatInt } from "../../../lib/i18n/index.ts";
 
 export const scale = rcva(`${stack} gap-1.5`);
 export const scaleSteps = rcva(`${row} gap-1`);
@@ -35,6 +36,8 @@ export class UiScale extends LightElement {
   @property() low = "";
   @property() high = "";
   @property({ type: Boolean }) disabled = false;
+  @property({ attribute: "aria-label" }) ariaLabelText?: string;
+  @property({ attribute: "input-id" }) inputId = uid("scale");
 
   private _set(n: number) {
     if (this.disabled || n === this.value) return;
@@ -64,8 +67,16 @@ export class UiScale extends LightElement {
   render() {
     const steps = Array.from({ length: Math.max(0, this.max - this.min + 1) }, (_, i) => this.min + i);
     const span = Math.max(1, this.max - this.min);
+    const name = groupName(this, { ariaLabel: this.ariaLabelText, label: this.label, controlId: this.inputId });
     return html`<div class=${scale()}>
-      <div class=${scaleSteps()} role="radiogroup" aria-label=${this.label || nothing} @keydown=${this._key}>
+      <div
+        class=${scaleSteps()}
+        id=${this.inputId}
+        role="radiogroup"
+        aria-label=${name.label ?? nothing}
+        aria-labelledby=${name.labelledby ?? nothing}
+        @keydown=${this._key}
+      >
         ${steps.map((n) => {
           const on = this.value != null && n <= this.value;
           const chosen = n === this.value;
@@ -81,7 +92,7 @@ export class UiScale extends LightElement {
           >
             ${formatInt(n)}
           </button>`;
-          return chosen ? keyed(`chosen-${n}`, step) : step;
+          return step;
         })}
       </div>
       ${this.low || this.high ? html`<div class=${scaleEnds()}><span>${this.low}</span><span>${this.high}</span></div>` : nothing}

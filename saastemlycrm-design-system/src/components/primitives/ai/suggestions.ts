@@ -1,10 +1,10 @@
 import { html } from "lit";
-import { scrollRoom } from "../layout/algebra.ts";
+import { scrollRoom } from "../../../styles/algebra.ts";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
+import { rcva } from "../../../lib/base/variants.ts";
 import { button } from "../actions/button.ts";
-import { m } from "../../../i18n/index.ts";
+import { m } from "../../../lib/i18n/index.ts";
 
 export const suggestions = rcva("", {
   variants: {

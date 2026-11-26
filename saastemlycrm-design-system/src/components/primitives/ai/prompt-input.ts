@@ -1,11 +1,11 @@
 import { html } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
 import { LightElement } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
-import { inset, row, stack, text } from "../layout/algebra.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { inset, row, stack, text } from "../../../styles/algebra.ts";
 import { iconButton } from "../actions/icon-button.ts";
 import { iconSvg } from "../media/icon.ts";
-import { m } from "../../../i18n/index.ts";
+import { m } from "../../../lib/i18n/index.ts";
 
 export const promptInput = rcva(
   `${stack} ${inset["1.5"]} gap-1 rounded-box border border-outline-variant bg-surface py-1.5 transition-[border-color,box-shadow] duration-(--duration-effects) ease-effects has-[>textarea:focus]:border-primary has-[>textarea:focus]:inset-ring has-[>textarea:focus]:inset-ring-primary motion-reduce:transition-none`,

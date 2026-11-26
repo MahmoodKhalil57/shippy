@@ -2,12 +2,12 @@ import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { keyed } from "lit/directives/keyed.js";
 import { styleMap } from "lit/directives/style-map.js";
-import { MINUTE_MS, timeLeft } from "../../base/countdown.ts";
-import { m } from "../../../i18n/index.ts";
+import { MINUTE_MS, timeLeft } from "../../../lib/base/countdown.ts";
+import { m } from "../../../lib/i18n/index.ts";
 import { LightElement } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
+import { rcva } from "../../../lib/base/variants.ts";
 import { iconSvg } from "../media/icon.ts";
-import { inlineRow, row, rowLine, stack, text } from "../layout/algebra.ts";
+import { inlineRow, row, rowLine, stack, text } from "../../../styles/algebra.ts";
 
 export const countdown = rcva(`${stack} relative w-full gap-1`);
 export const countdownList = rcva(`${stack} gap-1`);

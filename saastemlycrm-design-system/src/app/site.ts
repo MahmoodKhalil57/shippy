@@ -1,6 +1,6 @@
-import { api } from "../api/client.ts";
-import type { Doc, Tour } from "../contracts/config.ts";
-import { m } from "../i18n/index.ts";
+import { api } from "../lib/api/client.ts";
+import type { Doc, Tour } from "../lib/contracts/config.ts";
+import { m } from "../lib/i18n/index.ts";
 
 export interface Branding {
   name: string;

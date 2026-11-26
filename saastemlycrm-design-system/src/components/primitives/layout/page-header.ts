@@ -1,10 +1,11 @@
 import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
-import { row, stack, text } from "./algebra.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { row, stack, text } from "../../../styles/algebra.ts";
 import { heading } from "../typography/heading.ts";
 import { skeleton } from "../feedback/skeleton.ts";
+import { m } from "../../../lib/i18n/index.ts";
 
 export const pageHeader = rcva(`${stack} gap-1`);
 export const pageHeaderTitleRow = rcva(`${row} items-center justify-between gap-x-4 gap-y-2`);
@@ -29,7 +30,9 @@ export class UiPageHeader extends LightElement {
       return html`<header class=${pageHeader()} aria-busy="true">
         <p class=${pageHeaderEyebrow()}>${line("32")}</p>
         <div class=${pageHeaderTitleRow()}>
-          <h1 class=${heading({ variant: "page" })}>${line("52")}</h1>
+          <h1 class=${heading({ variant: "page" })}>
+            ${line("52")}<span class="sr-only">${this.heading || m.skeleton_loading()}</span>
+          </h1>
         </div>
         <p class=${pageHeaderSubtitle()}>${line("full")}</p>
         ${this.slotted()}

@@ -4,8 +4,9 @@ import { customElement, property, query } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { live } from "lit/directives/live.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
-import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
-import { fieldsetField, fieldsetLabel, type FieldsetVariants } from "./fieldset.ts";
+import { uid } from "../../../lib/base/uid.ts";
+import { rcva, responsiveBoolean, type Responsive } from "../../../lib/base/variants.ts";
+import { fieldsetField, fieldsetLabel, legendLabel, type FieldsetVariants } from "./fieldset.ts";
 
 export const checkbox = rcva("checkbox", {
   variants: {
@@ -53,6 +54,7 @@ export class UiCheckbox extends LightElement {
   @property({ attribute: "field-surface" }) fieldSurface: FieldsetVariants["surface"];
   @property({ attribute: "field-width" }) fieldWidth: FieldsetVariants["width"];
   @property({ attribute: "aria-label" }) ariaLabelText?: string;
+  @property({ attribute: "input-id" }) inputId = uid("checkbox");
 
   @query("input") input!: HTMLInputElement;
 
@@ -68,7 +70,9 @@ export class UiCheckbox extends LightElement {
 
   render() {
     const text = this.label || (this.hasContent ? this.slotted() : "");
+    const textId = `${this.inputId}-text`;
     const box = html`<input
+      id=${this.inputId}
       type="checkbox"
       class=${checkbox({ color: this.color, size: this.size, validator: this.validator })}
       name=${ifDefined(this.name)}
@@ -77,12 +81,17 @@ export class UiCheckbox extends LightElement {
       .indeterminate=${live(this.indeterminate)}
       ?disabled=${this.disabled}
       ?required=${this.required}
-      aria-label=${ifDefined(text ? undefined : this.ariaLabelText)}
+      aria-label=${ifDefined(this.ariaLabelText)}
+      aria-labelledby=${ifDefined(
+        this.ariaLabelText || text ? undefined : legendLabel({ legend: this.legend, controlId: this.inputId }),
+      )}
+      aria-describedby=${ifDefined(this.ariaLabelText && text ? textId : undefined)}
       @change=${this._onChange}
     />`;
+    const caption = html`<span id=${textId}>${text}</span>`;
     const control = text
       ? html`<label class=${fieldsetLabel({ control: true })}>
-          ${this.labelStart ? text : nothing} ${box} ${this.labelStart ? nothing : text}
+          ${this.labelStart ? caption : nothing} ${box} ${this.labelStart ? nothing : caption}
         </label>`
       : box;
     return fieldsetField(
@@ -90,6 +99,7 @@ export class UiCheckbox extends LightElement {
         legend: this.legend,
         hint: this.hint,
         validatorHint: this.validatorHint,
+        controlId: this.inputId,
         surface: this.fieldSurface,
         width: this.fieldWidth,
       },

@@ -1,12 +1,12 @@
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
-import { formatInt, m } from "../../../i18n/index.ts";
+import { formatInt, m } from "../../../lib/i18n/index.ts";
 import { LightElement } from "../../base/light-element.ts";
-import { motion } from "../../base/motion-queue.ts";
-import { rcva } from "../../base/variants.ts";
-import { fixed, fixedWidth, row, rowFill, rowGrow, rowLine, stack, text, tiles } from "../layout/algebra.ts";
-import { cellCounts, foldParts, percentOf, percentText, type Slot } from "./visual-math.ts";
+import { motion } from "../../../lib/base/motion-queue.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { fixed, fixedWidth, row, rowFill, rowGrow, rowLine, stack, text, tiles } from "../../../styles/algebra.ts";
+import { cellCounts, foldParts, percentOf, percentText, type Slot } from "../../../lib/base/visual-math.ts";
 
 export const waffle = rcva(`${row} w-full items-center gap-4`);
 export const waffleGrid = rcva(`${tiles["2"]} ${stack} gap-0.5 rounded-xs`);
@@ -34,28 +34,29 @@ export const waffleReading = rcva(`${stack} gap-0.5`);
 export const waffleValue = rcva(`${text.label} text-title-md tabular-nums text-on-surface`);
 export const waffleCaption = rcva(`${text.label} line-clamp-2 text-label-md text-on-surface-variant`);
 export const waffleLegend = rcva(`${stack} gap-0.5`);
-export const waffleItem = rcva(
-  `${row} items-center gap-2 rounded-field px-1 py-0.5 ${text.label} text-body-sm [transition:opacity_var(--duration-short4)_var(--ease-standard)]`,
+export const waffleItem = rcva(`${row} items-center gap-2 rounded-field px-1 py-0.5 ${text.label} text-body-sm`, {
+  variants: {
+    link: { true: "cursor-pointer hover:underline", false: "" },
+  },
+});
+/** Focusing a part dims the other parts' marks; legend text keeps full contrast. */
+export const waffleDot = rcva(
+  `${fixed["2.5"]} rounded-xs [transition:opacity_var(--duration-short4)_var(--ease-standard)]`,
   {
     variants: {
-      dim: { true: "opacity-50", false: "" },
-      link: { true: "cursor-pointer hover:underline", false: "" },
+      dim: { true: "opacity-30", false: "" },
+      slot: {
+        "0": "bg-chart-1",
+        "1": "bg-chart-2",
+        "2": "bg-chart-3",
+        "3": "bg-chart-4",
+        "4": "bg-chart-5",
+        "5": "bg-chart-6",
+        muted: "bg-chart-muted",
+      },
     },
   },
 );
-export const waffleDot = rcva(`${fixed["2.5"]} rounded-xs`, {
-  variants: {
-    slot: {
-      "0": "bg-chart-1",
-      "1": "bg-chart-2",
-      "2": "bg-chart-3",
-      "3": "bg-chart-4",
-      "4": "bg-chart-5",
-      "5": "bg-chart-6",
-      muted: "bg-chart-muted",
-    },
-  },
-});
 export const waffleLabel = rcva(`${rowLine} text-on-surface`);
 export const waffleAmount = rcva(`${text.label} tabular-nums text-on-surface`);
 export const waffleShare = rcva(`${fixedWidth["10"]} ${text.label} text-end tabular-nums text-on-surface-variant`);
@@ -95,12 +96,16 @@ export class UiWaffle extends LightElement {
     }
   }
 
+  get #max() {
+    return Number.isFinite(this.max) ? this.max : 100;
+  }
+
   #drawn(): Drawn[] {
     const given = this.parts?.length ? this.parts : [{ label: this.label || this.caption, value: this.value }];
     const folded = foldParts(given);
     const counts = cellCounts(
       folded.map((f) => f.part.value),
-      this.max,
+      this.#max,
       CELLS,
     );
     return folded.map((f, i) => ({ ...f.part, slot: f.slot, cells: counts[i]! }));
@@ -114,7 +119,7 @@ export class UiWaffle extends LightElement {
     const drawn = this.#drawn();
     const many = !!this.parts?.length;
     const sum = drawn.reduce((t, p) => t + p.value, 0);
-    const whole = Math.max(sum, this.max) || 1;
+    const whole = Math.max(sum, this.#max) || 1;
     const share = (v: number) => percentText(percentOf(v, whole) ?? 0);
     const owner: number[] = drawn.flatMap((p, i) => Array.from({ length: p.cells }, () => i));
     while (owner.length < CELLS) owner.push(-1);
@@ -124,7 +129,7 @@ export class UiWaffle extends LightElement {
       : many
         ? this.valueText || share(sum)
         : this.valueText || share(this.value);
-    const caption = active ? `${active.label} · ${share(active.value)}` : this.caption;
+    const caption = active ? [active.label, share(active.value)].filter(Boolean).join(" · ") : this.caption;
     const grid = html`${Array.from(
       { length: 10 },
       (_, r) =>
@@ -154,9 +159,9 @@ export class UiWaffle extends LightElement {
               role="meter"
               tabindex="0"
               aria-label=${this.label || this.caption || m.waffle_label()}
-              aria-valuenow=${this.value}
+              aria-valuenow=${Number.isFinite(this.value) ? this.value : 0}
               aria-valuemin="0"
-              aria-valuemax=${this.max}
+              aria-valuemax=${this.#max}
               aria-valuetext=${
                 this.caption
                   ? m.waffle_reading({ value: this.valueText || share(this.value), caption: this.caption })
@@ -178,11 +183,12 @@ export class UiWaffle extends LightElement {
           many
             ? html`<ul class=${waffleLegend()} aria-label=${this.label || nothing}>
                 ${drawn.map((p, i) => {
-                  const body = html`<span class=${waffleDot({ slot: p.slot })}></span>
+                  const dim = this._active >= 0 && this._active !== i;
+                  const body = html`<span class=${waffleDot({ slot: p.slot, dim })}></span>
                     <span class=${waffleLabel()}>${p.label}</span>
                     <span class=${waffleAmount()}>${p.valueText ?? formatInt(p.value)}</span>
                     <span class=${waffleShare()}>${share(p.value)}</span>`;
-                  const cls = waffleItem({ dim: this._active >= 0 && this._active !== i, link: !!p.href });
+                  const cls = waffleItem({ link: !!p.href });
                   const on = () => this.#set(i);
                   const off = () => this.#set(-1);
                   return html`<li>

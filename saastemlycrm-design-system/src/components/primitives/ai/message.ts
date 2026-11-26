@@ -1,11 +1,11 @@
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { LightElement } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
-import { inlineRow, row, text } from "../layout/algebra.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { inlineRow, row, text } from "../../../styles/algebra.ts";
 import { iconButton } from "../actions/icon-button.ts";
 import { iconSvg, type IconName } from "../media/icon.ts";
-import { m } from "../../../i18n/index.ts";
+import { m } from "../../../lib/i18n/index.ts";
 
 export const message = rcva("group/message flex flex-col gap-1", {
   variants: {
@@ -58,7 +58,9 @@ export class UiMessage extends LightElement {
     try {
       await navigator.clipboard.writeText(this.copyText);
       this._copied = true;
-      setTimeout(() => (this._copied = false), 2000);
+      const shown = this.animate([], { duration: 2000 });
+      const reset = () => (this._copied = false);
+      shown.finished.then(reset, reset);
     } catch {}
   }
 

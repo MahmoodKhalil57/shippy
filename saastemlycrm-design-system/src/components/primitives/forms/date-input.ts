@@ -2,10 +2,10 @@ import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { live } from "lit/directives/live.js";
 import { LightElement } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
-import { inlineRow, row, stack, text } from "../layout/algebra.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { inlineRow, row, stack, text } from "../../../styles/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
-import { intl, m } from "../../../i18n/index.ts";
+import { intl, m } from "../../../lib/i18n/index.ts";
 
 export const dateInput = rcva(`${stack} gap-2`);
 export const dateInputField = rcva("input w-full tabular-nums");
@@ -21,7 +21,6 @@ export const dateInputSaid = rcva(
 
 const DAY = 86_400_000;
 const isoDay = (d: Date) => d.toISOString().slice(0, 10);
-const pad = (n: number) => String(n).padStart(2, "0");
 
 export function daysBetween(today: string, day: string): number {
   return Math.round(
@@ -127,5 +126,3 @@ declare global {
     "ui-date-input": UiDateInput;
   }
 }
-
-export { pad as _pad };

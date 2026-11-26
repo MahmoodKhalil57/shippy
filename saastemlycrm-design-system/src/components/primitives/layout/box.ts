@@ -1,10 +1,12 @@
 import type { VariantProps } from "class-variance-authority";
-import { backdrop, clipRoom, scrollRoom } from "../layout/algebra.ts";
+import { backdrop, clipRoom, scrollRoom } from "../../../styles/algebra.ts";
 import { customElement, property } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
+import { nothing } from "lit";
 import { html, literal, type StaticValue } from "lit/static-html.js";
 import { LightElement } from "../../base/light-element.ts";
-import { rcva, responsiveBoolean, type Responsive } from "../../base/variants.ts";
+import { scrollFocus } from "../../base/scroll-focus.ts";
+import { rcva, responsiveBoolean, type Responsive } from "../../../lib/base/variants.ts";
 
 export const box = rcva("", {
   variants: {
@@ -123,6 +125,8 @@ export class UiBox extends LightElement {
   @property({ type: Boolean }) backdrop = false;
   @property() basis?: string;
   @property({ type: Boolean }) grow = false;
+  /** Names the box as a region while it scrolls (overflow or max-height), so keyboard users know what they scroll. */
+  @property() label?: string;
 
   render() {
     const tag = BOX_TAGS[this.as] ?? BOX_TAGS.div;
@@ -142,7 +146,11 @@ export class UiBox extends LightElement {
       basis: !!this.basis,
       grow: this.basis ? this.grow : undefined,
     });
-    return html`<${tag} class=${cls} style=${styleMap(this.basis ? { "--box-basis": this.basis } : {})}
+    const scrolls = this.overflow === "auto" || this.overflow === "x-auto" || !!this.maxHeight;
+    return html`<${tag}
+      class=${cls}
+      style=${styleMap(this.basis ? { "--box-basis": this.basis } : {})}
+      ${scrolls ? scrollFocus({ label: this.label }) : nothing}
       >${this.content}</${tag}
     >`;
   }

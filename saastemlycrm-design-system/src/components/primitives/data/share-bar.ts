@@ -1,12 +1,12 @@
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
-import { formatInt } from "../../../i18n/index.ts";
+import { formatInt } from "../../../lib/i18n/index.ts";
 import { LightElement } from "../../base/light-element.ts";
-import { motion } from "../../base/motion-queue.ts";
-import { rcva } from "../../base/variants.ts";
-import { fixed, inlineRow, row, rowLine, stack, text } from "../layout/algebra.ts";
-import { foldParts, percentText, sharePercents, type Slot } from "./visual-math.ts";
+import { motion } from "../../../lib/base/motion-queue.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { fixed, inlineRow, row, rowLine, stack, text } from "../../../styles/algebra.ts";
+import { foldParts, percentText, sharePercents, type Slot } from "../../../lib/base/visual-math.ts";
 
 export const shareBar = rcva(`${stack} w-full gap-1.5`);
 export const shareBarHead = rcva(`${row} items-baseline gap-x-2`);
@@ -33,27 +33,31 @@ export const shareBarSegment = rcva(
 );
 export const shareBarLegend = rcva(`${row} items-center gap-x-3 gap-y-0.5`);
 export const shareBarChip = rcva(
-  `${inlineRow} items-center gap-1.5 rounded-field px-1 py-0.5 ${text.label} text-body-sm [transition:opacity_var(--duration-short4)_var(--ease-standard)]`,
+  `${inlineRow} items-center gap-1.5 rounded-field px-1 py-0.5 ${text.label} text-body-sm`,
   {
     variants: {
-      dim: { true: "opacity-50", false: "" },
       link: { true: "cursor-pointer hover:underline", false: "" },
     },
   },
 );
-export const shareBarDot = rcva(`${fixed["2.5"]} rounded-full`, {
-  variants: {
-    slot: {
-      "0": "bg-chart-1",
-      "1": "bg-chart-2",
-      "2": "bg-chart-3",
-      "3": "bg-chart-4",
-      "4": "bg-chart-5",
-      "5": "bg-chart-6",
-      muted: "bg-chart-muted",
+/** Focusing a part dims the other parts' marks; legend text keeps full contrast. */
+export const shareBarDot = rcva(
+  `${fixed["2.5"]} rounded-full [transition:opacity_var(--duration-short4)_var(--ease-standard)]`,
+  {
+    variants: {
+      dim: { true: "opacity-30", false: "" },
+      slot: {
+        "0": "bg-chart-1",
+        "1": "bg-chart-2",
+        "2": "bg-chart-3",
+        "3": "bg-chart-4",
+        "4": "bg-chart-5",
+        "5": "bg-chart-6",
+        muted: "bg-chart-muted",
+      },
     },
   },
-});
+);
 export const shareBarName = rcva(`${text.label} text-on-surface`);
 export const shareBarAmount = rcva(`${text.label} tabular-nums text-on-surface`);
 export const shareBarShare = rcva(`${text.label} tabular-nums text-on-surface-variant`);
@@ -124,11 +128,11 @@ export class UiShareBar extends LightElement {
       </div>
       <ul class=${shareBarLegend()} aria-label=${this.label || nothing}>
         ${parts.map((p, i) => {
-          const body = html`<span class=${shareBarDot({ slot: p.slot })}></span>
+          const body = html`<span class=${shareBarDot({ slot: p.slot, dim: dim(i) })}></span>
             <span class=${shareBarName()}>${p.label}</span>
             <span class=${shareBarAmount()}>${p.valueText ?? formatInt(p.value)}</span>
             <span class=${shareBarShare()}>${percentText(p.share)}</span>`;
-          const cls = shareBarChip({ dim: dim(i), link: !!p.href });
+          const cls = shareBarChip({ link: !!p.href });
           const on = () => this.#set(i);
           const off = () => this.#set(-1);
           return html`<li>

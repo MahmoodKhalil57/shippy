@@ -1,11 +1,11 @@
 import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
-import { inset, row, rowFill, stack, text } from "../layout/algebra.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { inset, row, rowFill, stack, text } from "../../../styles/algebra.ts";
 import { button } from "../actions/button.ts";
 import { iconSvg } from "../media/icon.ts";
-import { m } from "../../../i18n/index.ts";
+import { m } from "../../../lib/i18n/index.ts";
 
 export const confirmation = rcva(`${stack} ${inset["3"]} ${text.label} gap-2 rounded-box border py-3 text-body-md`, {
   variants: {

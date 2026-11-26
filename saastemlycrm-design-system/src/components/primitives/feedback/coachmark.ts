@@ -1,13 +1,13 @@
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
-import { inlineStart } from "../../base/inline-start.ts";
+import { inlineStart } from "../../../lib/base/inline-start.ts";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
-import { floating, floatingHeight, pad, row, stack, text } from "../layout/algebra.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { floating, floatingHeight, pad, row, stack, text } from "../../../styles/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
-import { inlineStep } from "../../base/reading.ts";
-import { m } from "../../../i18n/index.ts";
+import { inlineStep } from "../../../lib/base/reading.ts";
+import { m } from "../../../lib/i18n/index.ts";
 
 export const coachmark = rcva("contents");
 export const coachmarkSpot = rcva(
@@ -41,6 +41,8 @@ export class UiCoachmark extends LightElement {
   @property({ attribute: false }) target: Element | null = null;
   @property() eyebrow: Renderable = "";
   @property() heading: Renderable = "";
+  /** The current step's body; when set it replaces the children, so each step can bring its own text. */
+  @property() body: Renderable = "";
   @property({ type: Number }) step = 1;
   @property({ type: Number }) total = 1;
   @property({ type: Boolean }) busy = false;
@@ -165,9 +167,13 @@ export class UiCoachmark extends LightElement {
           <span>${this.eyebrow}</span>
         </div>
         <div class=${coachmarkHeading()}>${this.heading}</div>
-        <div class=${coachmarkBody()}>${this.content}</div>
+        <div class=${coachmarkBody()}>${this.body ? this.body : this.content}</div>
         <div class=${coachmarkFooter()}>
-          <div class=${coachmarkProgress()} aria-label=${m.coachmark_step({ step: this.step, total: this.total })}>
+          <div
+            class=${coachmarkProgress()}
+            role="img"
+            aria-label=${m.coachmark_step({ step: this.step, total: this.total })}
+          >
             ${Array.from(
               { length: this.total },
               (_, i) =>

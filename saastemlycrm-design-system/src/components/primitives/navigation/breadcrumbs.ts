@@ -2,9 +2,9 @@ import type { VariantProps } from "class-variance-authority";
 import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
-import { inlineRow, text } from "../layout/algebra.ts";
-import { m } from "../../../i18n/index.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { inlineRow, text } from "../../../styles/algebra.ts";
+import { m } from "../../../lib/i18n/index.ts";
 
 export const breadcrumbs = rcva(
   `${text.label} breadcrumbs ms-0 overflow-visible [&>ul]:flex-wrap [&>ul]:ps-0 [&>ul]:whitespace-normal [&>ul>li]:max-w-full [&>ul>li]:[overflow-wrap:break-word]`,

@@ -1,13 +1,13 @@
 import type { VariantProps } from "class-variance-authority";
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { rowsFor, type TileSize } from "../../base/board.ts";
+import { rowsFor, type TileSize } from "../../../lib/base/board.ts";
 import { floating as float } from "../../base/floating.ts";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
+import { rcva } from "../../../lib/base/variants.ts";
 import { button } from "../actions/button.ts";
 import { iconSvg } from "../media/icon.ts";
-import { m } from "../../../i18n/index.ts";
+import { m } from "../../../lib/i18n/index.ts";
 import { badge, type BadgeVariants } from "../data/badge.ts";
 import { skeleton } from "../feedback/skeleton.ts";
 import {
@@ -21,13 +21,15 @@ import {
   scrollRoom,
   stack,
   text,
-} from "../layout/algebra.ts";
+  tiles,
+} from "../../../styles/algebra.ts";
+import { scrollFocus } from "../../base/scroll-focus.ts";
 import { card, cardBody, cardHeader, cardHeadingGroup, cardTitle, cardTrailing } from "./card.ts";
 
-export const tile = rcva("h-full min-h-0", {
+export const tile = rcva("h-full min-h-0 [[data-board-tile]_&]:w-full", {
   variants: {
     bare: { true: `flex flex-col ${clipRoom}`, false: "" },
-    size: { s: "", m: "", l: "", full: "" },
+    size: { s: tiles["6"], m: tiles["12"], l: tiles["18"], full: "w-full" },
     kind: { stats: "", text: "", card: "", table: "", list: "", chart: "", entries: "" },
   },
 });
@@ -104,14 +106,14 @@ export class UiTile extends LightElement {
   #contentHeight = 0;
   #resize = new ResizeObserver((entries) => {
     for (const e of entries) {
-      const height = e.borderBoxSize?.[0]?.blockSize ?? e.contentRect.height;
+      const height = e.borderBoxSize[0]!.blockSize;
       const el = e.target as HTMLElement;
       if (el.hasAttribute("data-tile-root")) {
         this.#rootHeight = height;
         if (!this.loading && height > 0)
           this.dispatchEvent(new CustomEvent("ui-tile-height", { detail: { height }, bubbles: true }));
       } else if (el.hasAttribute("data-tile-content")) this.#contentHeight = height;
-      else this.#bodyHeight = e.contentBoxSize?.[0]?.blockSize ?? e.contentRect.height;
+      else this.#bodyHeight = e.contentBoxSize[0]!.blockSize;
     }
     this._measure();
   });
@@ -206,6 +208,7 @@ export class UiTile extends LightElement {
               faded: this._over && !this._open,
             })}
             data-tile-body
+            ${scrollFocus({ label: typeof this.heading === "string" ? this.heading : undefined })}
           >
             ${content}
           </div>
@@ -237,7 +240,7 @@ function scrollerOf(el: Element): HTMLElement {
     }
     at = at.parentElement ?? ((at.getRootNode() as ShadowRoot).host || null);
   }
-  return (document.scrollingElement as HTMLElement | null) ?? document.documentElement;
+  return document.scrollingElement as HTMLElement;
 }
 
 let anchors = 0;
@@ -251,7 +254,6 @@ export class UiTileArrange extends LightElement {
   @state() private _lift = false;
   #drag?: {
     kind: "move" | "resize";
-    axis: "xy" | "x" | "y";
     id: number;
     x: number;
     y: number;
@@ -262,12 +264,8 @@ export class UiTileArrange extends LightElement {
     frame?: number;
   };
 
-  #box() {
-    return this.querySelector<HTMLElement>(":scope > div");
-  }
-
   #rtl() {
-    return getComputedStyle(this.#box() ?? document.documentElement).direction === "rtl" ? -1 : 1;
+    return getComputedStyle(this.querySelector(":scope > div")!).direction === "rtl" ? -1 : 1;
   }
 
   #emit(phase: TileDrag["phase"], e: { clientX: number; clientY: number }) {
@@ -276,8 +274,8 @@ export class UiTileArrange extends LightElement {
       phase,
       x: e.clientX,
       y: e.clientY,
-      dx: d.axis === "y" ? 0 : (e.clientX - d.x) * (d.kind === "resize" ? this.#rtl() : 1),
-      dy: d.axis === "x" ? 0 : e.clientY - d.y,
+      dx: (e.clientX - d.x) * (d.kind === "resize" ? this.#rtl() : 1),
+      dy: e.clientY - d.y,
     };
     this.dispatchEvent(new CustomEvent(d.kind === "move" ? "ui-drag" : "ui-resize", { detail, bubbles: true }));
   }
@@ -292,21 +290,20 @@ export class UiTileArrange extends LightElement {
     const fromKeys = e.detail === 0;
     if (!this.#pressed && !fromKeys) return;
     this.#pressed = false;
-    const menu = this.#menu();
-    if (!menu) return;
+    const menu = this.#menu()!;
     if (fromKeys) menu.togglePopover();
     else if (!this.#wasOpen) menu.showPopover();
   };
 
-  #down(kind: "move" | "resize", e: PointerEvent, axis: "xy" | "x" | "y" = "xy") {
-    if (kind === "move") this.#wasOpen = !!this.#menu()?.matches(":popover-open");
+  #down(kind: "move" | "resize", e: PointerEvent) {
+    if (kind === "move") this.#wasOpen = this.#menu()!.matches(":popover-open");
     if (e.button !== 0 || !e.isPrimary || this.#drag) return;
     const handle = e.currentTarget as HTMLElement;
     try {
       handle.setPointerCapture(e.pointerId);
     } catch {}
     const at = { clientX: e.clientX, clientY: e.clientY };
-    this.#drag = { kind, axis, id: e.pointerId, x: e.clientX, y: e.clientY, handle, started: false, last: at };
+    this.#drag = { kind, id: e.pointerId, x: e.clientX, y: e.clientY, handle, started: false, last: at };
     e.preventDefault();
     window.addEventListener("keydown", this.#escape, true);
   }
@@ -328,9 +325,8 @@ export class UiTileArrange extends LightElement {
   };
 
   #scroll = () => {
-    const d = this.#drag;
-    if (!d?.started || !d.scroller) return;
-    const s = d.scroller;
+    const d = this.#drag!;
+    const s = d.scroller!;
     const page = s === document.scrollingElement || s === document.documentElement;
     const r = page ? { top: 0, bottom: innerHeight } : s.getBoundingClientRect();
     const y = d.last.clientY;
@@ -355,15 +351,14 @@ export class UiTileArrange extends LightElement {
   };
 
   #escape = (e: KeyboardEvent) => {
-    if (e.key !== "Escape" || !this.#drag) return;
+    if (e.key !== "Escape") return;
     e.preventDefault();
     e.stopPropagation();
-    this.#finish("cancel", this.#drag.last);
+    this.#finish("cancel", this.#drag!.last);
   };
 
   #finish(phase: "end" | "cancel", e: { clientX: number; clientY: number }) {
-    const d = this.#drag;
-    if (!d) return;
+    const d = this.#drag!;
     window.removeEventListener("keydown", this.#escape, true);
     if (d.frame !== undefined) cancelAnimationFrame(d.frame);
     d.handle.removeAttribute("data-dragging");

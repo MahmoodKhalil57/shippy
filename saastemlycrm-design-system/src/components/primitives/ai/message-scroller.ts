@@ -1,10 +1,11 @@
 import { html, nothing } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { LightElement } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
+import { scrollFocus } from "../../base/scroll-focus.ts";
+import { rcva } from "../../../lib/base/variants.ts";
 import { iconButton } from "../actions/icon-button.ts";
 import { iconSvg } from "../media/icon.ts";
-import { m } from "../../../i18n/index.ts";
+import { m } from "../../../lib/i18n/index.ts";
 
 export const messageScroller = rcva("relative flex min-h-0 flex-1 flex-col");
 export const messageScrollerViewport = rcva(
@@ -50,11 +51,9 @@ export class UiMessageScroller extends LightElement {
   };
 
   protected firstUpdated() {
-    const content = this.querySelector("[data-content]");
-    if (content) {
-      this.#resize.observe(content);
-      this.#mutations.observe(content, { childList: true, subtree: true, characterData: true });
-    }
+    const content = this.querySelector("[data-content]")!;
+    this.#resize.observe(content);
+    this.#mutations.observe(content, { childList: true, subtree: true, characterData: true });
     this.scrollToEnd("instant");
   }
 
@@ -72,6 +71,7 @@ export class UiMessageScroller extends LightElement {
         role="log"
         aria-live="polite"
         aria-busy=${this.busy ? "true" : "false"}
+        ${scrollFocus()}
         @scroll=${this._onScroll}
       >
         <div class=${messageScrollerContent()} data-content>

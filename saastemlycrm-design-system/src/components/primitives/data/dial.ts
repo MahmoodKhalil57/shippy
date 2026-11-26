@@ -1,11 +1,11 @@
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
-import { formatInt, m } from "../../../i18n/index.ts";
+import { formatInt, m } from "../../../lib/i18n/index.ts";
 import { LightElement } from "../../base/light-element.ts";
-import { motion } from "../../base/motion-queue.ts";
-import { rcva } from "../../base/variants.ts";
-import { row, stack, text, tiles } from "../layout/algebra.ts";
+import { motion } from "../../../lib/base/motion-queue.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { row, stack, text, tiles } from "../../../styles/algebra.ts";
 import {
   fraction,
   indexAt,
@@ -16,7 +16,7 @@ import {
   type DrawnZone,
   type Zone,
   type ZoneTone,
-} from "./visual-math.ts";
+} from "../../../lib/base/visual-math.ts";
 
 export const dial = rcva(`${stack} w-full items-center gap-1`);
 export const dialFace = rcva(

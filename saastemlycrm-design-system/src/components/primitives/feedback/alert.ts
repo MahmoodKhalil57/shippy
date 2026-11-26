@@ -2,11 +2,11 @@ import type { VariantProps } from "class-variance-authority";
 import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
-import { booleanAttribute, rcva } from "../../base/variants.ts";
+import { booleanAttribute, rcva } from "../../../lib/base/variants.ts";
 import { iconButton } from "../actions/icon-button.ts";
-import { fixed, inset, row, rowFill, stack, text } from "../layout/algebra.ts";
+import { fixed, inset, row, rowFill, stack, text } from "../../../styles/algebra.ts";
 import { iconSvg, type IconName } from "../media/icon.ts";
-import { m } from "../../../i18n/index.ts";
+import { m } from "../../../lib/i18n/index.ts";
 
 export const alertBox = rcva("w-full");
 export const alert = rcva(`${row} ${inset["4"]} items-start gap-x-3 gap-y-2 rounded-box py-3`, {

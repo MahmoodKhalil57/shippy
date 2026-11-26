@@ -3,10 +3,10 @@ import { customElement, property } from "lit/decorators.js";
 import { keyed } from "lit/directives/keyed.js";
 import { live } from "lit/directives/live.js";
 import { LightElement } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
-import { fixed, fixedWidth, inlineRow, text } from "../layout/algebra.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { fixed, fixedWidth, inlineRow, text } from "../../../styles/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
-import { m } from "../../../i18n/index.ts";
+import { m } from "../../../lib/i18n/index.ts";
 
 export const stepper = rcva(`${inlineRow} items-center gap-1 rounded-full bg-surface-container-highest p-1`);
 export const stepperButton = rcva(

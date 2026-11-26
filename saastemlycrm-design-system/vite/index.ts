@@ -12,11 +12,12 @@ const pkg = fileURLToPath(new URL("..", import.meta.url));
 
 export function designSystem(options: { scan?: string[] } = {}) {
   return [
-    i18n(pkg),
+    i18n(pkg, "src/lib/i18n/paraglide"),
     componentCss({
       dir: path.join(pkg, "src/components"),
       reference: path.join(pkg, "src/styles/reference.css"),
       scan: [path.join(pkg, "src"), ...(options.scan ?? [])],
+      styled: [path.join(pkg, "src/styles/algebra.ts")],
     }),
     tailwindcss(),
     scopedInvalidation(),

@@ -1,9 +1,9 @@
 import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { LightElement } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
-import { row, rowEnd } from "../layout/algebra.ts";
-import { inlineStep } from "../../base/reading.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { row, rowEnd } from "../../../styles/algebra.ts";
+import { inlineStep } from "../../../lib/base/reading.ts";
 
 export const toolbar = rcva(`${row} items-center gap-2`);
 export const toolbarStart = rcva(`${row} min-w-0 items-center gap-2`);
@@ -26,11 +26,8 @@ export class UiToolbar extends LightElement {
     );
     const i = items.indexOf(from);
     if (i < 0) return;
-    const next = items[(i + step + items.length) % items.length];
-    if (next) {
-      e.preventDefault();
-      next.focus();
-    }
+    e.preventDefault();
+    items[(i + step + items.length) % items.length]!.focus();
   }
 
   render() {

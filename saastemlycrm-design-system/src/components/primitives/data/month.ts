@@ -1,13 +1,13 @@
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
-import { intl, intlTag, locale, m } from "../../../i18n/index.ts";
-import { isRtl } from "../../base/reading.ts";
+import { intl, intlTag, locale, m } from "../../../lib/i18n/index.ts";
+import { isRtl } from "../../../lib/base/reading.ts";
 import { LightElement } from "../../base/light-element.ts";
-import { monthWeeks, readMonth, weekdayOrder, type WeekStart } from "../../base/month.ts";
-import { motion } from "../../base/motion-queue.ts";
-import { rcva } from "../../base/variants.ts";
-import { fixed, grid, row, rowLine, stack, text } from "../layout/algebra.ts";
+import { monthWeeks, readMonth, weekdayOrder, type WeekStart } from "../../../lib/base/month.ts";
+import { motion } from "../../../lib/base/motion-queue.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { fixed, grid, row, rowLine, stack, text } from "../../../styles/algebra.ts";
 
 export const month = rcva(`${stack} w-full gap-2`);
 export const monthGrid = rcva(`${grid.month}`);
@@ -37,6 +37,7 @@ export const monthDot = rcva(`${fixed["2"]} rounded-full`, {
     },
   },
 });
+export const monthSr = rcva("sr-only");
 export const monthMore = rcva(`${text.label} text-label-sm leading-none text-on-surface-variant`);
 export const monthAgenda = rcva(`${stack} gap-1`);
 export const monthAgendaHead = rcva(`${text.label} text-title-sm text-on-surface`);
@@ -113,15 +114,28 @@ export class UiMonth extends LightElement {
     }
   }
 
+  #format(style: "long" | "short") {
+    return intl.date({ weekday: "short", day: "numeric", month: style, timeZone: "UTC" });
+  }
+
   #name(year: number, mon: number, d: number, style: "long" | "short") {
-    return intl
-      .date({ weekday: "short", day: "numeric", month: style, timeZone: "UTC" })
-      .format(Date.UTC(year, mon - 1, d));
+    return this.#format(style).format(Date.UTC(year, mon - 1, d));
+  }
+
+  /** The day's name split around its visible number, so the button is named by its own content. */
+  #label(year: number, mon: number, d: number, count: number) {
+    const parts = this.#format("long").formatToParts(Date.UTC(year, mon - 1, d));
+    const day = parts.map((p) => p.value).join("");
+    const full = count ? m.month_day_due({ day, count }) : day;
+    const at = parts.findIndex((p) => p.type === "day");
+    const shown = parts[at]!.value;
+    const start =
+      Math.max(0, full.indexOf(day)) + parts.slice(0, Math.max(0, at)).reduce((n, p) => n + p.value.length, 0);
+    return { before: full.slice(0, start), shown, after: full.slice(start + shown.length) };
   }
 
   #key = async (e: KeyboardEvent) => {
-    const days = readMonth(this.month)?.days ?? 0;
-    if (!days) return;
+    const days = readMonth(this.month)!.days;
     const rtl = isRtl(this);
     const step: Record<string, number> = {
       ArrowLeft: rtl ? 1 : -1,
@@ -157,15 +171,13 @@ export class UiMonth extends LightElement {
           week.map((d) => {
             if (d === null) return html`<span aria-hidden="true"></span>`;
             const on = byDay.get(d) ?? [];
-            const day = this.#name(mo.year, mo.month, d, "long");
-            const name = on.length ? m.month_day_due({ day, count: on.length }) : day;
+            const name = this.#label(mo.year, mo.month, d, on.length);
             return html`<button
               type="button"
               class=${monthDay({ chosen: d === this._chosen, today: d === today, busy: on.length > 0 })}
               style=${styleMap({ "--c": String(r) })}
               data-day=${d}
               tabindex=${d === this._focus ? 0 : -1}
-              aria-label=${name}
               aria-pressed=${d === this._chosen ? "true" : "false"}
               aria-current=${d === today ? "date" : nothing}
               @click=${() => {
@@ -173,7 +185,11 @@ export class UiMonth extends LightElement {
                 this._focus = d;
               }}
             >
-              <span aria-hidden="true">${d}</span>
+              <span
+                ><span class=${monthSr()}>${name.before}</span>${name.shown}<span class=${monthSr()}
+                  >${name.after}</span
+                ></span
+              >
               <span class=${monthDots()} aria-hidden="true">
                 ${on.slice(0, DOTS).map((e) => html`<span class=${monthDot({ tone: e.tone ?? "none" })}></span>`)}
                 ${on.length > DOTS ? html`<span class=${monthMore()}>+${on.length - DOTS}</span>` : nothing}

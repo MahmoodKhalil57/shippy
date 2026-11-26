@@ -3,8 +3,8 @@ import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { atBreakpoint, floating as float, place, placementOf } from "../../base/floating.ts";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
-import { rcva, type Breakpoint } from "../../base/variants.ts";
-import { floatingFit, floatingHeight, floatMotion, inlineRow, stack, text } from "../layout/algebra.ts";
+import { rcva, type Breakpoint } from "../../../lib/base/variants.ts";
+import { floatingFit, floatingHeight, floatMotion, inlineRow, stack, text } from "../../../styles/algebra.ts";
 
 export const tooltipHost = rcva(inlineRow);
 export const tooltipPanel = rcva(
@@ -33,7 +33,6 @@ const sharedTip = () => {
   if (tipEl) return tipEl;
   tipEl = document.createElement("div");
   tipEl.popover = "hint";
-  if (tipEl.popover !== "hint") tipEl.popover = "manual";
   tipEl.setAttribute("role", "tooltip");
   tipEl.dataset.floating = "";
   tipEl.id = "ui-tip";
@@ -42,14 +41,12 @@ const sharedTip = () => {
 };
 
 function showTip(target: HTMLElement, fromPointer: boolean) {
-  const words = target.dataset.tip;
-  if (!words) return;
   const el = sharedTip();
   if (tipFor === target && el.matches(":popover-open")) return;
   hideTip();
   tipFor = target;
   el.className = tooltipPanel({ variant: "plain", delayed: fromPointer });
-  el.textContent = words;
+  el.textContent = target.dataset.tip!;
   el.showPopover();
   stopTip = place(target, el, { placement: (target.dataset.tipSide as Side | undefined) ?? "top", gap: 6 });
 }
@@ -61,28 +58,25 @@ function hideTip() {
   if (tipEl?.matches(":popover-open")) tipEl.hidePopover();
 }
 
-const tipTarget = (e: Event) =>
-  e.target instanceof Element ? e.target.closest<HTMLElement>("[data-tip]:not([data-tip=''])") : null;
+const tipTarget = (e: Event) => (e.target as Element).closest<HTMLElement>("[data-tip]:not([data-tip=''])");
 
-if (typeof document !== "undefined") {
-  document.addEventListener("pointerover", (e) => {
-    if (e.pointerType === "touch") return;
-    const t = tipTarget(e);
-    if (t) showTip(t, true);
-  });
-  document.addEventListener("pointerout", (e) => {
-    if (!tipFor) return;
-    const to = e.relatedTarget as Node | null;
-    if (!to || !tipFor.contains(to)) hideTip();
-  });
-  document.addEventListener("focusin", (e) => {
-    const t = tipTarget(e);
-    if (t && e.target instanceof Element && e.target.matches(":focus-visible")) showTip(t, false);
-  });
-  document.addEventListener("focusout", () => hideTip());
-  document.addEventListener("pointerdown", () => hideTip(), true);
-  document.addEventListener("keydown", (e) => e.key === "Escape" && hideTip());
-}
+document.addEventListener("pointerover", (e) => {
+  if (e.pointerType === "touch") return;
+  const t = tipTarget(e);
+  if (t) showTip(t, true);
+});
+document.addEventListener("pointerout", (e) => {
+  if (!tipFor) return;
+  const to = e.relatedTarget as Node | null;
+  if (!to || !tipFor.contains(to)) hideTip();
+});
+document.addEventListener("focusin", (e) => {
+  const t = tipTarget(e);
+  if (t && (e.target as Element).matches(":focus-visible")) showTip(t, false);
+});
+document.addEventListener("focusout", () => hideTip());
+document.addEventListener("pointerdown", () => hideTip(), true);
+document.addEventListener("keydown", (e) => e.key === "Escape" && hideTip());
 
 let ids = 0;
 
@@ -108,8 +102,8 @@ export class UiTooltip extends LightElement {
   #show(byPointer: boolean) {
     if (this.from && !atBreakpoint(this.from)) return;
     this._byPointer = byPointer;
-    const panel = this._panel;
-    if (panel && !panel.matches(":popover-open")) panel.showPopover();
+    const panel = this._panel!;
+    if (!panel.matches(":popover-open")) panel.showPopover();
   }
   #hide = () => {
     const panel = this._panel;
@@ -121,12 +115,29 @@ export class UiTooltip extends LightElement {
     this.#hide();
   };
 
-  protected updated() {
+  #children = new MutationObserver(() => this.#describe());
+
+  connectedCallback() {
+    super.connectedCallback();
+    this.#children.observe(this, { childList: true, subtree: true });
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.#children.disconnect();
+  }
+
+  /** Points the trigger's aria-describedby at the tip once the trigger exists, including inside a nested component that renders later. */
+  #describe() {
     const target = this.querySelector<HTMLElement>(
       "[data-tip-host] :is(a, button, input, select, textarea, [tabindex]):not([role=tooltip] *)",
     );
-    if (target && !target.getAttribute("aria-describedby")?.includes(this._id))
+    if (target && !target.getAttribute("aria-describedby")?.split(/\s+/).includes(this._id))
       target.setAttribute("aria-describedby", `${target.getAttribute("aria-describedby") ?? ""} ${this._id}`.trim());
+  }
+
+  protected updated() {
+    this.#describe();
   }
 
   render() {

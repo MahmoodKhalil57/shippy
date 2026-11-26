@@ -9,7 +9,7 @@ import "../../primitives/layout/flex.ts";
 import "../../primitives/actions/button-group.ts";
 import "../../primitives/media/icon.ts";
 import "../../primitives/typography/text.ts";
-import { m } from "../../../i18n/index.ts";
+import { m } from "../../../lib/i18n/index.ts";
 
 export interface PickerColumn {
   key: string;
@@ -38,7 +38,7 @@ export class UiColumnPicker extends LightElement {
   private _move(i: number, by: -1 | 1) {
     const keys = this.columns.map((c) => c.key);
     const j = i + by;
-    if (!this.columns[j] || this.columns[j].required) return;
+    if (this.columns[j]!.required) return;
     [keys[i], keys[j]] = [keys[j]!, keys[i]!];
     this._emit(this.hiddenColumns, keys);
   }
@@ -120,7 +120,10 @@ export class UiColumnPicker extends LightElement {
                   { value: "-1", label: m.column_picker_density_compact() },
                   { value: "-2", label: m.column_picker_density_dense() },
                 ]}
-                @ui-change=${(e: CustomEvent<{ value: string }>) => this._density(e.detail.value as "0" | "-1" | "-2")}
+                @ui-change=${(e: CustomEvent<{ value: string }>) => {
+                  e.stopPropagation();
+                  this._density(e.detail.value as "0" | "-1" | "-2");
+                }}
               ></ui-button-group>
             </ui-flex>`
       }

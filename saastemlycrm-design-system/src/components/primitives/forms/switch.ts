@@ -4,8 +4,9 @@ import { customElement, property, query } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { live } from "lit/directives/live.js";
 import { LightElement, type Renderable } from "../../base/light-element.ts";
-import { rcva } from "../../base/variants.ts";
-import { fieldsetField, fieldsetLabel } from "./fieldset.ts";
+import { uid } from "../../../lib/base/uid.ts";
+import { rcva } from "../../../lib/base/variants.ts";
+import { fieldsetField, fieldsetLabel, legendLabel } from "./fieldset.ts";
 
 export const switchControl = rcva("toggle toggle-primary", {
   variants: {
@@ -27,6 +28,7 @@ export class UiSwitch extends LightElement {
   @property() legend: Renderable = "";
   @property() hint: Renderable = "";
   @property({ attribute: "aria-label" }) ariaLabelText?: string;
+  @property({ attribute: "input-id" }) inputId = uid("switch");
 
   @query("input") input!: HTMLInputElement;
 
@@ -36,7 +38,9 @@ export class UiSwitch extends LightElement {
 
   render() {
     const text = this.label || (this.hasContent ? this.slotted() : "");
+    const textId = `${this.inputId}-text`;
     const input = html`<input
+      id=${this.inputId}
       type="checkbox"
       role="switch"
       class=${switchControl({ size: this.size })}
@@ -44,15 +48,20 @@ export class UiSwitch extends LightElement {
       .checked=${live(this.checked)}
       aria-checked=${this.checked ? "true" : "false"}
       ?disabled=${this.disabled}
-      aria-label=${ifDefined(text ? undefined : this.ariaLabelText)}
+      aria-label=${ifDefined(this.ariaLabelText)}
+      aria-labelledby=${ifDefined(
+        this.ariaLabelText || text ? undefined : legendLabel({ legend: this.legend, controlId: this.inputId }),
+      )}
+      aria-describedby=${ifDefined(this.ariaLabelText && text ? textId : undefined)}
       @change=${(e: Event) => (this.checked = (e.target as HTMLInputElement).checked)}
     />`;
+    const caption = html`<span id=${textId}>${text}</span>`;
     const control = text
       ? html`<label class=${fieldsetLabel({ control: true })}>
-          ${this.labelStart ? text : nothing} ${input} ${this.labelStart ? nothing : text}
+          ${this.labelStart ? caption : nothing} ${input} ${this.labelStart ? nothing : caption}
         </label>`
       : input;
-    return fieldsetField({ legend: this.legend, hint: this.hint }, control);
+    return fieldsetField({ legend: this.legend, hint: this.hint, controlId: this.inputId }, control);
   }
 }
 
