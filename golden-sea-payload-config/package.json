@@ -17,6 +17,7 @@
   },
   "scripts": {
     "mock:dev": "vp dev --mode mock",
+    "mock:explode": "MOCK_EXPLODE_WATCH=1 vp dev --mode mock --port 5288 --strictPort",
     "mock:build": "tsc -p tsconfig.json && vpx build-locales.ts",
     "mock:preview": "vp preview --mode mock",
     "mock:publish": "vpx publish.ts mock",

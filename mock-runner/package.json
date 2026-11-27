@@ -16,18 +16,26 @@
     "check": "vp check"
   },
   "dependencies": {
-    "qs-esm": "^8.0.2"
+    "qs-esm": "^8.0.2",
+    "saastemlycrm-design-system": "link:saastemlycrm-design-system"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
     "payload": "3.94.0",
+    "playwright": "^1.65.1",
     "typescript": "~7.0.2",
     "vite": "npm:@voidzero-dev/vite-plus-core@8.3.8000",
     "vite-plus": "1.7.0"
   },
   "peerDependencies": {
     "payload": "3.94.0",
+    "playwright": "^1.65.1",
     "vite-plus": "1.7.0"
+  },
+  "peerDependenciesMeta": {
+    "playwright": {
+      "optional": true
+    }
   },
   "overrides": {
     "vite": "npm:@voidzero-dev/vite-plus-core@8.3.8000"

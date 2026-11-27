@@ -94,6 +94,7 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(api.handle(event.request));
     return;
   }
+  if (url.pathname === `${base}explode` || /^explode[/.]/.test(url.pathname.slice(base.length))) return;
   const isDashboardPage =
     event.request.mode === "navigate" &&
     url.pathname.startsWith(base) &&
