@@ -13,3 +13,6 @@
 [submodule "runners/mock-runner"]
 	path = runners/mock-runner
 	url = https://github.com/MahmoodKhalil57/mock-runner.git
+[submodule "projects/omnisaas"]
+	path = projects/omnisaas
+	url = https://github.com/MahmoodKhalil57/omnisaas.git
