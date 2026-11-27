@@ -1,0 +1,15 @@
+[submodule "projects/goldensea"]
+	path = projects/goldensea
+	url = https://github.com/MahmoodKhalil57/goldensea.git
+[submodule "packages/saastemlycrm-design-system"]
+	path = packages/saastemlycrm-design-system
+	url = https://github.com/MahmoodKhalil57/saastemlycrm-design-system.git
+[submodule "runners/test-runner"]
+	path = runners/test-runner
+	url = https://github.com/MahmoodKhalil57/test-runner.git
+[submodule "runners/cf-runner"]
+	path = runners/cf-runner
+	url = https://github.com/MahmoodKhalil57/cf-runner.git
+[submodule "runners/mock-runner"]
+	path = runners/mock-runner
+	url = https://github.com/MahmoodKhalil57/mock-runner.git
