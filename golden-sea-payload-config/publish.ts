@@ -17,7 +17,7 @@ const TARGETS = {
   mock: { script: "mock:build", out: "mock", branch: "mock-build" },
   cf: { script: "cf:build", out: "dist", branch: "cf-build" },
 } as const;
-const PACKAGES = ["saastemlycrm-design-system", "mock-runner", "cf-runner", "golden-sea-payload-config"];
+const PACKAGES = ["saastemlycrm-design-system", "mock-runner", "cf-runner", "test-runner", "golden-sea-payload-config"];
 const PROJECT = "golden-sea-payload-config";
 
 const which = process.argv[2];
@@ -78,10 +78,15 @@ try {
     const dir = path.join(top, pkg);
     if (!existsSync(path.join(dir, "package.json"))) throw new Error(`${pkg} isn't in ${short}`);
     run("bun", ["install"], dir);
+    const manifest = JSON.parse(readFileSync(path.join(dir, "package.json"), "utf8")) as {
+      dependencies?: Record<string, string>;
+      devDependencies?: Record<string, string>;
+    };
+    const declared = { ...manifest.dependencies, ...manifest.devDependencies };
     for (const dep of PACKAGES) {
+      if (dep === pkg || !(dep in declared)) continue;
       const at = path.join(dir, "node_modules", dep);
-      if (dep === pkg || !existsSync(at)) continue;
-      if (lstatSync(at).isSymbolicLink() || lstatSync(at).isDirectory()) rmSync(at, { recursive: true, force: true });
+      if (existsSync(at) || lstatSync(at, { throwIfNoEntry: false })) rmSync(at, { recursive: true, force: true });
       symlinkSync(path.join(top, dep), at, "junction");
     }
   }

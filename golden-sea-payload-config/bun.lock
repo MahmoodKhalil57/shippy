@@ -16,6 +16,7 @@
         "@vitest/coverage-v8": "5.1.0",
         "payload": "3.94.0",
         "playwright": "^1.65.1",
+        "test-runner": "link:test-runner",
         "typescript": "~7.0.2",
         "vite": "npm:@voidzero-dev/vite-plus-core@8.3.8000",
         "vite-plus": "1.7.0",
@@ -845,6 +846,8 @@
     "strtok3": ["strtok3@10.8.0", "", { "dependencies": { "@tokenizer/token": "^0.3.0" } }, "sha512-e6bW3fD6V01DPmcbLfNtn0cjsiHvTKS/hivgbzqYMfHb/nLes4QQ0H5QBxlkPQayF4xv08AvlSgptGwN86Eemw=="],
 
     "supports-color": ["supports-color@10.2.2", "", {}, "sha512-SS+jx45GF1QjgEXQx4NJZV9ImqmO2NPz5FNsIHrsDjh2YsHnawpan7SNQ1o8NuhrbHZy9AZhIoCUiCeaW/C80g=="],
+
+    "test-runner": ["test-runner@link:test-runner", {}],
 
     "thread-stream": ["thread-stream@3.2.0", "", { "dependencies": { "real-require": "^0.2.0" } }, "sha512-zLBvqpwr4Esa0kRjcrzGU6zL25lePWaCLMx0RQFrmteozIfeNdaMLpG5U7PeHzvlFkAWaRKA9/KVW4F60iB+qw=="],
 
