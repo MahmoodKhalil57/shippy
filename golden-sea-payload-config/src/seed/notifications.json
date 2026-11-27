@@ -164,12 +164,12 @@
     "user": "sa",
     "kind": "Update",
     "title": {
-      "en": "Your margin exception is with Karim Balbaa",
-      "ar": "استثناء الهامش الخاص بك لدى كريم بلباع"
+      "en": "Your quotation is with Karim Balbaa for approval",
+      "ar": "عرض السعر الخاص بك لدى كريم بلباع للاعتماد"
     },
     "detail": {
-      "en": "Quote v2 to Mare Nostrum · 12.4% vs 15% minimum",
-      "ar": "العرض v2 إلى Mare Nostrum · 12.4% مقابل حد أدنى 15%"
+      "en": "Quote GS-Q-0137 v2 to Mare Nostrum Shipping",
+      "ar": "عرض السعر GS-Q-0137 v2 إلى Mare Nostrum Shipping"
     },
     "href": "/collections/approvals/ap-margin-0137",
     "at": "2026-11-17T08:41:00.000Z",

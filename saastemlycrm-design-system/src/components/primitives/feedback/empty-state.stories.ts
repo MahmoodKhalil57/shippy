@@ -85,6 +85,14 @@ export const LoadingStatus = meta.story({
   },
 });
 
+export const LoadingIsBusy = meta.story({
+  name: "Loading marks its region busy",
+  args: { loading: true, heading: "", description: "" },
+  play: async ({ canvasElement }) => {
+    await expect(canvasElement.querySelector("ui-empty-state > div")).toHaveAttribute("aria-busy", "true");
+  },
+});
+
 export const SmallSize = meta.story({
   name: "Small size",
   args: { size: "sm", heading: "No contacts match this filter", description: "", icon: "users" },

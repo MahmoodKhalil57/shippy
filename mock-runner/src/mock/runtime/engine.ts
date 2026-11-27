@@ -481,6 +481,34 @@ export class Engine {
     return meta;
   }
 
+  private async guardQuery(slug: string, where: Where | undefined, req: MockRequest, override: boolean) {
+    if (override || !where) return;
+    const paths: string[] = [];
+    const walk = (w: Where) => {
+      for (const [key, value] of Object.entries(w)) {
+        if (key === "and" || key === "or") for (const inner of value as Where[]) walk(inner);
+        else paths.push(key);
+      }
+    };
+    walk(where);
+    const hidden: string[] = [];
+    for (const path of paths) {
+      let fields = this.fields(slug);
+      for (const part of path.split(".")) {
+        const f = dataFields(fields).find((x) => x.name === part);
+        if (!f) break;
+        if (f.access?.read && !(await f.access.read({ req, doc: undefined, siblingData: undefined }))) {
+          hidden.push(path);
+          break;
+        }
+        if (f.type !== "group" && f.type !== "array") break;
+        fields = childFields(f);
+      }
+    }
+    if (hidden.length)
+      throw new APIError(`The following paths cannot be queried: ${hidden.join(", ")}`, 400, undefined, "QueryError");
+  }
+
   async find(
     args: Common & {
       collection: string;
@@ -495,6 +523,7 @@ export class Engine {
     const c = this.collection(args.collection);
     const override = args.overrideAccess ?? true;
     const constraint = await this.access(c, "read", req, override);
+    await this.guardQuery(args.collection, args.where, req, override);
     const where: Where | undefined = constraint
       ? args.where
         ? { and: [args.where, constraint] }
@@ -548,6 +577,7 @@ export class Engine {
   async count(args: Common & { collection: string; where?: Where }) {
     const req = this.req(args);
     const constraint = await this.access(this.collection(args.collection), "read", req, args.overrideAccess ?? true);
+    await this.guardQuery(args.collection, args.where, req, args.overrideAccess ?? true);
     const where = constraint ? (args.where ? { and: [args.where, constraint] } : constraint) : args.where;
     const all = await this.store.all(args.collection);
     return { totalDocs: this.select(this.fields(args.collection), all, req, where).length };

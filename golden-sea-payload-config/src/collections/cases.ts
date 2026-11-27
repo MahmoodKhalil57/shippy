@@ -42,7 +42,7 @@ export const STAGES = [
   "Won — PO mismatch",
   "Won — sales order confirmed",
   "Purchasing",
-  "Delivering (drop 1 of 2)",
+  "Delivering",
   "Delivered",
   "Invoiced — partially paid",
   "Customs clearance",
@@ -67,7 +67,7 @@ const STAGE_AR: Record<string, string> = {
   "Won — PO mismatch": "فوز — عدم تطابق أمر الشراء",
   "Won — sales order confirmed": "فوز — تأكيد أمر البيع",
   Purchasing: "قيد الشراء",
-  "Delivering (drop 1 of 2)": "قيد التسليم (الدفعة 1 من 2)",
+  Delivering: "قيد التسليم",
   Delivered: "تم التسليم",
   "Invoiced — partially paid": "مفوتر — مدفوع جزئيًا",
   "Customs clearance": "التخليص الجمركي",
@@ -1729,7 +1729,7 @@ export const Cases: CollectionConfig = {
         "Won — PO mismatch": "error",
         "Won — sales order confirmed": "success",
         Purchasing: "info",
-        "Delivering (drop 1 of 2)": "info",
+        Delivering: "info",
         Delivered: "success",
         "Invoiced — partially paid": "warning",
         "Customs clearance": "info",
@@ -2045,5 +2045,29 @@ export const Cases: CollectionConfig = {
             value: u.id,
           })),
     ),
+    {
+      name: "replyArrivals",
+      type: "json",
+      label: { en: "Supplier replies just in", ar: "ردود الموردين الواردة للتو" },
+      admin: {
+        hidden: true,
+        description: {
+          en: "The supplier replies that arrived last, shown on the case for a short while.",
+          ar: "آخر ردود الموردين الواردة، تظهر على الملف لفترة قصيرة.",
+        },
+      },
+    },
+    {
+      name: "rfqDrafts",
+      type: "json",
+      label: { en: "Supplier RFQ drafts", ar: "مسودات طلبات عروض الموردين" },
+      admin: {
+        hidden: true,
+        description: {
+          en: "The supplier RFQs drafted for this case and not yet sent.",
+          ar: "طلبات عروض الموردين التي صيغت لهذا الملف ولم تُرسل بعد.",
+        },
+      },
+    },
   ],
 };

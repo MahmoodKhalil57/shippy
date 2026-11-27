@@ -7,7 +7,7 @@ import { m } from "../../../lib/i18n/index.ts";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../../lib/base/variants.ts";
 import { iconSvg } from "../media/icon.ts";
-import { inlineRow, row, rowLine, stack, text } from "../../../styles/algebra.ts";
+import { inlineRow, row, rowFill, stack, text } from "../../../styles/algebra.ts";
 
 export const countdown = rcva(`${stack} relative w-full gap-1`);
 export const countdownList = rcva(`${stack} gap-1`);
@@ -15,7 +15,7 @@ export const countdownItem = rcva(`${stack} gap-1 rounded-field px-1 py-1`, {
   variants: { link: { true: "cursor-pointer hover:underline", false: "" } },
 });
 export const countdownHead = rcva(`${row} items-baseline gap-x-2`);
-export const countdownLabel = rcva(`${rowLine} text-body-md text-on-surface`);
+export const countdownLabel = rcva(`${rowFill} truncate text-body-md text-on-surface`);
 export const countdownLeft = rcva(`${inlineRow} ${text.label} items-center gap-1 text-label-lg tabular-nums`, {
   variants: { overdue: { true: "text-error-ink", false: "text-on-surface-variant" } },
 });

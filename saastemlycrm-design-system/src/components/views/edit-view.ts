@@ -125,9 +125,9 @@ export class DashboardEditView extends LightElement {
 
   #readTab = () => {
     if (!this.stateKey) return;
-    const own = (parse(location.search, { ignoreQueryPrefix: true, depth: 3 }) as Record<string, unknown>)[
-      this.stateKey
-    ];
+    const own = (
+      parse(this.dashboard.address().search, { ignoreQueryPrefix: true, depth: 3 }) as Record<string, unknown>
+    )[this.stateKey];
     const tab = own && typeof own === "object" ? (own as { tab?: unknown }).tab : undefined;
     this.urlTab = typeof tab === "string" ? tab : "";
   };
@@ -437,7 +437,7 @@ export class DashboardEditView extends LightElement {
     </ui-flex>`;
   }
 
-  private _hero() {
+  private _hero(level?: 1) {
     if (!this._shows("summary") || !this.doc) return nothing;
     const g = this.globalSlug ? this._p.globalOf(this.globalSlug) : undefined;
     const c = g ? undefined : this._p.collectionOf(this.slug)!;
@@ -498,6 +498,7 @@ export class DashboardEditView extends LightElement {
       .figures=${figures}
       .links=${links.slice(0, 8)}
       .meta=${updated}
+      .level=${level}
     ></ui-record-hero>`;
   }
 
@@ -555,7 +556,7 @@ export class DashboardEditView extends LightElement {
     if (this.loading) return html`<ui-empty-state loading></ui-empty-state>`;
     const g = this.globalSlug ? this._p.globalOf(this.globalSlug) : undefined;
     const c = this.globalSlug ? undefined : this._p.collectionOf(this.slug)!;
-    const isAccount = c?.slug === this._p.userSlug && location.pathname.endsWith("/account");
+    const isAccount = c?.slug === this._p.userSlug && this.dashboard.address().pathname.endsWith("/account");
     const perms = this.access.collections[this.slug];
     const canSave = g
       ? this.access.globals[g.slug]!.update.permission
@@ -612,7 +613,10 @@ export class DashboardEditView extends LightElement {
         slug: g ? g.slug : c!.slug,
         docId: this.docId,
       });
-      return html`<ui-flex direction="col" gap="4">${tabBar}${el ?? nothing}</ui-flex>`;
+      const titled = !!(this.spec as { home?: boolean } | undefined)?.home && this._shows("header");
+      return html`<ui-flex direction="col" gap="4"
+        >${titled ? html`<ui-heading level="1" variant="title-md">${heading}</ui-heading>` : nothing}${tabBar}${el ?? nothing}</ui-flex
+      >`;
     }
     if (active && this.user) {
       const el = viewElement(active.Component, {
@@ -730,7 +734,9 @@ export class DashboardEditView extends LightElement {
           : nothing;
       return html`<ui-form label=${heading} @ui-submit=${() => this._save()}>
           <ui-flex direction="col" gap="5">
-            ${top} ${this._hero()} ${this._stage()} ${tabBar} ${problems} ${this._form(main, readonly)}
+            ${top}
+            ${home && !(this._shows("summary") && this.doc) ? html`<ui-heading level="1" variant="title-md">${heading}</ui-heading>` : nothing}
+            ${this._hero(home ? 1 : undefined)} ${this._stage()} ${tabBar} ${problems} ${this._form(main, readonly)}
             ${hasSide && this._shows("sidebar") ? side : nothing} ${actions}
           </ui-flex>
         </ui-form>

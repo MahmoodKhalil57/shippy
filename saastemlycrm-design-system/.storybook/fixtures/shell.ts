@@ -4,13 +4,13 @@ import type { Doc, MockConfig, Tour } from "../../src/lib/contracts/config.ts";
 import type { Decorator } from "@storybook/web-components-vite";
 import { expect, waitFor } from "storybook/test";
 import { testDashboard, withDashboard, type TestDashboard } from "../dashboard.ts";
+import { place } from "../address.ts";
 import type { DashboardApp } from "../../src/components/shell/app.ts";
 import { frames } from "../../src/lib/dashboard/tiling.ts";
 import type { Access, AiPort, GuideTopic, Site } from "../../src/lib/dashboard/context.ts";
 import type { MemoryData } from "../../src/lib/dashboard/memory.ts";
 import type { SeedUser } from "../../src/lib/dashboard/project.ts";
 import { collectionPage, documentPage, globalPage } from "../../src/lib/widgets/widget.ts";
-import type { Address } from "../../src/lib/shell/agent-tools.ts";
 
 const perm = (permission: boolean) => ({ permission });
 export const crud = (create = true, read = true, update = true, remove = true) => ({
@@ -375,7 +375,6 @@ export interface ShellOptions {
 export interface Shell {
   dashboard: TestDashboard;
   ai: FakeAi;
-  address: () => Address;
 }
 
 export function shell({
@@ -409,13 +408,8 @@ export function shell({
     },
   });
   if (fail) dashboard.data.me = () => Promise.reject(new Error(fail));
-  let here = new URL(at, "http://localhost");
-  dashboard.navigate = (to, replace = false) => {
-    dashboard.navigations.push({ to, replace });
-    here = new URL(dashboard.project.withBase(to), here);
-    window.dispatchEvent(new PopStateEvent("popstate"));
-  };
-  return { dashboard, ai, address: () => ({ pathname: here.pathname, search: here.search }) };
+  place.reset(at);
+  return { dashboard, ai };
 }
 
 export let current: Shell;

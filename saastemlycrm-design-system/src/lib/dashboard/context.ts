@@ -8,7 +8,10 @@ import type { api } from "../api/client.ts";
 import type * as Stores from "../stores/index.ts";
 import type { AssistantInfo, Branding } from "../../app/site.ts";
 import type { Tour } from "../contracts/config.ts";
+import type { Address } from "./address.ts";
 import type { Project } from "./project.ts";
+
+export type { Address };
 
 export type DataPort = typeof api;
 export type Access = Awaited<ReturnType<DataPort["access"]>>;
@@ -49,7 +52,9 @@ export interface Dashboard {
   data: DataPort;
   stores: DashboardStores;
   ai: AiPort;
+  address(): Address;
   navigate(to: string, replace?: boolean): void;
+  back(): void;
   notify(message: string, tone?: Tone, action?: NotifyAction): void;
 }
 

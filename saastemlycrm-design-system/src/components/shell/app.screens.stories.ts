@@ -4,7 +4,7 @@ import { expect, waitFor } from "storybook/test";
 import type { MockConfig } from "../../lib/contracts/config.ts";
 import { widgets } from "../../lib/widgets/widget.ts";
 import "./app.ts";
-import { config, current, ready, withShell } from "../../../.storybook/fixtures/shell.ts";
+import { config, ready, withShell } from "../../../.storybook/fixtures/shell.ts";
 
 const meta = preview.type<{ args: { at: string } }>().meta({
   title: "Shell/App/Screens",
@@ -27,7 +27,7 @@ const meta = preview.type<{ args: { at: string } }>().meta({
       description: "The address the dashboard opens at.",
     },
   },
-  render: () => html`<dashboard-app .address=${current.address}></dashboard-app>`,
+  render: () => html`<dashboard-app></dashboard-app>`,
 });
 
 const ownHome = {

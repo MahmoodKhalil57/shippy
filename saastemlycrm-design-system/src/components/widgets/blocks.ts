@@ -304,6 +304,7 @@ defineBlock("table", (b, ctx) => {
   const columns: TableColumn[] = b.columns.map((c, i) => ({
     key: c.key,
     label: c.label,
+    hideLabel: c.hideLabel,
     align: c.align,
     render: (row) => cell(row[c.key] as Cell, ctx, true),
     supporting: c.supporting ? (row) => supporting(row[c.supporting!] as Cell) : undefined,

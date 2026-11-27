@@ -281,6 +281,17 @@ export const ResizeHandles = meta.story({
   },
 });
 
+export const HandlesInALandmark = meta.story({
+  name: "Resize handles in a landmark",
+  parameters: { canvas: "column", a11y: { config: { rules: [{ id: "region", enabled: true }] } } },
+  play: async ({ canvas }) => {
+    const panes = canvas.getByRole("region", { name: "Pane sizes" });
+    const handles = canvas.getAllByRole("separator");
+    await expect(handles.length).toBe(2);
+    for (const h of handles) await expect(panes).toContainElement(h);
+  },
+});
+
 export const StartsOpen = meta.story({
   name: "Starts open",
   args: { navOpen: true },

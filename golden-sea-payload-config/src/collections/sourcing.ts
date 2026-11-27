@@ -16,8 +16,9 @@ import {
 } from "./shared.ts";
 import { formats, tones, type CollectionSettings } from "saastemlycrm-design-system/contracts";
 import * as link from "../links.ts";
+import { OPEN_RFQ_STATUSES } from "./shared.ts";
 
-export const OPEN_RFQ_STATUSES = ["Sent", "Awaiting reply", "Partial reply", "Clarification needed"];
+export { OPEN_RFQ_STATUSES } from "./shared.ts";
 const REMINDERS = 2;
 
 const AT = { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "UTC" } as const;
@@ -106,6 +107,7 @@ async function historyApproved(req: PayloadRequest): Promise<boolean> {
   return ctx.historyApproved;
 }
 
+export const SOURCING_ROLES = ["supply-chain", "management"];
 const LIVE = { source: { not_equals: "History import" } };
 const NEEDS_REVIEW = { ...LIVE, status: { equals: "Needs review" } };
 const LINKED = { ...LIVE, status: { equals: "Linked" }, "match.case": { exists: true } };
@@ -133,6 +135,7 @@ export const IntakeMessages: CollectionConfig = {
       {
         label: words({ en: "Confirm offer", ar: "تأكيد العرض" }),
         main: true,
+        roles: SOURCING_ROLES,
         when: { ...NEEDS_REVIEW, "match.case": { exists: true } },
         call: review("link", "$row.match.case.id"),
         done: words({
@@ -145,6 +148,7 @@ export const IntakeMessages: CollectionConfig = {
           en: "Link to $item.case.caseId ($item.confidencePct%)",
           ar: "ربط بـ $item.case.caseId ($item.confidencePct%)",
         }),
+        roles: SOURCING_ROLES,
         when: NEEDS_REVIEW,
         each: "candidates",
         call: review("link", "$item.case.id"),
@@ -152,6 +156,7 @@ export const IntakeMessages: CollectionConfig = {
       },
       {
         label: words({ en: "Not related", ar: "غير مرتبطة" }),
+        roles: SOURCING_ROLES,
         when: NEEDS_REVIEW,
         call: review("not-related"),
         done: words({ en: "Marked not related", ar: "عُلّمت غير مرتبطة" }),
@@ -1442,6 +1447,7 @@ export const SupplierRfqs: CollectionConfig = {
     actions: [
       {
         label: words({ en: "Remind now", ar: "ذكّر الآن" }),
+        roles: SOURCING_ROLES,
         when: {
           status: { in: OPEN_RFQ_STATUSES },
           or: [{ reminders: { less_than: 1 } }, { reminders: { exists: false } }],
@@ -1459,6 +1465,7 @@ export const SupplierRfqs: CollectionConfig = {
       },
       {
         label: words({ en: "Remind now", ar: "ذكّر الآن" }),
+        roles: SOURCING_ROLES,
         when: {
           status: { in: OPEN_RFQ_STATUSES },
           reminders: { greater_than_equal: 1 },
@@ -1706,6 +1713,7 @@ export const SupplierRfqs: CollectionConfig = {
         "Awaiting reply": "warning",
         "Partial reply": "warning",
         "Clarification needed": "warning",
+        Escalated: "error",
         Replied: "success",
         "Revised offer received": "success",
         Declined: "neutral",

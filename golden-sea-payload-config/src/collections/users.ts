@@ -139,5 +139,17 @@ export const Users: CollectionConfig = {
         },
       ],
     },
+    {
+      name: "briefingSummarisedAt",
+      type: "date",
+      label: { en: "Briefing summarised again at", ar: "أُعيد تلخيص الملخص في" },
+      admin: {
+        hidden: true,
+        description: {
+          en: "When this person last asked for the morning briefing to be summarised again.",
+          ar: "آخر مرة طلب فيها هذا الشخص إعادة تلخيص ملخص الصباح.",
+        },
+      },
+    },
   ],
 };

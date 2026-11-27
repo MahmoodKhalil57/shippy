@@ -30,7 +30,7 @@ export const action_cash_approved: ((inputs: Action_Cash_ApprovedInputs, options
 /**
 * | output |
 * | --- |
-* | "Call the supplier back on the number on file ({phone}) — never on a number from the request — and confirm the new account with them." |
+* | "Call the supplier back on the number on file ({phone}), never on a number from the request, and confirm the new account with them." |
 *
 */
 export const action_cash_call_back_text: ((inputs: Action_Cash_Call_Back_TextInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Action_Cash_Call_Back_TextInputs, { locale?: "en" | "ar" }, {}>;
@@ -108,7 +108,7 @@ export const action_eta_backorder_in_time: ((inputs: Action_Eta_Backorder_In_Tim
 /**
 * | output |
 * | --- |
-* | "Backorder L{line} ({supplier}, {date}): still late — escalate" |
+* | "Backorder L{line} ({supplier}, {date}): still late. Escalate." |
 *
 */
 export const action_eta_backorder_late: ((inputs: Action_Eta_Backorder_LateInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Action_Eta_Backorder_LateInputs, { locale?: "en" | "ar" }, {}>;
@@ -122,7 +122,7 @@ export const action_eta_from: ((inputs: Action_Eta_FromInputs, options?: { local
 /**
 * | output |
 * | --- |
-* | "Agent email — ETA update" |
+* | "Agent email: ETA update" |
 *
 */
 export const action_eta_heading: ((inputs?: Action_Eta_HeadingInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Action_Eta_HeadingInputs, { locale?: "en" | "ar" }, {}>;
@@ -171,7 +171,7 @@ export const action_history_organise: ((inputs?: Action_History_OrganiseInputs, 
 /**
 * | output |
 * | --- |
-* | "History organised — uncertain items are waiting for you" |
+* | "History organised. Uncertain items are waiting for you" |
 *
 */
 export const action_history_organised: ((inputs?: Action_History_OrganisedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Action_History_OrganisedInputs, { locale?: "en" | "ar" }, {}>;
@@ -472,7 +472,7 @@ export const action_rfqs_simulate: ((inputs?: Action_Rfqs_SimulateInputs, option
 /**
 * | output |
 * | --- |
-* | "Supplier replies are in — offers are on the Compare tab" |
+* | "Supplier replies are in. Offers are on the Compare tab" |
 *
 */
 export const action_rfqs_simulated: ((inputs?: Action_Rfqs_SimulatedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Action_Rfqs_SimulatedInputs, { locale?: "en" | "ar" }, {}>;
@@ -486,8 +486,8 @@ export const api_assistant_and_more: ((inputs: Api_Assistant_And_MoreInputs, opt
 /**
 * | twoPerson | output |
 * | --- | --- |
-* | "yes" | "{title} — {type}, from {from} · approvers {approvers} (two-person rule)" |
-* | * | "{title} — {type}, from {from} · approvers {approvers}" |
+* | "yes" | "{title}: {type}, from {from} · approvers {approvers} (two-person rule)" |
+* | * | "{title}: {type}, from {from} · approvers {approvers}" |
 *
 */
 export const api_assistant_approval_item: ((inputs: Api_Assistant_Approval_ItemInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Assistant_Approval_ItemInputs, { locale?: "en" | "ar" }, {}>;
@@ -732,9 +732,9 @@ export const api_assistant_items_awaiting_approval: ((inputs: Api_Assistant_Item
 /**
 * | extra | output |
 * | --- | --- |
-* | "claim" | "{supplier} — {po} line {line}: {received} of {ordered} received · {claim}" |
-* | "promised" | "{supplier} — {po} line {line}: {received} of {ordered} received · rest promised {promised}" |
-* | * | "{supplier} — {po} line {line}: {received} of {ordered} received" |
+* | "claim" | "{supplier}, {po} line {line}: {received} of {ordered} received · {claim}" |
+* | "promised" | "{supplier}, {po} line {line}: {received} of {ordered} received · rest promised {promised}" |
+* | * | "{supplier}, {po} line {line}: {received} of {ordered} received" |
 *
 */
 export const api_assistant_late_item: ((inputs: Api_Assistant_Late_ItemInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Assistant_Late_ItemInputs, { locale?: "en" | "ar" }, {}>;
@@ -762,7 +762,7 @@ export const api_assistant_margin_by_store: ((inputs: Api_Assistant_Margin_By_St
 /**
 * | output |
 * | --- |
-* | "{month}: gross profit EGP {expected}k expected at quotation, EGP {actual}k actual so far — the gap closes as November's costs are billed." |
+* | "{month}: gross profit EGP {expected}k expected at quotation, EGP {actual}k actual so far. The gap closes as November's costs are billed." |
 *
 */
 export const api_assistant_month_gp: ((inputs: Api_Assistant_Month_GpInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Assistant_Month_GpInputs, { locale?: "en" | "ar" }, {}>;
@@ -811,12 +811,12 @@ export const api_assistant_november_gp: ((inputs: Api_Assistant_November_GpInput
 /**
 * | hasValue | next | output |
 * | --- | --- | --- |
-* | "yes" | "none" | "{name} — {stage}, {value} · no next step planned" |
-* | "yes" | "dated" | "{name} — {stage}, {value} · next: {step} ({due})" |
-* | "yes" | * | "{name} — {stage}, {value} · next: {step}" |
-* | * | "none" | "{name} — {stage} · no next step planned" |
-* | * | "dated" | "{name} — {stage} · next: {step} ({due})" |
-* | * | * | "{name} — {stage} · next: {step}" |
+* | "yes" | "none" | "{name}: {stage}, {value} · no next step planned" |
+* | "yes" | "dated" | "{name}: {stage}, {value} · next: {step} ({due})" |
+* | "yes" | * | "{name}: {stage}, {value} · next: {step}" |
+* | * | "none" | "{name}: {stage} · no next step planned" |
+* | * | "dated" | "{name}: {stage} · next: {step} ({due})" |
+* | * | * | "{name}: {stage} · next: {step}" |
 *
 */
 export const api_assistant_opportunity_item: ((inputs: Api_Assistant_Opportunity_ItemInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Assistant_Opportunity_ItemInputs, { locale?: "en" | "ar" }, {}>;
@@ -877,7 +877,7 @@ export const api_assistant_profit_and_close: ((inputs?: Api_Assistant_Profit_And
 /**
 * | hasBlocker | output |
 * | --- | --- |
-* | "yes" | "{vessel} ({caseId}) {when} — {blocker}" |
+* | "yes" | "{vessel} ({caseId}) {when}, {blocker}" |
 * | * | "{vessel} ({caseId}) {when}" |
 *
 */
@@ -914,22 +914,22 @@ export const api_assistant_refused_hint: ((inputs?: Api_Assistant_Refused_HintIn
 /**
 * | hasBlocker | output |
 * | --- | --- |
-* | "yes" | "{caseId} {vessel} — {stage}, deadline {deadline} · {blocker}" |
-* | * | "{caseId} {vessel} — {stage}, deadline {deadline}" |
+* | "yes" | "{caseId} {vessel}: {stage}, deadline {deadline} · {blocker}" |
+* | * | "{caseId} {vessel}: {stage}, deadline {deadline}" |
 *
 */
 export const api_assistant_risky_item: ((inputs: Api_Assistant_Risky_ItemInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Assistant_Risky_ItemInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "{caseId}: {actual} actual vs {expected} expected — the launch cost more after the ETA moved at short notice." |
+* | "{caseId}: {actual} actual vs {expected} expected. The launch cost more after the ETA moved at short notice." |
 *
 */
 export const api_assistant_settled_margin: ((inputs: Api_Assistant_Settled_MarginInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Assistant_Settled_MarginInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | hasPromise | output |
 * | --- | --- |
-* | "yes" | "PO {po} line {line}, {received} of {ordered} — rest promised {promised}" |
+* | "yes" | "PO {po} line {line}, {received} of {ordered}, rest promised {promised}" |
 * | * | "PO {po} line {line}, {received} of {ordered}" |
 *
 */
@@ -995,9 +995,9 @@ export const api_assistant_summarised_again: ((inputs: Api_Assistant_Summarised_
 /**
 * | hasOnTime | isNew | output |
 * | --- | --- | --- |
-* | "yes" | "yes" | "{name}: replies in {hours} h on average, {onTime}% on time — new supplier, never ordered from." |
+* | "yes" | "yes" | "{name}: replies in {hours} h on average, {onTime}% on time, new supplier, never ordered from." |
 * | "yes" | * | "{name}: replies in {hours} h on average, {onTime}% on time." |
-* | * | "yes" | "{name}: replies in {hours} h on average, no deliveries yet — new supplier, never ordered from." |
+* | * | "yes" | "{name}: replies in {hours} h on average, no deliveries yet, new supplier, never ordered from." |
 * | * | * | "{name}: replies in {hours} h on average, no deliveries yet." |
 *
 */
@@ -1023,12 +1023,12 @@ export const api_assistant_suppliers_summary: ((inputs: Api_Assistant_Suppliers_
 /**
 * | hasDue | remindersPluralExact | remindersPlural | output |
 * | --- | --- | --- | --- |
-* | "yes" | "0" | * | "{supplier} — {reference} {status}, due {due}" |
-* | * | "0" | * | "{supplier} — {reference} {status}" |
-* | "yes" | * | "one" | "{supplier} — {reference} {status}, due {due} ({reminders} reminder)" |
-* | * | * | "one" | "{supplier} — {reference} {status} ({reminders} reminder)" |
-* | "yes" | * | * | "{supplier} — {reference} {status}, due {due} ({reminders} reminders)" |
-* | * | * | * | "{supplier} — {reference} {status} ({reminders} reminders)" |
+* | "yes" | "0" | * | "{supplier}: {reference} {status}, due {due}" |
+* | * | "0" | * | "{supplier}: {reference} {status}" |
+* | "yes" | * | "one" | "{supplier}: {reference} {status}, due {due} ({reminders} reminder)" |
+* | * | * | "one" | "{supplier}: {reference} {status} ({reminders} reminder)" |
+* | "yes" | * | * | "{supplier}: {reference} {status}, due {due} ({reminders} reminders)" |
+* | * | * | * | "{supplier}: {reference} {status} ({reminders} reminders)" |
 *
 */
 export const api_assistant_waiting_item: ((inputs: Api_Assistant_Waiting_ItemInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Assistant_Waiting_ItemInputs, { locale?: "en" | "ar" }, {}>;
@@ -1050,14 +1050,14 @@ export const api_cash_account_owner: ((inputs?: Api_Cash_Account_OwnerInputs, op
 /**
 * | output |
 * | --- |
-* | "{amount} allocated to {number} — balance {balance}." |
+* | "{amount} allocated to {number}. Balance {balance}." |
 *
 */
 export const api_cash_allocated_balance: ((inputs: Api_Cash_Allocated_BalanceInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Cash_Allocated_BalanceInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "{amount} allocated to {number} — paid in full." |
+* | "{amount} allocated to {number}. Paid in full." |
 *
 */
 export const api_cash_allocated_paid: ((inputs: Api_Cash_Allocated_PaidInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Cash_Allocated_PaidInputs, { locale?: "en" | "ar" }, {}>;
@@ -1089,6 +1089,13 @@ export const api_cash_approve_payment_title: ((inputs: Api_Cash_Approve_Payment_
 *
 */
 export const api_cash_bank_change_not_found: ((inputs?: Api_Cash_Bank_Change_Not_FoundInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Cash_Bank_Change_Not_FoundInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "The supplier bill for {number} is on hold. Release the hold before asking for payment approval." |
+*
+*/
+export const api_cash_bill_on_hold: ((inputs: Api_Cash_Bill_On_HoldInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Cash_Bill_On_HoldInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
@@ -1191,7 +1198,14 @@ export const api_cash_match_message: ((inputs: Api_Cash_Match_MessageInputs, opt
 /**
 * | output |
 * | --- |
-* | "No open invoice matches these numbers or this amount — check the remittance by hand." |
+* | "This payment is more than the open balance of {balance} on {number}. Record no more than the open balance." |
+*
+*/
+export const api_cash_more_than_balance: ((inputs: Api_Cash_More_Than_BalanceInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Cash_More_Than_BalanceInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "No open invoice matches these numbers or this amount. Check the remittance by hand." |
 *
 */
 export const api_cash_no_remittance_match: ((inputs?: Api_Cash_No_Remittance_MatchInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Cash_No_Remittance_MatchInputs, { locale?: "en" | "ar" }, {}>;
@@ -1212,7 +1226,7 @@ export const api_cash_pay_detail_matched: ((inputs: Api_Cash_Pay_Detail_MatchedI
 /**
 * | output |
 * | --- |
-* | "Pay {supplier} {amount} — {number}" |
+* | "Pay {supplier} {amount} for {number}" |
 *
 */
 export const api_cash_pay_title: ((inputs: Api_Cash_Pay_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Cash_Pay_TitleInputs, { locale?: "en" | "ar" }, {}>;
@@ -1269,7 +1283,7 @@ export const api_commercial_advance_payment: ((inputs: Api_Commercial_Advance_Pa
 /**
 * | output |
 * | --- |
-* | "Agency pricelist — priced instantly, no supplier RFQ" |
+* | "Agency pricelist: priced instantly, no supplier RFQ" |
 *
 */
 export const api_commercial_agency_flag: ((inputs?: Api_Commercial_Agency_FlagInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Commercial_Agency_FlagInputs, { locale?: "en" | "ar" }, {}>;
@@ -1290,7 +1304,7 @@ export const api_commercial_already_awaiting: ((inputs: Api_Commercial_Already_A
 /**
 * | output |
 * | --- |
-* | "{number} is already {status} — the decision can't be withdrawn." |
+* | "{number} is already {status}, so the decision can't be withdrawn." |
 *
 */
 export const api_commercial_already_cant_withdraw: ((inputs: Api_Commercial_Already_Cant_WithdrawInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Commercial_Already_Cant_WithdrawInputs, { locale?: "en" | "ar" }, {}>;
@@ -1325,25 +1339,17 @@ export const api_commercial_approval_not_found: ((inputs?: Api_Commercial_Approv
 /**
 * | output |
 * | --- |
-* | "Your approval is recorded — {progress}." |
+* | "Your approval is recorded: {progress}." |
 *
 */
 export const api_commercial_approval_recorded: ((inputs: Api_Commercial_Approval_RecordedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Commercial_Approval_RecordedInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "Quote {number} to {customer} — {total}" |
+* | "Quote {number} to {customer}, {total}" |
 *
 */
 export const api_commercial_approval_title: ((inputs: Api_Commercial_Approval_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Commercial_Approval_TitleInputs, { locale?: "en" | "ar" }, {}>;
-/**
-* | hasMargin | output |
-* | --- | --- |
-* | "yes" | "Quote {number} to {customer} — {margin}% margin (min {min}%)" |
-* | * | "Quote {number} to {customer} (min {min}%)" |
-*
-*/
-export const api_commercial_approval_title_margin: ((inputs: Api_Commercial_Approval_Title_MarginInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Commercial_Approval_Title_MarginInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
@@ -1361,14 +1367,14 @@ export const api_commercial_approved_title: ((inputs: Api_Commercial_Approved_Ti
 /**
 * | output |
 * | --- |
-* | "The new bank details are already applied — the decision can't be withdrawn." |
+* | "The new bank details are already applied, so the decision can't be withdrawn." |
 *
 */
 export const api_commercial_bank_applied_cant_withdraw: ((inputs?: Api_Commercial_Bank_Applied_Cant_WithdrawInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Commercial_Bank_Applied_Cant_WithdrawInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "Below {min}% minimum margin — approval exception" |
+* | "Below {min}% minimum margin: approval exception" |
 *
 */
 export const api_commercial_below_min: ((inputs: Api_Commercial_Below_MinInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Commercial_Below_MinInputs, { locale?: "en" | "ar" }, {}>;
@@ -1424,7 +1430,14 @@ export const api_commercial_choose_offer: ((inputs?: Api_Commercial_Choose_Offer
 /**
 * | output |
 * | --- |
-* | "Closed — lost" |
+* | "Closed: expired" |
+*
+*/
+export const api_commercial_closed_expired: ((inputs?: Api_Commercial_Closed_ExpiredInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Commercial_Closed_ExpiredInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Closed: lost" |
 *
 */
 export const api_commercial_closed_lost: ((inputs?: Api_Commercial_Closed_LostInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Commercial_Closed_LostInputs, { locale?: "en" | "ar" }, {}>;
@@ -1474,7 +1487,7 @@ export const api_commercial_correction_sent_status: ((inputs: Api_Commercial_Cor
 /**
 * | output |
 * | --- |
-* | "{rfq} — line {line}: please correct your offer" |
+* | "{rfq}, line {line}: please correct your offer" |
 *
 */
 export const api_commercial_correction_subject: ((inputs: Api_Commercial_Correction_SubjectInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Commercial_Correction_SubjectInputs, { locale?: "en" | "ar" }, {}>;
@@ -1519,7 +1532,7 @@ export const api_commercial_decided_activity: ((inputs: Api_Commercial_Decided_A
 /**
 * | hasNote | output |
 * | --- | --- |
-* | "yes" | "Customer decision on {number}: {decision} — {note}." |
+* | "yes" | "Customer decision on {number}: {decision} ({note})." |
 * | * | "Customer decision on {number}: {decision}." |
 *
 */
@@ -1541,7 +1554,7 @@ export const api_commercial_decision_on_received: ((inputs?: Api_Commercial_Deci
 /**
 * | output |
 * | --- |
-* | "Decision withdrawn — {title} is waiting again" |
+* | "Decision withdrawn. {title} is waiting again." |
 *
 */
 export const api_commercial_decision_withdrawn: ((inputs: Api_Commercial_Decision_WithdrawnInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Commercial_Decision_WithdrawnInputs, { locale?: "en" | "ar" }, {}>;
@@ -1583,7 +1596,7 @@ export const api_commercial_discount_above: ((inputs: Api_Commercial_Discount_Ab
 /**
 * | output |
 * | --- |
-* | "Draft — not sent" |
+* | "Draft, not sent" |
 *
 */
 export const api_commercial_draft_not_sent: ((inputs?: Api_Commercial_Draft_Not_SentInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Commercial_Draft_Not_SentInputs, { locale?: "en" | "ar" }, {}>;
@@ -1597,7 +1610,7 @@ export const api_commercial_due_day: ((inputs: Api_Commercial_Due_DayInputs, opt
 /**
 * | output |
 * | --- |
-* | "{number} emailed to {to} — draft confirmed by {name}." |
+* | "{number} emailed to {to}. Draft confirmed by {name}." |
 *
 */
 export const api_commercial_emailed_activity: ((inputs: Api_Commercial_Emailed_ActivityInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Commercial_Emailed_ActivityInputs, { locale?: "en" | "ar" }, {}>;
@@ -1611,7 +1624,7 @@ export const api_commercial_exact_only: ((inputs: Api_Commercial_Exact_OnlyInput
 /**
 * | output |
 * | --- |
-* | "Expired validity: offer ended {day} — reconfirm" |
+* | "Expired validity: offer ended {day}, reconfirm" |
 *
 */
 export const api_commercial_expired_validity: ((inputs: Api_Commercial_Expired_ValidityInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Commercial_Expired_ValidityInputs, { locale?: "en" | "ar" }, {}>;
@@ -1674,7 +1687,7 @@ export const api_commercial_freight_as_quoted: ((inputs?: Api_Commercial_Freight
 /**
 * | output |
 * | --- |
-* | "An exchange-rate decision takes effect at once — propose a new rate instead." |
+* | "An exchange-rate decision takes effect at once. Propose a new rate instead." |
 *
 */
 export const api_commercial_fx_decision_stands: ((inputs?: Api_Commercial_Fx_Decision_StandsInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Commercial_Fx_Decision_StandsInputs, { locale?: "en" | "ar" }, {}>;
@@ -1758,7 +1771,7 @@ export const api_commercial_line_not_found: ((inputs: Api_Commercial_Line_Not_Fo
 /**
 * | output |
 * | --- |
-* | "Lines {lines} excluded — to follow in a revised quotation" |
+* | "Lines {lines} excluded, to follow in a revised quotation" |
 *
 */
 export const api_commercial_lines_excluded: ((inputs: Api_Commercial_Lines_ExcludedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Commercial_Lines_ExcludedInputs, { locale?: "en" | "ar" }, {}>;
@@ -1772,7 +1785,7 @@ export const api_commercial_local_truck: ((inputs: Api_Commercial_Local_TruckInp
 /**
 * | output |
 * | --- |
-* | "Supplier did not quote this line (partial reply) — follow-up drafted" |
+* | "Supplier did not quote this line (partial reply), follow-up drafted" |
 *
 */
 export const api_commercial_missing_item_note: ((inputs?: Api_Commercial_Missing_Item_NoteInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Commercial_Missing_Item_NoteInputs, { locale?: "en" | "ar" }, {}>;
@@ -1814,14 +1827,14 @@ export const api_commercial_no_delivery_history: ((inputs?: Api_Commercial_No_De
 /**
 * | output |
 * | --- |
-* | "No exceptions — standard approval." |
+* | "No exceptions. Standard approval." |
 *
 */
 export const api_commercial_no_exceptions: ((inputs?: Api_Commercial_No_ExceptionsInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Commercial_No_ExceptionsInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "This request doesn't name its quotation — the decision can't be withdrawn." |
+* | "This request doesn't name its quotation, so the decision can't be withdrawn." |
 *
 */
 export const api_commercial_no_quotation_named: ((inputs?: Api_Commercial_No_Quotation_NamedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Commercial_No_Quotation_NamedInputs, { locale?: "en" | "ar" }, {}>;
@@ -1842,7 +1855,7 @@ export const api_commercial_not_given: ((inputs?: Api_Commercial_Not_GivenInputs
 /**
 * | output |
 * | --- |
-* | "{number} is {status} — nothing to request." |
+* | "{number} is {status}. Nothing to request." |
 *
 */
 export const api_commercial_nothing_to_request: ((inputs: Api_Commercial_Nothing_To_RequestInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Commercial_Nothing_To_RequestInputs, { locale?: "en" | "ar" }, {}>;
@@ -1919,8 +1932,8 @@ export const api_commercial_our_rfq: ((inputs?: Api_Commercial_Our_RfqInputs, op
 /**
 * | hasLot | output |
 * | --- | --- |
-* | "yes" | "Own stock (lot {lot}) — reserve now, Golden Sea truck" |
-* | * | "Own stock — reserve now, Golden Sea truck" |
+* | "yes" | "Own stock (lot {lot}): reserve now, Golden Sea truck" |
+* | * | "Own stock: reserve now, Golden Sea truck" |
 *
 */
 export const api_commercial_own_stock_flag: ((inputs: Api_Commercial_Own_Stock_FlagInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Commercial_Own_Stock_FlagInputs, { locale?: "en" | "ar" }, {}>;
@@ -1941,14 +1954,14 @@ export const api_commercial_pack: ((inputs?: Api_Commercial_PackInputs, options?
 /**
 * | output |
 * | --- |
-* | "Pack size: {offered} instead of {requested} — written customer acceptance needed" |
+* | "Pack size: {offered} instead of {requested}, written customer acceptance needed" |
 *
 */
 export const api_commercial_pack_size: ((inputs: Api_Commercial_Pack_SizeInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Commercial_Pack_SizeInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "The payment is already recorded — the decision can't be withdrawn." |
+* | "The payment is already recorded, so the decision can't be withdrawn." |
 *
 */
 export const api_commercial_payment_recorded_cant_withdraw: ((inputs?: Api_Commercial_Payment_Recorded_Cant_WithdrawInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Commercial_Payment_Recorded_Cant_WithdrawInputs, { locale?: "en" | "ar" }, {}>;
@@ -1962,7 +1975,7 @@ export const api_commercial_payment_terms_default: ((inputs?: Api_Commercial_Pay
 /**
 * | output |
 * | --- |
-* | "Pending customer acceptance — alternative pack" |
+* | "Pending customer acceptance: alternative pack" |
 *
 */
 export const api_commercial_pending_acceptance: ((inputs?: Api_Commercial_Pending_AcceptanceInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Commercial_Pending_AcceptanceInputs, { locale?: "en" | "ar" }, {}>;
@@ -1990,7 +2003,7 @@ export const api_commercial_portal_default_terms: ((inputs?: Api_Commercial_Port
 /**
 * | output |
 * | --- |
-* | "Supplier price expired — reconfirm" |
+* | "Supplier price expired, reconfirm" |
 *
 */
 export const api_commercial_price_expired: ((inputs?: Api_Commercial_Price_ExpiredInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Commercial_Price_ExpiredInputs, { locale?: "en" | "ar" }, {}>;
@@ -2025,7 +2038,7 @@ export const api_commercial_quote_margin_below: ((inputs: Api_Commercial_Quote_M
 /**
 * | output |
 * | --- |
-* | "{number} is {status} with this selection — revise the quotation instead." |
+* | "{number} is {status} with this selection. Revise the quotation instead." |
 *
 */
 export const api_commercial_quoted_with_selection: ((inputs: Api_Commercial_Quoted_With_SelectionInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Commercial_Quoted_With_SelectionInputs, { locale?: "en" | "ar" }, {}>;
@@ -2046,7 +2059,7 @@ export const api_commercial_replies_in: ((inputs: Api_Commercial_Replies_InInput
 /**
 * | output |
 * | --- |
-* | "{name} requested approval of {number} ({type})." |
+* | "{name} requested approval of {number}." |
 *
 */
 export const api_commercial_requested_activity: ((inputs: Api_Commercial_Requested_ActivityInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Commercial_Requested_ActivityInputs, { locale?: "en" | "ar" }, {}>;
@@ -2060,14 +2073,21 @@ export const api_commercial_returned_title: ((inputs: Api_Commercial_Returned_Ti
 /**
 * | output |
 * | --- |
-* | "{number} is {status} — revise the latest version instead." |
+* | "Revise {number} as the customer asked" |
+*
+*/
+export const api_commercial_revise_for_customer: ((inputs: Api_Commercial_Revise_For_CustomerInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Commercial_Revise_For_CustomerInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "{number} is {status}. Revise the latest version instead." |
 *
 */
 export const api_commercial_revise_latest: ((inputs: Api_Commercial_Revise_LatestInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Commercial_Revise_LatestInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "Revise pricing — returned by {name}: {reason}" |
+* | "Revise pricing. Returned by {name}: {reason}" |
 *
 */
 export const api_commercial_revise_pricing: ((inputs: Api_Commercial_Revise_PricingInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Commercial_Revise_PricingInputs, { locale?: "en" | "ar" }, {}>;
@@ -2109,7 +2129,7 @@ export const api_commercial_select_offers_first: ((inputs?: Api_Commercial_Selec
 /**
 * | hasReason | output |
 * | --- | --- |
-* | "yes" | "L{line}: selected {names} — {reason}." |
+* | "yes" | "L{line}: selected {names} ({reason})." |
 * | * | "L{line}: selected {names} (best fit)." |
 *
 */
@@ -2117,17 +2137,24 @@ export const api_commercial_selected_activity: ((inputs: Api_Commercial_Selected
 /**
 * | output |
 * | --- |
-* | "Line {line} has been selected again since — nothing to take back." |
+* | "Line {line} has been selected again since. Nothing to take back." |
 *
 */
 export const api_commercial_selected_again: ((inputs: Api_Commercial_Selected_AgainInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Commercial_Selected_AgainInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "Selected {total} of {qty} {unit} — split the rest to another offer." |
+* | "Selected {total} of {qty} {unit}. Split the rest to another offer." |
 *
 */
 export const api_commercial_selected_of: ((inputs: Api_Commercial_Selected_OfInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Commercial_Selected_OfInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Send {number} for approval" |
+*
+*/
+export const api_commercial_send_for_approval: ((inputs: Api_Commercial_Send_For_ApprovalInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Commercial_Send_For_ApprovalInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
@@ -2138,7 +2165,7 @@ export const api_commercial_send_to_customer: ((inputs: Api_Commercial_Send_To_C
 /**
 * | output |
 * | --- |
-* | "Sent — awaiting corrected offer" |
+* | "Sent, awaiting corrected offer" |
 *
 */
 export const api_commercial_sent_awaiting_corrected: ((inputs?: Api_Commercial_Sent_Awaiting_CorrectedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Commercial_Sent_Awaiting_CorrectedInputs, { locale?: "en" | "ar" }, {}>;
@@ -2159,7 +2186,7 @@ export const api_commercial_shelf_life_below: ((inputs?: Api_Commercial_Shelf_Li
 /**
 * | output |
 * | --- |
-* | "Someone decided after you — the request has moved on." |
+* | "Someone decided after you. The request has moved on." |
 *
 */
 export const api_commercial_someone_decided_after: ((inputs?: Api_Commercial_Someone_Decided_AfterInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Commercial_Someone_Decided_AfterInputs, { locale?: "en" | "ar" }, {}>;
@@ -2173,15 +2200,15 @@ export const api_commercial_split_sourcing: ((inputs: Api_Commercial_Split_Sourc
 /**
 * | output |
 * | --- |
-* | "Superseded by v{version} — kept for audit" |
+* | "Superseded by v{version}, kept for audit" |
 *
 */
 export const api_commercial_superseded_by: ((inputs: Api_Commercial_Superseded_ByInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Commercial_Superseded_ByInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | accepted | output |
 * | --- | --- |
-* | "yes" | "{description} — supplied as {pack} (alternative pack, accepted)" |
-* | * | "{description} — supplied as {pack} (alternative pack)" |
+* | "yes" | "{description}, supplied as {pack} (alternative pack, accepted)" |
+* | * | "{description}, supplied as {pack} (alternative pack)" |
 *
 */
 export const api_commercial_supplied_as: ((inputs: Api_Commercial_Supplied_AsInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Commercial_Supplied_AsInputs, { locale?: "en" | "ar" }, {}>;
@@ -2202,7 +2229,7 @@ export const api_commercial_taken_back: ((inputs: Api_Commercial_Taken_BackInput
 /**
 * | earlier | output |
 * | --- | --- |
-* | "yes" | "L{line}: selection taken back by {name} — the earlier selection applies again." |
+* | "yes" | "L{line}: selection taken back by {name}. The earlier selection applies again." |
 * | * | "L{line}: selection taken back by {name}." |
 *
 */
@@ -2252,8 +2279,8 @@ export const api_commercial_unknown_decision: ((inputs?: Api_Commercial_Unknown_
 /**
 * | approval | output |
 * | --- | --- |
-* | "yes" | "{name} withdrew their approval of “{title}” — it is waiting for a decision again." |
-* | * | "{name} withdrew their return of “{title}” — it is waiting for a decision again." |
+* | "yes" | "{name} withdrew their approval of “{title}”. It is waiting for a decision again." |
+* | * | "{name} withdrew their return of “{title}”. It is waiting for a decision again." |
 *
 */
 export const api_commercial_withdrew_activity: ((inputs: Api_Commercial_Withdrew_ActivityInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Commercial_Withdrew_ActivityInputs, { locale?: "en" | "ar" }, {}>;
@@ -2274,7 +2301,7 @@ export const api_commercial_your_offer: ((inputs: Api_Commercial_Your_OfferInput
 /**
 * | output |
 * | --- |
-* | "Median minutes to acknowledge an RFQ — automation live since 6 Oct" |
+* | "Median minutes to acknowledge an RFQ. Automation live since 6 Oct" |
 *
 */
 export const api_control_room_ack_sub: ((inputs?: Api_Control_Room_Ack_SubInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Control_Room_Ack_SubInputs, { locale?: "en" | "ar" }, {}>;
@@ -2801,8 +2828,8 @@ export const api_control_room_won_of_quoted: ((inputs: Api_Control_Room_Won_Of_Q
 /**
 * | hasNote | hasNext | output |
 * | --- | --- | --- |
-* | "yes" | "yes" | "{name}: {result} — {note}. Next: {step} ({due})." |
-* | "yes" | * | "{name}: {result} — {note}. Stage: {stage}." |
+* | "yes" | "yes" | "{name}: {result} ({note}). Next: {step} ({due})." |
+* | "yes" | * | "{name}: {result} ({note}). Stage: {stage}." |
 * | * | "yes" | "{name}: {result}. Next: {step} ({due})." |
 * | * | * | "{name}: {result}. Stage: {stage}." |
 *
@@ -2839,14 +2866,14 @@ export const api_growth_crm_opportunity_not_found: ((inputs?: Api_Growth_Crm_Opp
 /**
 * | output |
 * | --- |
-* | "Outcome saved — next step “{step}” planned for {due}" |
+* | "Outcome saved. Next step “{step}” planned for {due}" |
 *
 */
 export const api_growth_crm_outcome_planned: ((inputs: Api_Growth_Crm_Outcome_PlannedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Growth_Crm_Outcome_PlannedInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "Outcome saved — {name} is now “{stage}”" |
+* | "Outcome saved. {name} is now “{stage}”" |
 *
 */
 export const api_growth_crm_outcome_stage: ((inputs: Api_Growth_Crm_Outcome_StageInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Growth_Crm_Outcome_StageInputs, { locale?: "en" | "ar" }, {}>;
@@ -2867,7 +2894,7 @@ export const api_growth_crm_prospect_relation: ((inputs: Api_Growth_Crm_Prospect
 /**
 * | output |
 * | --- |
-* | "{step} — {name}" |
+* | "{step}: {name}" |
 *
 */
 export const api_growth_crm_task_title: ((inputs: Api_Growth_Crm_Task_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Growth_Crm_Task_TitleInputs, { locale?: "en" | "ar" }, {}>;
@@ -3411,6 +3438,13 @@ export const api_home_invoice_due: ((inputs: Api_Home_Invoice_DueInputs, options
 *
 */
 export const api_home_invoice_due_short: ((inputs: Api_Home_Invoice_Due_ShortInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Home_Invoice_Due_ShortInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "{customer}: {amount} overdue since {day}" |
+*
+*/
+export const api_home_invoice_overdue: ((inputs: Api_Home_Invoice_OverdueInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Home_Invoice_OverdueInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
@@ -3964,10 +3998,24 @@ export const api_insights_shared_overdue_since: ((inputs: Api_Insights_Shared_Ov
 /**
 * | output |
 * | --- |
+* | "today" |
+*
+*/
+export const api_insights_shared_today: ((inputs?: Api_Insights_Shared_TodayInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Insights_Shared_TodayInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
 * | "today {time}" |
 *
 */
 export const api_insights_shared_today_at: ((inputs: Api_Insights_Shared_Today_AtInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Insights_Shared_Today_AtInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "tomorrow" |
+*
+*/
+export const api_insights_shared_tomorrow: ((inputs?: Api_Insights_Shared_TomorrowInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Insights_Shared_TomorrowInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
@@ -3978,14 +4026,14 @@ export const api_insights_shared_tomorrow_at: ((inputs: Api_Insights_Shared_Tomo
 /**
 * | output |
 * | --- |
-* | "Already accepted — not resubmitted." |
+* | "Already accepted, so not resubmitted." |
 *
 */
 export const api_operations_already_accepted: ((inputs?: Api_Operations_Already_AcceptedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Operations_Already_AcceptedInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "PO {number} line {line} ({field}): {resolution} — evidence attached." |
+* | "PO {number} line {line} ({field}): {resolution}. Evidence attached." |
 *
 */
 export const api_operations_amend_activity: ((inputs: Api_Operations_Amend_ActivityInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Operations_Amend_ActivityInputs, { locale?: "en" | "ar" }, {}>;
@@ -4006,8 +4054,8 @@ export const api_operations_attach_confirmation: ((inputs?: Api_Operations_Attac
 /**
 * | hasWas | output |
 * | --- | --- |
-* | "yes" | "Line {line}: “{outcome}” taken back — {was}." |
-* | * | "Line {line}: “{outcome}” taken back — undecided again." |
+* | "yes" | "Line {line}: “{outcome}” taken back, back to {was}." |
+* | * | "Line {line}: “{outcome}” taken back, undecided again." |
 *
 */
 export const api_operations_award_undo_activity: ((inputs: Api_Operations_Award_Undo_ActivityInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Operations_Award_Undo_ActivityInputs, { locale?: "en" | "ar" }, {}>;
@@ -4084,21 +4132,21 @@ export const api_operations_customer_po_not_found: ((inputs?: Api_Operations_Cus
 /**
 * | output |
 * | --- |
-* | "Line {line} has been decided again since — nothing to take back." |
+* | "Line {line} has been decided again since, so there is nothing to take back." |
 *
 */
 export const api_operations_decided_again: ((inputs: Api_Operations_Decided_AgainInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Operations_Decided_AgainInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "The sales order is confirmed and its supplier POs are prepared — the line's decision stands." |
+* | "The sales order is confirmed and its supplier POs are prepared, so the line's decision stands." |
 *
 */
 export const api_operations_decision_stands: ((inputs?: Api_Operations_Decision_StandsInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Operations_Decision_StandsInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "{number} delivered — signed by {signedBy}; signed delivery note attached." |
+* | "{number} delivered. Signed by {signedBy}; signed delivery note attached." |
 *
 */
 export const api_operations_delivered_activity: ((inputs: Api_Operations_Delivered_ActivityInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Operations_Delivered_ActivityInputs, { locale?: "en" | "ar" }, {}>;
@@ -4116,6 +4164,13 @@ export const api_operations_delivery_not_found: ((inputs?: Api_Operations_Delive
 *
 */
 export const api_operations_describe_agreement: ((inputs?: Api_Operations_Describe_AgreementInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Operations_Describe_AgreementInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Drop {done} of {total} delivered. Invoice {number}: delivered quantities only" |
+*
+*/
+export const api_operations_drop_delivered: ((inputs: Api_Operations_Drop_DeliveredInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Operations_Drop_DeliveredInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
@@ -4161,7 +4216,7 @@ export const api_operations_eta_change_activity: ((inputs: Api_Operations_Eta_Ch
 /**
 * | output |
 * | --- |
-* | "ETA moved {hours} h by agent — {n} drop(s) re-planned" |
+* | "ETA moved {hours} h by agent: {n} drop(s) re-planned" |
 *
 */
 export const api_operations_eta_moved_blocker: ((inputs: Api_Operations_Eta_Moved_BlockerInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Operations_Eta_Moved_BlockerInputs, { locale?: "en" | "ar" }, {}>;
@@ -4175,14 +4230,14 @@ export const api_operations_eta_notification: ((inputs: Api_Operations_Eta_Notif
 /**
 * | output |
 * | --- |
-* | "{n} drop(s) re-planned — re-confirm transport." |
+* | "{n} drop(s) re-planned. Re-confirm transport." |
 *
 */
 export const api_operations_eta_notification_detail: ((inputs: Api_Operations_Eta_Notification_DetailInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Operations_Eta_Notification_DetailInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "ETA already up to date — nothing re-planned." |
+* | "ETA already up to date. Nothing re-planned." |
 *
 */
 export const api_operations_eta_up_to_date: ((inputs?: Api_Operations_Eta_Up_To_DateInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Operations_Eta_Up_To_DateInputs, { locale?: "en" | "ar" }, {}>;
@@ -4203,7 +4258,7 @@ export const api_operations_invoice_created_activity: ((inputs: Api_Operations_I
 /**
 * | output |
 * | --- |
-* | "Invoice {number} — delivered quantities only" |
+* | "Invoice {number}: delivered quantities only" |
 *
 */
 export const api_operations_invoice_delivered: ((inputs: Api_Operations_Invoice_DeliveredInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Operations_Invoice_DeliveredInputs, { locale?: "en" | "ar" }, {}>;
@@ -4245,7 +4300,7 @@ export const api_operations_launch_boat: ((inputs?: Api_Operations_Launch_BoatIn
 /**
 * | output |
 * | --- |
-* | "{launch} — re-booked for {at}" |
+* | "{launch}, re-booked for {at}" |
 *
 */
 export const api_operations_launch_rebooked: ((inputs: Api_Operations_Launch_RebookedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Operations_Launch_RebookedInputs, { locale?: "en" | "ar" }, {}>;
@@ -4256,6 +4311,13 @@ export const api_operations_launch_rebooked: ((inputs: Api_Operations_Launch_Reb
 *
 */
 export const api_operations_line: ((inputs: Api_Operations_LineInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Operations_LineInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Line {line} is on the customer PO, so it can't be kept open or closed." |
+*
+*/
+export const api_operations_line_on_po: ((inputs: Api_Operations_Line_On_PoInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Operations_Line_On_PoInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
@@ -4301,7 +4363,7 @@ export const api_operations_no_order_book: ((inputs?: Api_Operations_No_Order_Bo
 /**
 * | hasReason | output |
 * | --- | --- |
-* | "yes" | "Line {line} not awarded: {outcome} — {reason}." |
+* | "yes" | "Line {line} not awarded: {outcome}. Reason: {reason}." |
 * | * | "Line {line} not awarded: {outcome}." |
 *
 */
@@ -4358,6 +4420,13 @@ export const api_operations_recheck_availability: ((inputs?: Api_Operations_Rech
 /**
 * | output |
 * | --- |
+* | "Re-check availability, cost, FX and lead time with the supplier before confirming." |
+*
+*/
+export const api_operations_recheck_first: ((inputs?: Api_Operations_Recheck_FirstInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Operations_Recheck_FirstInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
 * | "Supplier price" |
 *
 */
@@ -4379,7 +4448,7 @@ export const api_operations_reconfirm_task: ((inputs: Api_Operations_Reconfirm_T
 /**
 * | output |
 * | --- |
-* | "Rejected by the tax authority — buyer tax ID." |
+* | "Rejected by the tax authority: buyer tax ID." |
 *
 */
 export const api_operations_rejected_tax_id: ((inputs?: Api_Operations_Rejected_Tax_IdInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Operations_Rejected_Tax_IdInputs, { locale?: "en" | "ar" }, {}>;
@@ -4442,7 +4511,7 @@ export const api_order_to_cash_approval_detail_clean: ((inputs: Api_Order_To_Cas
 /**
 * | output |
 * | --- |
-* | "PO {number} · re-check done — changes flagged." |
+* | "PO {number} · re-check done, changes flagged." |
 *
 */
 export const api_order_to_cash_approval_detail_flagged: ((inputs: Api_Order_To_Cash_Approval_Detail_FlaggedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Order_To_Cash_Approval_Detail_FlaggedInputs, { locale?: "en" | "ar" }, {}>;
@@ -4456,28 +4525,28 @@ export const api_order_to_cash_approval_title: ((inputs: Api_Order_To_Cash_Appro
 /**
 * | output |
 * | --- |
-* | "Duplicate bill blocked — {reason}" |
+* | "Bill not booked. {reason}" |
 *
 */
 export const api_order_to_cash_duplicate_bill: ((inputs: Api_Order_To_Cash_Duplicate_BillInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Order_To_Cash_Duplicate_BillInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "ETA updated — {changed} drop(s) re-planned; owner and management alerted." |
+* | "ETA updated. {changed} drop(s) re-planned; owner and management alerted." |
 *
 */
 export const api_order_to_cash_eta_updated: ((inputs: Api_Order_To_Cash_Eta_UpdatedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Order_To_Cash_Eta_UpdatedInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "{number} created from {delivery} — delivered quantities only." |
+* | "{number} created from {delivery}, for delivered quantities only." |
 *
 */
 export const api_order_to_cash_invoice_created: ((inputs: Api_Order_To_Cash_Invoice_CreatedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Order_To_Cash_Invoice_CreatedInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "{number} created from the delivery — delivered quantities only." |
+* | "{number} created from the delivery, for delivered quantities only." |
 *
 */
 export const api_order_to_cash_invoice_created_from_delivery: ((inputs: Api_Order_To_Cash_Invoice_Created_From_DeliveryInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Order_To_Cash_Invoice_Created_From_DeliveryInputs, { locale?: "en" | "ar" }, {}>;
@@ -4606,7 +4675,7 @@ export const api_platform_acc_9: ((inputs?: Api_Platform_Acc_9Inputs, options?: 
 /**
 * | output |
 * | --- |
-* | "Already {status} — key {key} checked, nothing re-run or re-sent." |
+* | "Already {status}. Key {key} checked, nothing re-run or re-sent." |
 *
 */
 export const api_platform_already_done: ((inputs: Api_Platform_Already_DoneInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Platform_Already_DoneInputs, { locale?: "en" | "ar" }, {}>;
@@ -4714,7 +4783,7 @@ export const api_platform_deadline_within_24h: ((inputs: Api_Platform_Deadline_W
 /**
 * | output |
 * | --- |
-* | "{number} {status} — not counted as delivered until confirmed" |
+* | "{number} {status}, not counted as delivered until confirmed" |
 *
 */
 export const api_platform_delivery_note: ((inputs: Api_Platform_Delivery_NoteInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Platform_Delivery_NoteInputs, { locale?: "en" | "ar" }, {}>;
@@ -4800,7 +4869,7 @@ export const api_platform_handover_subject: ((inputs: Api_Platform_Handover_Subj
 /**
 * | hasDue | output |
 * | --- | --- |
-* | "yes" | "Task: {title} — due {due}." |
+* | "yes" | "Task: {title}, due {due}." |
 * | * | "Task: {title}." |
 *
 */
@@ -4808,14 +4877,14 @@ export const api_platform_handover_task: ((inputs: Api_Platform_Handover_TaskInp
 /**
 * | output |
 * | --- |
-* | "Handover — {caseId} for {to}" |
+* | "Handover: {caseId} for {to}" |
 *
 */
 export const api_platform_handover_title: ((inputs: Api_Platform_Handover_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Platform_Handover_TitleInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "Re-checked {key}: already accepted by the tax authority — not submitted again." |
+* | "Re-checked {key}: already accepted by the tax authority, not submitted again." |
 *
 */
 export const api_platform_invoice_already_accepted: ((inputs: Api_Platform_Invoice_Already_AcceptedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Platform_Invoice_Already_AcceptedInputs, { locale?: "en" | "ar" }, {}>;
@@ -4878,6 +4947,13 @@ export const api_platform_my_language_en: ((inputs?: Api_Platform_My_Language_En
 /**
 * | output |
 * | --- |
+* | "This exception needs a person to check it. Review it and mark it reviewed instead of retrying." |
+*
+*/
+export const api_platform_needs_a_person: ((inputs?: Api_Platform_Needs_A_PersonInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Platform_Needs_A_PersonInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
 * | "Outside office hours and no shift on the roster: straight to the senior call list." |
 *
 */
@@ -4906,14 +4982,14 @@ export const api_platform_office_hours_reason: ((inputs?: Api_Platform_Office_Ho
 /**
 * | output |
 * | --- |
-* | "Simulated from /roles · acknowledge within {minutes} min, then {next} is alerted" |
+* | "Simulated from Roles & permissions · acknowledge within {minutes} min, then {next} is alerted" |
 *
 */
 export const api_platform_on_call_detail: ((inputs: Api_Platform_On_Call_DetailInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Platform_On_Call_DetailInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "Urgent RFQ after hours — you're on call ({at})" |
+* | "Urgent RFQ after hours: you're on call ({at})" |
 *
 */
 export const api_platform_on_call_title: ((inputs: Api_Platform_On_Call_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Platform_On_Call_TitleInputs, { locale?: "en" | "ar" }, {}>;
@@ -4970,8 +5046,8 @@ export const api_platform_pick_someone: ((inputs?: Api_Platform_Pick_SomeoneInpu
 /**
 * | hasRest | output |
 * | --- | --- |
-* | "yes" | "Line {line}: {qc} — {received} of {ordered} received, rest due {rest}" |
-* | * | "Line {line}: {qc} — {received} of {ordered} received" |
+* | "yes" | "Line {line}: {qc}, {received} of {ordered} received, rest due {rest}" |
+* | * | "Line {line}: {qc}, {received} of {ordered} received" |
 *
 */
 export const api_platform_receipt_note: ((inputs: Api_Platform_Receipt_NoteInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Platform_Receipt_NoteInputs, { locale?: "en" | "ar" }, {}>;
@@ -4999,7 +5075,7 @@ export const api_platform_reconnected_activity: ((inputs: Api_Platform_Reconnect
 /**
 * | output |
 * | --- |
-* | "Reconnected — waiting emails imported once each" |
+* | "Reconnected. Waiting emails imported once each" |
 *
 */
 export const api_platform_reconnected_note: ((inputs?: Api_Platform_Reconnected_NoteInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Platform_Reconnected_NoteInputs, { locale?: "en" | "ar" }, {}>;
@@ -5013,14 +5089,14 @@ export const api_platform_reconnected_with: ((inputs: Api_Platform_Reconnected_W
 /**
 * | output |
 * | --- |
-* | "{impact} — resolved by safe retry" |
+* | "{impact}. Resolved by safe retry" |
 *
 */
 export const api_platform_resolved_by_retry: ((inputs: Api_Platform_Resolved_By_RetryInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Platform_Resolved_By_RetryInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "Retried safely — {message}" |
+* | "Retried safely: {message}" |
 *
 */
 export const api_platform_retried_safely: ((inputs: Api_Platform_Retried_SafelyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Platform_Retried_SafelyInputs, { locale?: "en" | "ar" }, {}>;
@@ -5190,7 +5266,7 @@ export const api_platform_timeline_entries: ((inputs: Api_Platform_Timeline_Entr
 /**
 * | output |
 * | --- |
-* | "Uncertain match ({classification}) — waiting for a person in the inbox" |
+* | "Uncertain match ({classification}), waiting for a person in the inbox" |
 *
 */
 export const api_platform_uncertain_match: ((inputs: Api_Platform_Uncertain_MatchInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Platform_Uncertain_MatchInputs, { locale?: "en" | "ar" }, {}>;
@@ -5275,7 +5351,7 @@ export const api_profit_bill_number: ((inputs: Api_Profit_Bill_NumberInputs, opt
 /**
 * | output |
 * | --- |
-* | "{label}: billed {billed} vs estimate {estimate} — confirm" |
+* | "{label}: billed {billed} vs estimate {estimate}, confirm" |
 *
 */
 export const api_profit_billed_vs_estimate: ((inputs: Api_Profit_Billed_Vs_EstimateInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Profit_Billed_Vs_EstimateInputs, { locale?: "en" | "ar" }, {}>;
@@ -5289,7 +5365,7 @@ export const api_profit_cant_close: ((inputs: Api_Profit_Cant_CloseInputs, optio
 /**
 * | output |
 * | --- |
-* | "Case closed — actual gross profit {actual} ({margin}%) against {expected} expected. Supplier prices and on-time results fed back to supplier records." |
+* | "Case closed. Actual gross profit {actual} ({margin}%) against {expected} expected. Supplier prices and on-time results fed back to supplier records." |
 *
 */
 export const api_profit_case_closed_activity: ((inputs: Api_Profit_Case_Closed_ActivityInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Profit_Case_Closed_ActivityInputs, { locale?: "en" | "ar" }, {}>;
@@ -5366,7 +5442,7 @@ export const api_profit_claim_offset: ((inputs: Api_Profit_Claim_OffsetInputs, o
 /**
 * | output |
 * | --- |
-* | "Open — claimed from {against}" |
+* | "Open: claimed from {against}" |
 *
 */
 export const api_profit_claim_open: ((inputs: Api_Profit_Claim_OpenInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Profit_Claim_OpenInputs, { locale?: "en" | "ar" }, {}>;
@@ -5471,7 +5547,7 @@ export const api_profit_no_single_balance: ((inputs?: Api_Profit_No_Single_Balan
 /**
 * | output |
 * | --- |
-* | "None — case closed" |
+* | "None: case closed" |
 *
 */
 export const api_profit_none_case_closed: ((inputs?: Api_Profit_None_Case_ClosedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Profit_None_Case_ClosedInputs, { locale?: "en" | "ar" }, {}>;
@@ -5520,7 +5596,7 @@ export const api_profit_po: ((inputs: Api_Profit_PoInputs, options?: { locale?: 
 /**
 * | output |
 * | --- |
-* | "{supplier} — PO {number}" |
+* | "{supplier}: PO {number}" |
 *
 */
 export const api_profit_po_line: ((inputs: Api_Profit_Po_LineInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Profit_Po_LineInputs, { locale?: "en" | "ar" }, {}>;
@@ -5597,7 +5673,7 @@ export const api_quotations_give_lost_reason: ((inputs?: Api_Quotations_Give_Los
 /**
 * | output |
 * | --- |
-* | "New version created — the previous one is kept for audit." |
+* | "New version created. The previous one is kept for audit." |
 *
 */
 export const api_quotations_new_version: ((inputs?: Api_Quotations_New_VersionInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Quotations_New_VersionInputs, { locale?: "en" | "ar" }, {}>;
@@ -5625,7 +5701,7 @@ export const api_sourcing_a_person: ((inputs?: Api_Sourcing_A_PersonInputs, opti
 /**
 * | output |
 * | --- |
-* | "Already acknowledged earlier — no second acknowledgement." |
+* | "Already acknowledged earlier, so no second acknowledgement." |
 *
 */
 export const api_sourcing_ack_already_activity: ((inputs?: Api_Sourcing_Ack_Already_ActivityInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Ack_Already_ActivityInputs, { locale?: "en" | "ar" }, {}>;
@@ -5639,7 +5715,7 @@ export const api_sourcing_ack_by_hand_activity: ((inputs?: Api_Sourcing_Ack_By_H
 /**
 * | output |
 * | --- |
-* | "Dear {{contact}}, Thank you — your request for {{vessel}} is registered as {{caseId}}. We will revert by {{dueAt}}." |
+* | "Dear {{contact}}, Thank you. Your request for {{vessel}} is registered as {{caseId}}. We will revert by {{dueAt}}." |
 *
 */
 export const api_sourcing_ack_default_body: ((inputs?: Api_Sourcing_Ack_Default_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Ack_Default_BodyInputs, { locale?: "en" | "ar" }, {}>;
@@ -5674,7 +5750,7 @@ export const api_sourcing_already_asked: ((inputs: Api_Sourcing_Already_AskedInp
 /**
 * | output |
 * | --- |
-* | "Already linked to {caseId} — no new case, no second acknowledgement" |
+* | "Already linked to {caseId}: no new case, no second acknowledgement" |
 *
 */
 export const api_sourcing_already_linked_no_new: ((inputs: Api_Sourcing_Already_Linked_No_NewInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Already_Linked_No_NewInputs, { locale?: "en" | "ar" }, {}>;
@@ -5688,7 +5764,7 @@ export const api_sourcing_already_waiting: ((inputs?: Api_Sourcing_Already_Waiti
 /**
 * | output |
 * | --- |
-* | "Auto-created from an email reply to {reference} ({date}) — quoted, never ordered" |
+* | "Auto-created from an email reply to {reference} ({date}). Quoted, never ordered" |
 *
 */
 export const api_sourcing_auto_created_source: ((inputs: Api_Sourcing_Auto_Created_SourceInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Auto_Created_SourceInputs, { locale?: "en" | "ar" }, {}>;
@@ -5709,7 +5785,7 @@ export const api_sourcing_back_to_decision: ((inputs?: Api_Sourcing_Back_To_Deci
 /**
 * | output |
 * | --- |
-* | "Below 85% — a person confirms before anything is linked" |
+* | "Below 85%: a person confirms before anything is linked" |
 *
 */
 export const api_sourcing_below_threshold: ((inputs?: Api_Sourcing_Below_ThresholdInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Below_ThresholdInputs, { locale?: "en" | "ar" }, {}>;
@@ -5723,7 +5799,7 @@ export const api_sourcing_blocker: ((inputs: Api_Sourcing_BlockerInputs, options
 /**
 * | output |
 * | --- |
-* | "Cannot supply — reminders stopped" |
+* | "Cannot supply. Reminders stopped" |
 *
 */
 export const api_sourcing_cannot_supply: ((inputs?: Api_Sourcing_Cannot_SupplyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Cannot_SupplyInputs, { locale?: "en" | "ar" }, {}>;
@@ -5767,8 +5843,8 @@ export const api_sourcing_cash_terms: ((inputs?: Api_Sourcing_Cash_TermsInputs, 
 /**
 * | countPlural | output |
 * | --- | --- |
-* | "one" | "Created from the {channel} “{subject}” — {count} AI-extracted line checked and confirmed by {who}." |
-* | * | "Created from the {channel} “{subject}” — {count} AI-extracted lines checked and confirmed by {who}." |
+* | "one" | "Created from the {channel} “{subject}”: {count} AI-extracted line checked and confirmed by {who}." |
+* | * | "Created from the {channel} “{subject}”: {count} AI-extracted lines checked and confirmed by {who}." |
 *
 */
 export const api_sourcing_created_activity: ((inputs: Api_Sourcing_Created_ActivityInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Created_ActivityInputs, { locale?: "en" | "ar" }, {}>;
@@ -5782,10 +5858,17 @@ export const api_sourcing_customer_ref_is: ((inputs: Api_Sourcing_Customer_Ref_I
 /**
 * | output |
 * | --- |
-* | "Declined by email — reminders stopped" |
+* | "Declined by email. Reminders stopped" |
 *
 */
 export const api_sourcing_declined_event: ((inputs?: Api_Sourcing_Declined_EventInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Declined_EventInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Only supply chain and management can do this." |
+*
+*/
+export const api_sourcing_desk_only: ((inputs?: Api_Sourcing_Desk_OnlyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Desk_OnlyInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
@@ -5796,37 +5879,37 @@ export const api_sourcing_draft_gone: ((inputs?: Api_Sourcing_Draft_GoneInputs, 
 /**
 * | countPlural | output |
 * | --- | --- |
-* | "one" | "{count} RFQ draft back — nothing was sent" |
-* | * | "{count} RFQ drafts back — nothing was sent" |
+* | "one" | "{count} RFQ draft back. Nothing was sent" |
+* | * | "{count} RFQ drafts back. Nothing was sent" |
 *
 */
 export const api_sourcing_drafts_back: ((inputs: Api_Sourcing_Drafts_BackInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Drafts_BackInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "The drafts have changed since (drafted again or sent) — there is nothing to put back." |
+* | "The drafts have changed since (drafted again or sent), so there is nothing to put back." |
 *
 */
 export const api_sourcing_drafts_changed: ((inputs?: Api_Sourcing_Drafts_ChangedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Drafts_ChangedInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | countPlural | output |
 * | --- | --- |
-* | "one" | "{count} RFQ draft ready — check them before sending" |
-* | * | "{count} RFQ drafts ready — check them before sending" |
+* | "one" | "{count} RFQ draft ready. Check them before sending" |
+* | * | "{count} RFQ drafts ready. Check them before sending" |
 *
 */
 export const api_sourcing_drafts_ready: ((inputs: Api_Sourcing_Drafts_ReadyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Drafts_ReadyInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "Duplicate — kept with the original" |
+* | "Duplicate, kept with the original" |
 *
 */
 export const api_sourcing_duplicate_kept: ((inputs?: Api_Sourcing_Duplicate_KeptInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Duplicate_KeptInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "Duplicate — already linked to {caseId}" |
+* | "Duplicate, already linked to {caseId}" |
 *
 */
 export const api_sourcing_duplicate_linked: ((inputs: Api_Sourcing_Duplicate_LinkedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Duplicate_LinkedInputs, { locale?: "en" | "ar" }, {}>;
@@ -5854,7 +5937,7 @@ export const api_sourcing_forwarded_by_staff: ((inputs?: Api_Sourcing_Forwarded_
 /**
 * | output |
 * | --- |
-* | "General chandler — receives the full list" |
+* | "General chandler: receives the full list" |
 *
 */
 export const api_sourcing_general_full: ((inputs?: Api_Sourcing_General_FullInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_General_FullInputs, { locale?: "en" | "ar" }, {}>;
@@ -5896,14 +5979,14 @@ export const api_sourcing_identical_attachments: ((inputs: Api_Sourcing_Identica
 /**
 * | output |
 * | --- |
-* | "The import is approved and saved — its decisions can't be taken back." |
+* | "The import is approved and saved, so its decisions can't be taken back." |
 *
 */
 export const api_sourcing_import_approved: ((inputs?: Api_Sourcing_Import_ApprovedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Import_ApprovedInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "Invited on {count} open cases — can't tell which" |
+* | "Invited on {count} open cases: can't tell which" |
 *
 */
 export const api_sourcing_invited_on_many: ((inputs: Api_Sourcing_Invited_On_ManyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Invited_On_ManyInputs, { locale?: "en" | "ar" }, {}>;
@@ -5920,7 +6003,7 @@ export const api_sourcing_lines_offered: ((inputs: Api_Sourcing_Lines_OfferedInp
 /**
 * | offer | output |
 * | --- | --- |
-* | "yes" | "“{subject}” from {from} linked by {who} after review — offer confirmed." |
+* | "yes" | "“{subject}” from {from} linked by {who} after review, offer confirmed." |
 * | * | "“{subject}” from {from} linked by {who} after review." |
 *
 */
@@ -5935,7 +6018,7 @@ export const api_sourcing_linked_after_review_event: ((inputs?: Api_Sourcing_Lin
 /**
 * | output |
 * | --- |
-* | "Only management (Karim Balbaa) can approve the history import." |
+* | "Only management can approve the history import." |
 *
 */
 export const api_sourcing_management_approves: ((inputs?: Api_Sourcing_Management_ApprovesInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Management_ApprovesInputs, { locale?: "en" | "ar" }, {}>;
@@ -5984,7 +6067,7 @@ export const api_sourcing_new_case_detail: ((inputs: Api_Sourcing_New_Case_Detai
 /**
 * | output |
 * | --- |
-* | "New supplier {name} replied to {reference} — supplier and dated price saved automatically; unit waits for a person." |
+* | "New supplier {name} replied to {reference}. Supplier and dated price saved automatically; unit waits for a person." |
 *
 */
 export const api_sourcing_new_supplier_activity: ((inputs: Api_Sourcing_New_Supplier_ActivityInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_New_Supplier_ActivityInputs, { locale?: "en" | "ar" }, {}>;
@@ -5998,21 +6081,21 @@ export const api_sourcing_new_supplier_confirm: ((inputs: Api_Sourcing_New_Suppl
 /**
 * | output |
 * | --- |
-* | "Sender {domain} is not in the supplier list — new supplier created automatically" |
+* | "Sender {domain} is not in the supplier list: new supplier created automatically" |
 *
 */
 export const api_sourcing_new_supplier_created: ((inputs: Api_Sourcing_New_Supplier_CreatedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_New_Supplier_CreatedInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "Not in the database: supplier created, dated price stored with validity — unit to confirm" |
+* | "Not in the database: supplier created, dated price stored with validity. Unit to confirm" |
 *
 */
 export const api_sourcing_new_supplier_detail: ((inputs?: Api_Sourcing_New_Supplier_DetailInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_New_Supplier_DetailInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "Sender {domain} is not in the supplier list — new supplier already saved automatically" |
+* | "Sender {domain} is not in the supplier list: new supplier already saved automatically" |
 *
 */
 export const api_sourcing_new_supplier_saved: ((inputs: Api_Sourcing_New_Supplier_SavedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_New_Supplier_SavedInputs, { locale?: "en" | "ar" }, {}>;
@@ -6033,28 +6116,28 @@ export const api_sourcing_no_reference: ((inputs?: Api_Sourcing_No_ReferenceInpu
 /**
 * | output |
 * | --- |
-* | "No rule matched — you own it" |
+* | "No rule matched, so you own it" |
 *
 */
 export const api_sourcing_no_rule: ((inputs?: Api_Sourcing_No_RuleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_No_RuleInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "No specialist on file — general chandler" |
+* | "No specialist on file: general chandler" |
 *
 */
 export const api_sourcing_no_specialist: ((inputs?: Api_Sourcing_No_SpecialistInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_No_SpecialistInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "No supplier RFQs are waiting for a reply — send RFQs first" |
+* | "No supplier RFQs are waiting for a reply." |
 *
 */
 export const api_sourcing_none_waiting: ((inputs?: Api_Sourcing_None_WaitingInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_None_WaitingInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "This message isn't filed by a review — there is nothing to take back." |
+* | "This message isn't filed by a review, so there is nothing to take back." |
 *
 */
 export const api_sourcing_not_filed_by_review: ((inputs?: Api_Sourcing_Not_Filed_By_ReviewInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Not_Filed_By_ReviewInputs, { locale?: "en" | "ar" }, {}>;
@@ -6068,7 +6151,7 @@ export const api_sourcing_not_history_item: ((inputs?: Api_Sourcing_Not_History_
 /**
 * | output |
 * | --- |
-* | "Not invited — replied to {reference} forwarded to them; supplier created automatically" |
+* | "Not invited: replied to {reference} forwarded to them; supplier created automatically" |
 *
 */
 export const api_sourcing_not_invited_event: ((inputs: Api_Sourcing_Not_Invited_EventInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Not_Invited_EventInputs, { locale?: "en" | "ar" }, {}>;
@@ -6082,44 +6165,44 @@ export const api_sourcing_nothing_extracted: ((inputs?: Api_Sourcing_Nothing_Ext
 /**
 * | output |
 * | --- |
-* | "Nothing new to send — every picked line was already asked of these suppliers" |
+* | "Nothing new to send: every picked line was already asked of these suppliers" |
 *
 */
 export const api_sourcing_nothing_new: ((inputs?: Api_Sourcing_Nothing_NewInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Nothing_NewInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "Nothing to send — draft the RFQs first." |
+* | "Nothing to send. Draft the RFQs first." |
 *
 */
 export const api_sourcing_nothing_to_send: ((inputs?: Api_Sourcing_Nothing_To_SendInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Nothing_To_SendInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | changed | output |
 * | --- | --- |
-* | "yes" | "Offer received (subject “{subject}”) — matched by reference, reminders stopped" |
-* | * | "Offer received — matched by reference, reminders stopped" |
+* | "yes" | "Offer received (subject “{subject}”): matched by reference, reminders stopped" |
+* | * | "Offer received: matched by reference, reminders stopped" |
 *
 */
 export const api_sourcing_offer_received_event: ((inputs: Api_Sourcing_Offer_Received_EventInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Offer_Received_EventInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | countPlural | output |
 * | --- | --- |
-* | "one" | "{count} offer line captured from the reply to {reference} — dated prices saved to the supplier's history." |
-* | * | "{count} offer lines captured from the reply to {reference} — dated prices saved to the supplier's history." |
+* | "one" | "{count} offer line captured from the reply to {reference}. Dated prices saved to the supplier's history." |
+* | * | "{count} offer lines captured from the reply to {reference}. Dated prices saved to the supplier's history." |
 *
 */
 export const api_sourcing_offers_captured: ((inputs: Api_Sourcing_Offers_CapturedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Offers_CapturedInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "{name} decided this item — only they can take it back." |
+* | "{name} decided this item, so only they can take it back." |
 *
 */
 export const api_sourcing_only_decider: ((inputs: Api_Sourcing_Only_DeciderInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Only_DeciderInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "{name} filed this message — only they can take it back." |
+* | "{name} filed this message, so only they can take it back." |
 *
 */
 export const api_sourcing_only_filer: ((inputs: Api_Sourcing_Only_FilerInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Only_FilerInputs, { locale?: "en" | "ar" }, {}>;
@@ -6133,7 +6216,7 @@ export const api_sourcing_organise_first: ((inputs?: Api_Sourcing_Organise_First
 /**
 * | output |
 * | --- |
-* | "The original message isn't a case yet — handle that one; this copy is kept with it" |
+* | "The original message isn't a case yet. Handle that one; this copy is kept with it" |
 *
 */
 export const api_sourcing_original_not_case: ((inputs?: Api_Sourcing_Original_Not_CaseInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Original_Not_CaseInputs, { locale?: "en" | "ar" }, {}>;
@@ -6155,7 +6238,7 @@ export const api_sourcing_pending_items: ((inputs: Api_Sourcing_Pending_ItemsInp
 /**
 * | output |
 * | --- |
-* | "Quoted “{price} LE” — read as per kg, converted to {converted} per {pack} kg pack. Confirm the unit." |
+* | "Quoted “{price} LE”, read as per kg, converted to {converted} per {pack} kg pack. Confirm the unit." |
 *
 */
 export const api_sourcing_per_kg_uncertain: ((inputs: Api_Sourcing_Per_Kg_UncertainInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Per_Kg_UncertainInputs, { locale?: "en" | "ar" }, {}>;
@@ -6176,7 +6259,7 @@ export const api_sourcing_pick_line: ((inputs?: Api_Sourcing_Pick_LineInputs, op
 /**
 * | output |
 * | --- |
-* | "Price unit unclear — a person confirms" |
+* | "Price unit unclear: a person confirms" |
 *
 */
 export const api_sourcing_price_unit_unclear: ((inputs?: Api_Sourcing_Price_Unit_UnclearInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Price_Unit_UnclearInputs, { locale?: "en" | "ar" }, {}>;
@@ -6197,7 +6280,7 @@ export const api_sourcing_ref_in_subject: ((inputs: Api_Sourcing_Ref_In_SubjectI
 /**
 * | output |
 * | --- |
-* | "Reminder {n} sent — no reply after {after} reminders, escalated to the case owner" |
+* | "Reminder {n} sent. No reply after {after} reminders, escalated to the case owner" |
 *
 */
 export const api_sourcing_reminder_escalated_event: ((inputs: Api_Sourcing_Reminder_Escalated_EventInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Reminder_Escalated_EventInputs, { locale?: "en" | "ar" }, {}>;
@@ -6232,14 +6315,14 @@ export const api_sourcing_reopened_activity: ((inputs: Api_Sourcing_Reopened_Act
 /**
 * | output |
 * | --- |
-* | "The supplier's reply is already counted on the case — the link can't be taken back." |
+* | "The supplier's reply is already counted on the case, so the link can't be taken back." |
 *
 */
 export const api_sourcing_reply_counted: ((inputs?: Api_Sourcing_Reply_CountedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Reply_CountedInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "Reply matched by reference (subject “{subject}”) — reminders stopped" |
+* | "Reply matched by reference (subject “{subject}”). Reminders stopped" |
 *
 */
 export const api_sourcing_reply_matched_event: ((inputs: Api_Sourcing_Reply_Matched_EventInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Reply_Matched_EventInputs, { locale?: "en" | "ar" }, {}>;
@@ -6309,14 +6392,14 @@ export const api_sourcing_rfq_please_quote: ((inputs: Api_Sourcing_Rfq_Please_Qu
 /**
 * | output |
 * | --- |
-* | "For each line please state: unit price & currency, available quantity, pack size, lead time, delivery basis, freight, validity and payment terms — and attach..." |
+* | "For each line please state: unit price & currency, available quantity, pack size, lead time, delivery basis, freight, validity and payment terms, and attach ..." |
 *
 */
 export const api_sourcing_rfq_please_state: ((inputs?: Api_Sourcing_Rfq_Please_StateInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Rfq_Please_StateInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "Request for quotation {reference} — reply by {due}" |
+* | "Request for quotation {reference}: reply by {due}" |
 *
 */
 export const api_sourcing_rfq_subject: ((inputs: Api_Sourcing_Rfq_SubjectInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Rfq_SubjectInputs, { locale?: "en" | "ar" }, {}>;
@@ -6330,6 +6413,13 @@ export const api_sourcing_rfq_to_port: ((inputs?: Api_Sourcing_Rfq_To_PortInputs
 /**
 * | output |
 * | --- |
+* | "Sent by {name}, but {reference} was sent to {invited}. A person checks it before it counts" |
+*
+*/
+export const api_sourcing_sender_differs: ((inputs: Api_Sourcing_Sender_DiffersInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Sender_DiffersInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
 * | "Sender domain {domain} = {name}" |
 *
 */
@@ -6337,7 +6427,7 @@ export const api_sourcing_sender_domain: ((inputs: Api_Sourcing_Sender_DomainInp
 /**
 * | output |
 * | --- |
-* | "Sender {sender} is not in the supplier list — new supplier" |
+* | "Sender {sender} is not in the supplier list: new supplier" |
 *
 */
 export const api_sourcing_sender_unknown: ((inputs: Api_Sourcing_Sender_UnknownInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Sender_UnknownInputs, { locale?: "en" | "ar" }, {}>;
@@ -6352,13 +6442,6 @@ export const api_sourcing_sent_activity: ((inputs: Api_Sourcing_Sent_ActivityInp
 /**
 * | output |
 * | --- |
-* | "Sent by {name} for an RFQ sent to another supplier" |
-*
-*/
-export const api_sourcing_sent_by_other: ((inputs: Api_Sourcing_Sent_By_OtherInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Sent_By_OtherInputs, { locale?: "en" | "ar" }, {}>;
-/**
-* | output |
-* | --- |
 * | "Sent (client identity removed) · reminder 1 scheduled" |
 *
 */
@@ -6366,14 +6449,14 @@ export const api_sourcing_sent_event: ((inputs?: Api_Sourcing_Sent_EventInputs, 
 /**
 * | output |
 * | --- |
-* | "{reference}: {name} silent after {after} reminders — escalated to the owner." |
+* | "{reference}: {name} silent after {after} reminders, escalated to the owner." |
 *
 */
 export const api_sourcing_silent_activity: ((inputs: Api_Sourcing_Silent_ActivityInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Silent_ActivityInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "{after} reminders sent · {caseId} quote due {due} — call them or source elsewhere" |
+* | "{after} reminders sent · {caseId} quote due {due}. Call them or source elsewhere" |
 *
 */
 export const api_sourcing_silent_detail: ((inputs: Api_Sourcing_Silent_DetailInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Silent_DetailInputs, { locale?: "en" | "ar" }, {}>;
@@ -6401,7 +6484,7 @@ export const api_sourcing_specialist: ((inputs: Api_Sourcing_SpecialistInputs, o
 /**
 * | output |
 * | --- |
-* | "Draft — not sent" |
+* | "Draft, not sent" |
 *
 */
 export const api_sourcing_step_draft: ((inputs?: Api_Sourcing_Step_DraftInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Step_DraftInputs, { locale?: "en" | "ar" }, {}>;
@@ -6429,21 +6512,21 @@ export const api_sourcing_step_sent: ((inputs?: Api_Sourcing_Step_SentInputs, op
 /**
 * | output |
 * | --- |
-* | "{status} — reminders stopped" |
+* | "{status}: reminders stopped" |
 *
 */
 export const api_sourcing_step_stopped: ((inputs: Api_Sourcing_Step_StoppedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Step_StoppedInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "{status} without an invitation — reply matched by reference" |
+* | "{status} without an invitation: reply matched by reference" |
 *
 */
 export const api_sourcing_step_uninvited: ((inputs: Api_Sourcing_Step_UninvitedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Step_UninvitedInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "Subject changed (“{subject}”) — matched by reference, not by subject" |
+* | "Subject changed (“{subject}”): matched by reference, not by subject" |
 *
 */
 export const api_sourcing_subject_changed: ((inputs: Api_Sourcing_Subject_ChangedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Subject_ChangedInputs, { locale?: "en" | "ar" }, {}>;
@@ -6464,7 +6547,7 @@ export const api_sourcing_supplier: ((inputs?: Api_Sourcing_SupplierInputs, opti
 /**
 * | output |
 * | --- |
-* | "Inbox history import — quoted {quoted} lines 2022–2025, never ordered" |
+* | "Inbox history import: quoted {quoted} lines 2022–2025, never ordered" |
 *
 */
 export const api_sourcing_supplier_history_source: ((inputs: Api_Sourcing_Supplier_History_SourceInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Supplier_History_SourceInputs, { locale?: "en" | "ar" }, {}>;
@@ -6478,14 +6561,14 @@ export const api_sourcing_template_label: ((inputs: Api_Sourcing_Template_LabelI
 /**
 * | output |
 * | --- |
-* | "Uncertain — sent to the review queue" |
+* | "Uncertain, sent to the review queue" |
 *
 */
 export const api_sourcing_uncertain_review: ((inputs?: Api_Sourcing_Uncertain_ReviewInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_Uncertain_ReviewInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "No reference, no thread, unknown sender — a person classifies it" |
+* | "No reference, no thread, unknown sender: a person classifies it" |
 *
 */
 export const api_sourcing_unclassifiable: ((inputs?: Api_Sourcing_UnclassifiableInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Api_Sourcing_UnclassifiableInputs, { locale?: "en" | "ar" }, {}>;
@@ -6793,7 +6876,7 @@ export const automations_review_note: ((inputs?: Automations_Review_NoteInputs, 
 /**
 * | output |
 * | --- |
-* | "Reviewed — your name is on the audit log" |
+* | "Reviewed. Your name is on the audit log" |
 *
 */
 export const automations_reviewed_done: ((inputs?: Automations_Reviewed_DoneInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Automations_Reviewed_DoneInputs, { locale?: "en" | "ar" }, {}>;
@@ -6807,7 +6890,7 @@ export const case_overview_delivered: ((inputs?: Case_Overview_DeliveredInputs, 
 /**
 * | output |
 * | --- |
-* | "The case ended here — {next}" |
+* | "The case ended here: {next}" |
 *
 */
 export const case_overview_ended: ((inputs: Case_Overview_EndedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Case_Overview_EndedInputs, { locale?: "en" | "ar" }, {}>;
@@ -6835,7 +6918,7 @@ export const case_overview_ordered: ((inputs?: Case_Overview_OrderedInputs, opti
 /**
 * | output |
 * | --- |
-* | "Paused at the customer's decision — {next}" |
+* | "Paused at the customer's decision: {next}" |
 *
 */
 export const case_overview_paused: ((inputs: Case_Overview_PausedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Case_Overview_PausedInputs, { locale?: "en" | "ar" }, {}>;
@@ -6912,7 +6995,7 @@ export const cash_apply_details: ((inputs?: Cash_Apply_DetailsInputs, options?: 
 /**
 * | output |
 * | --- |
-* | "New bank details applied to {supplier} — verified by two people." |
+* | "New bank details applied to {supplier}, verified by two people." |
 *
 */
 export const cash_apply_done: ((inputs: Cash_Apply_DoneInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Cash_Apply_DoneInputs, { locale?: "en" | "ar" }, {}>;
@@ -7003,7 +7086,7 @@ export const cash_forecast_subhead_fixed: ((inputs: Cash_Forecast_Subhead_FixedI
 /**
 * | output |
 * | --- |
-* | "Payments to {supplier} stay on the old, verified account until two different people — Finance and the CEO — approve after a call-back on the number on file." |
+* | "Payments to {supplier} stay on the old, verified account until two different people, Finance and the CEO, approve after a call-back on the number on file." |
 *
 */
 export const cash_held_alert: ((inputs: Cash_Held_AlertInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Cash_Held_AlertInputs, { locale?: "en" | "ar" }, {}>;
@@ -7220,7 +7303,7 @@ export const cash_waiting_for_approver: ((inputs?: Cash_Waiting_For_ApproverInpu
 /**
 * | output |
 * | --- |
-* | "You have decided — a second, different person must approve." |
+* | "You have decided. A second, different person must approve." |
 *
 */
 export const cash_you_decided: ((inputs?: Cash_You_DecidedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Cash_You_DecidedInputs, { locale?: "en" | "ar" }, {}>;
@@ -7311,7 +7394,7 @@ export const commercial_approve: ((inputs?: Commercial_ApproveInputs, options?: 
 /**
 * | output |
 * | --- |
-* | "Approved {number} — it can be sent" |
+* | "Approved {number}: it can be sent" |
 *
 */
 export const commercial_approved_done: ((inputs: Commercial_Approved_DoneInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Commercial_Approved_DoneInputs, { locale?: "en" | "ar" }, {}>;
@@ -7349,7 +7432,7 @@ export const commercial_charges_allocated: ((inputs: Commercial_Charges_Allocate
 /**
 * | output |
 * | --- |
-* | "VAT: supply to a foreign vessel in transit is expected at 0% — finance confirms. The quotation shows prices excl. VAT." |
+* | "VAT: supply to a foreign vessel in transit is expected at 0%, which finance confirms. The quotation shows prices excl. VAT." |
 *
 */
 export const commercial_charges_vat: ((inputs?: Commercial_Charges_VatInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Commercial_Charges_VatInputs, { locale?: "en" | "ar" }, {}>;
@@ -7363,7 +7446,7 @@ export const commercial_check_again: ((inputs?: Commercial_Check_AgainInputs, op
 /**
 * | output |
 * | --- |
-* | "{supplier}: may differ from the request — check" |
+* | "{supplier}: may differ from the request, check" |
 *
 */
 export const commercial_check_no: ((inputs: Commercial_Check_NoInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Commercial_Check_NoInputs, { locale?: "en" | "ar" }, {}>;
@@ -7391,7 +7474,7 @@ export const commercial_check_question: ((inputs: Commercial_Check_QuestionInput
 /**
 * | output |
 * | --- |
-* | "Requested: {description} — {requested}. Rules: {rules}." |
+* | "Requested: {description}, {requested}. Rules: {rules}." |
 *
 */
 export const commercial_check_requested: ((inputs: Commercial_Check_RequestedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Commercial_Check_RequestedInputs, { locale?: "en" | "ar" }, {}>;
@@ -7479,6 +7562,13 @@ export const commercial_col_margin_pct: ((inputs?: Commercial_Col_Margin_PctInpu
 *
 */
 export const commercial_col_markup: ((inputs?: Commercial_Col_MarkupInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Commercial_Col_MarkupInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Match" |
+*
+*/
+export const commercial_col_match: ((inputs?: Commercial_Col_MatchInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Commercial_Col_MatchInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
@@ -7734,15 +7824,15 @@ export const commercial_evidence: ((inputs?: Commercial_EvidenceInputs, options?
 /**
 * | output |
 * | --- |
-* | "Customer email 17 Nov 10:12 — “500 ml cans OK”, attached" |
+* | "Customer email 17 Nov 10:12: “500 ml cans OK”, attached" |
 *
 */
 export const commercial_evidence_default: ((inputs?: Commercial_Evidence_DefaultInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Commercial_Evidence_DefaultInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | countPlural | output |
 * | --- | --- |
-* | "one" | "{count} exception — shown to the approver as “{type}”." |
-* | * | "{count} exceptions — shown to the approver as “{type}”." |
+* | "one" | "{count} exception, shown to the approver as “{type}”." |
+* | * | "{count} exceptions, shown to the approver as “{type}”." |
 *
 */
 export const commercial_exceptions: ((inputs: Commercial_ExceptionsInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Commercial_ExceptionsInputs, { locale?: "en" | "ar" }, {}>;
@@ -7973,7 +8063,7 @@ export const commercial_metric_no_freight: ((inputs: Commercial_Metric_No_Freigh
 /**
 * | output |
 * | --- |
-* | "No exceptions — standard approval." |
+* | "No exceptions. Standard approval." |
 *
 */
 export const commercial_no_exceptions: ((inputs?: Commercial_No_ExceptionsInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Commercial_No_ExceptionsInputs, { locale?: "en" | "ar" }, {}>;
@@ -8001,7 +8091,7 @@ export const commercial_no_offers: ((inputs?: Commercial_No_OffersInputs, option
 /**
 * | output |
 * | --- |
-* | "No offer passes every check yet — no recommendation." |
+* | "No offer passes every check yet, so there is no recommendation." |
 *
 */
 export const commercial_no_recommendation: ((inputs?: Commercial_No_RecommendationInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Commercial_No_RecommendationInputs, { locale?: "en" | "ar" }, {}>;
@@ -8148,7 +8238,7 @@ export const commercial_paper_discount: ((inputs: Commercial_Paper_DiscountInput
 /**
 * | output |
 * | --- |
-* | "DRAFT — not yet approved. Will be issued as version {version}." |
+* | "DRAFT: not yet approved. Will be issued as version {version}." |
 *
 */
 export const commercial_paper_draft: ((inputs: Commercial_Paper_DraftInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Commercial_Paper_DraftInputs, { locale?: "en" | "ar" }, {}>;
@@ -8260,7 +8350,7 @@ export const commercial_paper_s: ((inputs?: Commercial_Paper_SInputs, options?: 
 /**
 * | output |
 * | --- |
-* | "{name} — authorised signature" |
+* | "{name}, authorised signature" |
 *
 */
 export const commercial_paper_signature: ((inputs: Commercial_Paper_SignatureInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Commercial_Paper_SignatureInputs, { locale?: "en" | "ar" }, {}>;
@@ -8274,7 +8364,7 @@ export const commercial_paper_signature_pending: ((inputs?: Commercial_Paper_Sig
 /**
 * | output |
 * | --- |
-* | "Superseded — kept for audit. Not valid for ordering." |
+* | "Superseded: kept for audit. Not valid for ordering." |
 *
 */
 export const commercial_paper_superseded: ((inputs?: Commercial_Paper_SupersededInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Commercial_Paper_SupersededInputs, { locale?: "en" | "ar" }, {}>;
@@ -8344,7 +8434,7 @@ export const commercial_policy_target: ((inputs: Commercial_Policy_TargetInputs,
 /**
 * | output |
 * | --- |
-* | "All fields match — submission complete." |
+* | "All fields match. Submission complete." |
 *
 */
 export const commercial_portal_all_match: ((inputs?: Commercial_Portal_All_MatchInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Commercial_Portal_All_MatchInputs, { locale?: "en" | "ar" }, {}>;
@@ -8421,7 +8511,7 @@ export const commercial_quantity_from: ((inputs: Commercial_Quantity_FromInputs,
 /**
 * | output |
 * | --- |
-* | "{number} approved — ready to send." |
+* | "{number} approved and ready to send." |
 *
 */
 export const commercial_quote_approved: ((inputs: Commercial_Quote_ApprovedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Commercial_Quote_ApprovedInputs, { locale?: "en" | "ar" }, {}>;
@@ -8470,7 +8560,7 @@ export const commercial_reason_placeholder: ((inputs?: Commercial_Reason_Placeho
 /**
 * | output |
 * | --- |
-* | "{offer}: {landed} EGP / {baseUnit} landed — lowest cost on board among offers that pass every check." |
+* | "{offer}: {landed} EGP / {baseUnit} landed, the lowest cost on board among offers that pass every check." |
 *
 */
 export const commercial_recommendation_best: ((inputs: Commercial_Recommendation_BestInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Commercial_Recommendation_BestInputs, { locale?: "en" | "ar" }, {}>;
@@ -8484,14 +8574,14 @@ export const commercial_recommendation_heading: ((inputs?: Commercial_Recommenda
 /**
 * | output |
 * | --- |
-* | "Split sourcing: {split} — {cost} landed, all before ETA." |
+* | "Split sourcing: {split}, {cost} landed, all before ETA." |
 *
 */
 export const commercial_recommendation_split: ((inputs: Commercial_Recommendation_SplitInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Commercial_Recommendation_SplitInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "Split sourcing: {split} — {cost} landed, saves {saves} vs the best single supplier, all before ETA." |
+* | "Split sourcing: {split}, {cost} landed, saves {saves} vs the best single supplier, all before ETA." |
 *
 */
 export const commercial_recommendation_split_saves: ((inputs: Commercial_Recommendation_Split_SavesInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Commercial_Recommendation_Split_SavesInputs, { locale?: "en" | "ar" }, {}>;
@@ -8561,7 +8651,7 @@ export const commercial_return_heading: ((inputs: Commercial_Return_HeadingInput
 /**
 * | output |
 * | --- |
-* | "e.g. Re-check line 3 — margin too thin for a new supplier" |
+* | "e.g. Re-check line 3, margin too thin for a new supplier" |
 *
 */
 export const commercial_return_placeholder: ((inputs?: Commercial_Return_PlaceholderInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Commercial_Return_PlaceholderInputs, { locale?: "en" | "ar" }, {}>;
@@ -8724,7 +8814,7 @@ export const commercial_send_correction_text: ((inputs: Commercial_Send_Correcti
 /**
 * | output |
 * | --- |
-* | "Email from Odoo — To: {to} · Subject: Quotation {number} — {vessel} — ref. {ref} · Attachment: {number}.pdf" |
+* | "Email from Odoo. To: {to} · Subject: Quotation {number}, {vessel}, ref. {ref} · Attachment: {number}.pdf" |
 *
 */
 export const commercial_send_email_line: ((inputs: Commercial_Send_Email_LineInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Commercial_Send_Email_LineInputs, { locale?: "en" | "ar" }, {}>;
@@ -8738,7 +8828,7 @@ export const commercial_send_heading: ((inputs: Commercial_Send_HeadingInputs, o
 /**
 * | output |
 * | --- |
-* | "Customer portal — enter the quotation in {portal}, then upload the confirmation screenshot below — the submission is only complete when it matches the approv..." |
+* | "Customer portal: enter the quotation in {portal}, then upload the confirmation screenshot below. The submission is only complete when it matches the approved..." |
 *
 */
 export const commercial_send_portal_line: ((inputs: Commercial_Send_Portal_LineInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Commercial_Send_Portal_LineInputs, { locale?: "en" | "ar" }, {}>;
@@ -8941,7 +9031,7 @@ export const commercial_unit_price: ((inputs?: Commercial_Unit_PriceInputs, opti
 /**
 * | output |
 * | --- |
-* | "L{line} · {description} — {status}: no cost yet, excluded from this version." |
+* | "L{line} · {description} ({status}): no cost yet, excluded from this version." |
 *
 */
 export const commercial_unpriced_line: ((inputs: Commercial_Unpriced_LineInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Commercial_Unpriced_LineInputs, { locale?: "en" | "ar" }, {}>;
@@ -8962,7 +9052,7 @@ export const commercial_use_split: ((inputs?: Commercial_Use_SplitInputs, option
 /**
 * | output |
 * | --- |
-* | "14% on local supplier bills — excluded from cost" |
+* | "14% on local supplier bills, excluded from cost" |
 *
 */
 export const commercial_vat_note: ((inputs?: Commercial_Vat_NoteInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Commercial_Vat_NoteInputs, { locale?: "en" | "ar" }, {}>;
@@ -9074,14 +9164,14 @@ export const control_room_assistant: ((inputs?: Control_Room_AssistantInputs, op
 /**
 * | output |
 * | --- |
-* | "Summarised again at {at} from {count} live records. A draft to read — nothing is sent, priced or paid." |
+* | "Summarised again at {at} from {count} live records. A draft to read: nothing is sent, priced or paid." |
 *
 */
 export const control_room_briefing_summarised: ((inputs: Control_Room_Briefing_SummarisedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Control_Room_Briefing_SummarisedInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "Written at 07:00 from {count} live records. A draft to read — nothing is sent, priced or paid." |
+* | "Written at 07:00 from {count} live records. A draft to read: nothing is sent, priced or paid." |
 *
 */
 export const control_room_briefing_written: ((inputs: Control_Room_Briefing_WrittenInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Control_Room_Briefing_WrittenInputs, { locale?: "en" | "ar" }, {}>;
@@ -9243,7 +9333,7 @@ export const control_room_receivables_payables: ((inputs?: Control_Room_Receivab
 /**
 * | output |
 * | --- |
-* | "Briefed at 07:00 from every case, quote, delivery and payment — and answers to any question about them." |
+* | "Briefed at 07:00 from every case, quote, delivery and payment, with answers to any question about them." |
 *
 */
 export const control_room_subtitle: ((inputs?: Control_Room_SubtitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Control_Room_SubtitleInputs, { locale?: "en" | "ar" }, {}>;
@@ -9268,6 +9358,13 @@ export const growth_column_imo: ((inputs?: Growth_Column_ImoInputs, options?: { 
 *
 */
 export const growth_column_manager: ((inputs?: Growth_Column_ManagerInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Growth_Column_ManagerInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Supplied" |
+*
+*/
+export const growth_column_supplied: ((inputs?: Growth_Column_SuppliedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Growth_Column_SuppliedInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
@@ -9481,14 +9578,14 @@ export const inbox_ack_by_hand: ((inputs?: Inbox_Ack_By_HandInputs, options?: { 
 /**
 * | output |
 * | --- |
-* | "Template: {template}. WhatsApp / form source: the owner sends it — the system never messages the customer by itself here." |
+* | "Template: {template}. WhatsApp / form source: the owner sends it. The system never messages the customer by itself here." |
 *
 */
 export const inbox_ack_note_manual: ((inputs: Inbox_Ack_Note_ManualInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Inbox_Ack_Note_ManualInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "Template: {template}. Sent once from the approved template — never twice, even if the email is re-processed." |
+* | "Template: {template}. Sent once from the approved template, never twice, even if the email is re-processed." |
 *
 */
 export const inbox_ack_note_once: ((inputs: Inbox_Ack_Note_OnceInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Inbox_Ack_Note_OnceInputs, { locale?: "en" | "ar" }, {}>;
@@ -9551,7 +9648,7 @@ export const inbox_case_was_created: ((inputs: Inbox_Case_Was_CreatedInputs, opt
 /**
 * | output |
 * | --- |
-* | "{kind} · {account} — {status}" |
+* | "{kind} · {account}: {status}" |
 *
 */
 export const inbox_channel: ((inputs: Inbox_ChannelInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Inbox_ChannelInputs, { locale?: "en" | "ar" }, {}>;
@@ -9674,7 +9771,7 @@ export const inbox_flag_auto_reply: ((inputs?: Inbox_Flag_Auto_ReplyInputs, opti
 /**
 * | output |
 * | --- |
-* | "It doesn't answer the request — supplier reminders keep running." |
+* | "It doesn't answer the request, so supplier reminders keep running." |
 *
 */
 export const inbox_flag_auto_reply_note: ((inputs?: Inbox_Flag_Auto_Reply_NoteInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Inbox_Flag_Auto_Reply_NoteInputs, { locale?: "en" | "ar" }, {}>;
@@ -9716,21 +9813,21 @@ export const inbox_from: ((inputs: Inbox_FromInputs, options?: { locale?: "en" |
 /**
 * | output |
 * | --- |
-* | "Everything is reviewed — it's ready for approval." |
+* | "Everything is reviewed. It's ready for approval." |
 *
 */
 export const inbox_history_approval_ready: ((inputs?: Inbox_History_Approval_ReadyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Inbox_History_Approval_ReadyInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "Only management approves the import — nothing from the history becomes a record before Karim Balbaa says yes. Confidential threads stay out." |
+* | "Only management approves the import. Nothing from the history becomes a record before management says yes. Confidential threads stay out." |
 *
 */
 export const inbox_history_approval_text: ((inputs?: Inbox_History_Approval_TextInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Inbox_History_Approval_TextInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "Waiting for Karim Balbaa (management). {blocked}" |
+* | "Waiting for {approvers} (management). {blocked}" |
 *
 */
 export const inbox_history_approval_waiting: ((inputs: Inbox_History_Approval_WaitingInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Inbox_History_Approval_WaitingInputs, { locale?: "en" | "ar" }, {}>;
@@ -9744,7 +9841,7 @@ export const inbox_history_approve: ((inputs?: Inbox_History_ApproveInputs, opti
 /**
 * | output |
 * | --- |
-* | "Import approved — customers, vessels, suppliers and dated prices saved" |
+* | "Import approved: customers, vessels, suppliers and dated prices saved" |
 *
 */
 export const inbox_history_approve_done: ((inputs?: Inbox_History_Approve_DoneInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Inbox_History_Approve_DoneInputs, { locale?: "en" | "ar" }, {}>;
@@ -9989,10 +10086,17 @@ export const inbox_history_kept_share: ((inputs: Inbox_History_Kept_ShareInputs,
 /**
 * | output |
 * | --- |
-* | "All of Golden Sea's mailboxes and WhatsApp exports, read in a dry run first — nothing is saved before approval." |
+* | "All of Golden Sea's mailboxes and WhatsApp exports, read in a dry run first. Nothing is saved before approval." |
 *
 */
 export const inbox_history_mailboxes_note: ((inputs?: Inbox_History_Mailboxes_NoteInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Inbox_History_Mailboxes_NoteInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "management" |
+*
+*/
+export const inbox_history_management: ((inputs?: Inbox_History_ManagementInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Inbox_History_ManagementInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
@@ -10010,7 +10114,7 @@ export const inbox_history_new_to_odoo: ((inputs?: Inbox_History_New_To_OdooInpu
 /**
 * | output |
 * | --- |
-* | "No PO — still remembered" |
+* | "No PO, still remembered" |
 *
 */
 export const inbox_history_no_po: ((inputs?: Inbox_History_No_PoInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Inbox_History_No_PoInputs, { locale?: "en" | "ar" }, {}>;
@@ -10116,7 +10220,7 @@ export const inbox_history_status_approved: ((inputs: Inbox_History_Status_Appro
 /**
 * | output |
 * | --- |
-* | "Status: dry run ready — nothing has been imported" |
+* | "Status: dry run ready. Nothing has been imported" |
 *
 */
 export const inbox_history_status_dry_run: ((inputs?: Inbox_History_Status_Dry_RunInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Inbox_History_Status_Dry_RunInputs, { locale?: "en" | "ar" }, {}>;
@@ -10929,7 +11033,7 @@ export const order_to_cash_agreement_hint: ((inputs?: Order_To_Cash_Agreement_Hi
 /**
 * | output |
 * | --- |
-* | "AI draft from the customer's email — check it before recording" |
+* | "AI draft from the customer's email. Check it before recording." |
 *
 */
 export const order_to_cash_agreement_hint_ai: ((inputs?: Order_To_Cash_Agreement_Hint_AiInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Order_To_Cash_Agreement_Hint_AiInputs, { locale?: "en" | "ar" }, {}>;
@@ -10985,28 +11089,28 @@ export const order_to_cash_amendment_confirm: ((inputs?: Order_To_Cash_Amendment
 /**
 * | output |
 * | --- |
-* | "Amendment recorded on line {line} — evidence attached." |
+* | "Amendment recorded on line {line}. Evidence attached." |
 *
 */
 export const order_to_cash_amendment_done: ((inputs: Order_To_Cash_Amendment_DoneInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Order_To_Cash_Amendment_DoneInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "Record customer amendment — line header" |
+* | "Record customer amendment: line header" |
 *
 */
 export const order_to_cash_amendment_heading_header: ((inputs?: Order_To_Cash_Amendment_Heading_HeaderInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Order_To_Cash_Amendment_Heading_HeaderInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "Record customer amendment — line {line}" |
+* | "Record customer amendment: line {line}" |
 *
 */
 export const order_to_cash_amendment_heading_line: ((inputs: Order_To_Cash_Amendment_Heading_LineInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Order_To_Cash_Amendment_Heading_LineInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "{field} — PO: {po} · Quotation: {quote}" |
+* | "{field}. PO: {po} · Quotation: {quote}" |
 *
 */
 export const order_to_cash_amendment_intro: ((inputs: Order_To_Cash_Amendment_IntroInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Order_To_Cash_Amendment_IntroInputs, { locale?: "en" | "ar" }, {}>;
@@ -11041,7 +11145,7 @@ export const order_to_cash_bills_matched: ((inputs?: Order_To_Cash_Bills_Matched
 /**
 * | output |
 * | --- |
-* | "{count} on hold — 3-way match" |
+* | "{count} on hold: 3-way match" |
 *
 */
 export const order_to_cash_bills_on_hold: ((inputs: Order_To_Cash_Bills_On_HoldInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Order_To_Cash_Bills_On_HoldInputs, { locale?: "en" | "ar" }, {}>;
@@ -11129,6 +11233,13 @@ export const order_to_cash_closed_done: ((inputs: Order_To_Cash_Closed_DoneInput
 *
 */
 export const order_to_cash_col_at_quotation: ((inputs?: Order_To_Cash_Col_At_QuotationInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Order_To_Cash_Col_At_QuotationInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Check" |
+*
+*/
+export const order_to_cash_col_check: ((inputs?: Order_To_Cash_Col_CheckInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Order_To_Cash_Col_CheckInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
@@ -11245,7 +11356,7 @@ export const order_to_cash_confirmed_by_management: ((inputs?: Order_To_Cash_Con
 /**
 * | output |
 * | --- |
-* | "{number} confirmed — sent to {supplier}." |
+* | "{number} confirmed and sent to {supplier}." |
 *
 */
 export const order_to_cash_confirmed_done: ((inputs: Order_To_Cash_Confirmed_DoneInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Order_To_Cash_Confirmed_DoneInputs, { locale?: "en" | "ar" }, {}>;
@@ -11259,7 +11370,7 @@ export const order_to_cash_delivered_count: ((inputs: Order_To_Cash_Delivered_Co
 /**
 * | output |
 * | --- |
-* | "{number} delivered — signed delivery note on file." |
+* | "{number} delivered. Signed delivery note on file." |
 *
 */
 export const order_to_cash_delivered_done: ((inputs: Order_To_Cash_Delivered_DoneInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Order_To_Cash_Delivered_DoneInputs, { locale?: "en" | "ar" }, {}>;
@@ -11315,7 +11426,7 @@ export const order_to_cash_drop_tag: ((inputs: Order_To_Cash_Drop_TagInputs, opt
 /**
 * | output |
 * | --- |
-* | "Optional in the demo — a copy of the customer's email is attached if you skip this" |
+* | "Optional in the demo. A copy of the customer's email is attached if you skip this." |
 *
 */
 export const order_to_cash_evidence_hint: ((inputs?: Order_To_Cash_Evidence_HintInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Order_To_Cash_Evidence_HintInputs, { locale?: "en" | "ar" }, {}>;
@@ -11371,7 +11482,7 @@ export const order_to_cash_header: ((inputs?: Order_To_Cash_HeaderInputs, option
 /**
 * | output |
 * | --- |
-* | "{lines} — {place}" |
+* | "{lines}, {place}" |
 *
 */
 export const order_to_cash_intro: ((inputs: Order_To_Cash_IntroInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Order_To_Cash_IntroInputs, { locale?: "en" | "ar" }, {}>;
@@ -11448,7 +11559,7 @@ export const order_to_cash_n_of_total: ((inputs: Order_To_Cash_N_Of_TotalInputs,
 /**
 * | output |
 * | --- |
-* | "No delivery planned yet — the plan is created once supplier POs are confirmed and goods are due." |
+* | "No delivery planned yet. The plan is created once supplier POs are confirmed and goods are due." |
 *
 */
 export const order_to_cash_no_plan: ((inputs?: Order_To_Cash_No_PlanInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Order_To_Cash_No_PlanInputs, { locale?: "en" | "ar" }, {}>;
@@ -11462,7 +11573,7 @@ export const order_to_cash_not_dispatched: ((inputs?: Order_To_Cash_Not_Dispatch
 /**
 * | output |
 * | --- |
-* | "Not on the customer's PO — decide" |
+* | "Not on the customer's PO: decide" |
 *
 */
 export const order_to_cash_not_on_po_decide: ((inputs?: Order_To_Cash_Not_On_Po_DecideInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Order_To_Cash_Not_On_Po_DecideInputs, { locale?: "en" | "ar" }, {}>;
@@ -11504,14 +11615,14 @@ export const order_to_cash_outcome_closed: ((inputs?: Order_To_Cash_Outcome_Clos
 /**
 * | output |
 * | --- |
-* | "Open — revision to follow" |
+* | "Open, revision to follow" |
 *
 */
 export const order_to_cash_outcome_open_revision: ((inputs?: Order_To_Cash_Outcome_Open_RevisionInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Order_To_Cash_Outcome_Open_RevisionInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "{outcome} — {reason}" |
+* | "{outcome}: {reason}" |
 *
 */
 export const order_to_cash_outcome_with_reason: ((inputs: Order_To_Cash_Outcome_With_ReasonInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Order_To_Cash_Outcome_With_ReasonInputs, { locale?: "en" | "ar" }, {}>;
@@ -11525,7 +11636,7 @@ export const order_to_cash_pair: ((inputs: Order_To_Cash_PairInputs, options?: {
 /**
 * | output |
 * | --- |
-* | "Quoted lines the customer didn't order: they stay open for a revision or close with a reason — a partly awarded case never shows as complete." |
+* | "Quoted lines the customer didn't order stay open for a revision or close with a reason. A partly awarded case never shows as complete." |
 *
 */
 export const order_to_cash_partial_award_note: ((inputs?: Order_To_Cash_Partial_Award_NoteInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Order_To_Cash_Partial_Award_NoteInputs, { locale?: "en" | "ar" }, {}>;
@@ -11560,7 +11671,7 @@ export const order_to_cash_po_arrived_text: ((inputs?: Order_To_Cash_Po_Arrived_
 /**
 * | output |
 * | --- |
-* | "The customer's PO was checked against the approved quotation and validated — the sales order is confirmed." |
+* | "The customer's PO was checked against the approved quotation and validated. The sales order is confirmed." |
 *
 */
 export const order_to_cash_po_checked_validated: ((inputs?: Order_To_Cash_Po_Checked_ValidatedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Order_To_Cash_Po_Checked_ValidatedInputs, { locale?: "en" | "ar" }, {}>;
@@ -11609,14 +11720,14 @@ export const order_to_cash_po_validated: ((inputs?: Order_To_Cash_Po_ValidatedIn
 /**
 * | output |
 * | --- |
-* | "PO validated — every mismatch has written customer agreement." |
+* | "PO validated. Every mismatch has written customer agreement." |
 *
 */
 export const order_to_cash_po_validated_agreed: ((inputs?: Order_To_Cash_Po_Validated_AgreedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Order_To_Cash_Po_Validated_AgreedInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "PO validated — sales order confirmed. Supplier POs follow below." |
+* | "PO validated and sales order confirmed. Supplier POs follow below." |
 *
 */
 export const order_to_cash_po_validated_confirmed: ((inputs?: Order_To_Cash_Po_Validated_ConfirmedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Order_To_Cash_Po_Validated_ConfirmedInputs, { locale?: "en" | "ar" }, {}>;
@@ -11763,7 +11874,7 @@ export const order_to_cash_receipt: ((inputs?: Order_To_Cash_ReceiptInputs, opti
 /**
 * | output |
 * | --- |
-* | "Confirmed receipt pending — signed delivery note required" |
+* | "Confirmed receipt pending: signed delivery note required" |
 *
 */
 export const order_to_cash_receipt_pending: ((inputs?: Order_To_Cash_Receipt_PendingInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Order_To_Cash_Receipt_PendingInputs, { locale?: "en" | "ar" }, {}>;
@@ -11805,7 +11916,7 @@ export const order_to_cash_record_amendment: ((inputs?: Order_To_Cash_Record_Ame
 /**
 * | output |
 * | --- |
-* | "Re-planned after the agent's ETA change — escalated to {owner} and Karim Balbaa" |
+* | "Re-planned after the agent's ETA change. Escalated to {owner} and Karim Balbaa" |
 *
 */
 export const order_to_cash_replan_heading: ((inputs: Order_To_Cash_Replan_HeadingInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Order_To_Cash_Replan_HeadingInputs, { locale?: "en" | "ar" }, {}>;
@@ -11882,7 +11993,7 @@ export const order_to_cash_sample_re: ((inputs: Order_To_Cash_Sample_ReInputs, o
 /**
 * | output |
 * | --- |
-* | "Received on board — {signedBy}" |
+* | "Received on board: {signedBy}" |
 *
 */
 export const order_to_cash_sample_received: ((inputs: Order_To_Cash_Sample_ReceivedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Order_To_Cash_Sample_ReceivedInputs, { locale?: "en" | "ar" }, {}>;
@@ -11924,7 +12035,7 @@ export const order_to_cash_shortages: ((inputs?: Order_To_Cash_ShortagesInputs, 
 /**
 * | output |
 * | --- |
-* | "Optional — becomes a claim" |
+* | "Optional. Becomes a claim" |
 *
 */
 export const order_to_cash_shortages_hint: ((inputs?: Order_To_Cash_Shortages_HintInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Order_To_Cash_Shortages_HintInputs, { locale?: "en" | "ar" }, {}>;
@@ -11938,7 +12049,7 @@ export const order_to_cash_shortages_label: ((inputs?: Order_To_Cash_Shortages_L
 /**
 * | output |
 * | --- |
-* | "{changes} — the shortfall is scheduled as a backorder (the customer promise stays as agreed)." |
+* | "{changes}. The shortfall is scheduled as a backorder (the customer promise stays as agreed)." |
 *
 */
 export const order_to_cash_shortfall_backorder: ((inputs: Order_To_Cash_Shortfall_BackorderInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Order_To_Cash_Shortfall_BackorderInputs, { locale?: "en" | "ar" }, {}>;
@@ -15004,7 +15115,7 @@ export const page_quote_decision: ((inputs?: Page_Quote_DecisionInputs, options?
 /**
 * | output |
 * | --- |
-* | "Internal — never printed" |
+* | "Internal, never printed" |
 *
 */
 export const page_quote_internal: ((inputs?: Page_Quote_InternalInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Page_Quote_InternalInputs, { locale?: "en" | "ar" }, {}>;
@@ -16203,6 +16314,13 @@ export const profit_col_rate: ((inputs?: Profit_Col_RateInputs, options?: { loca
 /**
 * | output |
 * | --- |
+* | "Realised" |
+*
+*/
+export const profit_col_realised: ((inputs?: Profit_Col_RealisedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Profit_Col_RealisedInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
 * | "Receipt" |
 *
 */
@@ -16455,6 +16573,13 @@ export const project_col_checked: ((inputs?: Project_Col_CheckedInputs, options?
 /**
 * | output |
 * | --- |
+* | "Open" |
+*
+*/
+export const project_col_open: ((inputs?: Project_Col_OpenInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Project_Col_OpenInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
 * | "From your brief" |
 *
 */
@@ -16616,7 +16741,7 @@ export const roles_failing: ((inputs?: Roles_FailingInputs, options?: { locale?:
 /**
 * | output |
 * | --- |
-* | "{reason} Office hours — the case owner picks it up; no alert needed." |
+* | "{reason} Office hours: the case owner picks it up; no alert needed." |
 *
 */
 export const roles_in_hours_text: ((inputs: Roles_In_Hours_TextInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Roles_In_Hours_TextInputs, { locale?: "en" | "ar" }, {}>;
@@ -16637,28 +16762,28 @@ export const roles_open_pricing: ((inputs?: Roles_Open_PricingInputs, options?: 
 /**
 * | output |
 * | --- |
-* | "Fri 20 Nov 10:00 — weekend" |
+* | "Fri 20 Nov 10:00, weekend" |
 *
 */
 export const roles_preset_friday: ((inputs?: Roles_Preset_FridayInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Roles_Preset_FridayInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "Tue 17 Nov 11:30 — office hours" |
+* | "Tue 17 Nov 11:30, office hours" |
 *
 */
 export const roles_preset_office: ((inputs?: Roles_Preset_OfficeInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Roles_Preset_OfficeInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "Sat 21 Nov 14:00 — weekend" |
+* | "Sat 21 Nov 14:00, weekend" |
 *
 */
 export const roles_preset_saturday: ((inputs?: Roles_Preset_SaturdayInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Roles_Preset_SaturdayInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
-* | "Sun 22 Nov 06:30 — before office" |
+* | "Sun 22 Nov 06:30, before office" |
 *
 */
 export const roles_preset_sunday: ((inputs?: Roles_Preset_SundayInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Roles_Preset_SundayInputs, { locale?: "en" | "ar" }, {}>;
@@ -16714,7 +16839,7 @@ export const roles_step_senior: ((inputs: Roles_Step_SeniorInputs, options?: { l
 /**
 * | output |
 * | --- |
-* | "Try it: switch the signed-in user to Soaad Amer (Sales) and open the pricing tab of GS-RFQ-0142 — costs and margins are gone." |
+* | "Try it: switch the signed-in user to Soaad Amer (Sales) and open the pricing tab of GS-RFQ-0142. Costs and margins are gone." |
 *
 */
 export const roles_try_it: ((inputs?: Roles_Try_ItInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Roles_Try_ItInputs, { locale?: "en" | "ar" }, {}>;
@@ -16959,7 +17084,7 @@ export const sourcing_draft_rfqs_prompt: ((inputs?: Sourcing_Draft_Rfqs_PromptIn
 /**
 * | output |
 * | --- |
-* | "Drafts discarded — nothing was sent" |
+* | "Drafts discarded. Nothing was sent" |
 *
 */
 export const sourcing_drafts_discarded: ((inputs?: Sourcing_Drafts_DiscardedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Sourcing_Drafts_DiscardedInputs, { locale?: "en" | "ar" }, {}>;
@@ -17178,16 +17303,16 @@ export const sourcing_send_n: ((inputs: Sourcing_Send_NInputs, options?: { local
 /**
 * | nPlural | output |
 * | --- | --- |
-* | "one" | "{count} RFQ to {suppliers} — reply by {due}. The client's name, vessel and files are removed. Reminders go out after 24 h and 48 h, stop as soon as a supplie..." |
-* | * | "{count} RFQs to {suppliers} — reply by {due}. The client's name, vessel and files are removed. Reminders go out after 24 h and 48 h, stop as soon as a suppli..." |
+* | "one" | "{count} RFQ to {suppliers}: reply by {due}. The client's name, vessel and files are removed. Reminders go out after 24 h and 48 h, stop as soon as a supplier..." |
+* | * | "{count} RFQs to {suppliers}: reply by {due}. The client's name, vessel and files are removed. Reminders go out after 24 h and 48 h, stop as soon as a supplie..." |
 *
 */
 export const sourcing_send_text: ((inputs: Sourcing_Send_TextInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Sourcing_Send_TextInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | nPlural | output |
 * | --- | --- |
-* | "one" | "{count} supplier RFQ sent — replies will be matched automatically" |
-* | * | "{count} supplier RFQs sent — replies will be matched automatically" |
+* | "one" | "{count} supplier RFQ sent. Replies will be matched automatically" |
+* | * | "{count} supplier RFQs sent. Replies will be matched automatically" |
 *
 */
 export const sourcing_sent: ((inputs: Sourcing_SentInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Sourcing_SentInputs, { locale?: "en" | "ar" }, {}>;
@@ -17240,6 +17365,1329 @@ export const sourcing_system_chooses: ((inputs?: Sourcing_System_ChoosesInputs, 
 *
 */
 export const sourcing_vessel_removed: ((inputs?: Sourcing_Vessel_RemovedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Sourcing_Vessel_RemovedInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "The profit promised at quotation against the real result: the launch cost more than estimated once it was billed." |
+*
+*/
+export const tour_close_1_body: ((inputs?: Tour_Close_1_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Close_1_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Expected vs actual" |
+*
+*/
+export const tour_close_1_target: ((inputs?: Tour_Close_1_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Close_1_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Estimates become actuals" |
+*
+*/
+export const tour_close_1_title: ((inputs?: Tour_Close_1_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Close_1_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "USD 10,000 arrived at 48.80 against the quoted 48.60 — a gain of EGP 2,000, on the case where it happened." |
+*
+*/
+export const tour_close_2_body: ((inputs?: Tour_Close_2_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Close_2_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "FX differences" |
+*
+*/
+export const tour_close_2_target: ((inputs?: Tour_Close_2_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Close_2_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "FX is real money" |
+*
+*/
+export const tour_close_2_title: ((inputs?: Tour_Close_2_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Close_2_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Two helmets cracked in transit; the supplier's credit note settles the claim." |
+*
+*/
+export const tour_close_3_body: ((inputs?: Tour_Close_3_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Close_3_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Claims" |
+*
+*/
+export const tour_close_3_target: ((inputs?: Tour_Close_3_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Close_3_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Claims settle against credit notes" |
+*
+*/
+export const tour_close_3_title: ((inputs?: Tour_Close_3_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Close_3_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Bills matched, deliveries signed, invoices accepted by the tax authority and paid, claims settled — then the case can close." |
+*
+*/
+export const tour_close_4_body: ((inputs?: Tour_Close_4_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Close_4_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Close checklist" |
+*
+*/
+export const tour_close_4_target: ((inputs?: Tour_Close_4_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Close_4_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Only green closes" |
+*
+*/
+export const tour_close_4_title: ((inputs?: Tour_Close_4_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Close_4_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Estimates become actuals, FX and claims are accounted for, and only green checks close the case." |
+*
+*/
+export const tour_close_summary: ((inputs?: Tour_Close_SummaryInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Close_SummaryInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Settle and close a case" |
+*
+*/
+export const tour_close_title: ((inputs?: Tour_Close_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Close_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Written at 07:00 from live records, with links to its sources." |
+*
+*/
+export const tour_control_room_1_body: ((inputs?: Tour_Control_Room_1_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Control_Room_1_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "daily AI briefing" |
+*
+*/
+export const tour_control_room_1_target: ((inputs?: Tour_Control_Room_1_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Control_Room_1_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Briefed before coffee" |
+*
+*/
+export const tour_control_room_1_title: ((inputs?: Tour_Control_Room_1_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Control_Room_1_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Questions are answered from the live data, and every answer cites the records it used." |
+*
+*/
+export const tour_control_room_2_body: ((inputs?: Tour_Control_Room_2_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Control_Room_2_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Who owes us money?" |
+*
+*/
+export const tour_control_room_2_click: ((inputs?: Tour_Control_Room_2_ClickInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Control_Room_2_ClickInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Ask Golden Sea" |
+*
+*/
+export const tour_control_room_2_target: ((inputs?: Tour_Control_Room_2_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Control_Room_2_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Ask anything" |
+*
+*/
+export const tour_control_room_2_title: ((inputs?: Tour_Control_Room_2_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Control_Room_2_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Margin by store against the 15% minimum, plus pipeline, speed, cash and supplier performance." |
+*
+*/
+export const tour_control_room_3_body: ((inputs?: Tour_Control_Room_3_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Control_Room_3_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Margin by store" |
+*
+*/
+export const tour_control_room_3_target: ((inputs?: Tour_Control_Room_3_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Control_Room_3_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Policy in the numbers" |
+*
+*/
+export const tour_control_room_3_title: ((inputs?: Tour_Control_Room_3_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Control_Room_3_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Signed in as Soaad Amer, the same assistant declines questions about costs and margins." |
+*
+*/
+export const tour_control_room_4_body: ((inputs?: Tour_Control_Room_4_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Control_Room_4_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Ask Golden Sea" |
+*
+*/
+export const tour_control_room_4_target: ((inputs?: Tour_Control_Room_4_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Control_Room_4_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Sales never sees margins" |
+*
+*/
+export const tour_control_room_4_title: ((inputs?: Tour_Control_Room_4_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Control_Room_4_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "The CEO's control room and Ask Golden Sea — and what Sales is never told." |
+*
+*/
+export const tour_control_room_summary: ((inputs?: Tour_Control_Room_SummaryInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Control_Room_SummaryInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "The business, live — briefed at 07:00" |
+*
+*/
+export const tour_control_room_title: ((inputs?: Tour_Control_Room_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Control_Room_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Port, ETA, agent, truck, boarding staff and launch in one plan. When the agent moves the ETA, drop 2 is re-planned and the owner is alerted." |
+*
+*/
+export const tour_delivery_to_cash_1_body: ((inputs?: Tour_Delivery_To_Cash_1_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Delivery_To_Cash_1_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Vessel delivery plan" |
+*
+*/
+export const tour_delivery_to_cash_1_target: ((inputs?: Tour_Delivery_To_Cash_1_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Delivery_To_Cash_1_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "The vessel moves, the plan follows" |
+*
+*/
+export const tour_delivery_to_cash_1_title: ((inputs?: Tour_Delivery_To_Cash_1_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Delivery_To_Cash_1_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Two drops for one order. A drop counts as delivered only with the signed delivery note from the vessel." |
+*
+*/
+export const tour_delivery_to_cash_2_body: ((inputs?: Tour_Delivery_To_Cash_2_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Delivery_To_Cash_2_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Drops & proof of delivery" |
+*
+*/
+export const tour_delivery_to_cash_2_target: ((inputs?: Tour_Delivery_To_Cash_2_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Delivery_To_Cash_2_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "No evidence, no \"Delivered\"" |
+*
+*/
+export const tour_delivery_to_cash_2_title: ((inputs?: Tour_Delivery_To_Cash_2_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Delivery_To_Cash_2_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Only delivered quantities are invoiced, each invoice goes to the Egyptian tax authority, and rejections or outages get a safe retry." |
+*
+*/
+export const tour_delivery_to_cash_3_body: ((inputs?: Tour_Delivery_To_Cash_3_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Delivery_To_Cash_3_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Customer invoices & payments" |
+*
+*/
+export const tour_delivery_to_cash_3_target: ((inputs?: Tour_Delivery_To_Cash_3_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Delivery_To_Cash_3_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Invoice what was delivered, then e-invoice" |
+*
+*/
+export const tour_delivery_to_cash_3_title: ((inputs?: Tour_Delivery_To_Cash_3_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Delivery_To_Cash_3_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Receivables and payables side by side. Supplier payments wait for the Financial Director or the CEO." |
+*
+*/
+export const tour_delivery_to_cash_4_body: ((inputs?: Tour_Delivery_To_Cash_4_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Delivery_To_Cash_4_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Payments needing approval" |
+*
+*/
+export const tour_delivery_to_cash_4_target: ((inputs?: Tour_Delivery_To_Cash_4_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Delivery_To_Cash_4_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "A person approves, finance pays" |
+*
+*/
+export const tour_delivery_to_cash_4_title: ((inputs?: Tour_Delivery_To_Cash_4_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Delivery_To_Cash_4_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "A supplier's new bank account needs a call-back on the number on file and two approvers — Finance and the CEO." |
+*
+*/
+export const tour_delivery_to_cash_5_body: ((inputs?: Tour_Delivery_To_Cash_5_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Delivery_To_Cash_5_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "requested change" |
+*
+*/
+export const tour_delivery_to_cash_5_target: ((inputs?: Tour_Delivery_To_Cash_5_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Delivery_To_Cash_5_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Two different people, always" |
+*
+*/
+export const tour_delivery_to_cash_5_title: ((inputs?: Tour_Delivery_To_Cash_5_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Delivery_To_Cash_5_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "An ETA change re-plans the delivery, proof of delivery unlocks the invoice, finance collects and pays." |
+*
+*/
+export const tour_delivery_to_cash_summary: ((inputs?: Tour_Delivery_To_Cash_SummaryInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Delivery_To_Cash_SummaryInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "From the quay to the bank" |
+*
+*/
+export const tour_delivery_to_cash_title: ((inputs?: Tour_Delivery_To_Cash_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Delivery_To_Cash_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "An expired Outlook token and an unreachable e-invoice signing service sit in a queue with an owner — not in a log nobody reads." |
+*
+*/
+export const tour_exceptions_1_body: ((inputs?: Tour_Exceptions_1_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Exceptions_1_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Exception queue" |
+*
+*/
+export const tour_exceptions_1_target: ((inputs?: Tour_Exceptions_1_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Exceptions_1_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Failures are visible" |
+*
+*/
+export const tour_exceptions_1_title: ((inputs?: Tour_Exceptions_1_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Exceptions_1_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Uncertain AI results are never applied automatically; someone reviews them here." |
+*
+*/
+export const tour_exceptions_2_body: ((inputs?: Tour_Exceptions_2_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Exceptions_2_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "AI review queue" |
+*
+*/
+export const tour_exceptions_2_target: ((inputs?: Tour_Exceptions_2_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Exceptions_2_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Low confidence waits for a person" |
+*
+*/
+export const tour_exceptions_2_title: ((inputs?: Tour_Exceptions_2_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Exceptions_2_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Trigger, owner, due time, approval, retry behaviour and stop condition for each rule — switched on and off by management, and logged." |
+*
+*/
+export const tour_exceptions_3_body: ((inputs?: Tour_Exceptions_3_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Exceptions_3_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Rule registry" |
+*
+*/
+export const tour_exceptions_3_target: ((inputs?: Tour_Exceptions_3_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Exceptions_3_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Every automation is explicit" |
+*
+*/
+export const tour_exceptions_3_title: ((inputs?: Tour_Exceptions_3_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Exceptions_3_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Outside Sunday–Thursday office hours, urgent RFQs go to the on-duty person, with a backup if nobody answers." |
+*
+*/
+export const tour_exceptions_4_body: ((inputs?: Tour_Exceptions_4_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Exceptions_4_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "After-hours routing" |
+*
+*/
+export const tour_exceptions_4_target: ((inputs?: Tour_Exceptions_4_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Exceptions_4_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Urgent RFQs after hours" |
+*
+*/
+export const tour_exceptions_4_title: ((inputs?: Tour_Exceptions_4_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Exceptions_4_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "A failed mailbox and a low-confidence AI result, handled safely; urgent RFQs reach the on-duty person." |
+*
+*/
+export const tour_exceptions_summary: ((inputs?: Tour_Exceptions_SummaryInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Exceptions_SummaryInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Nothing fails silently" |
+*
+*/
+export const tour_exceptions_title: ((inputs?: Tour_Exceptions_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Exceptions_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Ship managers from first introduction to active account; stalled prospects are flagged." |
+*
+*/
+export const tour_growth_1_body: ((inputs?: Tour_Growth_1_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Growth_1_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Growth funnel" |
+*
+*/
+export const tour_growth_1_target: ((inputs?: Tour_Growth_1_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Growth_1_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "A pipeline beyond RFQs" |
+*
+*/
+export const tour_growth_1_title: ((inputs?: Tour_Growth_1_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Growth_1_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Each next step has a short script. Recording the outcome plans the next one." |
+*
+*/
+export const tour_growth_2_body: ((inputs?: Tour_Growth_2_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Growth_2_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Sales next steps" |
+*
+*/
+export const tour_growth_2_target: ((inputs?: Tour_Growth_2_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Growth_2_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Know what to say" |
+*
+*/
+export const tour_growth_2_title: ((inputs?: Tour_Growth_2_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Growth_2_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Documents and committee dates for getting onto each ship manager's approved-vendor list." |
+*
+*/
+export const tour_growth_3_body: ((inputs?: Tour_Growth_3_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Growth_3_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Vendor registrations" |
+*
+*/
+export const tour_growth_3_target: ((inputs?: Tour_Growth_3_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Growth_3_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Registrations tracked" |
+*
+*/
+export const tour_growth_3_title: ((inputs?: Tour_Growth_3_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Growth_3_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Prospects, fleets and vendor registrations — with what to say on the next call." |
+*
+*/
+export const tour_growth_summary: ((inputs?: Tour_Growth_SummaryInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Growth_SummaryInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Growing the customer base" |
+*
+*/
+export const tour_growth_title: ((inputs?: Tour_Growth_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Growth_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "From the first email to the last payment, everything happens on one case. GS-RFQ-0142 is comparing offers." |
+*
+*/
+export const tour_handover_1_body: ((inputs?: Tour_Handover_1_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Handover_1_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Lifecycle" |
+*
+*/
+export const tour_handover_1_target: ((inputs?: Tour_Handover_1_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Handover_1_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "One case, sixteen steps" |
+*
+*/
+export const tour_handover_1_title: ((inputs?: Tour_Handover_1_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Handover_1_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Three of six lines are ready and one is blocked by a clarification — a case only looks done when every line is." |
+*
+*/
+export const tour_handover_2_body: ((inputs?: Tour_Handover_2_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Handover_2_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Line progress" |
+*
+*/
+export const tour_handover_2_target: ((inputs?: Tour_Handover_2_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Handover_2_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Never complete too early" |
+*
+*/
+export const tour_handover_2_title: ((inputs?: Tour_Handover_2_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Handover_2_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Reassigning asks AI for a handover note — open questions, tasks, the customer's contact rule. A person edits and confirms it." |
+*
+*/
+export const tour_handover_3_body: ((inputs?: Tour_Handover_3_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Handover_3_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Owner & backup" |
+*
+*/
+export const tour_handover_3_target: ((inputs?: Tour_Handover_3_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Handover_3_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "AI drafts the handover" |
+*
+*/
+export const tour_handover_3_title: ((inputs?: Tour_Handover_3_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Handover_3_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Automatic steps name the rule that fired; human steps name the person. That's the audit trail." |
+*
+*/
+export const tour_handover_4_body: ((inputs?: Tour_Handover_4_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Handover_4_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Activity timeline" |
+*
+*/
+export const tour_handover_4_target: ((inputs?: Tour_Handover_4_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Handover_4_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Every step logged" |
+*
+*/
+export const tour_handover_4_title: ((inputs?: Tour_Handover_4_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Handover_4_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "One case from first email to last payment, and a handover AI drafts for a person to confirm." |
+*
+*/
+export const tour_handover_summary: ((inputs?: Tour_Handover_SummaryInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Handover_SummaryInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Handover without losing anything" |
+*
+*/
+export const tour_handover_title: ((inputs?: Tour_Handover_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Handover_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "This is Karim Youssef, supply chain. Golden Sea's dashboard is built for the person signed in: his waiting states, his queue, his follow-ups." |
+*
+*/
+export const tour_morning_1_body: ((inputs?: Tour_Morning_1_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Morning_1_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Every role has its own day" |
+*
+*/
+export const tour_morning_1_title: ((inputs?: Tour_Morning_1_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Morning_1_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Every live case has an owner, a deadline and a next action. Blocked and at-risk cases come first, then the nearest deadline." |
+*
+*/
+export const tour_morning_2_body: ((inputs?: Tour_Morning_2_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Morning_2_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "My queue" |
+*
+*/
+export const tour_morning_2_target: ((inputs?: Tour_Morning_2_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Morning_2_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "A queue sorted by risk" |
+*
+*/
+export const tour_morning_2_title: ((inputs?: Tour_Morning_2_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Morning_2_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "What changed overnight and what needs him today: deadlines, a PO mismatch, a supplier that hasn't replied, failed integrations." |
+*
+*/
+export const tour_morning_3_body: ((inputs?: Tour_Morning_3_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Morning_3_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Daily briefing" |
+*
+*/
+export const tour_morning_3_target: ((inputs?: Tour_Morning_3_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Morning_3_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Briefed at 07:00" |
+*
+*/
+export const tour_morning_3_title: ((inputs?: Tour_Morning_3_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Morning_3_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Soaad Amer signs in. Her queue has no values, costs or margins: sales never sees what Golden Sea pays its suppliers." |
+*
+*/
+export const tour_morning_4_body: ((inputs?: Tour_Morning_4_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Morning_4_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "My queue" |
+*
+*/
+export const tour_morning_4_target: ((inputs?: Tour_Morning_4_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Morning_4_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Sales sees the same cases — without costs" |
+*
+*/
+export const tour_morning_4_title: ((inputs?: Tour_Morning_4_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Morning_4_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Karim Balbaa sees what waits for him first — a margin exception from Soaad, a supplier deposit, an FX rate, and a bank change that already has one of its two..." |
+*
+*/
+export const tour_morning_5_body: ((inputs?: Tour_Morning_5_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Morning_5_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Waiting for your decision" |
+*
+*/
+export const tour_morning_5_target: ((inputs?: Tour_Morning_5_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Morning_5_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "The CEO starts with decisions" |
+*
+*/
+export const tour_morning_5_title: ((inputs?: Tour_Morning_5_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Morning_5_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Mohamed Helmy only sees payments and deposits. He already approved the bank change after a call-back; it now waits for the CEO — two people, always." |
+*
+*/
+export const tour_morning_6_body: ((inputs?: Tour_Morning_6_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Morning_6_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Waiting for your decision" |
+*
+*/
+export const tour_morning_6_target: ((inputs?: Tour_Morning_6_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Morning_6_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Finance approves payments" |
+*
+*/
+export const tour_morning_6_title: ((inputs?: Tour_Morning_6_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Morning_6_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Notifications, bookmarks and the counters in this panel belong to the person signed in. Back as Karim Youssef — his are about his cases." |
+*
+*/
+export const tour_morning_7_body: ((inputs?: Tour_Morning_7_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Morning_7_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Notifications" |
+*
+*/
+export const tour_morning_7_target: ((inputs?: Tour_Morning_7_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Morning_7_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Everyone's own notifications" |
+*
+*/
+export const tour_morning_7_title: ((inputs?: Tour_Morning_7_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Morning_7_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "The buyer, sales, the CEO and finance start their day — each sees only what needs them." |
+*
+*/
+export const tour_morning_summary: ((inputs?: Tour_Morning_SummaryInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Morning_SummaryInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "One morning, four people" |
+*
+*/
+export const tour_morning_title: ((inputs?: Tour_Morning_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Morning_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Nordvik's PO is matched to the approved quotation version. An old pack size, an expired v1 price and 15 instead of 10 helmets block the commitment until the ..." |
+*
+*/
+export const tour_po_check_1_body: ((inputs?: Tour_Po_Check_1_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Po_Check_1_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Customer PO check" |
+*
+*/
+export const tour_po_check_1_target: ((inputs?: Tour_Po_Check_1_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Po_Check_1_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "The PO is checked line by line" |
+*
+*/
+export const tour_po_check_1_title: ((inputs?: Tour_Po_Check_1_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Po_Check_1_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Lines the customer didn't order stay open for a revision or close with a recorded reason." |
+*
+*/
+export const tour_po_check_2_body: ((inputs?: Tour_Po_Check_2_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Po_Check_2_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Partial award" |
+*
+*/
+export const tour_po_check_2_target: ((inputs?: Tour_Po_Check_2_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Po_Check_2_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Partial awards, never silent" |
+*
+*/
+export const tour_po_check_2_title: ((inputs?: Tour_Po_Check_2_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Po_Check_2_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Once the PO is agreed, supplier POs are prepared — drop-shipped or through the warehouse — and each is re-checked against the latest offer first." |
+*
+*/
+export const tour_po_check_3_body: ((inputs?: Tour_Po_Check_3_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Po_Check_3_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Supplier purchase orders" |
+*
+*/
+export const tour_po_check_3_target: ((inputs?: Tour_Po_Check_3_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Po_Check_3_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Purchase orders per supplier" |
+*
+*/
+export const tour_po_check_3_title: ((inputs?: Tour_Po_Check_3_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Po_Check_3_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Each supplier bill is matched to its PO and the goods received; a duplicate bill is refused." |
+*
+*/
+export const tour_po_check_4_body: ((inputs?: Tour_Po_Check_4_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Po_Check_4_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Supplier bills" |
+*
+*/
+export const tour_po_check_4_target: ((inputs?: Tour_Po_Check_4_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Po_Check_4_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Three-way match" |
+*
+*/
+export const tour_po_check_4_title: ((inputs?: Tour_Po_Check_4_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Po_Check_4_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Signed in as the CEO: a flagged price change on a supplier PO is shown before he commits, and deposits wait for a payment approval." |
+*
+*/
+export const tour_po_check_5_body: ((inputs?: Tour_Po_Check_5_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Po_Check_5_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Supplier purchase orders" |
+*
+*/
+export const tour_po_check_5_target: ((inputs?: Tour_Po_Check_5_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Po_Check_5_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Karim Balbaa confirms" |
+*
+*/
+export const tour_po_check_5_title: ((inputs?: Tour_Po_Check_5_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Po_Check_5_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "A customer PO with an old price and the wrong quantity is caught before anything is ordered." |
+*
+*/
+export const tour_po_check_summary: ((inputs?: Tour_Po_Check_SummaryInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Po_Check_SummaryInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "The PO doesn't match the quote" |
+*
+*/
+export const tour_po_check_title: ((inputs?: Tour_Po_Check_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Po_Check_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Every offer is normalised to EGP per base unit. Switch to landed cost and freight to Port Said re-ranks them." |
+*
+*/
+export const tour_quote_1_body: ((inputs?: Tour_Quote_1_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Quote_1_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Landed cost" |
+*
+*/
+export const tour_quote_1_click: ((inputs?: Tour_Quote_1_ClickInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Quote_1_ClickInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "How offers are compared" |
+*
+*/
+export const tour_quote_1_target: ((inputs?: Tour_Quote_1_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Quote_1_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Cheapest isn't always cheapest on board" |
+*
+*/
+export const tour_quote_1_title: ((inputs?: Tour_Quote_1_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Quote_1_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "242 was offered for an exact-part 243 line, so the line is blocked from pricing. v1 is kept for the record; the corrected v2 is used." |
+*
+*/
+export const tour_quote_2_body: ((inputs?: Tour_Quote_2_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Quote_2_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "L2 · LOCTITE 243" |
+*
+*/
+export const tour_quote_2_target: ((inputs?: Tour_Quote_2_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Quote_2_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "The wrong part is caught" |
+*
+*/
+export const tour_quote_2_title: ((inputs?: Tour_Quote_2_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Quote_2_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Alexandria stock is cheapest per unit but dearest delivered. The proposal splits 10 + 5 across two suppliers, both before the vessel's ETA." |
+*
+*/
+export const tour_quote_3_body: ((inputs?: Tour_Quote_3_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Quote_3_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "L5 · Safety helmet" |
+*
+*/
+export const tour_quote_3_target: ((inputs?: Tour_Quote_3_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Quote_3_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Own stock and split sourcing" |
+*
+*/
+export const tour_quote_3_title: ((inputs?: Tour_Quote_3_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Quote_3_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Shared charges are spread over the lines; policy is checked on margin, and every line shows cost, charges and profit." |
+*
+*/
+export const tour_quote_4_body: ((inputs?: Tour_Quote_4_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Quote_4_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Margin = profit ÷ selling price" |
+*
+*/
+export const tour_quote_4_target: ((inputs?: Tour_Quote_4_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Quote_4_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Margin, not markup" |
+*
+*/
+export const tour_quote_4_title: ((inputs?: Tour_Quote_4_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Quote_4_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "The quotation and its exceptions go to Karim Balbaa with one click. AI never prices on its own." |
+*
+*/
+export const tour_quote_5_body: ((inputs?: Tour_Quote_5_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Quote_5_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Approval" |
+*
+*/
+export const tour_quote_5_target: ((inputs?: Tour_Quote_5_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Quote_5_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "A person approves" |
+*
+*/
+export const tour_quote_5_title: ((inputs?: Tour_Quote_5_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Quote_5_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Karim Balbaa sees what he's deciding and why — the margin, the FX rate, the deposit, and the bank change Mohamed Helmy already approved." |
+*
+*/
+export const tour_quote_6_body: ((inputs?: Tour_Quote_6_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Quote_6_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Waiting for you" |
+*
+*/
+export const tour_quote_6_target: ((inputs?: Tour_Quote_6_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Quote_6_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Evidence first" |
+*
+*/
+export const tour_quote_6_title: ((inputs?: Tour_Quote_6_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Quote_6_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "The same quotation in Golden Sea's own layout, in English or Arabic, in EGP or USD. Nothing goes to the customer until a person confirms the email." |
+*
+*/
+export const tour_quote_7_body: ((inputs?: Tour_Quote_7_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Quote_7_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "العربية" |
+*
+*/
+export const tour_quote_7_click: ((inputs?: Tour_Quote_7_ClickInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Quote_7_ClickInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Decision state" |
+*
+*/
+export const tour_quote_7_target: ((inputs?: Tour_Quote_7_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Quote_7_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Their layout, their language" |
+*
+*/
+export const tour_quote_7_title: ((inputs?: Tour_Quote_7_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Quote_7_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "The buyer compares and prices, the CEO approves, the customer gets Golden Sea's own layout." |
+*
+*/
+export const tour_quote_summary: ((inputs?: Tour_Quote_SummaryInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Quote_SummaryInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "From offers to an approved quotation" |
+*
+*/
+export const tour_quote_title: ((inputs?: Tour_Quote_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Quote_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Lines are split by category and each supplier sees only its lines — never the customer or the vessel." |
+*
+*/
+export const tour_replies_1_body: ((inputs?: Tour_Replies_1_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Replies_1_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Each supplier sees only the lines they can quote" |
+*
+*/
+export const tour_replies_1_target: ((inputs?: Tour_Replies_1_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Replies_1_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "The client stays hidden" |
+*
+*/
+export const tour_replies_1_title: ((inputs?: Tour_Replies_1_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Replies_1_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Replies arrive with changed subjects; each is matched to its RFQ by its reference, and reminders stop for that supplier." |
+*
+*/
+export const tour_replies_2_body: ((inputs?: Tour_Replies_2_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Replies_2_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Simulate replies" |
+*
+*/
+export const tour_replies_2_click: ((inputs?: Tour_Replies_2_ClickInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Replies_2_ClickInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Replies arriving" |
+*
+*/
+export const tour_replies_2_target: ((inputs?: Tour_Replies_2_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Replies_2_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Matched by reference" |
+*
+*/
+export const tour_replies_2_title: ((inputs?: Tour_Replies_2_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Replies_2_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "A supplier Golden Sea never bought from replied. It's created automatically, with its price, date and validity." |
+*
+*/
+export const tour_replies_3_body: ((inputs?: Tour_Replies_3_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Replies_3_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "quoted, never ordered" |
+*
+*/
+export const tour_replies_3_target: ((inputs?: Tour_Replies_3_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Replies_3_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Remembered without an order" |
+*
+*/
+export const tour_replies_3_title: ((inputs?: Tour_Replies_3_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Replies_3_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "An unclear price unit isn't used until someone confirms it." |
+*
+*/
+export const tour_replies_4_body: ((inputs?: Tour_Replies_4_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Replies_4_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Needs a person" |
+*
+*/
+export const tour_replies_4_target: ((inputs?: Tour_Replies_4_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Replies_4_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "A person confirms the uncertain" |
+*
+*/
+export const tour_replies_4_title: ((inputs?: Tour_Replies_4_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Replies_4_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "The same engine reads the old inboxes into customers, vessels, suppliers and dated prices. Nothing is saved until Karim Balbaa approves." |
+*
+*/
+export const tour_replies_5_body: ((inputs?: Tour_Replies_5_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Replies_5_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Organise and approve" |
+*
+*/
+export const tour_replies_5_target: ((inputs?: Tour_Replies_5_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Replies_5_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Years of email, organised" |
+*
+*/
+export const tour_replies_5_title: ((inputs?: Tour_Replies_5_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Replies_5_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Supplier RFQs go out without the client's name; replies are matched even with new subjects." |
+*
+*/
+export const tour_replies_summary: ((inputs?: Tour_Replies_SummaryInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Replies_SummaryInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Every reply matched, every price remembered" |
+*
+*/
+export const tour_replies_title: ((inputs?: Tour_Replies_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Replies_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Outlook, Gmail, the website quick-quote form and WhatsApp all land in one list — nothing lives in someone's personal mailbox." |
+*
+*/
+export const tour_rfq_to_case_1_body: ((inputs?: Tour_Rfq_To_Case_1_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Rfq_To_Case_1_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Connected channels" |
+*
+*/
+export const tour_rfq_to_case_1_target: ((inputs?: Tour_Rfq_To_Case_1_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Rfq_To_Case_1_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "One inbox for every channel" |
+*
+*/
+export const tour_rfq_to_case_1_title: ((inputs?: Tour_Rfq_To_Case_1_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Rfq_To_Case_1_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "A new RFQ for MV Aurora Crest arrives with an Excel list, a PDF and a WhatsApp photo. The email and every file stay with the case." |
+*
+*/
+export const tour_rfq_to_case_2_body: ((inputs?: Tour_Rfq_To_Case_2_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Rfq_To_Case_2_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Simulate new email" |
+*
+*/
+export const tour_rfq_to_case_2_click: ((inputs?: Tour_Rfq_To_Case_2_ClickInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Rfq_To_Case_2_ClickInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Original message" |
+*
+*/
+export const tour_rfq_to_case_2_target: ((inputs?: Tour_Rfq_To_Case_2_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Rfq_To_Case_2_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "The original is kept" |
+*
+*/
+export const tour_rfq_to_case_2_title: ((inputs?: Tour_Rfq_To_Case_2_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Rfq_To_Case_2_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Every line gets its IMPA code, quantity, unit and the file it came from, with a confidence. The 62% photo line is flagged for a person." |
+*
+*/
+export const tour_rfq_to_case_3_body: ((inputs?: Tour_Rfq_To_Case_3_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Rfq_To_Case_3_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Extract with AI" |
+*
+*/
+export const tour_rfq_to_case_3_click: ((inputs?: Tour_Rfq_To_Case_3_ClickInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Rfq_To_Case_3_ClickInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Draft lines" |
+*
+*/
+export const tour_rfq_to_case_3_target: ((inputs?: Tour_Rfq_To_Case_3_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Rfq_To_Case_3_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "AI reads, people decide" |
+*
+*/
+export const tour_rfq_to_case_3_title: ((inputs?: Tour_Rfq_To_Case_3_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Rfq_To_Case_3_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Missing details become a drafted clarification to the customer — drafted, not sent." |
+*
+*/
+export const tour_rfq_to_case_4_body: ((inputs?: Tour_Rfq_To_Case_4_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Rfq_To_Case_4_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Missing or unclear" |
+*
+*/
+export const tour_rfq_to_case_4_target: ((inputs?: Tour_Rfq_To_Case_4_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Rfq_To_Case_4_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Nothing is guessed" |
+*
+*/
+export const tour_rfq_to_case_4_title: ((inputs?: Tour_Rfq_To_Case_4_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Rfq_To_Case_4_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Assignment rules suggest who owns it and who backs them up; the deadline comes from the customer's request." |
+*
+*/
+export const tour_rfq_to_case_5_body: ((inputs?: Tour_Rfq_To_Case_5_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Rfq_To_Case_5_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Owner, backup and deadline" |
+*
+*/
+export const tour_rfq_to_case_5_target: ((inputs?: Tour_Rfq_To_Case_5_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Rfq_To_Case_5_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Owner, backup, deadline" |
+*
+*/
+export const tour_rfq_to_case_5_title: ((inputs?: Tour_Rfq_To_Case_5_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Rfq_To_Case_5_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Confirming creates the case with its lines, links the email and sends one branded acknowledgement." |
+*
+*/
+export const tour_rfq_to_case_6_body: ((inputs?: Tour_Rfq_To_Case_6_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Rfq_To_Case_6_BodyInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Next step" |
+*
+*/
+export const tour_rfq_to_case_6_target: ((inputs?: Tour_Rfq_To_Case_6_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Rfq_To_Case_6_TargetInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "One click to a case" |
+*
+*/
+export const tour_rfq_to_case_6_title: ((inputs?: Tour_Rfq_To_Case_6_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Rfq_To_Case_6_TitleInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "An RFQ email with Excel, PDF and a photo becomes one clean case — AI reads, a person decides." |
+*
+*/
+export const tour_rfq_to_case_summary: ((inputs?: Tour_Rfq_To_Case_SummaryInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Rfq_To_Case_SummaryInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "Any format in, one case out" |
+*
+*/
+export const tour_rfq_to_case_title: ((inputs?: Tour_Rfq_To_Case_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Tour_Rfq_To_Case_TitleInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
@@ -17620,6 +19068,7 @@ export type Api_Cash_Approval_In_ProgressInputs = {};
 export type Api_Cash_Approval_Not_FoundInputs = {};
 export type Api_Cash_Approve_Payment_TitleInputs = { supplier: NonNullable<unknown> };
 export type Api_Cash_Bank_Change_Not_FoundInputs = {};
+export type Api_Cash_Bill_On_HoldInputs = { number: NonNullable<unknown> };
 export type Api_Cash_Call_Back_DoneInputs = { note: NonNullable<unknown> };
 export type Api_Cash_Call_Back_FirstInputs = {};
 export type Api_Cash_Cant_DecideInputs = {};
@@ -17634,6 +19083,7 @@ export type Api_Cash_Invoice_Not_FoundInputs = {};
 export type Api_Cash_List_SeparatorInputs = {};
 export type Api_Cash_Match_ItemInputs = { number: NonNullable<unknown>, customer: NonNullable<unknown>, amount: NonNullable<unknown> };
 export type Api_Cash_Match_MessageInputs = { count: NonNullable<unknown>, list: NonNullable<unknown> };
+export type Api_Cash_More_Than_BalanceInputs = { balance: NonNullable<unknown>, number: NonNullable<unknown> };
 export type Api_Cash_No_Remittance_MatchInputs = {};
 export type Api_Cash_Pay_DetailInputs = { number: NonNullable<unknown>, due: NonNullable<unknown> };
 export type Api_Cash_Pay_Detail_MatchedInputs = { number: NonNullable<unknown>, bill: NonNullable<unknown>, due: NonNullable<unknown> };
@@ -17655,7 +19105,6 @@ export type Api_Commercial_Alternatives_AllowedInputs = {};
 export type Api_Commercial_Approval_Not_FoundInputs = {};
 export type Api_Commercial_Approval_RecordedInputs = { progress: NonNullable<unknown> };
 export type Api_Commercial_Approval_TitleInputs = { number: NonNullable<unknown>, customer: NonNullable<unknown>, total: NonNullable<unknown> };
-export type Api_Commercial_Approval_Title_MarginInputs = { number: NonNullable<unknown>, customer: NonNullable<unknown>, hasMargin: NonNullable<unknown>, margin: NonNullable<unknown>, min: NonNullable<unknown> };
 export type Api_Commercial_Approved_DotInputs = {};
 export type Api_Commercial_Approved_TitleInputs = { title: NonNullable<unknown> };
 export type Api_Commercial_Bank_Applied_Cant_WithdrawInputs = {};
@@ -17667,6 +19116,7 @@ export type Api_Commercial_Charge_EstimateInputs = { label: NonNullable<unknown>
 export type Api_Commercial_Check_PoInputs = {};
 export type Api_Commercial_Check_Po_PartialInputs = {};
 export type Api_Commercial_Choose_OfferInputs = {};
+export type Api_Commercial_Closed_ExpiredInputs = {};
 export type Api_Commercial_Closed_LostInputs = {};
 export type Api_Commercial_Converted_FxInputs = { currency: NonNullable<unknown>, rate: NonNullable<unknown> };
 export type Api_Commercial_Corrected_VersionInputs = { version: NonNullable<unknown>, replaces: NonNullable<unknown>, hasWas: NonNullable<unknown>, was: NonNullable<unknown> };
@@ -17755,8 +19205,9 @@ export type Api_Commercial_Quote_Margin_BelowInputs = { margin: NonNullable<unkn
 export type Api_Commercial_Quoted_With_SelectionInputs = { number: NonNullable<unknown>, status: NonNullable<unknown> };
 export type Api_Commercial_Rejected_TechnicalInputs = {};
 export type Api_Commercial_Replies_InInputs = { hours: NonNullable<unknown> };
-export type Api_Commercial_Requested_ActivityInputs = { name: NonNullable<unknown>, number: NonNullable<unknown>, type: NonNullable<unknown> };
+export type Api_Commercial_Requested_ActivityInputs = { name: NonNullable<unknown>, number: NonNullable<unknown> };
 export type Api_Commercial_Returned_TitleInputs = { title: NonNullable<unknown> };
+export type Api_Commercial_Revise_For_CustomerInputs = { number: NonNullable<unknown> };
 export type Api_Commercial_Revise_LatestInputs = { number: NonNullable<unknown>, status: NonNullable<unknown> };
 export type Api_Commercial_Revise_PricingInputs = { name: NonNullable<unknown>, reason: NonNullable<unknown> };
 export type Api_Commercial_Revised_ActivityInputs = { next: NonNullable<unknown>, from: NonNullable<unknown> };
@@ -17767,6 +19218,7 @@ export type Api_Commercial_Select_Offers_FirstInputs = {};
 export type Api_Commercial_Selected_ActivityInputs = { line: NonNullable<unknown>, names: NonNullable<unknown>, hasReason: NonNullable<unknown>, reason: NonNullable<unknown> };
 export type Api_Commercial_Selected_AgainInputs = { line: NonNullable<unknown> };
 export type Api_Commercial_Selected_OfInputs = { total: NonNullable<unknown>, qty: NonNullable<unknown>, unit: NonNullable<unknown> };
+export type Api_Commercial_Send_For_ApprovalInputs = { number: NonNullable<unknown> };
 export type Api_Commercial_Send_To_CustomerInputs = { number: NonNullable<unknown> };
 export type Api_Commercial_Sent_Awaiting_CorrectedInputs = {};
 export type Api_Commercial_Shelf_LifeInputs = { left: NonNullable<unknown>, need: NonNullable<unknown> };
@@ -17948,6 +19400,7 @@ export type Api_Home_Inquiries_4_WeeksInputs = {};
 export type Api_Home_Integration_ExceptionsInputs = { n: NonNullable<unknown> };
 export type Api_Home_Invoice_DueInputs = { customer: NonNullable<unknown>, amount: NonNullable<unknown>, day: NonNullable<unknown> };
 export type Api_Home_Invoice_Due_ShortInputs = { customer: NonNullable<unknown> };
+export type Api_Home_Invoice_OverdueInputs = { customer: NonNullable<unknown>, amount: NonNullable<unknown>, day: NonNullable<unknown> };
 export type Api_Home_Invoice_SubInputs = { number: NonNullable<unknown>, status: NonNullable<unknown> };
 export type Api_Home_Invoice_Sub_PaidInputs = { number: NonNullable<unknown>, status: NonNullable<unknown>, paid: NonNullable<unknown> };
 export type Api_Home_InvoicesInputs = {};
@@ -18025,7 +19478,9 @@ export type Api_Insights_Shared_Days_OverdueInputs = { days: NonNullable<unknown
 export type Api_Insights_Shared_In_DaysInputs = { days: NonNullable<unknown> };
 export type Api_Insights_Shared_Not_AllowedInputs = {};
 export type Api_Insights_Shared_Overdue_SinceInputs = { time: NonNullable<unknown> };
+export type Api_Insights_Shared_TodayInputs = {};
 export type Api_Insights_Shared_Today_AtInputs = { time: NonNullable<unknown> };
+export type Api_Insights_Shared_TomorrowInputs = {};
 export type Api_Insights_Shared_Tomorrow_AtInputs = { time: NonNullable<unknown> };
 export type Api_Operations_Already_AcceptedInputs = {};
 export type Api_Operations_Amend_ActivityInputs = { number: NonNullable<unknown>, line: NonNullable<unknown>, field: NonNullable<unknown>, resolution: NonNullable<unknown> };
@@ -18047,6 +19502,7 @@ export type Api_Operations_Decision_StandsInputs = {};
 export type Api_Operations_Delivered_ActivityInputs = { number: NonNullable<unknown>, signedBy: NonNullable<unknown> };
 export type Api_Operations_Delivery_Not_FoundInputs = {};
 export type Api_Operations_Describe_AgreementInputs = {};
+export type Api_Operations_Drop_DeliveredInputs = { done: NonNullable<unknown>, total: NonNullable<unknown>, number: NonNullable<unknown> };
 export type Api_Operations_Einvoice_SubmittedInputs = { number: NonNullable<unknown> };
 export type Api_Operations_Einvoice_Submitted_ActivityInputs = { number: NonNullable<unknown>, uuid: NonNullable<unknown> };
 export type Api_Operations_Einvoice_ValidInputs = { number: NonNullable<unknown> };
@@ -18067,6 +19523,7 @@ export type Api_Operations_Kept_Open_AgainInputs = { line: NonNullable<unknown> 
 export type Api_Operations_Launch_BoatInputs = {};
 export type Api_Operations_Launch_RebookedInputs = { launch: NonNullable<unknown>, at: NonNullable<unknown> };
 export type Api_Operations_LineInputs = { n: NonNullable<unknown> };
+export type Api_Operations_Line_On_PoInputs = { line: NonNullable<unknown> };
 export type Api_Operations_No_ChangesInputs = {};
 export type Api_Operations_No_Customer_PoInputs = {};
 export type Api_Operations_No_Customer_Po_YetInputs = {};
@@ -18081,6 +19538,7 @@ export type Api_Operations_Po_Not_FoundInputs = {};
 export type Api_Operations_Po_Read_ActivityInputs = { number: NonNullable<unknown>, caseId: NonNullable<unknown>, open: NonNullable<unknown> };
 export type Api_Operations_Recheck_ActivityInputs = { number: NonNullable<unknown>, changes: NonNullable<unknown> };
 export type Api_Operations_Recheck_AvailabilityInputs = {};
+export type Api_Operations_Recheck_FirstInputs = {};
 export type Api_Operations_Recheck_PriceInputs = {};
 export type Api_Operations_Recheck_Then_ApproveInputs = {};
 export type Api_Operations_Reconfirm_TaskInputs = { number: NonNullable<unknown>, hours: NonNullable<unknown> };
@@ -18153,6 +19611,7 @@ export type Api_Platform_Management_PermissionsInputs = {};
 export type Api_Platform_Management_RulesInputs = {};
 export type Api_Platform_My_Language_ArInputs = {};
 export type Api_Platform_My_Language_EnInputs = {};
+export type Api_Platform_Needs_A_PersonInputs = {};
 export type Api_Platform_No_Shift_ReasonInputs = {};
 export type Api_Platform_Not_Yet_ShownInputs = {};
 export type Api_Platform_Note_RequiredInputs = {};
@@ -18282,6 +19741,7 @@ export type Api_Sourcing_Cash_TermsInputs = {};
 export type Api_Sourcing_Created_ActivityInputs = { channel: NonNullable<unknown>, subject: NonNullable<unknown>, count: NonNullable<unknown>, who: NonNullable<unknown> };
 export type Api_Sourcing_Customer_Ref_IsInputs = { ref: NonNullable<unknown>, caseId: NonNullable<unknown> };
 export type Api_Sourcing_Declined_EventInputs = {};
+export type Api_Sourcing_Desk_OnlyInputs = {};
 export type Api_Sourcing_Draft_GoneInputs = {};
 export type Api_Sourcing_Drafts_BackInputs = { count: NonNullable<unknown> };
 export type Api_Sourcing_Drafts_ChangedInputs = {};
@@ -18358,10 +19818,10 @@ export type Api_Sourcing_Rfq_Please_QuoteInputs = { port: NonNullable<unknown>, 
 export type Api_Sourcing_Rfq_Please_StateInputs = {};
 export type Api_Sourcing_Rfq_SubjectInputs = { reference: NonNullable<unknown>, due: NonNullable<unknown> };
 export type Api_Sourcing_Rfq_To_PortInputs = {};
+export type Api_Sourcing_Sender_DiffersInputs = { name: NonNullable<unknown>, reference: NonNullable<unknown>, invited: NonNullable<unknown> };
 export type Api_Sourcing_Sender_DomainInputs = { domain: NonNullable<unknown>, name: NonNullable<unknown> };
 export type Api_Sourcing_Sender_UnknownInputs = { sender: NonNullable<unknown> };
 export type Api_Sourcing_Sent_ActivityInputs = { count: NonNullable<unknown>, who: NonNullable<unknown>, mode: NonNullable<unknown>, references: NonNullable<unknown> };
-export type Api_Sourcing_Sent_By_OtherInputs = { name: NonNullable<unknown> };
 export type Api_Sourcing_Sent_EventInputs = {};
 export type Api_Sourcing_Silent_ActivityInputs = { reference: NonNullable<unknown>, name: NonNullable<unknown>, after: NonNullable<unknown> };
 export type Api_Sourcing_Silent_DetailInputs = { after: NonNullable<unknown>, caseId: NonNullable<unknown>, due: NonNullable<unknown> };
@@ -18522,6 +19982,7 @@ export type Commercial_Col_LeadInputs = {};
 export type Commercial_Col_Line_SupplierInputs = {};
 export type Commercial_Col_Margin_PctInputs = {};
 export type Commercial_Col_MarkupInputs = {};
+export type Commercial_Col_MatchInputs = {};
 export type Commercial_Col_OfferedInputs = {};
 export type Commercial_Col_Plus_SharedInputs = {};
 export type Commercial_Col_PortalInputs = {};
@@ -18777,6 +20238,7 @@ export type Control_Room_SubtitleInputs = {};
 export type Control_Room_SummariseInputs = {};
 export type Growth_Column_ImoInputs = {};
 export type Growth_Column_ManagerInputs = {};
+export type Growth_Column_SuppliedInputs = {};
 export type Growth_Column_TypeInputs = {};
 export type Growth_Column_VesselInputs = {};
 export type Growth_Extract_CompanyInputs = {};
@@ -18842,7 +20304,7 @@ export type Inbox_Flag_Cannot_Supply_NoteInputs = {};
 export type Inbox_FromInputs = { name: NonNullable<unknown>, email: NonNullable<unknown> };
 export type Inbox_History_Approval_ReadyInputs = {};
 export type Inbox_History_Approval_TextInputs = {};
-export type Inbox_History_Approval_WaitingInputs = { blocked: NonNullable<unknown> };
+export type Inbox_History_Approval_WaitingInputs = { approvers: NonNullable<unknown>, blocked: NonNullable<unknown> };
 export type Inbox_History_ApproveInputs = {};
 export type Inbox_History_Approve_DoneInputs = {};
 export type Inbox_History_Approved_ByInputs = { by: NonNullable<unknown> };
@@ -18880,6 +20342,7 @@ export type Inbox_History_HeadingInputs = {};
 export type Inbox_History_KeptInputs = {};
 export type Inbox_History_Kept_ShareInputs = { scanned: NonNullable<unknown> };
 export type Inbox_History_Mailboxes_NoteInputs = {};
+export type Inbox_History_ManagementInputs = {};
 export type Inbox_History_MessagesInputs = {};
 export type Inbox_History_New_To_OdooInputs = {};
 export type Inbox_History_No_PoInputs = {};
@@ -19042,6 +20505,7 @@ export type Order_To_Cash_Close_Line_PromptInputs = { line: NonNullable<unknown>
 export type Order_To_Cash_Close_With_ReasonInputs = {};
 export type Order_To_Cash_Closed_DoneInputs = { line: NonNullable<unknown> };
 export type Order_To_Cash_Col_At_QuotationInputs = {};
+export type Order_To_Cash_Col_CheckInputs = {};
 export type Order_To_Cash_Col_CheckedInputs = {};
 export type Order_To_Cash_Col_Customer_PoInputs = {};
 export type Order_To_Cash_Col_ItemInputs = {};
@@ -19766,6 +21230,7 @@ export type Profit_Col_DifferenceInputs = {};
 export type Profit_Col_ExpectedInputs = {};
 export type Profit_Col_FxInputs = {};
 export type Profit_Col_RateInputs = {};
+export type Profit_Col_RealisedInputs = {};
 export type Profit_Col_ReceiptInputs = {};
 export type Profit_Col_StatusInputs = {};
 export type Profit_Costs_NoteInputs = {};
@@ -19802,6 +21267,7 @@ export type Project_Acceptance_NoteInputs = { at: NonNullable<unknown> };
 export type Project_AnswerInputs = { answer: NonNullable<unknown> };
 export type Project_Brief_NoteInputs = {};
 export type Project_Col_CheckedInputs = {};
+export type Project_Col_OpenInputs = {};
 export type Project_Col_RequirementInputs = {};
 export type Project_Col_ScenarioInputs = {};
 export type Project_Col_StatusInputs = {};
@@ -19914,6 +21380,195 @@ export type Sourcing_SubjectInputs = { subject: NonNullable<unknown> };
 export type Sourcing_Supplier_RecordInputs = {};
 export type Sourcing_System_ChoosesInputs = {};
 export type Sourcing_Vessel_RemovedInputs = {};
+export type Tour_Close_1_BodyInputs = {};
+export type Tour_Close_1_TargetInputs = {};
+export type Tour_Close_1_TitleInputs = {};
+export type Tour_Close_2_BodyInputs = {};
+export type Tour_Close_2_TargetInputs = {};
+export type Tour_Close_2_TitleInputs = {};
+export type Tour_Close_3_BodyInputs = {};
+export type Tour_Close_3_TargetInputs = {};
+export type Tour_Close_3_TitleInputs = {};
+export type Tour_Close_4_BodyInputs = {};
+export type Tour_Close_4_TargetInputs = {};
+export type Tour_Close_4_TitleInputs = {};
+export type Tour_Close_SummaryInputs = {};
+export type Tour_Close_TitleInputs = {};
+export type Tour_Control_Room_1_BodyInputs = {};
+export type Tour_Control_Room_1_TargetInputs = {};
+export type Tour_Control_Room_1_TitleInputs = {};
+export type Tour_Control_Room_2_BodyInputs = {};
+export type Tour_Control_Room_2_ClickInputs = {};
+export type Tour_Control_Room_2_TargetInputs = {};
+export type Tour_Control_Room_2_TitleInputs = {};
+export type Tour_Control_Room_3_BodyInputs = {};
+export type Tour_Control_Room_3_TargetInputs = {};
+export type Tour_Control_Room_3_TitleInputs = {};
+export type Tour_Control_Room_4_BodyInputs = {};
+export type Tour_Control_Room_4_TargetInputs = {};
+export type Tour_Control_Room_4_TitleInputs = {};
+export type Tour_Control_Room_SummaryInputs = {};
+export type Tour_Control_Room_TitleInputs = {};
+export type Tour_Delivery_To_Cash_1_BodyInputs = {};
+export type Tour_Delivery_To_Cash_1_TargetInputs = {};
+export type Tour_Delivery_To_Cash_1_TitleInputs = {};
+export type Tour_Delivery_To_Cash_2_BodyInputs = {};
+export type Tour_Delivery_To_Cash_2_TargetInputs = {};
+export type Tour_Delivery_To_Cash_2_TitleInputs = {};
+export type Tour_Delivery_To_Cash_3_BodyInputs = {};
+export type Tour_Delivery_To_Cash_3_TargetInputs = {};
+export type Tour_Delivery_To_Cash_3_TitleInputs = {};
+export type Tour_Delivery_To_Cash_4_BodyInputs = {};
+export type Tour_Delivery_To_Cash_4_TargetInputs = {};
+export type Tour_Delivery_To_Cash_4_TitleInputs = {};
+export type Tour_Delivery_To_Cash_5_BodyInputs = {};
+export type Tour_Delivery_To_Cash_5_TargetInputs = {};
+export type Tour_Delivery_To_Cash_5_TitleInputs = {};
+export type Tour_Delivery_To_Cash_SummaryInputs = {};
+export type Tour_Delivery_To_Cash_TitleInputs = {};
+export type Tour_Exceptions_1_BodyInputs = {};
+export type Tour_Exceptions_1_TargetInputs = {};
+export type Tour_Exceptions_1_TitleInputs = {};
+export type Tour_Exceptions_2_BodyInputs = {};
+export type Tour_Exceptions_2_TargetInputs = {};
+export type Tour_Exceptions_2_TitleInputs = {};
+export type Tour_Exceptions_3_BodyInputs = {};
+export type Tour_Exceptions_3_TargetInputs = {};
+export type Tour_Exceptions_3_TitleInputs = {};
+export type Tour_Exceptions_4_BodyInputs = {};
+export type Tour_Exceptions_4_TargetInputs = {};
+export type Tour_Exceptions_4_TitleInputs = {};
+export type Tour_Exceptions_SummaryInputs = {};
+export type Tour_Exceptions_TitleInputs = {};
+export type Tour_Growth_1_BodyInputs = {};
+export type Tour_Growth_1_TargetInputs = {};
+export type Tour_Growth_1_TitleInputs = {};
+export type Tour_Growth_2_BodyInputs = {};
+export type Tour_Growth_2_TargetInputs = {};
+export type Tour_Growth_2_TitleInputs = {};
+export type Tour_Growth_3_BodyInputs = {};
+export type Tour_Growth_3_TargetInputs = {};
+export type Tour_Growth_3_TitleInputs = {};
+export type Tour_Growth_SummaryInputs = {};
+export type Tour_Growth_TitleInputs = {};
+export type Tour_Handover_1_BodyInputs = {};
+export type Tour_Handover_1_TargetInputs = {};
+export type Tour_Handover_1_TitleInputs = {};
+export type Tour_Handover_2_BodyInputs = {};
+export type Tour_Handover_2_TargetInputs = {};
+export type Tour_Handover_2_TitleInputs = {};
+export type Tour_Handover_3_BodyInputs = {};
+export type Tour_Handover_3_TargetInputs = {};
+export type Tour_Handover_3_TitleInputs = {};
+export type Tour_Handover_4_BodyInputs = {};
+export type Tour_Handover_4_TargetInputs = {};
+export type Tour_Handover_4_TitleInputs = {};
+export type Tour_Handover_SummaryInputs = {};
+export type Tour_Handover_TitleInputs = {};
+export type Tour_Morning_1_BodyInputs = {};
+export type Tour_Morning_1_TitleInputs = {};
+export type Tour_Morning_2_BodyInputs = {};
+export type Tour_Morning_2_TargetInputs = {};
+export type Tour_Morning_2_TitleInputs = {};
+export type Tour_Morning_3_BodyInputs = {};
+export type Tour_Morning_3_TargetInputs = {};
+export type Tour_Morning_3_TitleInputs = {};
+export type Tour_Morning_4_BodyInputs = {};
+export type Tour_Morning_4_TargetInputs = {};
+export type Tour_Morning_4_TitleInputs = {};
+export type Tour_Morning_5_BodyInputs = {};
+export type Tour_Morning_5_TargetInputs = {};
+export type Tour_Morning_5_TitleInputs = {};
+export type Tour_Morning_6_BodyInputs = {};
+export type Tour_Morning_6_TargetInputs = {};
+export type Tour_Morning_6_TitleInputs = {};
+export type Tour_Morning_7_BodyInputs = {};
+export type Tour_Morning_7_TargetInputs = {};
+export type Tour_Morning_7_TitleInputs = {};
+export type Tour_Morning_SummaryInputs = {};
+export type Tour_Morning_TitleInputs = {};
+export type Tour_Po_Check_1_BodyInputs = {};
+export type Tour_Po_Check_1_TargetInputs = {};
+export type Tour_Po_Check_1_TitleInputs = {};
+export type Tour_Po_Check_2_BodyInputs = {};
+export type Tour_Po_Check_2_TargetInputs = {};
+export type Tour_Po_Check_2_TitleInputs = {};
+export type Tour_Po_Check_3_BodyInputs = {};
+export type Tour_Po_Check_3_TargetInputs = {};
+export type Tour_Po_Check_3_TitleInputs = {};
+export type Tour_Po_Check_4_BodyInputs = {};
+export type Tour_Po_Check_4_TargetInputs = {};
+export type Tour_Po_Check_4_TitleInputs = {};
+export type Tour_Po_Check_5_BodyInputs = {};
+export type Tour_Po_Check_5_TargetInputs = {};
+export type Tour_Po_Check_5_TitleInputs = {};
+export type Tour_Po_Check_SummaryInputs = {};
+export type Tour_Po_Check_TitleInputs = {};
+export type Tour_Quote_1_BodyInputs = {};
+export type Tour_Quote_1_ClickInputs = {};
+export type Tour_Quote_1_TargetInputs = {};
+export type Tour_Quote_1_TitleInputs = {};
+export type Tour_Quote_2_BodyInputs = {};
+export type Tour_Quote_2_TargetInputs = {};
+export type Tour_Quote_2_TitleInputs = {};
+export type Tour_Quote_3_BodyInputs = {};
+export type Tour_Quote_3_TargetInputs = {};
+export type Tour_Quote_3_TitleInputs = {};
+export type Tour_Quote_4_BodyInputs = {};
+export type Tour_Quote_4_TargetInputs = {};
+export type Tour_Quote_4_TitleInputs = {};
+export type Tour_Quote_5_BodyInputs = {};
+export type Tour_Quote_5_TargetInputs = {};
+export type Tour_Quote_5_TitleInputs = {};
+export type Tour_Quote_6_BodyInputs = {};
+export type Tour_Quote_6_TargetInputs = {};
+export type Tour_Quote_6_TitleInputs = {};
+export type Tour_Quote_7_BodyInputs = {};
+export type Tour_Quote_7_ClickInputs = {};
+export type Tour_Quote_7_TargetInputs = {};
+export type Tour_Quote_7_TitleInputs = {};
+export type Tour_Quote_SummaryInputs = {};
+export type Tour_Quote_TitleInputs = {};
+export type Tour_Replies_1_BodyInputs = {};
+export type Tour_Replies_1_TargetInputs = {};
+export type Tour_Replies_1_TitleInputs = {};
+export type Tour_Replies_2_BodyInputs = {};
+export type Tour_Replies_2_ClickInputs = {};
+export type Tour_Replies_2_TargetInputs = {};
+export type Tour_Replies_2_TitleInputs = {};
+export type Tour_Replies_3_BodyInputs = {};
+export type Tour_Replies_3_TargetInputs = {};
+export type Tour_Replies_3_TitleInputs = {};
+export type Tour_Replies_4_BodyInputs = {};
+export type Tour_Replies_4_TargetInputs = {};
+export type Tour_Replies_4_TitleInputs = {};
+export type Tour_Replies_5_BodyInputs = {};
+export type Tour_Replies_5_TargetInputs = {};
+export type Tour_Replies_5_TitleInputs = {};
+export type Tour_Replies_SummaryInputs = {};
+export type Tour_Replies_TitleInputs = {};
+export type Tour_Rfq_To_Case_1_BodyInputs = {};
+export type Tour_Rfq_To_Case_1_TargetInputs = {};
+export type Tour_Rfq_To_Case_1_TitleInputs = {};
+export type Tour_Rfq_To_Case_2_BodyInputs = {};
+export type Tour_Rfq_To_Case_2_ClickInputs = {};
+export type Tour_Rfq_To_Case_2_TargetInputs = {};
+export type Tour_Rfq_To_Case_2_TitleInputs = {};
+export type Tour_Rfq_To_Case_3_BodyInputs = {};
+export type Tour_Rfq_To_Case_3_ClickInputs = {};
+export type Tour_Rfq_To_Case_3_TargetInputs = {};
+export type Tour_Rfq_To_Case_3_TitleInputs = {};
+export type Tour_Rfq_To_Case_4_BodyInputs = {};
+export type Tour_Rfq_To_Case_4_TargetInputs = {};
+export type Tour_Rfq_To_Case_4_TitleInputs = {};
+export type Tour_Rfq_To_Case_5_BodyInputs = {};
+export type Tour_Rfq_To_Case_5_TargetInputs = {};
+export type Tour_Rfq_To_Case_5_TitleInputs = {};
+export type Tour_Rfq_To_Case_6_BodyInputs = {};
+export type Tour_Rfq_To_Case_6_TargetInputs = {};
+export type Tour_Rfq_To_Case_6_TitleInputs = {};
+export type Tour_Rfq_To_Case_SummaryInputs = {};
+export type Tour_Rfq_To_Case_TitleInputs = {};
 export type Visuals_AckInputs = {};
 export type Visuals_Ack_CaptionInputs = {};
 export type Visuals_Customer_DiscountInputs = {};

@@ -7,19 +7,7 @@ import { monogramHue, monogramLetters } from "../../../lib/base/monogram.ts";
 import { motion } from "../../../lib/base/motion-queue.ts";
 import { rcva } from "../../../lib/base/variants.ts";
 import { iconSvg } from "../media/icon.ts";
-import {
-  fixed,
-  grid,
-  inlineRow,
-  inset,
-  row,
-  rowEnd,
-  rowFill,
-  rowGrow,
-  rowLine,
-  stack,
-  text,
-} from "../../../styles/algebra.ts";
+import { fixed, grid, inlineRow, inset, row, rowEnd, rowFill, stack, text } from "../../../styles/algebra.ts";
 import type { Tone } from "./tag.ts";
 
 export interface RecordFact {
@@ -115,7 +103,7 @@ export const recordStripe = rcva("pointer-events-none absolute inset-x-0 top-0 h
   variants: { tone: TONE_DOT },
 });
 export const recordHead = rcva(`${row} items-start gap-3`);
-export const recordNames = rcva(`${stack} ${rowGrow} gap-0.5`);
+export const recordNames = rcva(`${stack} ${rowFill} gap-0.5`);
 export const recordEyebrow = rcva(`${text.line} text-label-md text-on-surface-variant`);
 export const recordTitle = rcva(`${text.label} line-clamp-2 text-title-md text-on-surface`);
 export const recordSupporting = rcva(`${text.label} line-clamp-2 text-body-sm text-on-surface-variant`);
@@ -131,7 +119,7 @@ export const recordFill = rcva(
   "block h-full w-(--p) max-w-full rounded-full bg-chart-1 [transition:width_var(--duration-long2)_var(--ease-emphasized-decelerate)] starting:w-0 motion-reduce:transition-none",
 );
 export const recordFoot = rcva(`${row} ${text.label} mt-auto items-center gap-2 text-body-sm text-on-surface-variant`);
-export const recordPerson = rcva(`${rowLine} text-body-sm text-on-surface-variant`);
+export const recordPerson = rcva(`${rowFill} truncate text-body-sm text-on-surface-variant`);
 export const recordInitials = rcva(
   `${fixed["6"]} grid place-items-center rounded-full bg-surface-container-highest text-label-sm text-on-surface`,
 );
@@ -375,6 +363,7 @@ export class UiRecordHero extends RecordsBase {
   @property({ attribute: false }) figures: RecordFact[] = [];
   @property({ attribute: false }) links: RecordLink[] = [];
   @property() meta = "";
+  @property({ type: Number }) level?: 1;
   protected get count() {
     return this.figures.length;
   }
@@ -387,7 +376,11 @@ export class UiRecordHero extends RecordsBase {
         ${monogram(r.monogram ?? r.title, "lg")}
         <span class=${recordNames()}>
           ${r.eyebrow ? html`<span class=${recordEyebrow()}>${r.eyebrow}</span>` : nothing}
-          <span class=${recordHeroTitle()}>${r.title}</span>
+          ${
+            this.level === 1
+              ? html`<h1 class=${recordHeroTitle()}>${r.title}</h1>`
+              : html`<span class=${recordHeroTitle()}>${r.title}</span>`
+          }
           ${r.supporting ? html`<span class=${recordSupporting()}>${r.supporting}</span>` : nothing}
         </span>
       </div>

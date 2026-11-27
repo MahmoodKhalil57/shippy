@@ -1,4 +1,4 @@
-import type { IconName, KindData, Tag, Tone, WidgetScope } from "saastemlycrm-design-system/contracts";
+import type { Action, IconName, KindData, Tag, Tone, WidgetScope } from "saastemlycrm-design-system/contracts";
 import type { CaseLine, CaseRfqRow, CaseRfqsPayload, ReplyEvent, RfqDraft } from "../endpoints/sourcing.ts";
 import { m } from "../i18n/paraglide/messages.js";
 import * as link from "../links.ts";
@@ -16,7 +16,7 @@ export const dated = (v: string) =>
 
 const names = (list: string[]) => list.join(numberLocale().startsWith("ar") ? "، " : ", ");
 
-export const OPEN = ["Sent", "Awaiting reply", "Partial reply", "Clarification needed"];
+export const OPEN = ["Sent", "Awaiting reply", "Partial reply", "Clarification needed", "Escalated"];
 
 export const chased = (r: CaseRfqRow) => OPEN.includes(r.status) || r.escalated;
 
@@ -134,38 +134,38 @@ export const rfqLines = (d: CaseRfqsPayload, { params }: WidgetScope): KindData<
             : undefined,
     })),
     empty: m.sourcing_no_lines(),
-    actions: [
-      {
-        label: m.sourcing_draft_rfqs(),
-        icon: "sparkles",
-        prompt: m.sourcing_draft_rfqs_prompt(),
-        disabled: !sendable.length,
-        reason: sendable.length ? undefined : m.sourcing_all_held(),
-        call: { path: "/sourcing/cases/$doc.id/plan", body: { mode } },
-        fields: [
-          {
-            type: "select",
-            name: "lineNos",
-            label: m.sourcing_lines(),
-            hasMany: true,
-            required: true,
-            defaultValue: picked(d.lines).map(String),
-            options: sendable.map((l) => ({
-              value: String(l.lineNo),
-              label: `L${l.lineNo} · ${l.description} · ${lineState(l)}`,
-            })),
-            admin: {
-              description: held.length
-                ? m.sourcing_held_back({ lines: heldLines(held.map((l) => ({ lineNo: l.lineNo, reason: l.held! }))) })
-                : m.sourcing_system_chooses(),
-            },
-          },
-        ],
-        reply: true,
-      },
-    ],
+    actions: d.canSource ? [draftAction(d, mode, sendable, held)] : undefined,
   };
 };
+
+const draftAction = (d: CaseRfqsPayload, mode: "split" | "full", sendable: CaseLine[], held: CaseLine[]): Action => ({
+  label: m.sourcing_draft_rfqs(),
+  icon: "sparkles",
+  prompt: m.sourcing_draft_rfqs_prompt(),
+  disabled: !sendable.length,
+  reason: sendable.length ? undefined : m.sourcing_all_held(),
+  call: { path: "/sourcing/cases/$doc.id/plan", body: { mode } },
+  fields: [
+    {
+      type: "select",
+      name: "lineNos",
+      label: m.sourcing_lines(),
+      hasMany: true,
+      required: true,
+      defaultValue: picked(d.lines).map(String),
+      options: sendable.map((l) => ({
+        value: String(l.lineNo),
+        label: `L${l.lineNo} · ${l.description} · ${lineState(l)}`,
+      })),
+      admin: {
+        description: held.length
+          ? m.sourcing_held_back({ lines: heldLines(held.map((l) => ({ lineNo: l.lineNo, reason: l.held! }))) })
+          : m.sourcing_system_chooses(),
+      },
+    },
+  ],
+  reply: true,
+});
 
 const anonymised = (): Tag[] =>
   [
@@ -184,29 +184,31 @@ export const rfqDrafts = (d: CaseRfqsPayload): KindData<"list"> | null => {
     head: {
       count: n,
       tags: [{ label: plan.mode === "full" ? m.sourcing_full() : m.sourcing_split() }],
-      actions: [
-        {
-          label: m.sourcing_discard_drafts(),
-          call: { path: "/sourcing/cases/$doc.id/plan/discard" },
-          done: m.sourcing_drafts_discarded(),
-        },
-        {
-          label: m.sourcing_send_n(many),
-          icon: "send",
-          main: true,
-          call: { path: "/sourcing/cases/$doc.id/send" },
-          confirm: {
-            heading: m.sourcing_send_heading(),
-            text: m.sourcing_send_text({
-              ...many,
-              suppliers: names(plan.drafts.map((r) => r.supplierName)),
-              due: at(plan.dueAt),
-            }),
-            label: m.sourcing_send_label(),
-          },
-          done: m.sourcing_sent(many),
-        },
-      ],
+      actions: d.canSource
+        ? [
+            {
+              label: m.sourcing_discard_drafts(),
+              call: { path: "/sourcing/cases/$doc.id/plan/discard" },
+              done: m.sourcing_drafts_discarded(),
+            },
+            {
+              label: m.sourcing_send_n(many),
+              icon: "send",
+              main: true,
+              call: { path: "/sourcing/cases/$doc.id/send" },
+              confirm: {
+                heading: m.sourcing_send_heading(),
+                text: m.sourcing_send_text({
+                  ...many,
+                  suppliers: names(plan.drafts.map((r) => r.supplierName)),
+                  due: at(plan.dueAt),
+                }),
+                label: m.sourcing_send_label(),
+              },
+              done: m.sourcing_sent(many),
+            },
+          ]
+        : undefined,
     },
     alerts: plan.held.length
       ? [{ tone: "warning", text: m.sourcing_held_back({ lines: heldLines(plan.held) }) }]
@@ -217,13 +219,15 @@ export const rfqDrafts = (d: CaseRfqsPayload): KindData<"list"> | null => {
       headline: `${r.supplierName} · ${r.reference}`,
       supporting: `${r.category} · L${r.lineNos.join(", L")} · ${r.note}`,
       tags: [{ label: m.sourcing_draft() }],
-      actions: [
-        {
-          label: m.sourcing_remove(),
-          call: { path: "/sourcing/cases/$doc.id/plan/remove", body: { reference: r.reference } },
-          done: m.sourcing_removed({ reference: r.reference }),
-        },
-      ],
+      actions: d.canSource
+        ? [
+            {
+              label: m.sourcing_remove(),
+              call: { path: "/sourcing/cases/$doc.id/plan/remove", body: { reference: r.reference } },
+              done: m.sourcing_removed({ reference: r.reference }),
+            },
+          ]
+        : undefined,
     })),
   };
 };

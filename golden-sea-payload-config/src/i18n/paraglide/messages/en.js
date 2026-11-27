@@ -148,6 +148,7 @@
 /** @typedef {{}} Api_Cash_Approval_Not_FoundInputs */
 /** @typedef {{ supplier: NonNullable<unknown> }} Api_Cash_Approve_Payment_TitleInputs */
 /** @typedef {{}} Api_Cash_Bank_Change_Not_FoundInputs */
+/** @typedef {{ number: NonNullable<unknown> }} Api_Cash_Bill_On_HoldInputs */
 /** @typedef {{ note: NonNullable<unknown> }} Api_Cash_Call_Back_DoneInputs */
 /** @typedef {{}} Api_Cash_Call_Back_FirstInputs */
 /** @typedef {{}} Api_Cash_Cant_DecideInputs */
@@ -162,6 +163,7 @@
 /** @typedef {{}} Api_Cash_List_SeparatorInputs */
 /** @typedef {{ number: NonNullable<unknown>, customer: NonNullable<unknown>, amount: NonNullable<unknown> }} Api_Cash_Match_ItemInputs */
 /** @typedef {{ count: NonNullable<unknown>, list: NonNullable<unknown> }} Api_Cash_Match_MessageInputs */
+/** @typedef {{ balance: NonNullable<unknown>, number: NonNullable<unknown> }} Api_Cash_More_Than_BalanceInputs */
 /** @typedef {{}} Api_Cash_No_Remittance_MatchInputs */
 /** @typedef {{ number: NonNullable<unknown>, due: NonNullable<unknown> }} Api_Cash_Pay_DetailInputs */
 /** @typedef {{ number: NonNullable<unknown>, bill: NonNullable<unknown>, due: NonNullable<unknown> }} Api_Cash_Pay_Detail_MatchedInputs */
@@ -183,7 +185,6 @@
 /** @typedef {{}} Api_Commercial_Approval_Not_FoundInputs */
 /** @typedef {{ progress: NonNullable<unknown> }} Api_Commercial_Approval_RecordedInputs */
 /** @typedef {{ number: NonNullable<unknown>, customer: NonNullable<unknown>, total: NonNullable<unknown> }} Api_Commercial_Approval_TitleInputs */
-/** @typedef {{ number: NonNullable<unknown>, customer: NonNullable<unknown>, hasMargin: NonNullable<unknown>, margin: NonNullable<unknown>, min: NonNullable<unknown> }} Api_Commercial_Approval_Title_MarginInputs */
 /** @typedef {{}} Api_Commercial_Approved_DotInputs */
 /** @typedef {{ title: NonNullable<unknown> }} Api_Commercial_Approved_TitleInputs */
 /** @typedef {{}} Api_Commercial_Bank_Applied_Cant_WithdrawInputs */
@@ -195,6 +196,7 @@
 /** @typedef {{}} Api_Commercial_Check_PoInputs */
 /** @typedef {{}} Api_Commercial_Check_Po_PartialInputs */
 /** @typedef {{}} Api_Commercial_Choose_OfferInputs */
+/** @typedef {{}} Api_Commercial_Closed_ExpiredInputs */
 /** @typedef {{}} Api_Commercial_Closed_LostInputs */
 /** @typedef {{ currency: NonNullable<unknown>, rate: NonNullable<unknown> }} Api_Commercial_Converted_FxInputs */
 /** @typedef {{ version: NonNullable<unknown>, replaces: NonNullable<unknown>, hasWas: NonNullable<unknown>, was: NonNullable<unknown> }} Api_Commercial_Corrected_VersionInputs */
@@ -283,8 +285,9 @@
 /** @typedef {{ number: NonNullable<unknown>, status: NonNullable<unknown> }} Api_Commercial_Quoted_With_SelectionInputs */
 /** @typedef {{}} Api_Commercial_Rejected_TechnicalInputs */
 /** @typedef {{ hours: NonNullable<unknown> }} Api_Commercial_Replies_InInputs */
-/** @typedef {{ name: NonNullable<unknown>, number: NonNullable<unknown>, type: NonNullable<unknown> }} Api_Commercial_Requested_ActivityInputs */
+/** @typedef {{ name: NonNullable<unknown>, number: NonNullable<unknown> }} Api_Commercial_Requested_ActivityInputs */
 /** @typedef {{ title: NonNullable<unknown> }} Api_Commercial_Returned_TitleInputs */
+/** @typedef {{ number: NonNullable<unknown> }} Api_Commercial_Revise_For_CustomerInputs */
 /** @typedef {{ number: NonNullable<unknown>, status: NonNullable<unknown> }} Api_Commercial_Revise_LatestInputs */
 /** @typedef {{ name: NonNullable<unknown>, reason: NonNullable<unknown> }} Api_Commercial_Revise_PricingInputs */
 /** @typedef {{ next: NonNullable<unknown>, from: NonNullable<unknown> }} Api_Commercial_Revised_ActivityInputs */
@@ -295,6 +298,7 @@
 /** @typedef {{ line: NonNullable<unknown>, names: NonNullable<unknown>, hasReason: NonNullable<unknown>, reason: NonNullable<unknown> }} Api_Commercial_Selected_ActivityInputs */
 /** @typedef {{ line: NonNullable<unknown> }} Api_Commercial_Selected_AgainInputs */
 /** @typedef {{ total: NonNullable<unknown>, qty: NonNullable<unknown>, unit: NonNullable<unknown> }} Api_Commercial_Selected_OfInputs */
+/** @typedef {{ number: NonNullable<unknown> }} Api_Commercial_Send_For_ApprovalInputs */
 /** @typedef {{ number: NonNullable<unknown> }} Api_Commercial_Send_To_CustomerInputs */
 /** @typedef {{}} Api_Commercial_Sent_Awaiting_CorrectedInputs */
 /** @typedef {{ left: NonNullable<unknown>, need: NonNullable<unknown> }} Api_Commercial_Shelf_LifeInputs */
@@ -476,6 +480,7 @@
 /** @typedef {{ n: NonNullable<unknown> }} Api_Home_Integration_ExceptionsInputs */
 /** @typedef {{ customer: NonNullable<unknown>, amount: NonNullable<unknown>, day: NonNullable<unknown> }} Api_Home_Invoice_DueInputs */
 /** @typedef {{ customer: NonNullable<unknown> }} Api_Home_Invoice_Due_ShortInputs */
+/** @typedef {{ customer: NonNullable<unknown>, amount: NonNullable<unknown>, day: NonNullable<unknown> }} Api_Home_Invoice_OverdueInputs */
 /** @typedef {{ number: NonNullable<unknown>, status: NonNullable<unknown> }} Api_Home_Invoice_SubInputs */
 /** @typedef {{ number: NonNullable<unknown>, status: NonNullable<unknown>, paid: NonNullable<unknown> }} Api_Home_Invoice_Sub_PaidInputs */
 /** @typedef {{}} Api_Home_InvoicesInputs */
@@ -553,7 +558,9 @@
 /** @typedef {{ days: NonNullable<unknown> }} Api_Insights_Shared_In_DaysInputs */
 /** @typedef {{}} Api_Insights_Shared_Not_AllowedInputs */
 /** @typedef {{ time: NonNullable<unknown> }} Api_Insights_Shared_Overdue_SinceInputs */
+/** @typedef {{}} Api_Insights_Shared_TodayInputs */
 /** @typedef {{ time: NonNullable<unknown> }} Api_Insights_Shared_Today_AtInputs */
+/** @typedef {{}} Api_Insights_Shared_TomorrowInputs */
 /** @typedef {{ time: NonNullable<unknown> }} Api_Insights_Shared_Tomorrow_AtInputs */
 /** @typedef {{}} Api_Operations_Already_AcceptedInputs */
 /** @typedef {{ number: NonNullable<unknown>, line: NonNullable<unknown>, field: NonNullable<unknown>, resolution: NonNullable<unknown> }} Api_Operations_Amend_ActivityInputs */
@@ -575,6 +582,7 @@
 /** @typedef {{ number: NonNullable<unknown>, signedBy: NonNullable<unknown> }} Api_Operations_Delivered_ActivityInputs */
 /** @typedef {{}} Api_Operations_Delivery_Not_FoundInputs */
 /** @typedef {{}} Api_Operations_Describe_AgreementInputs */
+/** @typedef {{ done: NonNullable<unknown>, total: NonNullable<unknown>, number: NonNullable<unknown> }} Api_Operations_Drop_DeliveredInputs */
 /** @typedef {{ number: NonNullable<unknown> }} Api_Operations_Einvoice_SubmittedInputs */
 /** @typedef {{ number: NonNullable<unknown>, uuid: NonNullable<unknown> }} Api_Operations_Einvoice_Submitted_ActivityInputs */
 /** @typedef {{ number: NonNullable<unknown> }} Api_Operations_Einvoice_ValidInputs */
@@ -595,6 +603,7 @@
 /** @typedef {{}} Api_Operations_Launch_BoatInputs */
 /** @typedef {{ launch: NonNullable<unknown>, at: NonNullable<unknown> }} Api_Operations_Launch_RebookedInputs */
 /** @typedef {{ n: NonNullable<unknown> }} Api_Operations_LineInputs */
+/** @typedef {{ line: NonNullable<unknown> }} Api_Operations_Line_On_PoInputs */
 /** @typedef {{}} Api_Operations_No_ChangesInputs */
 /** @typedef {{}} Api_Operations_No_Customer_PoInputs */
 /** @typedef {{}} Api_Operations_No_Customer_Po_YetInputs */
@@ -609,6 +618,7 @@
 /** @typedef {{ number: NonNullable<unknown>, caseId: NonNullable<unknown>, open: NonNullable<unknown> }} Api_Operations_Po_Read_ActivityInputs */
 /** @typedef {{ number: NonNullable<unknown>, changes: NonNullable<unknown> }} Api_Operations_Recheck_ActivityInputs */
 /** @typedef {{}} Api_Operations_Recheck_AvailabilityInputs */
+/** @typedef {{}} Api_Operations_Recheck_FirstInputs */
 /** @typedef {{}} Api_Operations_Recheck_PriceInputs */
 /** @typedef {{}} Api_Operations_Recheck_Then_ApproveInputs */
 /** @typedef {{ number: NonNullable<unknown>, hours: NonNullable<unknown> }} Api_Operations_Reconfirm_TaskInputs */
@@ -681,6 +691,7 @@
 /** @typedef {{}} Api_Platform_Management_RulesInputs */
 /** @typedef {{}} Api_Platform_My_Language_ArInputs */
 /** @typedef {{}} Api_Platform_My_Language_EnInputs */
+/** @typedef {{}} Api_Platform_Needs_A_PersonInputs */
 /** @typedef {{}} Api_Platform_No_Shift_ReasonInputs */
 /** @typedef {{}} Api_Platform_Not_Yet_ShownInputs */
 /** @typedef {{}} Api_Platform_Note_RequiredInputs */
@@ -810,6 +821,7 @@
 /** @typedef {{ channel: NonNullable<unknown>, subject: NonNullable<unknown>, count: NonNullable<unknown>, who: NonNullable<unknown> }} Api_Sourcing_Created_ActivityInputs */
 /** @typedef {{ ref: NonNullable<unknown>, caseId: NonNullable<unknown> }} Api_Sourcing_Customer_Ref_IsInputs */
 /** @typedef {{}} Api_Sourcing_Declined_EventInputs */
+/** @typedef {{}} Api_Sourcing_Desk_OnlyInputs */
 /** @typedef {{}} Api_Sourcing_Draft_GoneInputs */
 /** @typedef {{ count: NonNullable<unknown> }} Api_Sourcing_Drafts_BackInputs */
 /** @typedef {{}} Api_Sourcing_Drafts_ChangedInputs */
@@ -886,10 +898,10 @@
 /** @typedef {{}} Api_Sourcing_Rfq_Please_StateInputs */
 /** @typedef {{ reference: NonNullable<unknown>, due: NonNullable<unknown> }} Api_Sourcing_Rfq_SubjectInputs */
 /** @typedef {{}} Api_Sourcing_Rfq_To_PortInputs */
+/** @typedef {{ name: NonNullable<unknown>, reference: NonNullable<unknown>, invited: NonNullable<unknown> }} Api_Sourcing_Sender_DiffersInputs */
 /** @typedef {{ domain: NonNullable<unknown>, name: NonNullable<unknown> }} Api_Sourcing_Sender_DomainInputs */
 /** @typedef {{ sender: NonNullable<unknown> }} Api_Sourcing_Sender_UnknownInputs */
 /** @typedef {{ count: NonNullable<unknown>, who: NonNullable<unknown>, mode: NonNullable<unknown>, references: NonNullable<unknown> }} Api_Sourcing_Sent_ActivityInputs */
-/** @typedef {{ name: NonNullable<unknown> }} Api_Sourcing_Sent_By_OtherInputs */
 /** @typedef {{}} Api_Sourcing_Sent_EventInputs */
 /** @typedef {{ reference: NonNullable<unknown>, name: NonNullable<unknown>, after: NonNullable<unknown> }} Api_Sourcing_Silent_ActivityInputs */
 /** @typedef {{ after: NonNullable<unknown>, caseId: NonNullable<unknown>, due: NonNullable<unknown> }} Api_Sourcing_Silent_DetailInputs */
@@ -1050,6 +1062,7 @@
 /** @typedef {{}} Commercial_Col_Line_SupplierInputs */
 /** @typedef {{}} Commercial_Col_Margin_PctInputs */
 /** @typedef {{}} Commercial_Col_MarkupInputs */
+/** @typedef {{}} Commercial_Col_MatchInputs */
 /** @typedef {{}} Commercial_Col_OfferedInputs */
 /** @typedef {{}} Commercial_Col_Plus_SharedInputs */
 /** @typedef {{}} Commercial_Col_PortalInputs */
@@ -1305,6 +1318,7 @@
 /** @typedef {{}} Control_Room_SummariseInputs */
 /** @typedef {{}} Growth_Column_ImoInputs */
 /** @typedef {{}} Growth_Column_ManagerInputs */
+/** @typedef {{}} Growth_Column_SuppliedInputs */
 /** @typedef {{}} Growth_Column_TypeInputs */
 /** @typedef {{}} Growth_Column_VesselInputs */
 /** @typedef {{}} Growth_Extract_CompanyInputs */
@@ -1370,7 +1384,7 @@
 /** @typedef {{ name: NonNullable<unknown>, email: NonNullable<unknown> }} Inbox_FromInputs */
 /** @typedef {{}} Inbox_History_Approval_ReadyInputs */
 /** @typedef {{}} Inbox_History_Approval_TextInputs */
-/** @typedef {{ blocked: NonNullable<unknown> }} Inbox_History_Approval_WaitingInputs */
+/** @typedef {{ approvers: NonNullable<unknown>, blocked: NonNullable<unknown> }} Inbox_History_Approval_WaitingInputs */
 /** @typedef {{}} Inbox_History_ApproveInputs */
 /** @typedef {{}} Inbox_History_Approve_DoneInputs */
 /** @typedef {{ by: NonNullable<unknown> }} Inbox_History_Approved_ByInputs */
@@ -1408,6 +1422,7 @@
 /** @typedef {{}} Inbox_History_KeptInputs */
 /** @typedef {{ scanned: NonNullable<unknown> }} Inbox_History_Kept_ShareInputs */
 /** @typedef {{}} Inbox_History_Mailboxes_NoteInputs */
+/** @typedef {{}} Inbox_History_ManagementInputs */
 /** @typedef {{}} Inbox_History_MessagesInputs */
 /** @typedef {{}} Inbox_History_New_To_OdooInputs */
 /** @typedef {{}} Inbox_History_No_PoInputs */
@@ -1570,6 +1585,7 @@
 /** @typedef {{}} Order_To_Cash_Close_With_ReasonInputs */
 /** @typedef {{ line: NonNullable<unknown> }} Order_To_Cash_Closed_DoneInputs */
 /** @typedef {{}} Order_To_Cash_Col_At_QuotationInputs */
+/** @typedef {{}} Order_To_Cash_Col_CheckInputs */
 /** @typedef {{}} Order_To_Cash_Col_CheckedInputs */
 /** @typedef {{}} Order_To_Cash_Col_Customer_PoInputs */
 /** @typedef {{}} Order_To_Cash_Col_ItemInputs */
@@ -2294,6 +2310,7 @@
 /** @typedef {{}} Profit_Col_ExpectedInputs */
 /** @typedef {{}} Profit_Col_FxInputs */
 /** @typedef {{}} Profit_Col_RateInputs */
+/** @typedef {{}} Profit_Col_RealisedInputs */
 /** @typedef {{}} Profit_Col_ReceiptInputs */
 /** @typedef {{}} Profit_Col_StatusInputs */
 /** @typedef {{}} Profit_Costs_NoteInputs */
@@ -2330,6 +2347,7 @@
 /** @typedef {{ answer: NonNullable<unknown> }} Project_AnswerInputs */
 /** @typedef {{}} Project_Brief_NoteInputs */
 /** @typedef {{}} Project_Col_CheckedInputs */
+/** @typedef {{}} Project_Col_OpenInputs */
 /** @typedef {{}} Project_Col_RequirementInputs */
 /** @typedef {{}} Project_Col_ScenarioInputs */
 /** @typedef {{}} Project_Col_StatusInputs */
@@ -2442,6 +2460,195 @@
 /** @typedef {{}} Sourcing_Supplier_RecordInputs */
 /** @typedef {{}} Sourcing_System_ChoosesInputs */
 /** @typedef {{}} Sourcing_Vessel_RemovedInputs */
+/** @typedef {{}} Tour_Close_1_BodyInputs */
+/** @typedef {{}} Tour_Close_1_TargetInputs */
+/** @typedef {{}} Tour_Close_1_TitleInputs */
+/** @typedef {{}} Tour_Close_2_BodyInputs */
+/** @typedef {{}} Tour_Close_2_TargetInputs */
+/** @typedef {{}} Tour_Close_2_TitleInputs */
+/** @typedef {{}} Tour_Close_3_BodyInputs */
+/** @typedef {{}} Tour_Close_3_TargetInputs */
+/** @typedef {{}} Tour_Close_3_TitleInputs */
+/** @typedef {{}} Tour_Close_4_BodyInputs */
+/** @typedef {{}} Tour_Close_4_TargetInputs */
+/** @typedef {{}} Tour_Close_4_TitleInputs */
+/** @typedef {{}} Tour_Close_SummaryInputs */
+/** @typedef {{}} Tour_Close_TitleInputs */
+/** @typedef {{}} Tour_Control_Room_1_BodyInputs */
+/** @typedef {{}} Tour_Control_Room_1_TargetInputs */
+/** @typedef {{}} Tour_Control_Room_1_TitleInputs */
+/** @typedef {{}} Tour_Control_Room_2_BodyInputs */
+/** @typedef {{}} Tour_Control_Room_2_ClickInputs */
+/** @typedef {{}} Tour_Control_Room_2_TargetInputs */
+/** @typedef {{}} Tour_Control_Room_2_TitleInputs */
+/** @typedef {{}} Tour_Control_Room_3_BodyInputs */
+/** @typedef {{}} Tour_Control_Room_3_TargetInputs */
+/** @typedef {{}} Tour_Control_Room_3_TitleInputs */
+/** @typedef {{}} Tour_Control_Room_4_BodyInputs */
+/** @typedef {{}} Tour_Control_Room_4_TargetInputs */
+/** @typedef {{}} Tour_Control_Room_4_TitleInputs */
+/** @typedef {{}} Tour_Control_Room_SummaryInputs */
+/** @typedef {{}} Tour_Control_Room_TitleInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_1_BodyInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_1_TargetInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_1_TitleInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_2_BodyInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_2_TargetInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_2_TitleInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_3_BodyInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_3_TargetInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_3_TitleInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_4_BodyInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_4_TargetInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_4_TitleInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_5_BodyInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_5_TargetInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_5_TitleInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_SummaryInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_TitleInputs */
+/** @typedef {{}} Tour_Exceptions_1_BodyInputs */
+/** @typedef {{}} Tour_Exceptions_1_TargetInputs */
+/** @typedef {{}} Tour_Exceptions_1_TitleInputs */
+/** @typedef {{}} Tour_Exceptions_2_BodyInputs */
+/** @typedef {{}} Tour_Exceptions_2_TargetInputs */
+/** @typedef {{}} Tour_Exceptions_2_TitleInputs */
+/** @typedef {{}} Tour_Exceptions_3_BodyInputs */
+/** @typedef {{}} Tour_Exceptions_3_TargetInputs */
+/** @typedef {{}} Tour_Exceptions_3_TitleInputs */
+/** @typedef {{}} Tour_Exceptions_4_BodyInputs */
+/** @typedef {{}} Tour_Exceptions_4_TargetInputs */
+/** @typedef {{}} Tour_Exceptions_4_TitleInputs */
+/** @typedef {{}} Tour_Exceptions_SummaryInputs */
+/** @typedef {{}} Tour_Exceptions_TitleInputs */
+/** @typedef {{}} Tour_Growth_1_BodyInputs */
+/** @typedef {{}} Tour_Growth_1_TargetInputs */
+/** @typedef {{}} Tour_Growth_1_TitleInputs */
+/** @typedef {{}} Tour_Growth_2_BodyInputs */
+/** @typedef {{}} Tour_Growth_2_TargetInputs */
+/** @typedef {{}} Tour_Growth_2_TitleInputs */
+/** @typedef {{}} Tour_Growth_3_BodyInputs */
+/** @typedef {{}} Tour_Growth_3_TargetInputs */
+/** @typedef {{}} Tour_Growth_3_TitleInputs */
+/** @typedef {{}} Tour_Growth_SummaryInputs */
+/** @typedef {{}} Tour_Growth_TitleInputs */
+/** @typedef {{}} Tour_Handover_1_BodyInputs */
+/** @typedef {{}} Tour_Handover_1_TargetInputs */
+/** @typedef {{}} Tour_Handover_1_TitleInputs */
+/** @typedef {{}} Tour_Handover_2_BodyInputs */
+/** @typedef {{}} Tour_Handover_2_TargetInputs */
+/** @typedef {{}} Tour_Handover_2_TitleInputs */
+/** @typedef {{}} Tour_Handover_3_BodyInputs */
+/** @typedef {{}} Tour_Handover_3_TargetInputs */
+/** @typedef {{}} Tour_Handover_3_TitleInputs */
+/** @typedef {{}} Tour_Handover_4_BodyInputs */
+/** @typedef {{}} Tour_Handover_4_TargetInputs */
+/** @typedef {{}} Tour_Handover_4_TitleInputs */
+/** @typedef {{}} Tour_Handover_SummaryInputs */
+/** @typedef {{}} Tour_Handover_TitleInputs */
+/** @typedef {{}} Tour_Morning_1_BodyInputs */
+/** @typedef {{}} Tour_Morning_1_TitleInputs */
+/** @typedef {{}} Tour_Morning_2_BodyInputs */
+/** @typedef {{}} Tour_Morning_2_TargetInputs */
+/** @typedef {{}} Tour_Morning_2_TitleInputs */
+/** @typedef {{}} Tour_Morning_3_BodyInputs */
+/** @typedef {{}} Tour_Morning_3_TargetInputs */
+/** @typedef {{}} Tour_Morning_3_TitleInputs */
+/** @typedef {{}} Tour_Morning_4_BodyInputs */
+/** @typedef {{}} Tour_Morning_4_TargetInputs */
+/** @typedef {{}} Tour_Morning_4_TitleInputs */
+/** @typedef {{}} Tour_Morning_5_BodyInputs */
+/** @typedef {{}} Tour_Morning_5_TargetInputs */
+/** @typedef {{}} Tour_Morning_5_TitleInputs */
+/** @typedef {{}} Tour_Morning_6_BodyInputs */
+/** @typedef {{}} Tour_Morning_6_TargetInputs */
+/** @typedef {{}} Tour_Morning_6_TitleInputs */
+/** @typedef {{}} Tour_Morning_7_BodyInputs */
+/** @typedef {{}} Tour_Morning_7_TargetInputs */
+/** @typedef {{}} Tour_Morning_7_TitleInputs */
+/** @typedef {{}} Tour_Morning_SummaryInputs */
+/** @typedef {{}} Tour_Morning_TitleInputs */
+/** @typedef {{}} Tour_Po_Check_1_BodyInputs */
+/** @typedef {{}} Tour_Po_Check_1_TargetInputs */
+/** @typedef {{}} Tour_Po_Check_1_TitleInputs */
+/** @typedef {{}} Tour_Po_Check_2_BodyInputs */
+/** @typedef {{}} Tour_Po_Check_2_TargetInputs */
+/** @typedef {{}} Tour_Po_Check_2_TitleInputs */
+/** @typedef {{}} Tour_Po_Check_3_BodyInputs */
+/** @typedef {{}} Tour_Po_Check_3_TargetInputs */
+/** @typedef {{}} Tour_Po_Check_3_TitleInputs */
+/** @typedef {{}} Tour_Po_Check_4_BodyInputs */
+/** @typedef {{}} Tour_Po_Check_4_TargetInputs */
+/** @typedef {{}} Tour_Po_Check_4_TitleInputs */
+/** @typedef {{}} Tour_Po_Check_5_BodyInputs */
+/** @typedef {{}} Tour_Po_Check_5_TargetInputs */
+/** @typedef {{}} Tour_Po_Check_5_TitleInputs */
+/** @typedef {{}} Tour_Po_Check_SummaryInputs */
+/** @typedef {{}} Tour_Po_Check_TitleInputs */
+/** @typedef {{}} Tour_Quote_1_BodyInputs */
+/** @typedef {{}} Tour_Quote_1_ClickInputs */
+/** @typedef {{}} Tour_Quote_1_TargetInputs */
+/** @typedef {{}} Tour_Quote_1_TitleInputs */
+/** @typedef {{}} Tour_Quote_2_BodyInputs */
+/** @typedef {{}} Tour_Quote_2_TargetInputs */
+/** @typedef {{}} Tour_Quote_2_TitleInputs */
+/** @typedef {{}} Tour_Quote_3_BodyInputs */
+/** @typedef {{}} Tour_Quote_3_TargetInputs */
+/** @typedef {{}} Tour_Quote_3_TitleInputs */
+/** @typedef {{}} Tour_Quote_4_BodyInputs */
+/** @typedef {{}} Tour_Quote_4_TargetInputs */
+/** @typedef {{}} Tour_Quote_4_TitleInputs */
+/** @typedef {{}} Tour_Quote_5_BodyInputs */
+/** @typedef {{}} Tour_Quote_5_TargetInputs */
+/** @typedef {{}} Tour_Quote_5_TitleInputs */
+/** @typedef {{}} Tour_Quote_6_BodyInputs */
+/** @typedef {{}} Tour_Quote_6_TargetInputs */
+/** @typedef {{}} Tour_Quote_6_TitleInputs */
+/** @typedef {{}} Tour_Quote_7_BodyInputs */
+/** @typedef {{}} Tour_Quote_7_ClickInputs */
+/** @typedef {{}} Tour_Quote_7_TargetInputs */
+/** @typedef {{}} Tour_Quote_7_TitleInputs */
+/** @typedef {{}} Tour_Quote_SummaryInputs */
+/** @typedef {{}} Tour_Quote_TitleInputs */
+/** @typedef {{}} Tour_Replies_1_BodyInputs */
+/** @typedef {{}} Tour_Replies_1_TargetInputs */
+/** @typedef {{}} Tour_Replies_1_TitleInputs */
+/** @typedef {{}} Tour_Replies_2_BodyInputs */
+/** @typedef {{}} Tour_Replies_2_ClickInputs */
+/** @typedef {{}} Tour_Replies_2_TargetInputs */
+/** @typedef {{}} Tour_Replies_2_TitleInputs */
+/** @typedef {{}} Tour_Replies_3_BodyInputs */
+/** @typedef {{}} Tour_Replies_3_TargetInputs */
+/** @typedef {{}} Tour_Replies_3_TitleInputs */
+/** @typedef {{}} Tour_Replies_4_BodyInputs */
+/** @typedef {{}} Tour_Replies_4_TargetInputs */
+/** @typedef {{}} Tour_Replies_4_TitleInputs */
+/** @typedef {{}} Tour_Replies_5_BodyInputs */
+/** @typedef {{}} Tour_Replies_5_TargetInputs */
+/** @typedef {{}} Tour_Replies_5_TitleInputs */
+/** @typedef {{}} Tour_Replies_SummaryInputs */
+/** @typedef {{}} Tour_Replies_TitleInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_1_BodyInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_1_TargetInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_1_TitleInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_2_BodyInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_2_ClickInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_2_TargetInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_2_TitleInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_3_BodyInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_3_ClickInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_3_TargetInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_3_TitleInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_4_BodyInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_4_TargetInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_4_TitleInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_5_BodyInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_5_TargetInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_5_TitleInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_6_BodyInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_6_TargetInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_6_TitleInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_SummaryInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_TitleInputs */
 /** @typedef {{}} Visuals_AckInputs */
 /** @typedef {{}} Visuals_Ack_CaptionInputs */
 /** @typedef {{}} Visuals_Customer_DiscountInputs */
@@ -2495,7 +2702,7 @@ export const action_cash_approved = /** @type {(inputs: Action_Cash_ApprovedInpu
 };
 
 export const action_cash_call_back_text = /** @type {(inputs: Action_Cash_Call_Back_TextInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Call the supplier back on the number on file (${i?.phone}) — never on a number from the request — and confirm the new account with them.`)
+	return /** @type {LocalizedString} */ (`Call the supplier back on the number on file (${i?.phone}), never on a number from the request, and confirm the new account with them.`)
 };
 
 export const action_cash_called_back = /** @type {(inputs: Action_Cash_Called_BackInputs) => LocalizedString} */ () => {
@@ -2540,7 +2747,7 @@ export const action_eta_backorder_in_time = /** @type {(inputs: Action_Eta_Backo
 };
 
 export const action_eta_backorder_late = /** @type {(inputs: Action_Eta_Backorder_LateInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Backorder L${i?.line} (${i?.supplier}, ${i?.date}): still late — escalate`)
+	return /** @type {LocalizedString} */ (`Backorder L${i?.line} (${i?.supplier}, ${i?.date}): still late. Escalate.`)
 };
 
 export const action_eta_from = /** @type {(inputs: Action_Eta_FromInputs) => LocalizedString} */ (i) => {
@@ -2548,7 +2755,7 @@ export const action_eta_from = /** @type {(inputs: Action_Eta_FromInputs) => Loc
 };
 
 export const action_eta_heading = /** @type {(inputs: Action_Eta_HeadingInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Agent email — ETA update`)
+	return /** @type {LocalizedString} */ (`Agent email: ETA update`)
 };
 
 export const action_eta_label = /** @type {(inputs: Action_Eta_LabelInputs) => LocalizedString} */ () => {
@@ -2576,7 +2783,7 @@ export const action_history_organise = /** @type {(inputs: Action_History_Organi
 };
 
 export const action_history_organised = /** @type {(inputs: Action_History_OrganisedInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`History organised — uncertain items are waiting for you`)
+	return /** @type {LocalizedString} */ (`History organised. Uncertain items are waiting for you`)
 };
 
 export const action_inbox_ack_auto = /** @type {(inputs: Action_Inbox_Ack_AutoInputs) => LocalizedString} */ () => {
@@ -2754,7 +2961,7 @@ export const action_rfqs_simulate = /** @type {(inputs: Action_Rfqs_SimulateInpu
 };
 
 export const action_rfqs_simulated = /** @type {(inputs: Action_Rfqs_SimulatedInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Supplier replies are in — offers are on the Compare tab`)
+	return /** @type {LocalizedString} */ (`Supplier replies are in. Offers are on the Compare tab`)
 };
 
 export const api_assistant_and_more = /** @type {(inputs: Api_Assistant_And_MoreInputs) => LocalizedString} */ (i) => {
@@ -2762,8 +2969,8 @@ export const api_assistant_and_more = /** @type {(inputs: Api_Assistant_And_More
 };
 
 export const api_assistant_approval_item = /** @type {(inputs: Api_Assistant_Approval_ItemInputs) => LocalizedString} */ (i) => {
-	if (i?.twoPerson === "yes") return /** @type {LocalizedString} */ (`${i?.title} — ${i?.type}, from ${i?.from} · approvers ${i?.approvers} (two-person rule)`);
-	return /** @type {LocalizedString} */ (`${i?.title} — ${i?.type}, from ${i?.from} · approvers ${i?.approvers}`)
+	if (i?.twoPerson === "yes") return /** @type {LocalizedString} */ (`${i?.title}: ${i?.type}, from ${i?.from} · approvers ${i?.approvers} (two-person rule)`);
+	return /** @type {LocalizedString} */ (`${i?.title}: ${i?.type}, from ${i?.from} · approvers ${i?.approvers}`)
 };
 
 export const api_assistant_approvals_for_you = /** @type {(inputs: Api_Assistant_Approvals_For_YouInputs) => LocalizedString} */ (i) => {
@@ -2918,9 +3125,9 @@ export const api_assistant_items_awaiting_approval = /** @type {(inputs: Api_Ass
 };
 
 export const api_assistant_late_item = /** @type {(inputs: Api_Assistant_Late_ItemInputs) => LocalizedString} */ (i) => {
-	if (i?.extra === "claim") return /** @type {LocalizedString} */ (`${i?.supplier} — ${i?.po} line ${i?.line}: ${i?.received} of ${i?.ordered} received · ${i?.claim}`);
-	if (i?.extra === "promised") return /** @type {LocalizedString} */ (`${i?.supplier} — ${i?.po} line ${i?.line}: ${i?.received} of ${i?.ordered} received · rest promised ${i?.promised}`);
-	return /** @type {LocalizedString} */ (`${i?.supplier} — ${i?.po} line ${i?.line}: ${i?.received} of ${i?.ordered} received`)
+	if (i?.extra === "claim") return /** @type {LocalizedString} */ (`${i?.supplier}, ${i?.po} line ${i?.line}: ${i?.received} of ${i?.ordered} received · ${i?.claim}`);
+	if (i?.extra === "promised") return /** @type {LocalizedString} */ (`${i?.supplier}, ${i?.po} line ${i?.line}: ${i?.received} of ${i?.ordered} received · rest promised ${i?.promised}`);
+	return /** @type {LocalizedString} */ (`${i?.supplier}, ${i?.po} line ${i?.line}: ${i?.received} of ${i?.ordered} received`)
 };
 
 export const api_assistant_least_reliable = /** @type {(inputs: Api_Assistant_Least_ReliableInputs) => LocalizedString} */ (i) => {
@@ -2936,7 +3143,7 @@ export const api_assistant_margin_by_store = /** @type {(inputs: Api_Assistant_M
 };
 
 export const api_assistant_month_gp = /** @type {(inputs: Api_Assistant_Month_GpInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.month}: gross profit EGP ${i?.expected}k expected at quotation, EGP ${i?.actual}k actual so far — the gap closes as November's costs are billed.`)
+	return /** @type {LocalizedString} */ (`${i?.month}: gross profit EGP ${i?.expected}k expected at quotation, EGP ${i?.actual}k actual so far. The gap closes as November's costs are billed.`)
 };
 
 export const api_assistant_more_due_later = /** @type {(inputs: Api_Assistant_More_Due_LaterInputs) => LocalizedString} */ (i) => {
@@ -2964,12 +3171,12 @@ export const api_assistant_november_gp = /** @type {(inputs: Api_Assistant_Novem
 };
 
 export const api_assistant_opportunity_item = /** @type {(inputs: Api_Assistant_Opportunity_ItemInputs) => LocalizedString} */ (i) => {
-	if (i?.hasValue === "yes" && i?.next === "none") return /** @type {LocalizedString} */ (`${i?.name} — ${i?.stage}, ${i?.value} · no next step planned`);
-	if (i?.hasValue === "yes" && i?.next === "dated") return /** @type {LocalizedString} */ (`${i?.name} — ${i?.stage}, ${i?.value} · next: ${i?.step} (${i?.due})`);
-	if (i?.hasValue === "yes") return /** @type {LocalizedString} */ (`${i?.name} — ${i?.stage}, ${i?.value} · next: ${i?.step}`);
-	if (i?.next === "none") return /** @type {LocalizedString} */ (`${i?.name} — ${i?.stage} · no next step planned`);
-	if (i?.next === "dated") return /** @type {LocalizedString} */ (`${i?.name} — ${i?.stage} · next: ${i?.step} (${i?.due})`);
-	return /** @type {LocalizedString} */ (`${i?.name} — ${i?.stage} · next: ${i?.step}`)
+	if (i?.hasValue === "yes" && i?.next === "none") return /** @type {LocalizedString} */ (`${i?.name}: ${i?.stage}, ${i?.value} · no next step planned`);
+	if (i?.hasValue === "yes" && i?.next === "dated") return /** @type {LocalizedString} */ (`${i?.name}: ${i?.stage}, ${i?.value} · next: ${i?.step} (${i?.due})`);
+	if (i?.hasValue === "yes") return /** @type {LocalizedString} */ (`${i?.name}: ${i?.stage}, ${i?.value} · next: ${i?.step}`);
+	if (i?.next === "none") return /** @type {LocalizedString} */ (`${i?.name}: ${i?.stage} · no next step planned`);
+	if (i?.next === "dated") return /** @type {LocalizedString} */ (`${i?.name}: ${i?.stage} · next: ${i?.step} (${i?.due})`);
+	return /** @type {LocalizedString} */ (`${i?.name}: ${i?.stage} · next: ${i?.step}`)
 };
 
 export const api_assistant_overdue = /** @type {(inputs: Api_Assistant_OverdueInputs) => LocalizedString} */ (i) => {
@@ -3006,7 +3213,7 @@ export const api_assistant_profit_and_close = /** @type {(inputs: Api_Assistant_
 };
 
 export const api_assistant_quote_due_item = /** @type {(inputs: Api_Assistant_Quote_Due_ItemInputs) => LocalizedString} */ (i) => {
-	if (i?.hasBlocker === "yes") return /** @type {LocalizedString} */ (`${i?.vessel} (${i?.caseId}) ${i?.when} — ${i?.blocker}`);
+	if (i?.hasBlocker === "yes") return /** @type {LocalizedString} */ (`${i?.vessel} (${i?.caseId}) ${i?.when}, ${i?.blocker}`);
 	return /** @type {LocalizedString} */ (`${i?.vessel} (${i?.caseId}) ${i?.when}`)
 };
 
@@ -3029,16 +3236,16 @@ export const api_assistant_refused_hint = /** @type {(inputs: Api_Assistant_Refu
 };
 
 export const api_assistant_risky_item = /** @type {(inputs: Api_Assistant_Risky_ItemInputs) => LocalizedString} */ (i) => {
-	if (i?.hasBlocker === "yes") return /** @type {LocalizedString} */ (`${i?.caseId} ${i?.vessel} — ${i?.stage}, deadline ${i?.deadline} · ${i?.blocker}`);
-	return /** @type {LocalizedString} */ (`${i?.caseId} ${i?.vessel} — ${i?.stage}, deadline ${i?.deadline}`)
+	if (i?.hasBlocker === "yes") return /** @type {LocalizedString} */ (`${i?.caseId} ${i?.vessel}: ${i?.stage}, deadline ${i?.deadline} · ${i?.blocker}`);
+	return /** @type {LocalizedString} */ (`${i?.caseId} ${i?.vessel}: ${i?.stage}, deadline ${i?.deadline}`)
 };
 
 export const api_assistant_settled_margin = /** @type {(inputs: Api_Assistant_Settled_MarginInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.caseId}: ${i?.actual} actual vs ${i?.expected} expected — the launch cost more after the ETA moved at short notice.`)
+	return /** @type {LocalizedString} */ (`${i?.caseId}: ${i?.actual} actual vs ${i?.expected} expected. The launch cost more after the ETA moved at short notice.`)
 };
 
 export const api_assistant_short_item = /** @type {(inputs: Api_Assistant_Short_ItemInputs) => LocalizedString} */ (i) => {
-	if (i?.hasPromise === "yes") return /** @type {LocalizedString} */ (`PO ${i?.po} line ${i?.line}, ${i?.received} of ${i?.ordered} — rest promised ${i?.promised}`);
+	if (i?.hasPromise === "yes") return /** @type {LocalizedString} */ (`PO ${i?.po} line ${i?.line}, ${i?.received} of ${i?.ordered}, rest promised ${i?.promised}`);
 	return /** @type {LocalizedString} */ (`PO ${i?.po} line ${i?.line}, ${i?.received} of ${i?.ordered}`)
 };
 
@@ -3079,9 +3286,9 @@ export const api_assistant_summarised_again = /** @type {(inputs: Api_Assistant_
 };
 
 export const api_assistant_supplier_named = /** @type {(inputs: Api_Assistant_Supplier_NamedInputs) => LocalizedString} */ (i) => {
-	if (i?.hasOnTime === "yes" && i?.isNew === "yes") return /** @type {LocalizedString} */ (`${i?.name}: replies in ${i?.hours} h on average, ${i?.onTime}% on time — new supplier, never ordered from.`);
+	if (i?.hasOnTime === "yes" && i?.isNew === "yes") return /** @type {LocalizedString} */ (`${i?.name}: replies in ${i?.hours} h on average, ${i?.onTime}% on time, new supplier, never ordered from.`);
 	if (i?.hasOnTime === "yes") return /** @type {LocalizedString} */ (`${i?.name}: replies in ${i?.hours} h on average, ${i?.onTime}% on time.`);
-	if (i?.isNew === "yes") return /** @type {LocalizedString} */ (`${i?.name}: replies in ${i?.hours} h on average, no deliveries yet — new supplier, never ordered from.`);
+	if (i?.isNew === "yes") return /** @type {LocalizedString} */ (`${i?.name}: replies in ${i?.hours} h on average, no deliveries yet, new supplier, never ordered from.`);
 	return /** @type {LocalizedString} */ (`${i?.name}: replies in ${i?.hours} h on average, no deliveries yet.`)
 };
 
@@ -3103,12 +3310,12 @@ export const api_assistant_suppliers_summary = /** @type {(inputs: Api_Assistant
 export const api_assistant_waiting_item = /** @type {(inputs: Api_Assistant_Waiting_ItemInputs) => LocalizedString} */ (i) => {
 	const remindersPlural = __paraglideRegistry.plural("en", i?.reminders, {}, true);
 	const remindersPluralExact = i?.reminders;
-	if (i?.hasDue === "yes" && (remindersPluralExact === 0 || remindersPluralExact === "0")) return /** @type {LocalizedString} */ (`${i?.supplier} — ${i?.reference} ${i?.status}, due ${i?.due}`);
-	if (i?.hasDue === "yes" && remindersPlural === "one") return /** @type {LocalizedString} */ (`${i?.supplier} — ${i?.reference} ${i?.status}, due ${i?.due} (${__paraglideRegistry.icuPound("en", i?.reminders, {})} reminder)`);
-	if (i?.hasDue === "yes") return /** @type {LocalizedString} */ (`${i?.supplier} — ${i?.reference} ${i?.status}, due ${i?.due} (${__paraglideRegistry.icuPound("en", i?.reminders, {})} reminders)`);
-	if ((remindersPluralExact === 0 || remindersPluralExact === "0")) return /** @type {LocalizedString} */ (`${i?.supplier} — ${i?.reference} ${i?.status}`);
-	if (remindersPlural === "one") return /** @type {LocalizedString} */ (`${i?.supplier} — ${i?.reference} ${i?.status} (${__paraglideRegistry.icuPound("en", i?.reminders, {})} reminder)`);
-	return /** @type {LocalizedString} */ (`${i?.supplier} — ${i?.reference} ${i?.status} (${__paraglideRegistry.icuPound("en", i?.reminders, {})} reminders)`)
+	if (i?.hasDue === "yes" && (remindersPluralExact === 0 || remindersPluralExact === "0")) return /** @type {LocalizedString} */ (`${i?.supplier}: ${i?.reference} ${i?.status}, due ${i?.due}`);
+	if (i?.hasDue === "yes" && remindersPlural === "one") return /** @type {LocalizedString} */ (`${i?.supplier}: ${i?.reference} ${i?.status}, due ${i?.due} (${__paraglideRegistry.icuPound("en", i?.reminders, {})} reminder)`);
+	if (i?.hasDue === "yes") return /** @type {LocalizedString} */ (`${i?.supplier}: ${i?.reference} ${i?.status}, due ${i?.due} (${__paraglideRegistry.icuPound("en", i?.reminders, {})} reminders)`);
+	if ((remindersPluralExact === 0 || remindersPluralExact === "0")) return /** @type {LocalizedString} */ (`${i?.supplier}: ${i?.reference} ${i?.status}`);
+	if (remindersPlural === "one") return /** @type {LocalizedString} */ (`${i?.supplier}: ${i?.reference} ${i?.status} (${__paraglideRegistry.icuPound("en", i?.reminders, {})} reminder)`);
+	return /** @type {LocalizedString} */ (`${i?.supplier}: ${i?.reference} ${i?.status} (${__paraglideRegistry.icuPound("en", i?.reminders, {})} reminders)`)
 };
 
 export const api_assistant_we_owe = /** @type {(inputs: Api_Assistant_We_OweInputs) => LocalizedString} */ (i) => {
@@ -3121,11 +3328,11 @@ export const api_cash_account_owner = /** @type {(inputs: Api_Cash_Account_Owner
 };
 
 export const api_cash_allocated_balance = /** @type {(inputs: Api_Cash_Allocated_BalanceInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.amount} allocated to ${i?.number} — balance ${i?.balance}.`)
+	return /** @type {LocalizedString} */ (`${i?.amount} allocated to ${i?.number}. Balance ${i?.balance}.`)
 };
 
 export const api_cash_allocated_paid = /** @type {(inputs: Api_Cash_Allocated_PaidInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.amount} allocated to ${i?.number} — paid in full.`)
+	return /** @type {LocalizedString} */ (`${i?.amount} allocated to ${i?.number}. Paid in full.`)
 };
 
 export const api_cash_approval_in_progress = /** @type {(inputs: Api_Cash_Approval_In_ProgressInputs) => LocalizedString} */ () => {
@@ -3142,6 +3349,10 @@ export const api_cash_approve_payment_title = /** @type {(inputs: Api_Cash_Appro
 
 export const api_cash_bank_change_not_found = /** @type {(inputs: Api_Cash_Bank_Change_Not_FoundInputs) => LocalizedString} */ () => {
 	return /** @type {LocalizedString} */ (`Bank-detail change not found.`)
+};
+
+export const api_cash_bill_on_hold = /** @type {(inputs: Api_Cash_Bill_On_HoldInputs) => LocalizedString} */ (i) => {
+	return /** @type {LocalizedString} */ (`The supplier bill for ${i?.number} is on hold. Release the hold before asking for payment approval.`)
 };
 
 export const api_cash_call_back_done = /** @type {(inputs: Api_Cash_Call_Back_DoneInputs) => LocalizedString} */ (i) => {
@@ -3202,8 +3413,12 @@ export const api_cash_match_message = /** @type {(inputs: Api_Cash_Match_Message
 	return /** @type {LocalizedString} */ (`Looks like it pays these ${i?.count} invoices: ${i?.list}. A person records the payment.`)
 };
 
+export const api_cash_more_than_balance = /** @type {(inputs: Api_Cash_More_Than_BalanceInputs) => LocalizedString} */ (i) => {
+	return /** @type {LocalizedString} */ (`This payment is more than the open balance of ${i?.balance} on ${i?.number}. Record no more than the open balance.`)
+};
+
 export const api_cash_no_remittance_match = /** @type {(inputs: Api_Cash_No_Remittance_MatchInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`No open invoice matches these numbers or this amount — check the remittance by hand.`)
+	return /** @type {LocalizedString} */ (`No open invoice matches these numbers or this amount. Check the remittance by hand.`)
 };
 
 export const api_cash_pay_detail = /** @type {(inputs: Api_Cash_Pay_DetailInputs) => LocalizedString} */ (i) => {
@@ -3215,7 +3430,7 @@ export const api_cash_pay_detail_matched = /** @type {(inputs: Api_Cash_Pay_Deta
 };
 
 export const api_cash_pay_title = /** @type {(inputs: Api_Cash_Pay_TitleInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Pay ${i?.supplier} ${i?.amount} — ${i?.number}`)
+	return /** @type {LocalizedString} */ (`Pay ${i?.supplier} ${i?.amount} for ${i?.number}`)
 };
 
 export const api_cash_payable_not_found = /** @type {(inputs: Api_Cash_Payable_Not_FoundInputs) => LocalizedString} */ () => {
@@ -3248,7 +3463,7 @@ export const api_commercial_advance_payment = /** @type {(inputs: Api_Commercial
 };
 
 export const api_commercial_agency_flag = /** @type {(inputs: Api_Commercial_Agency_FlagInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Agency pricelist — priced instantly, no supplier RFQ`)
+	return /** @type {LocalizedString} */ (`Agency pricelist: priced instantly, no supplier RFQ`)
 };
 
 export const api_commercial_agency_terms = /** @type {(inputs: Api_Commercial_Agency_TermsInputs) => LocalizedString} */ () => {
@@ -3260,7 +3475,7 @@ export const api_commercial_already_awaiting = /** @type {(inputs: Api_Commercia
 };
 
 export const api_commercial_already_cant_withdraw = /** @type {(inputs: Api_Commercial_Already_Cant_WithdrawInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.number} is already ${i?.status} — the decision can't be withdrawn.`)
+	return /** @type {LocalizedString} */ (`${i?.number} is already ${i?.status}, so the decision can't be withdrawn.`)
 };
 
 export const api_commercial_alternative_accepted = /** @type {(inputs: Api_Commercial_Alternative_AcceptedInputs) => LocalizedString} */ () => {
@@ -3280,16 +3495,11 @@ export const api_commercial_approval_not_found = /** @type {(inputs: Api_Commerc
 };
 
 export const api_commercial_approval_recorded = /** @type {(inputs: Api_Commercial_Approval_RecordedInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Your approval is recorded — ${i?.progress}.`)
+	return /** @type {LocalizedString} */ (`Your approval is recorded: ${i?.progress}.`)
 };
 
 export const api_commercial_approval_title = /** @type {(inputs: Api_Commercial_Approval_TitleInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Quote ${i?.number} to ${i?.customer} — ${i?.total}`)
-};
-
-export const api_commercial_approval_title_margin = /** @type {(inputs: Api_Commercial_Approval_Title_MarginInputs) => LocalizedString} */ (i) => {
-	if (i?.hasMargin === "yes") return /** @type {LocalizedString} */ (`Quote ${i?.number} to ${i?.customer} — ${i?.margin}% margin (min ${i?.min}%)`);
-	return /** @type {LocalizedString} */ (`Quote ${i?.number} to ${i?.customer} (min ${i?.min}%)`)
+	return /** @type {LocalizedString} */ (`Quote ${i?.number} to ${i?.customer}, ${i?.total}`)
 };
 
 export const api_commercial_approved_dot = /** @type {(inputs: Api_Commercial_Approved_DotInputs) => LocalizedString} */ () => {
@@ -3301,11 +3511,11 @@ export const api_commercial_approved_title = /** @type {(inputs: Api_Commercial_
 };
 
 export const api_commercial_bank_applied_cant_withdraw = /** @type {(inputs: Api_Commercial_Bank_Applied_Cant_WithdrawInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`The new bank details are already applied — the decision can't be withdrawn.`)
+	return /** @type {LocalizedString} */ (`The new bank details are already applied, so the decision can't be withdrawn.`)
 };
 
 export const api_commercial_below_min = /** @type {(inputs: Api_Commercial_Below_MinInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Below ${i?.min}% minimum margin — approval exception`)
+	return /** @type {LocalizedString} */ (`Below ${i?.min}% minimum margin: approval exception`)
 };
 
 export const api_commercial_best_fit_reason = /** @type {(inputs: Api_Commercial_Best_Fit_ReasonInputs) => LocalizedString} */ () => {
@@ -3336,8 +3546,12 @@ export const api_commercial_choose_offer = /** @type {(inputs: Api_Commercial_Ch
 	return /** @type {LocalizedString} */ (`Choose at least one offer.`)
 };
 
+export const api_commercial_closed_expired = /** @type {(inputs: Api_Commercial_Closed_ExpiredInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Closed: expired`)
+};
+
 export const api_commercial_closed_lost = /** @type {(inputs: Api_Commercial_Closed_LostInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Closed — lost`)
+	return /** @type {LocalizedString} */ (`Closed: lost`)
 };
 
 export const api_commercial_converted_fx = /** @type {(inputs: Api_Commercial_Converted_FxInputs) => LocalizedString} */ (i) => {
@@ -3366,7 +3580,7 @@ export const api_commercial_correction_sent_status = /** @type {(inputs: Api_Com
 };
 
 export const api_commercial_correction_subject = /** @type {(inputs: Api_Commercial_Correction_SubjectInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.rfq} — line ${i?.line}: please correct your offer`)
+	return /** @type {LocalizedString} */ (`${i?.rfq}, line ${i?.line}: please correct your offer`)
 };
 
 export const api_commercial_customer_decision = /** @type {(inputs: Api_Commercial_Customer_DecisionInputs) => LocalizedString} */ () => {
@@ -3393,7 +3607,7 @@ export const api_commercial_decided_activity = /** @type {(inputs: Api_Commercia
 };
 
 export const api_commercial_decision_activity = /** @type {(inputs: Api_Commercial_Decision_ActivityInputs) => LocalizedString} */ (i) => {
-	if (i?.hasNote === "yes") return /** @type {LocalizedString} */ (`Customer decision on ${i?.number}: ${i?.decision} — ${i?.note}.`);
+	if (i?.hasNote === "yes") return /** @type {LocalizedString} */ (`Customer decision on ${i?.number}: ${i?.decision} (${i?.note}).`);
 	return /** @type {LocalizedString} */ (`Customer decision on ${i?.number}: ${i?.decision}.`)
 };
 
@@ -3406,7 +3620,7 @@ export const api_commercial_decision_on_received = /** @type {(inputs: Api_Comme
 };
 
 export const api_commercial_decision_withdrawn = /** @type {(inputs: Api_Commercial_Decision_WithdrawnInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Decision withdrawn — ${i?.title} is waiting again`)
+	return /** @type {LocalizedString} */ (`Decision withdrawn. ${i?.title} is waiting again.`)
 };
 
 export const api_commercial_delivered_as_quoted = /** @type {(inputs: Api_Commercial_Delivered_As_QuotedInputs) => LocalizedString} */ () => {
@@ -3430,7 +3644,7 @@ export const api_commercial_discount_above = /** @type {(inputs: Api_Commercial_
 };
 
 export const api_commercial_draft_not_sent = /** @type {(inputs: Api_Commercial_Draft_Not_SentInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Draft — not sent`)
+	return /** @type {LocalizedString} */ (`Draft, not sent`)
 };
 
 export const api_commercial_due_day = /** @type {(inputs: Api_Commercial_Due_DayInputs) => LocalizedString} */ (i) => {
@@ -3438,7 +3652,7 @@ export const api_commercial_due_day = /** @type {(inputs: Api_Commercial_Due_Day
 };
 
 export const api_commercial_emailed_activity = /** @type {(inputs: Api_Commercial_Emailed_ActivityInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.number} emailed to ${i?.to} — draft confirmed by ${i?.name}.`)
+	return /** @type {LocalizedString} */ (`${i?.number} emailed to ${i?.to}. Draft confirmed by ${i?.name}.`)
 };
 
 export const api_commercial_exact_only = /** @type {(inputs: Api_Commercial_Exact_OnlyInputs) => LocalizedString} */ (i) => {
@@ -3446,7 +3660,7 @@ export const api_commercial_exact_only = /** @type {(inputs: Api_Commercial_Exac
 };
 
 export const api_commercial_expired_validity = /** @type {(inputs: Api_Commercial_Expired_ValidityInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Expired validity: offer ended ${i?.day} — reconfirm`)
+	return /** @type {LocalizedString} */ (`Expired validity: offer ended ${i?.day}, reconfirm`)
 };
 
 export const api_commercial_field_currency = /** @type {(inputs: Api_Commercial_Field_CurrencyInputs) => LocalizedString} */ () => {
@@ -3482,7 +3696,7 @@ export const api_commercial_freight_as_quoted = /** @type {(inputs: Api_Commerci
 };
 
 export const api_commercial_fx_decision_stands = /** @type {(inputs: Api_Commercial_Fx_Decision_StandsInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`An exchange-rate decision takes effect at once — propose a new rate instead.`)
+	return /** @type {LocalizedString} */ (`An exchange-rate decision takes effect at once. Propose a new rate instead.`)
 };
 
 export const api_commercial_fx_label = /** @type {(inputs: Api_Commercial_Fx_LabelInputs) => LocalizedString} */ (i) => {
@@ -3530,7 +3744,7 @@ export const api_commercial_line_not_found = /** @type {(inputs: Api_Commercial_
 };
 
 export const api_commercial_lines_excluded = /** @type {(inputs: Api_Commercial_Lines_ExcludedInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Lines ${i?.lines} excluded — to follow in a revised quotation`)
+	return /** @type {LocalizedString} */ (`Lines ${i?.lines} excluded, to follow in a revised quotation`)
 };
 
 export const api_commercial_local_truck = /** @type {(inputs: Api_Commercial_Local_TruckInputs) => LocalizedString} */ (i) => {
@@ -3538,7 +3752,7 @@ export const api_commercial_local_truck = /** @type {(inputs: Api_Commercial_Loc
 };
 
 export const api_commercial_missing_item_note = /** @type {(inputs: Api_Commercial_Missing_Item_NoteInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Supplier did not quote this line (partial reply) — follow-up drafted`)
+	return /** @type {LocalizedString} */ (`Supplier did not quote this line (partial reply), follow-up drafted`)
 };
 
 export const api_commercial_negative_profit = /** @type {(inputs: Api_Commercial_Negative_ProfitInputs) => LocalizedString} */ () => {
@@ -3562,11 +3776,11 @@ export const api_commercial_no_delivery_history = /** @type {(inputs: Api_Commer
 };
 
 export const api_commercial_no_exceptions = /** @type {(inputs: Api_Commercial_No_ExceptionsInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`No exceptions — standard approval.`)
+	return /** @type {LocalizedString} */ (`No exceptions. Standard approval.`)
 };
 
 export const api_commercial_no_quotation_named = /** @type {(inputs: Api_Commercial_No_Quotation_NamedInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`This request doesn't name its quotation — the decision can't be withdrawn.`)
+	return /** @type {LocalizedString} */ (`This request doesn't name its quotation, so the decision can't be withdrawn.`)
 };
 
 export const api_commercial_not_a_selection = /** @type {(inputs: Api_Commercial_Not_A_SelectionInputs) => LocalizedString} */ (i) => {
@@ -3578,7 +3792,7 @@ export const api_commercial_not_given = /** @type {(inputs: Api_Commercial_Not_G
 };
 
 export const api_commercial_nothing_to_request = /** @type {(inputs: Api_Commercial_Nothing_To_RequestInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.number} is ${i?.status} — nothing to request.`)
+	return /** @type {LocalizedString} */ (`${i?.number} is ${i?.status}. Nothing to request.`)
 };
 
 export const api_commercial_offer_blocked = /** @type {(inputs: Api_Commercial_Offer_BlockedInputs) => LocalizedString} */ (i) => {
@@ -3622,8 +3836,8 @@ export const api_commercial_our_rfq = /** @type {(inputs: Api_Commercial_Our_Rfq
 };
 
 export const api_commercial_own_stock_flag = /** @type {(inputs: Api_Commercial_Own_Stock_FlagInputs) => LocalizedString} */ (i) => {
-	if (i?.hasLot === "yes") return /** @type {LocalizedString} */ (`Own stock (lot ${i?.lot}) — reserve now, Golden Sea truck`);
-	return /** @type {LocalizedString} */ (`Own stock — reserve now, Golden Sea truck`)
+	if (i?.hasLot === "yes") return /** @type {LocalizedString} */ (`Own stock (lot ${i?.lot}): reserve now, Golden Sea truck`);
+	return /** @type {LocalizedString} */ (`Own stock: reserve now, Golden Sea truck`)
 };
 
 export const api_commercial_own_stock_terms = /** @type {(inputs: Api_Commercial_Own_Stock_TermsInputs) => LocalizedString} */ () => {
@@ -3635,11 +3849,11 @@ export const api_commercial_pack = /** @type {(inputs: Api_Commercial_PackInputs
 };
 
 export const api_commercial_pack_size = /** @type {(inputs: Api_Commercial_Pack_SizeInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Pack size: ${i?.offered} instead of ${i?.requested} — written customer acceptance needed`)
+	return /** @type {LocalizedString} */ (`Pack size: ${i?.offered} instead of ${i?.requested}, written customer acceptance needed`)
 };
 
 export const api_commercial_payment_recorded_cant_withdraw = /** @type {(inputs: Api_Commercial_Payment_Recorded_Cant_WithdrawInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`The payment is already recorded — the decision can't be withdrawn.`)
+	return /** @type {LocalizedString} */ (`The payment is already recorded, so the decision can't be withdrawn.`)
 };
 
 export const api_commercial_payment_terms_default = /** @type {(inputs: Api_Commercial_Payment_Terms_DefaultInputs) => LocalizedString} */ () => {
@@ -3647,7 +3861,7 @@ export const api_commercial_payment_terms_default = /** @type {(inputs: Api_Comm
 };
 
 export const api_commercial_pending_acceptance = /** @type {(inputs: Api_Commercial_Pending_AcceptanceInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Pending customer acceptance — alternative pack`)
+	return /** @type {LocalizedString} */ (`Pending customer acceptance: alternative pack`)
 };
 
 export const api_commercial_portal_activity = /** @type {(inputs: Api_Commercial_Portal_ActivityInputs) => LocalizedString} */ (i) => {
@@ -3663,7 +3877,7 @@ export const api_commercial_portal_default_terms = /** @type {(inputs: Api_Comme
 };
 
 export const api_commercial_price_expired = /** @type {(inputs: Api_Commercial_Price_ExpiredInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Supplier price expired — reconfirm`)
+	return /** @type {LocalizedString} */ (`Supplier price expired, reconfirm`)
 };
 
 export const api_commercial_purchasing_department = /** @type {(inputs: Api_Commercial_Purchasing_DepartmentInputs) => LocalizedString} */ () => {
@@ -3683,7 +3897,7 @@ export const api_commercial_quote_margin_below = /** @type {(inputs: Api_Commerc
 };
 
 export const api_commercial_quoted_with_selection = /** @type {(inputs: Api_Commercial_Quoted_With_SelectionInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.number} is ${i?.status} with this selection — revise the quotation instead.`)
+	return /** @type {LocalizedString} */ (`${i?.number} is ${i?.status} with this selection. Revise the quotation instead.`)
 };
 
 export const api_commercial_rejected_technical = /** @type {(inputs: Api_Commercial_Rejected_TechnicalInputs) => LocalizedString} */ () => {
@@ -3695,19 +3909,23 @@ export const api_commercial_replies_in = /** @type {(inputs: Api_Commercial_Repl
 };
 
 export const api_commercial_requested_activity = /** @type {(inputs: Api_Commercial_Requested_ActivityInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.name} requested approval of ${i?.number} (${i?.type}).`)
+	return /** @type {LocalizedString} */ (`${i?.name} requested approval of ${i?.number}.`)
 };
 
 export const api_commercial_returned_title = /** @type {(inputs: Api_Commercial_Returned_TitleInputs) => LocalizedString} */ (i) => {
 	return /** @type {LocalizedString} */ (`Returned: ${i?.title}`)
 };
 
+export const api_commercial_revise_for_customer = /** @type {(inputs: Api_Commercial_Revise_For_CustomerInputs) => LocalizedString} */ (i) => {
+	return /** @type {LocalizedString} */ (`Revise ${i?.number} as the customer asked`)
+};
+
 export const api_commercial_revise_latest = /** @type {(inputs: Api_Commercial_Revise_LatestInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.number} is ${i?.status} — revise the latest version instead.`)
+	return /** @type {LocalizedString} */ (`${i?.number} is ${i?.status}. Revise the latest version instead.`)
 };
 
 export const api_commercial_revise_pricing = /** @type {(inputs: Api_Commercial_Revise_PricingInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Revise pricing — returned by ${i?.name}: ${i?.reason}`)
+	return /** @type {LocalizedString} */ (`Revise pricing. Returned by ${i?.name}: ${i?.reason}`)
 };
 
 export const api_commercial_revised_activity = /** @type {(inputs: Api_Commercial_Revised_ActivityInputs) => LocalizedString} */ (i) => {
@@ -3731,16 +3949,20 @@ export const api_commercial_select_offers_first = /** @type {(inputs: Api_Commer
 };
 
 export const api_commercial_selected_activity = /** @type {(inputs: Api_Commercial_Selected_ActivityInputs) => LocalizedString} */ (i) => {
-	if (i?.hasReason === "yes") return /** @type {LocalizedString} */ (`L${i?.line}: selected ${i?.names} — ${i?.reason}.`);
+	if (i?.hasReason === "yes") return /** @type {LocalizedString} */ (`L${i?.line}: selected ${i?.names} (${i?.reason}).`);
 	return /** @type {LocalizedString} */ (`L${i?.line}: selected ${i?.names} (best fit).`)
 };
 
 export const api_commercial_selected_again = /** @type {(inputs: Api_Commercial_Selected_AgainInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Line ${i?.line} has been selected again since — nothing to take back.`)
+	return /** @type {LocalizedString} */ (`Line ${i?.line} has been selected again since. Nothing to take back.`)
 };
 
 export const api_commercial_selected_of = /** @type {(inputs: Api_Commercial_Selected_OfInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Selected ${i?.total} of ${i?.qty} ${i?.unit} — split the rest to another offer.`)
+	return /** @type {LocalizedString} */ (`Selected ${i?.total} of ${i?.qty} ${i?.unit}. Split the rest to another offer.`)
+};
+
+export const api_commercial_send_for_approval = /** @type {(inputs: Api_Commercial_Send_For_ApprovalInputs) => LocalizedString} */ (i) => {
+	return /** @type {LocalizedString} */ (`Send ${i?.number} for approval`)
 };
 
 export const api_commercial_send_to_customer = /** @type {(inputs: Api_Commercial_Send_To_CustomerInputs) => LocalizedString} */ (i) => {
@@ -3748,7 +3970,7 @@ export const api_commercial_send_to_customer = /** @type {(inputs: Api_Commercia
 };
 
 export const api_commercial_sent_awaiting_corrected = /** @type {(inputs: Api_Commercial_Sent_Awaiting_CorrectedInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Sent — awaiting corrected offer`)
+	return /** @type {LocalizedString} */ (`Sent, awaiting corrected offer`)
 };
 
 export const api_commercial_shelf_life = /** @type {(inputs: Api_Commercial_Shelf_LifeInputs) => LocalizedString} */ (i) => {
@@ -3760,7 +3982,7 @@ export const api_commercial_shelf_life_below = /** @type {(inputs: Api_Commercia
 };
 
 export const api_commercial_someone_decided_after = /** @type {(inputs: Api_Commercial_Someone_Decided_AfterInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Someone decided after you — the request has moved on.`)
+	return /** @type {LocalizedString} */ (`Someone decided after you. The request has moved on.`)
 };
 
 export const api_commercial_split_sourcing = /** @type {(inputs: Api_Commercial_Split_SourcingInputs) => LocalizedString} */ (i) => {
@@ -3768,12 +3990,12 @@ export const api_commercial_split_sourcing = /** @type {(inputs: Api_Commercial_
 };
 
 export const api_commercial_superseded_by = /** @type {(inputs: Api_Commercial_Superseded_ByInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Superseded by v${i?.version} — kept for audit`)
+	return /** @type {LocalizedString} */ (`Superseded by v${i?.version}, kept for audit`)
 };
 
 export const api_commercial_supplied_as = /** @type {(inputs: Api_Commercial_Supplied_AsInputs) => LocalizedString} */ (i) => {
-	if (i?.accepted === "yes") return /** @type {LocalizedString} */ (`${i?.description} — supplied as ${i?.pack} (alternative pack, accepted)`);
-	return /** @type {LocalizedString} */ (`${i?.description} — supplied as ${i?.pack} (alternative pack)`)
+	if (i?.accepted === "yes") return /** @type {LocalizedString} */ (`${i?.description}, supplied as ${i?.pack} (alternative pack, accepted)`);
+	return /** @type {LocalizedString} */ (`${i?.description}, supplied as ${i?.pack} (alternative pack)`)
 };
 
 export const api_commercial_supplier_word = /** @type {(inputs: Api_Commercial_Supplier_WordInputs) => LocalizedString} */ () => {
@@ -3785,7 +4007,7 @@ export const api_commercial_taken_back = /** @type {(inputs: Api_Commercial_Take
 };
 
 export const api_commercial_taken_back_activity = /** @type {(inputs: Api_Commercial_Taken_Back_ActivityInputs) => LocalizedString} */ (i) => {
-	if (i?.earlier === "yes") return /** @type {LocalizedString} */ (`L${i?.line}: selection taken back by ${i?.name} — the earlier selection applies again.`);
+	if (i?.earlier === "yes") return /** @type {LocalizedString} */ (`L${i?.line}: selection taken back by ${i?.name}. The earlier selection applies again.`);
 	return /** @type {LocalizedString} */ (`L${i?.line}: selection taken back by ${i?.name}.`)
 };
 
@@ -3814,8 +4036,8 @@ export const api_commercial_unknown_decision = /** @type {(inputs: Api_Commercia
 };
 
 export const api_commercial_withdrew_activity = /** @type {(inputs: Api_Commercial_Withdrew_ActivityInputs) => LocalizedString} */ (i) => {
-	if (i?.approval === "yes") return /** @type {LocalizedString} */ (`${i?.name} withdrew their approval of “${i?.title}” — it is waiting for a decision again.`);
-	return /** @type {LocalizedString} */ (`${i?.name} withdrew their return of “${i?.title}” — it is waiting for a decision again.`)
+	if (i?.approval === "yes") return /** @type {LocalizedString} */ (`${i?.name} withdrew their approval of “${i?.title}”. It is waiting for a decision again.`);
+	return /** @type {LocalizedString} */ (`${i?.name} withdrew their return of “${i?.title}”. It is waiting for a decision again.`)
 };
 
 export const api_commercial_wrong_part = /** @type {(inputs: Api_Commercial_Wrong_PartInputs) => LocalizedString} */ (i) => {
@@ -3827,7 +4049,7 @@ export const api_commercial_your_offer = /** @type {(inputs: Api_Commercial_Your
 };
 
 export const api_control_room_ack_sub = /** @type {(inputs: Api_Control_Room_Ack_SubInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Median minutes to acknowledge an RFQ — automation live since 6 Oct`)
+	return /** @type {LocalizedString} */ (`Median minutes to acknowledge an RFQ. Automation live since 6 Oct`)
 };
 
 export const api_control_room_ack_title = /** @type {(inputs: Api_Control_Room_Ack_TitleInputs) => LocalizedString} */ () => {
@@ -4131,8 +4353,8 @@ export const api_control_room_won_of_quoted = /** @type {(inputs: Api_Control_Ro
 };
 
 export const api_growth_crm_activity = /** @type {(inputs: Api_Growth_Crm_ActivityInputs) => LocalizedString} */ (i) => {
-	if (i?.hasNote === "yes" && i?.hasNext === "yes") return /** @type {LocalizedString} */ (`${i?.name}: ${i?.result} — ${i?.note}. Next: ${i?.step} (${i?.due}).`);
-	if (i?.hasNote === "yes") return /** @type {LocalizedString} */ (`${i?.name}: ${i?.result} — ${i?.note}. Stage: ${i?.stage}.`);
+	if (i?.hasNote === "yes" && i?.hasNext === "yes") return /** @type {LocalizedString} */ (`${i?.name}: ${i?.result} (${i?.note}). Next: ${i?.step} (${i?.due}).`);
+	if (i?.hasNote === "yes") return /** @type {LocalizedString} */ (`${i?.name}: ${i?.result} (${i?.note}). Stage: ${i?.stage}.`);
 	if (i?.hasNext === "yes") return /** @type {LocalizedString} */ (`${i?.name}: ${i?.result}. Next: ${i?.step} (${i?.due}).`);
 	return /** @type {LocalizedString} */ (`${i?.name}: ${i?.result}. Stage: ${i?.stage}.`)
 };
@@ -4154,11 +4376,11 @@ export const api_growth_crm_opportunity_not_found = /** @type {(inputs: Api_Grow
 };
 
 export const api_growth_crm_outcome_planned = /** @type {(inputs: Api_Growth_Crm_Outcome_PlannedInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Outcome saved — next step “${i?.step}” planned for ${i?.due}`)
+	return /** @type {LocalizedString} */ (`Outcome saved. Next step “${i?.step}” planned for ${i?.due}`)
 };
 
 export const api_growth_crm_outcome_stage = /** @type {(inputs: Api_Growth_Crm_Outcome_StageInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Outcome saved — ${i?.name} is now “${i?.stage}”`)
+	return /** @type {LocalizedString} */ (`Outcome saved. ${i?.name} is now “${i?.stage}”`)
 };
 
 export const api_growth_crm_plan_next_step = /** @type {(inputs: Api_Growth_Crm_Plan_Next_StepInputs) => LocalizedString} */ () => {
@@ -4170,7 +4392,7 @@ export const api_growth_crm_prospect_relation = /** @type {(inputs: Api_Growth_C
 };
 
 export const api_growth_crm_task_title = /** @type {(inputs: Api_Growth_Crm_Task_TitleInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.step} — ${i?.name}`)
+	return /** @type {LocalizedString} */ (`${i?.step}: ${i?.name}`)
 };
 
 export const api_growth_crm_unknown_stage = /** @type {(inputs: Api_Growth_Crm_Unknown_StageInputs) => LocalizedString} */ () => {
@@ -4491,6 +4713,10 @@ export const api_home_invoice_due = /** @type {(inputs: Api_Home_Invoice_DueInpu
 
 export const api_home_invoice_due_short = /** @type {(inputs: Api_Home_Invoice_Due_ShortInputs) => LocalizedString} */ (i) => {
 	return /** @type {LocalizedString} */ (`${i?.customer}: invoice due`)
+};
+
+export const api_home_invoice_overdue = /** @type {(inputs: Api_Home_Invoice_OverdueInputs) => LocalizedString} */ (i) => {
+	return /** @type {LocalizedString} */ (`${i?.customer}: ${i?.amount} overdue since ${i?.day}`)
 };
 
 export const api_home_invoice_sub = /** @type {(inputs: Api_Home_Invoice_SubInputs) => LocalizedString} */ (i) => {
@@ -4823,8 +5049,16 @@ export const api_insights_shared_overdue_since = /** @type {(inputs: Api_Insight
 	return /** @type {LocalizedString} */ (`overdue since ${i?.time}`)
 };
 
+export const api_insights_shared_today = /** @type {(inputs: Api_Insights_Shared_TodayInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`today`)
+};
+
 export const api_insights_shared_today_at = /** @type {(inputs: Api_Insights_Shared_Today_AtInputs) => LocalizedString} */ (i) => {
 	return /** @type {LocalizedString} */ (`today ${i?.time}`)
+};
+
+export const api_insights_shared_tomorrow = /** @type {(inputs: Api_Insights_Shared_TomorrowInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`tomorrow`)
 };
 
 export const api_insights_shared_tomorrow_at = /** @type {(inputs: Api_Insights_Shared_Tomorrow_AtInputs) => LocalizedString} */ (i) => {
@@ -4832,11 +5066,11 @@ export const api_insights_shared_tomorrow_at = /** @type {(inputs: Api_Insights_
 };
 
 export const api_operations_already_accepted = /** @type {(inputs: Api_Operations_Already_AcceptedInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Already accepted — not resubmitted.`)
+	return /** @type {LocalizedString} */ (`Already accepted, so not resubmitted.`)
 };
 
 export const api_operations_amend_activity = /** @type {(inputs: Api_Operations_Amend_ActivityInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`PO ${i?.number} line ${i?.line} (${i?.field}): ${i?.resolution} — evidence attached.`)
+	return /** @type {LocalizedString} */ (`PO ${i?.number} line ${i?.line} (${i?.field}): ${i?.resolution}. Evidence attached.`)
 };
 
 export const api_operations_as_quoted = /** @type {(inputs: Api_Operations_As_QuotedInputs) => LocalizedString} */ () => {
@@ -4848,8 +5082,8 @@ export const api_operations_attach_confirmation = /** @type {(inputs: Api_Operat
 };
 
 export const api_operations_award_undo_activity = /** @type {(inputs: Api_Operations_Award_Undo_ActivityInputs) => LocalizedString} */ (i) => {
-	if (i?.hasWas === "yes") return /** @type {LocalizedString} */ (`Line ${i?.line}: “${i?.outcome}” taken back — ${i?.was}.`);
-	return /** @type {LocalizedString} */ (`Line ${i?.line}: “${i?.outcome}” taken back — undecided again.`)
+	if (i?.hasWas === "yes") return /** @type {LocalizedString} */ (`Line ${i?.line}: “${i?.outcome}” taken back, back to ${i?.was}.`);
+	return /** @type {LocalizedString} */ (`Line ${i?.line}: “${i?.outcome}” taken back, undecided again.`)
 };
 
 export const api_operations_back_to_undecided = /** @type {(inputs: Api_Operations_Back_To_UndecidedInputs) => LocalizedString} */ () => {
@@ -4893,15 +5127,15 @@ export const api_operations_customer_po_not_found = /** @type {(inputs: Api_Oper
 };
 
 export const api_operations_decided_again = /** @type {(inputs: Api_Operations_Decided_AgainInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Line ${i?.line} has been decided again since — nothing to take back.`)
+	return /** @type {LocalizedString} */ (`Line ${i?.line} has been decided again since, so there is nothing to take back.`)
 };
 
 export const api_operations_decision_stands = /** @type {(inputs: Api_Operations_Decision_StandsInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`The sales order is confirmed and its supplier POs are prepared — the line's decision stands.`)
+	return /** @type {LocalizedString} */ (`The sales order is confirmed and its supplier POs are prepared, so the line's decision stands.`)
 };
 
 export const api_operations_delivered_activity = /** @type {(inputs: Api_Operations_Delivered_ActivityInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.number} delivered — signed by ${i?.signedBy}; signed delivery note attached.`)
+	return /** @type {LocalizedString} */ (`${i?.number} delivered. Signed by ${i?.signedBy}; signed delivery note attached.`)
 };
 
 export const api_operations_delivery_not_found = /** @type {(inputs: Api_Operations_Delivery_Not_FoundInputs) => LocalizedString} */ () => {
@@ -4910,6 +5144,10 @@ export const api_operations_delivery_not_found = /** @type {(inputs: Api_Operati
 
 export const api_operations_describe_agreement = /** @type {(inputs: Api_Operations_Describe_AgreementInputs) => LocalizedString} */ () => {
 	return /** @type {LocalizedString} */ (`Describe the customer's written agreement (who, when, what).`)
+};
+
+export const api_operations_drop_delivered = /** @type {(inputs: Api_Operations_Drop_DeliveredInputs) => LocalizedString} */ (i) => {
+	return /** @type {LocalizedString} */ (`Drop ${i?.done} of ${i?.total} delivered. Invoice ${i?.number}: delivered quantities only`)
 };
 
 export const api_operations_einvoice_submitted = /** @type {(inputs: Api_Operations_Einvoice_SubmittedInputs) => LocalizedString} */ (i) => {
@@ -4937,7 +5175,7 @@ export const api_operations_eta_change_activity = /** @type {(inputs: Api_Operat
 };
 
 export const api_operations_eta_moved_blocker = /** @type {(inputs: Api_Operations_Eta_Moved_BlockerInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`ETA moved ${i?.hours} h by agent — ${i?.n} drop(s) re-planned`)
+	return /** @type {LocalizedString} */ (`ETA moved ${i?.hours} h by agent: ${i?.n} drop(s) re-planned`)
 };
 
 export const api_operations_eta_notification = /** @type {(inputs: Api_Operations_Eta_NotificationInputs) => LocalizedString} */ (i) => {
@@ -4945,11 +5183,11 @@ export const api_operations_eta_notification = /** @type {(inputs: Api_Operation
 };
 
 export const api_operations_eta_notification_detail = /** @type {(inputs: Api_Operations_Eta_Notification_DetailInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.n} drop(s) re-planned — re-confirm transport.`)
+	return /** @type {LocalizedString} */ (`${i?.n} drop(s) re-planned. Re-confirm transport.`)
 };
 
 export const api_operations_eta_up_to_date = /** @type {(inputs: Api_Operations_Eta_Up_To_DateInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`ETA already up to date — nothing re-planned.`)
+	return /** @type {LocalizedString} */ (`ETA already up to date. Nothing re-planned.`)
 };
 
 export const api_operations_header = /** @type {(inputs: Api_Operations_HeaderInputs) => LocalizedString} */ () => {
@@ -4961,7 +5199,7 @@ export const api_operations_invoice_created_activity = /** @type {(inputs: Api_O
 };
 
 export const api_operations_invoice_delivered = /** @type {(inputs: Api_Operations_Invoice_DeliveredInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Invoice ${i?.number} — delivered quantities only`)
+	return /** @type {LocalizedString} */ (`Invoice ${i?.number}: delivered quantities only`)
 };
 
 export const api_operations_invoice_not_found = /** @type {(inputs: Api_Operations_Invoice_Not_FoundInputs) => LocalizedString} */ () => {
@@ -4985,11 +5223,15 @@ export const api_operations_launch_boat = /** @type {(inputs: Api_Operations_Lau
 };
 
 export const api_operations_launch_rebooked = /** @type {(inputs: Api_Operations_Launch_RebookedInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.launch} — re-booked for ${i?.at}`)
+	return /** @type {LocalizedString} */ (`${i?.launch}, re-booked for ${i?.at}`)
 };
 
 export const api_operations_line = /** @type {(inputs: Api_Operations_LineInputs) => LocalizedString} */ (i) => {
 	return /** @type {LocalizedString} */ (`Line ${i?.n}`)
+};
+
+export const api_operations_line_on_po = /** @type {(inputs: Api_Operations_Line_On_PoInputs) => LocalizedString} */ (i) => {
+	return /** @type {LocalizedString} */ (`Line ${i?.line} is on the customer PO, so it can't be kept open or closed.`)
 };
 
 export const api_operations_no_changes = /** @type {(inputs: Api_Operations_No_ChangesInputs) => LocalizedString} */ () => {
@@ -5017,7 +5259,7 @@ export const api_operations_no_order_book = /** @type {(inputs: Api_Operations_N
 };
 
 export const api_operations_not_awarded_activity = /** @type {(inputs: Api_Operations_Not_Awarded_ActivityInputs) => LocalizedString} */ (i) => {
-	if (i?.hasReason === "yes") return /** @type {LocalizedString} */ (`Line ${i?.line} not awarded: ${i?.outcome} — ${i?.reason}.`);
+	if (i?.hasReason === "yes") return /** @type {LocalizedString} */ (`Line ${i?.line} not awarded: ${i?.outcome}. Reason: ${i?.reason}.`);
 	return /** @type {LocalizedString} */ (`Line ${i?.line} not awarded: ${i?.outcome}.`)
 };
 
@@ -5049,6 +5291,10 @@ export const api_operations_recheck_availability = /** @type {(inputs: Api_Opera
 	return /** @type {LocalizedString} */ (`Availability & lead time`)
 };
 
+export const api_operations_recheck_first = /** @type {(inputs: Api_Operations_Recheck_FirstInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Re-check availability, cost, FX and lead time with the supplier before confirming.`)
+};
+
 export const api_operations_recheck_price = /** @type {(inputs: Api_Operations_Recheck_PriceInputs) => LocalizedString} */ () => {
 	return /** @type {LocalizedString} */ (`Supplier price`)
 };
@@ -5062,7 +5308,7 @@ export const api_operations_reconfirm_task = /** @type {(inputs: Api_Operations_
 };
 
 export const api_operations_rejected_tax_id = /** @type {(inputs: Api_Operations_Rejected_Tax_IdInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Rejected by the tax authority — buyer tax ID.`)
+	return /** @type {LocalizedString} */ (`Rejected by the tax authority: buyer tax ID.`)
 };
 
 export const api_operations_resolve_mismatches = /** @type {(inputs: Api_Operations_Resolve_MismatchesInputs) => LocalizedString} */ (i) => {
@@ -5098,7 +5344,7 @@ export const api_order_to_cash_approval_detail_clean = /** @type {(inputs: Api_O
 };
 
 export const api_order_to_cash_approval_detail_flagged = /** @type {(inputs: Api_Order_To_Cash_Approval_Detail_FlaggedInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`PO ${i?.number} · re-check done — changes flagged.`)
+	return /** @type {LocalizedString} */ (`PO ${i?.number} · re-check done, changes flagged.`)
 };
 
 export const api_order_to_cash_approval_title = /** @type {(inputs: Api_Order_To_Cash_Approval_TitleInputs) => LocalizedString} */ (i) => {
@@ -5106,19 +5352,19 @@ export const api_order_to_cash_approval_title = /** @type {(inputs: Api_Order_To
 };
 
 export const api_order_to_cash_duplicate_bill = /** @type {(inputs: Api_Order_To_Cash_Duplicate_BillInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Duplicate bill blocked — ${i?.reason}`)
+	return /** @type {LocalizedString} */ (`Bill not booked. ${i?.reason}`)
 };
 
 export const api_order_to_cash_eta_updated = /** @type {(inputs: Api_Order_To_Cash_Eta_UpdatedInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`ETA updated — ${i?.changed} drop(s) re-planned; owner and management alerted.`)
+	return /** @type {LocalizedString} */ (`ETA updated. ${i?.changed} drop(s) re-planned; owner and management alerted.`)
 };
 
 export const api_order_to_cash_invoice_created = /** @type {(inputs: Api_Order_To_Cash_Invoice_CreatedInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.number} created from ${i?.delivery} — delivered quantities only.`)
+	return /** @type {LocalizedString} */ (`${i?.number} created from ${i?.delivery}, for delivered quantities only.`)
 };
 
 export const api_order_to_cash_invoice_created_from_delivery = /** @type {(inputs: Api_Order_To_Cash_Invoice_Created_From_DeliveryInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.number} created from the delivery — delivered quantities only.`)
+	return /** @type {LocalizedString} */ (`${i?.number} created from the delivery, for delivered quantities only.`)
 };
 
 export const api_order_to_cash_no_bill = /** @type {(inputs: Api_Order_To_Cash_No_BillInputs) => LocalizedString} */ () => {
@@ -5194,7 +5440,7 @@ export const api_platform_acc_9 = /** @type {(inputs: Api_Platform_Acc_9Inputs) 
 };
 
 export const api_platform_already_done = /** @type {(inputs: Api_Platform_Already_DoneInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Already ${i?.status} — key ${i?.key} checked, nothing re-run or re-sent.`)
+	return /** @type {LocalizedString} */ (`Already ${i?.status}. Key ${i?.key} checked, nothing re-run or re-sent.`)
 };
 
 export const api_platform_already_owns = /** @type {(inputs: Api_Platform_Already_OwnsInputs) => LocalizedString} */ (i) => {
@@ -5258,7 +5504,7 @@ export const api_platform_deadline_within_24h = /** @type {(inputs: Api_Platform
 };
 
 export const api_platform_delivery_note = /** @type {(inputs: Api_Platform_Delivery_NoteInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.number} ${i?.status} — not counted as delivered until confirmed`)
+	return /** @type {LocalizedString} */ (`${i?.number} ${i?.status}, not counted as delivered until confirmed`)
 };
 
 export const api_platform_exception_not_found = /** @type {(inputs: Api_Platform_Exception_Not_FoundInputs) => LocalizedString} */ () => {
@@ -5315,16 +5561,16 @@ export const api_platform_handover_subject = /** @type {(inputs: Api_Platform_Ha
 };
 
 export const api_platform_handover_task = /** @type {(inputs: Api_Platform_Handover_TaskInputs) => LocalizedString} */ (i) => {
-	if (i?.hasDue === "yes") return /** @type {LocalizedString} */ (`Task: ${i?.title} — due ${i?.due}.`);
+	if (i?.hasDue === "yes") return /** @type {LocalizedString} */ (`Task: ${i?.title}, due ${i?.due}.`);
 	return /** @type {LocalizedString} */ (`Task: ${i?.title}.`)
 };
 
 export const api_platform_handover_title = /** @type {(inputs: Api_Platform_Handover_TitleInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Handover — ${i?.caseId} for ${i?.to}`)
+	return /** @type {LocalizedString} */ (`Handover: ${i?.caseId} for ${i?.to}`)
 };
 
 export const api_platform_invoice_already_accepted = /** @type {(inputs: Api_Platform_Invoice_Already_AcceptedInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Re-checked ${i?.key}: already accepted by the tax authority — not submitted again.`)
+	return /** @type {LocalizedString} */ (`Re-checked ${i?.key}: already accepted by the tax authority, not submitted again.`)
 };
 
 export const api_platform_invoice_submitted_once = /** @type {(inputs: Api_Platform_Invoice_Submitted_OnceInputs) => LocalizedString} */ (i) => {
@@ -5359,6 +5605,10 @@ export const api_platform_my_language_en = /** @type {(inputs: Api_Platform_My_L
 	return /** @type {LocalizedString} */ (`Your dashboard language: English`)
 };
 
+export const api_platform_needs_a_person = /** @type {(inputs: Api_Platform_Needs_A_PersonInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`This exception needs a person to check it. Review it and mark it reviewed instead of retrying.`)
+};
+
 export const api_platform_no_shift_reason = /** @type {(inputs: Api_Platform_No_Shift_ReasonInputs) => LocalizedString} */ () => {
 	return /** @type {LocalizedString} */ (`Outside office hours and no shift on the roster: straight to the senior call list.`)
 };
@@ -5376,11 +5626,11 @@ export const api_platform_office_hours_reason = /** @type {(inputs: Api_Platform
 };
 
 export const api_platform_on_call_detail = /** @type {(inputs: Api_Platform_On_Call_DetailInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Simulated from /roles · acknowledge within ${i?.minutes} min, then ${i?.next} is alerted`)
+	return /** @type {LocalizedString} */ (`Simulated from Roles & permissions · acknowledge within ${i?.minutes} min, then ${i?.next} is alerted`)
 };
 
 export const api_platform_on_call_title = /** @type {(inputs: Api_Platform_On_Call_TitleInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Urgent RFQ after hours — you're on call (${i?.at})`)
+	return /** @type {LocalizedString} */ (`Urgent RFQ after hours: you're on call (${i?.at})`)
 };
 
 export const api_platform_on_duty_reason = /** @type {(inputs: Api_Platform_On_Duty_ReasonInputs) => LocalizedString} */ (i) => {
@@ -5414,8 +5664,8 @@ export const api_platform_pick_someone = /** @type {(inputs: Api_Platform_Pick_S
 };
 
 export const api_platform_receipt_note = /** @type {(inputs: Api_Platform_Receipt_NoteInputs) => LocalizedString} */ (i) => {
-	if (i?.hasRest === "yes") return /** @type {LocalizedString} */ (`Line ${i?.line}: ${i?.qc} — ${i?.received} of ${i?.ordered} received, rest due ${i?.rest}`);
-	return /** @type {LocalizedString} */ (`Line ${i?.line}: ${i?.qc} — ${i?.received} of ${i?.ordered} received`)
+	if (i?.hasRest === "yes") return /** @type {LocalizedString} */ (`Line ${i?.line}: ${i?.qc}, ${i?.received} of ${i?.ordered} received, rest due ${i?.rest}`);
+	return /** @type {LocalizedString} */ (`Line ${i?.line}: ${i?.qc}, ${i?.received} of ${i?.ordered} received`)
 };
 
 export const api_platform_reconnect_roles = /** @type {(inputs: Api_Platform_Reconnect_RolesInputs) => LocalizedString} */ () => {
@@ -5431,7 +5681,7 @@ export const api_platform_reconnected_activity = /** @type {(inputs: Api_Platfor
 };
 
 export const api_platform_reconnected_note = /** @type {(inputs: Api_Platform_Reconnected_NoteInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Reconnected — waiting emails imported once each`)
+	return /** @type {LocalizedString} */ (`Reconnected. Waiting emails imported once each`)
 };
 
 export const api_platform_reconnected_with = /** @type {(inputs: Api_Platform_Reconnected_WithInputs) => LocalizedString} */ (i) => {
@@ -5439,11 +5689,11 @@ export const api_platform_reconnected_with = /** @type {(inputs: Api_Platform_Re
 };
 
 export const api_platform_resolved_by_retry = /** @type {(inputs: Api_Platform_Resolved_By_RetryInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.impact} — resolved by safe retry`)
+	return /** @type {LocalizedString} */ (`${i?.impact}. Resolved by safe retry`)
 };
 
 export const api_platform_retried_safely = /** @type {(inputs: Api_Platform_Retried_SafelyInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Retried safely — ${i?.message}`)
+	return /** @type {LocalizedString} */ (`Retried safely: ${i?.message}`)
 };
 
 export const api_platform_reviewed_activity = /** @type {(inputs: Api_Platform_Reviewed_ActivityInputs) => LocalizedString} */ (i) => {
@@ -5541,7 +5791,7 @@ export const api_platform_timeline_entries = /** @type {(inputs: Api_Platform_Ti
 };
 
 export const api_platform_uncertain_match = /** @type {(inputs: Api_Platform_Uncertain_MatchInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Uncertain match (${i?.classification}) — waiting for a person in the inbox`)
+	return /** @type {LocalizedString} */ (`Uncertain match (${i?.classification}), waiting for a person in the inbox`)
 };
 
 export const api_platform_unclassified = /** @type {(inputs: Api_Platform_UnclassifiedInputs) => LocalizedString} */ () => {
@@ -5591,7 +5841,7 @@ export const api_profit_bill_number = /** @type {(inputs: Api_Profit_Bill_Number
 };
 
 export const api_profit_billed_vs_estimate = /** @type {(inputs: Api_Profit_Billed_Vs_EstimateInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.label}: billed ${i?.billed} vs estimate ${i?.estimate} — confirm`)
+	return /** @type {LocalizedString} */ (`${i?.label}: billed ${i?.billed} vs estimate ${i?.estimate}, confirm`)
 };
 
 export const api_profit_cant_close = /** @type {(inputs: Api_Profit_Cant_CloseInputs) => LocalizedString} */ (i) => {
@@ -5599,7 +5849,7 @@ export const api_profit_cant_close = /** @type {(inputs: Api_Profit_Cant_CloseIn
 };
 
 export const api_profit_case_closed_activity = /** @type {(inputs: Api_Profit_Case_Closed_ActivityInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Case closed — actual gross profit ${i?.actual} (${i?.margin}%) against ${i?.expected} expected. Supplier prices and on-time results fed back to supplier records.`)
+	return /** @type {LocalizedString} */ (`Case closed. Actual gross profit ${i?.actual} (${i?.margin}%) against ${i?.expected} expected. Supplier prices and on-time results fed back to supplier records.`)
 };
 
 export const api_profit_case_not_found = /** @type {(inputs: Api_Profit_Case_Not_FoundInputs) => LocalizedString} */ () => {
@@ -5643,7 +5893,7 @@ export const api_profit_claim_offset = /** @type {(inputs: Api_Profit_Claim_Offs
 };
 
 export const api_profit_claim_open = /** @type {(inputs: Api_Profit_Claim_OpenInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Open — claimed from ${i?.against}`)
+	return /** @type {LocalizedString} */ (`Open: claimed from ${i?.against}`)
 };
 
 export const api_profit_claim_open_with = /** @type {(inputs: Api_Profit_Claim_Open_WithInputs) => LocalizedString} */ (i) => {
@@ -5703,7 +5953,7 @@ export const api_profit_no_single_balance = /** @type {(inputs: Api_Profit_No_Si
 };
 
 export const api_profit_none_case_closed = /** @type {(inputs: Api_Profit_None_Case_ClosedInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`None — case closed`)
+	return /** @type {LocalizedString} */ (`None: case closed`)
 };
 
 export const api_profit_not_applicable = /** @type {(inputs: Api_Profit_Not_ApplicableInputs) => LocalizedString} */ () => {
@@ -5731,7 +5981,7 @@ export const api_profit_po = /** @type {(inputs: Api_Profit_PoInputs) => Localiz
 };
 
 export const api_profit_po_line = /** @type {(inputs: Api_Profit_Po_LineInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.supplier} — PO ${i?.number}`)
+	return /** @type {LocalizedString} */ (`${i?.supplier}: PO ${i?.number}`)
 };
 
 export const api_profit_receipt = /** @type {(inputs: Api_Profit_ReceiptInputs) => LocalizedString} */ (i) => {
@@ -5775,7 +6025,7 @@ export const api_quotations_give_lost_reason = /** @type {(inputs: Api_Quotation
 };
 
 export const api_quotations_new_version = /** @type {(inputs: Api_Quotations_New_VersionInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`New version created — the previous one is kept for audit.`)
+	return /** @type {LocalizedString} */ (`New version created. The previous one is kept for audit.`)
 };
 
 export const api_quotations_sent_to = /** @type {(inputs: Api_Quotations_Sent_ToInputs) => LocalizedString} */ (i) => {
@@ -5791,7 +6041,7 @@ export const api_sourcing_a_person = /** @type {(inputs: Api_Sourcing_A_PersonIn
 };
 
 export const api_sourcing_ack_already_activity = /** @type {(inputs: Api_Sourcing_Ack_Already_ActivityInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Already acknowledged earlier — no second acknowledgement.`)
+	return /** @type {LocalizedString} */ (`Already acknowledged earlier, so no second acknowledgement.`)
 };
 
 export const api_sourcing_ack_by_hand_activity = /** @type {(inputs: Api_Sourcing_Ack_By_Hand_ActivityInputs) => LocalizedString} */ () => {
@@ -5801,7 +6051,7 @@ export const api_sourcing_ack_by_hand_activity = /** @type {(inputs: Api_Sourcin
 export const api_sourcing_ack_default_body = /** @type {(inputs: Api_Sourcing_Ack_Default_BodyInputs) => LocalizedString} */ () => {
 	return /** @type {LocalizedString} */ (`Dear {{contact}},
 
-Thank you — your request for {{vessel}} is registered as {{caseId}}. We will revert by {{dueAt}}.`)
+Thank you. Your request for {{vessel}} is registered as {{caseId}}. We will revert by {{dueAt}}.`)
 };
 
 export const api_sourcing_ack_default_subject = /** @type {(inputs: Api_Sourcing_Ack_Default_SubjectInputs) => LocalizedString} */ () => {
@@ -5824,7 +6074,7 @@ export const api_sourcing_already_asked = /** @type {(inputs: Api_Sourcing_Alrea
 };
 
 export const api_sourcing_already_linked_no_new = /** @type {(inputs: Api_Sourcing_Already_Linked_No_NewInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Already linked to ${i?.caseId} — no new case, no second acknowledgement`)
+	return /** @type {LocalizedString} */ (`Already linked to ${i?.caseId}: no new case, no second acknowledgement`)
 };
 
 export const api_sourcing_already_waiting = /** @type {(inputs: Api_Sourcing_Already_WaitingInputs) => LocalizedString} */ () => {
@@ -5832,7 +6082,7 @@ export const api_sourcing_already_waiting = /** @type {(inputs: Api_Sourcing_Alr
 };
 
 export const api_sourcing_auto_created_source = /** @type {(inputs: Api_Sourcing_Auto_Created_SourceInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Auto-created from an email reply to ${i?.reference} (${i?.date}) — quoted, never ordered`)
+	return /** @type {LocalizedString} */ (`Auto-created from an email reply to ${i?.reference} (${i?.date}). Quoted, never ordered`)
 };
 
 export const api_sourcing_back_in_queue = /** @type {(inputs: Api_Sourcing_Back_In_QueueInputs) => LocalizedString} */ () => {
@@ -5844,7 +6094,7 @@ export const api_sourcing_back_to_decision = /** @type {(inputs: Api_Sourcing_Ba
 };
 
 export const api_sourcing_below_threshold = /** @type {(inputs: Api_Sourcing_Below_ThresholdInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Below 85% — a person confirms before anything is linked`)
+	return /** @type {LocalizedString} */ (`Below 85%: a person confirms before anything is linked`)
 };
 
 export const api_sourcing_blocker = /** @type {(inputs: Api_Sourcing_BlockerInputs) => LocalizedString} */ (i) => {
@@ -5852,7 +6102,7 @@ export const api_sourcing_blocker = /** @type {(inputs: Api_Sourcing_BlockerInpu
 };
 
 export const api_sourcing_cannot_supply = /** @type {(inputs: Api_Sourcing_Cannot_SupplyInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Cannot supply — reminders stopped`)
+	return /** @type {LocalizedString} */ (`Cannot supply. Reminders stopped`)
 };
 
 export const api_sourcing_case_already_created = /** @type {(inputs: Api_Sourcing_Case_Already_CreatedInputs) => LocalizedString} */ (i) => {
@@ -5879,8 +6129,8 @@ export const api_sourcing_cash_terms = /** @type {(inputs: Api_Sourcing_Cash_Ter
 
 export const api_sourcing_created_activity = /** @type {(inputs: Api_Sourcing_Created_ActivityInputs) => LocalizedString} */ (i) => {
 	const countPlural = __paraglideRegistry.plural("en", i?.count, {}, true);
-	if (countPlural === "one") return /** @type {LocalizedString} */ (`Created from the ${i?.channel} “${i?.subject}” — ${i?.count} AI-extracted line checked and confirmed by ${i?.who}.`);
-	return /** @type {LocalizedString} */ (`Created from the ${i?.channel} “${i?.subject}” — ${i?.count} AI-extracted lines checked and confirmed by ${i?.who}.`)
+	if (countPlural === "one") return /** @type {LocalizedString} */ (`Created from the ${i?.channel} “${i?.subject}”: ${i?.count} AI-extracted line checked and confirmed by ${i?.who}.`);
+	return /** @type {LocalizedString} */ (`Created from the ${i?.channel} “${i?.subject}”: ${i?.count} AI-extracted lines checked and confirmed by ${i?.who}.`)
 };
 
 export const api_sourcing_customer_ref_is = /** @type {(inputs: Api_Sourcing_Customer_Ref_IsInputs) => LocalizedString} */ (i) => {
@@ -5888,7 +6138,11 @@ export const api_sourcing_customer_ref_is = /** @type {(inputs: Api_Sourcing_Cus
 };
 
 export const api_sourcing_declined_event = /** @type {(inputs: Api_Sourcing_Declined_EventInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Declined by email — reminders stopped`)
+	return /** @type {LocalizedString} */ (`Declined by email. Reminders stopped`)
+};
+
+export const api_sourcing_desk_only = /** @type {(inputs: Api_Sourcing_Desk_OnlyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Only supply chain and management can do this.`)
 };
 
 export const api_sourcing_draft_gone = /** @type {(inputs: Api_Sourcing_Draft_GoneInputs) => LocalizedString} */ () => {
@@ -5897,26 +6151,26 @@ export const api_sourcing_draft_gone = /** @type {(inputs: Api_Sourcing_Draft_Go
 
 export const api_sourcing_drafts_back = /** @type {(inputs: Api_Sourcing_Drafts_BackInputs) => LocalizedString} */ (i) => {
 	const countPlural = __paraglideRegistry.plural("en", i?.count, {}, true);
-	if (countPlural === "one") return /** @type {LocalizedString} */ (`${i?.count} RFQ draft back — nothing was sent`);
-	return /** @type {LocalizedString} */ (`${i?.count} RFQ drafts back — nothing was sent`)
+	if (countPlural === "one") return /** @type {LocalizedString} */ (`${i?.count} RFQ draft back. Nothing was sent`);
+	return /** @type {LocalizedString} */ (`${i?.count} RFQ drafts back. Nothing was sent`)
 };
 
 export const api_sourcing_drafts_changed = /** @type {(inputs: Api_Sourcing_Drafts_ChangedInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`The drafts have changed since (drafted again or sent) — there is nothing to put back.`)
+	return /** @type {LocalizedString} */ (`The drafts have changed since (drafted again or sent), so there is nothing to put back.`)
 };
 
 export const api_sourcing_drafts_ready = /** @type {(inputs: Api_Sourcing_Drafts_ReadyInputs) => LocalizedString} */ (i) => {
 	const countPlural = __paraglideRegistry.plural("en", i?.count, {}, true);
-	if (countPlural === "one") return /** @type {LocalizedString} */ (`${i?.count} RFQ draft ready — check them before sending`);
-	return /** @type {LocalizedString} */ (`${i?.count} RFQ drafts ready — check them before sending`)
+	if (countPlural === "one") return /** @type {LocalizedString} */ (`${i?.count} RFQ draft ready. Check them before sending`);
+	return /** @type {LocalizedString} */ (`${i?.count} RFQ drafts ready. Check them before sending`)
 };
 
 export const api_sourcing_duplicate_kept = /** @type {(inputs: Api_Sourcing_Duplicate_KeptInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Duplicate — kept with the original`)
+	return /** @type {LocalizedString} */ (`Duplicate, kept with the original`)
 };
 
 export const api_sourcing_duplicate_linked = /** @type {(inputs: Api_Sourcing_Duplicate_LinkedInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Duplicate — already linked to ${i?.caseId}`)
+	return /** @type {LocalizedString} */ (`Duplicate, already linked to ${i?.caseId}`)
 };
 
 export const api_sourcing_escalated_to = /** @type {(inputs: Api_Sourcing_Escalated_ToInputs) => LocalizedString} */ (i) => {
@@ -5932,7 +6186,7 @@ export const api_sourcing_forwarded_by_staff = /** @type {(inputs: Api_Sourcing_
 };
 
 export const api_sourcing_general_full = /** @type {(inputs: Api_Sourcing_General_FullInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`General chandler — receives the full list`)
+	return /** @type {LocalizedString} */ (`General chandler: receives the full list`)
 };
 
 export const api_sourcing_held_back = /** @type {(inputs: Api_Sourcing_Held_BackInputs) => LocalizedString} */ (i) => {
@@ -5956,11 +6210,11 @@ export const api_sourcing_identical_attachments = /** @type {(inputs: Api_Sourci
 };
 
 export const api_sourcing_import_approved = /** @type {(inputs: Api_Sourcing_Import_ApprovedInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`The import is approved and saved — its decisions can't be taken back.`)
+	return /** @type {LocalizedString} */ (`The import is approved and saved, so its decisions can't be taken back.`)
 };
 
 export const api_sourcing_invited_on_many = /** @type {(inputs: Api_Sourcing_Invited_On_ManyInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Invited on ${i?.count} open cases — can't tell which`)
+	return /** @type {LocalizedString} */ (`Invited on ${i?.count} open cases: can't tell which`)
 };
 
 export const api_sourcing_lines_offered = /** @type {(inputs: Api_Sourcing_Lines_OfferedInputs) => LocalizedString} */ (i) => {
@@ -5972,7 +6226,7 @@ export const api_sourcing_lines_offered = /** @type {(inputs: Api_Sourcing_Lines
 };
 
 export const api_sourcing_linked_activity = /** @type {(inputs: Api_Sourcing_Linked_ActivityInputs) => LocalizedString} */ (i) => {
-	if (i?.offer === "yes") return /** @type {LocalizedString} */ (`“${i?.subject}” from ${i?.from} linked by ${i?.who} after review — offer confirmed.`);
+	if (i?.offer === "yes") return /** @type {LocalizedString} */ (`“${i?.subject}” from ${i?.from} linked by ${i?.who} after review, offer confirmed.`);
 	return /** @type {LocalizedString} */ (`“${i?.subject}” from ${i?.from} linked by ${i?.who} after review.`)
 };
 
@@ -5981,7 +6235,7 @@ export const api_sourcing_linked_after_review_event = /** @type {(inputs: Api_So
 };
 
 export const api_sourcing_management_approves = /** @type {(inputs: Api_Sourcing_Management_ApprovesInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Only management (Karim Balbaa) can approve the history import.`)
+	return /** @type {LocalizedString} */ (`Only management can approve the history import.`)
 };
 
 export const api_sourcing_matched_to = /** @type {(inputs: Api_Sourcing_Matched_ToInputs) => LocalizedString} */ (i) => {
@@ -6009,7 +6263,7 @@ export const api_sourcing_new_case_detail = /** @type {(inputs: Api_Sourcing_New
 };
 
 export const api_sourcing_new_supplier_activity = /** @type {(inputs: Api_Sourcing_New_Supplier_ActivityInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`New supplier ${i?.name} replied to ${i?.reference} — supplier and dated price saved automatically; unit waits for a person.`)
+	return /** @type {LocalizedString} */ (`New supplier ${i?.name} replied to ${i?.reference}. Supplier and dated price saved automatically; unit waits for a person.`)
 };
 
 export const api_sourcing_new_supplier_confirm = /** @type {(inputs: Api_Sourcing_New_Supplier_ConfirmInputs) => LocalizedString} */ (i) => {
@@ -6017,15 +6271,15 @@ export const api_sourcing_new_supplier_confirm = /** @type {(inputs: Api_Sourcin
 };
 
 export const api_sourcing_new_supplier_created = /** @type {(inputs: Api_Sourcing_New_Supplier_CreatedInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Sender ${i?.domain} is not in the supplier list — new supplier created automatically`)
+	return /** @type {LocalizedString} */ (`Sender ${i?.domain} is not in the supplier list: new supplier created automatically`)
 };
 
 export const api_sourcing_new_supplier_detail = /** @type {(inputs: Api_Sourcing_New_Supplier_DetailInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Not in the database: supplier created, dated price stored with validity — unit to confirm`)
+	return /** @type {LocalizedString} */ (`Not in the database: supplier created, dated price stored with validity. Unit to confirm`)
 };
 
 export const api_sourcing_new_supplier_saved = /** @type {(inputs: Api_Sourcing_New_Supplier_SavedInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Sender ${i?.domain} is not in the supplier list — new supplier already saved automatically`)
+	return /** @type {LocalizedString} */ (`Sender ${i?.domain} is not in the supplier list: new supplier already saved automatically`)
 };
 
 export const api_sourcing_no_new_case = /** @type {(inputs: Api_Sourcing_No_New_CaseInputs) => LocalizedString} */ () => {
@@ -6037,19 +6291,19 @@ export const api_sourcing_no_reference = /** @type {(inputs: Api_Sourcing_No_Ref
 };
 
 export const api_sourcing_no_rule = /** @type {(inputs: Api_Sourcing_No_RuleInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`No rule matched — you own it`)
+	return /** @type {LocalizedString} */ (`No rule matched, so you own it`)
 };
 
 export const api_sourcing_no_specialist = /** @type {(inputs: Api_Sourcing_No_SpecialistInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`No specialist on file — general chandler`)
+	return /** @type {LocalizedString} */ (`No specialist on file: general chandler`)
 };
 
 export const api_sourcing_none_waiting = /** @type {(inputs: Api_Sourcing_None_WaitingInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`No supplier RFQs are waiting for a reply — send RFQs first`)
+	return /** @type {LocalizedString} */ (`No supplier RFQs are waiting for a reply.`)
 };
 
 export const api_sourcing_not_filed_by_review = /** @type {(inputs: Api_Sourcing_Not_Filed_By_ReviewInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`This message isn't filed by a review — there is nothing to take back.`)
+	return /** @type {LocalizedString} */ (`This message isn't filed by a review, so there is nothing to take back.`)
 };
 
 export const api_sourcing_not_history_item = /** @type {(inputs: Api_Sourcing_Not_History_ItemInputs) => LocalizedString} */ () => {
@@ -6057,7 +6311,7 @@ export const api_sourcing_not_history_item = /** @type {(inputs: Api_Sourcing_No
 };
 
 export const api_sourcing_not_invited_event = /** @type {(inputs: Api_Sourcing_Not_Invited_EventInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Not invited — replied to ${i?.reference} forwarded to them; supplier created automatically`)
+	return /** @type {LocalizedString} */ (`Not invited: replied to ${i?.reference} forwarded to them; supplier created automatically`)
 };
 
 export const api_sourcing_nothing_extracted = /** @type {(inputs: Api_Sourcing_Nothing_ExtractedInputs) => LocalizedString} */ () => {
@@ -6065,30 +6319,30 @@ export const api_sourcing_nothing_extracted = /** @type {(inputs: Api_Sourcing_N
 };
 
 export const api_sourcing_nothing_new = /** @type {(inputs: Api_Sourcing_Nothing_NewInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Nothing new to send — every picked line was already asked of these suppliers`)
+	return /** @type {LocalizedString} */ (`Nothing new to send: every picked line was already asked of these suppliers`)
 };
 
 export const api_sourcing_nothing_to_send = /** @type {(inputs: Api_Sourcing_Nothing_To_SendInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Nothing to send — draft the RFQs first.`)
+	return /** @type {LocalizedString} */ (`Nothing to send. Draft the RFQs first.`)
 };
 
 export const api_sourcing_offer_received_event = /** @type {(inputs: Api_Sourcing_Offer_Received_EventInputs) => LocalizedString} */ (i) => {
-	if (i?.changed === "yes") return /** @type {LocalizedString} */ (`Offer received (subject “${i?.subject}”) — matched by reference, reminders stopped`);
-	return /** @type {LocalizedString} */ (`Offer received — matched by reference, reminders stopped`)
+	if (i?.changed === "yes") return /** @type {LocalizedString} */ (`Offer received (subject “${i?.subject}”): matched by reference, reminders stopped`);
+	return /** @type {LocalizedString} */ (`Offer received: matched by reference, reminders stopped`)
 };
 
 export const api_sourcing_offers_captured = /** @type {(inputs: Api_Sourcing_Offers_CapturedInputs) => LocalizedString} */ (i) => {
 	const countPlural = __paraglideRegistry.plural("en", i?.count, {}, true);
-	if (countPlural === "one") return /** @type {LocalizedString} */ (`${i?.count} offer line captured from the reply to ${i?.reference} — dated prices saved to the supplier's history.`);
-	return /** @type {LocalizedString} */ (`${i?.count} offer lines captured from the reply to ${i?.reference} — dated prices saved to the supplier's history.`)
+	if (countPlural === "one") return /** @type {LocalizedString} */ (`${i?.count} offer line captured from the reply to ${i?.reference}. Dated prices saved to the supplier's history.`);
+	return /** @type {LocalizedString} */ (`${i?.count} offer lines captured from the reply to ${i?.reference}. Dated prices saved to the supplier's history.`)
 };
 
 export const api_sourcing_only_decider = /** @type {(inputs: Api_Sourcing_Only_DeciderInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.name} decided this item — only they can take it back.`)
+	return /** @type {LocalizedString} */ (`${i?.name} decided this item, so only they can take it back.`)
 };
 
 export const api_sourcing_only_filer = /** @type {(inputs: Api_Sourcing_Only_FilerInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.name} filed this message — only they can take it back.`)
+	return /** @type {LocalizedString} */ (`${i?.name} filed this message, so only they can take it back.`)
 };
 
 export const api_sourcing_organise_first = /** @type {(inputs: Api_Sourcing_Organise_FirstInputs) => LocalizedString} */ () => {
@@ -6096,7 +6350,7 @@ export const api_sourcing_organise_first = /** @type {(inputs: Api_Sourcing_Orga
 };
 
 export const api_sourcing_original_not_case = /** @type {(inputs: Api_Sourcing_Original_Not_CaseInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`The original message isn't a case yet — handle that one; this copy is kept with it`)
+	return /** @type {LocalizedString} */ (`The original message isn't a case yet. Handle that one; this copy is kept with it`)
 };
 
 export const api_sourcing_original_text = /** @type {(inputs: Api_Sourcing_Original_TextInputs) => LocalizedString} */ (i) => {
@@ -6110,7 +6364,7 @@ export const api_sourcing_pending_items = /** @type {(inputs: Api_Sourcing_Pendi
 };
 
 export const api_sourcing_per_kg_uncertain = /** @type {(inputs: Api_Sourcing_Per_Kg_UncertainInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Quoted “${i?.price} LE” — read as per kg, converted to ${i?.converted} per ${i?.pack} kg pack. Confirm the unit.`)
+	return /** @type {LocalizedString} */ (`Quoted “${i?.price} LE”, read as per kg, converted to ${i?.converted} per ${i?.pack} kg pack. Confirm the unit.`)
 };
 
 export const api_sourcing_pick_case = /** @type {(inputs: Api_Sourcing_Pick_CaseInputs) => LocalizedString} */ () => {
@@ -6122,7 +6376,7 @@ export const api_sourcing_pick_line = /** @type {(inputs: Api_Sourcing_Pick_Line
 };
 
 export const api_sourcing_price_unit_unclear = /** @type {(inputs: Api_Sourcing_Price_Unit_UnclearInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Price unit unclear — a person confirms`)
+	return /** @type {LocalizedString} */ (`Price unit unclear: a person confirms`)
 };
 
 export const api_sourcing_ref_in_body = /** @type {(inputs: Api_Sourcing_Ref_In_BodyInputs) => LocalizedString} */ (i) => {
@@ -6134,7 +6388,7 @@ export const api_sourcing_ref_in_subject = /** @type {(inputs: Api_Sourcing_Ref_
 };
 
 export const api_sourcing_reminder_escalated_event = /** @type {(inputs: Api_Sourcing_Reminder_Escalated_EventInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Reminder ${i?.n} sent — no reply after ${i?.after} reminders, escalated to the case owner`)
+	return /** @type {LocalizedString} */ (`Reminder ${i?.n} sent. No reply after ${i?.after} reminders, escalated to the case owner`)
 };
 
 export const api_sourcing_reminder_n_sent = /** @type {(inputs: Api_Sourcing_Reminder_N_SentInputs) => LocalizedString} */ (i) => {
@@ -6154,11 +6408,11 @@ export const api_sourcing_reopened_activity = /** @type {(inputs: Api_Sourcing_R
 };
 
 export const api_sourcing_reply_counted = /** @type {(inputs: Api_Sourcing_Reply_CountedInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`The supplier's reply is already counted on the case — the link can't be taken back.`)
+	return /** @type {LocalizedString} */ (`The supplier's reply is already counted on the case, so the link can't be taken back.`)
 };
 
 export const api_sourcing_reply_matched_event = /** @type {(inputs: Api_Sourcing_Reply_Matched_EventInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Reply matched by reference (subject “${i?.subject}”) — reminders stopped`)
+	return /** @type {LocalizedString} */ (`Reply matched by reference (subject “${i?.subject}”). Reminders stopped`)
 };
 
 export const api_sourcing_rfq_alternatives = /** @type {(inputs: Api_Sourcing_Rfq_AlternativesInputs) => LocalizedString} */ () => {
@@ -6198,15 +6452,19 @@ export const api_sourcing_rfq_please_quote = /** @type {(inputs: Api_Sourcing_Rf
 };
 
 export const api_sourcing_rfq_please_state = /** @type {(inputs: Api_Sourcing_Rfq_Please_StateInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`For each line please state: unit price & currency, available quantity, pack size, lead time, delivery basis, freight, validity and payment terms — and attach SDS / TDS / certificates.`)
+	return /** @type {LocalizedString} */ (`For each line please state: unit price & currency, available quantity, pack size, lead time, delivery basis, freight, validity and payment terms, and attach SDS / TDS / certificates.`)
 };
 
 export const api_sourcing_rfq_subject = /** @type {(inputs: Api_Sourcing_Rfq_SubjectInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Request for quotation ${i?.reference} — reply by ${i?.due}`)
+	return /** @type {LocalizedString} */ (`Request for quotation ${i?.reference}: reply by ${i?.due}`)
 };
 
 export const api_sourcing_rfq_to_port = /** @type {(inputs: Api_Sourcing_Rfq_To_PortInputs) => LocalizedString} */ () => {
 	return /** @type {LocalizedString} */ (`to port`)
+};
+
+export const api_sourcing_sender_differs = /** @type {(inputs: Api_Sourcing_Sender_DiffersInputs) => LocalizedString} */ (i) => {
+	return /** @type {LocalizedString} */ (`Sent by ${i?.name}, but ${i?.reference} was sent to ${i?.invited}. A person checks it before it counts`)
 };
 
 export const api_sourcing_sender_domain = /** @type {(inputs: Api_Sourcing_Sender_DomainInputs) => LocalizedString} */ (i) => {
@@ -6214,7 +6472,7 @@ export const api_sourcing_sender_domain = /** @type {(inputs: Api_Sourcing_Sende
 };
 
 export const api_sourcing_sender_unknown = /** @type {(inputs: Api_Sourcing_Sender_UnknownInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Sender ${i?.sender} is not in the supplier list — new supplier`)
+	return /** @type {LocalizedString} */ (`Sender ${i?.sender} is not in the supplier list: new supplier`)
 };
 
 export const api_sourcing_sent_activity = /** @type {(inputs: Api_Sourcing_Sent_ActivityInputs) => LocalizedString} */ (i) => {
@@ -6223,20 +6481,16 @@ export const api_sourcing_sent_activity = /** @type {(inputs: Api_Sourcing_Sent_
 	return /** @type {LocalizedString} */ (`${i?.count} supplier RFQs sent by ${i?.who} (${i?.mode}, client identity removed): ${i?.references}.`)
 };
 
-export const api_sourcing_sent_by_other = /** @type {(inputs: Api_Sourcing_Sent_By_OtherInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Sent by ${i?.name} for an RFQ sent to another supplier`)
-};
-
 export const api_sourcing_sent_event = /** @type {(inputs: Api_Sourcing_Sent_EventInputs) => LocalizedString} */ () => {
 	return /** @type {LocalizedString} */ (`Sent (client identity removed) · reminder 1 scheduled`)
 };
 
 export const api_sourcing_silent_activity = /** @type {(inputs: Api_Sourcing_Silent_ActivityInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.reference}: ${i?.name} silent after ${i?.after} reminders — escalated to the owner.`)
+	return /** @type {LocalizedString} */ (`${i?.reference}: ${i?.name} silent after ${i?.after} reminders, escalated to the owner.`)
 };
 
 export const api_sourcing_silent_detail = /** @type {(inputs: Api_Sourcing_Silent_DetailInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.after} reminders sent · ${i?.caseId} quote due ${i?.due} — call them or source elsewhere`)
+	return /** @type {LocalizedString} */ (`${i?.after} reminders sent · ${i?.caseId} quote due ${i?.due}. Call them or source elsewhere`)
 };
 
 export const api_sourcing_silent_title = /** @type {(inputs: Api_Sourcing_Silent_TitleInputs) => LocalizedString} */ (i) => {
@@ -6252,7 +6506,7 @@ export const api_sourcing_specialist = /** @type {(inputs: Api_Sourcing_Speciali
 };
 
 export const api_sourcing_step_draft = /** @type {(inputs: Api_Sourcing_Step_DraftInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Draft — not sent`)
+	return /** @type {LocalizedString} */ (`Draft, not sent`)
 };
 
 export const api_sourcing_step_escalate = /** @type {(inputs: Api_Sourcing_Step_EscalateInputs) => LocalizedString} */ () => {
@@ -6268,15 +6522,15 @@ export const api_sourcing_step_sent = /** @type {(inputs: Api_Sourcing_Step_Sent
 };
 
 export const api_sourcing_step_stopped = /** @type {(inputs: Api_Sourcing_Step_StoppedInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.status} — reminders stopped`)
+	return /** @type {LocalizedString} */ (`${i?.status}: reminders stopped`)
 };
 
 export const api_sourcing_step_uninvited = /** @type {(inputs: Api_Sourcing_Step_UninvitedInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.status} without an invitation — reply matched by reference`)
+	return /** @type {LocalizedString} */ (`${i?.status} without an invitation: reply matched by reference`)
 };
 
 export const api_sourcing_subject_changed = /** @type {(inputs: Api_Sourcing_Subject_ChangedInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Subject changed (“${i?.subject}”) — matched by reference, not by subject`)
+	return /** @type {LocalizedString} */ (`Subject changed (“${i?.subject}”): matched by reference, not by subject`)
 };
 
 export const api_sourcing_subject_kept = /** @type {(inputs: Api_Sourcing_Subject_KeptInputs) => LocalizedString} */ () => {
@@ -6288,7 +6542,7 @@ export const api_sourcing_supplier = /** @type {(inputs: Api_Sourcing_SupplierIn
 };
 
 export const api_sourcing_supplier_history_source = /** @type {(inputs: Api_Sourcing_Supplier_History_SourceInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Inbox history import — quoted ${i?.quoted} lines 2022–2025, never ordered`)
+	return /** @type {LocalizedString} */ (`Inbox history import: quoted ${i?.quoted} lines 2022–2025, never ordered`)
 };
 
 export const api_sourcing_template_label = /** @type {(inputs: Api_Sourcing_Template_LabelInputs) => LocalizedString} */ (i) => {
@@ -6296,11 +6550,11 @@ export const api_sourcing_template_label = /** @type {(inputs: Api_Sourcing_Temp
 };
 
 export const api_sourcing_uncertain_review = /** @type {(inputs: Api_Sourcing_Uncertain_ReviewInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Uncertain — sent to the review queue`)
+	return /** @type {LocalizedString} */ (`Uncertain, sent to the review queue`)
 };
 
 export const api_sourcing_unclassifiable = /** @type {(inputs: Api_Sourcing_UnclassifiableInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`No reference, no thread, unknown sender — a person classifies it`)
+	return /** @type {LocalizedString} */ (`No reference, no thread, unknown sender: a person classifies it`)
 };
 
 export const api_sourcing_vessel_history_note = /** @type {(inputs: Api_Sourcing_Vessel_History_NoteInputs) => LocalizedString} */ (i) => {
@@ -6477,7 +6731,7 @@ export const automations_review_note = /** @type {(inputs: Automations_Review_No
 };
 
 export const automations_reviewed_done = /** @type {(inputs: Automations_Reviewed_DoneInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Reviewed — your name is on the audit log`)
+	return /** @type {LocalizedString} */ (`Reviewed. Your name is on the audit log`)
 };
 
 export const case_overview_delivered = /** @type {(inputs: Case_Overview_DeliveredInputs) => LocalizedString} */ () => {
@@ -6485,7 +6739,7 @@ export const case_overview_delivered = /** @type {(inputs: Case_Overview_Deliver
 };
 
 export const case_overview_ended = /** @type {(inputs: Case_Overview_EndedInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`The case ended here — ${i?.next}`)
+	return /** @type {LocalizedString} */ (`The case ended here: ${i?.next}`)
 };
 
 export const case_overview_gauge_a11y = /** @type {(inputs: Case_Overview_Gauge_A11yInputs) => LocalizedString} */ (i) => {
@@ -6501,7 +6755,7 @@ export const case_overview_ordered = /** @type {(inputs: Case_Overview_OrderedIn
 };
 
 export const case_overview_paused = /** @type {(inputs: Case_Overview_PausedInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Paused at the customer's decision — ${i?.next}`)
+	return /** @type {LocalizedString} */ (`Paused at the customer's decision: ${i?.next}`)
 };
 
 export const case_overview_phase = /** @type {(inputs: Case_Overview_PhaseInputs) => LocalizedString} */ (i) => {
@@ -6545,7 +6799,7 @@ export const cash_apply_details = /** @type {(inputs: Cash_Apply_DetailsInputs) 
 };
 
 export const cash_apply_done = /** @type {(inputs: Cash_Apply_DoneInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`New bank details applied to ${i?.supplier} — verified by two people.`)
+	return /** @type {LocalizedString} */ (`New bank details applied to ${i?.supplier}, verified by two people.`)
 };
 
 export const cash_apply_heading = /** @type {(inputs: Cash_Apply_HeadingInputs) => LocalizedString} */ (i) => {
@@ -6597,7 +6851,7 @@ export const cash_forecast_subhead_fixed = /** @type {(inputs: Cash_Forecast_Sub
 };
 
 export const cash_held_alert = /** @type {(inputs: Cash_Held_AlertInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Payments to ${i?.supplier} stay on the old, verified account until two different people — Finance and the CEO — approve after a call-back on the number on file.`)
+	return /** @type {LocalizedString} */ (`Payments to ${i?.supplier} stay on the old, verified account until two different people, Finance and the CEO, approve after a call-back on the number on file.`)
 };
 
 export const cash_invoice_numbers = /** @type {(inputs: Cash_Invoice_NumbersInputs) => LocalizedString} */ () => {
@@ -6721,7 +6975,7 @@ export const cash_waiting_for_approver = /** @type {(inputs: Cash_Waiting_For_Ap
 };
 
 export const cash_you_decided = /** @type {(inputs: Cash_You_DecidedInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`You have decided — a second, different person must approve.`)
+	return /** @type {LocalizedString} */ (`You have decided. A second, different person must approve.`)
 };
 
 export const commercial_acceptance_done = /** @type {(inputs: Commercial_Acceptance_DoneInputs) => LocalizedString} */ (i) => {
@@ -6773,7 +7027,7 @@ export const commercial_approve = /** @type {(inputs: Commercial_ApproveInputs) 
 };
 
 export const commercial_approved_done = /** @type {(inputs: Commercial_Approved_DoneInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Approved ${i?.number} — it can be sent`)
+	return /** @type {LocalizedString} */ (`Approved ${i?.number}: it can be sent`)
 };
 
 export const commercial_charge_actual = /** @type {(inputs: Commercial_Charge_ActualInputs) => LocalizedString} */ () => {
@@ -6796,7 +7050,7 @@ export const commercial_charges_allocated = /** @type {(inputs: Commercial_Charg
 };
 
 export const commercial_charges_vat = /** @type {(inputs: Commercial_Charges_VatInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`VAT: supply to a foreign vessel in transit is expected at 0% — finance confirms. The quotation shows prices excl. VAT.`)
+	return /** @type {LocalizedString} */ (`VAT: supply to a foreign vessel in transit is expected at 0%, which finance confirms. The quotation shows prices excl. VAT.`)
 };
 
 export const commercial_check_again = /** @type {(inputs: Commercial_Check_AgainInputs) => LocalizedString} */ () => {
@@ -6804,7 +7058,7 @@ export const commercial_check_again = /** @type {(inputs: Commercial_Check_Again
 };
 
 export const commercial_check_no = /** @type {(inputs: Commercial_Check_NoInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.supplier}: may differ from the request — check`)
+	return /** @type {LocalizedString} */ (`${i?.supplier}: may differ from the request, check`)
 };
 
 export const commercial_check_offer = /** @type {(inputs: Commercial_Check_OfferInputs) => LocalizedString} */ (i) => {
@@ -6820,7 +7074,7 @@ export const commercial_check_question = /** @type {(inputs: Commercial_Check_Qu
 };
 
 export const commercial_check_requested = /** @type {(inputs: Commercial_Check_RequestedInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Requested: ${i?.description} — ${i?.requested}. Rules: ${i?.rules}.`)
+	return /** @type {LocalizedString} */ (`Requested: ${i?.description}, ${i?.requested}. Rules: ${i?.rules}.`)
 };
 
 export const commercial_check_yes = /** @type {(inputs: Commercial_Check_YesInputs) => LocalizedString} */ (i) => {
@@ -6869,6 +7123,10 @@ export const commercial_col_margin_pct = /** @type {(inputs: Commercial_Col_Marg
 
 export const commercial_col_markup = /** @type {(inputs: Commercial_Col_MarkupInputs) => LocalizedString} */ () => {
 	return /** @type {LocalizedString} */ (`Markup`)
+};
+
+export const commercial_col_match = /** @type {(inputs: Commercial_Col_MatchInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Match`)
 };
 
 export const commercial_col_offered = /** @type {(inputs: Commercial_Col_OfferedInputs) => LocalizedString} */ () => {
@@ -7016,13 +7274,13 @@ export const commercial_evidence = /** @type {(inputs: Commercial_EvidenceInputs
 };
 
 export const commercial_evidence_default = /** @type {(inputs: Commercial_Evidence_DefaultInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Customer email 17 Nov 10:12 — “500 ml cans OK”, attached`)
+	return /** @type {LocalizedString} */ (`Customer email 17 Nov 10:12: “500 ml cans OK”, attached`)
 };
 
 export const commercial_exceptions = /** @type {(inputs: Commercial_ExceptionsInputs) => LocalizedString} */ (i) => {
 	const countPlural = __paraglideRegistry.plural("en", i?.count, {}, true);
-	if (countPlural === "one") return /** @type {LocalizedString} */ (`${i?.count} exception — shown to the approver as “${i?.type}”.`);
-	return /** @type {LocalizedString} */ (`${i?.count} exceptions — shown to the approver as “${i?.type}”.`)
+	if (countPlural === "one") return /** @type {LocalizedString} */ (`${i?.count} exception, shown to the approver as “${i?.type}”.`);
+	return /** @type {LocalizedString} */ (`${i?.count} exceptions, shown to the approver as “${i?.type}”.`)
 };
 
 export const commercial_fig_expected_profit = /** @type {(inputs: Commercial_Fig_Expected_ProfitInputs) => LocalizedString} */ () => {
@@ -7154,7 +7412,7 @@ export const commercial_metric_no_freight = /** @type {(inputs: Commercial_Metri
 };
 
 export const commercial_no_exceptions = /** @type {(inputs: Commercial_No_ExceptionsInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`No exceptions — standard approval.`)
+	return /** @type {LocalizedString} */ (`No exceptions. Standard approval.`)
 };
 
 export const commercial_no_issues = /** @type {(inputs: Commercial_No_IssuesInputs) => LocalizedString} */ () => {
@@ -7170,7 +7428,7 @@ export const commercial_no_offers = /** @type {(inputs: Commercial_No_OffersInpu
 };
 
 export const commercial_no_recommendation = /** @type {(inputs: Commercial_No_RecommendationInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`No offer passes every check yet — no recommendation.`)
+	return /** @type {LocalizedString} */ (`No offer passes every check yet, so there is no recommendation.`)
 };
 
 export const commercial_none = /** @type {(inputs: Commercial_NoneInputs) => LocalizedString} */ () => {
@@ -7254,7 +7512,7 @@ export const commercial_paper_discount = /** @type {(inputs: Commercial_Paper_Di
 };
 
 export const commercial_paper_draft = /** @type {(inputs: Commercial_Paper_DraftInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`DRAFT — not yet approved. Will be issued as version ${i?.version}.`)
+	return /** @type {LocalizedString} */ (`DRAFT: not yet approved. Will be issued as version ${i?.version}.`)
 };
 
 export const commercial_paper_grand = /** @type {(inputs: Commercial_Paper_GrandInputs) => LocalizedString} */ (i) => {
@@ -7318,7 +7576,7 @@ export const commercial_paper_s = /** @type {(inputs: Commercial_Paper_SInputs) 
 };
 
 export const commercial_paper_signature = /** @type {(inputs: Commercial_Paper_SignatureInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.name} — authorised signature`)
+	return /** @type {LocalizedString} */ (`${i?.name}, authorised signature`)
 };
 
 export const commercial_paper_signature_pending = /** @type {(inputs: Commercial_Paper_Signature_PendingInputs) => LocalizedString} */ () => {
@@ -7326,7 +7584,7 @@ export const commercial_paper_signature_pending = /** @type {(inputs: Commercial
 };
 
 export const commercial_paper_superseded = /** @type {(inputs: Commercial_Paper_SupersededInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Superseded — kept for audit. Not valid for ordering.`)
+	return /** @type {LocalizedString} */ (`Superseded: kept for audit. Not valid for ordering.`)
 };
 
 export const commercial_paper_title = /** @type {(inputs: Commercial_Paper_TitleInputs) => LocalizedString} */ () => {
@@ -7366,7 +7624,7 @@ export const commercial_policy_target = /** @type {(inputs: Commercial_Policy_Ta
 };
 
 export const commercial_portal_all_match = /** @type {(inputs: Commercial_Portal_All_MatchInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`All fields match — submission complete.`)
+	return /** @type {LocalizedString} */ (`All fields match. Submission complete.`)
 };
 
 export const commercial_portal_diffs = /** @type {(inputs: Commercial_Portal_DiffsInputs) => LocalizedString} */ (i) => {
@@ -7410,7 +7668,7 @@ export const commercial_quantity_from = /** @type {(inputs: Commercial_Quantity_
 };
 
 export const commercial_quote_approved = /** @type {(inputs: Commercial_Quote_ApprovedInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.number} approved — ready to send.`)
+	return /** @type {LocalizedString} */ (`${i?.number} approved and ready to send.`)
 };
 
 export const commercial_quote_returned = /** @type {(inputs: Commercial_Quote_ReturnedInputs) => LocalizedString} */ (i) => {
@@ -7438,7 +7696,7 @@ export const commercial_reason_placeholder = /** @type {(inputs: Commercial_Reas
 };
 
 export const commercial_recommendation_best = /** @type {(inputs: Commercial_Recommendation_BestInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.offer}: ${i?.landed} EGP / ${i?.baseUnit} landed — lowest cost on board among offers that pass every check.`)
+	return /** @type {LocalizedString} */ (`${i?.offer}: ${i?.landed} EGP / ${i?.baseUnit} landed, the lowest cost on board among offers that pass every check.`)
 };
 
 export const commercial_recommendation_heading = /** @type {(inputs: Commercial_Recommendation_HeadingInputs) => LocalizedString} */ () => {
@@ -7446,11 +7704,11 @@ export const commercial_recommendation_heading = /** @type {(inputs: Commercial_
 };
 
 export const commercial_recommendation_split = /** @type {(inputs: Commercial_Recommendation_SplitInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Split sourcing: ${i?.split} — ${i?.cost} landed, all before ETA.`)
+	return /** @type {LocalizedString} */ (`Split sourcing: ${i?.split}, ${i?.cost} landed, all before ETA.`)
 };
 
 export const commercial_recommendation_split_saves = /** @type {(inputs: Commercial_Recommendation_Split_SavesInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Split sourcing: ${i?.split} — ${i?.cost} landed, saves ${i?.saves} vs the best single supplier, all before ETA.`)
+	return /** @type {LocalizedString} */ (`Split sourcing: ${i?.split}, ${i?.cost} landed, saves ${i?.saves} vs the best single supplier, all before ETA.`)
 };
 
 export const commercial_record = /** @type {(inputs: Commercial_RecordInputs) => LocalizedString} */ () => {
@@ -7490,7 +7748,7 @@ export const commercial_return_heading = /** @type {(inputs: Commercial_Return_H
 };
 
 export const commercial_return_placeholder = /** @type {(inputs: Commercial_Return_PlaceholderInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`e.g. Re-check line 3 — margin too thin for a new supplier`)
+	return /** @type {LocalizedString} */ (`e.g. Re-check line 3, margin too thin for a new supplier`)
 };
 
 export const commercial_return_text = /** @type {(inputs: Commercial_Return_TextInputs) => LocalizedString} */ (i) => {
@@ -7584,7 +7842,7 @@ export const commercial_send_correction_text = /** @type {(inputs: Commercial_Se
 };
 
 export const commercial_send_email_line = /** @type {(inputs: Commercial_Send_Email_LineInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Email from Odoo — To: ${i?.to} · Subject: Quotation ${i?.number} — ${i?.vessel} — ref. ${i?.ref} · Attachment: ${i?.number}.pdf`)
+	return /** @type {LocalizedString} */ (`Email from Odoo. To: ${i?.to} · Subject: Quotation ${i?.number}, ${i?.vessel}, ref. ${i?.ref} · Attachment: ${i?.number}.pdf`)
 };
 
 export const commercial_send_heading = /** @type {(inputs: Commercial_Send_HeadingInputs) => LocalizedString} */ (i) => {
@@ -7592,7 +7850,7 @@ export const commercial_send_heading = /** @type {(inputs: Commercial_Send_Headi
 };
 
 export const commercial_send_portal_line = /** @type {(inputs: Commercial_Send_Portal_LineInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Customer portal — enter the quotation in ${i?.portal}, then upload the confirmation screenshot below — the submission is only complete when it matches the approved quote.`)
+	return /** @type {LocalizedString} */ (`Customer portal: enter the quotation in ${i?.portal}, then upload the confirmation screenshot below. The submission is only complete when it matches the approved quote.`)
 };
 
 export const commercial_send_to_customer = /** @type {(inputs: Commercial_Send_To_CustomerInputs) => LocalizedString} */ () => {
@@ -7708,7 +7966,7 @@ export const commercial_unit_price = /** @type {(inputs: Commercial_Unit_PriceIn
 };
 
 export const commercial_unpriced_line = /** @type {(inputs: Commercial_Unpriced_LineInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`L${i?.line} · ${i?.description} — ${i?.status}: no cost yet, excluded from this version.`)
+	return /** @type {LocalizedString} */ (`L${i?.line} · ${i?.description} (${i?.status}): no cost yet, excluded from this version.`)
 };
 
 export const commercial_upload_compare = /** @type {(inputs: Commercial_Upload_CompareInputs) => LocalizedString} */ () => {
@@ -7720,7 +7978,7 @@ export const commercial_use_split = /** @type {(inputs: Commercial_Use_SplitInpu
 };
 
 export const commercial_vat_note = /** @type {(inputs: Commercial_Vat_NoteInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`14% on local supplier bills — excluded from cost`)
+	return /** @type {LocalizedString} */ (`14% on local supplier bills, excluded from cost`)
 };
 
 export const commercial_view_quotation = /** @type {(inputs: Commercial_View_QuotationInputs) => LocalizedString} */ () => {
@@ -7784,11 +8042,11 @@ export const control_room_assistant = /** @type {(inputs: Control_Room_Assistant
 };
 
 export const control_room_briefing_summarised = /** @type {(inputs: Control_Room_Briefing_SummarisedInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Summarised again at ${i?.at} from ${i?.count} live records. A draft to read — nothing is sent, priced or paid.`)
+	return /** @type {LocalizedString} */ (`Summarised again at ${i?.at} from ${i?.count} live records. A draft to read: nothing is sent, priced or paid.`)
 };
 
 export const control_room_briefing_written = /** @type {(inputs: Control_Room_Briefing_WrittenInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Written at 07:00 from ${i?.count} live records. A draft to read — nothing is sent, priced or paid.`)
+	return /** @type {LocalizedString} */ (`Written at 07:00 from ${i?.count} live records. A draft to read: nothing is sent, priced or paid.`)
 };
 
 export const control_room_days_label = /** @type {(inputs: Control_Room_Days_LabelInputs) => LocalizedString} */ () => {
@@ -7882,7 +8140,7 @@ export const control_room_receivables_payables = /** @type {(inputs: Control_Roo
 };
 
 export const control_room_subtitle = /** @type {(inputs: Control_Room_SubtitleInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Briefed at 07:00 from every case, quote, delivery and payment — and answers to any question about them.`)
+	return /** @type {LocalizedString} */ (`Briefed at 07:00 from every case, quote, delivery and payment, with answers to any question about them.`)
 };
 
 export const control_room_summarise = /** @type {(inputs: Control_Room_SummariseInputs) => LocalizedString} */ () => {
@@ -7895,6 +8153,10 @@ export const growth_column_imo = /** @type {(inputs: Growth_Column_ImoInputs) =>
 
 export const growth_column_manager = /** @type {(inputs: Growth_Column_ManagerInputs) => LocalizedString} */ () => {
 	return /** @type {LocalizedString} */ (`Ship manager`)
+};
+
+export const growth_column_supplied = /** @type {(inputs: Growth_Column_SuppliedInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Supplied`)
 };
 
 export const growth_column_type = /** @type {(inputs: Growth_Column_TypeInputs) => LocalizedString} */ () => {
@@ -8018,11 +8280,11 @@ export const inbox_ack_by_hand = /** @type {(inputs: Inbox_Ack_By_HandInputs) =>
 };
 
 export const inbox_ack_note_manual = /** @type {(inputs: Inbox_Ack_Note_ManualInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Template: ${i?.template}. WhatsApp / form source: the owner sends it — the system never messages the customer by itself here.`)
+	return /** @type {LocalizedString} */ (`Template: ${i?.template}. WhatsApp / form source: the owner sends it. The system never messages the customer by itself here.`)
 };
 
 export const inbox_ack_note_once = /** @type {(inputs: Inbox_Ack_Note_OnceInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Template: ${i?.template}. Sent once from the approved template — never twice, even if the email is re-processed.`)
+	return /** @type {LocalizedString} */ (`Template: ${i?.template}. Sent once from the approved template, never twice, even if the email is re-processed.`)
 };
 
 export const inbox_ack_on_create = /** @type {(inputs: Inbox_Ack_On_CreateInputs) => LocalizedString} */ () => {
@@ -8058,7 +8320,7 @@ export const inbox_case_was_created = /** @type {(inputs: Inbox_Case_Was_Created
 };
 
 export const inbox_channel = /** @type {(inputs: Inbox_ChannelInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.kind} · ${i?.account} — ${i?.status}`)
+	return /** @type {LocalizedString} */ (`${i?.kind} · ${i?.account}: ${i?.status}`)
 };
 
 export const inbox_check_original = /** @type {(inputs: Inbox_Check_OriginalInputs) => LocalizedString} */ () => {
@@ -8134,7 +8396,7 @@ export const inbox_flag_auto_reply = /** @type {(inputs: Inbox_Flag_Auto_ReplyIn
 };
 
 export const inbox_flag_auto_reply_note = /** @type {(inputs: Inbox_Flag_Auto_Reply_NoteInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`It doesn't answer the request — supplier reminders keep running.`)
+	return /** @type {LocalizedString} */ (`It doesn't answer the request, so supplier reminders keep running.`)
 };
 
 export const inbox_flag_bank = /** @type {(inputs: Inbox_Flag_BankInputs) => LocalizedString} */ () => {
@@ -8158,15 +8420,15 @@ export const inbox_from = /** @type {(inputs: Inbox_FromInputs) => LocalizedStri
 };
 
 export const inbox_history_approval_ready = /** @type {(inputs: Inbox_History_Approval_ReadyInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Everything is reviewed — it's ready for approval.`)
+	return /** @type {LocalizedString} */ (`Everything is reviewed. It's ready for approval.`)
 };
 
 export const inbox_history_approval_text = /** @type {(inputs: Inbox_History_Approval_TextInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Only management approves the import — nothing from the history becomes a record before Karim Balbaa says yes. Confidential threads stay out.`)
+	return /** @type {LocalizedString} */ (`Only management approves the import. Nothing from the history becomes a record before management says yes. Confidential threads stay out.`)
 };
 
 export const inbox_history_approval_waiting = /** @type {(inputs: Inbox_History_Approval_WaitingInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Waiting for Karim Balbaa (management). ${i?.blocked}`)
+	return /** @type {LocalizedString} */ (`Waiting for ${i?.approvers} (management). ${i?.blocked}`)
 };
 
 export const inbox_history_approve = /** @type {(inputs: Inbox_History_ApproveInputs) => LocalizedString} */ () => {
@@ -8174,7 +8436,7 @@ export const inbox_history_approve = /** @type {(inputs: Inbox_History_ApproveIn
 };
 
 export const inbox_history_approve_done = /** @type {(inputs: Inbox_History_Approve_DoneInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Import approved — customers, vessels, suppliers and dated prices saved`)
+	return /** @type {LocalizedString} */ (`Import approved: customers, vessels, suppliers and dated prices saved`)
 };
 
 export const inbox_history_approved_by = /** @type {(inputs: Inbox_History_Approved_ByInputs) => LocalizedString} */ (i) => {
@@ -8314,7 +8576,11 @@ export const inbox_history_kept_share = /** @type {(inputs: Inbox_History_Kept_S
 };
 
 export const inbox_history_mailboxes_note = /** @type {(inputs: Inbox_History_Mailboxes_NoteInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`All of Golden Sea's mailboxes and WhatsApp exports, read in a dry run first — nothing is saved before approval.`)
+	return /** @type {LocalizedString} */ (`All of Golden Sea's mailboxes and WhatsApp exports, read in a dry run first. Nothing is saved before approval.`)
+};
+
+export const inbox_history_management = /** @type {(inputs: Inbox_History_ManagementInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`management`)
 };
 
 export const inbox_history_messages = /** @type {(inputs: Inbox_History_MessagesInputs) => LocalizedString} */ () => {
@@ -8326,7 +8592,7 @@ export const inbox_history_new_to_odoo = /** @type {(inputs: Inbox_History_New_T
 };
 
 export const inbox_history_no_po = /** @type {(inputs: Inbox_History_No_PoInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`No PO — still remembered`)
+	return /** @type {LocalizedString} */ (`No PO, still remembered`)
 };
 
 export const inbox_history_ordered = /** @type {(inputs: Inbox_History_OrderedInputs) => LocalizedString} */ () => {
@@ -8388,7 +8654,7 @@ export const inbox_history_status_approved = /** @type {(inputs: Inbox_History_S
 };
 
 export const inbox_history_status_dry_run = /** @type {(inputs: Inbox_History_Status_Dry_RunInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Status: dry run ready — nothing has been imported`)
+	return /** @type {LocalizedString} */ (`Status: dry run ready. Nothing has been imported`)
 };
 
 export const inbox_history_status_pending = /** @type {(inputs: Inbox_History_Status_PendingInputs) => LocalizedString} */ (i) => {
@@ -8854,7 +9120,7 @@ export const order_to_cash_agreement_hint = /** @type {(inputs: Order_To_Cash_Ag
 };
 
 export const order_to_cash_agreement_hint_ai = /** @type {(inputs: Order_To_Cash_Agreement_Hint_AiInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`AI draft from the customer's email — check it before recording`)
+	return /** @type {LocalizedString} */ (`AI draft from the customer's email. Check it before recording.`)
 };
 
 export const order_to_cash_agreement_label = /** @type {(inputs: Order_To_Cash_Agreement_LabelInputs) => LocalizedString} */ () => {
@@ -8886,19 +9152,19 @@ export const order_to_cash_amendment_confirm = /** @type {(inputs: Order_To_Cash
 };
 
 export const order_to_cash_amendment_done = /** @type {(inputs: Order_To_Cash_Amendment_DoneInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Amendment recorded on line ${i?.line} — evidence attached.`)
+	return /** @type {LocalizedString} */ (`Amendment recorded on line ${i?.line}. Evidence attached.`)
 };
 
 export const order_to_cash_amendment_heading_header = /** @type {(inputs: Order_To_Cash_Amendment_Heading_HeaderInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Record customer amendment — line header`)
+	return /** @type {LocalizedString} */ (`Record customer amendment: line header`)
 };
 
 export const order_to_cash_amendment_heading_line = /** @type {(inputs: Order_To_Cash_Amendment_Heading_LineInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Record customer amendment — line ${i?.line}`)
+	return /** @type {LocalizedString} */ (`Record customer amendment: line ${i?.line}`)
 };
 
 export const order_to_cash_amendment_intro = /** @type {(inputs: Order_To_Cash_Amendment_IntroInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.field} — PO: ${i?.po} · Quotation: ${i?.quote}`)
+	return /** @type {LocalizedString} */ (`${i?.field}. PO: ${i?.po} · Quotation: ${i?.quote}`)
 };
 
 export const order_to_cash_approve_confirm = /** @type {(inputs: Order_To_Cash_Approve_ConfirmInputs) => LocalizedString} */ (i) => {
@@ -8918,7 +9184,7 @@ export const order_to_cash_bills_matched = /** @type {(inputs: Order_To_Cash_Bil
 };
 
 export const order_to_cash_bills_on_hold = /** @type {(inputs: Order_To_Cash_Bills_On_HoldInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.count} on hold — 3-way match`)
+	return /** @type {LocalizedString} */ (`${i?.count} on hold: 3-way match`)
 };
 
 export const order_to_cash_change_line = /** @type {(inputs: Order_To_Cash_Change_LineInputs) => LocalizedString} */ (i) => {
@@ -8967,6 +9233,10 @@ export const order_to_cash_closed_done = /** @type {(inputs: Order_To_Cash_Close
 
 export const order_to_cash_col_at_quotation = /** @type {(inputs: Order_To_Cash_Col_At_QuotationInputs) => LocalizedString} */ () => {
 	return /** @type {LocalizedString} */ (`At quotation`)
+};
+
+export const order_to_cash_col_check = /** @type {(inputs: Order_To_Cash_Col_CheckInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Check`)
 };
 
 export const order_to_cash_col_checked = /** @type {(inputs: Order_To_Cash_Col_CheckedInputs) => LocalizedString} */ () => {
@@ -9036,7 +9306,7 @@ export const order_to_cash_confirmed_by_management = /** @type {(inputs: Order_T
 };
 
 export const order_to_cash_confirmed_done = /** @type {(inputs: Order_To_Cash_Confirmed_DoneInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.number} confirmed — sent to ${i?.supplier}.`)
+	return /** @type {LocalizedString} */ (`${i?.number} confirmed and sent to ${i?.supplier}.`)
 };
 
 export const order_to_cash_delivered_count = /** @type {(inputs: Order_To_Cash_Delivered_CountInputs) => LocalizedString} */ (i) => {
@@ -9044,7 +9314,7 @@ export const order_to_cash_delivered_count = /** @type {(inputs: Order_To_Cash_D
 };
 
 export const order_to_cash_delivered_done = /** @type {(inputs: Order_To_Cash_Delivered_DoneInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.number} delivered — signed delivery note on file.`)
+	return /** @type {LocalizedString} */ (`${i?.number} delivered. Signed delivery note on file.`)
 };
 
 export const order_to_cash_dictate = /** @type {(inputs: Order_To_Cash_DictateInputs) => LocalizedString} */ () => {
@@ -9076,7 +9346,7 @@ export const order_to_cash_drop_tag = /** @type {(inputs: Order_To_Cash_Drop_Tag
 };
 
 export const order_to_cash_evidence_hint = /** @type {(inputs: Order_To_Cash_Evidence_HintInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Optional in the demo — a copy of the customer's email is attached if you skip this`)
+	return /** @type {LocalizedString} */ (`Optional in the demo. A copy of the customer's email is attached if you skip this.`)
 };
 
 export const order_to_cash_evidence_legend = /** @type {(inputs: Order_To_Cash_Evidence_LegendInputs) => LocalizedString} */ () => {
@@ -9108,7 +9378,7 @@ export const order_to_cash_header = /** @type {(inputs: Order_To_Cash_HeaderInpu
 };
 
 export const order_to_cash_intro = /** @type {(inputs: Order_To_Cash_IntroInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.lines} — ${i?.place}`)
+	return /** @type {LocalizedString} */ (`${i?.lines}, ${i?.place}`)
 };
 
 export const order_to_cash_intro_line = /** @type {(inputs: Order_To_Cash_Intro_LineInputs) => LocalizedString} */ (i) => {
@@ -9152,7 +9422,7 @@ export const order_to_cash_n_of_total = /** @type {(inputs: Order_To_Cash_N_Of_T
 };
 
 export const order_to_cash_no_plan = /** @type {(inputs: Order_To_Cash_No_PlanInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`No delivery planned yet — the plan is created once supplier POs are confirmed and goods are due.`)
+	return /** @type {LocalizedString} */ (`No delivery planned yet. The plan is created once supplier POs are confirmed and goods are due.`)
 };
 
 export const order_to_cash_not_dispatched = /** @type {(inputs: Order_To_Cash_Not_DispatchedInputs) => LocalizedString} */ () => {
@@ -9160,7 +9430,7 @@ export const order_to_cash_not_dispatched = /** @type {(inputs: Order_To_Cash_No
 };
 
 export const order_to_cash_not_on_po_decide = /** @type {(inputs: Order_To_Cash_Not_On_Po_DecideInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Not on the customer's PO — decide`)
+	return /** @type {LocalizedString} */ (`Not on the customer's PO: decide`)
 };
 
 export const order_to_cash_not_rechecked = /** @type {(inputs: Order_To_Cash_Not_RecheckedInputs) => LocalizedString} */ () => {
@@ -9184,11 +9454,11 @@ export const order_to_cash_outcome_closed = /** @type {(inputs: Order_To_Cash_Ou
 };
 
 export const order_to_cash_outcome_open_revision = /** @type {(inputs: Order_To_Cash_Outcome_Open_RevisionInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Open — revision to follow`)
+	return /** @type {LocalizedString} */ (`Open, revision to follow`)
 };
 
 export const order_to_cash_outcome_with_reason = /** @type {(inputs: Order_To_Cash_Outcome_With_ReasonInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.outcome} — ${i?.reason}`)
+	return /** @type {LocalizedString} */ (`${i?.outcome}: ${i?.reason}`)
 };
 
 export const order_to_cash_pair = /** @type {(inputs: Order_To_Cash_PairInputs) => LocalizedString} */ (i) => {
@@ -9196,7 +9466,7 @@ export const order_to_cash_pair = /** @type {(inputs: Order_To_Cash_PairInputs) 
 };
 
 export const order_to_cash_partial_award_note = /** @type {(inputs: Order_To_Cash_Partial_Award_NoteInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Quoted lines the customer didn't order: they stay open for a revision or close with a reason — a partly awarded case never shows as complete.`)
+	return /** @type {LocalizedString} */ (`Quoted lines the customer didn't order stay open for a revision or close with a reason. A partly awarded case never shows as complete.`)
 };
 
 export const order_to_cash_plan_note = /** @type {(inputs: Order_To_Cash_Plan_NoteInputs) => LocalizedString} */ () => {
@@ -9216,7 +9486,7 @@ export const order_to_cash_po_arrived_text = /** @type {(inputs: Order_To_Cash_P
 };
 
 export const order_to_cash_po_checked_validated = /** @type {(inputs: Order_To_Cash_Po_Checked_ValidatedInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`The customer's PO was checked against the approved quotation and validated — the sales order is confirmed.`)
+	return /** @type {LocalizedString} */ (`The customer's PO was checked against the approved quotation and validated. The sales order is confirmed.`)
 };
 
 export const order_to_cash_po_empty_confirmed = /** @type {(inputs: Order_To_Cash_Po_Empty_ConfirmedInputs) => LocalizedString} */ () => {
@@ -9244,11 +9514,11 @@ export const order_to_cash_po_validated = /** @type {(inputs: Order_To_Cash_Po_V
 };
 
 export const order_to_cash_po_validated_agreed = /** @type {(inputs: Order_To_Cash_Po_Validated_AgreedInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`PO validated — every mismatch has written customer agreement.`)
+	return /** @type {LocalizedString} */ (`PO validated. Every mismatch has written customer agreement.`)
 };
 
 export const order_to_cash_po_validated_confirmed = /** @type {(inputs: Order_To_Cash_Po_Validated_ConfirmedInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`PO validated — sales order confirmed. Supplier POs follow below.`)
+	return /** @type {LocalizedString} */ (`PO validated and sales order confirmed. Supplier POs follow below.`)
 };
 
 export const order_to_cash_po_vs_quotation = /** @type {(inputs: Order_To_Cash_Po_Vs_QuotationInputs) => LocalizedString} */ (i) => {
@@ -9332,7 +9602,7 @@ export const order_to_cash_receipt = /** @type {(inputs: Order_To_Cash_ReceiptIn
 };
 
 export const order_to_cash_receipt_pending = /** @type {(inputs: Order_To_Cash_Receipt_PendingInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Confirmed receipt pending — signed delivery note required`)
+	return /** @type {LocalizedString} */ (`Confirmed receipt pending: signed delivery note required`)
 };
 
 export const order_to_cash_recheck_confirm = /** @type {(inputs: Order_To_Cash_Recheck_ConfirmInputs) => LocalizedString} */ () => {
@@ -9356,7 +9626,7 @@ export const order_to_cash_record_amendment = /** @type {(inputs: Order_To_Cash_
 };
 
 export const order_to_cash_replan_heading = /** @type {(inputs: Order_To_Cash_Replan_HeadingInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Re-planned after the agent's ETA change — escalated to ${i?.owner} and Karim Balbaa`)
+	return /** @type {LocalizedString} */ (`Re-planned after the agent's ETA change. Escalated to ${i?.owner} and Karim Balbaa`)
 };
 
 export const order_to_cash_replan_text = /** @type {(inputs: Order_To_Cash_Replan_TextInputs) => LocalizedString} */ (i) => {
@@ -9400,7 +9670,7 @@ export const order_to_cash_sample_re = /** @type {(inputs: Order_To_Cash_Sample_
 };
 
 export const order_to_cash_sample_received = /** @type {(inputs: Order_To_Cash_Sample_ReceivedInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`Received on board — ${i?.signedBy}`)
+	return /** @type {LocalizedString} */ (`Received on board: ${i?.signedBy}`)
 };
 
 export const order_to_cash_sample_scan = /** @type {(inputs: Order_To_Cash_Sample_ScanInputs) => LocalizedString} */ () => {
@@ -9424,7 +9694,7 @@ export const order_to_cash_shortages = /** @type {(inputs: Order_To_Cash_Shortag
 };
 
 export const order_to_cash_shortages_hint = /** @type {(inputs: Order_To_Cash_Shortages_HintInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Optional — becomes a claim`)
+	return /** @type {LocalizedString} */ (`Optional. Becomes a claim`)
 };
 
 export const order_to_cash_shortages_label = /** @type {(inputs: Order_To_Cash_Shortages_LabelInputs) => LocalizedString} */ () => {
@@ -9432,7 +9702,7 @@ export const order_to_cash_shortages_label = /** @type {(inputs: Order_To_Cash_S
 };
 
 export const order_to_cash_shortfall_backorder = /** @type {(inputs: Order_To_Cash_Shortfall_BackorderInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.changes} — the shortfall is scheduled as a backorder (the customer promise stays as agreed).`)
+	return /** @type {LocalizedString} */ (`${i?.changes}. The shortfall is scheduled as a backorder (the customer promise stays as agreed).`)
 };
 
 export const order_to_cash_signed_by_at = /** @type {(inputs: Order_To_Cash_Signed_By_AtInputs) => LocalizedString} */ (i) => {
@@ -11184,7 +11454,7 @@ export const page_quote_decision = /** @type {(inputs: Page_Quote_DecisionInputs
 };
 
 export const page_quote_internal = /** @type {(inputs: Page_Quote_InternalInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Internal — never printed`)
+	return /** @type {LocalizedString} */ (`Internal, never printed`)
 };
 
 export const page_quote_no_portal = /** @type {(inputs: Page_Quote_No_PortalInputs) => LocalizedString} */ () => {
@@ -11871,6 +12141,10 @@ export const profit_col_rate = /** @type {(inputs: Profit_Col_RateInputs) => Loc
 	return /** @type {LocalizedString} */ (`Rate`)
 };
 
+export const profit_col_realised = /** @type {(inputs: Profit_Col_RealisedInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Realised`)
+};
+
 export const profit_col_receipt = /** @type {(inputs: Profit_Col_ReceiptInputs) => LocalizedString} */ () => {
 	return /** @type {LocalizedString} */ (`Receipt`)
 };
@@ -12015,6 +12289,10 @@ export const project_col_checked = /** @type {(inputs: Project_Col_CheckedInputs
 	return /** @type {LocalizedString} */ (`Checked live`)
 };
 
+export const project_col_open = /** @type {(inputs: Project_Col_OpenInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Open`)
+};
+
 export const project_col_requirement = /** @type {(inputs: Project_Col_RequirementInputs) => LocalizedString} */ () => {
 	return /** @type {LocalizedString} */ (`From your brief`)
 };
@@ -12108,7 +12386,7 @@ export const roles_failing = /** @type {(inputs: Roles_FailingInputs) => Localiz
 };
 
 export const roles_in_hours_text = /** @type {(inputs: Roles_In_Hours_TextInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.reason} Office hours — the case owner picks it up; no alert needed.`)
+	return /** @type {LocalizedString} */ (`${i?.reason} Office hours: the case owner picks it up; no alert needed.`)
 };
 
 export const roles_office_hours = /** @type {(inputs: Roles_Office_HoursInputs) => LocalizedString} */ () => {
@@ -12120,19 +12398,19 @@ export const roles_open_pricing = /** @type {(inputs: Roles_Open_PricingInputs) 
 };
 
 export const roles_preset_friday = /** @type {(inputs: Roles_Preset_FridayInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Fri 20 Nov 10:00 — weekend`)
+	return /** @type {LocalizedString} */ (`Fri 20 Nov 10:00, weekend`)
 };
 
 export const roles_preset_office = /** @type {(inputs: Roles_Preset_OfficeInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Tue 17 Nov 11:30 — office hours`)
+	return /** @type {LocalizedString} */ (`Tue 17 Nov 11:30, office hours`)
 };
 
 export const roles_preset_saturday = /** @type {(inputs: Roles_Preset_SaturdayInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Sat 21 Nov 14:00 — weekend`)
+	return /** @type {LocalizedString} */ (`Sat 21 Nov 14:00, weekend`)
 };
 
 export const roles_preset_sunday = /** @type {(inputs: Roles_Preset_SundayInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Sun 22 Nov 06:30 — before office`)
+	return /** @type {LocalizedString} */ (`Sun 22 Nov 06:30, before office`)
 };
 
 export const roles_preset_tonight = /** @type {(inputs: Roles_Preset_TonightInputs) => LocalizedString} */ () => {
@@ -12164,7 +12442,7 @@ export const roles_step_senior = /** @type {(inputs: Roles_Step_SeniorInputs) =>
 };
 
 export const roles_try_it = /** @type {(inputs: Roles_Try_ItInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Try it: switch the signed-in user to Soaad Amer (Sales) and open the pricing tab of GS-RFQ-0142 — costs and margins are gone.`)
+	return /** @type {LocalizedString} */ (`Try it: switch the signed-in user to Soaad Amer (Sales) and open the pricing tab of GS-RFQ-0142. Costs and margins are gone.`)
 };
 
 export const roles_verified = /** @type {(inputs: Roles_VerifiedInputs) => LocalizedString} */ () => {
@@ -12304,7 +12582,7 @@ export const sourcing_draft_rfqs_prompt = /** @type {(inputs: Sourcing_Draft_Rfq
 };
 
 export const sourcing_drafts_discarded = /** @type {(inputs: Sourcing_Drafts_DiscardedInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`Drafts discarded — nothing was sent`)
+	return /** @type {LocalizedString} */ (`Drafts discarded. Nothing was sent`)
 };
 
 export const sourcing_full = /** @type {(inputs: Sourcing_FullInputs) => LocalizedString} */ () => {
@@ -12433,18 +12711,18 @@ export const sourcing_send_n = /** @type {(inputs: Sourcing_Send_NInputs) => Loc
 
 export const sourcing_send_text = /** @type {(inputs: Sourcing_Send_TextInputs) => LocalizedString} */ (i) => {
 	const nPlural = __paraglideRegistry.plural("en", i?.n, {}, true);
-	if (nPlural === "one") return /** @type {LocalizedString} */ (`${i?.count} RFQ to ${i?.suppliers} — reply by ${i?.due}.
+	if (nPlural === "one") return /** @type {LocalizedString} */ (`${i?.count} RFQ to ${i?.suppliers}: reply by ${i?.due}.
 
 The client's name, vessel and files are removed. Reminders go out after 24 h and 48 h, stop as soon as a supplier answers, and the case owner is alerted after the second.`);
-	return /** @type {LocalizedString} */ (`${i?.count} RFQs to ${i?.suppliers} — reply by ${i?.due}.
+	return /** @type {LocalizedString} */ (`${i?.count} RFQs to ${i?.suppliers}: reply by ${i?.due}.
 
 The client's name, vessel and files are removed. Reminders go out after 24 h and 48 h, stop as soon as a supplier answers, and the case owner is alerted after the second.`)
 };
 
 export const sourcing_sent = /** @type {(inputs: Sourcing_SentInputs) => LocalizedString} */ (i) => {
 	const nPlural = __paraglideRegistry.plural("en", i?.n, {}, true);
-	if (nPlural === "one") return /** @type {LocalizedString} */ (`${i?.count} supplier RFQ sent — replies will be matched automatically`);
-	return /** @type {LocalizedString} */ (`${i?.count} supplier RFQs sent — replies will be matched automatically`)
+	if (nPlural === "one") return /** @type {LocalizedString} */ (`${i?.count} supplier RFQ sent. Replies will be matched automatically`);
+	return /** @type {LocalizedString} */ (`${i?.count} supplier RFQs sent. Replies will be matched automatically`)
 };
 
 export const sourcing_skipped = /** @type {(inputs: Sourcing_SkippedInputs) => LocalizedString} */ (i) => {
@@ -12473,6 +12751,762 @@ export const sourcing_system_chooses = /** @type {(inputs: Sourcing_System_Choos
 
 export const sourcing_vessel_removed = /** @type {(inputs: Sourcing_Vessel_RemovedInputs) => LocalizedString} */ () => {
 	return /** @type {LocalizedString} */ (`Vessel removed`)
+};
+
+export const tour_close_1_body = /** @type {(inputs: Tour_Close_1_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`The profit promised at quotation against the real result: the launch cost more than estimated once it was billed.`)
+};
+
+export const tour_close_1_target = /** @type {(inputs: Tour_Close_1_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Expected vs actual`)
+};
+
+export const tour_close_1_title = /** @type {(inputs: Tour_Close_1_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Estimates become actuals`)
+};
+
+export const tour_close_2_body = /** @type {(inputs: Tour_Close_2_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`USD 10,000 arrived at 48.80 against the quoted 48.60 — a gain of EGP 2,000, on the case where it happened.`)
+};
+
+export const tour_close_2_target = /** @type {(inputs: Tour_Close_2_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`FX differences`)
+};
+
+export const tour_close_2_title = /** @type {(inputs: Tour_Close_2_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`FX is real money`)
+};
+
+export const tour_close_3_body = /** @type {(inputs: Tour_Close_3_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Two helmets cracked in transit; the supplier's credit note settles the claim.`)
+};
+
+export const tour_close_3_target = /** @type {(inputs: Tour_Close_3_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Claims`)
+};
+
+export const tour_close_3_title = /** @type {(inputs: Tour_Close_3_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Claims settle against credit notes`)
+};
+
+export const tour_close_4_body = /** @type {(inputs: Tour_Close_4_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Bills matched, deliveries signed, invoices accepted by the tax authority and paid, claims settled — then the case can close.`)
+};
+
+export const tour_close_4_target = /** @type {(inputs: Tour_Close_4_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Close checklist`)
+};
+
+export const tour_close_4_title = /** @type {(inputs: Tour_Close_4_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Only green closes`)
+};
+
+export const tour_close_summary = /** @type {(inputs: Tour_Close_SummaryInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Estimates become actuals, FX and claims are accounted for, and only green checks close the case.`)
+};
+
+export const tour_close_title = /** @type {(inputs: Tour_Close_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Settle and close a case`)
+};
+
+export const tour_control_room_1_body = /** @type {(inputs: Tour_Control_Room_1_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Written at 07:00 from live records, with links to its sources.`)
+};
+
+export const tour_control_room_1_target = /** @type {(inputs: Tour_Control_Room_1_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`daily AI briefing`)
+};
+
+export const tour_control_room_1_title = /** @type {(inputs: Tour_Control_Room_1_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Briefed before coffee`)
+};
+
+export const tour_control_room_2_body = /** @type {(inputs: Tour_Control_Room_2_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Questions are answered from the live data, and every answer cites the records it used.`)
+};
+
+export const tour_control_room_2_click = /** @type {(inputs: Tour_Control_Room_2_ClickInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Who owes us money?`)
+};
+
+export const tour_control_room_2_target = /** @type {(inputs: Tour_Control_Room_2_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Ask Golden Sea`)
+};
+
+export const tour_control_room_2_title = /** @type {(inputs: Tour_Control_Room_2_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Ask anything`)
+};
+
+export const tour_control_room_3_body = /** @type {(inputs: Tour_Control_Room_3_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Margin by store against the 15% minimum, plus pipeline, speed, cash and supplier performance.`)
+};
+
+export const tour_control_room_3_target = /** @type {(inputs: Tour_Control_Room_3_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Margin by store`)
+};
+
+export const tour_control_room_3_title = /** @type {(inputs: Tour_Control_Room_3_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Policy in the numbers`)
+};
+
+export const tour_control_room_4_body = /** @type {(inputs: Tour_Control_Room_4_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Signed in as Soaad Amer, the same assistant declines questions about costs and margins.`)
+};
+
+export const tour_control_room_4_target = /** @type {(inputs: Tour_Control_Room_4_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Ask Golden Sea`)
+};
+
+export const tour_control_room_4_title = /** @type {(inputs: Tour_Control_Room_4_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Sales never sees margins`)
+};
+
+export const tour_control_room_summary = /** @type {(inputs: Tour_Control_Room_SummaryInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`The CEO's control room and Ask Golden Sea — and what Sales is never told.`)
+};
+
+export const tour_control_room_title = /** @type {(inputs: Tour_Control_Room_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`The business, live — briefed at 07:00`)
+};
+
+export const tour_delivery_to_cash_1_body = /** @type {(inputs: Tour_Delivery_To_Cash_1_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Port, ETA, agent, truck, boarding staff and launch in one plan. When the agent moves the ETA, drop 2 is re-planned and the owner is alerted.`)
+};
+
+export const tour_delivery_to_cash_1_target = /** @type {(inputs: Tour_Delivery_To_Cash_1_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Vessel delivery plan`)
+};
+
+export const tour_delivery_to_cash_1_title = /** @type {(inputs: Tour_Delivery_To_Cash_1_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`The vessel moves, the plan follows`)
+};
+
+export const tour_delivery_to_cash_2_body = /** @type {(inputs: Tour_Delivery_To_Cash_2_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Two drops for one order. A drop counts as delivered only with the signed delivery note from the vessel.`)
+};
+
+export const tour_delivery_to_cash_2_target = /** @type {(inputs: Tour_Delivery_To_Cash_2_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Drops & proof of delivery`)
+};
+
+export const tour_delivery_to_cash_2_title = /** @type {(inputs: Tour_Delivery_To_Cash_2_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`No evidence, no "Delivered"`)
+};
+
+export const tour_delivery_to_cash_3_body = /** @type {(inputs: Tour_Delivery_To_Cash_3_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Only delivered quantities are invoiced, each invoice goes to the Egyptian tax authority, and rejections or outages get a safe retry.`)
+};
+
+export const tour_delivery_to_cash_3_target = /** @type {(inputs: Tour_Delivery_To_Cash_3_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Customer invoices & payments`)
+};
+
+export const tour_delivery_to_cash_3_title = /** @type {(inputs: Tour_Delivery_To_Cash_3_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Invoice what was delivered, then e-invoice`)
+};
+
+export const tour_delivery_to_cash_4_body = /** @type {(inputs: Tour_Delivery_To_Cash_4_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Receivables and payables side by side. Supplier payments wait for the Financial Director or the CEO.`)
+};
+
+export const tour_delivery_to_cash_4_target = /** @type {(inputs: Tour_Delivery_To_Cash_4_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Payments needing approval`)
+};
+
+export const tour_delivery_to_cash_4_title = /** @type {(inputs: Tour_Delivery_To_Cash_4_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`A person approves, finance pays`)
+};
+
+export const tour_delivery_to_cash_5_body = /** @type {(inputs: Tour_Delivery_To_Cash_5_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`A supplier's new bank account needs a call-back on the number on file and two approvers — Finance and the CEO.`)
+};
+
+export const tour_delivery_to_cash_5_target = /** @type {(inputs: Tour_Delivery_To_Cash_5_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`requested change`)
+};
+
+export const tour_delivery_to_cash_5_title = /** @type {(inputs: Tour_Delivery_To_Cash_5_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Two different people, always`)
+};
+
+export const tour_delivery_to_cash_summary = /** @type {(inputs: Tour_Delivery_To_Cash_SummaryInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`An ETA change re-plans the delivery, proof of delivery unlocks the invoice, finance collects and pays.`)
+};
+
+export const tour_delivery_to_cash_title = /** @type {(inputs: Tour_Delivery_To_Cash_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`From the quay to the bank`)
+};
+
+export const tour_exceptions_1_body = /** @type {(inputs: Tour_Exceptions_1_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`An expired Outlook token and an unreachable e-invoice signing service sit in a queue with an owner — not in a log nobody reads.`)
+};
+
+export const tour_exceptions_1_target = /** @type {(inputs: Tour_Exceptions_1_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Exception queue`)
+};
+
+export const tour_exceptions_1_title = /** @type {(inputs: Tour_Exceptions_1_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Failures are visible`)
+};
+
+export const tour_exceptions_2_body = /** @type {(inputs: Tour_Exceptions_2_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Uncertain AI results are never applied automatically; someone reviews them here.`)
+};
+
+export const tour_exceptions_2_target = /** @type {(inputs: Tour_Exceptions_2_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`AI review queue`)
+};
+
+export const tour_exceptions_2_title = /** @type {(inputs: Tour_Exceptions_2_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Low confidence waits for a person`)
+};
+
+export const tour_exceptions_3_body = /** @type {(inputs: Tour_Exceptions_3_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Trigger, owner, due time, approval, retry behaviour and stop condition for each rule — switched on and off by management, and logged.`)
+};
+
+export const tour_exceptions_3_target = /** @type {(inputs: Tour_Exceptions_3_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Rule registry`)
+};
+
+export const tour_exceptions_3_title = /** @type {(inputs: Tour_Exceptions_3_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Every automation is explicit`)
+};
+
+export const tour_exceptions_4_body = /** @type {(inputs: Tour_Exceptions_4_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Outside Sunday–Thursday office hours, urgent RFQs go to the on-duty person, with a backup if nobody answers.`)
+};
+
+export const tour_exceptions_4_target = /** @type {(inputs: Tour_Exceptions_4_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`After-hours routing`)
+};
+
+export const tour_exceptions_4_title = /** @type {(inputs: Tour_Exceptions_4_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Urgent RFQs after hours`)
+};
+
+export const tour_exceptions_summary = /** @type {(inputs: Tour_Exceptions_SummaryInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`A failed mailbox and a low-confidence AI result, handled safely; urgent RFQs reach the on-duty person.`)
+};
+
+export const tour_exceptions_title = /** @type {(inputs: Tour_Exceptions_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Nothing fails silently`)
+};
+
+export const tour_growth_1_body = /** @type {(inputs: Tour_Growth_1_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Ship managers from first introduction to active account; stalled prospects are flagged.`)
+};
+
+export const tour_growth_1_target = /** @type {(inputs: Tour_Growth_1_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Growth funnel`)
+};
+
+export const tour_growth_1_title = /** @type {(inputs: Tour_Growth_1_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`A pipeline beyond RFQs`)
+};
+
+export const tour_growth_2_body = /** @type {(inputs: Tour_Growth_2_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Each next step has a short script. Recording the outcome plans the next one.`)
+};
+
+export const tour_growth_2_target = /** @type {(inputs: Tour_Growth_2_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Sales next steps`)
+};
+
+export const tour_growth_2_title = /** @type {(inputs: Tour_Growth_2_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Know what to say`)
+};
+
+export const tour_growth_3_body = /** @type {(inputs: Tour_Growth_3_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Documents and committee dates for getting onto each ship manager's approved-vendor list.`)
+};
+
+export const tour_growth_3_target = /** @type {(inputs: Tour_Growth_3_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Vendor registrations`)
+};
+
+export const tour_growth_3_title = /** @type {(inputs: Tour_Growth_3_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Registrations tracked`)
+};
+
+export const tour_growth_summary = /** @type {(inputs: Tour_Growth_SummaryInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Prospects, fleets and vendor registrations — with what to say on the next call.`)
+};
+
+export const tour_growth_title = /** @type {(inputs: Tour_Growth_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Growing the customer base`)
+};
+
+export const tour_handover_1_body = /** @type {(inputs: Tour_Handover_1_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`From the first email to the last payment, everything happens on one case. GS-RFQ-0142 is comparing offers.`)
+};
+
+export const tour_handover_1_target = /** @type {(inputs: Tour_Handover_1_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Lifecycle`)
+};
+
+export const tour_handover_1_title = /** @type {(inputs: Tour_Handover_1_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`One case, sixteen steps`)
+};
+
+export const tour_handover_2_body = /** @type {(inputs: Tour_Handover_2_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Three of six lines are ready and one is blocked by a clarification — a case only looks done when every line is.`)
+};
+
+export const tour_handover_2_target = /** @type {(inputs: Tour_Handover_2_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Line progress`)
+};
+
+export const tour_handover_2_title = /** @type {(inputs: Tour_Handover_2_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Never complete too early`)
+};
+
+export const tour_handover_3_body = /** @type {(inputs: Tour_Handover_3_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Reassigning asks AI for a handover note — open questions, tasks, the customer's contact rule. A person edits and confirms it.`)
+};
+
+export const tour_handover_3_target = /** @type {(inputs: Tour_Handover_3_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Owner & backup`)
+};
+
+export const tour_handover_3_title = /** @type {(inputs: Tour_Handover_3_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`AI drafts the handover`)
+};
+
+export const tour_handover_4_body = /** @type {(inputs: Tour_Handover_4_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Automatic steps name the rule that fired; human steps name the person. That's the audit trail.`)
+};
+
+export const tour_handover_4_target = /** @type {(inputs: Tour_Handover_4_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Activity timeline`)
+};
+
+export const tour_handover_4_title = /** @type {(inputs: Tour_Handover_4_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Every step logged`)
+};
+
+export const tour_handover_summary = /** @type {(inputs: Tour_Handover_SummaryInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`One case from first email to last payment, and a handover AI drafts for a person to confirm.`)
+};
+
+export const tour_handover_title = /** @type {(inputs: Tour_Handover_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Handover without losing anything`)
+};
+
+export const tour_morning_1_body = /** @type {(inputs: Tour_Morning_1_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`This is Karim Youssef, supply chain. Golden Sea's dashboard is built for the person signed in: his waiting states, his queue, his follow-ups.`)
+};
+
+export const tour_morning_1_title = /** @type {(inputs: Tour_Morning_1_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Every role has its own day`)
+};
+
+export const tour_morning_2_body = /** @type {(inputs: Tour_Morning_2_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Every live case has an owner, a deadline and a next action. Blocked and at-risk cases come first, then the nearest deadline.`)
+};
+
+export const tour_morning_2_target = /** @type {(inputs: Tour_Morning_2_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`My queue`)
+};
+
+export const tour_morning_2_title = /** @type {(inputs: Tour_Morning_2_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`A queue sorted by risk`)
+};
+
+export const tour_morning_3_body = /** @type {(inputs: Tour_Morning_3_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`What changed overnight and what needs him today: deadlines, a PO mismatch, a supplier that hasn't replied, failed integrations.`)
+};
+
+export const tour_morning_3_target = /** @type {(inputs: Tour_Morning_3_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Daily briefing`)
+};
+
+export const tour_morning_3_title = /** @type {(inputs: Tour_Morning_3_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Briefed at 07:00`)
+};
+
+export const tour_morning_4_body = /** @type {(inputs: Tour_Morning_4_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Soaad Amer signs in. Her queue has no values, costs or margins: sales never sees what Golden Sea pays its suppliers.`)
+};
+
+export const tour_morning_4_target = /** @type {(inputs: Tour_Morning_4_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`My queue`)
+};
+
+export const tour_morning_4_title = /** @type {(inputs: Tour_Morning_4_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Sales sees the same cases — without costs`)
+};
+
+export const tour_morning_5_body = /** @type {(inputs: Tour_Morning_5_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Karim Balbaa sees what waits for him first — a margin exception from Soaad, a supplier deposit, an FX rate, and a bank change that already has one of its two approvals.`)
+};
+
+export const tour_morning_5_target = /** @type {(inputs: Tour_Morning_5_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Waiting for your decision`)
+};
+
+export const tour_morning_5_title = /** @type {(inputs: Tour_Morning_5_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`The CEO starts with decisions`)
+};
+
+export const tour_morning_6_body = /** @type {(inputs: Tour_Morning_6_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Mohamed Helmy only sees payments and deposits. He already approved the bank change after a call-back; it now waits for the CEO — two people, always.`)
+};
+
+export const tour_morning_6_target = /** @type {(inputs: Tour_Morning_6_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Waiting for your decision`)
+};
+
+export const tour_morning_6_title = /** @type {(inputs: Tour_Morning_6_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Finance approves payments`)
+};
+
+export const tour_morning_7_body = /** @type {(inputs: Tour_Morning_7_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Notifications, bookmarks and the counters in this panel belong to the person signed in. Back as Karim Youssef — his are about his cases.`)
+};
+
+export const tour_morning_7_target = /** @type {(inputs: Tour_Morning_7_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Notifications`)
+};
+
+export const tour_morning_7_title = /** @type {(inputs: Tour_Morning_7_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Everyone's own notifications`)
+};
+
+export const tour_morning_summary = /** @type {(inputs: Tour_Morning_SummaryInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`The buyer, sales, the CEO and finance start their day — each sees only what needs them.`)
+};
+
+export const tour_morning_title = /** @type {(inputs: Tour_Morning_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`One morning, four people`)
+};
+
+export const tour_po_check_1_body = /** @type {(inputs: Tour_Po_Check_1_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Nordvik's PO is matched to the approved quotation version. An old pack size, an expired v1 price and 15 instead of 10 helmets block the commitment until the customer agrees in writing.`)
+};
+
+export const tour_po_check_1_target = /** @type {(inputs: Tour_Po_Check_1_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Customer PO check`)
+};
+
+export const tour_po_check_1_title = /** @type {(inputs: Tour_Po_Check_1_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`The PO is checked line by line`)
+};
+
+export const tour_po_check_2_body = /** @type {(inputs: Tour_Po_Check_2_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Lines the customer didn't order stay open for a revision or close with a recorded reason.`)
+};
+
+export const tour_po_check_2_target = /** @type {(inputs: Tour_Po_Check_2_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Partial award`)
+};
+
+export const tour_po_check_2_title = /** @type {(inputs: Tour_Po_Check_2_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Partial awards, never silent`)
+};
+
+export const tour_po_check_3_body = /** @type {(inputs: Tour_Po_Check_3_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Once the PO is agreed, supplier POs are prepared — drop-shipped or through the warehouse — and each is re-checked against the latest offer first.`)
+};
+
+export const tour_po_check_3_target = /** @type {(inputs: Tour_Po_Check_3_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Supplier purchase orders`)
+};
+
+export const tour_po_check_3_title = /** @type {(inputs: Tour_Po_Check_3_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Purchase orders per supplier`)
+};
+
+export const tour_po_check_4_body = /** @type {(inputs: Tour_Po_Check_4_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Each supplier bill is matched to its PO and the goods received; a duplicate bill is refused.`)
+};
+
+export const tour_po_check_4_target = /** @type {(inputs: Tour_Po_Check_4_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Supplier bills`)
+};
+
+export const tour_po_check_4_title = /** @type {(inputs: Tour_Po_Check_4_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Three-way match`)
+};
+
+export const tour_po_check_5_body = /** @type {(inputs: Tour_Po_Check_5_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Signed in as the CEO: a flagged price change on a supplier PO is shown before he commits, and deposits wait for a payment approval.`)
+};
+
+export const tour_po_check_5_target = /** @type {(inputs: Tour_Po_Check_5_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Supplier purchase orders`)
+};
+
+export const tour_po_check_5_title = /** @type {(inputs: Tour_Po_Check_5_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Karim Balbaa confirms`)
+};
+
+export const tour_po_check_summary = /** @type {(inputs: Tour_Po_Check_SummaryInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`A customer PO with an old price and the wrong quantity is caught before anything is ordered.`)
+};
+
+export const tour_po_check_title = /** @type {(inputs: Tour_Po_Check_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`The PO doesn't match the quote`)
+};
+
+export const tour_quote_1_body = /** @type {(inputs: Tour_Quote_1_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Every offer is normalised to EGP per base unit. Switch to landed cost and freight to Port Said re-ranks them.`)
+};
+
+export const tour_quote_1_click = /** @type {(inputs: Tour_Quote_1_ClickInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Landed cost`)
+};
+
+export const tour_quote_1_target = /** @type {(inputs: Tour_Quote_1_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`How offers are compared`)
+};
+
+export const tour_quote_1_title = /** @type {(inputs: Tour_Quote_1_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Cheapest isn't always cheapest on board`)
+};
+
+export const tour_quote_2_body = /** @type {(inputs: Tour_Quote_2_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`242 was offered for an exact-part 243 line, so the line is blocked from pricing. v1 is kept for the record; the corrected v2 is used.`)
+};
+
+export const tour_quote_2_target = /** @type {(inputs: Tour_Quote_2_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`L2 · LOCTITE 243`)
+};
+
+export const tour_quote_2_title = /** @type {(inputs: Tour_Quote_2_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`The wrong part is caught`)
+};
+
+export const tour_quote_3_body = /** @type {(inputs: Tour_Quote_3_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Alexandria stock is cheapest per unit but dearest delivered. The proposal splits 10 + 5 across two suppliers, both before the vessel's ETA.`)
+};
+
+export const tour_quote_3_target = /** @type {(inputs: Tour_Quote_3_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`L5 · Safety helmet`)
+};
+
+export const tour_quote_3_title = /** @type {(inputs: Tour_Quote_3_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Own stock and split sourcing`)
+};
+
+export const tour_quote_4_body = /** @type {(inputs: Tour_Quote_4_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Shared charges are spread over the lines; policy is checked on margin, and every line shows cost, charges and profit.`)
+};
+
+export const tour_quote_4_target = /** @type {(inputs: Tour_Quote_4_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Margin = profit ÷ selling price`)
+};
+
+export const tour_quote_4_title = /** @type {(inputs: Tour_Quote_4_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Margin, not markup`)
+};
+
+export const tour_quote_5_body = /** @type {(inputs: Tour_Quote_5_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`The quotation and its exceptions go to Karim Balbaa with one click. AI never prices on its own.`)
+};
+
+export const tour_quote_5_target = /** @type {(inputs: Tour_Quote_5_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Approval`)
+};
+
+export const tour_quote_5_title = /** @type {(inputs: Tour_Quote_5_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`A person approves`)
+};
+
+export const tour_quote_6_body = /** @type {(inputs: Tour_Quote_6_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Karim Balbaa sees what he's deciding and why — the margin, the FX rate, the deposit, and the bank change Mohamed Helmy already approved.`)
+};
+
+export const tour_quote_6_target = /** @type {(inputs: Tour_Quote_6_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Waiting for you`)
+};
+
+export const tour_quote_6_title = /** @type {(inputs: Tour_Quote_6_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Evidence first`)
+};
+
+export const tour_quote_7_body = /** @type {(inputs: Tour_Quote_7_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`The same quotation in Golden Sea's own layout, in English or Arabic, in EGP or USD. Nothing goes to the customer until a person confirms the email.`)
+};
+
+export const tour_quote_7_click = /** @type {(inputs: Tour_Quote_7_ClickInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`العربية`)
+};
+
+export const tour_quote_7_target = /** @type {(inputs: Tour_Quote_7_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Decision state`)
+};
+
+export const tour_quote_7_title = /** @type {(inputs: Tour_Quote_7_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Their layout, their language`)
+};
+
+export const tour_quote_summary = /** @type {(inputs: Tour_Quote_SummaryInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`The buyer compares and prices, the CEO approves, the customer gets Golden Sea's own layout.`)
+};
+
+export const tour_quote_title = /** @type {(inputs: Tour_Quote_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`From offers to an approved quotation`)
+};
+
+export const tour_replies_1_body = /** @type {(inputs: Tour_Replies_1_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Lines are split by category and each supplier sees only its lines — never the customer or the vessel.`)
+};
+
+export const tour_replies_1_target = /** @type {(inputs: Tour_Replies_1_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Each supplier sees only the lines they can quote`)
+};
+
+export const tour_replies_1_title = /** @type {(inputs: Tour_Replies_1_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`The client stays hidden`)
+};
+
+export const tour_replies_2_body = /** @type {(inputs: Tour_Replies_2_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Replies arrive with changed subjects; each is matched to its RFQ by its reference, and reminders stop for that supplier.`)
+};
+
+export const tour_replies_2_click = /** @type {(inputs: Tour_Replies_2_ClickInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Simulate replies`)
+};
+
+export const tour_replies_2_target = /** @type {(inputs: Tour_Replies_2_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Replies arriving`)
+};
+
+export const tour_replies_2_title = /** @type {(inputs: Tour_Replies_2_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Matched by reference`)
+};
+
+export const tour_replies_3_body = /** @type {(inputs: Tour_Replies_3_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`A supplier Golden Sea never bought from replied. It's created automatically, with its price, date and validity.`)
+};
+
+export const tour_replies_3_target = /** @type {(inputs: Tour_Replies_3_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`quoted, never ordered`)
+};
+
+export const tour_replies_3_title = /** @type {(inputs: Tour_Replies_3_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Remembered without an order`)
+};
+
+export const tour_replies_4_body = /** @type {(inputs: Tour_Replies_4_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`An unclear price unit isn't used until someone confirms it.`)
+};
+
+export const tour_replies_4_target = /** @type {(inputs: Tour_Replies_4_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Needs a person`)
+};
+
+export const tour_replies_4_title = /** @type {(inputs: Tour_Replies_4_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`A person confirms the uncertain`)
+};
+
+export const tour_replies_5_body = /** @type {(inputs: Tour_Replies_5_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`The same engine reads the old inboxes into customers, vessels, suppliers and dated prices. Nothing is saved until Karim Balbaa approves.`)
+};
+
+export const tour_replies_5_target = /** @type {(inputs: Tour_Replies_5_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Organise and approve`)
+};
+
+export const tour_replies_5_title = /** @type {(inputs: Tour_Replies_5_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Years of email, organised`)
+};
+
+export const tour_replies_summary = /** @type {(inputs: Tour_Replies_SummaryInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Supplier RFQs go out without the client's name; replies are matched even with new subjects.`)
+};
+
+export const tour_replies_title = /** @type {(inputs: Tour_Replies_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Every reply matched, every price remembered`)
+};
+
+export const tour_rfq_to_case_1_body = /** @type {(inputs: Tour_Rfq_To_Case_1_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Outlook, Gmail, the website quick-quote form and WhatsApp all land in one list — nothing lives in someone's personal mailbox.`)
+};
+
+export const tour_rfq_to_case_1_target = /** @type {(inputs: Tour_Rfq_To_Case_1_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Connected channels`)
+};
+
+export const tour_rfq_to_case_1_title = /** @type {(inputs: Tour_Rfq_To_Case_1_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`One inbox for every channel`)
+};
+
+export const tour_rfq_to_case_2_body = /** @type {(inputs: Tour_Rfq_To_Case_2_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`A new RFQ for MV Aurora Crest arrives with an Excel list, a PDF and a WhatsApp photo. The email and every file stay with the case.`)
+};
+
+export const tour_rfq_to_case_2_click = /** @type {(inputs: Tour_Rfq_To_Case_2_ClickInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Simulate new email`)
+};
+
+export const tour_rfq_to_case_2_target = /** @type {(inputs: Tour_Rfq_To_Case_2_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Original message`)
+};
+
+export const tour_rfq_to_case_2_title = /** @type {(inputs: Tour_Rfq_To_Case_2_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`The original is kept`)
+};
+
+export const tour_rfq_to_case_3_body = /** @type {(inputs: Tour_Rfq_To_Case_3_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Every line gets its IMPA code, quantity, unit and the file it came from, with a confidence. The 62% photo line is flagged for a person.`)
+};
+
+export const tour_rfq_to_case_3_click = /** @type {(inputs: Tour_Rfq_To_Case_3_ClickInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Extract with AI`)
+};
+
+export const tour_rfq_to_case_3_target = /** @type {(inputs: Tour_Rfq_To_Case_3_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Draft lines`)
+};
+
+export const tour_rfq_to_case_3_title = /** @type {(inputs: Tour_Rfq_To_Case_3_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`AI reads, people decide`)
+};
+
+export const tour_rfq_to_case_4_body = /** @type {(inputs: Tour_Rfq_To_Case_4_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Missing details become a drafted clarification to the customer — drafted, not sent.`)
+};
+
+export const tour_rfq_to_case_4_target = /** @type {(inputs: Tour_Rfq_To_Case_4_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Missing or unclear`)
+};
+
+export const tour_rfq_to_case_4_title = /** @type {(inputs: Tour_Rfq_To_Case_4_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Nothing is guessed`)
+};
+
+export const tour_rfq_to_case_5_body = /** @type {(inputs: Tour_Rfq_To_Case_5_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Assignment rules suggest who owns it and who backs them up; the deadline comes from the customer's request.`)
+};
+
+export const tour_rfq_to_case_5_target = /** @type {(inputs: Tour_Rfq_To_Case_5_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Owner, backup and deadline`)
+};
+
+export const tour_rfq_to_case_5_title = /** @type {(inputs: Tour_Rfq_To_Case_5_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Owner, backup, deadline`)
+};
+
+export const tour_rfq_to_case_6_body = /** @type {(inputs: Tour_Rfq_To_Case_6_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Confirming creates the case with its lines, links the email and sends one branded acknowledgement.`)
+};
+
+export const tour_rfq_to_case_6_target = /** @type {(inputs: Tour_Rfq_To_Case_6_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Next step`)
+};
+
+export const tour_rfq_to_case_6_title = /** @type {(inputs: Tour_Rfq_To_Case_6_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`One click to a case`)
+};
+
+export const tour_rfq_to_case_summary = /** @type {(inputs: Tour_Rfq_To_Case_SummaryInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`An RFQ email with Excel, PDF and a photo becomes one clean case — AI reads, a person decides.`)
+};
+
+export const tour_rfq_to_case_title = /** @type {(inputs: Tour_Rfq_To_Case_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Any format in, one case out`)
 };
 
 export const visuals_ack = /** @type {(inputs: Visuals_AckInputs) => LocalizedString} */ () => {

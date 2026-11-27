@@ -93,7 +93,7 @@ export const brief = (d: ProjectView): KindData<"table"> => ({
     { key: "requirement", label: m.project_col_requirement() },
     { key: "phase", label: m.project_phase() },
     { key: "covered", label: m.project_covered() },
-    { key: "open", label: "" },
+    { key: "open", label: m.project_col_open(), hideLabel: true },
   ],
   rows: d.requirements.map(([requirement, phase, href]) => ({
     requirement,
@@ -133,7 +133,7 @@ export const acceptance = (d: ProjectView): KindData<"table"> => {
       { key: "scenario", label: m.project_col_scenario(), supporting: "evidence" },
       { key: "check", label: m.project_col_checked() },
       { key: "status", label: m.project_col_status() },
-      { key: "open", label: "" },
+      { key: "open", label: m.project_col_open(), hideLabel: true },
     ],
     rows: d.acceptance.map((a) => ({
       no: { text: String(a.no), strong: true },

@@ -68,7 +68,7 @@ export const homeHeader = ({
   summary: {
     label: m.home_away_label(),
     context: m.home_away_context(),
-    text: n.docs.map((x) => `${String(x.kind)}: ${String(x.title)} — ${String(x.detail)}`).join("\n"),
+    text: n.docs.map((x) => `${String(x.kind)}: ${String(x.title)}. ${String(x.detail)}`).join("\n"),
   },
   actions: h.actions.map((a) => ({ label: a.label, href: a.href, main: a.primary })),
 });

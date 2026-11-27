@@ -102,7 +102,9 @@ export function layerVariantsCss(css: string): string {
     const layer = layerOf(rule) ?? (isDaisyBase(rule.selector) && insideUtilities(rule) ? "components" : null);
     if (layer) moves.push([rule, layer]);
   });
-  if (!moves.length) return css;
+  if (!moves.length)
+    return `${LAYER_ORDER}
+${css}`;
 
   for (const [rule, layer] of moves) {
     let target = targets.get(layer);

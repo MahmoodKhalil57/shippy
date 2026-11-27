@@ -3,7 +3,8 @@ import { html } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { expect } from "storybook/test";
 import "./share-bar.ts";
-import type { SharePart } from "./share-bar.ts";
+import { auditLayout } from "../../../lib/base/layout.ts";
+import type { SharePart, UiShareBar } from "./share-bar.ts";
 
 const pipeline: SharePart[] = [
   { label: "Won", value: 184000, valueText: "$184k" },
@@ -216,5 +217,26 @@ export const SegmentPointer = meta.story({
     await expect(followed).toEqual(["#online"]);
     await userEvent.unhover(track);
     await expect(canvas.queryByText(/ · /)).toBeNull();
+  },
+});
+
+const words = (n: number) => "$389k across every open stage this quarter ".repeat(3).slice(0, n).trim();
+
+export const LongTotalKeepsTheLabel = meta.story({
+  name: "Long total keeps the label readable",
+  globals: { viewport: { value: "mobile1", isRotated: false } },
+  play: async ({ canvasElement }) => {
+    const el = canvasElement.querySelector<UiShareBar>("ui-share-bar")!;
+    const squeezed: string[] = [];
+    for (let n = 1; n <= 80; n++) {
+      el.total = words(n);
+      await el.updateComplete;
+      squeezed.push(
+        ...auditLayout(canvasElement)
+          .filter((i) => i.kind === "squeezed")
+          .map((i) => `${n}: ${i.detail}`),
+      );
+    }
+    await expect(squeezed).toEqual([]);
   },
 });

@@ -150,6 +150,7 @@ import { getLocale, experimentalStaticLocale, isDevelopment } from "../runtime.j
 /** @typedef {{}} Api_Cash_Approval_Not_FoundInputs */
 /** @typedef {{ supplier: NonNullable<unknown> }} Api_Cash_Approve_Payment_TitleInputs */
 /** @typedef {{}} Api_Cash_Bank_Change_Not_FoundInputs */
+/** @typedef {{ number: NonNullable<unknown> }} Api_Cash_Bill_On_HoldInputs */
 /** @typedef {{ note: NonNullable<unknown> }} Api_Cash_Call_Back_DoneInputs */
 /** @typedef {{}} Api_Cash_Call_Back_FirstInputs */
 /** @typedef {{}} Api_Cash_Cant_DecideInputs */
@@ -164,6 +165,7 @@ import { getLocale, experimentalStaticLocale, isDevelopment } from "../runtime.j
 /** @typedef {{}} Api_Cash_List_SeparatorInputs */
 /** @typedef {{ number: NonNullable<unknown>, customer: NonNullable<unknown>, amount: NonNullable<unknown> }} Api_Cash_Match_ItemInputs */
 /** @typedef {{ count: NonNullable<unknown>, list: NonNullable<unknown> }} Api_Cash_Match_MessageInputs */
+/** @typedef {{ balance: NonNullable<unknown>, number: NonNullable<unknown> }} Api_Cash_More_Than_BalanceInputs */
 /** @typedef {{}} Api_Cash_No_Remittance_MatchInputs */
 /** @typedef {{ number: NonNullable<unknown>, due: NonNullable<unknown> }} Api_Cash_Pay_DetailInputs */
 /** @typedef {{ number: NonNullable<unknown>, bill: NonNullable<unknown>, due: NonNullable<unknown> }} Api_Cash_Pay_Detail_MatchedInputs */
@@ -185,7 +187,6 @@ import { getLocale, experimentalStaticLocale, isDevelopment } from "../runtime.j
 /** @typedef {{}} Api_Commercial_Approval_Not_FoundInputs */
 /** @typedef {{ progress: NonNullable<unknown> }} Api_Commercial_Approval_RecordedInputs */
 /** @typedef {{ number: NonNullable<unknown>, customer: NonNullable<unknown>, total: NonNullable<unknown> }} Api_Commercial_Approval_TitleInputs */
-/** @typedef {{ number: NonNullable<unknown>, customer: NonNullable<unknown>, hasMargin: NonNullable<unknown>, margin: NonNullable<unknown>, min: NonNullable<unknown> }} Api_Commercial_Approval_Title_MarginInputs */
 /** @typedef {{}} Api_Commercial_Approved_DotInputs */
 /** @typedef {{ title: NonNullable<unknown> }} Api_Commercial_Approved_TitleInputs */
 /** @typedef {{}} Api_Commercial_Bank_Applied_Cant_WithdrawInputs */
@@ -197,6 +198,7 @@ import { getLocale, experimentalStaticLocale, isDevelopment } from "../runtime.j
 /** @typedef {{}} Api_Commercial_Check_PoInputs */
 /** @typedef {{}} Api_Commercial_Check_Po_PartialInputs */
 /** @typedef {{}} Api_Commercial_Choose_OfferInputs */
+/** @typedef {{}} Api_Commercial_Closed_ExpiredInputs */
 /** @typedef {{}} Api_Commercial_Closed_LostInputs */
 /** @typedef {{ currency: NonNullable<unknown>, rate: NonNullable<unknown> }} Api_Commercial_Converted_FxInputs */
 /** @typedef {{ version: NonNullable<unknown>, replaces: NonNullable<unknown>, hasWas: NonNullable<unknown>, was: NonNullable<unknown> }} Api_Commercial_Corrected_VersionInputs */
@@ -285,8 +287,9 @@ import { getLocale, experimentalStaticLocale, isDevelopment } from "../runtime.j
 /** @typedef {{ number: NonNullable<unknown>, status: NonNullable<unknown> }} Api_Commercial_Quoted_With_SelectionInputs */
 /** @typedef {{}} Api_Commercial_Rejected_TechnicalInputs */
 /** @typedef {{ hours: NonNullable<unknown> }} Api_Commercial_Replies_InInputs */
-/** @typedef {{ name: NonNullable<unknown>, number: NonNullable<unknown>, type: NonNullable<unknown> }} Api_Commercial_Requested_ActivityInputs */
+/** @typedef {{ name: NonNullable<unknown>, number: NonNullable<unknown> }} Api_Commercial_Requested_ActivityInputs */
 /** @typedef {{ title: NonNullable<unknown> }} Api_Commercial_Returned_TitleInputs */
+/** @typedef {{ number: NonNullable<unknown> }} Api_Commercial_Revise_For_CustomerInputs */
 /** @typedef {{ number: NonNullable<unknown>, status: NonNullable<unknown> }} Api_Commercial_Revise_LatestInputs */
 /** @typedef {{ name: NonNullable<unknown>, reason: NonNullable<unknown> }} Api_Commercial_Revise_PricingInputs */
 /** @typedef {{ next: NonNullable<unknown>, from: NonNullable<unknown> }} Api_Commercial_Revised_ActivityInputs */
@@ -297,6 +300,7 @@ import { getLocale, experimentalStaticLocale, isDevelopment } from "../runtime.j
 /** @typedef {{ line: NonNullable<unknown>, names: NonNullable<unknown>, hasReason: NonNullable<unknown>, reason: NonNullable<unknown> }} Api_Commercial_Selected_ActivityInputs */
 /** @typedef {{ line: NonNullable<unknown> }} Api_Commercial_Selected_AgainInputs */
 /** @typedef {{ total: NonNullable<unknown>, qty: NonNullable<unknown>, unit: NonNullable<unknown> }} Api_Commercial_Selected_OfInputs */
+/** @typedef {{ number: NonNullable<unknown> }} Api_Commercial_Send_For_ApprovalInputs */
 /** @typedef {{ number: NonNullable<unknown> }} Api_Commercial_Send_To_CustomerInputs */
 /** @typedef {{}} Api_Commercial_Sent_Awaiting_CorrectedInputs */
 /** @typedef {{ left: NonNullable<unknown>, need: NonNullable<unknown> }} Api_Commercial_Shelf_LifeInputs */
@@ -478,6 +482,7 @@ import { getLocale, experimentalStaticLocale, isDevelopment } from "../runtime.j
 /** @typedef {{ n: NonNullable<unknown> }} Api_Home_Integration_ExceptionsInputs */
 /** @typedef {{ customer: NonNullable<unknown>, amount: NonNullable<unknown>, day: NonNullable<unknown> }} Api_Home_Invoice_DueInputs */
 /** @typedef {{ customer: NonNullable<unknown> }} Api_Home_Invoice_Due_ShortInputs */
+/** @typedef {{ customer: NonNullable<unknown>, amount: NonNullable<unknown>, day: NonNullable<unknown> }} Api_Home_Invoice_OverdueInputs */
 /** @typedef {{ number: NonNullable<unknown>, status: NonNullable<unknown> }} Api_Home_Invoice_SubInputs */
 /** @typedef {{ number: NonNullable<unknown>, status: NonNullable<unknown>, paid: NonNullable<unknown> }} Api_Home_Invoice_Sub_PaidInputs */
 /** @typedef {{}} Api_Home_InvoicesInputs */
@@ -555,7 +560,9 @@ import { getLocale, experimentalStaticLocale, isDevelopment } from "../runtime.j
 /** @typedef {{ days: NonNullable<unknown> }} Api_Insights_Shared_In_DaysInputs */
 /** @typedef {{}} Api_Insights_Shared_Not_AllowedInputs */
 /** @typedef {{ time: NonNullable<unknown> }} Api_Insights_Shared_Overdue_SinceInputs */
+/** @typedef {{}} Api_Insights_Shared_TodayInputs */
 /** @typedef {{ time: NonNullable<unknown> }} Api_Insights_Shared_Today_AtInputs */
+/** @typedef {{}} Api_Insights_Shared_TomorrowInputs */
 /** @typedef {{ time: NonNullable<unknown> }} Api_Insights_Shared_Tomorrow_AtInputs */
 /** @typedef {{}} Api_Operations_Already_AcceptedInputs */
 /** @typedef {{ number: NonNullable<unknown>, line: NonNullable<unknown>, field: NonNullable<unknown>, resolution: NonNullable<unknown> }} Api_Operations_Amend_ActivityInputs */
@@ -577,6 +584,7 @@ import { getLocale, experimentalStaticLocale, isDevelopment } from "../runtime.j
 /** @typedef {{ number: NonNullable<unknown>, signedBy: NonNullable<unknown> }} Api_Operations_Delivered_ActivityInputs */
 /** @typedef {{}} Api_Operations_Delivery_Not_FoundInputs */
 /** @typedef {{}} Api_Operations_Describe_AgreementInputs */
+/** @typedef {{ done: NonNullable<unknown>, total: NonNullable<unknown>, number: NonNullable<unknown> }} Api_Operations_Drop_DeliveredInputs */
 /** @typedef {{ number: NonNullable<unknown> }} Api_Operations_Einvoice_SubmittedInputs */
 /** @typedef {{ number: NonNullable<unknown>, uuid: NonNullable<unknown> }} Api_Operations_Einvoice_Submitted_ActivityInputs */
 /** @typedef {{ number: NonNullable<unknown> }} Api_Operations_Einvoice_ValidInputs */
@@ -597,6 +605,7 @@ import { getLocale, experimentalStaticLocale, isDevelopment } from "../runtime.j
 /** @typedef {{}} Api_Operations_Launch_BoatInputs */
 /** @typedef {{ launch: NonNullable<unknown>, at: NonNullable<unknown> }} Api_Operations_Launch_RebookedInputs */
 /** @typedef {{ n: NonNullable<unknown> }} Api_Operations_LineInputs */
+/** @typedef {{ line: NonNullable<unknown> }} Api_Operations_Line_On_PoInputs */
 /** @typedef {{}} Api_Operations_No_ChangesInputs */
 /** @typedef {{}} Api_Operations_No_Customer_PoInputs */
 /** @typedef {{}} Api_Operations_No_Customer_Po_YetInputs */
@@ -611,6 +620,7 @@ import { getLocale, experimentalStaticLocale, isDevelopment } from "../runtime.j
 /** @typedef {{ number: NonNullable<unknown>, caseId: NonNullable<unknown>, open: NonNullable<unknown> }} Api_Operations_Po_Read_ActivityInputs */
 /** @typedef {{ number: NonNullable<unknown>, changes: NonNullable<unknown> }} Api_Operations_Recheck_ActivityInputs */
 /** @typedef {{}} Api_Operations_Recheck_AvailabilityInputs */
+/** @typedef {{}} Api_Operations_Recheck_FirstInputs */
 /** @typedef {{}} Api_Operations_Recheck_PriceInputs */
 /** @typedef {{}} Api_Operations_Recheck_Then_ApproveInputs */
 /** @typedef {{ number: NonNullable<unknown>, hours: NonNullable<unknown> }} Api_Operations_Reconfirm_TaskInputs */
@@ -683,6 +693,7 @@ import { getLocale, experimentalStaticLocale, isDevelopment } from "../runtime.j
 /** @typedef {{}} Api_Platform_Management_RulesInputs */
 /** @typedef {{}} Api_Platform_My_Language_ArInputs */
 /** @typedef {{}} Api_Platform_My_Language_EnInputs */
+/** @typedef {{}} Api_Platform_Needs_A_PersonInputs */
 /** @typedef {{}} Api_Platform_No_Shift_ReasonInputs */
 /** @typedef {{}} Api_Platform_Not_Yet_ShownInputs */
 /** @typedef {{}} Api_Platform_Note_RequiredInputs */
@@ -812,6 +823,7 @@ import { getLocale, experimentalStaticLocale, isDevelopment } from "../runtime.j
 /** @typedef {{ channel: NonNullable<unknown>, subject: NonNullable<unknown>, count: NonNullable<unknown>, who: NonNullable<unknown> }} Api_Sourcing_Created_ActivityInputs */
 /** @typedef {{ ref: NonNullable<unknown>, caseId: NonNullable<unknown> }} Api_Sourcing_Customer_Ref_IsInputs */
 /** @typedef {{}} Api_Sourcing_Declined_EventInputs */
+/** @typedef {{}} Api_Sourcing_Desk_OnlyInputs */
 /** @typedef {{}} Api_Sourcing_Draft_GoneInputs */
 /** @typedef {{ count: NonNullable<unknown> }} Api_Sourcing_Drafts_BackInputs */
 /** @typedef {{}} Api_Sourcing_Drafts_ChangedInputs */
@@ -888,10 +900,10 @@ import { getLocale, experimentalStaticLocale, isDevelopment } from "../runtime.j
 /** @typedef {{}} Api_Sourcing_Rfq_Please_StateInputs */
 /** @typedef {{ reference: NonNullable<unknown>, due: NonNullable<unknown> }} Api_Sourcing_Rfq_SubjectInputs */
 /** @typedef {{}} Api_Sourcing_Rfq_To_PortInputs */
+/** @typedef {{ name: NonNullable<unknown>, reference: NonNullable<unknown>, invited: NonNullable<unknown> }} Api_Sourcing_Sender_DiffersInputs */
 /** @typedef {{ domain: NonNullable<unknown>, name: NonNullable<unknown> }} Api_Sourcing_Sender_DomainInputs */
 /** @typedef {{ sender: NonNullable<unknown> }} Api_Sourcing_Sender_UnknownInputs */
 /** @typedef {{ count: NonNullable<unknown>, who: NonNullable<unknown>, mode: NonNullable<unknown>, references: NonNullable<unknown> }} Api_Sourcing_Sent_ActivityInputs */
-/** @typedef {{ name: NonNullable<unknown> }} Api_Sourcing_Sent_By_OtherInputs */
 /** @typedef {{}} Api_Sourcing_Sent_EventInputs */
 /** @typedef {{ reference: NonNullable<unknown>, name: NonNullable<unknown>, after: NonNullable<unknown> }} Api_Sourcing_Silent_ActivityInputs */
 /** @typedef {{ after: NonNullable<unknown>, caseId: NonNullable<unknown>, due: NonNullable<unknown> }} Api_Sourcing_Silent_DetailInputs */
@@ -1052,6 +1064,7 @@ import { getLocale, experimentalStaticLocale, isDevelopment } from "../runtime.j
 /** @typedef {{}} Commercial_Col_Line_SupplierInputs */
 /** @typedef {{}} Commercial_Col_Margin_PctInputs */
 /** @typedef {{}} Commercial_Col_MarkupInputs */
+/** @typedef {{}} Commercial_Col_MatchInputs */
 /** @typedef {{}} Commercial_Col_OfferedInputs */
 /** @typedef {{}} Commercial_Col_Plus_SharedInputs */
 /** @typedef {{}} Commercial_Col_PortalInputs */
@@ -1307,6 +1320,7 @@ import { getLocale, experimentalStaticLocale, isDevelopment } from "../runtime.j
 /** @typedef {{}} Control_Room_SummariseInputs */
 /** @typedef {{}} Growth_Column_ImoInputs */
 /** @typedef {{}} Growth_Column_ManagerInputs */
+/** @typedef {{}} Growth_Column_SuppliedInputs */
 /** @typedef {{}} Growth_Column_TypeInputs */
 /** @typedef {{}} Growth_Column_VesselInputs */
 /** @typedef {{}} Growth_Extract_CompanyInputs */
@@ -1372,7 +1386,7 @@ import { getLocale, experimentalStaticLocale, isDevelopment } from "../runtime.j
 /** @typedef {{ name: NonNullable<unknown>, email: NonNullable<unknown> }} Inbox_FromInputs */
 /** @typedef {{}} Inbox_History_Approval_ReadyInputs */
 /** @typedef {{}} Inbox_History_Approval_TextInputs */
-/** @typedef {{ blocked: NonNullable<unknown> }} Inbox_History_Approval_WaitingInputs */
+/** @typedef {{ approvers: NonNullable<unknown>, blocked: NonNullable<unknown> }} Inbox_History_Approval_WaitingInputs */
 /** @typedef {{}} Inbox_History_ApproveInputs */
 /** @typedef {{}} Inbox_History_Approve_DoneInputs */
 /** @typedef {{ by: NonNullable<unknown> }} Inbox_History_Approved_ByInputs */
@@ -1410,6 +1424,7 @@ import { getLocale, experimentalStaticLocale, isDevelopment } from "../runtime.j
 /** @typedef {{}} Inbox_History_KeptInputs */
 /** @typedef {{ scanned: NonNullable<unknown> }} Inbox_History_Kept_ShareInputs */
 /** @typedef {{}} Inbox_History_Mailboxes_NoteInputs */
+/** @typedef {{}} Inbox_History_ManagementInputs */
 /** @typedef {{}} Inbox_History_MessagesInputs */
 /** @typedef {{}} Inbox_History_New_To_OdooInputs */
 /** @typedef {{}} Inbox_History_No_PoInputs */
@@ -1572,6 +1587,7 @@ import { getLocale, experimentalStaticLocale, isDevelopment } from "../runtime.j
 /** @typedef {{}} Order_To_Cash_Close_With_ReasonInputs */
 /** @typedef {{ line: NonNullable<unknown> }} Order_To_Cash_Closed_DoneInputs */
 /** @typedef {{}} Order_To_Cash_Col_At_QuotationInputs */
+/** @typedef {{}} Order_To_Cash_Col_CheckInputs */
 /** @typedef {{}} Order_To_Cash_Col_CheckedInputs */
 /** @typedef {{}} Order_To_Cash_Col_Customer_PoInputs */
 /** @typedef {{}} Order_To_Cash_Col_ItemInputs */
@@ -2296,6 +2312,7 @@ import { getLocale, experimentalStaticLocale, isDevelopment } from "../runtime.j
 /** @typedef {{}} Profit_Col_ExpectedInputs */
 /** @typedef {{}} Profit_Col_FxInputs */
 /** @typedef {{}} Profit_Col_RateInputs */
+/** @typedef {{}} Profit_Col_RealisedInputs */
 /** @typedef {{}} Profit_Col_ReceiptInputs */
 /** @typedef {{}} Profit_Col_StatusInputs */
 /** @typedef {{}} Profit_Costs_NoteInputs */
@@ -2332,6 +2349,7 @@ import { getLocale, experimentalStaticLocale, isDevelopment } from "../runtime.j
 /** @typedef {{ answer: NonNullable<unknown> }} Project_AnswerInputs */
 /** @typedef {{}} Project_Brief_NoteInputs */
 /** @typedef {{}} Project_Col_CheckedInputs */
+/** @typedef {{}} Project_Col_OpenInputs */
 /** @typedef {{}} Project_Col_RequirementInputs */
 /** @typedef {{}} Project_Col_ScenarioInputs */
 /** @typedef {{}} Project_Col_StatusInputs */
@@ -2444,6 +2462,195 @@ import { getLocale, experimentalStaticLocale, isDevelopment } from "../runtime.j
 /** @typedef {{}} Sourcing_Supplier_RecordInputs */
 /** @typedef {{}} Sourcing_System_ChoosesInputs */
 /** @typedef {{}} Sourcing_Vessel_RemovedInputs */
+/** @typedef {{}} Tour_Close_1_BodyInputs */
+/** @typedef {{}} Tour_Close_1_TargetInputs */
+/** @typedef {{}} Tour_Close_1_TitleInputs */
+/** @typedef {{}} Tour_Close_2_BodyInputs */
+/** @typedef {{}} Tour_Close_2_TargetInputs */
+/** @typedef {{}} Tour_Close_2_TitleInputs */
+/** @typedef {{}} Tour_Close_3_BodyInputs */
+/** @typedef {{}} Tour_Close_3_TargetInputs */
+/** @typedef {{}} Tour_Close_3_TitleInputs */
+/** @typedef {{}} Tour_Close_4_BodyInputs */
+/** @typedef {{}} Tour_Close_4_TargetInputs */
+/** @typedef {{}} Tour_Close_4_TitleInputs */
+/** @typedef {{}} Tour_Close_SummaryInputs */
+/** @typedef {{}} Tour_Close_TitleInputs */
+/** @typedef {{}} Tour_Control_Room_1_BodyInputs */
+/** @typedef {{}} Tour_Control_Room_1_TargetInputs */
+/** @typedef {{}} Tour_Control_Room_1_TitleInputs */
+/** @typedef {{}} Tour_Control_Room_2_BodyInputs */
+/** @typedef {{}} Tour_Control_Room_2_ClickInputs */
+/** @typedef {{}} Tour_Control_Room_2_TargetInputs */
+/** @typedef {{}} Tour_Control_Room_2_TitleInputs */
+/** @typedef {{}} Tour_Control_Room_3_BodyInputs */
+/** @typedef {{}} Tour_Control_Room_3_TargetInputs */
+/** @typedef {{}} Tour_Control_Room_3_TitleInputs */
+/** @typedef {{}} Tour_Control_Room_4_BodyInputs */
+/** @typedef {{}} Tour_Control_Room_4_TargetInputs */
+/** @typedef {{}} Tour_Control_Room_4_TitleInputs */
+/** @typedef {{}} Tour_Control_Room_SummaryInputs */
+/** @typedef {{}} Tour_Control_Room_TitleInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_1_BodyInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_1_TargetInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_1_TitleInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_2_BodyInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_2_TargetInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_2_TitleInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_3_BodyInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_3_TargetInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_3_TitleInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_4_BodyInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_4_TargetInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_4_TitleInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_5_BodyInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_5_TargetInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_5_TitleInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_SummaryInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_TitleInputs */
+/** @typedef {{}} Tour_Exceptions_1_BodyInputs */
+/** @typedef {{}} Tour_Exceptions_1_TargetInputs */
+/** @typedef {{}} Tour_Exceptions_1_TitleInputs */
+/** @typedef {{}} Tour_Exceptions_2_BodyInputs */
+/** @typedef {{}} Tour_Exceptions_2_TargetInputs */
+/** @typedef {{}} Tour_Exceptions_2_TitleInputs */
+/** @typedef {{}} Tour_Exceptions_3_BodyInputs */
+/** @typedef {{}} Tour_Exceptions_3_TargetInputs */
+/** @typedef {{}} Tour_Exceptions_3_TitleInputs */
+/** @typedef {{}} Tour_Exceptions_4_BodyInputs */
+/** @typedef {{}} Tour_Exceptions_4_TargetInputs */
+/** @typedef {{}} Tour_Exceptions_4_TitleInputs */
+/** @typedef {{}} Tour_Exceptions_SummaryInputs */
+/** @typedef {{}} Tour_Exceptions_TitleInputs */
+/** @typedef {{}} Tour_Growth_1_BodyInputs */
+/** @typedef {{}} Tour_Growth_1_TargetInputs */
+/** @typedef {{}} Tour_Growth_1_TitleInputs */
+/** @typedef {{}} Tour_Growth_2_BodyInputs */
+/** @typedef {{}} Tour_Growth_2_TargetInputs */
+/** @typedef {{}} Tour_Growth_2_TitleInputs */
+/** @typedef {{}} Tour_Growth_3_BodyInputs */
+/** @typedef {{}} Tour_Growth_3_TargetInputs */
+/** @typedef {{}} Tour_Growth_3_TitleInputs */
+/** @typedef {{}} Tour_Growth_SummaryInputs */
+/** @typedef {{}} Tour_Growth_TitleInputs */
+/** @typedef {{}} Tour_Handover_1_BodyInputs */
+/** @typedef {{}} Tour_Handover_1_TargetInputs */
+/** @typedef {{}} Tour_Handover_1_TitleInputs */
+/** @typedef {{}} Tour_Handover_2_BodyInputs */
+/** @typedef {{}} Tour_Handover_2_TargetInputs */
+/** @typedef {{}} Tour_Handover_2_TitleInputs */
+/** @typedef {{}} Tour_Handover_3_BodyInputs */
+/** @typedef {{}} Tour_Handover_3_TargetInputs */
+/** @typedef {{}} Tour_Handover_3_TitleInputs */
+/** @typedef {{}} Tour_Handover_4_BodyInputs */
+/** @typedef {{}} Tour_Handover_4_TargetInputs */
+/** @typedef {{}} Tour_Handover_4_TitleInputs */
+/** @typedef {{}} Tour_Handover_SummaryInputs */
+/** @typedef {{}} Tour_Handover_TitleInputs */
+/** @typedef {{}} Tour_Morning_1_BodyInputs */
+/** @typedef {{}} Tour_Morning_1_TitleInputs */
+/** @typedef {{}} Tour_Morning_2_BodyInputs */
+/** @typedef {{}} Tour_Morning_2_TargetInputs */
+/** @typedef {{}} Tour_Morning_2_TitleInputs */
+/** @typedef {{}} Tour_Morning_3_BodyInputs */
+/** @typedef {{}} Tour_Morning_3_TargetInputs */
+/** @typedef {{}} Tour_Morning_3_TitleInputs */
+/** @typedef {{}} Tour_Morning_4_BodyInputs */
+/** @typedef {{}} Tour_Morning_4_TargetInputs */
+/** @typedef {{}} Tour_Morning_4_TitleInputs */
+/** @typedef {{}} Tour_Morning_5_BodyInputs */
+/** @typedef {{}} Tour_Morning_5_TargetInputs */
+/** @typedef {{}} Tour_Morning_5_TitleInputs */
+/** @typedef {{}} Tour_Morning_6_BodyInputs */
+/** @typedef {{}} Tour_Morning_6_TargetInputs */
+/** @typedef {{}} Tour_Morning_6_TitleInputs */
+/** @typedef {{}} Tour_Morning_7_BodyInputs */
+/** @typedef {{}} Tour_Morning_7_TargetInputs */
+/** @typedef {{}} Tour_Morning_7_TitleInputs */
+/** @typedef {{}} Tour_Morning_SummaryInputs */
+/** @typedef {{}} Tour_Morning_TitleInputs */
+/** @typedef {{}} Tour_Po_Check_1_BodyInputs */
+/** @typedef {{}} Tour_Po_Check_1_TargetInputs */
+/** @typedef {{}} Tour_Po_Check_1_TitleInputs */
+/** @typedef {{}} Tour_Po_Check_2_BodyInputs */
+/** @typedef {{}} Tour_Po_Check_2_TargetInputs */
+/** @typedef {{}} Tour_Po_Check_2_TitleInputs */
+/** @typedef {{}} Tour_Po_Check_3_BodyInputs */
+/** @typedef {{}} Tour_Po_Check_3_TargetInputs */
+/** @typedef {{}} Tour_Po_Check_3_TitleInputs */
+/** @typedef {{}} Tour_Po_Check_4_BodyInputs */
+/** @typedef {{}} Tour_Po_Check_4_TargetInputs */
+/** @typedef {{}} Tour_Po_Check_4_TitleInputs */
+/** @typedef {{}} Tour_Po_Check_5_BodyInputs */
+/** @typedef {{}} Tour_Po_Check_5_TargetInputs */
+/** @typedef {{}} Tour_Po_Check_5_TitleInputs */
+/** @typedef {{}} Tour_Po_Check_SummaryInputs */
+/** @typedef {{}} Tour_Po_Check_TitleInputs */
+/** @typedef {{}} Tour_Quote_1_BodyInputs */
+/** @typedef {{}} Tour_Quote_1_ClickInputs */
+/** @typedef {{}} Tour_Quote_1_TargetInputs */
+/** @typedef {{}} Tour_Quote_1_TitleInputs */
+/** @typedef {{}} Tour_Quote_2_BodyInputs */
+/** @typedef {{}} Tour_Quote_2_TargetInputs */
+/** @typedef {{}} Tour_Quote_2_TitleInputs */
+/** @typedef {{}} Tour_Quote_3_BodyInputs */
+/** @typedef {{}} Tour_Quote_3_TargetInputs */
+/** @typedef {{}} Tour_Quote_3_TitleInputs */
+/** @typedef {{}} Tour_Quote_4_BodyInputs */
+/** @typedef {{}} Tour_Quote_4_TargetInputs */
+/** @typedef {{}} Tour_Quote_4_TitleInputs */
+/** @typedef {{}} Tour_Quote_5_BodyInputs */
+/** @typedef {{}} Tour_Quote_5_TargetInputs */
+/** @typedef {{}} Tour_Quote_5_TitleInputs */
+/** @typedef {{}} Tour_Quote_6_BodyInputs */
+/** @typedef {{}} Tour_Quote_6_TargetInputs */
+/** @typedef {{}} Tour_Quote_6_TitleInputs */
+/** @typedef {{}} Tour_Quote_7_BodyInputs */
+/** @typedef {{}} Tour_Quote_7_ClickInputs */
+/** @typedef {{}} Tour_Quote_7_TargetInputs */
+/** @typedef {{}} Tour_Quote_7_TitleInputs */
+/** @typedef {{}} Tour_Quote_SummaryInputs */
+/** @typedef {{}} Tour_Quote_TitleInputs */
+/** @typedef {{}} Tour_Replies_1_BodyInputs */
+/** @typedef {{}} Tour_Replies_1_TargetInputs */
+/** @typedef {{}} Tour_Replies_1_TitleInputs */
+/** @typedef {{}} Tour_Replies_2_BodyInputs */
+/** @typedef {{}} Tour_Replies_2_ClickInputs */
+/** @typedef {{}} Tour_Replies_2_TargetInputs */
+/** @typedef {{}} Tour_Replies_2_TitleInputs */
+/** @typedef {{}} Tour_Replies_3_BodyInputs */
+/** @typedef {{}} Tour_Replies_3_TargetInputs */
+/** @typedef {{}} Tour_Replies_3_TitleInputs */
+/** @typedef {{}} Tour_Replies_4_BodyInputs */
+/** @typedef {{}} Tour_Replies_4_TargetInputs */
+/** @typedef {{}} Tour_Replies_4_TitleInputs */
+/** @typedef {{}} Tour_Replies_5_BodyInputs */
+/** @typedef {{}} Tour_Replies_5_TargetInputs */
+/** @typedef {{}} Tour_Replies_5_TitleInputs */
+/** @typedef {{}} Tour_Replies_SummaryInputs */
+/** @typedef {{}} Tour_Replies_TitleInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_1_BodyInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_1_TargetInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_1_TitleInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_2_BodyInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_2_ClickInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_2_TargetInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_2_TitleInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_3_BodyInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_3_ClickInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_3_TargetInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_3_TitleInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_4_BodyInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_4_TargetInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_4_TitleInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_5_BodyInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_5_TargetInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_5_TitleInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_6_BodyInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_6_TargetInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_6_TitleInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_SummaryInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_TitleInputs */
 /** @typedef {{}} Visuals_AckInputs */
 /** @typedef {{}} Visuals_Ack_CaptionInputs */
 /** @typedef {{}} Visuals_Customer_DiscountInputs */
@@ -4257,6 +4464,18 @@ export const api_cash_bank_change_not_found = /** @type {((inputs?: Api_Cash_Ban
 });
 /**
 
+* @param {Api_Cash_Bill_On_HoldInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const api_cash_bill_on_hold = /** @type {((inputs: Api_Cash_Bill_On_HoldInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Api_Cash_Bill_On_HoldInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.api_cash_bill_on_hold(inputs)
+	return __en.api_cash_bill_on_hold(inputs)
+});
+/**
+
 * @param {Api_Cash_Call_Back_DoneInputs} inputs
 * @param {{ locale?: "en" | "ar" }} options
 * @returns {LocalizedString}
@@ -4422,6 +4641,18 @@ export const api_cash_match_message = /** @type {((inputs: Api_Cash_Match_Messag
 	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
 	if (locale === "ar") return __ar.api_cash_match_message(inputs)
 	return __en.api_cash_match_message(inputs)
+});
+/**
+
+* @param {Api_Cash_More_Than_BalanceInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const api_cash_more_than_balance = /** @type {((inputs: Api_Cash_More_Than_BalanceInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Api_Cash_More_Than_BalanceInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.api_cash_more_than_balance(inputs)
+	return __en.api_cash_more_than_balance(inputs)
 });
 /**
 
@@ -4677,18 +4908,6 @@ export const api_commercial_approval_title = /** @type {((inputs: Api_Commercial
 });
 /**
 
-* @param {Api_Commercial_Approval_Title_MarginInputs} inputs
-* @param {{ locale?: "en" | "ar" }} options
-* @returns {LocalizedString}
-*/
-export const api_commercial_approval_title_margin = /** @type {((inputs: Api_Commercial_Approval_Title_MarginInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Api_Commercial_Approval_Title_MarginInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs, options = {}) => {
-	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
-	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
-	if (locale === "ar") return __ar.api_commercial_approval_title_margin(inputs)
-	return __en.api_commercial_approval_title_margin(inputs)
-});
-/**
-
 * @param {Api_Commercial_Approved_DotInputs} inputs
 * @param {{ locale?: "en" | "ar" }} options
 * @returns {LocalizedString}
@@ -4818,6 +5037,18 @@ export const api_commercial_choose_offer = /** @type {((inputs?: Api_Commercial_
 	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
 	if (locale === "ar") return __ar.api_commercial_choose_offer(inputs)
 	return __en.api_commercial_choose_offer(inputs)
+});
+/**
+
+* @param {Api_Commercial_Closed_ExpiredInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const api_commercial_closed_expired = /** @type {((inputs?: Api_Commercial_Closed_ExpiredInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Api_Commercial_Closed_ExpiredInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.api_commercial_closed_expired(inputs)
+	return __en.api_commercial_closed_expired(inputs)
 });
 /**
 
@@ -5901,6 +6132,18 @@ export const api_commercial_returned_title = /** @type {((inputs: Api_Commercial
 });
 /**
 
+* @param {Api_Commercial_Revise_For_CustomerInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const api_commercial_revise_for_customer = /** @type {((inputs: Api_Commercial_Revise_For_CustomerInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Api_Commercial_Revise_For_CustomerInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.api_commercial_revise_for_customer(inputs)
+	return __en.api_commercial_revise_for_customer(inputs)
+});
+/**
+
 * @param {Api_Commercial_Revise_LatestInputs} inputs
 * @param {{ locale?: "en" | "ar" }} options
 * @returns {LocalizedString}
@@ -6018,6 +6261,18 @@ export const api_commercial_selected_of = /** @type {((inputs: Api_Commercial_Se
 	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
 	if (locale === "ar") return __ar.api_commercial_selected_of(inputs)
 	return __en.api_commercial_selected_of(inputs)
+});
+/**
+
+* @param {Api_Commercial_Send_For_ApprovalInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const api_commercial_send_for_approval = /** @type {((inputs: Api_Commercial_Send_For_ApprovalInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Api_Commercial_Send_For_ApprovalInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.api_commercial_send_for_approval(inputs)
+	return __en.api_commercial_send_for_approval(inputs)
 });
 /**
 
@@ -8193,6 +8448,18 @@ export const api_home_invoice_due_short = /** @type {((inputs: Api_Home_Invoice_
 });
 /**
 
+* @param {Api_Home_Invoice_OverdueInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const api_home_invoice_overdue = /** @type {((inputs: Api_Home_Invoice_OverdueInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Api_Home_Invoice_OverdueInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.api_home_invoice_overdue(inputs)
+	return __en.api_home_invoice_overdue(inputs)
+});
+/**
+
 * @param {Api_Home_Invoice_SubInputs} inputs
 * @param {{ locale?: "en" | "ar" }} options
 * @returns {LocalizedString}
@@ -9117,6 +9384,18 @@ export const api_insights_shared_overdue_since = /** @type {((inputs: Api_Insigh
 });
 /**
 
+* @param {Api_Insights_Shared_TodayInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const api_insights_shared_today = /** @type {((inputs?: Api_Insights_Shared_TodayInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Api_Insights_Shared_TodayInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.api_insights_shared_today(inputs)
+	return __en.api_insights_shared_today(inputs)
+});
+/**
+
 * @param {Api_Insights_Shared_Today_AtInputs} inputs
 * @param {{ locale?: "en" | "ar" }} options
 * @returns {LocalizedString}
@@ -9126,6 +9405,18 @@ export const api_insights_shared_today_at = /** @type {((inputs: Api_Insights_Sh
 	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
 	if (locale === "ar") return __ar.api_insights_shared_today_at(inputs)
 	return __en.api_insights_shared_today_at(inputs)
+});
+/**
+
+* @param {Api_Insights_Shared_TomorrowInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const api_insights_shared_tomorrow = /** @type {((inputs?: Api_Insights_Shared_TomorrowInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Api_Insights_Shared_TomorrowInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.api_insights_shared_tomorrow(inputs)
+	return __en.api_insights_shared_tomorrow(inputs)
 });
 /**
 
@@ -9381,6 +9672,18 @@ export const api_operations_describe_agreement = /** @type {((inputs?: Api_Opera
 });
 /**
 
+* @param {Api_Operations_Drop_DeliveredInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const api_operations_drop_delivered = /** @type {((inputs: Api_Operations_Drop_DeliveredInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Api_Operations_Drop_DeliveredInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.api_operations_drop_delivered(inputs)
+	return __en.api_operations_drop_delivered(inputs)
+});
+/**
+
 * @param {Api_Operations_Einvoice_SubmittedInputs} inputs
 * @param {{ locale?: "en" | "ar" }} options
 * @returns {LocalizedString}
@@ -9621,6 +9924,18 @@ export const api_operations_line = /** @type {((inputs: Api_Operations_LineInput
 });
 /**
 
+* @param {Api_Operations_Line_On_PoInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const api_operations_line_on_po = /** @type {((inputs: Api_Operations_Line_On_PoInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Api_Operations_Line_On_PoInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.api_operations_line_on_po(inputs)
+	return __en.api_operations_line_on_po(inputs)
+});
+/**
+
 * @param {Api_Operations_No_ChangesInputs} inputs
 * @param {{ locale?: "en" | "ar" }} options
 * @returns {LocalizedString}
@@ -9786,6 +10101,18 @@ export const api_operations_recheck_availability = /** @type {((inputs?: Api_Ope
 	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
 	if (locale === "ar") return __ar.api_operations_recheck_availability(inputs)
 	return __en.api_operations_recheck_availability(inputs)
+});
+/**
+
+* @param {Api_Operations_Recheck_FirstInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const api_operations_recheck_first = /** @type {((inputs?: Api_Operations_Recheck_FirstInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Api_Operations_Recheck_FirstInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.api_operations_recheck_first(inputs)
+	return __en.api_operations_recheck_first(inputs)
 });
 /**
 
@@ -10650,6 +10977,18 @@ export const api_platform_my_language_en = /** @type {((inputs?: Api_Platform_My
 	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
 	if (locale === "ar") return __ar.api_platform_my_language_en(inputs)
 	return __en.api_platform_my_language_en(inputs)
+});
+/**
+
+* @param {Api_Platform_Needs_A_PersonInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const api_platform_needs_a_person = /** @type {((inputs?: Api_Platform_Needs_A_PersonInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Api_Platform_Needs_A_PersonInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.api_platform_needs_a_person(inputs)
+	return __en.api_platform_needs_a_person(inputs)
 });
 /**
 
@@ -12201,6 +12540,18 @@ export const api_sourcing_declined_event = /** @type {((inputs?: Api_Sourcing_De
 });
 /**
 
+* @param {Api_Sourcing_Desk_OnlyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const api_sourcing_desk_only = /** @type {((inputs?: Api_Sourcing_Desk_OnlyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Api_Sourcing_Desk_OnlyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.api_sourcing_desk_only(inputs)
+	return __en.api_sourcing_desk_only(inputs)
+});
+/**
+
 * @param {Api_Sourcing_Draft_GoneInputs} inputs
 * @param {{ locale?: "en" | "ar" }} options
 * @returns {LocalizedString}
@@ -13113,6 +13464,18 @@ export const api_sourcing_rfq_to_port = /** @type {((inputs?: Api_Sourcing_Rfq_T
 });
 /**
 
+* @param {Api_Sourcing_Sender_DiffersInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const api_sourcing_sender_differs = /** @type {((inputs: Api_Sourcing_Sender_DiffersInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Api_Sourcing_Sender_DiffersInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.api_sourcing_sender_differs(inputs)
+	return __en.api_sourcing_sender_differs(inputs)
+});
+/**
+
 * @param {Api_Sourcing_Sender_DomainInputs} inputs
 * @param {{ locale?: "en" | "ar" }} options
 * @returns {LocalizedString}
@@ -13146,18 +13509,6 @@ export const api_sourcing_sent_activity = /** @type {((inputs: Api_Sourcing_Sent
 	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
 	if (locale === "ar") return __ar.api_sourcing_sent_activity(inputs)
 	return __en.api_sourcing_sent_activity(inputs)
-});
-/**
-
-* @param {Api_Sourcing_Sent_By_OtherInputs} inputs
-* @param {{ locale?: "en" | "ar" }} options
-* @returns {LocalizedString}
-*/
-export const api_sourcing_sent_by_other = /** @type {((inputs: Api_Sourcing_Sent_By_OtherInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Api_Sourcing_Sent_By_OtherInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs, options = {}) => {
-	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
-	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
-	if (locale === "ar") return __ar.api_sourcing_sent_by_other(inputs)
-	return __en.api_sourcing_sent_by_other(inputs)
 });
 /**
 
@@ -15078,6 +15429,18 @@ export const commercial_col_markup = /** @type {((inputs?: Commercial_Col_Markup
 	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
 	if (locale === "ar") return __ar.commercial_col_markup(inputs)
 	return __en.commercial_col_markup(inputs)
+});
+/**
+
+* @param {Commercial_Col_MatchInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const commercial_col_match = /** @type {((inputs?: Commercial_Col_MatchInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Commercial_Col_MatchInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.commercial_col_match(inputs)
+	return __en.commercial_col_match(inputs)
 });
 /**
 
@@ -18141,6 +18504,18 @@ export const growth_column_manager = /** @type {((inputs?: Growth_Column_Manager
 });
 /**
 
+* @param {Growth_Column_SuppliedInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const growth_column_supplied = /** @type {((inputs?: Growth_Column_SuppliedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Growth_Column_SuppliedInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.growth_column_supplied(inputs)
+	return __en.growth_column_supplied(inputs)
+});
+/**
+
 * @param {Growth_Column_TypeInputs} inputs
 * @param {{ locale?: "en" | "ar" }} options
 * @returns {LocalizedString}
@@ -19374,6 +19749,18 @@ export const inbox_history_mailboxes_note = /** @type {((inputs?: Inbox_History_
 	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
 	if (locale === "ar") return __ar.inbox_history_mailboxes_note(inputs)
 	return __en.inbox_history_mailboxes_note(inputs)
+});
+/**
+
+* @param {Inbox_History_ManagementInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const inbox_history_management = /** @type {((inputs?: Inbox_History_ManagementInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Inbox_History_ManagementInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.inbox_history_management(inputs)
+	return __en.inbox_history_management(inputs)
 });
 /**
 
@@ -21318,6 +21705,18 @@ export const order_to_cash_col_at_quotation = /** @type {((inputs?: Order_To_Cas
 	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
 	if (locale === "ar") return __ar.order_to_cash_col_at_quotation(inputs)
 	return __en.order_to_cash_col_at_quotation(inputs)
+});
+/**
+
+* @param {Order_To_Cash_Col_CheckInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const order_to_cash_col_check = /** @type {((inputs?: Order_To_Cash_Col_CheckInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Order_To_Cash_Col_CheckInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.order_to_cash_col_check(inputs)
+	return __en.order_to_cash_col_check(inputs)
 });
 /**
 
@@ -30009,6 +30408,18 @@ export const profit_col_rate = /** @type {((inputs?: Profit_Col_RateInputs, opti
 });
 /**
 
+* @param {Profit_Col_RealisedInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const profit_col_realised = /** @type {((inputs?: Profit_Col_RealisedInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Profit_Col_RealisedInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.profit_col_realised(inputs)
+	return __en.profit_col_realised(inputs)
+});
+/**
+
 * @param {Profit_Col_ReceiptInputs} inputs
 * @param {{ locale?: "en" | "ar" }} options
 * @returns {LocalizedString}
@@ -30438,6 +30849,18 @@ export const project_col_checked = /** @type {((inputs?: Project_Col_CheckedInpu
 	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
 	if (locale === "ar") return __ar.project_col_checked(inputs)
 	return __en.project_col_checked(inputs)
+});
+/**
+
+* @param {Project_Col_OpenInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const project_col_open = /** @type {((inputs?: Project_Col_OpenInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Project_Col_OpenInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.project_col_open(inputs)
+	return __en.project_col_open(inputs)
 });
 /**
 
@@ -31782,6 +32205,2274 @@ export const sourcing_vessel_removed = /** @type {((inputs?: Sourcing_Vessel_Rem
 	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
 	if (locale === "ar") return __ar.sourcing_vessel_removed(inputs)
 	return __en.sourcing_vessel_removed(inputs)
+});
+/**
+
+* @param {Tour_Close_1_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_close_1_body = /** @type {((inputs?: Tour_Close_1_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Close_1_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_close_1_body(inputs)
+	return __en.tour_close_1_body(inputs)
+});
+/**
+
+* @param {Tour_Close_1_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_close_1_target = /** @type {((inputs?: Tour_Close_1_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Close_1_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_close_1_target(inputs)
+	return __en.tour_close_1_target(inputs)
+});
+/**
+
+* @param {Tour_Close_1_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_close_1_title = /** @type {((inputs?: Tour_Close_1_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Close_1_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_close_1_title(inputs)
+	return __en.tour_close_1_title(inputs)
+});
+/**
+
+* @param {Tour_Close_2_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_close_2_body = /** @type {((inputs?: Tour_Close_2_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Close_2_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_close_2_body(inputs)
+	return __en.tour_close_2_body(inputs)
+});
+/**
+
+* @param {Tour_Close_2_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_close_2_target = /** @type {((inputs?: Tour_Close_2_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Close_2_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_close_2_target(inputs)
+	return __en.tour_close_2_target(inputs)
+});
+/**
+
+* @param {Tour_Close_2_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_close_2_title = /** @type {((inputs?: Tour_Close_2_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Close_2_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_close_2_title(inputs)
+	return __en.tour_close_2_title(inputs)
+});
+/**
+
+* @param {Tour_Close_3_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_close_3_body = /** @type {((inputs?: Tour_Close_3_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Close_3_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_close_3_body(inputs)
+	return __en.tour_close_3_body(inputs)
+});
+/**
+
+* @param {Tour_Close_3_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_close_3_target = /** @type {((inputs?: Tour_Close_3_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Close_3_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_close_3_target(inputs)
+	return __en.tour_close_3_target(inputs)
+});
+/**
+
+* @param {Tour_Close_3_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_close_3_title = /** @type {((inputs?: Tour_Close_3_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Close_3_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_close_3_title(inputs)
+	return __en.tour_close_3_title(inputs)
+});
+/**
+
+* @param {Tour_Close_4_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_close_4_body = /** @type {((inputs?: Tour_Close_4_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Close_4_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_close_4_body(inputs)
+	return __en.tour_close_4_body(inputs)
+});
+/**
+
+* @param {Tour_Close_4_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_close_4_target = /** @type {((inputs?: Tour_Close_4_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Close_4_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_close_4_target(inputs)
+	return __en.tour_close_4_target(inputs)
+});
+/**
+
+* @param {Tour_Close_4_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_close_4_title = /** @type {((inputs?: Tour_Close_4_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Close_4_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_close_4_title(inputs)
+	return __en.tour_close_4_title(inputs)
+});
+/**
+
+* @param {Tour_Close_SummaryInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_close_summary = /** @type {((inputs?: Tour_Close_SummaryInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Close_SummaryInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_close_summary(inputs)
+	return __en.tour_close_summary(inputs)
+});
+/**
+
+* @param {Tour_Close_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_close_title = /** @type {((inputs?: Tour_Close_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Close_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_close_title(inputs)
+	return __en.tour_close_title(inputs)
+});
+/**
+
+* @param {Tour_Control_Room_1_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_control_room_1_body = /** @type {((inputs?: Tour_Control_Room_1_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Control_Room_1_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_control_room_1_body(inputs)
+	return __en.tour_control_room_1_body(inputs)
+});
+/**
+
+* @param {Tour_Control_Room_1_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_control_room_1_target = /** @type {((inputs?: Tour_Control_Room_1_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Control_Room_1_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_control_room_1_target(inputs)
+	return __en.tour_control_room_1_target(inputs)
+});
+/**
+
+* @param {Tour_Control_Room_1_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_control_room_1_title = /** @type {((inputs?: Tour_Control_Room_1_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Control_Room_1_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_control_room_1_title(inputs)
+	return __en.tour_control_room_1_title(inputs)
+});
+/**
+
+* @param {Tour_Control_Room_2_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_control_room_2_body = /** @type {((inputs?: Tour_Control_Room_2_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Control_Room_2_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_control_room_2_body(inputs)
+	return __en.tour_control_room_2_body(inputs)
+});
+/**
+
+* @param {Tour_Control_Room_2_ClickInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_control_room_2_click = /** @type {((inputs?: Tour_Control_Room_2_ClickInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Control_Room_2_ClickInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_control_room_2_click(inputs)
+	return __en.tour_control_room_2_click(inputs)
+});
+/**
+
+* @param {Tour_Control_Room_2_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_control_room_2_target = /** @type {((inputs?: Tour_Control_Room_2_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Control_Room_2_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_control_room_2_target(inputs)
+	return __en.tour_control_room_2_target(inputs)
+});
+/**
+
+* @param {Tour_Control_Room_2_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_control_room_2_title = /** @type {((inputs?: Tour_Control_Room_2_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Control_Room_2_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_control_room_2_title(inputs)
+	return __en.tour_control_room_2_title(inputs)
+});
+/**
+
+* @param {Tour_Control_Room_3_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_control_room_3_body = /** @type {((inputs?: Tour_Control_Room_3_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Control_Room_3_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_control_room_3_body(inputs)
+	return __en.tour_control_room_3_body(inputs)
+});
+/**
+
+* @param {Tour_Control_Room_3_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_control_room_3_target = /** @type {((inputs?: Tour_Control_Room_3_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Control_Room_3_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_control_room_3_target(inputs)
+	return __en.tour_control_room_3_target(inputs)
+});
+/**
+
+* @param {Tour_Control_Room_3_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_control_room_3_title = /** @type {((inputs?: Tour_Control_Room_3_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Control_Room_3_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_control_room_3_title(inputs)
+	return __en.tour_control_room_3_title(inputs)
+});
+/**
+
+* @param {Tour_Control_Room_4_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_control_room_4_body = /** @type {((inputs?: Tour_Control_Room_4_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Control_Room_4_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_control_room_4_body(inputs)
+	return __en.tour_control_room_4_body(inputs)
+});
+/**
+
+* @param {Tour_Control_Room_4_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_control_room_4_target = /** @type {((inputs?: Tour_Control_Room_4_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Control_Room_4_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_control_room_4_target(inputs)
+	return __en.tour_control_room_4_target(inputs)
+});
+/**
+
+* @param {Tour_Control_Room_4_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_control_room_4_title = /** @type {((inputs?: Tour_Control_Room_4_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Control_Room_4_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_control_room_4_title(inputs)
+	return __en.tour_control_room_4_title(inputs)
+});
+/**
+
+* @param {Tour_Control_Room_SummaryInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_control_room_summary = /** @type {((inputs?: Tour_Control_Room_SummaryInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Control_Room_SummaryInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_control_room_summary(inputs)
+	return __en.tour_control_room_summary(inputs)
+});
+/**
+
+* @param {Tour_Control_Room_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_control_room_title = /** @type {((inputs?: Tour_Control_Room_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Control_Room_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_control_room_title(inputs)
+	return __en.tour_control_room_title(inputs)
+});
+/**
+
+* @param {Tour_Delivery_To_Cash_1_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_delivery_to_cash_1_body = /** @type {((inputs?: Tour_Delivery_To_Cash_1_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Delivery_To_Cash_1_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_delivery_to_cash_1_body(inputs)
+	return __en.tour_delivery_to_cash_1_body(inputs)
+});
+/**
+
+* @param {Tour_Delivery_To_Cash_1_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_delivery_to_cash_1_target = /** @type {((inputs?: Tour_Delivery_To_Cash_1_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Delivery_To_Cash_1_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_delivery_to_cash_1_target(inputs)
+	return __en.tour_delivery_to_cash_1_target(inputs)
+});
+/**
+
+* @param {Tour_Delivery_To_Cash_1_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_delivery_to_cash_1_title = /** @type {((inputs?: Tour_Delivery_To_Cash_1_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Delivery_To_Cash_1_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_delivery_to_cash_1_title(inputs)
+	return __en.tour_delivery_to_cash_1_title(inputs)
+});
+/**
+
+* @param {Tour_Delivery_To_Cash_2_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_delivery_to_cash_2_body = /** @type {((inputs?: Tour_Delivery_To_Cash_2_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Delivery_To_Cash_2_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_delivery_to_cash_2_body(inputs)
+	return __en.tour_delivery_to_cash_2_body(inputs)
+});
+/**
+
+* @param {Tour_Delivery_To_Cash_2_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_delivery_to_cash_2_target = /** @type {((inputs?: Tour_Delivery_To_Cash_2_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Delivery_To_Cash_2_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_delivery_to_cash_2_target(inputs)
+	return __en.tour_delivery_to_cash_2_target(inputs)
+});
+/**
+
+* @param {Tour_Delivery_To_Cash_2_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_delivery_to_cash_2_title = /** @type {((inputs?: Tour_Delivery_To_Cash_2_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Delivery_To_Cash_2_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_delivery_to_cash_2_title(inputs)
+	return __en.tour_delivery_to_cash_2_title(inputs)
+});
+/**
+
+* @param {Tour_Delivery_To_Cash_3_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_delivery_to_cash_3_body = /** @type {((inputs?: Tour_Delivery_To_Cash_3_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Delivery_To_Cash_3_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_delivery_to_cash_3_body(inputs)
+	return __en.tour_delivery_to_cash_3_body(inputs)
+});
+/**
+
+* @param {Tour_Delivery_To_Cash_3_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_delivery_to_cash_3_target = /** @type {((inputs?: Tour_Delivery_To_Cash_3_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Delivery_To_Cash_3_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_delivery_to_cash_3_target(inputs)
+	return __en.tour_delivery_to_cash_3_target(inputs)
+});
+/**
+
+* @param {Tour_Delivery_To_Cash_3_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_delivery_to_cash_3_title = /** @type {((inputs?: Tour_Delivery_To_Cash_3_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Delivery_To_Cash_3_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_delivery_to_cash_3_title(inputs)
+	return __en.tour_delivery_to_cash_3_title(inputs)
+});
+/**
+
+* @param {Tour_Delivery_To_Cash_4_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_delivery_to_cash_4_body = /** @type {((inputs?: Tour_Delivery_To_Cash_4_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Delivery_To_Cash_4_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_delivery_to_cash_4_body(inputs)
+	return __en.tour_delivery_to_cash_4_body(inputs)
+});
+/**
+
+* @param {Tour_Delivery_To_Cash_4_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_delivery_to_cash_4_target = /** @type {((inputs?: Tour_Delivery_To_Cash_4_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Delivery_To_Cash_4_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_delivery_to_cash_4_target(inputs)
+	return __en.tour_delivery_to_cash_4_target(inputs)
+});
+/**
+
+* @param {Tour_Delivery_To_Cash_4_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_delivery_to_cash_4_title = /** @type {((inputs?: Tour_Delivery_To_Cash_4_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Delivery_To_Cash_4_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_delivery_to_cash_4_title(inputs)
+	return __en.tour_delivery_to_cash_4_title(inputs)
+});
+/**
+
+* @param {Tour_Delivery_To_Cash_5_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_delivery_to_cash_5_body = /** @type {((inputs?: Tour_Delivery_To_Cash_5_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Delivery_To_Cash_5_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_delivery_to_cash_5_body(inputs)
+	return __en.tour_delivery_to_cash_5_body(inputs)
+});
+/**
+
+* @param {Tour_Delivery_To_Cash_5_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_delivery_to_cash_5_target = /** @type {((inputs?: Tour_Delivery_To_Cash_5_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Delivery_To_Cash_5_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_delivery_to_cash_5_target(inputs)
+	return __en.tour_delivery_to_cash_5_target(inputs)
+});
+/**
+
+* @param {Tour_Delivery_To_Cash_5_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_delivery_to_cash_5_title = /** @type {((inputs?: Tour_Delivery_To_Cash_5_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Delivery_To_Cash_5_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_delivery_to_cash_5_title(inputs)
+	return __en.tour_delivery_to_cash_5_title(inputs)
+});
+/**
+
+* @param {Tour_Delivery_To_Cash_SummaryInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_delivery_to_cash_summary = /** @type {((inputs?: Tour_Delivery_To_Cash_SummaryInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Delivery_To_Cash_SummaryInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_delivery_to_cash_summary(inputs)
+	return __en.tour_delivery_to_cash_summary(inputs)
+});
+/**
+
+* @param {Tour_Delivery_To_Cash_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_delivery_to_cash_title = /** @type {((inputs?: Tour_Delivery_To_Cash_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Delivery_To_Cash_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_delivery_to_cash_title(inputs)
+	return __en.tour_delivery_to_cash_title(inputs)
+});
+/**
+
+* @param {Tour_Exceptions_1_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_exceptions_1_body = /** @type {((inputs?: Tour_Exceptions_1_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Exceptions_1_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_exceptions_1_body(inputs)
+	return __en.tour_exceptions_1_body(inputs)
+});
+/**
+
+* @param {Tour_Exceptions_1_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_exceptions_1_target = /** @type {((inputs?: Tour_Exceptions_1_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Exceptions_1_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_exceptions_1_target(inputs)
+	return __en.tour_exceptions_1_target(inputs)
+});
+/**
+
+* @param {Tour_Exceptions_1_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_exceptions_1_title = /** @type {((inputs?: Tour_Exceptions_1_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Exceptions_1_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_exceptions_1_title(inputs)
+	return __en.tour_exceptions_1_title(inputs)
+});
+/**
+
+* @param {Tour_Exceptions_2_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_exceptions_2_body = /** @type {((inputs?: Tour_Exceptions_2_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Exceptions_2_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_exceptions_2_body(inputs)
+	return __en.tour_exceptions_2_body(inputs)
+});
+/**
+
+* @param {Tour_Exceptions_2_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_exceptions_2_target = /** @type {((inputs?: Tour_Exceptions_2_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Exceptions_2_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_exceptions_2_target(inputs)
+	return __en.tour_exceptions_2_target(inputs)
+});
+/**
+
+* @param {Tour_Exceptions_2_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_exceptions_2_title = /** @type {((inputs?: Tour_Exceptions_2_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Exceptions_2_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_exceptions_2_title(inputs)
+	return __en.tour_exceptions_2_title(inputs)
+});
+/**
+
+* @param {Tour_Exceptions_3_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_exceptions_3_body = /** @type {((inputs?: Tour_Exceptions_3_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Exceptions_3_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_exceptions_3_body(inputs)
+	return __en.tour_exceptions_3_body(inputs)
+});
+/**
+
+* @param {Tour_Exceptions_3_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_exceptions_3_target = /** @type {((inputs?: Tour_Exceptions_3_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Exceptions_3_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_exceptions_3_target(inputs)
+	return __en.tour_exceptions_3_target(inputs)
+});
+/**
+
+* @param {Tour_Exceptions_3_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_exceptions_3_title = /** @type {((inputs?: Tour_Exceptions_3_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Exceptions_3_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_exceptions_3_title(inputs)
+	return __en.tour_exceptions_3_title(inputs)
+});
+/**
+
+* @param {Tour_Exceptions_4_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_exceptions_4_body = /** @type {((inputs?: Tour_Exceptions_4_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Exceptions_4_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_exceptions_4_body(inputs)
+	return __en.tour_exceptions_4_body(inputs)
+});
+/**
+
+* @param {Tour_Exceptions_4_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_exceptions_4_target = /** @type {((inputs?: Tour_Exceptions_4_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Exceptions_4_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_exceptions_4_target(inputs)
+	return __en.tour_exceptions_4_target(inputs)
+});
+/**
+
+* @param {Tour_Exceptions_4_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_exceptions_4_title = /** @type {((inputs?: Tour_Exceptions_4_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Exceptions_4_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_exceptions_4_title(inputs)
+	return __en.tour_exceptions_4_title(inputs)
+});
+/**
+
+* @param {Tour_Exceptions_SummaryInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_exceptions_summary = /** @type {((inputs?: Tour_Exceptions_SummaryInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Exceptions_SummaryInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_exceptions_summary(inputs)
+	return __en.tour_exceptions_summary(inputs)
+});
+/**
+
+* @param {Tour_Exceptions_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_exceptions_title = /** @type {((inputs?: Tour_Exceptions_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Exceptions_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_exceptions_title(inputs)
+	return __en.tour_exceptions_title(inputs)
+});
+/**
+
+* @param {Tour_Growth_1_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_growth_1_body = /** @type {((inputs?: Tour_Growth_1_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Growth_1_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_growth_1_body(inputs)
+	return __en.tour_growth_1_body(inputs)
+});
+/**
+
+* @param {Tour_Growth_1_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_growth_1_target = /** @type {((inputs?: Tour_Growth_1_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Growth_1_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_growth_1_target(inputs)
+	return __en.tour_growth_1_target(inputs)
+});
+/**
+
+* @param {Tour_Growth_1_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_growth_1_title = /** @type {((inputs?: Tour_Growth_1_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Growth_1_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_growth_1_title(inputs)
+	return __en.tour_growth_1_title(inputs)
+});
+/**
+
+* @param {Tour_Growth_2_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_growth_2_body = /** @type {((inputs?: Tour_Growth_2_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Growth_2_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_growth_2_body(inputs)
+	return __en.tour_growth_2_body(inputs)
+});
+/**
+
+* @param {Tour_Growth_2_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_growth_2_target = /** @type {((inputs?: Tour_Growth_2_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Growth_2_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_growth_2_target(inputs)
+	return __en.tour_growth_2_target(inputs)
+});
+/**
+
+* @param {Tour_Growth_2_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_growth_2_title = /** @type {((inputs?: Tour_Growth_2_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Growth_2_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_growth_2_title(inputs)
+	return __en.tour_growth_2_title(inputs)
+});
+/**
+
+* @param {Tour_Growth_3_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_growth_3_body = /** @type {((inputs?: Tour_Growth_3_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Growth_3_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_growth_3_body(inputs)
+	return __en.tour_growth_3_body(inputs)
+});
+/**
+
+* @param {Tour_Growth_3_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_growth_3_target = /** @type {((inputs?: Tour_Growth_3_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Growth_3_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_growth_3_target(inputs)
+	return __en.tour_growth_3_target(inputs)
+});
+/**
+
+* @param {Tour_Growth_3_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_growth_3_title = /** @type {((inputs?: Tour_Growth_3_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Growth_3_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_growth_3_title(inputs)
+	return __en.tour_growth_3_title(inputs)
+});
+/**
+
+* @param {Tour_Growth_SummaryInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_growth_summary = /** @type {((inputs?: Tour_Growth_SummaryInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Growth_SummaryInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_growth_summary(inputs)
+	return __en.tour_growth_summary(inputs)
+});
+/**
+
+* @param {Tour_Growth_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_growth_title = /** @type {((inputs?: Tour_Growth_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Growth_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_growth_title(inputs)
+	return __en.tour_growth_title(inputs)
+});
+/**
+
+* @param {Tour_Handover_1_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_handover_1_body = /** @type {((inputs?: Tour_Handover_1_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Handover_1_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_handover_1_body(inputs)
+	return __en.tour_handover_1_body(inputs)
+});
+/**
+
+* @param {Tour_Handover_1_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_handover_1_target = /** @type {((inputs?: Tour_Handover_1_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Handover_1_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_handover_1_target(inputs)
+	return __en.tour_handover_1_target(inputs)
+});
+/**
+
+* @param {Tour_Handover_1_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_handover_1_title = /** @type {((inputs?: Tour_Handover_1_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Handover_1_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_handover_1_title(inputs)
+	return __en.tour_handover_1_title(inputs)
+});
+/**
+
+* @param {Tour_Handover_2_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_handover_2_body = /** @type {((inputs?: Tour_Handover_2_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Handover_2_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_handover_2_body(inputs)
+	return __en.tour_handover_2_body(inputs)
+});
+/**
+
+* @param {Tour_Handover_2_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_handover_2_target = /** @type {((inputs?: Tour_Handover_2_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Handover_2_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_handover_2_target(inputs)
+	return __en.tour_handover_2_target(inputs)
+});
+/**
+
+* @param {Tour_Handover_2_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_handover_2_title = /** @type {((inputs?: Tour_Handover_2_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Handover_2_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_handover_2_title(inputs)
+	return __en.tour_handover_2_title(inputs)
+});
+/**
+
+* @param {Tour_Handover_3_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_handover_3_body = /** @type {((inputs?: Tour_Handover_3_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Handover_3_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_handover_3_body(inputs)
+	return __en.tour_handover_3_body(inputs)
+});
+/**
+
+* @param {Tour_Handover_3_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_handover_3_target = /** @type {((inputs?: Tour_Handover_3_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Handover_3_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_handover_3_target(inputs)
+	return __en.tour_handover_3_target(inputs)
+});
+/**
+
+* @param {Tour_Handover_3_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_handover_3_title = /** @type {((inputs?: Tour_Handover_3_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Handover_3_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_handover_3_title(inputs)
+	return __en.tour_handover_3_title(inputs)
+});
+/**
+
+* @param {Tour_Handover_4_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_handover_4_body = /** @type {((inputs?: Tour_Handover_4_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Handover_4_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_handover_4_body(inputs)
+	return __en.tour_handover_4_body(inputs)
+});
+/**
+
+* @param {Tour_Handover_4_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_handover_4_target = /** @type {((inputs?: Tour_Handover_4_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Handover_4_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_handover_4_target(inputs)
+	return __en.tour_handover_4_target(inputs)
+});
+/**
+
+* @param {Tour_Handover_4_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_handover_4_title = /** @type {((inputs?: Tour_Handover_4_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Handover_4_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_handover_4_title(inputs)
+	return __en.tour_handover_4_title(inputs)
+});
+/**
+
+* @param {Tour_Handover_SummaryInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_handover_summary = /** @type {((inputs?: Tour_Handover_SummaryInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Handover_SummaryInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_handover_summary(inputs)
+	return __en.tour_handover_summary(inputs)
+});
+/**
+
+* @param {Tour_Handover_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_handover_title = /** @type {((inputs?: Tour_Handover_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Handover_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_handover_title(inputs)
+	return __en.tour_handover_title(inputs)
+});
+/**
+
+* @param {Tour_Morning_1_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_morning_1_body = /** @type {((inputs?: Tour_Morning_1_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Morning_1_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_morning_1_body(inputs)
+	return __en.tour_morning_1_body(inputs)
+});
+/**
+
+* @param {Tour_Morning_1_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_morning_1_title = /** @type {((inputs?: Tour_Morning_1_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Morning_1_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_morning_1_title(inputs)
+	return __en.tour_morning_1_title(inputs)
+});
+/**
+
+* @param {Tour_Morning_2_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_morning_2_body = /** @type {((inputs?: Tour_Morning_2_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Morning_2_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_morning_2_body(inputs)
+	return __en.tour_morning_2_body(inputs)
+});
+/**
+
+* @param {Tour_Morning_2_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_morning_2_target = /** @type {((inputs?: Tour_Morning_2_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Morning_2_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_morning_2_target(inputs)
+	return __en.tour_morning_2_target(inputs)
+});
+/**
+
+* @param {Tour_Morning_2_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_morning_2_title = /** @type {((inputs?: Tour_Morning_2_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Morning_2_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_morning_2_title(inputs)
+	return __en.tour_morning_2_title(inputs)
+});
+/**
+
+* @param {Tour_Morning_3_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_morning_3_body = /** @type {((inputs?: Tour_Morning_3_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Morning_3_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_morning_3_body(inputs)
+	return __en.tour_morning_3_body(inputs)
+});
+/**
+
+* @param {Tour_Morning_3_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_morning_3_target = /** @type {((inputs?: Tour_Morning_3_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Morning_3_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_morning_3_target(inputs)
+	return __en.tour_morning_3_target(inputs)
+});
+/**
+
+* @param {Tour_Morning_3_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_morning_3_title = /** @type {((inputs?: Tour_Morning_3_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Morning_3_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_morning_3_title(inputs)
+	return __en.tour_morning_3_title(inputs)
+});
+/**
+
+* @param {Tour_Morning_4_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_morning_4_body = /** @type {((inputs?: Tour_Morning_4_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Morning_4_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_morning_4_body(inputs)
+	return __en.tour_morning_4_body(inputs)
+});
+/**
+
+* @param {Tour_Morning_4_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_morning_4_target = /** @type {((inputs?: Tour_Morning_4_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Morning_4_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_morning_4_target(inputs)
+	return __en.tour_morning_4_target(inputs)
+});
+/**
+
+* @param {Tour_Morning_4_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_morning_4_title = /** @type {((inputs?: Tour_Morning_4_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Morning_4_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_morning_4_title(inputs)
+	return __en.tour_morning_4_title(inputs)
+});
+/**
+
+* @param {Tour_Morning_5_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_morning_5_body = /** @type {((inputs?: Tour_Morning_5_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Morning_5_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_morning_5_body(inputs)
+	return __en.tour_morning_5_body(inputs)
+});
+/**
+
+* @param {Tour_Morning_5_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_morning_5_target = /** @type {((inputs?: Tour_Morning_5_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Morning_5_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_morning_5_target(inputs)
+	return __en.tour_morning_5_target(inputs)
+});
+/**
+
+* @param {Tour_Morning_5_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_morning_5_title = /** @type {((inputs?: Tour_Morning_5_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Morning_5_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_morning_5_title(inputs)
+	return __en.tour_morning_5_title(inputs)
+});
+/**
+
+* @param {Tour_Morning_6_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_morning_6_body = /** @type {((inputs?: Tour_Morning_6_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Morning_6_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_morning_6_body(inputs)
+	return __en.tour_morning_6_body(inputs)
+});
+/**
+
+* @param {Tour_Morning_6_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_morning_6_target = /** @type {((inputs?: Tour_Morning_6_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Morning_6_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_morning_6_target(inputs)
+	return __en.tour_morning_6_target(inputs)
+});
+/**
+
+* @param {Tour_Morning_6_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_morning_6_title = /** @type {((inputs?: Tour_Morning_6_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Morning_6_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_morning_6_title(inputs)
+	return __en.tour_morning_6_title(inputs)
+});
+/**
+
+* @param {Tour_Morning_7_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_morning_7_body = /** @type {((inputs?: Tour_Morning_7_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Morning_7_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_morning_7_body(inputs)
+	return __en.tour_morning_7_body(inputs)
+});
+/**
+
+* @param {Tour_Morning_7_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_morning_7_target = /** @type {((inputs?: Tour_Morning_7_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Morning_7_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_morning_7_target(inputs)
+	return __en.tour_morning_7_target(inputs)
+});
+/**
+
+* @param {Tour_Morning_7_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_morning_7_title = /** @type {((inputs?: Tour_Morning_7_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Morning_7_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_morning_7_title(inputs)
+	return __en.tour_morning_7_title(inputs)
+});
+/**
+
+* @param {Tour_Morning_SummaryInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_morning_summary = /** @type {((inputs?: Tour_Morning_SummaryInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Morning_SummaryInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_morning_summary(inputs)
+	return __en.tour_morning_summary(inputs)
+});
+/**
+
+* @param {Tour_Morning_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_morning_title = /** @type {((inputs?: Tour_Morning_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Morning_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_morning_title(inputs)
+	return __en.tour_morning_title(inputs)
+});
+/**
+
+* @param {Tour_Po_Check_1_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_po_check_1_body = /** @type {((inputs?: Tour_Po_Check_1_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Po_Check_1_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_po_check_1_body(inputs)
+	return __en.tour_po_check_1_body(inputs)
+});
+/**
+
+* @param {Tour_Po_Check_1_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_po_check_1_target = /** @type {((inputs?: Tour_Po_Check_1_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Po_Check_1_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_po_check_1_target(inputs)
+	return __en.tour_po_check_1_target(inputs)
+});
+/**
+
+* @param {Tour_Po_Check_1_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_po_check_1_title = /** @type {((inputs?: Tour_Po_Check_1_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Po_Check_1_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_po_check_1_title(inputs)
+	return __en.tour_po_check_1_title(inputs)
+});
+/**
+
+* @param {Tour_Po_Check_2_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_po_check_2_body = /** @type {((inputs?: Tour_Po_Check_2_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Po_Check_2_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_po_check_2_body(inputs)
+	return __en.tour_po_check_2_body(inputs)
+});
+/**
+
+* @param {Tour_Po_Check_2_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_po_check_2_target = /** @type {((inputs?: Tour_Po_Check_2_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Po_Check_2_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_po_check_2_target(inputs)
+	return __en.tour_po_check_2_target(inputs)
+});
+/**
+
+* @param {Tour_Po_Check_2_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_po_check_2_title = /** @type {((inputs?: Tour_Po_Check_2_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Po_Check_2_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_po_check_2_title(inputs)
+	return __en.tour_po_check_2_title(inputs)
+});
+/**
+
+* @param {Tour_Po_Check_3_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_po_check_3_body = /** @type {((inputs?: Tour_Po_Check_3_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Po_Check_3_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_po_check_3_body(inputs)
+	return __en.tour_po_check_3_body(inputs)
+});
+/**
+
+* @param {Tour_Po_Check_3_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_po_check_3_target = /** @type {((inputs?: Tour_Po_Check_3_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Po_Check_3_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_po_check_3_target(inputs)
+	return __en.tour_po_check_3_target(inputs)
+});
+/**
+
+* @param {Tour_Po_Check_3_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_po_check_3_title = /** @type {((inputs?: Tour_Po_Check_3_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Po_Check_3_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_po_check_3_title(inputs)
+	return __en.tour_po_check_3_title(inputs)
+});
+/**
+
+* @param {Tour_Po_Check_4_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_po_check_4_body = /** @type {((inputs?: Tour_Po_Check_4_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Po_Check_4_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_po_check_4_body(inputs)
+	return __en.tour_po_check_4_body(inputs)
+});
+/**
+
+* @param {Tour_Po_Check_4_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_po_check_4_target = /** @type {((inputs?: Tour_Po_Check_4_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Po_Check_4_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_po_check_4_target(inputs)
+	return __en.tour_po_check_4_target(inputs)
+});
+/**
+
+* @param {Tour_Po_Check_4_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_po_check_4_title = /** @type {((inputs?: Tour_Po_Check_4_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Po_Check_4_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_po_check_4_title(inputs)
+	return __en.tour_po_check_4_title(inputs)
+});
+/**
+
+* @param {Tour_Po_Check_5_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_po_check_5_body = /** @type {((inputs?: Tour_Po_Check_5_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Po_Check_5_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_po_check_5_body(inputs)
+	return __en.tour_po_check_5_body(inputs)
+});
+/**
+
+* @param {Tour_Po_Check_5_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_po_check_5_target = /** @type {((inputs?: Tour_Po_Check_5_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Po_Check_5_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_po_check_5_target(inputs)
+	return __en.tour_po_check_5_target(inputs)
+});
+/**
+
+* @param {Tour_Po_Check_5_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_po_check_5_title = /** @type {((inputs?: Tour_Po_Check_5_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Po_Check_5_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_po_check_5_title(inputs)
+	return __en.tour_po_check_5_title(inputs)
+});
+/**
+
+* @param {Tour_Po_Check_SummaryInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_po_check_summary = /** @type {((inputs?: Tour_Po_Check_SummaryInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Po_Check_SummaryInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_po_check_summary(inputs)
+	return __en.tour_po_check_summary(inputs)
+});
+/**
+
+* @param {Tour_Po_Check_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_po_check_title = /** @type {((inputs?: Tour_Po_Check_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Po_Check_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_po_check_title(inputs)
+	return __en.tour_po_check_title(inputs)
+});
+/**
+
+* @param {Tour_Quote_1_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_quote_1_body = /** @type {((inputs?: Tour_Quote_1_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Quote_1_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_quote_1_body(inputs)
+	return __en.tour_quote_1_body(inputs)
+});
+/**
+
+* @param {Tour_Quote_1_ClickInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_quote_1_click = /** @type {((inputs?: Tour_Quote_1_ClickInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Quote_1_ClickInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_quote_1_click(inputs)
+	return __en.tour_quote_1_click(inputs)
+});
+/**
+
+* @param {Tour_Quote_1_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_quote_1_target = /** @type {((inputs?: Tour_Quote_1_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Quote_1_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_quote_1_target(inputs)
+	return __en.tour_quote_1_target(inputs)
+});
+/**
+
+* @param {Tour_Quote_1_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_quote_1_title = /** @type {((inputs?: Tour_Quote_1_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Quote_1_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_quote_1_title(inputs)
+	return __en.tour_quote_1_title(inputs)
+});
+/**
+
+* @param {Tour_Quote_2_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_quote_2_body = /** @type {((inputs?: Tour_Quote_2_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Quote_2_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_quote_2_body(inputs)
+	return __en.tour_quote_2_body(inputs)
+});
+/**
+
+* @param {Tour_Quote_2_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_quote_2_target = /** @type {((inputs?: Tour_Quote_2_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Quote_2_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_quote_2_target(inputs)
+	return __en.tour_quote_2_target(inputs)
+});
+/**
+
+* @param {Tour_Quote_2_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_quote_2_title = /** @type {((inputs?: Tour_Quote_2_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Quote_2_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_quote_2_title(inputs)
+	return __en.tour_quote_2_title(inputs)
+});
+/**
+
+* @param {Tour_Quote_3_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_quote_3_body = /** @type {((inputs?: Tour_Quote_3_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Quote_3_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_quote_3_body(inputs)
+	return __en.tour_quote_3_body(inputs)
+});
+/**
+
+* @param {Tour_Quote_3_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_quote_3_target = /** @type {((inputs?: Tour_Quote_3_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Quote_3_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_quote_3_target(inputs)
+	return __en.tour_quote_3_target(inputs)
+});
+/**
+
+* @param {Tour_Quote_3_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_quote_3_title = /** @type {((inputs?: Tour_Quote_3_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Quote_3_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_quote_3_title(inputs)
+	return __en.tour_quote_3_title(inputs)
+});
+/**
+
+* @param {Tour_Quote_4_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_quote_4_body = /** @type {((inputs?: Tour_Quote_4_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Quote_4_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_quote_4_body(inputs)
+	return __en.tour_quote_4_body(inputs)
+});
+/**
+
+* @param {Tour_Quote_4_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_quote_4_target = /** @type {((inputs?: Tour_Quote_4_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Quote_4_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_quote_4_target(inputs)
+	return __en.tour_quote_4_target(inputs)
+});
+/**
+
+* @param {Tour_Quote_4_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_quote_4_title = /** @type {((inputs?: Tour_Quote_4_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Quote_4_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_quote_4_title(inputs)
+	return __en.tour_quote_4_title(inputs)
+});
+/**
+
+* @param {Tour_Quote_5_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_quote_5_body = /** @type {((inputs?: Tour_Quote_5_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Quote_5_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_quote_5_body(inputs)
+	return __en.tour_quote_5_body(inputs)
+});
+/**
+
+* @param {Tour_Quote_5_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_quote_5_target = /** @type {((inputs?: Tour_Quote_5_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Quote_5_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_quote_5_target(inputs)
+	return __en.tour_quote_5_target(inputs)
+});
+/**
+
+* @param {Tour_Quote_5_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_quote_5_title = /** @type {((inputs?: Tour_Quote_5_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Quote_5_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_quote_5_title(inputs)
+	return __en.tour_quote_5_title(inputs)
+});
+/**
+
+* @param {Tour_Quote_6_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_quote_6_body = /** @type {((inputs?: Tour_Quote_6_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Quote_6_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_quote_6_body(inputs)
+	return __en.tour_quote_6_body(inputs)
+});
+/**
+
+* @param {Tour_Quote_6_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_quote_6_target = /** @type {((inputs?: Tour_Quote_6_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Quote_6_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_quote_6_target(inputs)
+	return __en.tour_quote_6_target(inputs)
+});
+/**
+
+* @param {Tour_Quote_6_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_quote_6_title = /** @type {((inputs?: Tour_Quote_6_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Quote_6_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_quote_6_title(inputs)
+	return __en.tour_quote_6_title(inputs)
+});
+/**
+
+* @param {Tour_Quote_7_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_quote_7_body = /** @type {((inputs?: Tour_Quote_7_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Quote_7_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_quote_7_body(inputs)
+	return __en.tour_quote_7_body(inputs)
+});
+/**
+
+* @param {Tour_Quote_7_ClickInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_quote_7_click = /** @type {((inputs?: Tour_Quote_7_ClickInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Quote_7_ClickInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_quote_7_click(inputs)
+	return __en.tour_quote_7_click(inputs)
+});
+/**
+
+* @param {Tour_Quote_7_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_quote_7_target = /** @type {((inputs?: Tour_Quote_7_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Quote_7_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_quote_7_target(inputs)
+	return __en.tour_quote_7_target(inputs)
+});
+/**
+
+* @param {Tour_Quote_7_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_quote_7_title = /** @type {((inputs?: Tour_Quote_7_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Quote_7_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_quote_7_title(inputs)
+	return __en.tour_quote_7_title(inputs)
+});
+/**
+
+* @param {Tour_Quote_SummaryInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_quote_summary = /** @type {((inputs?: Tour_Quote_SummaryInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Quote_SummaryInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_quote_summary(inputs)
+	return __en.tour_quote_summary(inputs)
+});
+/**
+
+* @param {Tour_Quote_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_quote_title = /** @type {((inputs?: Tour_Quote_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Quote_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_quote_title(inputs)
+	return __en.tour_quote_title(inputs)
+});
+/**
+
+* @param {Tour_Replies_1_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_replies_1_body = /** @type {((inputs?: Tour_Replies_1_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Replies_1_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_replies_1_body(inputs)
+	return __en.tour_replies_1_body(inputs)
+});
+/**
+
+* @param {Tour_Replies_1_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_replies_1_target = /** @type {((inputs?: Tour_Replies_1_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Replies_1_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_replies_1_target(inputs)
+	return __en.tour_replies_1_target(inputs)
+});
+/**
+
+* @param {Tour_Replies_1_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_replies_1_title = /** @type {((inputs?: Tour_Replies_1_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Replies_1_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_replies_1_title(inputs)
+	return __en.tour_replies_1_title(inputs)
+});
+/**
+
+* @param {Tour_Replies_2_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_replies_2_body = /** @type {((inputs?: Tour_Replies_2_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Replies_2_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_replies_2_body(inputs)
+	return __en.tour_replies_2_body(inputs)
+});
+/**
+
+* @param {Tour_Replies_2_ClickInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_replies_2_click = /** @type {((inputs?: Tour_Replies_2_ClickInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Replies_2_ClickInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_replies_2_click(inputs)
+	return __en.tour_replies_2_click(inputs)
+});
+/**
+
+* @param {Tour_Replies_2_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_replies_2_target = /** @type {((inputs?: Tour_Replies_2_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Replies_2_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_replies_2_target(inputs)
+	return __en.tour_replies_2_target(inputs)
+});
+/**
+
+* @param {Tour_Replies_2_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_replies_2_title = /** @type {((inputs?: Tour_Replies_2_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Replies_2_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_replies_2_title(inputs)
+	return __en.tour_replies_2_title(inputs)
+});
+/**
+
+* @param {Tour_Replies_3_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_replies_3_body = /** @type {((inputs?: Tour_Replies_3_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Replies_3_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_replies_3_body(inputs)
+	return __en.tour_replies_3_body(inputs)
+});
+/**
+
+* @param {Tour_Replies_3_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_replies_3_target = /** @type {((inputs?: Tour_Replies_3_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Replies_3_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_replies_3_target(inputs)
+	return __en.tour_replies_3_target(inputs)
+});
+/**
+
+* @param {Tour_Replies_3_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_replies_3_title = /** @type {((inputs?: Tour_Replies_3_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Replies_3_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_replies_3_title(inputs)
+	return __en.tour_replies_3_title(inputs)
+});
+/**
+
+* @param {Tour_Replies_4_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_replies_4_body = /** @type {((inputs?: Tour_Replies_4_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Replies_4_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_replies_4_body(inputs)
+	return __en.tour_replies_4_body(inputs)
+});
+/**
+
+* @param {Tour_Replies_4_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_replies_4_target = /** @type {((inputs?: Tour_Replies_4_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Replies_4_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_replies_4_target(inputs)
+	return __en.tour_replies_4_target(inputs)
+});
+/**
+
+* @param {Tour_Replies_4_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_replies_4_title = /** @type {((inputs?: Tour_Replies_4_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Replies_4_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_replies_4_title(inputs)
+	return __en.tour_replies_4_title(inputs)
+});
+/**
+
+* @param {Tour_Replies_5_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_replies_5_body = /** @type {((inputs?: Tour_Replies_5_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Replies_5_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_replies_5_body(inputs)
+	return __en.tour_replies_5_body(inputs)
+});
+/**
+
+* @param {Tour_Replies_5_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_replies_5_target = /** @type {((inputs?: Tour_Replies_5_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Replies_5_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_replies_5_target(inputs)
+	return __en.tour_replies_5_target(inputs)
+});
+/**
+
+* @param {Tour_Replies_5_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_replies_5_title = /** @type {((inputs?: Tour_Replies_5_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Replies_5_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_replies_5_title(inputs)
+	return __en.tour_replies_5_title(inputs)
+});
+/**
+
+* @param {Tour_Replies_SummaryInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_replies_summary = /** @type {((inputs?: Tour_Replies_SummaryInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Replies_SummaryInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_replies_summary(inputs)
+	return __en.tour_replies_summary(inputs)
+});
+/**
+
+* @param {Tour_Replies_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_replies_title = /** @type {((inputs?: Tour_Replies_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Replies_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_replies_title(inputs)
+	return __en.tour_replies_title(inputs)
+});
+/**
+
+* @param {Tour_Rfq_To_Case_1_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_rfq_to_case_1_body = /** @type {((inputs?: Tour_Rfq_To_Case_1_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Rfq_To_Case_1_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_rfq_to_case_1_body(inputs)
+	return __en.tour_rfq_to_case_1_body(inputs)
+});
+/**
+
+* @param {Tour_Rfq_To_Case_1_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_rfq_to_case_1_target = /** @type {((inputs?: Tour_Rfq_To_Case_1_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Rfq_To_Case_1_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_rfq_to_case_1_target(inputs)
+	return __en.tour_rfq_to_case_1_target(inputs)
+});
+/**
+
+* @param {Tour_Rfq_To_Case_1_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_rfq_to_case_1_title = /** @type {((inputs?: Tour_Rfq_To_Case_1_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Rfq_To_Case_1_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_rfq_to_case_1_title(inputs)
+	return __en.tour_rfq_to_case_1_title(inputs)
+});
+/**
+
+* @param {Tour_Rfq_To_Case_2_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_rfq_to_case_2_body = /** @type {((inputs?: Tour_Rfq_To_Case_2_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Rfq_To_Case_2_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_rfq_to_case_2_body(inputs)
+	return __en.tour_rfq_to_case_2_body(inputs)
+});
+/**
+
+* @param {Tour_Rfq_To_Case_2_ClickInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_rfq_to_case_2_click = /** @type {((inputs?: Tour_Rfq_To_Case_2_ClickInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Rfq_To_Case_2_ClickInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_rfq_to_case_2_click(inputs)
+	return __en.tour_rfq_to_case_2_click(inputs)
+});
+/**
+
+* @param {Tour_Rfq_To_Case_2_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_rfq_to_case_2_target = /** @type {((inputs?: Tour_Rfq_To_Case_2_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Rfq_To_Case_2_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_rfq_to_case_2_target(inputs)
+	return __en.tour_rfq_to_case_2_target(inputs)
+});
+/**
+
+* @param {Tour_Rfq_To_Case_2_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_rfq_to_case_2_title = /** @type {((inputs?: Tour_Rfq_To_Case_2_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Rfq_To_Case_2_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_rfq_to_case_2_title(inputs)
+	return __en.tour_rfq_to_case_2_title(inputs)
+});
+/**
+
+* @param {Tour_Rfq_To_Case_3_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_rfq_to_case_3_body = /** @type {((inputs?: Tour_Rfq_To_Case_3_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Rfq_To_Case_3_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_rfq_to_case_3_body(inputs)
+	return __en.tour_rfq_to_case_3_body(inputs)
+});
+/**
+
+* @param {Tour_Rfq_To_Case_3_ClickInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_rfq_to_case_3_click = /** @type {((inputs?: Tour_Rfq_To_Case_3_ClickInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Rfq_To_Case_3_ClickInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_rfq_to_case_3_click(inputs)
+	return __en.tour_rfq_to_case_3_click(inputs)
+});
+/**
+
+* @param {Tour_Rfq_To_Case_3_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_rfq_to_case_3_target = /** @type {((inputs?: Tour_Rfq_To_Case_3_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Rfq_To_Case_3_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_rfq_to_case_3_target(inputs)
+	return __en.tour_rfq_to_case_3_target(inputs)
+});
+/**
+
+* @param {Tour_Rfq_To_Case_3_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_rfq_to_case_3_title = /** @type {((inputs?: Tour_Rfq_To_Case_3_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Rfq_To_Case_3_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_rfq_to_case_3_title(inputs)
+	return __en.tour_rfq_to_case_3_title(inputs)
+});
+/**
+
+* @param {Tour_Rfq_To_Case_4_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_rfq_to_case_4_body = /** @type {((inputs?: Tour_Rfq_To_Case_4_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Rfq_To_Case_4_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_rfq_to_case_4_body(inputs)
+	return __en.tour_rfq_to_case_4_body(inputs)
+});
+/**
+
+* @param {Tour_Rfq_To_Case_4_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_rfq_to_case_4_target = /** @type {((inputs?: Tour_Rfq_To_Case_4_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Rfq_To_Case_4_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_rfq_to_case_4_target(inputs)
+	return __en.tour_rfq_to_case_4_target(inputs)
+});
+/**
+
+* @param {Tour_Rfq_To_Case_4_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_rfq_to_case_4_title = /** @type {((inputs?: Tour_Rfq_To_Case_4_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Rfq_To_Case_4_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_rfq_to_case_4_title(inputs)
+	return __en.tour_rfq_to_case_4_title(inputs)
+});
+/**
+
+* @param {Tour_Rfq_To_Case_5_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_rfq_to_case_5_body = /** @type {((inputs?: Tour_Rfq_To_Case_5_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Rfq_To_Case_5_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_rfq_to_case_5_body(inputs)
+	return __en.tour_rfq_to_case_5_body(inputs)
+});
+/**
+
+* @param {Tour_Rfq_To_Case_5_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_rfq_to_case_5_target = /** @type {((inputs?: Tour_Rfq_To_Case_5_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Rfq_To_Case_5_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_rfq_to_case_5_target(inputs)
+	return __en.tour_rfq_to_case_5_target(inputs)
+});
+/**
+
+* @param {Tour_Rfq_To_Case_5_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_rfq_to_case_5_title = /** @type {((inputs?: Tour_Rfq_To_Case_5_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Rfq_To_Case_5_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_rfq_to_case_5_title(inputs)
+	return __en.tour_rfq_to_case_5_title(inputs)
+});
+/**
+
+* @param {Tour_Rfq_To_Case_6_BodyInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_rfq_to_case_6_body = /** @type {((inputs?: Tour_Rfq_To_Case_6_BodyInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Rfq_To_Case_6_BodyInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_rfq_to_case_6_body(inputs)
+	return __en.tour_rfq_to_case_6_body(inputs)
+});
+/**
+
+* @param {Tour_Rfq_To_Case_6_TargetInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_rfq_to_case_6_target = /** @type {((inputs?: Tour_Rfq_To_Case_6_TargetInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Rfq_To_Case_6_TargetInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_rfq_to_case_6_target(inputs)
+	return __en.tour_rfq_to_case_6_target(inputs)
+});
+/**
+
+* @param {Tour_Rfq_To_Case_6_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_rfq_to_case_6_title = /** @type {((inputs?: Tour_Rfq_To_Case_6_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Rfq_To_Case_6_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_rfq_to_case_6_title(inputs)
+	return __en.tour_rfq_to_case_6_title(inputs)
+});
+/**
+
+* @param {Tour_Rfq_To_Case_SummaryInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_rfq_to_case_summary = /** @type {((inputs?: Tour_Rfq_To_Case_SummaryInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Rfq_To_Case_SummaryInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_rfq_to_case_summary(inputs)
+	return __en.tour_rfq_to_case_summary(inputs)
+});
+/**
+
+* @param {Tour_Rfq_To_Case_TitleInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const tour_rfq_to_case_title = /** @type {((inputs?: Tour_Rfq_To_Case_TitleInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Tour_Rfq_To_Case_TitleInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.tour_rfq_to_case_title(inputs)
+	return __en.tour_rfq_to_case_title(inputs)
 });
 /**
 

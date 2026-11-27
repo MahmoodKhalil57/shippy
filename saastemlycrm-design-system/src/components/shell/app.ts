@@ -3,7 +3,7 @@ import { text } from "../../lib/payload/util.ts";
 import { yieldToMain } from "../../lib/base/work-queue.ts";
 import { LightElement } from "../base/light-element.ts";
 import { html, nothing } from "lit";
-import { customElement, property, query, state } from "lit/decorators.js";
+import { customElement, query, state } from "lit/decorators.js";
 import { keyed } from "lit/directives/keyed.js";
 import type { Doc } from "../../lib/contracts/config.ts";
 import type { MenuItem } from "../primitives/navigation/menu.ts";
@@ -22,7 +22,7 @@ import { viewElement } from "../../lib/dashboard/view-element.ts";
 import { viewWidgets } from "../../lib/widgets/places.ts";
 import { dashboardContext, type Access, type Dashboard } from "../../lib/dashboard/context.ts";
 import { componentOf, dataFields, fieldsOf, type Route, type SeedUser } from "../../lib/dashboard/project.ts";
-import { dashboardTools, type Address, type AgentHost, type Appearance } from "../../lib/shell/agent-tools.ts";
+import { dashboardTools, type AgentHost, type Appearance } from "../../lib/shell/agent-tools.ts";
 import { asideRail, expandAsideSection, type AsideSection, type Attention } from "./aside.ts";
 import { Watch } from "../../lib/shell/stores.ts";
 import { followLanguage, keepLanguage, m, savedLanguage } from "../../lib/i18n/index.ts";
@@ -52,7 +52,6 @@ const initialsOf = (user: object) => {
 @customElement("dashboard-app")
 export class DashboardApp extends LightElement {
   @consume({ context: dashboardContext, subscribe: true }) @state() private dashboard!: Dashboard;
-  @property({ attribute: false }) address: () => Address = () => location;
   @state() private route: Route = { name: "dashboard" };
   @state() private user: (Doc & { collection: string }) | null = null;
   @state() private access: Access | null = null;
@@ -81,7 +80,7 @@ export class DashboardApp extends LightElement {
   }
 
   private _parse() {
-    const { pathname, search } = this.address();
+    const { pathname, search } = this.dashboard.address();
     return this.dashboard.project.parseRoute(pathname, search);
   }
 
@@ -155,7 +154,7 @@ export class DashboardApp extends LightElement {
             role: project.roleLabel(text(this.user.role)),
             roleId: text(this.user.role),
             page: this._title(),
-            path: this.address().pathname,
+            path: this.dashboard.address().pathname,
           }
         : null,
     );
@@ -166,7 +165,7 @@ export class DashboardApp extends LightElement {
     user: () => this.user,
     access: () => this.access,
     title: () => this._title(),
-    address: () => this.address(),
+    address: () => this.dashboard.address(),
     navigation: () => [
       {
         label: m.app_nav_home(),
@@ -305,7 +304,7 @@ export class DashboardApp extends LightElement {
 
   private _groups() {
     const { project } = this.dashboard;
-    const { pathname } = this.address();
+    const { pathname } = this.dashboard.address();
     const here = (path: string) => pathname === path || pathname.startsWith(`${path}/`);
     const groups = new Map<string, MenuItem[]>();
     const access = this.access!;
@@ -454,7 +453,7 @@ export class DashboardApp extends LightElement {
     const { project, site } = d;
     const { branding } = site;
     const access = this.access!;
-    const path = this.address().pathname;
+    const path = this.dashboard.address().pathname;
     const title = this._title();
     const profile: MenuItem[] = [
       { label: m.app_title_account(), href: project.dashboardPath("account"), active: this.route.name === "account" },

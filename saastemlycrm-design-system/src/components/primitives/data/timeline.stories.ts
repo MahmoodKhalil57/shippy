@@ -3,6 +3,8 @@ import { html } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { expect } from "storybook/test";
 import "./timeline.ts";
+import "../layout/box.ts";
+import { auditLayout } from "../../../lib/base/layout.ts";
 import "../media/icon.ts";
 import type { TimelineItem } from "./timeline.ts";
 
@@ -211,5 +213,26 @@ export const MarkupItems = meta.story({
     await expect(rows).toHaveLength(2);
     await expect(rows[0]!.parentElement).toBe(list);
     await expect(rows[1]).toHaveTextContent("Sent for review");
+  },
+});
+
+export const NarrowKeepsTheText = meta.story({
+  name: "Narrow box keeps each entry readable",
+  globals: { viewport: { value: "mobile1", isRotated: false } },
+  render: () => {
+    const entries = html`<ui-timeline
+      direction="vertical"
+      snap-icon
+      compact
+      .items=${[
+        { end: { heading: "Reassigned from the sales desk to the buying desk" }, box: "end", done: true },
+        { end: { heading: "Agent update: arrival moved by one day, delivery unchanged" }, box: "end" },
+      ]}
+    ></ui-timeline>`;
+    return html`<ui-box padding="16" width="full"><ui-box padding="3" width="full">${entries}</ui-box></ui-box>
+      <ui-box padding="16" width="full"><ui-box padding="16" width="full">${entries}</ui-box></ui-box>`;
+  },
+  play: async ({ canvasElement }) => {
+    await expect(auditLayout(canvasElement).map((i) => `${i.kind} ${i.detail}`)).toEqual([]);
   },
 });

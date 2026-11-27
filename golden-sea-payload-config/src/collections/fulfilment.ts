@@ -268,7 +268,7 @@ export const PurchaseOrders: CollectionConfig = {
         data.total =
           Math.round(lines.reduce((s, l) => s + (Number(l.qty) || 0) * (Number(l.unitPrice) || 0), 0) * 100) / 100;
         if (data.status === "Confirmed" && originalDoc?.status !== "Confirmed") {
-          if (!data.recheckDone)
+          if (!(originalDoc?.recheckDone || req.context?.seed))
             throw ruleError(
               arabic(req)
                 ? "أعد التحقق من التوفر والتكلفة وسعر الصرف ومدة التوريد قبل التأكيد."

@@ -76,6 +76,29 @@ export const relative = (d: Date, lang: Lang = "en") => {
   return m.api_insights_shared_days_overdue({ days: -days }, o);
 };
 
+export const timed = (d: Date) => d.getTime() % DAY !== 0;
+export const relativeDay = (d: Date, lang: Lang = "en") => {
+  const days = Math.floor(d.getTime() / DAY) - Math.floor(NOW.getTime() / DAY);
+  const o = { locale: lang };
+  if (days === 0) return m.api_insights_shared_today({}, o);
+  if (days === 1) return m.api_insights_shared_tomorrow({}, o);
+  if (days > 1) return m.api_insights_shared_in_days({ days }, o);
+  return m.api_insights_shared_days_overdue({ days: -days }, o);
+};
+export const relativeArrival = (d: Date, lang: Lang = "en") => (timed(d) ? relative(d, lang) : relativeDay(d, lang));
+
+export const QUOTE_STAGES = [
+  "New",
+  "Validating",
+  "Sourcing",
+  "Awaiting supplier",
+  "Comparing offers",
+  "Awaiting corrected offer",
+  "Awaiting management approval",
+  "Revision requested",
+];
+export const quoteDue = (c: Doc) => QUOTE_STAGES.includes(str(c.stage));
+
 export const money = (currency: string, n: number, digits = 0, lang: Lang = "en") =>
   `${currency} ${n.toLocaleString(intlLocale(lang, "en-US"), { minimumFractionDigits: digits, maximumFractionDigits: digits })}`;
 export const egp = (n: number, lang: Lang = "en") => money("EGP", Math.round(n), 0, lang);

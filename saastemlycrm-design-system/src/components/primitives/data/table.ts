@@ -20,6 +20,7 @@ import {
   fixedWidth,
   inlineRow,
   row,
+  rowFill,
   rowLine,
   scrolled,
   scrollRoom,
@@ -29,6 +30,7 @@ import {
 } from "../../../styles/algebra.ts";
 import { iconSvg } from "../media/icon.ts";
 import { tag } from "./tag.ts";
+import { scrollFocus } from "../../base/scroll-focus.ts";
 
 export const table = rcva(
   [
@@ -36,6 +38,7 @@ export const table = rcva(
     "[&_thead_tr]:border-b [&_thead_tr]:border-outline-variant [&_thead_th]:bg-surface-container-low [&_thead_th]:text-label-md [&_thead_th]:tracking-wide [&_thead_th]:uppercase [&_:where(thead,tfoot)]:text-on-surface-variant",
     "[&_tbody_tr]:border-outline-variant [&_tbody_tr:last-child]:border-b-0 [&_tbody_tr:has(td:first-of-type_a)]:state-layer",
     "[&_td]:text-on-surface-variant [&_td_a]:no-underline [&_td_a]:underline-offset-2 [&_td_a:hover]:underline [&_td_a:hover]:text-on-surface [&_td:first-of-type_a]:font-medium [&_td:first-of-type_a]:text-on-surface",
+    "[&_:is(.truncate,.text-ellipsis)_a]:inline-block [&_:is(.truncate,.text-ellipsis)_a]:max-w-full [&_:is(.truncate,.text-ellipsis)_a]:truncate [&_:is(.truncate,.text-ellipsis)_a]:align-bottom",
     "[&_tbody_tr]:relative [&_tbody_td:first-of-type_a]:after:absolute [&_tbody_td:first-of-type_a]:after:inset-0 [&_tbody_td:first-of-type_a]:after:content-[''] [&_tbody_tr:has(td:first-of-type_a)]:cursor-pointer [&_tbody_td:not(:first-of-type)_:is(a,button,label,input)]:relative [&_tbody_td:not(:first-of-type)_:is(a,button,label,input)]:z-1 [&_tbody_th_:is(a,button,label,input)]:relative [&_tbody_th_:is(a,button,label,input)]:z-1 [--focus:host] [&_tbody_td:first-of-type_a]:focus-visible:outline-none [&_tbody_tr:has(td:first-of-type_a:focus-visible)]:outline-2 [&_tbody_tr:has(td:first-of-type_a:focus-visible)]:-outline-offset-2 [&_tbody_tr:has(td:first-of-type_a:focus-visible)]:outline-primary",
   ].join(" "),
   {
@@ -57,7 +60,7 @@ export const table = rcva(
       },
       lines: {
         wrap: scrolled.tableColumns,
-        one: "[&_thead_th_button]:min-w-max [&_tbody_tr]:h-11 [&_tbody_:is(td,th)]:max-w-80 [&_tbody_:is(td,th)]:py-1.5 [&_tbody_td]:truncate [&_tbody_td_*]:text-nowrap [&_thead_th]:py-2 [&_thead_th]:whitespace-nowrap [&_thead_th]:bg-transparent! [&_thead_th]:text-label-sm!",
+        one: "[&_thead_th_button]:min-w-max [&_tbody_tr]:h-11 [&_tbody_:is(td,th):not(:has(button))]:max-w-80 [&_tbody_:is(td,th)]:py-1.5 [&_tbody_td:not(:has(button))]:truncate [&_tbody_td_*]:text-nowrap [&_tbody_td_a]:inline-block [&_tbody_td_a]:max-w-full [&_tbody_td_a]:truncate [&_tbody_td_a]:align-bottom [&_thead_th]:py-2 [&_thead_th]:whitespace-nowrap [&_thead_th]:bg-transparent! [&_thead_th]:text-label-sm!",
       },
       surface: { true: "bg-surface-container" },
     },
@@ -76,7 +79,7 @@ export const tableWrapper = rcva(scrollX, {
     },
     bordered: { true: "rounded-box border border-outline-variant bg-surface [--scrollbar-inset:var(--radius-box)]" },
     height: { sm: "h-64", md: "h-80", lg: "h-96" },
-    width: { md: "w-80 max-w-full", lg: "w-96 max-w-full", full: "w-full" },
+    width: { md: "w-80! max-w-full", lg: "w-96! max-w-full", full: "w-full" },
   },
 });
 
@@ -160,7 +163,7 @@ export const tablePerson = rcva(`${row} items-center gap-2`);
 export const tablePersonAvatar = rcva(
   `${fixed["7"]} ${row} items-center justify-center overflow-hidden [--clips:media] rounded-full bg-primary-container text-label-sm text-on-primary-container [&>img]:size-full [&>img]:object-cover [tr[aria-selected=true]_&]:bg-surface [tr[aria-selected=true]_&]:text-on-surface`,
 );
-export const tablePersonName = rcva(rowLine);
+export const tablePersonName = rcva(`${rowFill} truncate`);
 
 export type TableVariants = VariantProps<typeof table>;
 export type TableWrapperVariants = VariantProps<typeof tableWrapper>;
@@ -190,6 +193,7 @@ export interface TableColumn<T extends TableRowData = TableRowData> {
   align?: "start" | "center" | "end";
   nowrap?: boolean;
   fixed?: boolean;
+  hideLabel?: boolean;
   kind?: "text-badge" | "button";
 }
 
@@ -535,7 +539,9 @@ export class UiTable extends LightElement {
   }
 
   private _headCell(c: TableColumn, index: number, live: boolean) {
-    const label = c.label ?? (c.kind === "button" ? html`<span class=${tableHidden()}>${c.key}</span>` : c.key);
+    const label = c.hideLabel
+      ? html`<span class=${tableHidden()}>${c.label || c.key}</span>`
+      : (c.label ?? (c.kind === "button" ? html`<span class=${tableHidden()}>${c.key}</span>` : c.key));
     const sized = this.columnWidths[c.key] !== undefined;
     const drag = live ? this._drag : undefined;
     const dragging = drag?.key === c.key;
@@ -818,6 +824,7 @@ export class UiTable extends LightElement {
     });
     return html`<div
       class=${tableWrapper({ bordered: this.bordered, height: this.height, width: this.width, nowrap: this.nowrap })}
+      ${scrollFocus()}
     >
       <table class=${cls}>
         ${this._body()}

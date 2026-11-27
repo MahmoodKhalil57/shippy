@@ -258,11 +258,9 @@ class HostBench {
   calls = () => (this.dashboard.data as unknown as { calls: { method: string; args: unknown[] }[] }).calls;
   decorator = withDashboard(() => this.dashboard);
   setup = () => {
-    const where = location.pathname + location.search;
     still(true);
     this.make();
     return () => {
-      history.replaceState(null, "", where);
       still(false);
       document.body.querySelectorAll(":scope > div:has(> dashboard-provider)").forEach((d) => d.remove());
     };

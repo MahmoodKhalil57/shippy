@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
+import MagicString from "magic-string";
 import { formatViolations, widthViolations } from "./layout-proof/check.ts";
 import { booleanBindings, recipeVariants, responsiveSafelist, responsiveTokens } from "./recipes.ts";
 
@@ -142,7 +143,8 @@ ${formatViolations(posix(path.relative(componentsDir, tsFile)), violations)}`,
       const file = path.normalize(id.split("?")[0]);
       if (!isComponentModule(file)) return null;
       const name = path.basename(file, ".ts");
-      return { code: `import "./${name}${SUFFIX}";\n${code}`, map: null };
+      const out = new MagicString(code).prepend(`import "./${name}${SUFFIX}";\n`);
+      return { code: out.toString(), map: out.generateMap({ hires: true, source: file, includeContent: true }) };
     },
   };
 }

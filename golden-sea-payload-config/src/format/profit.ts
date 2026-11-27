@@ -250,7 +250,7 @@ export const fxReceipts = (p: CaseProfit): KindData<"table"> => ({
     { key: "label", label: m.profit_col_receipt(), supporting: "amount" },
     { key: "rate", label: m.profit_col_rate(), align: "end", supporting: "quoted" },
     { key: "difference", label: m.profit_col_fx(), align: "end" },
-    { key: "realised", label: "" },
+    { key: "realised", label: m.profit_col_realised(), hideLabel: true },
   ],
   rows:
     p.currency === "EGP"

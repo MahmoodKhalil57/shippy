@@ -3,6 +3,8 @@ import { html } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { expect, waitFor } from "storybook/test";
 import "./countdown.ts";
+import "../layout/box.ts";
+import { auditLayout } from "../../../lib/base/layout.ts";
 import type { CountdownItem } from "./countdown.ts";
 
 const deadlines: CountdownItem[] = [
@@ -231,5 +233,23 @@ export const ClockChanges = meta.story({
     el.now = "";
     await el.updateComplete;
     await expect(canvas.getByRole("listitem")).toHaveTextContent(/overdue \d+ d/);
+  },
+});
+
+export const NarrowKeepsTheLabel = meta.story({
+  name: "Narrow box keeps each label readable",
+  globals: { viewport: { value: "mobile1", isRotated: false } },
+  render: () =>
+    html`<ui-box padding="16" width="full"
+      ><ui-box padding="16" width="full"
+        ><ui-countdown
+          label="Arrivals"
+          now="2026-03-02T08:59:30Z"
+          .items=${[{ label: "Arrival of the Nordic Tern", due: "2026-03-02T11:29:00Z" }]}
+        ></ui-countdown></ui-box
+    ></ui-box>`,
+  play: async ({ canvas, canvasElement }) => {
+    await expect(canvas.getByText("2 h 29 min left")).toBeInTheDocument();
+    await expect(auditLayout(canvasElement).filter((i) => i.kind === "squeezed")).toEqual([]);
   },
 });

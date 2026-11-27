@@ -34,7 +34,7 @@ export const fleetVessels = (g: Growth): KindData<"table"> => ({
     { key: "name", label: m.growth_column_vessel() },
     { key: "imo", label: m.growth_column_imo() },
     { key: "type", label: m.growth_column_type() },
-    { key: "supplied", label: "" },
+    { key: "supplied", label: m.growth_column_supplied(), hideLabel: true },
   ],
   rows: g.fleets.flatMap((f) =>
     f.vessels.map((v) => ({

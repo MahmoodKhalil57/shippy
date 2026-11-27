@@ -285,7 +285,7 @@ describe("records", () => {
             "updatedAt",
           ],
           supporting: { code: "notes" },
-          labels: { total: "Amount" },
+          labels: { total: "Amount", price: "" },
           more: true,
         },
         { head: () => ({ count: 99 }) },
@@ -299,6 +299,8 @@ describe("records", () => {
     const table = first(blocks, "table");
     expect(table.columns.map((c) => c.key)).toContain("__actions");
     expect(table.columns.find((c) => c.key === "total")).toMatchObject({ label: "Amount", align: "end" });
+    expect(table.columns.find((c) => c.key === "total")!.hideLabel).toBeUndefined();
+    expect(table.columns.find((c) => c.key === "price")).toMatchObject({ label: "Price", hideLabel: true });
     expect(table.columns.find((c) => c.key === "code")).toMatchObject({ supporting: "code__2" });
     expect(table.columns.find((c) => c.key === "customer.city")).toMatchObject({ label: "City" });
     const [a, b, c] = table.rows;

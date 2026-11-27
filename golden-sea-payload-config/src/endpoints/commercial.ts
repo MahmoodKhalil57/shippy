@@ -1,6 +1,6 @@
 import type { Endpoint, PayloadRequest } from "payload";
 import type { ApprovalView } from "../collections/commercial.ts";
-import { idOf, logActivity } from "../collections/shared.ts";
+import { activeRate, activeRates, idOf, logActivity } from "../collections/shared.ts";
 import type { Doc } from "saastemlycrm-design-system/contracts";
 import { IS_MOCK, IS_TEMP_MOCK, NotConnectedError, TempMockError } from "../flags.ts";
 import { DEMO_NOW } from "./home.ts";
@@ -98,8 +98,7 @@ async function fxRates(req: PayloadRequest) {
     rates?: Rate[];
   };
   const rates = g.rates ?? [];
-  const fx: Record<string, number> = { EGP: 1 };
-  for (const r of rates) if (r.status === "Active" && r.currency) fx[r.currency] = num(r.egpPerUnit, 1);
+  const fx: Record<string, number> = { EGP: 1, ...activeRates(rates) };
   if (fx.USD === undefined || fx.EUR === undefined) {
     if (IS_TEMP_MOCK) {
       fx.USD ??= 48.6;
@@ -1080,19 +1079,7 @@ async function requestQuoteApproval(
   const exceptions = opts.exceptions ?? (internal.exceptions ? [internal.exceptions] : []);
   const total = `${str(q.currency)} ${num(q.totalExVat).toLocaleString(intlLocale(t.locale, "en-US"), { maximumFractionDigits: 2 })}`;
   const approval = await create(req, "approvals", {
-    title:
-      type === "Quotation margin exception"
-        ? m.api_commercial_approval_title_margin(
-            {
-              number: str(q.number),
-              customer: str(customer?.name),
-              hasMargin: typeof internal.marginPct === "number" ? "yes" : "no",
-              margin: internal.marginPct ?? "",
-              min,
-            },
-            t,
-          )
-        : m.api_commercial_approval_title({ number: str(q.number), customer: str(customer?.name), total }, t),
+    title: m.api_commercial_approval_title({ number: str(q.number), customer: str(customer?.name), total }, t),
     type,
     case: idOf(q.case),
     detail: [opts.note, ...exceptions].filter(Boolean).join("\n") || m.api_commercial_no_exceptions({}, t),
@@ -1242,7 +1229,26 @@ async function quoteView(req: PayloadRequest, id: string): Promise<QuoteView | n
   };
 }
 
-const DECISIONS = ["Won", "Partially won", "Lost", "Revision requested"];
+const DECISIONS = ["Won", "Partially won", "Lost", "Expired", "Revision requested"];
+
+async function supersede(req: PayloadRequest, q: Doc, next: Doc) {
+  const t = loc(req);
+  const caseId = str(idOf(q.case));
+  const sent = q.status === "Submitted";
+  await update(req, "quotations", q.id, {
+    status: "Superseded",
+    decision: sent ? "Revision requested" : q.decision,
+  });
+  await update(req, "cases", caseId, {
+    ...(sent ? { stage: "Revision requested", decision: "Revision requested" } : {}),
+    wait: null,
+    nextAction: m.api_commercial_send_for_approval({ number: str(next.number) }, t),
+  });
+  await logActivity(req, {
+    case: caseId,
+    text: m.api_commercial_revised_activity({ next: str(next.number), from: str(q.number) }, t),
+  });
+}
 
 const readApproval = (req: PayloadRequest, id: string) =>
   req.payload.findByID({ collection: "approvals" as never, id, depth: 0, req }) as unknown as Promise<
@@ -1291,14 +1297,24 @@ async function decide(req: PayloadRequest, id: string, decision: "Approve" | "Re
     }
   } else if (type === "Exchange rate") {
     const g = await fxRates(req);
+    const approved = status === "Approved";
+    const replaced = new Set(
+      approved
+        ? g.rates
+            .filter((r) => r.status === "Awaiting approval" && r.currency)
+            .map((r) => activeRate(g.rates, str(r.currency)))
+        : [],
+    );
     const rates = g.rates.map((r) =>
       r.status === "Awaiting approval"
         ? {
             ...r,
-            status: status === "Approved" ? "Active" : "Rejected",
-            approvedBy: status === "Approved" ? me?.id : undefined,
+            status: approved ? "Active" : "Rejected",
+            approvedBy: approved ? me?.id : undefined,
           }
-        : r,
+        : replaced.has(r)
+          ? { ...r, status: "Superseded" }
+          : r,
     );
     await req.payload.updateGlobal({ slug: "fx-rates" as never, data: { rates } as never, req, depth: 0 } as never);
   }
@@ -1903,8 +1919,7 @@ export const commercialEndpoints: Endpoint[] = [
             deliveryTerms:
               str(latest?.deliveryTerms) || m.api_commercial_delivery_terms_default({ port: str(ctx.c.port) }, t),
           });
-          if (latest && latest.status !== "Superseded")
-            await update(req, "quotations", latest.id, { status: "Superseded" });
+          if (latest && latest.status !== "Superseded") await supersede(req, latest, q);
         }
         const out = await requestQuoteApproval(req, q, {
           type: P.approvalType,
@@ -1913,14 +1928,7 @@ export const commercialEndpoints: Endpoint[] = [
         });
         await logActivity(req, {
           case: ctx.c.id,
-          text: m.api_commercial_requested_activity(
-            {
-              name: str(userOf(req)?.name),
-              number: str(q.number),
-              type: optionLabel(req, "approvals", "type", P.approvalType).toLowerCase(),
-            },
-            t,
-          ),
+          text: m.api_commercial_requested_activity({ name: str(userOf(req)?.name), number: str(q.number) }, t),
         });
         return Response.json({ approval: out.approval, quotation: out.quotation });
       },
@@ -2015,39 +2023,41 @@ export const commercialEndpoints: Endpoint[] = [
             .filter(Boolean)
             .join("\n"),
         });
-        await update(req, "quotations", id, {
-          status: "Superseded",
-          decision: q.status === "Submitted" ? "Revision requested" : q.decision,
-        });
-        if (q.status === "Submitted")
-          await update(req, "cases", caseId, { stage: "Revision requested", decision: "Revision requested" });
-        await logActivity(req, {
-          case: caseId,
-          text: m.api_commercial_revised_activity({ next: str(next.number), from: str(q.number) }, t),
-        });
+        await supersede(req, q, next);
         return Response.json({ id: next.id, view: await quoteView(req, next.id) });
       } else if (action === "decision") {
         const decision = str(b.decision);
         if (!DECISIONS.includes(decision)) return fail(400, m.api_commercial_unknown_decision({}, t));
         if (q.status !== "Submitted") return fail(400, m.api_commercial_decision_on_received({}, t));
-        if (decision === "Revision requested") {
-          await update(req, "quotations", id, { decision });
-          await update(req, "cases", caseId, { stage: "Revision requested", decision, wait: null });
-        } else {
-          await update(req, "quotations", id, { decision });
+        await update(req, "quotations", id, { decision });
+        if (decision === "Revision requested")
+          await update(req, "cases", caseId, {
+            stage: "Revision requested",
+            decision,
+            wait: null,
+            nextAction: m.api_commercial_revise_for_customer({ number: str(q.number) }, t),
+          });
+        else if (decision === "Lost" || decision === "Expired")
           await update(req, "cases", caseId, {
             decision,
-            ...(decision === "Lost"
-              ? { stage: "Lost", lostReason: str(b.note) || m.api_commercial_not_given({}, t), tone: "neutral" }
-              : { stage: "Won — sales order confirmed", wait: null, tone: "ok" }),
+            stage: decision,
+            wait: null,
+            tone: "neutral",
+            ...(decision === "Lost" ? { lostReason: str(b.note) || m.api_commercial_not_given({}, t) } : {}),
             nextAction:
-              decision === "Lost"
-                ? m.api_commercial_closed_lost({}, t)
-                : decision === "Partially won"
-                  ? m.api_commercial_check_po_partial({}, t)
-                  : m.api_commercial_check_po({}, t),
+              decision === "Lost" ? m.api_commercial_closed_lost({}, t) : m.api_commercial_closed_expired({}, t),
           });
-        }
+        else
+          await update(req, "cases", caseId, {
+            decision,
+            stage: "Won — sales order confirmed",
+            wait: null,
+            tone: "ok",
+            nextAction:
+              decision === "Partially won"
+                ? m.api_commercial_check_po_partial({}, t)
+                : m.api_commercial_check_po({}, t),
+          });
         await logActivity(req, {
           case: caseId,
           text: m.api_commercial_decision_activity(

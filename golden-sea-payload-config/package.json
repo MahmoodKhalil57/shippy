@@ -29,7 +29,11 @@
     "cf:migrate:remote": "wrangler d1 migrations apply golden-sea --remote",
     "cf:seed:remote": "vpx cf-seed.ts --mode cf.remote",
     "cf:deploy": "vp build --mode cf.remote && wrangler deploy",
-    "cf:publish": "vpx publish.ts cf"
+    "cf:publish": "vpx publish.ts cf",
+    "test": "node node_modules/test-runner/src/impact/cli.ts --project checks --project features",
+    "test:checks": "vp test run --project checks",
+    "test:features": "vp test run --project features",
+    "test:ui": "vp test run --project ui"
   },
   "dependencies": {
     "cf-runner": "link:cf-runner",
@@ -40,7 +44,10 @@
   "devDependencies": {
     "@inlang/plugin-icu1": "^1.3.8",
     "@types/node": "^26.6.6",
+    "@vitest/browser-playwright": "5.1.0",
+    "@vitest/coverage-v8": "5.1.0",
     "payload": "3.94.0",
+    "playwright": "^1.65.1",
     "typescript": "~7.0.2",
     "vite": "npm:@voidzero-dev/vite-plus-core@8.3.8000",
     "vite-plus": "1.7.0",

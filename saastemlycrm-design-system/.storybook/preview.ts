@@ -5,6 +5,7 @@ import { html } from "lit";
 import addonA11y from "@storybook/addon-a11y";
 import addonDocs from "@storybook/addon-docs";
 import { configure, sb } from "storybook/test";
+import { place } from "./address.ts";
 
 configure({ asyncUtilTimeout: 5000 });
 
@@ -26,6 +27,7 @@ const withCanvas: Decorator = (story, { parameters }) =>
 export default definePreview({
   tags: ["autodocs"],
   beforeEach: () => {
+    place.reset("/");
     if (!("__vitest_browser__" in globalThis)) return;
     localStorage.clear();
     sessionStorage.clear();

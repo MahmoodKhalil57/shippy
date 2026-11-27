@@ -499,6 +499,7 @@
 /** @typedef {{ what: NonNullable<unknown> }} Frame_Drag_To_CloseInputs */
 /** @typedef {{ what: NonNullable<unknown> }} Frame_Drag_To_OpenInputs */
 /** @typedef {{ what: NonNullable<unknown> }} Frame_ExpandInputs */
+/** @typedef {{}} Frame_PanesInputs */
 /** @typedef {{}} Frame_ResizeInputs */
 /** @typedef {{ what: NonNullable<unknown> }} Frame_Resize_To_CloseInputs */
 /** @typedef {{ what: NonNullable<unknown> }} Frame_Resize_To_OpenInputs */
@@ -573,6 +574,7 @@
 /** @typedef {{ field: NonNullable<unknown> }} List_View_None_InlineInputs */
 /** @typedef {{}} List_View_OpenInputs */
 /** @typedef {{}} List_View_Open_FullInputs */
+/** @typedef {{ what: NonNullable<unknown> }} List_View_PagesInputs */
 /** @typedef {{ at: NonNullable<unknown>, total: NonNullable<unknown> }} List_View_PositionInputs */
 /** @typedef {{}} List_View_PreviousInputs */
 /** @typedef {{}} List_View_Previous_MonthInputs */
@@ -2928,6 +2930,10 @@ export const frame_expand = /** @type {(inputs: Frame_ExpandInputs) => Localized
 	return /** @type {LocalizedString} */ (`توسيع ${i?.what}`)
 };
 
+export const frame_panes = /** @type {(inputs: Frame_PanesInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`أحجام الأجزاء`)
+};
+
 export const frame_resize = /** @type {(inputs: Frame_ResizeInputs) => LocalizedString} */ () => {
 	return /** @type {LocalizedString} */ (`تغيير الحجم`)
 };
@@ -3246,6 +3252,10 @@ export const list_view_open = /** @type {(inputs: List_View_OpenInputs) => Local
 
 export const list_view_open_full = /** @type {(inputs: List_View_Open_FullInputs) => LocalizedString} */ () => {
 	return /** @type {LocalizedString} */ (`فتح الصفحة كاملة`)
+};
+
+export const list_view_pages = /** @type {(inputs: List_View_PagesInputs) => LocalizedString} */ (i) => {
+	return /** @type {LocalizedString} */ (`صفحات ${i?.what}`)
 };
 
 export const list_view_position = /** @type {(inputs: List_View_PositionInputs) => LocalizedString} */ (i) => {

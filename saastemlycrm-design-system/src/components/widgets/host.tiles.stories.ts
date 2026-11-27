@@ -313,6 +313,26 @@ export const Screens = meta.story({
   },
 });
 
+export const HomeTileNamesThePage = meta.story({
+  name: "The home tile names the page",
+  render: () =>
+    boardOf(
+      pageOf(
+        { collection: { collection: "invoices", home: true }, size: "full" },
+        { collection: { collection: "customers" }, size: "full" },
+      ),
+      { access },
+    ),
+  play: async ({ canvasElement }) => {
+    await bench.ready(canvasElement);
+    const h1 = [...canvasElement.querySelectorAll("h1")].map((h) => h.textContent!.trim());
+    await expect(h1).toEqual(["Invoices"]);
+    await expect([...canvasElement.querySelectorAll("ui-tile h2")].map((h) => h.textContent!.trim())).toContain(
+      "Customers",
+    );
+  },
+});
+
 const split: Widget = {
   split: {
     main: [{ document: { collection: "customers", id: "c1", hide: ["around"] } } as Widget],

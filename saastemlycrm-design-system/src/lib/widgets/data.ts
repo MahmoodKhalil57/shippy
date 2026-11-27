@@ -366,7 +366,8 @@ function records(p: Project, { records: r, ...w }: Kind<"records">, scope: Widge
         columns: [
           ...columns.map((f) => ({
             key: f.name!,
-            label: r.labels?.[f.name!] ?? labelOf(f),
+            label: r.labels?.[f.name!] || labelOf(f),
+            hideLabel: r.labels?.[f.name!] === "" || undefined,
             align: f.type === "number" ? ("end" as const) : undefined,
             supporting: r.supporting?.[f.name!] ? `${f.name}__2` : undefined,
           })),

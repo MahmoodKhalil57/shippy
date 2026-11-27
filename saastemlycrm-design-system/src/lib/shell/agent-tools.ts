@@ -4,7 +4,7 @@ import { text } from "../payload/util.ts";
 import type { Doc, FieldLike } from "../contracts/config.ts";
 import type { AgentTool } from "../agent/webmcp.ts";
 import { intl, m } from "../i18n/index.ts";
-import type { Access, Dashboard } from "../dashboard/context.ts";
+import type { Access, Address, Dashboard } from "../dashboard/context.ts";
 import {
   collectionSettings,
   columnsOf,
@@ -31,10 +31,7 @@ import { loadBookmarks, startTour, toggleBookmark } from "./stores.ts";
 
 export type { Access };
 
-export interface Address {
-  pathname: string;
-  search: string;
-}
+export type { Address };
 
 export interface AgentHost {
   user(): (Doc & { collection: string }) | null;

@@ -17,6 +17,7 @@ import {
 import { SETTLE_FRAMES } from "./host.ts";
 import type { Widget } from "../../lib/widgets/widget.ts";
 import "./host.ts";
+import { visit } from "../../../.storybook/address.ts";
 
 const bench = hostBench();
 const board = () => bench.boards();
@@ -53,7 +54,7 @@ const drag = (root: Element, key: string, type = "ui-drag") => {
 };
 const send = (root: Element, key: string, phase: string, x: number, y: number, type = "ui-drag", dx = 0) =>
   handleOf(root, key).dispatchEvent(new CustomEvent(type, { detail: { phase, x, y, dx, dy: 0 }, bubbles: true }));
-const atReports = () => history.replaceState(null, "", "/reports");
+const atReports = () => visit("/reports");
 
 export const MoveNext = meta.story({
   name: "Move a tile next to another",

@@ -5,6 +5,7 @@ import { idOf, logActivity } from "../collections/shared.ts";
 import type { Doc } from "saastemlycrm-design-system/contracts";
 import { IS_MOCK, IS_TEMP_MOCK, NotConnectedError, TempMockError } from "../flags.ts";
 import { DEMO_NOW } from "./home.ts";
+import { STAGE_STEP } from "./platform.ts";
 import * as link from "../links.ts";
 import { m } from "../i18n/paraglide/messages.js";
 import { type Lang, intlLocale, langOf, optionLabel } from "./insights-shared.ts";
@@ -830,6 +831,8 @@ async function poAward(req: PayloadRequest) {
   if (!["Open — revision to follow", "Closed"].includes(outcome)) return fail(m.api_operations_keep_or_close({}, t));
   if (outcome === "Closed" && !reason) return fail(m.api_operations_closing_needs_reason({}, t));
   const lineNo = num(b.lineNo);
+  if (((po.checks as Check[] | undefined) ?? []).some((c) => c.lineNo > 0 && c.lineNo === lineNo))
+    return fail(m.api_operations_line_on_po({ line: lineNo }, t));
   const all = (po.unawarded as Unawarded[] | undefined) ?? [];
   const was = all.find((u) => u.lineNo === lineNo);
   const rest = all.filter((u) => u.lineNo !== lineNo);
@@ -940,14 +943,17 @@ async function confirmOrder(req: PayloadRequest) {
       );
     }
   }
-  await update(req, "cases", id, {
-    stage: "Won — sales order confirmed",
-    decision: "Won",
-    tone: "info",
-    wait: "Awaiting internal approval",
-    blocker: "",
-    nextAction: m.api_operations_recheck_then_approve({}, t),
-  });
+  const current = await byId(req, "cases", id);
+  const confirmedStep = STAGE_STEP["Won — sales order confirmed"] ?? 0;
+  if ((STAGE_STEP[str(current?.stage)] ?? 0) < confirmedStep)
+    await update(req, "cases", id, {
+      stage: "Won — sales order confirmed",
+      decision: "Won",
+      tone: "info",
+      wait: "Awaiting internal approval",
+      blocker: "",
+      nextAction: m.api_operations_recheck_then_approve({}, t),
+    });
   await logActivity(req, {
     case: id,
     text: m.api_operations_order_confirmed_activity({ number: str(po.number), n: created.length }, t),
@@ -1007,6 +1013,20 @@ async function poRecheck(req: PayloadRequest) {
     ),
   });
   return Response.json({ doc, changed: changed.length });
+}
+
+async function poConfirm(req: PayloadRequest) {
+  if (!req.user) return signIn(req);
+  const t = loc(req);
+  if (isSales(req)) return fail(m.api_operations_costs_hidden_sales({}, t), 403);
+  const { po: poId } = await body(req);
+  const po = await byId(req, "purchase-orders", str(poId));
+  if (!po) return fail(m.api_operations_po_not_found({}, t), 404);
+  const rows = (po.recheck as unknown[] | undefined) ?? [];
+  if (po.recheckDone !== true || !rows.length) return fail(m.api_operations_recheck_first({}, t));
+  return attempt(async () =>
+    Response.json({ doc: await update(req, "purchase-orders", po.id, { status: "Confirmed" }) }),
+  );
 }
 
 async function etaChange(req: PayloadRequest) {
@@ -1099,10 +1119,14 @@ async function confirmDelivery(req: PayloadRequest) {
     });
     const caseId = str(idOf(d.case));
     const all = await find(req, "deliveries", { case: { equals: caseId } });
-    const open = all.filter((x) => !/confirmed|Cancelled/.test(str(x.status))).length;
+    const drops = all.filter((x) => !/Cancelled/.test(str(x.status)));
+    const done = drops.filter((x) => /confirmed/.test(str(x.status))).length;
+    const open = drops.length - done;
     await update(req, "cases", caseId, {
-      stage: open ? `Delivering (drop 1 of 2)` : "Delivered",
-      nextAction: m.api_operations_invoice_delivered({ number: str(d.number) }, t),
+      stage: open ? "Delivering" : "Delivered",
+      nextAction: open
+        ? m.api_operations_drop_delivered({ done, total: drops.length, number: str(d.number) }, t)
+        : m.api_operations_invoice_delivered({ number: str(d.number) }, t),
     });
     await logActivity(req, {
       case: caseId,
@@ -1470,6 +1494,7 @@ export const operationsEndpoints: Endpoint[] = [
   { path: "/operations/po-award-undo", method: "post", handler: poAwardUndo as Endpoint["handler"] },
   { path: "/operations/confirm-order", method: "post", handler: confirmOrder as Endpoint["handler"] },
   { path: "/operations/po-recheck", method: "post", handler: poRecheck as Endpoint["handler"] },
+  { path: "/operations/po-confirm", method: "post", handler: poConfirm as Endpoint["handler"] },
   { path: "/operations/eta-change", method: "post", handler: etaChange as Endpoint["handler"] },
   { path: "/operations/confirm-delivery", method: "post", handler: confirmDelivery as Endpoint["handler"] },
   { path: "/operations/invoice-delivery", method: "post", handler: invoiceDelivery as Endpoint["handler"] },

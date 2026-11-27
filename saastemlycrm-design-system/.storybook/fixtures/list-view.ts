@@ -14,6 +14,7 @@ import type { MemoryData } from "../../src/lib/dashboard/memory.ts";
 import { frames } from "../../src/lib/dashboard/tiling.ts";
 import type { ViewContext } from "../../src/components/widgets/registry.ts";
 import type { DashboardListView } from "../../src/components/views/list-view.ts";
+import { here, visit } from "../address.ts";
 
 export const TODAY = "2026-03-16";
 
@@ -294,7 +295,6 @@ let clickPrevented = false;
 export const lastClickPrevented = () => clickPrevented;
 
 export const listPage = () => {
-  const start = location.href;
   const onClick = (e: MouseEvent) => {
     clickPrevented = e.defaultPrevented;
     e.preventDefault();
@@ -304,13 +304,12 @@ export const listPage = () => {
     await frames(3);
     unmount();
     document.removeEventListener("click", onClick);
-    history.replaceState(null, "", start);
   };
 };
 
-export const urlWith = (query: string) => history.replaceState(null, "", `${location.pathname}?${query}`);
+export const urlWith = (query: string) => visit(`${here().pathname}?${query}`);
 export const at = (query: string) => () => urlWith(query);
-export const own = () => new URLSearchParams(location.search);
+export const own = () => new URLSearchParams(here().search);
 export const ids = (v: DashboardListView) => peek(v).result!.docs.map((d) => d.id);
 export const titles = (v: DashboardListView) => peek(v).result!.docs.map((d) => d.title);
 export const fire = (el: Element, type: string, detail?: unknown) =>
@@ -347,11 +346,9 @@ export const dashboardOf = (el: HTMLElement) =>
   ([...el.querySelectorAll("dashboard-provider")].at(-1) as unknown as { dashboard: TestDashboard }).dashboard;
 export const seen = (find: () => HTMLElement | Promise<HTMLElement>) =>
   waitFor(async () => expect(await find()).toBeVisible());
-export const param = (key: string) => new URLSearchParams(location.search).get(`list[${key}]`);
+export const param = (key: string) => new URLSearchParams(here().search).get(`list[${key}]`);
 
 export const clearUrl = () => {
-  const url = new URL(location.href);
-  const keys = Array.from(url.searchParams.keys());
-  for (const k of keys) if (k.startsWith("list[")) url.searchParams.delete(k);
-  history.replaceState(null, "", url);
+  const query = new URLSearchParams([...new URLSearchParams(here().search)].filter(([k]) => !k.startsWith("list[")));
+  visit(`${here().pathname}?${query}`);
 };

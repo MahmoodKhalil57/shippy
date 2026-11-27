@@ -236,6 +236,7 @@
   "field_error_option": "اختر أحد الخيارات.",
   "field_error_required": "املأ هذا الحقل للحفظ.",
   "field_error_text": "نص فقط.",
+  "list_view_pages": "صفحات {what}",
   "list_view_by": "{things} حسب {field}",
   "list_view_calendar_count": "{count} حسب {field}",
   "list_view_calendar_label": "{things} حسب {field}، {month}",

@@ -15,6 +15,14 @@ export const timeline = rcva("timeline", {
     snapIcon: { true: "timeline-snap-icon" },
     compact: { true: "timeline-compact" },
   },
+  compoundVariants: [
+    {
+      direction: "vertical",
+      compact: true,
+      class:
+        "@container w-full @max-[12rem]:[&>li]:grid-cols-[minmax(0,1fr)] @max-[12rem]:[&>li>hr]:hidden @max-[12rem]:[&>li>.timeline-middle]:hidden @max-[12rem]:[&>li>.timeline-end]:col-start-1 @max-[12rem]:[&>li>.timeline-box]:border-0 @max-[12rem]:[&>li>.timeline-box]:bg-transparent @max-[12rem]:[&>li>.timeline-box]:shadow-none @max-[12rem]:[&>li>.timeline-box]:px-0 @max-[12rem]:[&>li>.timeline-end]:mx-0",
+    },
+  ],
 });
 
 export const timelineStart = rcva("timeline-start", {

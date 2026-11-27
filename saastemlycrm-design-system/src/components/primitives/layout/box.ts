@@ -21,7 +21,7 @@ export const box = rcva("", {
       primary: "bg-primary text-primary-content",
       "primary-soft": "bg-primary-container text-on-surface",
     },
-    border: { true: "border border-outline-variant" },
+    border: { true: "ring-1 ring-inset ring-outline-variant" },
     rounded: {
       none: "rounded-none",
       field: "rounded-field",

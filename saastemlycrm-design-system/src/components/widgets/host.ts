@@ -249,7 +249,7 @@ export class AppWidgets extends LightElement {
   get scope(): WidgetScope {
     const user = (this.user ?? { id: "" }) as WidgetScope["user"];
     const page = this.page.widgets.find((w) => w.document)?.document;
-    const params = { ...this.page.params, ...Object.fromEntries(new URLSearchParams(location.search)), ...this.params };
+    const params = { ...this.page.params, ...this.#query(), ...this.params };
     const today = this.#project.today;
     const id = page ? fill(page.id, { user, params, today }) : "";
     return {
@@ -290,19 +290,21 @@ export class AppWidgets extends LightElement {
     await Promise.allSettled(this.#cache.values());
   }
 
-  ctx: ViewContext = Object.defineProperty(
+  #query() {
+    return Object.fromEntries(new URLSearchParams(this.dashboard.address().search));
+  }
+
+  ctx: ViewContext = Object.defineProperties(
     {
       run: (a: Action) => this.run(a),
       setParam: (param, value) => {
-        const url = new URL(location.href);
-        url.searchParams.set(param, value);
-        history.replaceState(history.state, "", url);
+        const { pathname, search } = this.dashboard.address();
+        const query = new URLSearchParams(search);
+        query.set(param, value);
+        this.dashboard.navigate(`${pathname}?${query}`, true);
         this.reload();
       },
       reload: () => this.reload(),
-      get params() {
-        return Object.fromEntries(new URLSearchParams(location.search));
-      },
       mount: (element, props, key) => {
         if (!customElements.get(element)) return nothing;
         const id = key ? `${element}#${key}` : element;
@@ -314,9 +316,11 @@ export class AppWidgets extends LightElement {
         Object.assign(el, props);
         return el;
       },
-    } as Omit<ViewContext, "dashboard"> as ViewContext,
-    "dashboard",
-    { get: () => this.dashboard, enumerable: true },
+    } as Omit<ViewContext, "dashboard" | "params"> as ViewContext,
+    {
+      dashboard: { get: () => this.dashboard, enumerable: true },
+      params: { get: () => this.#query(), enumerable: true },
+    },
   );
 
   run(action: Action): Promise<void> | void {
@@ -360,7 +364,8 @@ export class AppWidgets extends LightElement {
         undo && { label: m.widget_undo(), undo: true, onClick: () => void this.#undo(undo) },
       );
     if (a.reply && typeof r?.href === "string") {
-      const same = new URL(r.href, location.href).pathname === location.pathname;
+      const { pathname } = this.dashboard.address();
+      const same = new URL(r.href, `http://localhost${pathname}`).pathname === pathname;
       void this.run({ label: a.label, href: r.href });
       if (!same) return;
     }
@@ -626,7 +631,7 @@ export class AppWidgets extends LightElement {
 
   get #boardKey() {
     if (this.board) return this.board;
-    let path = location.pathname;
+    let path = this.dashboard.address().pathname;
     for (const [name, value] of Object.entries(this.params))
       path = path.replace(`/${encodeURIComponent(value)}`, `/:${name}`);
     return this.docId ? path.replace(`/${encodeURIComponent(this.docId)}`, "/:id") : path;
@@ -1178,6 +1183,7 @@ export class AppWidget extends LightElement {
       heading ||= col ? labels(col).plural : c.collection;
       body = html`<dashboard-list-view
         tile
+        .heading=${heading}
         .slug=${c.collection}
         .stateKey=${c.key ?? c.collection}
         .spec=${c}
@@ -1224,6 +1230,7 @@ export class AppWidget extends LightElement {
       ?bare=${bare}
       scrolls
       .heading=${bare ? "" : heading}
+      .level=${(w.collection ?? w.document ?? w.global)?.home ? 1 : 2}
       .subhead=${w.subhead ?? ""}
       .count=${this.count}
       .emphasis=${w.emphasis}
@@ -1306,7 +1313,7 @@ export class AppWidget extends LightElement {
           : this.state === "error"
             ? html`<ui-alert tone="error" .heading=${m.widget_load_failed()}>${this.message}</ui-alert>`
             : renderBlocks(blocks, ctx);
-    const head = this.state === "ready" ? w.head?.(this.data as never, scope) : undefined;
+    const head = this.state === "ready" && !nothingToShow ? w.head?.(this.data as never, scope) : undefined;
     const subhead = this.mini ? "" : head?.subhead || w.subhead || "";
     const trailing = title
       ? html`<ui-flex slot="trailing" gap="1" align="center" wrap

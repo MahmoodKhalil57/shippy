@@ -422,7 +422,7 @@
   "page_quote_copy": "Customer copy",
   "page_quote_copy_subhead": "Customer-facing: supplier names, costs and margins are never printed.",
   "page_quote_decision": "Decision state",
-  "page_quote_internal": "Internal — never printed",
+  "page_quote_internal": "Internal, never printed",
   "page_quote_no_portal": "No portal submission to check.",
   "page_quote_no_portal_description": "Only quotations sent through a customer's procurement portal are checked here.",
   "page_quote_no_versions": "No other versions.",

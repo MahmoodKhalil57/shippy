@@ -201,7 +201,7 @@ function harness({
     user: () => user,
     access: () => allowed,
     title: () => "Invoices",
-    address: s.address,
+    address: () => s.dashboard.address(),
     navigation: () => navigation,
     switchUser: (id) => {
       switched.push(id);

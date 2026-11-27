@@ -185,6 +185,7 @@ export const appShellDragHandle = rcva(
 
 export const appShellPage = rcva("");
 
+export const appShellHandles = rcva("contents");
 export const appShellCenter = rcva(
   "[grid-area:5/5/-1/-5] relative grid grid-rows-subgrid grid-cols-[minmax(0,1fr)] min-w-(--main-min) min-h-0 [transition:margin-inline-start_var(--duration-spatial)_var(--ease-spatial)_var(--push-start-delay,0s),margin-inline-end_var(--duration-spatial)_var(--ease-spatial)_var(--push-end-delay,0s)] motion-reduce:transition-none group-data-[drag-start]/shell:transition-none group-data-[drag-end]/shell:transition-none",
   {
@@ -898,7 +899,9 @@ export class UiFrameMain extends LightElement {
         </div>
       </div>
       ${this.hasSlotted("footer") ? html`<footer class=${appShellPageFooter()} data-frame-region>${this.slotted("footer")}</footer>` : nothing}
-      ${this.#handle("start")} ${this.compact ? nothing : this.#handle("end")}
+      <section class=${appShellHandles()} aria-label=${m.frame_panes()}>
+        ${this.#handle("start")} ${this.compact ? nothing : this.#handle("end")}
+      </section>
     </div>`;
   }
 }

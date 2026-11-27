@@ -798,12 +798,12 @@
     "tone": "warn",
     "owner": "sa",
     "nextAction": {
-      "en": "Karim Balbaa: margin exception (12.4%)",
-      "ar": "كريم بلباع: استثناء هامش (12.4%)"
+      "en": "Karim Balbaa: approve GS-Q-0137 v2",
+      "ar": "Karim Balbaa: الموافقة على GS-Q-0137 v2"
     },
     "blocker": {
-      "en": "Below 15% minimum margin",
-      "ar": "أقل من الحد الأدنى للهامش 15%"
+      "en": "Waiting for management approval of the price",
+      "ar": "بانتظار موافقة الإدارة على السعر"
     },
     "lines": {
       "ready": 6,
@@ -857,8 +857,8 @@
           "marginPct": 12.4,
           "offers": ["off-0137-l1-s1"],
           "reason": {
-            "en": "Best fit; margin cut to the customer's target price (approval requested)",
-            "ar": "الأنسب؛ خُفّض الهامش إلى السعر المستهدف للعميل (طُلبت الموافقة)"
+            "en": "Best fit; priced to the customer's target price (approval requested)",
+            "ar": "الأنسب؛ سُعّر وفق السعر المستهدف للعميل (طُلبت الموافقة)"
           }
         }
       },
@@ -881,8 +881,8 @@
           "marginPct": 12.4,
           "offers": ["off-0137-l2-s1"],
           "reason": {
-            "en": "Best fit; margin cut to the customer's target price (approval requested)",
-            "ar": "الأنسب؛ خُفّض الهامش إلى السعر المستهدف للعميل (طُلبت الموافقة)"
+            "en": "Best fit; priced to the customer's target price (approval requested)",
+            "ar": "الأنسب؛ سُعّر وفق السعر المستهدف للعميل (طُلبت الموافقة)"
           }
         }
       },
@@ -1394,7 +1394,7 @@
     "port": "Abu Qir",
     "eta": "2026-11-21T00:00:00.000Z",
     "deadline": "2026-11-09T12:00:00.000Z",
-    "stage": "Delivering (drop 1 of 2)",
+    "stage": "Delivering",
     "wait": "Awaiting delivery or payment",
     "tone": "ok",
     "owner": "ah",
@@ -1940,5 +1940,265 @@
         }
       ]
     }
+  },
+  {
+    "id": "gs-rfq-0129",
+    "caseId": "GS-RFQ-0129",
+    "customer": "delta-offshore",
+    "vessel": "DOS Falcon",
+    "deadline": "2026-11-01T00:00:00.000Z",
+    "stage": "Delivered",
+    "wait": "Awaiting delivery or payment",
+    "tone": "ok",
+    "owner": "ah",
+    "nextAction": {
+      "en": "Collect INV/2026/0417: EGP 98,500 due 13 Feb",
+      "ar": "تحصيل INV/2026/0417: EGP 98,500 مستحق 13 فبراير"
+    },
+    "blocker": "",
+    "lines": {
+      "ready": 1,
+      "waiting": 0,
+      "blocked": 0,
+      "noOffer": 0
+    },
+    "value": 98500,
+    "urgent": false,
+    "currency": "EGP",
+    "decision": "Won"
+  },
+  {
+    "id": "gs-rfq-0128",
+    "caseId": "GS-RFQ-0128",
+    "customer": "mare-nostrum",
+    "vessel": "MV Corallo",
+    "deadline": "2026-10-22T00:00:00.000Z",
+    "stage": "Delivered",
+    "wait": "Awaiting delivery or payment",
+    "tone": "ok",
+    "owner": "ah",
+    "nextAction": {
+      "en": "Collect INV/2026/0418: EUR 5,200 due 4 Jan",
+      "ar": "تحصيل INV/2026/0418: EUR 5,200 مستحق 4 يناير"
+    },
+    "blocker": "",
+    "lines": {
+      "ready": 1,
+      "waiting": 0,
+      "blocked": 0,
+      "noOffer": 0
+    },
+    "value": 5200,
+    "urgent": false,
+    "currency": "EUR",
+    "decision": "Won"
+  },
+  {
+    "id": "gs-rfq-0127",
+    "caseId": "GS-RFQ-0127",
+    "customer": "mare-nostrum",
+    "vessel": "MV Corallo",
+    "deadline": "2026-11-02T00:00:00.000Z",
+    "stage": "Delivered",
+    "wait": "Awaiting delivery or payment",
+    "tone": "ok",
+    "owner": "ah",
+    "nextAction": {
+      "en": "Collect INV/2026/0419: EUR 1,840 due 15 Jan",
+      "ar": "تحصيل INV/2026/0419: EUR 1,840 مستحق 15 يناير"
+    },
+    "blocker": "",
+    "lines": {
+      "ready": 1,
+      "waiting": 0,
+      "blocked": 0,
+      "noOffer": 0
+    },
+    "value": 1840,
+    "urgent": false,
+    "currency": "EUR",
+    "decision": "Won"
+  },
+  {
+    "id": "gs-rfq-0126",
+    "caseId": "GS-RFQ-0126",
+    "customer": "delta-offshore",
+    "vessel": "rig resupply",
+    "deadline": "2026-08-06T00:00:00.000Z",
+    "stage": "Delivered",
+    "wait": "Awaiting delivery or payment",
+    "tone": "ok",
+    "owner": "ah",
+    "nextAction": {
+      "en": "Collect INV/2026/0405: EGP 465,000 due 18 Nov",
+      "ar": "تحصيل INV/2026/0405: EGP 465,000 مستحق 18 نوفمبر"
+    },
+    "blocker": "",
+    "lines": {
+      "ready": 1,
+      "waiting": 0,
+      "blocked": 0,
+      "noOffer": 0
+    },
+    "value": 465000,
+    "urgent": false,
+    "currency": "EGP",
+    "decision": "Won"
+  },
+  {
+    "id": "gs-rfq-0125",
+    "caseId": "GS-RFQ-0125",
+    "customer": "helios",
+    "vessel": "MV Helios Star",
+    "deadline": "2026-10-14T00:00:00.000Z",
+    "stage": "Delivered",
+    "wait": "Awaiting delivery or payment",
+    "tone": "ok",
+    "owner": "ah",
+    "nextAction": {
+      "en": "Collect INV/2026/0409: USD 8,000 due 27 Nov",
+      "ar": "تحصيل INV/2026/0409: USD 8,000 مستحق 27 نوفمبر"
+    },
+    "blocker": "",
+    "lines": {
+      "ready": 1,
+      "waiting": 0,
+      "blocked": 0,
+      "noOffer": 0
+    },
+    "value": 8000,
+    "urgent": false,
+    "currency": "USD",
+    "decision": "Won"
+  },
+  {
+    "id": "gs-rfq-0124",
+    "caseId": "GS-RFQ-0124",
+    "customer": "nordvik",
+    "vessel": "MV Aurora Crest",
+    "deadline": "2026-09-26T00:00:00.000Z",
+    "stage": "Delivered",
+    "wait": "Awaiting delivery or payment",
+    "tone": "ok",
+    "owner": "ah",
+    "nextAction": {
+      "en": "Collect INV/2026/0401: USD 12,400 due 9 Dec",
+      "ar": "تحصيل INV/2026/0401: USD 12,400 مستحق 9 ديسمبر"
+    },
+    "blocker": "",
+    "lines": {
+      "ready": 1,
+      "waiting": 0,
+      "blocked": 0,
+      "noOffer": 0
+    },
+    "value": 12400,
+    "urgent": false,
+    "currency": "USD",
+    "decision": "Won"
+  },
+  {
+    "id": "gs-rfq-0122",
+    "caseId": "GS-RFQ-0122",
+    "customer": "delta-offshore",
+    "vessel": "DOS Falcon",
+    "deadline": "2026-07-16T00:00:00.000Z",
+    "stage": "Delivered",
+    "wait": "Awaiting delivery or payment",
+    "tone": "ok",
+    "owner": "ah",
+    "nextAction": {
+      "en": "Collect INV/2026/0398: EGP 170,000 due 28 Oct",
+      "ar": "تحصيل INV/2026/0398: EGP 170,000 مستحق 28 أكتوبر"
+    },
+    "blocker": "",
+    "lines": {
+      "ready": 1,
+      "waiting": 0,
+      "blocked": 0,
+      "noOffer": 0
+    },
+    "value": 170000,
+    "urgent": false,
+    "currency": "EGP",
+    "decision": "Won"
+  },
+  {
+    "id": "gs-rfq-0121",
+    "caseId": "GS-RFQ-0121",
+    "customer": "nordvik",
+    "vessel": "MV Nordic Tern",
+    "deadline": "2026-08-20T00:00:00.000Z",
+    "stage": "Delivered",
+    "wait": "Awaiting delivery or payment",
+    "tone": "ok",
+    "owner": "ah",
+    "nextAction": {
+      "en": "Collect INV/2026/0396: USD 3,100 due 2 Nov",
+      "ar": "تحصيل INV/2026/0396: USD 3,100 مستحق 2 نوفمبر"
+    },
+    "blocker": "",
+    "lines": {
+      "ready": 1,
+      "waiting": 0,
+      "blocked": 0,
+      "noOffer": 0
+    },
+    "value": 3100,
+    "urgent": false,
+    "currency": "USD",
+    "decision": "Won"
+  },
+  {
+    "id": "gs-rfq-0119",
+    "caseId": "GS-RFQ-0119",
+    "customer": "atlas",
+    "vessel": "MT Atlas Pearl",
+    "deadline": "2026-08-04T00:00:00.000Z",
+    "stage": "Delivered",
+    "wait": "Awaiting delivery or payment",
+    "tone": "ok",
+    "owner": "ah",
+    "nextAction": {
+      "en": "Collect INV/2026/0388: USD 6,500 due 2 Oct",
+      "ar": "تحصيل INV/2026/0388: USD 6,500 مستحق 2 أكتوبر"
+    },
+    "blocker": "",
+    "lines": {
+      "ready": 1,
+      "waiting": 0,
+      "blocked": 0,
+      "noOffer": 0
+    },
+    "value": 6500,
+    "urgent": false,
+    "currency": "USD",
+    "decision": "Won"
+  },
+  {
+    "id": "gs-rfq-0112",
+    "caseId": "GS-RFQ-0112",
+    "customer": "atlas",
+    "vessel": "MT Atlas Wave",
+    "deadline": "2026-06-28T00:00:00.000Z",
+    "stage": "Delivered",
+    "wait": "Awaiting delivery or payment",
+    "tone": "ok",
+    "owner": "ah",
+    "nextAction": {
+      "en": "Collect INV/2026/0371: USD 1,400 due 26 Aug",
+      "ar": "تحصيل INV/2026/0371: USD 1,400 مستحق 26 أغسطس"
+    },
+    "blocker": "",
+    "lines": {
+      "ready": 1,
+      "waiting": 0,
+      "blocked": 0,
+      "noOffer": 0
+    },
+    "value": 1400,
+    "urgent": false,
+    "currency": "USD",
+    "decision": "Won"
   }
 ]

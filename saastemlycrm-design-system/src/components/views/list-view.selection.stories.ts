@@ -14,6 +14,7 @@ import {
   withTasks,
 } from "../../../.storybook/fixtures/list-view.ts";
 import "./list-view.ts";
+import { here } from "../../../.storybook/address.ts";
 
 const meta = preview.meta({
   component: "dashboard-list-view",
@@ -168,7 +169,7 @@ export const PageColumnPrefs = meta.story({
   play: async ({ canvasElement }) => {
     const { view, dashboard } = await shown(canvasElement);
     fire(view.querySelector("ui-column-picker")!, "ui-change", { hidden: [], order: [], reset: false });
-    await expect(Object.keys(dashboard.stores.preferences.get().listColumns)).toEqual([`tasks@${location.pathname}#k`]);
+    await expect(Object.keys(dashboard.stores.preferences.get().listColumns)).toEqual([`tasks@${here().pathname}#k`]);
   },
 });
 

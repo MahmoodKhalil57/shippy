@@ -9,7 +9,8 @@
       "./messages/pages/{locale}.json",
       "./messages/format/{locale}.json",
       "./messages/endpoints/{locale}.json",
-      "./messages/actions/{locale}.json"
+      "./messages/actions/{locale}.json",
+      "./messages/tours/{locale}.json"
     ]
   }
 }

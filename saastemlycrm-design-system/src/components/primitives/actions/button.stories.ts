@@ -3,6 +3,8 @@ import { html } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { expect, fn } from "storybook/test";
 import "./button.ts";
+import ownSheet from "./button.ui.css?inline";
+import plainSheet from "../forms/form.ui.css?inline";
 
 const meta = preview.type<{ args: { text: string; onClick: () => void } }>().meta({
   title: "Primitives/Actions/Button",
@@ -183,5 +185,34 @@ export const ChoiceInputsAndDefaultTone = meta.story({
     await expect(right!.checked).toBe(false);
     await expect(bold!.checked).toBe(true);
     await expect(canvas.getByRole("button", { name: "Save draft" })).toHaveClass("bg-secondary-container");
+  },
+});
+
+export const OwnSheetKeepsLayerOrder = meta.story({
+  name: "Own sheet keeps the layer order",
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Component sheets load in import order. A sheet without daisyUI or variant rules, loaded first, still declares the layer order, so a filled button keeps its on-colour ink.",
+      },
+    },
+  },
+  render: () => html`<div data-own-sheet></div>`,
+  play: async ({ canvasElement }) => {
+    const host = canvasElement.querySelector<HTMLElement>("[data-own-sheet]")!;
+    const root = host.shadowRoot ?? host.attachShadow({ mode: "open" });
+    root.adoptedStyleSheets = [plainSheet, ownSheet].map((css) => {
+      const sheet = new CSSStyleSheet();
+      sheet.replaceSync(css);
+      return sheet;
+    });
+    root.innerHTML = '<a class="btn btn-primary" href="#">Continue</a>';
+    const probe = document.createElement("span");
+    probe.style.color = "var(--color-primary-content)";
+    canvasElement.append(probe);
+    const ink = getComputedStyle(probe).color;
+    probe.remove();
+    await expect(getComputedStyle(root.querySelector("a")!).color).toBe(ink);
   },
 });

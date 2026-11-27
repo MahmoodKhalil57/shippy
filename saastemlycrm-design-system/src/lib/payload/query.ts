@@ -63,8 +63,6 @@ function test(op: string, actual: unknown, expected: unknown): boolean {
       return list(expected).some((e) => same(actual, e));
     case "not_in":
       return !list(expected).some((e) => same(actual, e));
-    case "all":
-      return list(expected).some((e) => same(actual, e));
     case "exists": {
       const want = expected === true || expected === "true";
       return want ? actual != null && actual !== "" : actual == null || actual === "";

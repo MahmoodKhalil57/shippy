@@ -267,9 +267,17 @@ export const messageOutcome = ({ d }: Open): KindData<"text"> => {
 export const matchPrompt = ({ d }: Open): KindData<"text"> => ({
   muted: true,
   text: t.inbox_match_text(),
-  actions: [
-    { label: t.inbox_match(), icon: "sparkles", main: true, call: { path: path(d.message!.id, "match") }, reply: true },
-  ],
+  actions: d.canSource
+    ? [
+        {
+          label: t.inbox_match(),
+          icon: "sparkles",
+          main: true,
+          call: { path: path(d.message!.id, "match") },
+          reply: true,
+        },
+      ]
+    : undefined,
 });
 
 const matchState = ({ d }: Open): KindData<"text"> | null => {
@@ -346,7 +354,7 @@ export const createCase = ({ d, users }: OpenWithPeople): KindData<"text"> => {
   const m = d.message!;
   const x = d.extraction!;
   const flagged = x.lines.filter((l) => l.flag).length;
-  const actions: Action[] = [notRelated(m, t.inbox_not_an_rfq()), createAction(m, x, users)];
+  const actions: Action[] = d.canSource ? [notRelated(m, t.inbox_not_an_rfq()), createAction(m, x, users)] : [];
   const what = {
     customer: x.customerName,
     lines: x.lines.length,

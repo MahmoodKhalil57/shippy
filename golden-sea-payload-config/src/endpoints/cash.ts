@@ -276,8 +276,8 @@ export const cashEndpoints: Endpoint[] = [
     };
     const p = po ? payableOf(po, docs) : null;
     if (!po || !p) return fail(m.api_cash_payable_not_found({}, o), 404);
-    if (p.stage === "Bill on hold" || p.depositApproval || p.paymentApproval)
-      return fail(m.api_cash_approval_in_progress({}, o));
+    if (p.stage === "Bill on hold") return fail(m.api_cash_bill_on_hold({ number: s(po.number) }, o));
+    if (p.depositApproval || p.paymentApproval) return fail(m.api_cash_approval_in_progress({}, o));
     const supplier = await related(req, "suppliers", po.supplier);
     const supplierName = s(supplier?.name);
     const number = s(po.number);
@@ -353,6 +353,10 @@ export const cashEndpoints: Endpoint[] = [
       if (!inv) return fail(m.api_cash_invoice_not_found({}, o), 404);
       const amount = Number(b.amount);
       if (!(amount > 0)) return fail(m.api_cash_enter_amount({}, o));
+      if (Math.round(amount * 100) > Math.round(inv.balance * 100))
+        return fail(
+          m.api_cash_more_than_balance({ number: inv.number, balance: money(inv.balance, inv.currency, o.locale) }, o),
+        );
       try {
         await req.payload.create({
           req,

@@ -19,6 +19,7 @@ import {
 } from "../../../.storybook/fit/widgets.ts";
 import type { AppWidgets, TileArrange } from "./host.ts";
 import "./host.ts";
+import { visit } from "../../../.storybook/address.ts";
 
 const bench = hostBench();
 const board = () => bench.boards();
@@ -176,7 +177,7 @@ export const EmptyBoard = meta.story({
 
 export const PerScreen = meta.story({
   name: "The layout is remembered per screen",
-  beforeEach: () => history.replaceState(null, "", "/customers/c%201/tasks/t1"),
+  beforeEach: () => visit("/customers/c%201/tasks/t1"),
   render: () => boardOf(pageOf(note("A"), note("B")), { board: "", params: { id: "c 1" }, docId: "t1" }),
   play: async ({ canvasElement }) => {
     const { host } = await bench.ready(canvasElement);

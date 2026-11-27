@@ -7,6 +7,7 @@ import { boardOf, hostBench, note, type El } from "../../../.storybook/fit/widge
 import type { AppWidgets } from "./host.ts";
 import type { Widget } from "../../lib/widgets/widget.ts";
 import "./host.ts";
+import { here, visit } from "../../../.storybook/address.ts";
 
 const bench = hostBench();
 
@@ -18,7 +19,7 @@ const meta = preview.meta({
 });
 
 const doc: Widget = { document: { collection: "customers", id: "$param.id" }, size: "full" };
-const atCustomer = () => history.replaceState(null, "", "/customers/c1?tab=open");
+const atCustomer = () => visit("/customers/c1?tab=open");
 
 export const ScopeFromAddress = meta.story({
   name: "Scope from the page and the address",
@@ -75,18 +76,20 @@ export const Cache = meta.story({
 
 export const Context = meta.story({
   name: "A context for blocks",
-  beforeEach: () => history.replaceState(null, "", "/reports?period=week"),
+  beforeEach: () => visit("/reports?period=week"),
   render: () => boardOf(pageOf(note("A"))),
   play: async ({ canvasElement }) => {
     const { el } = await bench.ready(canvasElement);
     const ctx = el.ctx;
     await expect(ctx.dashboard).toBe(bench.dashboard);
+    await expect(ctx.params).toEqual({ period: "week" });
     void ctx.run({ label: "Open", href: "/x" });
     await expect(bench.dashboard.navigations).toEqual([{ to: "/x", replace: false }]);
-    await expect(ctx.params).toEqual({ period: "week" });
+    await expect(ctx.params).toEqual({});
     const version = el.version;
     ctx.setParam("period", "month");
-    await expect(location.search).toBe("?period=month");
+    await expect(bench.dashboard.navigations.at(-1)).toEqual({ to: "/x?period=month", replace: true });
+    await expect(here()).toEqual({ pathname: "/x", search: "?period=month" });
     await expect(el.version).toBe(version + 1);
     ctx.reload();
     await expect(el.version).toBe(version + 2);
@@ -114,7 +117,7 @@ export const RunActions = meta.story({
         "POST /stay": () => ({ href: "/reports?x=1" }),
       },
     });
-    history.replaceState(null, "", "/reports");
+    visit("/reports");
   },
   render: () => boardOf(pageOf(note("A"))),
   play: async ({ canvasElement }) => {
@@ -174,6 +177,7 @@ export const RunActions = meta.story({
     await expect(dashboard.notices.at(-1)).toMatchObject({ message: m.widget_failed(), tone: "error" });
     await el.run({ label: "Go", call: { path: "/go" }, reply: true });
     await expect(dashboard.navigations.at(-1)).toEqual({ to: "/elsewhere", replace: false });
+    visit("/reports");
     const version = el.version;
     await el.run({ label: "Stay", call: { path: "/stay" }, reply: true });
     await expect(dashboard.navigations.at(-1)).toEqual({ to: "/reports?x=1", replace: false });

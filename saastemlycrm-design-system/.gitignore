@@ -9,4 +9,4 @@ dist
 storybook-static
 coverage
 .vitest/attachments/
-
+.test-impact.json

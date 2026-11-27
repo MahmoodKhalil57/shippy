@@ -3510,6 +3510,13 @@ export const frame_expand: ((inputs: Frame_ExpandInputs, options?: { locale?: "e
 /**
 * | output |
 * | --- |
+* | "Pane sizes" |
+*
+*/
+export const frame_panes: ((inputs?: Frame_PanesInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<Frame_PanesInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
 * | "Resize" |
 *
 */
@@ -4035,6 +4042,13 @@ export const list_view_open: ((inputs?: List_View_OpenInputs, options?: { locale
 *
 */
 export const list_view_open_full: ((inputs?: List_View_Open_FullInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<List_View_Open_FullInputs, { locale?: "en" | "ar" }, {}>;
+/**
+* | output |
+* | --- |
+* | "{what} pages" |
+*
+*/
+export const list_view_pages: ((inputs: List_View_PagesInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & __ParaglideMessageMetadata<List_View_PagesInputs, { locale?: "en" | "ar" }, {}>;
 /**
 * | output |
 * | --- |
@@ -5632,6 +5646,7 @@ export type Frame_CollapseInputs = { what: NonNullable<unknown> };
 export type Frame_Drag_To_CloseInputs = { what: NonNullable<unknown> };
 export type Frame_Drag_To_OpenInputs = { what: NonNullable<unknown> };
 export type Frame_ExpandInputs = { what: NonNullable<unknown> };
+export type Frame_PanesInputs = {};
 export type Frame_ResizeInputs = {};
 export type Frame_Resize_To_CloseInputs = { what: NonNullable<unknown> };
 export type Frame_Resize_To_OpenInputs = { what: NonNullable<unknown> };
@@ -5706,6 +5721,7 @@ export type List_View_None_ColumnInputs = { field: NonNullable<unknown> };
 export type List_View_None_InlineInputs = { field: NonNullable<unknown> };
 export type List_View_OpenInputs = {};
 export type List_View_Open_FullInputs = {};
+export type List_View_PagesInputs = { what: NonNullable<unknown> };
 export type List_View_PositionInputs = { at: NonNullable<unknown>, total: NonNullable<unknown> };
 export type List_View_PreviousInputs = {};
 export type List_View_Previous_MonthInputs = {};

@@ -148,6 +148,7 @@
 /** @typedef {{}} Api_Cash_Approval_Not_FoundInputs */
 /** @typedef {{ supplier: NonNullable<unknown> }} Api_Cash_Approve_Payment_TitleInputs */
 /** @typedef {{}} Api_Cash_Bank_Change_Not_FoundInputs */
+/** @typedef {{ number: NonNullable<unknown> }} Api_Cash_Bill_On_HoldInputs */
 /** @typedef {{ note: NonNullable<unknown> }} Api_Cash_Call_Back_DoneInputs */
 /** @typedef {{}} Api_Cash_Call_Back_FirstInputs */
 /** @typedef {{}} Api_Cash_Cant_DecideInputs */
@@ -162,6 +163,7 @@
 /** @typedef {{}} Api_Cash_List_SeparatorInputs */
 /** @typedef {{ number: NonNullable<unknown>, customer: NonNullable<unknown>, amount: NonNullable<unknown> }} Api_Cash_Match_ItemInputs */
 /** @typedef {{ count: NonNullable<unknown>, list: NonNullable<unknown> }} Api_Cash_Match_MessageInputs */
+/** @typedef {{ balance: NonNullable<unknown>, number: NonNullable<unknown> }} Api_Cash_More_Than_BalanceInputs */
 /** @typedef {{}} Api_Cash_No_Remittance_MatchInputs */
 /** @typedef {{ number: NonNullable<unknown>, due: NonNullable<unknown> }} Api_Cash_Pay_DetailInputs */
 /** @typedef {{ number: NonNullable<unknown>, bill: NonNullable<unknown>, due: NonNullable<unknown> }} Api_Cash_Pay_Detail_MatchedInputs */
@@ -183,7 +185,6 @@
 /** @typedef {{}} Api_Commercial_Approval_Not_FoundInputs */
 /** @typedef {{ progress: NonNullable<unknown> }} Api_Commercial_Approval_RecordedInputs */
 /** @typedef {{ number: NonNullable<unknown>, customer: NonNullable<unknown>, total: NonNullable<unknown> }} Api_Commercial_Approval_TitleInputs */
-/** @typedef {{ number: NonNullable<unknown>, customer: NonNullable<unknown>, hasMargin: NonNullable<unknown>, margin: NonNullable<unknown>, min: NonNullable<unknown> }} Api_Commercial_Approval_Title_MarginInputs */
 /** @typedef {{}} Api_Commercial_Approved_DotInputs */
 /** @typedef {{ title: NonNullable<unknown> }} Api_Commercial_Approved_TitleInputs */
 /** @typedef {{}} Api_Commercial_Bank_Applied_Cant_WithdrawInputs */
@@ -195,6 +196,7 @@
 /** @typedef {{}} Api_Commercial_Check_PoInputs */
 /** @typedef {{}} Api_Commercial_Check_Po_PartialInputs */
 /** @typedef {{}} Api_Commercial_Choose_OfferInputs */
+/** @typedef {{}} Api_Commercial_Closed_ExpiredInputs */
 /** @typedef {{}} Api_Commercial_Closed_LostInputs */
 /** @typedef {{ currency: NonNullable<unknown>, rate: NonNullable<unknown> }} Api_Commercial_Converted_FxInputs */
 /** @typedef {{ version: NonNullable<unknown>, replaces: NonNullable<unknown>, hasWas: NonNullable<unknown>, was: NonNullable<unknown> }} Api_Commercial_Corrected_VersionInputs */
@@ -283,8 +285,9 @@
 /** @typedef {{ number: NonNullable<unknown>, status: NonNullable<unknown> }} Api_Commercial_Quoted_With_SelectionInputs */
 /** @typedef {{}} Api_Commercial_Rejected_TechnicalInputs */
 /** @typedef {{ hours: NonNullable<unknown> }} Api_Commercial_Replies_InInputs */
-/** @typedef {{ name: NonNullable<unknown>, number: NonNullable<unknown>, type: NonNullable<unknown> }} Api_Commercial_Requested_ActivityInputs */
+/** @typedef {{ name: NonNullable<unknown>, number: NonNullable<unknown> }} Api_Commercial_Requested_ActivityInputs */
 /** @typedef {{ title: NonNullable<unknown> }} Api_Commercial_Returned_TitleInputs */
+/** @typedef {{ number: NonNullable<unknown> }} Api_Commercial_Revise_For_CustomerInputs */
 /** @typedef {{ number: NonNullable<unknown>, status: NonNullable<unknown> }} Api_Commercial_Revise_LatestInputs */
 /** @typedef {{ name: NonNullable<unknown>, reason: NonNullable<unknown> }} Api_Commercial_Revise_PricingInputs */
 /** @typedef {{ next: NonNullable<unknown>, from: NonNullable<unknown> }} Api_Commercial_Revised_ActivityInputs */
@@ -295,6 +298,7 @@
 /** @typedef {{ line: NonNullable<unknown>, names: NonNullable<unknown>, hasReason: NonNullable<unknown>, reason: NonNullable<unknown> }} Api_Commercial_Selected_ActivityInputs */
 /** @typedef {{ line: NonNullable<unknown> }} Api_Commercial_Selected_AgainInputs */
 /** @typedef {{ total: NonNullable<unknown>, qty: NonNullable<unknown>, unit: NonNullable<unknown> }} Api_Commercial_Selected_OfInputs */
+/** @typedef {{ number: NonNullable<unknown> }} Api_Commercial_Send_For_ApprovalInputs */
 /** @typedef {{ number: NonNullable<unknown> }} Api_Commercial_Send_To_CustomerInputs */
 /** @typedef {{}} Api_Commercial_Sent_Awaiting_CorrectedInputs */
 /** @typedef {{ left: NonNullable<unknown>, need: NonNullable<unknown> }} Api_Commercial_Shelf_LifeInputs */
@@ -476,6 +480,7 @@
 /** @typedef {{ n: NonNullable<unknown> }} Api_Home_Integration_ExceptionsInputs */
 /** @typedef {{ customer: NonNullable<unknown>, amount: NonNullable<unknown>, day: NonNullable<unknown> }} Api_Home_Invoice_DueInputs */
 /** @typedef {{ customer: NonNullable<unknown> }} Api_Home_Invoice_Due_ShortInputs */
+/** @typedef {{ customer: NonNullable<unknown>, amount: NonNullable<unknown>, day: NonNullable<unknown> }} Api_Home_Invoice_OverdueInputs */
 /** @typedef {{ number: NonNullable<unknown>, status: NonNullable<unknown> }} Api_Home_Invoice_SubInputs */
 /** @typedef {{ number: NonNullable<unknown>, status: NonNullable<unknown>, paid: NonNullable<unknown> }} Api_Home_Invoice_Sub_PaidInputs */
 /** @typedef {{}} Api_Home_InvoicesInputs */
@@ -553,7 +558,9 @@
 /** @typedef {{ days: NonNullable<unknown> }} Api_Insights_Shared_In_DaysInputs */
 /** @typedef {{}} Api_Insights_Shared_Not_AllowedInputs */
 /** @typedef {{ time: NonNullable<unknown> }} Api_Insights_Shared_Overdue_SinceInputs */
+/** @typedef {{}} Api_Insights_Shared_TodayInputs */
 /** @typedef {{ time: NonNullable<unknown> }} Api_Insights_Shared_Today_AtInputs */
+/** @typedef {{}} Api_Insights_Shared_TomorrowInputs */
 /** @typedef {{ time: NonNullable<unknown> }} Api_Insights_Shared_Tomorrow_AtInputs */
 /** @typedef {{}} Api_Operations_Already_AcceptedInputs */
 /** @typedef {{ number: NonNullable<unknown>, line: NonNullable<unknown>, field: NonNullable<unknown>, resolution: NonNullable<unknown> }} Api_Operations_Amend_ActivityInputs */
@@ -575,6 +582,7 @@
 /** @typedef {{ number: NonNullable<unknown>, signedBy: NonNullable<unknown> }} Api_Operations_Delivered_ActivityInputs */
 /** @typedef {{}} Api_Operations_Delivery_Not_FoundInputs */
 /** @typedef {{}} Api_Operations_Describe_AgreementInputs */
+/** @typedef {{ done: NonNullable<unknown>, total: NonNullable<unknown>, number: NonNullable<unknown> }} Api_Operations_Drop_DeliveredInputs */
 /** @typedef {{ number: NonNullable<unknown> }} Api_Operations_Einvoice_SubmittedInputs */
 /** @typedef {{ number: NonNullable<unknown>, uuid: NonNullable<unknown> }} Api_Operations_Einvoice_Submitted_ActivityInputs */
 /** @typedef {{ number: NonNullable<unknown> }} Api_Operations_Einvoice_ValidInputs */
@@ -595,6 +603,7 @@
 /** @typedef {{}} Api_Operations_Launch_BoatInputs */
 /** @typedef {{ launch: NonNullable<unknown>, at: NonNullable<unknown> }} Api_Operations_Launch_RebookedInputs */
 /** @typedef {{ n: NonNullable<unknown> }} Api_Operations_LineInputs */
+/** @typedef {{ line: NonNullable<unknown> }} Api_Operations_Line_On_PoInputs */
 /** @typedef {{}} Api_Operations_No_ChangesInputs */
 /** @typedef {{}} Api_Operations_No_Customer_PoInputs */
 /** @typedef {{}} Api_Operations_No_Customer_Po_YetInputs */
@@ -609,6 +618,7 @@
 /** @typedef {{ number: NonNullable<unknown>, caseId: NonNullable<unknown>, open: NonNullable<unknown> }} Api_Operations_Po_Read_ActivityInputs */
 /** @typedef {{ number: NonNullable<unknown>, changes: NonNullable<unknown> }} Api_Operations_Recheck_ActivityInputs */
 /** @typedef {{}} Api_Operations_Recheck_AvailabilityInputs */
+/** @typedef {{}} Api_Operations_Recheck_FirstInputs */
 /** @typedef {{}} Api_Operations_Recheck_PriceInputs */
 /** @typedef {{}} Api_Operations_Recheck_Then_ApproveInputs */
 /** @typedef {{ number: NonNullable<unknown>, hours: NonNullable<unknown> }} Api_Operations_Reconfirm_TaskInputs */
@@ -681,6 +691,7 @@
 /** @typedef {{}} Api_Platform_Management_RulesInputs */
 /** @typedef {{}} Api_Platform_My_Language_ArInputs */
 /** @typedef {{}} Api_Platform_My_Language_EnInputs */
+/** @typedef {{}} Api_Platform_Needs_A_PersonInputs */
 /** @typedef {{}} Api_Platform_No_Shift_ReasonInputs */
 /** @typedef {{}} Api_Platform_Not_Yet_ShownInputs */
 /** @typedef {{}} Api_Platform_Note_RequiredInputs */
@@ -810,6 +821,7 @@
 /** @typedef {{ channel: NonNullable<unknown>, subject: NonNullable<unknown>, count: NonNullable<unknown>, who: NonNullable<unknown> }} Api_Sourcing_Created_ActivityInputs */
 /** @typedef {{ ref: NonNullable<unknown>, caseId: NonNullable<unknown> }} Api_Sourcing_Customer_Ref_IsInputs */
 /** @typedef {{}} Api_Sourcing_Declined_EventInputs */
+/** @typedef {{}} Api_Sourcing_Desk_OnlyInputs */
 /** @typedef {{}} Api_Sourcing_Draft_GoneInputs */
 /** @typedef {{ count: NonNullable<unknown> }} Api_Sourcing_Drafts_BackInputs */
 /** @typedef {{}} Api_Sourcing_Drafts_ChangedInputs */
@@ -886,10 +898,10 @@
 /** @typedef {{}} Api_Sourcing_Rfq_Please_StateInputs */
 /** @typedef {{ reference: NonNullable<unknown>, due: NonNullable<unknown> }} Api_Sourcing_Rfq_SubjectInputs */
 /** @typedef {{}} Api_Sourcing_Rfq_To_PortInputs */
+/** @typedef {{ name: NonNullable<unknown>, reference: NonNullable<unknown>, invited: NonNullable<unknown> }} Api_Sourcing_Sender_DiffersInputs */
 /** @typedef {{ domain: NonNullable<unknown>, name: NonNullable<unknown> }} Api_Sourcing_Sender_DomainInputs */
 /** @typedef {{ sender: NonNullable<unknown> }} Api_Sourcing_Sender_UnknownInputs */
 /** @typedef {{ count: NonNullable<unknown>, who: NonNullable<unknown>, mode: NonNullable<unknown>, references: NonNullable<unknown> }} Api_Sourcing_Sent_ActivityInputs */
-/** @typedef {{ name: NonNullable<unknown> }} Api_Sourcing_Sent_By_OtherInputs */
 /** @typedef {{}} Api_Sourcing_Sent_EventInputs */
 /** @typedef {{ reference: NonNullable<unknown>, name: NonNullable<unknown>, after: NonNullable<unknown> }} Api_Sourcing_Silent_ActivityInputs */
 /** @typedef {{ after: NonNullable<unknown>, caseId: NonNullable<unknown>, due: NonNullable<unknown> }} Api_Sourcing_Silent_DetailInputs */
@@ -1050,6 +1062,7 @@
 /** @typedef {{}} Commercial_Col_Line_SupplierInputs */
 /** @typedef {{}} Commercial_Col_Margin_PctInputs */
 /** @typedef {{}} Commercial_Col_MarkupInputs */
+/** @typedef {{}} Commercial_Col_MatchInputs */
 /** @typedef {{}} Commercial_Col_OfferedInputs */
 /** @typedef {{}} Commercial_Col_Plus_SharedInputs */
 /** @typedef {{}} Commercial_Col_PortalInputs */
@@ -1305,6 +1318,7 @@
 /** @typedef {{}} Control_Room_SummariseInputs */
 /** @typedef {{}} Growth_Column_ImoInputs */
 /** @typedef {{}} Growth_Column_ManagerInputs */
+/** @typedef {{}} Growth_Column_SuppliedInputs */
 /** @typedef {{}} Growth_Column_TypeInputs */
 /** @typedef {{}} Growth_Column_VesselInputs */
 /** @typedef {{}} Growth_Extract_CompanyInputs */
@@ -1370,7 +1384,7 @@
 /** @typedef {{ name: NonNullable<unknown>, email: NonNullable<unknown> }} Inbox_FromInputs */
 /** @typedef {{}} Inbox_History_Approval_ReadyInputs */
 /** @typedef {{}} Inbox_History_Approval_TextInputs */
-/** @typedef {{ blocked: NonNullable<unknown> }} Inbox_History_Approval_WaitingInputs */
+/** @typedef {{ approvers: NonNullable<unknown>, blocked: NonNullable<unknown> }} Inbox_History_Approval_WaitingInputs */
 /** @typedef {{}} Inbox_History_ApproveInputs */
 /** @typedef {{}} Inbox_History_Approve_DoneInputs */
 /** @typedef {{ by: NonNullable<unknown> }} Inbox_History_Approved_ByInputs */
@@ -1408,6 +1422,7 @@
 /** @typedef {{}} Inbox_History_KeptInputs */
 /** @typedef {{ scanned: NonNullable<unknown> }} Inbox_History_Kept_ShareInputs */
 /** @typedef {{}} Inbox_History_Mailboxes_NoteInputs */
+/** @typedef {{}} Inbox_History_ManagementInputs */
 /** @typedef {{}} Inbox_History_MessagesInputs */
 /** @typedef {{}} Inbox_History_New_To_OdooInputs */
 /** @typedef {{}} Inbox_History_No_PoInputs */
@@ -1570,6 +1585,7 @@
 /** @typedef {{}} Order_To_Cash_Close_With_ReasonInputs */
 /** @typedef {{ line: NonNullable<unknown> }} Order_To_Cash_Closed_DoneInputs */
 /** @typedef {{}} Order_To_Cash_Col_At_QuotationInputs */
+/** @typedef {{}} Order_To_Cash_Col_CheckInputs */
 /** @typedef {{}} Order_To_Cash_Col_CheckedInputs */
 /** @typedef {{}} Order_To_Cash_Col_Customer_PoInputs */
 /** @typedef {{}} Order_To_Cash_Col_ItemInputs */
@@ -2294,6 +2310,7 @@
 /** @typedef {{}} Profit_Col_ExpectedInputs */
 /** @typedef {{}} Profit_Col_FxInputs */
 /** @typedef {{}} Profit_Col_RateInputs */
+/** @typedef {{}} Profit_Col_RealisedInputs */
 /** @typedef {{}} Profit_Col_ReceiptInputs */
 /** @typedef {{}} Profit_Col_StatusInputs */
 /** @typedef {{}} Profit_Costs_NoteInputs */
@@ -2330,6 +2347,7 @@
 /** @typedef {{ answer: NonNullable<unknown> }} Project_AnswerInputs */
 /** @typedef {{}} Project_Brief_NoteInputs */
 /** @typedef {{}} Project_Col_CheckedInputs */
+/** @typedef {{}} Project_Col_OpenInputs */
 /** @typedef {{}} Project_Col_RequirementInputs */
 /** @typedef {{}} Project_Col_ScenarioInputs */
 /** @typedef {{}} Project_Col_StatusInputs */
@@ -2442,6 +2460,195 @@
 /** @typedef {{}} Sourcing_Supplier_RecordInputs */
 /** @typedef {{}} Sourcing_System_ChoosesInputs */
 /** @typedef {{}} Sourcing_Vessel_RemovedInputs */
+/** @typedef {{}} Tour_Close_1_BodyInputs */
+/** @typedef {{}} Tour_Close_1_TargetInputs */
+/** @typedef {{}} Tour_Close_1_TitleInputs */
+/** @typedef {{}} Tour_Close_2_BodyInputs */
+/** @typedef {{}} Tour_Close_2_TargetInputs */
+/** @typedef {{}} Tour_Close_2_TitleInputs */
+/** @typedef {{}} Tour_Close_3_BodyInputs */
+/** @typedef {{}} Tour_Close_3_TargetInputs */
+/** @typedef {{}} Tour_Close_3_TitleInputs */
+/** @typedef {{}} Tour_Close_4_BodyInputs */
+/** @typedef {{}} Tour_Close_4_TargetInputs */
+/** @typedef {{}} Tour_Close_4_TitleInputs */
+/** @typedef {{}} Tour_Close_SummaryInputs */
+/** @typedef {{}} Tour_Close_TitleInputs */
+/** @typedef {{}} Tour_Control_Room_1_BodyInputs */
+/** @typedef {{}} Tour_Control_Room_1_TargetInputs */
+/** @typedef {{}} Tour_Control_Room_1_TitleInputs */
+/** @typedef {{}} Tour_Control_Room_2_BodyInputs */
+/** @typedef {{}} Tour_Control_Room_2_ClickInputs */
+/** @typedef {{}} Tour_Control_Room_2_TargetInputs */
+/** @typedef {{}} Tour_Control_Room_2_TitleInputs */
+/** @typedef {{}} Tour_Control_Room_3_BodyInputs */
+/** @typedef {{}} Tour_Control_Room_3_TargetInputs */
+/** @typedef {{}} Tour_Control_Room_3_TitleInputs */
+/** @typedef {{}} Tour_Control_Room_4_BodyInputs */
+/** @typedef {{}} Tour_Control_Room_4_TargetInputs */
+/** @typedef {{}} Tour_Control_Room_4_TitleInputs */
+/** @typedef {{}} Tour_Control_Room_SummaryInputs */
+/** @typedef {{}} Tour_Control_Room_TitleInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_1_BodyInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_1_TargetInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_1_TitleInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_2_BodyInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_2_TargetInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_2_TitleInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_3_BodyInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_3_TargetInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_3_TitleInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_4_BodyInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_4_TargetInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_4_TitleInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_5_BodyInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_5_TargetInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_5_TitleInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_SummaryInputs */
+/** @typedef {{}} Tour_Delivery_To_Cash_TitleInputs */
+/** @typedef {{}} Tour_Exceptions_1_BodyInputs */
+/** @typedef {{}} Tour_Exceptions_1_TargetInputs */
+/** @typedef {{}} Tour_Exceptions_1_TitleInputs */
+/** @typedef {{}} Tour_Exceptions_2_BodyInputs */
+/** @typedef {{}} Tour_Exceptions_2_TargetInputs */
+/** @typedef {{}} Tour_Exceptions_2_TitleInputs */
+/** @typedef {{}} Tour_Exceptions_3_BodyInputs */
+/** @typedef {{}} Tour_Exceptions_3_TargetInputs */
+/** @typedef {{}} Tour_Exceptions_3_TitleInputs */
+/** @typedef {{}} Tour_Exceptions_4_BodyInputs */
+/** @typedef {{}} Tour_Exceptions_4_TargetInputs */
+/** @typedef {{}} Tour_Exceptions_4_TitleInputs */
+/** @typedef {{}} Tour_Exceptions_SummaryInputs */
+/** @typedef {{}} Tour_Exceptions_TitleInputs */
+/** @typedef {{}} Tour_Growth_1_BodyInputs */
+/** @typedef {{}} Tour_Growth_1_TargetInputs */
+/** @typedef {{}} Tour_Growth_1_TitleInputs */
+/** @typedef {{}} Tour_Growth_2_BodyInputs */
+/** @typedef {{}} Tour_Growth_2_TargetInputs */
+/** @typedef {{}} Tour_Growth_2_TitleInputs */
+/** @typedef {{}} Tour_Growth_3_BodyInputs */
+/** @typedef {{}} Tour_Growth_3_TargetInputs */
+/** @typedef {{}} Tour_Growth_3_TitleInputs */
+/** @typedef {{}} Tour_Growth_SummaryInputs */
+/** @typedef {{}} Tour_Growth_TitleInputs */
+/** @typedef {{}} Tour_Handover_1_BodyInputs */
+/** @typedef {{}} Tour_Handover_1_TargetInputs */
+/** @typedef {{}} Tour_Handover_1_TitleInputs */
+/** @typedef {{}} Tour_Handover_2_BodyInputs */
+/** @typedef {{}} Tour_Handover_2_TargetInputs */
+/** @typedef {{}} Tour_Handover_2_TitleInputs */
+/** @typedef {{}} Tour_Handover_3_BodyInputs */
+/** @typedef {{}} Tour_Handover_3_TargetInputs */
+/** @typedef {{}} Tour_Handover_3_TitleInputs */
+/** @typedef {{}} Tour_Handover_4_BodyInputs */
+/** @typedef {{}} Tour_Handover_4_TargetInputs */
+/** @typedef {{}} Tour_Handover_4_TitleInputs */
+/** @typedef {{}} Tour_Handover_SummaryInputs */
+/** @typedef {{}} Tour_Handover_TitleInputs */
+/** @typedef {{}} Tour_Morning_1_BodyInputs */
+/** @typedef {{}} Tour_Morning_1_TitleInputs */
+/** @typedef {{}} Tour_Morning_2_BodyInputs */
+/** @typedef {{}} Tour_Morning_2_TargetInputs */
+/** @typedef {{}} Tour_Morning_2_TitleInputs */
+/** @typedef {{}} Tour_Morning_3_BodyInputs */
+/** @typedef {{}} Tour_Morning_3_TargetInputs */
+/** @typedef {{}} Tour_Morning_3_TitleInputs */
+/** @typedef {{}} Tour_Morning_4_BodyInputs */
+/** @typedef {{}} Tour_Morning_4_TargetInputs */
+/** @typedef {{}} Tour_Morning_4_TitleInputs */
+/** @typedef {{}} Tour_Morning_5_BodyInputs */
+/** @typedef {{}} Tour_Morning_5_TargetInputs */
+/** @typedef {{}} Tour_Morning_5_TitleInputs */
+/** @typedef {{}} Tour_Morning_6_BodyInputs */
+/** @typedef {{}} Tour_Morning_6_TargetInputs */
+/** @typedef {{}} Tour_Morning_6_TitleInputs */
+/** @typedef {{}} Tour_Morning_7_BodyInputs */
+/** @typedef {{}} Tour_Morning_7_TargetInputs */
+/** @typedef {{}} Tour_Morning_7_TitleInputs */
+/** @typedef {{}} Tour_Morning_SummaryInputs */
+/** @typedef {{}} Tour_Morning_TitleInputs */
+/** @typedef {{}} Tour_Po_Check_1_BodyInputs */
+/** @typedef {{}} Tour_Po_Check_1_TargetInputs */
+/** @typedef {{}} Tour_Po_Check_1_TitleInputs */
+/** @typedef {{}} Tour_Po_Check_2_BodyInputs */
+/** @typedef {{}} Tour_Po_Check_2_TargetInputs */
+/** @typedef {{}} Tour_Po_Check_2_TitleInputs */
+/** @typedef {{}} Tour_Po_Check_3_BodyInputs */
+/** @typedef {{}} Tour_Po_Check_3_TargetInputs */
+/** @typedef {{}} Tour_Po_Check_3_TitleInputs */
+/** @typedef {{}} Tour_Po_Check_4_BodyInputs */
+/** @typedef {{}} Tour_Po_Check_4_TargetInputs */
+/** @typedef {{}} Tour_Po_Check_4_TitleInputs */
+/** @typedef {{}} Tour_Po_Check_5_BodyInputs */
+/** @typedef {{}} Tour_Po_Check_5_TargetInputs */
+/** @typedef {{}} Tour_Po_Check_5_TitleInputs */
+/** @typedef {{}} Tour_Po_Check_SummaryInputs */
+/** @typedef {{}} Tour_Po_Check_TitleInputs */
+/** @typedef {{}} Tour_Quote_1_BodyInputs */
+/** @typedef {{}} Tour_Quote_1_ClickInputs */
+/** @typedef {{}} Tour_Quote_1_TargetInputs */
+/** @typedef {{}} Tour_Quote_1_TitleInputs */
+/** @typedef {{}} Tour_Quote_2_BodyInputs */
+/** @typedef {{}} Tour_Quote_2_TargetInputs */
+/** @typedef {{}} Tour_Quote_2_TitleInputs */
+/** @typedef {{}} Tour_Quote_3_BodyInputs */
+/** @typedef {{}} Tour_Quote_3_TargetInputs */
+/** @typedef {{}} Tour_Quote_3_TitleInputs */
+/** @typedef {{}} Tour_Quote_4_BodyInputs */
+/** @typedef {{}} Tour_Quote_4_TargetInputs */
+/** @typedef {{}} Tour_Quote_4_TitleInputs */
+/** @typedef {{}} Tour_Quote_5_BodyInputs */
+/** @typedef {{}} Tour_Quote_5_TargetInputs */
+/** @typedef {{}} Tour_Quote_5_TitleInputs */
+/** @typedef {{}} Tour_Quote_6_BodyInputs */
+/** @typedef {{}} Tour_Quote_6_TargetInputs */
+/** @typedef {{}} Tour_Quote_6_TitleInputs */
+/** @typedef {{}} Tour_Quote_7_BodyInputs */
+/** @typedef {{}} Tour_Quote_7_ClickInputs */
+/** @typedef {{}} Tour_Quote_7_TargetInputs */
+/** @typedef {{}} Tour_Quote_7_TitleInputs */
+/** @typedef {{}} Tour_Quote_SummaryInputs */
+/** @typedef {{}} Tour_Quote_TitleInputs */
+/** @typedef {{}} Tour_Replies_1_BodyInputs */
+/** @typedef {{}} Tour_Replies_1_TargetInputs */
+/** @typedef {{}} Tour_Replies_1_TitleInputs */
+/** @typedef {{}} Tour_Replies_2_BodyInputs */
+/** @typedef {{}} Tour_Replies_2_ClickInputs */
+/** @typedef {{}} Tour_Replies_2_TargetInputs */
+/** @typedef {{}} Tour_Replies_2_TitleInputs */
+/** @typedef {{}} Tour_Replies_3_BodyInputs */
+/** @typedef {{}} Tour_Replies_3_TargetInputs */
+/** @typedef {{}} Tour_Replies_3_TitleInputs */
+/** @typedef {{}} Tour_Replies_4_BodyInputs */
+/** @typedef {{}} Tour_Replies_4_TargetInputs */
+/** @typedef {{}} Tour_Replies_4_TitleInputs */
+/** @typedef {{}} Tour_Replies_5_BodyInputs */
+/** @typedef {{}} Tour_Replies_5_TargetInputs */
+/** @typedef {{}} Tour_Replies_5_TitleInputs */
+/** @typedef {{}} Tour_Replies_SummaryInputs */
+/** @typedef {{}} Tour_Replies_TitleInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_1_BodyInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_1_TargetInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_1_TitleInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_2_BodyInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_2_ClickInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_2_TargetInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_2_TitleInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_3_BodyInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_3_ClickInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_3_TargetInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_3_TitleInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_4_BodyInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_4_TargetInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_4_TitleInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_5_BodyInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_5_TargetInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_5_TitleInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_6_BodyInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_6_TargetInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_6_TitleInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_SummaryInputs */
+/** @typedef {{}} Tour_Rfq_To_Case_TitleInputs */
 /** @typedef {{}} Visuals_AckInputs */
 /** @typedef {{}} Visuals_Ack_CaptionInputs */
 /** @typedef {{}} Visuals_Customer_DiscountInputs */
@@ -2495,7 +2702,7 @@ export const action_cash_approved = /** @type {(inputs: Action_Cash_ApprovedInpu
 };
 
 export const action_cash_call_back_text = /** @type {(inputs: Action_Cash_Call_Back_TextInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`عاود الاتصال بالمورّد على الرقم المسجَّل (${i?.phone}) — لا على رقم ورد في الطلب أبدًا — وأكّد معه الحساب الجديد.`)
+	return /** @type {LocalizedString} */ (`عاود الاتصال بالمورّد على الرقم المسجَّل (${i?.phone})، لا على رقم ورد في الطلب أبدًا، وأكّد معه الحساب الجديد.`)
 };
 
 export const action_cash_called_back = /** @type {(inputs: Action_Cash_Called_BackInputs) => LocalizedString} */ () => {
@@ -2540,7 +2747,7 @@ export const action_eta_backorder_in_time = /** @type {(inputs: Action_Eta_Backo
 };
 
 export const action_eta_backorder_late = /** @type {(inputs: Action_Eta_Backorder_LateInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`طلب مؤجل للبند ${i?.line} (${i?.supplier}، ${i?.date}): ما زال متأخرًا — صعّد`)
+	return /** @type {LocalizedString} */ (`طلب مؤجل للبند ${i?.line} (${i?.supplier}، ${i?.date}): ما زال متأخرًا. صعّد.`)
 };
 
 export const action_eta_from = /** @type {(inputs: Action_Eta_FromInputs) => LocalizedString} */ (i) => {
@@ -2548,7 +2755,7 @@ export const action_eta_from = /** @type {(inputs: Action_Eta_FromInputs) => Loc
 };
 
 export const action_eta_heading = /** @type {(inputs: Action_Eta_HeadingInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`رسالة الوكيل — تحديث موعد الوصول`)
+	return /** @type {LocalizedString} */ (`رسالة الوكيل: تحديث موعد الوصول`)
 };
 
 export const action_eta_label = /** @type {(inputs: Action_Eta_LabelInputs) => LocalizedString} */ () => {
@@ -2576,7 +2783,7 @@ export const action_history_organise = /** @type {(inputs: Action_History_Organi
 };
 
 export const action_history_organised = /** @type {(inputs: Action_History_OrganisedInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`نُظّم السجل — العناصر غير المؤكدة بانتظارك`)
+	return /** @type {LocalizedString} */ (`نُظّم السجل، والعناصر غير المؤكدة بانتظارك`)
 };
 
 export const action_inbox_ack_auto = /** @type {(inputs: Action_Inbox_Ack_AutoInputs) => LocalizedString} */ () => {
@@ -2770,7 +2977,7 @@ export const action_rfqs_simulate = /** @type {(inputs: Action_Rfqs_SimulateInpu
 };
 
 export const action_rfqs_simulated = /** @type {(inputs: Action_Rfqs_SimulatedInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`وصلت ردود الموردين — العروض في تبويب «مقارنة»`)
+	return /** @type {LocalizedString} */ (`وصلت ردود الموردين، والعروض في تبويب «مقارنة»`)
 };
 
 export const api_assistant_and_more = /** @type {(inputs: Api_Assistant_And_MoreInputs) => LocalizedString} */ (i) => {
@@ -2778,8 +2985,8 @@ export const api_assistant_and_more = /** @type {(inputs: Api_Assistant_And_More
 };
 
 export const api_assistant_approval_item = /** @type {(inputs: Api_Assistant_Approval_ItemInputs) => LocalizedString} */ (i) => {
-	if (i?.twoPerson === "yes") return /** @type {LocalizedString} */ (`${i?.title} — ${i?.type}، من ${i?.from} · الموافقون ${i?.approvers} (قاعدة الشخصين)`);
-	return /** @type {LocalizedString} */ (`${i?.title} — ${i?.type}، من ${i?.from} · الموافقون ${i?.approvers}`)
+	if (i?.twoPerson === "yes") return /** @type {LocalizedString} */ (`${i?.title}: ${i?.type}، من ${i?.from} · الموافقون ${i?.approvers} (قاعدة الشخصين)`);
+	return /** @type {LocalizedString} */ (`${i?.title}: ${i?.type}، من ${i?.from} · الموافقون ${i?.approvers}`)
 };
 
 export const api_assistant_approvals_for_you = /** @type {(inputs: Api_Assistant_Approvals_For_YouInputs) => LocalizedString} */ (i) => {
@@ -2966,9 +3173,9 @@ export const api_assistant_items_awaiting_approval = /** @type {(inputs: Api_Ass
 };
 
 export const api_assistant_late_item = /** @type {(inputs: Api_Assistant_Late_ItemInputs) => LocalizedString} */ (i) => {
-	if (i?.extra === "claim") return /** @type {LocalizedString} */ (`${i?.supplier} — ${i?.po} البند ${i?.line}: استُلم ${i?.received} من ${i?.ordered} · ${i?.claim}`);
-	if (i?.extra === "promised") return /** @type {LocalizedString} */ (`${i?.supplier} — ${i?.po} البند ${i?.line}: استُلم ${i?.received} من ${i?.ordered} · والباقي موعود في ${i?.promised}`);
-	return /** @type {LocalizedString} */ (`${i?.supplier} — ${i?.po} البند ${i?.line}: استُلم ${i?.received} من ${i?.ordered}`)
+	if (i?.extra === "claim") return /** @type {LocalizedString} */ (`${i?.supplier}، ${i?.po} البند ${i?.line}: استُلم ${i?.received} من ${i?.ordered} · ${i?.claim}`);
+	if (i?.extra === "promised") return /** @type {LocalizedString} */ (`${i?.supplier}، ${i?.po} البند ${i?.line}: استُلم ${i?.received} من ${i?.ordered} · والباقي موعود في ${i?.promised}`);
+	return /** @type {LocalizedString} */ (`${i?.supplier}، ${i?.po} البند ${i?.line}: استُلم ${i?.received} من ${i?.ordered}`)
 };
 
 export const api_assistant_least_reliable = /** @type {(inputs: Api_Assistant_Least_ReliableInputs) => LocalizedString} */ (i) => {
@@ -3012,12 +3219,12 @@ export const api_assistant_november_gp = /** @type {(inputs: Api_Assistant_Novem
 };
 
 export const api_assistant_opportunity_item = /** @type {(inputs: Api_Assistant_Opportunity_ItemInputs) => LocalizedString} */ (i) => {
-	if (i?.hasValue === "yes" && i?.next === "none") return /** @type {LocalizedString} */ (`${i?.name} — ${i?.stage}، ${i?.value} · لا توجد خطوة تالية مخططة`);
-	if (i?.hasValue === "yes" && i?.next === "dated") return /** @type {LocalizedString} */ (`${i?.name} — ${i?.stage}، ${i?.value} · التالي: ${i?.step} (${i?.due})`);
-	if (i?.hasValue === "yes") return /** @type {LocalizedString} */ (`${i?.name} — ${i?.stage}، ${i?.value} · التالي: ${i?.step}`);
-	if (i?.next === "none") return /** @type {LocalizedString} */ (`${i?.name} — ${i?.stage} · لا توجد خطوة تالية مخططة`);
-	if (i?.next === "dated") return /** @type {LocalizedString} */ (`${i?.name} — ${i?.stage} · التالي: ${i?.step} (${i?.due})`);
-	return /** @type {LocalizedString} */ (`${i?.name} — ${i?.stage} · التالي: ${i?.step}`)
+	if (i?.hasValue === "yes" && i?.next === "none") return /** @type {LocalizedString} */ (`${i?.name}: ${i?.stage}، ${i?.value} · لا توجد خطوة تالية مخططة`);
+	if (i?.hasValue === "yes" && i?.next === "dated") return /** @type {LocalizedString} */ (`${i?.name}: ${i?.stage}، ${i?.value} · التالي: ${i?.step} (${i?.due})`);
+	if (i?.hasValue === "yes") return /** @type {LocalizedString} */ (`${i?.name}: ${i?.stage}، ${i?.value} · التالي: ${i?.step}`);
+	if (i?.next === "none") return /** @type {LocalizedString} */ (`${i?.name}: ${i?.stage} · لا توجد خطوة تالية مخططة`);
+	if (i?.next === "dated") return /** @type {LocalizedString} */ (`${i?.name}: ${i?.stage} · التالي: ${i?.step} (${i?.due})`);
+	return /** @type {LocalizedString} */ (`${i?.name}: ${i?.stage} · التالي: ${i?.step}`)
 };
 
 export const api_assistant_overdue = /** @type {(inputs: Api_Assistant_OverdueInputs) => LocalizedString} */ (i) => {
@@ -3080,8 +3287,8 @@ export const api_assistant_refused_hint = /** @type {(inputs: Api_Assistant_Refu
 };
 
 export const api_assistant_risky_item = /** @type {(inputs: Api_Assistant_Risky_ItemInputs) => LocalizedString} */ (i) => {
-	if (i?.hasBlocker === "yes") return /** @type {LocalizedString} */ (`${i?.caseId} ${i?.vessel} — ${i?.stage}، الموعد ${i?.deadline} · ${i?.blocker}`);
-	return /** @type {LocalizedString} */ (`${i?.caseId} ${i?.vessel} — ${i?.stage}، الموعد ${i?.deadline}`)
+	if (i?.hasBlocker === "yes") return /** @type {LocalizedString} */ (`${i?.caseId} ${i?.vessel}: ${i?.stage}، الموعد ${i?.deadline} · ${i?.blocker}`);
+	return /** @type {LocalizedString} */ (`${i?.caseId} ${i?.vessel}: ${i?.stage}، الموعد ${i?.deadline}`)
 };
 
 export const api_assistant_settled_margin = /** @type {(inputs: Api_Assistant_Settled_MarginInputs) => LocalizedString} */ (i) => {
@@ -3192,18 +3399,18 @@ export const api_assistant_suppliers_summary = /** @type {(inputs: Api_Assistant
 export const api_assistant_waiting_item = /** @type {(inputs: Api_Assistant_Waiting_ItemInputs) => LocalizedString} */ (i) => {
 	const remindersPlural = __paraglideRegistry.plural("ar", i?.reminders, {}, true);
 	const remindersPluralExact = i?.reminders;
-	if (i?.hasDue === "yes" && (remindersPluralExact === 0 || remindersPluralExact === "0")) return /** @type {LocalizedString} */ (`${i?.supplier} — ${i?.reference} ${i?.status}، الموعد ${i?.due}`);
-	if (i?.hasDue === "yes" && remindersPlural === "one") return /** @type {LocalizedString} */ (`${i?.supplier} — ${i?.reference} ${i?.status}، الموعد ${i?.due} (تذكير واحد)`);
-	if (i?.hasDue === "yes" && remindersPlural === "two") return /** @type {LocalizedString} */ (`${i?.supplier} — ${i?.reference} ${i?.status}، الموعد ${i?.due} (تذكيران)`);
-	if (i?.hasDue === "yes" && remindersPlural === "few") return /** @type {LocalizedString} */ (`${i?.supplier} — ${i?.reference} ${i?.status}، الموعد ${i?.due} (${__paraglideRegistry.icuPound("ar", i?.reminders, {})} تذكيرات)`);
-	if (i?.hasDue === "yes" && remindersPlural === "many") return /** @type {LocalizedString} */ (`${i?.supplier} — ${i?.reference} ${i?.status}، الموعد ${i?.due} (${__paraglideRegistry.icuPound("ar", i?.reminders, {})} تذكيرًا)`);
-	if (i?.hasDue === "yes") return /** @type {LocalizedString} */ (`${i?.supplier} — ${i?.reference} ${i?.status}، الموعد ${i?.due} (${__paraglideRegistry.icuPound("ar", i?.reminders, {})} تذكير)`);
-	if ((remindersPluralExact === 0 || remindersPluralExact === "0")) return /** @type {LocalizedString} */ (`${i?.supplier} — ${i?.reference} ${i?.status}`);
-	if (remindersPlural === "one") return /** @type {LocalizedString} */ (`${i?.supplier} — ${i?.reference} ${i?.status} (تذكير واحد)`);
-	if (remindersPlural === "two") return /** @type {LocalizedString} */ (`${i?.supplier} — ${i?.reference} ${i?.status} (تذكيران)`);
-	if (remindersPlural === "few") return /** @type {LocalizedString} */ (`${i?.supplier} — ${i?.reference} ${i?.status} (${__paraglideRegistry.icuPound("ar", i?.reminders, {})} تذكيرات)`);
-	if (remindersPlural === "many") return /** @type {LocalizedString} */ (`${i?.supplier} — ${i?.reference} ${i?.status} (${__paraglideRegistry.icuPound("ar", i?.reminders, {})} تذكيرًا)`);
-	return /** @type {LocalizedString} */ (`${i?.supplier} — ${i?.reference} ${i?.status} (${__paraglideRegistry.icuPound("ar", i?.reminders, {})} تذكير)`)
+	if (i?.hasDue === "yes" && (remindersPluralExact === 0 || remindersPluralExact === "0")) return /** @type {LocalizedString} */ (`${i?.supplier}: ${i?.reference} ${i?.status}، الموعد ${i?.due}`);
+	if (i?.hasDue === "yes" && remindersPlural === "one") return /** @type {LocalizedString} */ (`${i?.supplier}: ${i?.reference} ${i?.status}، الموعد ${i?.due} (تذكير واحد)`);
+	if (i?.hasDue === "yes" && remindersPlural === "two") return /** @type {LocalizedString} */ (`${i?.supplier}: ${i?.reference} ${i?.status}، الموعد ${i?.due} (تذكيران)`);
+	if (i?.hasDue === "yes" && remindersPlural === "few") return /** @type {LocalizedString} */ (`${i?.supplier}: ${i?.reference} ${i?.status}، الموعد ${i?.due} (${__paraglideRegistry.icuPound("ar", i?.reminders, {})} تذكيرات)`);
+	if (i?.hasDue === "yes" && remindersPlural === "many") return /** @type {LocalizedString} */ (`${i?.supplier}: ${i?.reference} ${i?.status}، الموعد ${i?.due} (${__paraglideRegistry.icuPound("ar", i?.reminders, {})} تذكيرًا)`);
+	if (i?.hasDue === "yes") return /** @type {LocalizedString} */ (`${i?.supplier}: ${i?.reference} ${i?.status}، الموعد ${i?.due} (${__paraglideRegistry.icuPound("ar", i?.reminders, {})} تذكير)`);
+	if ((remindersPluralExact === 0 || remindersPluralExact === "0")) return /** @type {LocalizedString} */ (`${i?.supplier}: ${i?.reference} ${i?.status}`);
+	if (remindersPlural === "one") return /** @type {LocalizedString} */ (`${i?.supplier}: ${i?.reference} ${i?.status} (تذكير واحد)`);
+	if (remindersPlural === "two") return /** @type {LocalizedString} */ (`${i?.supplier}: ${i?.reference} ${i?.status} (تذكيران)`);
+	if (remindersPlural === "few") return /** @type {LocalizedString} */ (`${i?.supplier}: ${i?.reference} ${i?.status} (${__paraglideRegistry.icuPound("ar", i?.reminders, {})} تذكيرات)`);
+	if (remindersPlural === "many") return /** @type {LocalizedString} */ (`${i?.supplier}: ${i?.reference} ${i?.status} (${__paraglideRegistry.icuPound("ar", i?.reminders, {})} تذكيرًا)`);
+	return /** @type {LocalizedString} */ (`${i?.supplier}: ${i?.reference} ${i?.status} (${__paraglideRegistry.icuPound("ar", i?.reminders, {})} تذكير)`)
 };
 
 export const api_assistant_we_owe = /** @type {(inputs: Api_Assistant_We_OweInputs) => LocalizedString} */ (i) => {
@@ -3237,6 +3444,10 @@ export const api_cash_approve_payment_title = /** @type {(inputs: Api_Cash_Appro
 
 export const api_cash_bank_change_not_found = /** @type {(inputs: Api_Cash_Bank_Change_Not_FoundInputs) => LocalizedString} */ () => {
 	return /** @type {LocalizedString} */ (`لم يتم العثور على طلب تغيير البيانات البنكية.`)
+};
+
+export const api_cash_bill_on_hold = /** @type {(inputs: Api_Cash_Bill_On_HoldInputs) => LocalizedString} */ (i) => {
+	return /** @type {LocalizedString} */ (`فاتورة المورّد الخاصة بـ ${i?.number} معلّقة. ارفع التعليق قبل طلب موافقة الدفع.`)
 };
 
 export const api_cash_call_back_done = /** @type {(inputs: Api_Cash_Call_Back_DoneInputs) => LocalizedString} */ (i) => {
@@ -3298,6 +3509,10 @@ export const api_cash_match_message = /** @type {(inputs: Api_Cash_Match_Message
 	return /** @type {LocalizedString} */ (`يبدو أنه يسدّد هذه الفواتير الـ${i?.count}: ${i?.list}. يسجّل شخص الدفعة.`)
 };
 
+export const api_cash_more_than_balance = /** @type {(inputs: Api_Cash_More_Than_BalanceInputs) => LocalizedString} */ (i) => {
+	return /** @type {LocalizedString} */ (`هذه الدفعة أكبر من الرصيد المفتوح البالغ ${i?.balance} على ${i?.number}. سجّل مبلغًا لا يزيد على الرصيد المفتوح.`)
+};
+
 export const api_cash_no_remittance_match = /** @type {(inputs: Api_Cash_No_Remittance_MatchInputs) => LocalizedString} */ () => {
 	return /** @type {LocalizedString} */ (`لا توجد فاتورة مفتوحة تطابق هذه الأرقام أو هذا المبلغ، راجع إشعار التحويل يدويًا.`)
 };
@@ -3311,7 +3526,7 @@ export const api_cash_pay_detail_matched = /** @type {(inputs: Api_Cash_Pay_Deta
 };
 
 export const api_cash_pay_title = /** @type {(inputs: Api_Cash_Pay_TitleInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`دفع ${i?.amount} إلى ${i?.supplier} — ${i?.number}`)
+	return /** @type {LocalizedString} */ (`دفع ${i?.amount} إلى ${i?.supplier} مقابل ${i?.number}`)
 };
 
 export const api_cash_payable_not_found = /** @type {(inputs: Api_Cash_Payable_Not_FoundInputs) => LocalizedString} */ () => {
@@ -3380,12 +3595,7 @@ export const api_commercial_approval_recorded = /** @type {(inputs: Api_Commerci
 };
 
 export const api_commercial_approval_title = /** @type {(inputs: Api_Commercial_Approval_TitleInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`عرض السعر ${i?.number} إلى ${i?.customer} — ${i?.total}`)
-};
-
-export const api_commercial_approval_title_margin = /** @type {(inputs: Api_Commercial_Approval_Title_MarginInputs) => LocalizedString} */ (i) => {
-	if (i?.hasMargin === "yes") return /** @type {LocalizedString} */ (`عرض السعر ${i?.number} إلى ${i?.customer}، بهامش ربح ${i?.margin}% (الحد الأدنى ${i?.min}%)`);
-	return /** @type {LocalizedString} */ (`عرض السعر ${i?.number} إلى ${i?.customer} (الحد الأدنى ${i?.min}%)`)
+	return /** @type {LocalizedString} */ (`عرض السعر ${i?.number} إلى ${i?.customer}، ${i?.total}`)
 };
 
 export const api_commercial_approved_dot = /** @type {(inputs: Api_Commercial_Approved_DotInputs) => LocalizedString} */ () => {
@@ -3432,6 +3642,10 @@ export const api_commercial_choose_offer = /** @type {(inputs: Api_Commercial_Ch
 	return /** @type {LocalizedString} */ (`اختر عرضًا واحدًا على الأقل.`)
 };
 
+export const api_commercial_closed_expired = /** @type {(inputs: Api_Commercial_Closed_ExpiredInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`مغلق، منتهي الصلاحية`)
+};
+
 export const api_commercial_closed_lost = /** @type {(inputs: Api_Commercial_Closed_LostInputs) => LocalizedString} */ () => {
 	return /** @type {LocalizedString} */ (`مغلق، خاسر`)
 };
@@ -3462,7 +3676,7 @@ export const api_commercial_correction_sent_status = /** @type {(inputs: Api_Com
 };
 
 export const api_commercial_correction_subject = /** @type {(inputs: Api_Commercial_Correction_SubjectInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.rfq} — البند ${i?.line}: يُرجى تصحيح عرضكم`)
+	return /** @type {LocalizedString} */ (`${i?.rfq}، البند ${i?.line}: يُرجى تصحيح عرضكم`)
 };
 
 export const api_commercial_customer_decision = /** @type {(inputs: Api_Commercial_Customer_DecisionInputs) => LocalizedString} */ () => {
@@ -3489,7 +3703,7 @@ export const api_commercial_decided_activity = /** @type {(inputs: Api_Commercia
 };
 
 export const api_commercial_decision_activity = /** @type {(inputs: Api_Commercial_Decision_ActivityInputs) => LocalizedString} */ (i) => {
-	if (i?.hasNote === "yes") return /** @type {LocalizedString} */ (`قرار العميل على ${i?.number}: ${i?.decision} — ${i?.note}.`);
+	if (i?.hasNote === "yes") return /** @type {LocalizedString} */ (`قرار العميل على ${i?.number}: ${i?.decision} (${i?.note}).`);
 	return /** @type {LocalizedString} */ (`قرار العميل على ${i?.number}: ${i?.decision}.`)
 };
 
@@ -3796,11 +4010,15 @@ export const api_commercial_replies_in = /** @type {(inputs: Api_Commercial_Repl
 };
 
 export const api_commercial_requested_activity = /** @type {(inputs: Api_Commercial_Requested_ActivityInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`طلب ${i?.name} الموافقة على ${i?.number} (${i?.type}).`)
+	return /** @type {LocalizedString} */ (`طلب ${i?.name} الموافقة على ${i?.number}.`)
 };
 
 export const api_commercial_returned_title = /** @type {(inputs: Api_Commercial_Returned_TitleInputs) => LocalizedString} */ (i) => {
 	return /** @type {LocalizedString} */ (`أُرجع: ${i?.title}`)
+};
+
+export const api_commercial_revise_for_customer = /** @type {(inputs: Api_Commercial_Revise_For_CustomerInputs) => LocalizedString} */ (i) => {
+	return /** @type {LocalizedString} */ (`راجع ${i?.number} كما طلب العميل`)
 };
 
 export const api_commercial_revise_latest = /** @type {(inputs: Api_Commercial_Revise_LatestInputs) => LocalizedString} */ (i) => {
@@ -3832,7 +4050,7 @@ export const api_commercial_select_offers_first = /** @type {(inputs: Api_Commer
 };
 
 export const api_commercial_selected_activity = /** @type {(inputs: Api_Commercial_Selected_ActivityInputs) => LocalizedString} */ (i) => {
-	if (i?.hasReason === "yes") return /** @type {LocalizedString} */ (`البند ${i?.line}: تم اختيار ${i?.names} — ${i?.reason}.`);
+	if (i?.hasReason === "yes") return /** @type {LocalizedString} */ (`البند ${i?.line}: تم اختيار ${i?.names} (${i?.reason}).`);
 	return /** @type {LocalizedString} */ (`البند ${i?.line}: تم اختيار ${i?.names} (الأنسب).`)
 };
 
@@ -3842,6 +4060,10 @@ export const api_commercial_selected_again = /** @type {(inputs: Api_Commercial_
 
 export const api_commercial_selected_of = /** @type {(inputs: Api_Commercial_Selected_OfInputs) => LocalizedString} */ (i) => {
 	return /** @type {LocalizedString} */ (`تم اختيار ${i?.total} من ${i?.qty} ${i?.unit}، فوزّع الباقي على عرض آخر.`)
+};
+
+export const api_commercial_send_for_approval = /** @type {(inputs: Api_Commercial_Send_For_ApprovalInputs) => LocalizedString} */ (i) => {
+	return /** @type {LocalizedString} */ (`أرسل ${i?.number} للاعتماد`)
 };
 
 export const api_commercial_send_to_customer = /** @type {(inputs: Api_Commercial_Send_To_CustomerInputs) => LocalizedString} */ (i) => {
@@ -4240,8 +4462,8 @@ export const api_control_room_won_of_quoted = /** @type {(inputs: Api_Control_Ro
 };
 
 export const api_growth_crm_activity = /** @type {(inputs: Api_Growth_Crm_ActivityInputs) => LocalizedString} */ (i) => {
-	if (i?.hasNote === "yes" && i?.hasNext === "yes") return /** @type {LocalizedString} */ (`${i?.name}: ${i?.result} — ${i?.note}. الخطوة التالية: ${i?.step} (${i?.due}).`);
-	if (i?.hasNote === "yes") return /** @type {LocalizedString} */ (`${i?.name}: ${i?.result} — ${i?.note}. المرحلة: ${i?.stage}.`);
+	if (i?.hasNote === "yes" && i?.hasNext === "yes") return /** @type {LocalizedString} */ (`${i?.name}: ${i?.result} (${i?.note}). الخطوة التالية: ${i?.step} (${i?.due}).`);
+	if (i?.hasNote === "yes") return /** @type {LocalizedString} */ (`${i?.name}: ${i?.result} (${i?.note}). المرحلة: ${i?.stage}.`);
 	if (i?.hasNext === "yes") return /** @type {LocalizedString} */ (`${i?.name}: ${i?.result}. الخطوة التالية: ${i?.step} (${i?.due}).`);
 	return /** @type {LocalizedString} */ (`${i?.name}: ${i?.result}. المرحلة: ${i?.stage}.`)
 };
@@ -4279,7 +4501,7 @@ export const api_growth_crm_prospect_relation = /** @type {(inputs: Api_Growth_C
 };
 
 export const api_growth_crm_task_title = /** @type {(inputs: Api_Growth_Crm_Task_TitleInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.step} — ${i?.name}`)
+	return /** @type {LocalizedString} */ (`${i?.step}: ${i?.name}`)
 };
 
 export const api_growth_crm_unknown_stage = /** @type {(inputs: Api_Growth_Crm_Unknown_StageInputs) => LocalizedString} */ () => {
@@ -4632,6 +4854,10 @@ export const api_home_invoice_due = /** @type {(inputs: Api_Home_Invoice_DueInpu
 
 export const api_home_invoice_due_short = /** @type {(inputs: Api_Home_Invoice_Due_ShortInputs) => LocalizedString} */ (i) => {
 	return /** @type {LocalizedString} */ (`${i?.customer}: الفاتورة مستحقة`)
+};
+
+export const api_home_invoice_overdue = /** @type {(inputs: Api_Home_Invoice_OverdueInputs) => LocalizedString} */ (i) => {
+	return /** @type {LocalizedString} */ (`${i?.customer}: ${i?.amount} متأخرة منذ ${i?.day}`)
 };
 
 export const api_home_invoice_sub = /** @type {(inputs: Api_Home_Invoice_SubInputs) => LocalizedString} */ (i) => {
@@ -5006,8 +5232,16 @@ export const api_insights_shared_overdue_since = /** @type {(inputs: Api_Insight
 	return /** @type {LocalizedString} */ (`متأخر منذ ${i?.time}`)
 };
 
+export const api_insights_shared_today = /** @type {(inputs: Api_Insights_Shared_TodayInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`اليوم`)
+};
+
 export const api_insights_shared_today_at = /** @type {(inputs: Api_Insights_Shared_Today_AtInputs) => LocalizedString} */ (i) => {
 	return /** @type {LocalizedString} */ (`اليوم ${i?.time}`)
+};
+
+export const api_insights_shared_tomorrow = /** @type {(inputs: Api_Insights_Shared_TomorrowInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`غدًا`)
 };
 
 export const api_insights_shared_tomorrow_at = /** @type {(inputs: Api_Insights_Shared_Tomorrow_AtInputs) => LocalizedString} */ (i) => {
@@ -5111,6 +5345,10 @@ export const api_operations_describe_agreement = /** @type {(inputs: Api_Operati
 	return /** @type {LocalizedString} */ (`صف موافقة العميل الكتابية (من، ومتى، وعلى ماذا).`)
 };
 
+export const api_operations_drop_delivered = /** @type {(inputs: Api_Operations_Drop_DeliveredInputs) => LocalizedString} */ (i) => {
+	return /** @type {LocalizedString} */ (`سُلّمت الدفعة ${i?.done} من ${i?.total}. فوترة ${i?.number}، بالكميات المسلّمة فقط`)
+};
+
 export const api_operations_einvoice_submitted = /** @type {(inputs: Api_Operations_Einvoice_SubmittedInputs) => LocalizedString} */ (i) => {
 	return /** @type {LocalizedString} */ (`وُقّعت ${i?.number} وأُرسلت.`)
 };
@@ -5196,11 +5434,15 @@ export const api_operations_launch_boat = /** @type {(inputs: Api_Operations_Lau
 };
 
 export const api_operations_launch_rebooked = /** @type {(inputs: Api_Operations_Launch_RebookedInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.launch} — أُعيد الحجز في ${i?.at}`)
+	return /** @type {LocalizedString} */ (`${i?.launch}، أُعيد الحجز في ${i?.at}`)
 };
 
 export const api_operations_line = /** @type {(inputs: Api_Operations_LineInputs) => LocalizedString} */ (i) => {
 	return /** @type {LocalizedString} */ (`البند ${i?.n}`)
+};
+
+export const api_operations_line_on_po = /** @type {(inputs: Api_Operations_Line_On_PoInputs) => LocalizedString} */ (i) => {
+	return /** @type {LocalizedString} */ (`البند ${i?.line} موجود في أمر شراء العميل، لذا لا يمكن إبقاؤه مفتوحًا أو إغلاقه.`)
 };
 
 export const api_operations_no_changes = /** @type {(inputs: Api_Operations_No_ChangesInputs) => LocalizedString} */ () => {
@@ -5228,7 +5470,7 @@ export const api_operations_no_order_book = /** @type {(inputs: Api_Operations_N
 };
 
 export const api_operations_not_awarded_activity = /** @type {(inputs: Api_Operations_Not_Awarded_ActivityInputs) => LocalizedString} */ (i) => {
-	if (i?.hasReason === "yes") return /** @type {LocalizedString} */ (`البند ${i?.line} غير مُرسى: ${i?.outcome} — ${i?.reason}.`);
+	if (i?.hasReason === "yes") return /** @type {LocalizedString} */ (`البند ${i?.line} غير مُرسى: ${i?.outcome}. السبب: ${i?.reason}.`);
 	return /** @type {LocalizedString} */ (`البند ${i?.line} غير مُرسى: ${i?.outcome}.`)
 };
 
@@ -5270,6 +5512,10 @@ export const api_operations_recheck_activity = /** @type {(inputs: Api_Operation
 
 export const api_operations_recheck_availability = /** @type {(inputs: Api_Operations_Recheck_AvailabilityInputs) => LocalizedString} */ () => {
 	return /** @type {LocalizedString} */ (`التوافر ومدة التوريد`)
+};
+
+export const api_operations_recheck_first = /** @type {(inputs: Api_Operations_Recheck_FirstInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`أعد التحقق من التوفر والتكلفة وسعر الصرف ومدة التوريد مع المورّد قبل التأكيد.`)
 };
 
 export const api_operations_recheck_price = /** @type {(inputs: Api_Operations_Recheck_PriceInputs) => LocalizedString} */ () => {
@@ -5334,7 +5580,7 @@ export const api_order_to_cash_approval_title = /** @type {(inputs: Api_Order_To
 };
 
 export const api_order_to_cash_duplicate_bill = /** @type {(inputs: Api_Order_To_Cash_Duplicate_BillInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`تم منع فاتورة مكررة: ${i?.reason}`)
+	return /** @type {LocalizedString} */ (`لم تُسجَّل الفاتورة. ${i?.reason}`)
 };
 
 export const api_order_to_cash_eta_updated = /** @type {(inputs: Api_Order_To_Cash_Eta_UpdatedInputs) => LocalizedString} */ (i) => {
@@ -5572,7 +5818,7 @@ export const api_platform_handover_task = /** @type {(inputs: Api_Platform_Hando
 };
 
 export const api_platform_handover_title = /** @type {(inputs: Api_Platform_Handover_TitleInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`تسليم — ${i?.caseId} إلى ${i?.to}`)
+	return /** @type {LocalizedString} */ (`تسليم: ${i?.caseId} إلى ${i?.to}`)
 };
 
 export const api_platform_invoice_already_accepted = /** @type {(inputs: Api_Platform_Invoice_Already_AcceptedInputs) => LocalizedString} */ (i) => {
@@ -5611,6 +5857,10 @@ export const api_platform_my_language_en = /** @type {(inputs: Api_Platform_My_L
 	return /** @type {LocalizedString} */ (`لغة لوحتك: الإنجليزية`)
 };
 
+export const api_platform_needs_a_person = /** @type {(inputs: Api_Platform_Needs_A_PersonInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`يحتاج هذا الاستثناء إلى شخص يراجعه. راجعه وعلّمه كمُراجَع بدلًا من إعادة المحاولة.`)
+};
+
 export const api_platform_no_shift_reason = /** @type {(inputs: Api_Platform_No_Shift_ReasonInputs) => LocalizedString} */ () => {
 	return /** @type {LocalizedString} */ (`خارج ساعات العمل ولا توجد مناوبة في الجدول: مباشرة إلى قائمة الاتصال بالمسؤولين.`)
 };
@@ -5628,7 +5878,7 @@ export const api_platform_office_hours_reason = /** @type {(inputs: Api_Platform
 };
 
 export const api_platform_on_call_detail = /** @type {(inputs: Api_Platform_On_Call_DetailInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`محاكاة من /roles · أكّد الاستلام خلال ${i?.minutes} دقيقة، وإلا يُنبَّه ${i?.next}`)
+	return /** @type {LocalizedString} */ (`محاكاة من صفحة الأدوار والصلاحيات · أكّد الاستلام خلال ${i?.minutes} دقيقة، وإلا يُنبَّه ${i?.next}`)
 };
 
 export const api_platform_on_call_title = /** @type {(inputs: Api_Platform_On_Call_TitleInputs) => LocalizedString} */ (i) => {
@@ -5997,7 +6247,7 @@ export const api_profit_po = /** @type {(inputs: Api_Profit_PoInputs) => Localiz
 };
 
 export const api_profit_po_line = /** @type {(inputs: Api_Profit_Po_LineInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.supplier} — أمر الشراء ${i?.number}`)
+	return /** @type {LocalizedString} */ (`${i?.supplier}: أمر الشراء ${i?.number}`)
 };
 
 export const api_profit_receipt = /** @type {(inputs: Api_Profit_ReceiptInputs) => LocalizedString} */ (i) => {
@@ -6160,6 +6410,10 @@ export const api_sourcing_declined_event = /** @type {(inputs: Api_Sourcing_Decl
 	return /** @type {LocalizedString} */ (`اعتذر بالبريد، وتوقفت التذكيرات`)
 };
 
+export const api_sourcing_desk_only = /** @type {(inputs: Api_Sourcing_Desk_OnlyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`سلسلة التوريد والإدارة فقط يمكنهما القيام بذلك.`)
+};
+
 export const api_sourcing_draft_gone = /** @type {(inputs: Api_Sourcing_Draft_GoneInputs) => LocalizedString} */ () => {
 	return /** @type {LocalizedString} */ (`هذه المسودة لم تعد موجودة.`)
 };
@@ -6262,7 +6516,7 @@ export const api_sourcing_linked_after_review_event = /** @type {(inputs: Api_So
 };
 
 export const api_sourcing_management_approves = /** @type {(inputs: Api_Sourcing_Management_ApprovesInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`الإدارة فقط (Karim Balbaa) توافق على استيراد السجل.`)
+	return /** @type {LocalizedString} */ (`الإدارة فقط توافق على استيراد السجل.`)
 };
 
 export const api_sourcing_matched_to = /** @type {(inputs: Api_Sourcing_Matched_ToInputs) => LocalizedString} */ (i) => {
@@ -6326,7 +6580,7 @@ export const api_sourcing_no_specialist = /** @type {(inputs: Api_Sourcing_No_Sp
 };
 
 export const api_sourcing_none_waiting = /** @type {(inputs: Api_Sourcing_None_WaitingInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`لا توجد طلبات عروض أسعار تنتظر ردًا، أرسل الطلبات أولًا`)
+	return /** @type {LocalizedString} */ (`لا توجد طلبات عروض أسعار تنتظر ردًا.`)
 };
 
 export const api_sourcing_not_filed_by_review = /** @type {(inputs: Api_Sourcing_Not_Filed_By_ReviewInputs) => LocalizedString} */ () => {
@@ -6489,11 +6743,15 @@ export const api_sourcing_rfq_please_state = /** @type {(inputs: Api_Sourcing_Rf
 };
 
 export const api_sourcing_rfq_subject = /** @type {(inputs: Api_Sourcing_Rfq_SubjectInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`طلب عرض أسعار ${i?.reference} — الرد قبل ${i?.due}`)
+	return /** @type {LocalizedString} */ (`طلب عرض أسعار ${i?.reference}: الرد قبل ${i?.due}`)
 };
 
 export const api_sourcing_rfq_to_port = /** @type {(inputs: Api_Sourcing_Rfq_To_PortInputs) => LocalizedString} */ () => {
 	return /** @type {LocalizedString} */ (`إلى الميناء`)
+};
+
+export const api_sourcing_sender_differs = /** @type {(inputs: Api_Sourcing_Sender_DiffersInputs) => LocalizedString} */ (i) => {
+	return /** @type {LocalizedString} */ (`أرسلها ${i?.name}، لكن ${i?.reference} أُرسل إلى ${i?.invited}. يتحقق منها شخص قبل احتسابها`)
 };
 
 export const api_sourcing_sender_domain = /** @type {(inputs: Api_Sourcing_Sender_DomainInputs) => LocalizedString} */ (i) => {
@@ -6511,10 +6769,6 @@ export const api_sourcing_sent_activity = /** @type {(inputs: Api_Sourcing_Sent_
 	if (countPlural === "few") return /** @type {LocalizedString} */ (`أرسل ${i?.who} ${i?.count} طلبات عروض أسعار للموردين (${i?.mode}، مع إخفاء هوية العميل): ${i?.references}.`);
 	if (countPlural === "many") return /** @type {LocalizedString} */ (`أرسل ${i?.who} ${i?.count} طلبًا لعروض الأسعار للموردين (${i?.mode}، مع إخفاء هوية العميل): ${i?.references}.`);
 	return /** @type {LocalizedString} */ (`أرسل ${i?.who} ${i?.count} طلب عرض أسعار للموردين (${i?.mode}، مع إخفاء هوية العميل): ${i?.references}.`)
-};
-
-export const api_sourcing_sent_by_other = /** @type {(inputs: Api_Sourcing_Sent_By_OtherInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`أرسلها ${i?.name} عن طلب عرض أسعار أُرسل إلى مورّد آخر`)
 };
 
 export const api_sourcing_sent_event = /** @type {(inputs: Api_Sourcing_Sent_EventInputs) => LocalizedString} */ () => {
@@ -6773,7 +7027,7 @@ export const automations_review_note = /** @type {(inputs: Automations_Review_No
 };
 
 export const automations_reviewed_done = /** @type {(inputs: Automations_Reviewed_DoneInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`تمت المراجعة — اسمك مسجَّل في سجل التدقيق`)
+	return /** @type {LocalizedString} */ (`تمت المراجعة، واسمك مسجَّل في سجل التدقيق`)
 };
 
 export const case_overview_delivered = /** @type {(inputs: Case_Overview_DeliveredInputs) => LocalizedString} */ () => {
@@ -6781,7 +7035,7 @@ export const case_overview_delivered = /** @type {(inputs: Case_Overview_Deliver
 };
 
 export const case_overview_ended = /** @type {(inputs: Case_Overview_EndedInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`انتهى الملف هنا — ${i?.next}`)
+	return /** @type {LocalizedString} */ (`انتهى الملف هنا: ${i?.next}`)
 };
 
 export const case_overview_gauge_a11y = /** @type {(inputs: Case_Overview_Gauge_A11yInputs) => LocalizedString} */ (i) => {
@@ -6797,7 +7051,7 @@ export const case_overview_ordered = /** @type {(inputs: Case_Overview_OrderedIn
 };
 
 export const case_overview_paused = /** @type {(inputs: Case_Overview_PausedInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`متوقف عند قرار العميل — ${i?.next}`)
+	return /** @type {LocalizedString} */ (`متوقف عند قرار العميل: ${i?.next}`)
 };
 
 export const case_overview_phase = /** @type {(inputs: Case_Overview_PhaseInputs) => LocalizedString} */ (i) => {
@@ -6841,7 +7095,7 @@ export const cash_apply_details = /** @type {(inputs: Cash_Apply_DetailsInputs) 
 };
 
 export const cash_apply_done = /** @type {(inputs: Cash_Apply_DoneInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`طُبّقت البيانات البنكية الجديدة على ${i?.supplier} — تحقّق منها شخصان.`)
+	return /** @type {LocalizedString} */ (`طُبّقت البيانات البنكية الجديدة على ${i?.supplier}، وتحقّق منها شخصان.`)
 };
 
 export const cash_apply_heading = /** @type {(inputs: Cash_Apply_HeadingInputs) => LocalizedString} */ (i) => {
@@ -6893,7 +7147,7 @@ export const cash_forecast_subhead_fixed = /** @type {(inputs: Cash_Forecast_Sub
 };
 
 export const cash_held_alert = /** @type {(inputs: Cash_Held_AlertInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`تبقى المدفوعات إلى ${i?.supplier} على الحساب القديم المُتحقَّق منه حتى يعتمد شخصان مختلفان — المالية والرئيس التنفيذي — بعد معاودة الاتصال بالرقم المسجّل.`)
+	return /** @type {LocalizedString} */ (`تبقى المدفوعات إلى ${i?.supplier} على الحساب القديم المُتحقَّق منه حتى يعتمد شخصان مختلفان، المالية والرئيس التنفيذي، بعد معاودة الاتصال بالرقم المسجّل.`)
 };
 
 export const cash_invoice_numbers = /** @type {(inputs: Cash_Invoice_NumbersInputs) => LocalizedString} */ () => {
@@ -7017,7 +7271,7 @@ export const cash_waiting_for_approver = /** @type {(inputs: Cash_Waiting_For_Ap
 };
 
 export const cash_you_decided = /** @type {(inputs: Cash_You_DecidedInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`لقد اتخذت قرارك — يجب أن يعتمد شخص ثانٍ مختلف.`)
+	return /** @type {LocalizedString} */ (`لقد اتخذت قرارك. يجب أن يعتمد شخص ثانٍ مختلف.`)
 };
 
 export const commercial_acceptance_done = /** @type {(inputs: Commercial_Acceptance_DoneInputs) => LocalizedString} */ (i) => {
@@ -7069,7 +7323,7 @@ export const commercial_approve = /** @type {(inputs: Commercial_ApproveInputs) 
 };
 
 export const commercial_approved_done = /** @type {(inputs: Commercial_Approved_DoneInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`تم اعتماد ${i?.number} — يمكن إرساله`)
+	return /** @type {LocalizedString} */ (`تم اعتماد ${i?.number}، ويمكن إرساله`)
 };
 
 export const commercial_charge_actual = /** @type {(inputs: Commercial_Charge_ActualInputs) => LocalizedString} */ () => {
@@ -7092,7 +7346,7 @@ export const commercial_charges_allocated = /** @type {(inputs: Commercial_Charg
 };
 
 export const commercial_charges_vat = /** @type {(inputs: Commercial_Charges_VatInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`الضريبة: يُتوقع أن يكون التوريد لسفينة أجنبية عابرة بنسبة 0% — تؤكد المالية ذلك. يعرض عرض السعر الأسعار غير شاملة الضريبة.`)
+	return /** @type {LocalizedString} */ (`الضريبة: يُتوقع أن يكون التوريد لسفينة أجنبية عابرة بنسبة 0%، وتؤكد المالية ذلك. يعرض عرض السعر الأسعار غير شاملة الضريبة.`)
 };
 
 export const commercial_check_again = /** @type {(inputs: Commercial_Check_AgainInputs) => LocalizedString} */ () => {
@@ -7100,7 +7354,7 @@ export const commercial_check_again = /** @type {(inputs: Commercial_Check_Again
 };
 
 export const commercial_check_no = /** @type {(inputs: Commercial_Check_NoInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.supplier}: قد يختلف عن الطلب — تحقّق`)
+	return /** @type {LocalizedString} */ (`${i?.supplier}: قد يختلف عن الطلب، تحقّق`)
 };
 
 export const commercial_check_offer = /** @type {(inputs: Commercial_Check_OfferInputs) => LocalizedString} */ (i) => {
@@ -7116,7 +7370,7 @@ export const commercial_check_question = /** @type {(inputs: Commercial_Check_Qu
 };
 
 export const commercial_check_requested = /** @type {(inputs: Commercial_Check_RequestedInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`المطلوب: ${i?.description} — ${i?.requested}. القواعد: ${i?.rules}.`)
+	return /** @type {LocalizedString} */ (`المطلوب: ${i?.description}، ${i?.requested}. القواعد: ${i?.rules}.`)
 };
 
 export const commercial_check_yes = /** @type {(inputs: Commercial_Check_YesInputs) => LocalizedString} */ (i) => {
@@ -7165,6 +7419,10 @@ export const commercial_col_margin_pct = /** @type {(inputs: Commercial_Col_Marg
 
 export const commercial_col_markup = /** @type {(inputs: Commercial_Col_MarkupInputs) => LocalizedString} */ () => {
 	return /** @type {LocalizedString} */ (`نسبة الإضافة`)
+};
+
+export const commercial_col_match = /** @type {(inputs: Commercial_Col_MatchInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`التطابق`)
 };
 
 export const commercial_col_offered = /** @type {(inputs: Commercial_Col_OfferedInputs) => LocalizedString} */ () => {
@@ -7318,17 +7576,17 @@ export const commercial_evidence = /** @type {(inputs: Commercial_EvidenceInputs
 };
 
 export const commercial_evidence_default = /** @type {(inputs: Commercial_Evidence_DefaultInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`بريد العميل 17 نوفمبر 10:12 — «علب 500 مل مقبولة»، مرفق`)
+	return /** @type {LocalizedString} */ (`بريد العميل 17 نوفمبر 10:12: «علب 500 مل مقبولة»، مرفق`)
 };
 
 export const commercial_exceptions = /** @type {(inputs: Commercial_ExceptionsInputs) => LocalizedString} */ (i) => {
 	const countPlural = __paraglideRegistry.plural("ar", i?.count, {}, true);
-	if (countPlural === "zero") return /** @type {LocalizedString} */ (`لا استثناءات — تُعرض على المعتمِد كـ«${i?.type}».`);
-	if (countPlural === "one") return /** @type {LocalizedString} */ (`استثناء واحد — يُعرض على المعتمِد كـ«${i?.type}».`);
-	if (countPlural === "two") return /** @type {LocalizedString} */ (`استثناءان — يُعرضان على المعتمِد كـ«${i?.type}».`);
-	if (countPlural === "few") return /** @type {LocalizedString} */ (`${i?.count} استثناءات — تُعرض على المعتمِد كـ«${i?.type}».`);
-	if (countPlural === "many") return /** @type {LocalizedString} */ (`${i?.count} استثناءً — تُعرض على المعتمِد كـ«${i?.type}».`);
-	return /** @type {LocalizedString} */ (`${i?.count} استثناء — تُعرض على المعتمِد كـ«${i?.type}».`)
+	if (countPlural === "zero") return /** @type {LocalizedString} */ (`لا استثناءات، تُعرض على المعتمِد كـ«${i?.type}».`);
+	if (countPlural === "one") return /** @type {LocalizedString} */ (`استثناء واحد، يُعرض على المعتمِد كـ«${i?.type}».`);
+	if (countPlural === "two") return /** @type {LocalizedString} */ (`استثناءان، يُعرضان على المعتمِد كـ«${i?.type}».`);
+	if (countPlural === "few") return /** @type {LocalizedString} */ (`${i?.count} استثناءات، تُعرض على المعتمِد كـ«${i?.type}».`);
+	if (countPlural === "many") return /** @type {LocalizedString} */ (`${i?.count} استثناءً، تُعرض على المعتمِد كـ«${i?.type}».`);
+	return /** @type {LocalizedString} */ (`${i?.count} استثناء، تُعرض على المعتمِد كـ«${i?.type}».`)
 };
 
 export const commercial_fig_expected_profit = /** @type {(inputs: Commercial_Fig_Expected_ProfitInputs) => LocalizedString} */ () => {
@@ -7472,7 +7730,7 @@ export const commercial_metric_no_freight = /** @type {(inputs: Commercial_Metri
 };
 
 export const commercial_no_exceptions = /** @type {(inputs: Commercial_No_ExceptionsInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`لا استثناءات — اعتماد عادي.`)
+	return /** @type {LocalizedString} */ (`لا استثناءات. اعتماد عادي.`)
 };
 
 export const commercial_no_issues = /** @type {(inputs: Commercial_No_IssuesInputs) => LocalizedString} */ () => {
@@ -7488,7 +7746,7 @@ export const commercial_no_offers = /** @type {(inputs: Commercial_No_OffersInpu
 };
 
 export const commercial_no_recommendation = /** @type {(inputs: Commercial_No_RecommendationInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`لا يوجد عرض يجتاز كل الفحوص بعد — لا توصية.`)
+	return /** @type {LocalizedString} */ (`لا يوجد عرض يجتاز كل الفحوص بعد، فلا توصية.`)
 };
 
 export const commercial_none = /** @type {(inputs: Commercial_NoneInputs) => LocalizedString} */ () => {
@@ -7572,7 +7830,7 @@ export const commercial_paper_discount = /** @type {(inputs: Commercial_Paper_Di
 };
 
 export const commercial_paper_draft = /** @type {(inputs: Commercial_Paper_DraftInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`مسودة — لم تُعتمد بعد. ستصدر كنسخة ${i?.version}.`)
+	return /** @type {LocalizedString} */ (`مسودة: لم تُعتمد بعد. ستصدر كنسخة ${i?.version}.`)
 };
 
 export const commercial_paper_grand = /** @type {(inputs: Commercial_Paper_GrandInputs) => LocalizedString} */ (i) => {
@@ -7636,7 +7894,7 @@ export const commercial_paper_s = /** @type {(inputs: Commercial_Paper_SInputs) 
 };
 
 export const commercial_paper_signature = /** @type {(inputs: Commercial_Paper_SignatureInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.name} — توقيع معتمد`)
+	return /** @type {LocalizedString} */ (`${i?.name}، توقيع معتمد`)
 };
 
 export const commercial_paper_signature_pending = /** @type {(inputs: Commercial_Paper_Signature_PendingInputs) => LocalizedString} */ () => {
@@ -7644,7 +7902,7 @@ export const commercial_paper_signature_pending = /** @type {(inputs: Commercial
 };
 
 export const commercial_paper_superseded = /** @type {(inputs: Commercial_Paper_SupersededInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`مُستبدَل — محفوظ للتدقيق. غير صالح للطلب.`)
+	return /** @type {LocalizedString} */ (`مُستبدَل: محفوظ للتدقيق. غير صالح للطلب.`)
 };
 
 export const commercial_paper_title = /** @type {(inputs: Commercial_Paper_TitleInputs) => LocalizedString} */ () => {
@@ -7684,7 +7942,7 @@ export const commercial_policy_target = /** @type {(inputs: Commercial_Policy_Ta
 };
 
 export const commercial_portal_all_match = /** @type {(inputs: Commercial_Portal_All_MatchInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`كل الحقول متطابقة — اكتمل التقديم.`)
+	return /** @type {LocalizedString} */ (`كل الحقول متطابقة. اكتمل التقديم.`)
 };
 
 export const commercial_portal_diffs = /** @type {(inputs: Commercial_Portal_DiffsInputs) => LocalizedString} */ (i) => {
@@ -7728,7 +7986,7 @@ export const commercial_quantity_from = /** @type {(inputs: Commercial_Quantity_
 };
 
 export const commercial_quote_approved = /** @type {(inputs: Commercial_Quote_ApprovedInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`تم اعتماد ${i?.number} — جاهز للإرسال.`)
+	return /** @type {LocalizedString} */ (`تم اعتماد ${i?.number}، وهو جاهز للإرسال.`)
 };
 
 export const commercial_quote_returned = /** @type {(inputs: Commercial_Quote_ReturnedInputs) => LocalizedString} */ (i) => {
@@ -7756,7 +8014,7 @@ export const commercial_reason_placeholder = /** @type {(inputs: Commercial_Reas
 };
 
 export const commercial_recommendation_best = /** @type {(inputs: Commercial_Recommendation_BestInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.offer}: ${i?.landed} جنيه / ${i?.baseUnit} حتى التسليم — أقل تكلفة على متن السفينة بين العروض التي تجتاز كل الفحوص.`)
+	return /** @type {LocalizedString} */ (`${i?.offer}: ${i?.landed} جنيه / ${i?.baseUnit} حتى التسليم، وهو أقل تكلفة على متن السفينة بين العروض التي تجتاز كل الفحوص.`)
 };
 
 export const commercial_recommendation_heading = /** @type {(inputs: Commercial_Recommendation_HeadingInputs) => LocalizedString} */ () => {
@@ -7764,11 +8022,11 @@ export const commercial_recommendation_heading = /** @type {(inputs: Commercial_
 };
 
 export const commercial_recommendation_split = /** @type {(inputs: Commercial_Recommendation_SplitInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`توزيع التوريد: ${i?.split} — ${i?.cost} حتى التسليم، والكل قبل الوصول المتوقع.`)
+	return /** @type {LocalizedString} */ (`توزيع التوريد: ${i?.split}، ${i?.cost} حتى التسليم، والكل قبل الوصول المتوقع.`)
 };
 
 export const commercial_recommendation_split_saves = /** @type {(inputs: Commercial_Recommendation_Split_SavesInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`توزيع التوريد: ${i?.split} — ${i?.cost} حتى التسليم، بتوفير ${i?.saves} مقارنة بأفضل مورّد منفرد، والكل قبل الوصول المتوقع.`)
+	return /** @type {LocalizedString} */ (`توزيع التوريد: ${i?.split}، ${i?.cost} حتى التسليم، بتوفير ${i?.saves} مقارنة بأفضل مورّد منفرد، والكل قبل الوصول المتوقع.`)
 };
 
 export const commercial_record = /** @type {(inputs: Commercial_RecordInputs) => LocalizedString} */ () => {
@@ -7814,7 +8072,7 @@ export const commercial_return_heading = /** @type {(inputs: Commercial_Return_H
 };
 
 export const commercial_return_placeholder = /** @type {(inputs: Commercial_Return_PlaceholderInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`مثال: راجع البند 3 — الهامش ضئيل لمورّد جديد`)
+	return /** @type {LocalizedString} */ (`مثال: راجع البند 3، الهامش ضئيل لمورّد جديد`)
 };
 
 export const commercial_return_text = /** @type {(inputs: Commercial_Return_TextInputs) => LocalizedString} */ (i) => {
@@ -7908,7 +8166,7 @@ export const commercial_send_correction_text = /** @type {(inputs: Commercial_Se
 };
 
 export const commercial_send_email_line = /** @type {(inputs: Commercial_Send_Email_LineInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`بريد من Odoo — إلى: ${i?.to} · الموضوع: عرض سعر ${i?.number} — ${i?.vessel} — المرجع ${i?.ref} · المرفق: ${i?.number}.pdf`)
+	return /** @type {LocalizedString} */ (`بريد من Odoo. إلى: ${i?.to} · الموضوع: عرض سعر ${i?.number}، ${i?.vessel}، المرجع ${i?.ref} · المرفق: ${i?.number}.pdf`)
 };
 
 export const commercial_send_heading = /** @type {(inputs: Commercial_Send_HeadingInputs) => LocalizedString} */ (i) => {
@@ -7916,7 +8174,7 @@ export const commercial_send_heading = /** @type {(inputs: Commercial_Send_Headi
 };
 
 export const commercial_send_portal_line = /** @type {(inputs: Commercial_Send_Portal_LineInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`بوابة العميل — أدخل عرض السعر في ${i?.portal}، ثم ارفع لقطة شاشة التأكيد أدناه — لا يكتمل التقديم إلا بمطابقتها للعرض المعتمد.`)
+	return /** @type {LocalizedString} */ (`بوابة العميل: أدخل عرض السعر في ${i?.portal}، ثم ارفع لقطة شاشة التأكيد أدناه. لا يكتمل التقديم إلا بمطابقتها للعرض المعتمد.`)
 };
 
 export const commercial_send_to_customer = /** @type {(inputs: Commercial_Send_To_CustomerInputs) => LocalizedString} */ () => {
@@ -8032,7 +8290,7 @@ export const commercial_unit_price = /** @type {(inputs: Commercial_Unit_PriceIn
 };
 
 export const commercial_unpriced_line = /** @type {(inputs: Commercial_Unpriced_LineInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`L${i?.line} · ${i?.description} — ${i?.status}: لا تكلفة بعد، مستبعد من هذا الإصدار.`)
+	return /** @type {LocalizedString} */ (`L${i?.line} · ${i?.description} (${i?.status}): لا تكلفة بعد، مستبعد من هذا الإصدار.`)
 };
 
 export const commercial_upload_compare = /** @type {(inputs: Commercial_Upload_CompareInputs) => LocalizedString} */ () => {
@@ -8044,7 +8302,7 @@ export const commercial_use_split = /** @type {(inputs: Commercial_Use_SplitInpu
 };
 
 export const commercial_vat_note = /** @type {(inputs: Commercial_Vat_NoteInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`14% على فواتير الموردين المحليين — مستبعدة من التكلفة`)
+	return /** @type {LocalizedString} */ (`14% على فواتير الموردين المحليين، مستبعدة من التكلفة`)
 };
 
 export const commercial_view_quotation = /** @type {(inputs: Commercial_View_QuotationInputs) => LocalizedString} */ () => {
@@ -8241,6 +8499,10 @@ export const growth_column_manager = /** @type {(inputs: Growth_Column_ManagerIn
 	return /** @type {LocalizedString} */ (`مدير السفن`)
 };
 
+export const growth_column_supplied = /** @type {(inputs: Growth_Column_SuppliedInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`التوريد`)
+};
+
 export const growth_column_type = /** @type {(inputs: Growth_Column_TypeInputs) => LocalizedString} */ () => {
 	return /** @type {LocalizedString} */ (`النوع`)
 };
@@ -8362,11 +8624,11 @@ export const inbox_ack_by_hand = /** @type {(inputs: Inbox_Ack_By_HandInputs) =>
 };
 
 export const inbox_ack_note_manual = /** @type {(inputs: Inbox_Ack_Note_ManualInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`القالب: ${i?.template}. مصدر WhatsApp أو النموذج: يرسله المسؤول بنفسه — لا يراسل النظام العميل من تلقاء نفسه هنا.`)
+	return /** @type {LocalizedString} */ (`القالب: ${i?.template}. مصدر WhatsApp أو النموذج: يرسله المسؤول بنفسه، ولا يراسل النظام العميل من تلقاء نفسه هنا.`)
 };
 
 export const inbox_ack_note_once = /** @type {(inputs: Inbox_Ack_Note_OnceInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`القالب: ${i?.template}. يُرسل مرة واحدة من القالب المعتمد — لا يُرسل مرتين أبدًا، حتى لو أُعيدت معالجة البريد.`)
+	return /** @type {LocalizedString} */ (`القالب: ${i?.template}. يُرسل مرة واحدة من القالب المعتمد، ولا يُرسل مرتين أبدًا، حتى لو أُعيدت معالجة البريد.`)
 };
 
 export const inbox_ack_on_create = /** @type {(inputs: Inbox_Ack_On_CreateInputs) => LocalizedString} */ () => {
@@ -8402,7 +8664,7 @@ export const inbox_case_was_created = /** @type {(inputs: Inbox_Case_Was_Created
 };
 
 export const inbox_channel = /** @type {(inputs: Inbox_ChannelInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.kind} · ${i?.account} — ${i?.status}`)
+	return /** @type {LocalizedString} */ (`${i?.kind} · ${i?.account}: ${i?.status}`)
 };
 
 export const inbox_check_original = /** @type {(inputs: Inbox_Check_OriginalInputs) => LocalizedString} */ () => {
@@ -8494,7 +8756,7 @@ export const inbox_flag_auto_reply = /** @type {(inputs: Inbox_Flag_Auto_ReplyIn
 };
 
 export const inbox_flag_auto_reply_note = /** @type {(inputs: Inbox_Flag_Auto_Reply_NoteInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`لا يجيب عن الطلب — تستمر تذكيرات المورد.`)
+	return /** @type {LocalizedString} */ (`لا يجيب عن الطلب، فتستمر تذكيرات المورد.`)
 };
 
 export const inbox_flag_bank = /** @type {(inputs: Inbox_Flag_BankInputs) => LocalizedString} */ () => {
@@ -8518,15 +8780,15 @@ export const inbox_from = /** @type {(inputs: Inbox_FromInputs) => LocalizedStri
 };
 
 export const inbox_history_approval_ready = /** @type {(inputs: Inbox_History_Approval_ReadyInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`تمت مراجعة كل شيء — جاهز للاعتماد.`)
+	return /** @type {LocalizedString} */ (`تمت مراجعة كل شيء، وهو جاهز للاعتماد.`)
 };
 
 export const inbox_history_approval_text = /** @type {(inputs: Inbox_History_Approval_TextInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`الإدارة وحدها تعتمد الاستيراد — لا يصبح شيء من السجل قيدًا قبل موافقة كريم بلبع. وتبقى المراسلات السرية خارجه.`)
+	return /** @type {LocalizedString} */ (`الإدارة وحدها تعتمد الاستيراد. لا يصبح شيء من السجل قيدًا قبل موافقة الإدارة. وتبقى المراسلات السرية خارجه.`)
 };
 
 export const inbox_history_approval_waiting = /** @type {(inputs: Inbox_History_Approval_WaitingInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`بانتظار كريم بلبع (الإدارة). ${i?.blocked}`)
+	return /** @type {LocalizedString} */ (`بانتظار ${i?.approvers} (الإدارة). ${i?.blocked}`)
 };
 
 export const inbox_history_approve = /** @type {(inputs: Inbox_History_ApproveInputs) => LocalizedString} */ () => {
@@ -8534,7 +8796,7 @@ export const inbox_history_approve = /** @type {(inputs: Inbox_History_ApproveIn
 };
 
 export const inbox_history_approve_done = /** @type {(inputs: Inbox_History_Approve_DoneInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`تم اعتماد الاستيراد — حُفظ العملاء والسفن والموردون والأسعار المؤرخة`)
+	return /** @type {LocalizedString} */ (`تم اعتماد الاستيراد: حُفظ العملاء والسفن والموردون والأسعار المؤرخة`)
 };
 
 export const inbox_history_approved_by = /** @type {(inputs: Inbox_History_Approved_ByInputs) => LocalizedString} */ (i) => {
@@ -8674,7 +8936,11 @@ export const inbox_history_kept_share = /** @type {(inputs: Inbox_History_Kept_S
 };
 
 export const inbox_history_mailboxes_note = /** @type {(inputs: Inbox_History_Mailboxes_NoteInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`كل صناديق بريد Golden Sea وتصديرات WhatsApp، تُقرأ أولًا في تجربة دون حفظ — لا يُحفظ شيء قبل الاعتماد.`)
+	return /** @type {LocalizedString} */ (`كل صناديق بريد Golden Sea وتصديرات WhatsApp، تُقرأ أولًا في تجربة دون حفظ، ولا يُحفظ شيء قبل الاعتماد.`)
+};
+
+export const inbox_history_management = /** @type {(inputs: Inbox_History_ManagementInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`الإدارة`)
 };
 
 export const inbox_history_messages = /** @type {(inputs: Inbox_History_MessagesInputs) => LocalizedString} */ () => {
@@ -8686,7 +8952,7 @@ export const inbox_history_new_to_odoo = /** @type {(inputs: Inbox_History_New_T
 };
 
 export const inbox_history_no_po = /** @type {(inputs: Inbox_History_No_PoInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`دون أمر شراء — لكنه محفوظ`)
+	return /** @type {LocalizedString} */ (`دون أمر شراء، لكنه محفوظ`)
 };
 
 export const inbox_history_ordered = /** @type {(inputs: Inbox_History_OrderedInputs) => LocalizedString} */ () => {
@@ -8752,7 +9018,7 @@ export const inbox_history_status_approved = /** @type {(inputs: Inbox_History_S
 };
 
 export const inbox_history_status_dry_run = /** @type {(inputs: Inbox_History_Status_Dry_RunInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`الحالة: التجربة جاهزة — لم يُستورد شيء`)
+	return /** @type {LocalizedString} */ (`الحالة: التجربة جاهزة، ولم يُستورد شيء`)
 };
 
 export const inbox_history_status_pending = /** @type {(inputs: Inbox_History_Status_PendingInputs) => LocalizedString} */ (i) => {
@@ -9458,7 +9724,7 @@ export const order_to_cash_agreement_hint = /** @type {(inputs: Order_To_Cash_Ag
 };
 
 export const order_to_cash_agreement_hint_ai = /** @type {(inputs: Order_To_Cash_Agreement_Hint_AiInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`مسودة الذكاء الاصطناعي من بريد العميل — راجعها قبل التسجيل`)
+	return /** @type {LocalizedString} */ (`مسودة الذكاء الاصطناعي من بريد العميل. راجعها قبل التسجيل.`)
 };
 
 export const order_to_cash_agreement_label = /** @type {(inputs: Order_To_Cash_Agreement_LabelInputs) => LocalizedString} */ () => {
@@ -9490,19 +9756,19 @@ export const order_to_cash_amendment_confirm = /** @type {(inputs: Order_To_Cash
 };
 
 export const order_to_cash_amendment_done = /** @type {(inputs: Order_To_Cash_Amendment_DoneInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`سُجّل التعديل على البند ${i?.line} — الدليل مرفق.`)
+	return /** @type {LocalizedString} */ (`سُجّل التعديل على البند ${i?.line}. الدليل مرفق.`)
 };
 
 export const order_to_cash_amendment_heading_header = /** @type {(inputs: Order_To_Cash_Amendment_Heading_HeaderInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`تسجيل تعديل العميل — الرأس`)
+	return /** @type {LocalizedString} */ (`تسجيل تعديل العميل: الرأس`)
 };
 
 export const order_to_cash_amendment_heading_line = /** @type {(inputs: Order_To_Cash_Amendment_Heading_LineInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`تسجيل تعديل العميل — البند ${i?.line}`)
+	return /** @type {LocalizedString} */ (`تسجيل تعديل العميل: البند ${i?.line}`)
 };
 
 export const order_to_cash_amendment_intro = /** @type {(inputs: Order_To_Cash_Amendment_IntroInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.field} — أمر الشراء: ${i?.po} · عرض السعر: ${i?.quote}`)
+	return /** @type {LocalizedString} */ (`${i?.field}. أمر الشراء: ${i?.po} · عرض السعر: ${i?.quote}`)
 };
 
 export const order_to_cash_approve_confirm = /** @type {(inputs: Order_To_Cash_Approve_ConfirmInputs) => LocalizedString} */ (i) => {
@@ -9522,7 +9788,7 @@ export const order_to_cash_bills_matched = /** @type {(inputs: Order_To_Cash_Bil
 };
 
 export const order_to_cash_bills_on_hold = /** @type {(inputs: Order_To_Cash_Bills_On_HoldInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.count} معلّقة — مطابقة ثلاثية`)
+	return /** @type {LocalizedString} */ (`${i?.count} معلّقة: مطابقة ثلاثية`)
 };
 
 export const order_to_cash_change_line = /** @type {(inputs: Order_To_Cash_Change_LineInputs) => LocalizedString} */ (i) => {
@@ -9571,6 +9837,10 @@ export const order_to_cash_closed_done = /** @type {(inputs: Order_To_Cash_Close
 
 export const order_to_cash_col_at_quotation = /** @type {(inputs: Order_To_Cash_Col_At_QuotationInputs) => LocalizedString} */ () => {
 	return /** @type {LocalizedString} */ (`عند عرض السعر`)
+};
+
+export const order_to_cash_col_check = /** @type {(inputs: Order_To_Cash_Col_CheckInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`التحقق`)
 };
 
 export const order_to_cash_col_checked = /** @type {(inputs: Order_To_Cash_Col_CheckedInputs) => LocalizedString} */ () => {
@@ -9644,7 +9914,7 @@ export const order_to_cash_confirmed_by_management = /** @type {(inputs: Order_T
 };
 
 export const order_to_cash_confirmed_done = /** @type {(inputs: Order_To_Cash_Confirmed_DoneInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`تم تأكيد ${i?.number} — أُرسل إلى ${i?.supplier}.`)
+	return /** @type {LocalizedString} */ (`تم تأكيد ${i?.number} وأُرسل إلى ${i?.supplier}.`)
 };
 
 export const order_to_cash_delivered_count = /** @type {(inputs: Order_To_Cash_Delivered_CountInputs) => LocalizedString} */ (i) => {
@@ -9652,7 +9922,7 @@ export const order_to_cash_delivered_count = /** @type {(inputs: Order_To_Cash_D
 };
 
 export const order_to_cash_delivered_done = /** @type {(inputs: Order_To_Cash_Delivered_DoneInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`تم تسليم ${i?.number} — إذن التسليم الموقّع محفوظ.`)
+	return /** @type {LocalizedString} */ (`تم تسليم ${i?.number}. إذن التسليم الموقّع محفوظ.`)
 };
 
 export const order_to_cash_dictate = /** @type {(inputs: Order_To_Cash_DictateInputs) => LocalizedString} */ () => {
@@ -9684,7 +9954,7 @@ export const order_to_cash_drop_tag = /** @type {(inputs: Order_To_Cash_Drop_Tag
 };
 
 export const order_to_cash_evidence_hint = /** @type {(inputs: Order_To_Cash_Evidence_HintInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`اختياري في العرض التجريبي — تُرفق نسخة من بريد العميل إن تخطيته`)
+	return /** @type {LocalizedString} */ (`اختياري في العرض التجريبي. تُرفق نسخة من بريد العميل إن تخطيته.`)
 };
 
 export const order_to_cash_evidence_legend = /** @type {(inputs: Order_To_Cash_Evidence_LegendInputs) => LocalizedString} */ () => {
@@ -9716,7 +9986,7 @@ export const order_to_cash_header = /** @type {(inputs: Order_To_Cash_HeaderInpu
 };
 
 export const order_to_cash_intro = /** @type {(inputs: Order_To_Cash_IntroInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.lines} — ${i?.place}`)
+	return /** @type {LocalizedString} */ (`${i?.lines}، ${i?.place}`)
 };
 
 export const order_to_cash_intro_line = /** @type {(inputs: Order_To_Cash_Intro_LineInputs) => LocalizedString} */ (i) => {
@@ -9760,7 +10030,7 @@ export const order_to_cash_n_of_total = /** @type {(inputs: Order_To_Cash_N_Of_T
 };
 
 export const order_to_cash_no_plan = /** @type {(inputs: Order_To_Cash_No_PlanInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`لا يوجد تسليم مخطط بعد — تُنشأ الخطة بعد تأكيد أوامر شراء الموردين واستحقاق البضائع.`)
+	return /** @type {LocalizedString} */ (`لا يوجد تسليم مخطط بعد. تُنشأ الخطة بعد تأكيد أوامر شراء الموردين واستحقاق البضائع.`)
 };
 
 export const order_to_cash_not_dispatched = /** @type {(inputs: Order_To_Cash_Not_DispatchedInputs) => LocalizedString} */ () => {
@@ -9768,7 +10038,7 @@ export const order_to_cash_not_dispatched = /** @type {(inputs: Order_To_Cash_No
 };
 
 export const order_to_cash_not_on_po_decide = /** @type {(inputs: Order_To_Cash_Not_On_Po_DecideInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`غير موجود في أمر شراء العميل — قرّر`)
+	return /** @type {LocalizedString} */ (`غير موجود في أمر شراء العميل: قرّر`)
 };
 
 export const order_to_cash_not_rechecked = /** @type {(inputs: Order_To_Cash_Not_RecheckedInputs) => LocalizedString} */ () => {
@@ -9792,11 +10062,11 @@ export const order_to_cash_outcome_closed = /** @type {(inputs: Order_To_Cash_Ou
 };
 
 export const order_to_cash_outcome_open_revision = /** @type {(inputs: Order_To_Cash_Outcome_Open_RevisionInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`مفتوح — مراجعة لاحقة`)
+	return /** @type {LocalizedString} */ (`مفتوح، مراجعة لاحقة`)
 };
 
 export const order_to_cash_outcome_with_reason = /** @type {(inputs: Order_To_Cash_Outcome_With_ReasonInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.outcome} — ${i?.reason}`)
+	return /** @type {LocalizedString} */ (`${i?.outcome}: ${i?.reason}`)
 };
 
 export const order_to_cash_pair = /** @type {(inputs: Order_To_Cash_PairInputs) => LocalizedString} */ (i) => {
@@ -9804,7 +10074,7 @@ export const order_to_cash_pair = /** @type {(inputs: Order_To_Cash_PairInputs) 
 };
 
 export const order_to_cash_partial_award_note = /** @type {(inputs: Order_To_Cash_Partial_Award_NoteInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`بنود مسعّرة لم يطلبها العميل: تبقى مفتوحة لمراجعة لاحقة أو تُغلق مع ذكر السبب — الملف المُرسى جزئيًا لا يظهر مكتملًا أبدًا.`)
+	return /** @type {LocalizedString} */ (`البنود المسعّرة التي لم يطلبها العميل تبقى مفتوحة لمراجعة لاحقة أو تُغلق مع ذكر السبب. الملف المُرسى جزئيًا لا يظهر مكتملًا أبدًا.`)
 };
 
 export const order_to_cash_plan_note = /** @type {(inputs: Order_To_Cash_Plan_NoteInputs) => LocalizedString} */ () => {
@@ -9824,7 +10094,7 @@ export const order_to_cash_po_arrived_text = /** @type {(inputs: Order_To_Cash_P
 };
 
 export const order_to_cash_po_checked_validated = /** @type {(inputs: Order_To_Cash_Po_Checked_ValidatedInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`فُحص أمر شراء العميل مقابل عرض السعر المعتمد وتم التحقق منه — أمر البيع مؤكد.`)
+	return /** @type {LocalizedString} */ (`فُحص أمر شراء العميل مقابل عرض السعر المعتمد وتم التحقق منه. أمر البيع مؤكد.`)
 };
 
 export const order_to_cash_po_empty_confirmed = /** @type {(inputs: Order_To_Cash_Po_Empty_ConfirmedInputs) => LocalizedString} */ () => {
@@ -9852,11 +10122,11 @@ export const order_to_cash_po_validated = /** @type {(inputs: Order_To_Cash_Po_V
 };
 
 export const order_to_cash_po_validated_agreed = /** @type {(inputs: Order_To_Cash_Po_Validated_AgreedInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`تم التحقق من أمر الشراء — لكل اختلاف موافقة مكتوبة من العميل.`)
+	return /** @type {LocalizedString} */ (`تم التحقق من أمر الشراء. لكل اختلاف موافقة مكتوبة من العميل.`)
 };
 
 export const order_to_cash_po_validated_confirmed = /** @type {(inputs: Order_To_Cash_Po_Validated_ConfirmedInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`تم التحقق من أمر الشراء — أمر البيع مؤكد. أوامر شراء الموردين أدناه.`)
+	return /** @type {LocalizedString} */ (`تم التحقق من أمر الشراء وتأكيد أمر البيع. أوامر شراء الموردين أدناه.`)
 };
 
 export const order_to_cash_po_vs_quotation = /** @type {(inputs: Order_To_Cash_Po_Vs_QuotationInputs) => LocalizedString} */ (i) => {
@@ -9940,7 +10210,7 @@ export const order_to_cash_receipt = /** @type {(inputs: Order_To_Cash_ReceiptIn
 };
 
 export const order_to_cash_receipt_pending = /** @type {(inputs: Order_To_Cash_Receipt_PendingInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`تأكيد الاستلام معلّق — يلزم إذن تسليم موقّع`)
+	return /** @type {LocalizedString} */ (`تأكيد الاستلام معلّق: يلزم إذن تسليم موقّع`)
 };
 
 export const order_to_cash_recheck_confirm = /** @type {(inputs: Order_To_Cash_Recheck_ConfirmInputs) => LocalizedString} */ () => {
@@ -9964,7 +10234,7 @@ export const order_to_cash_record_amendment = /** @type {(inputs: Order_To_Cash_
 };
 
 export const order_to_cash_replan_heading = /** @type {(inputs: Order_To_Cash_Replan_HeadingInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`أُعيد التخطيط بعد تغيير الوكيل للوصول المتوقع — صُعّد إلى ${i?.owner} وKarim Balbaa`)
+	return /** @type {LocalizedString} */ (`أُعيد التخطيط بعد تغيير الوكيل للوصول المتوقع. صُعّد إلى ${i?.owner} وKarim Balbaa`)
 };
 
 export const order_to_cash_replan_text = /** @type {(inputs: Order_To_Cash_Replan_TextInputs) => LocalizedString} */ (i) => {
@@ -10008,7 +10278,7 @@ export const order_to_cash_sample_re = /** @type {(inputs: Order_To_Cash_Sample_
 };
 
 export const order_to_cash_sample_received = /** @type {(inputs: Order_To_Cash_Sample_ReceivedInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`استُلم على متن السفينة — ${i?.signedBy}`)
+	return /** @type {LocalizedString} */ (`استُلم على متن السفينة: ${i?.signedBy}`)
 };
 
 export const order_to_cash_sample_scan = /** @type {(inputs: Order_To_Cash_Sample_ScanInputs) => LocalizedString} */ () => {
@@ -10032,7 +10302,7 @@ export const order_to_cash_shortages = /** @type {(inputs: Order_To_Cash_Shortag
 };
 
 export const order_to_cash_shortages_hint = /** @type {(inputs: Order_To_Cash_Shortages_HintInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`اختياري — يصبح مطالبة`)
+	return /** @type {LocalizedString} */ (`اختياري. يصبح مطالبة`)
 };
 
 export const order_to_cash_shortages_label = /** @type {(inputs: Order_To_Cash_Shortages_LabelInputs) => LocalizedString} */ () => {
@@ -10040,7 +10310,7 @@ export const order_to_cash_shortages_label = /** @type {(inputs: Order_To_Cash_S
 };
 
 export const order_to_cash_shortfall_backorder = /** @type {(inputs: Order_To_Cash_Shortfall_BackorderInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.changes} — يُجدول النقص طلبًا مؤجلًا (يبقى الموعد المتفق عليه مع العميل كما هو).`)
+	return /** @type {LocalizedString} */ (`${i?.changes}. يُجدول النقص طلبًا مؤجلًا (يبقى الموعد المتفق عليه مع العميل كما هو).`)
 };
 
 export const order_to_cash_signed_by_at = /** @type {(inputs: Order_To_Cash_Signed_By_AtInputs) => LocalizedString} */ (i) => {
@@ -11792,7 +12062,7 @@ export const page_quote_decision = /** @type {(inputs: Page_Quote_DecisionInputs
 };
 
 export const page_quote_internal = /** @type {(inputs: Page_Quote_InternalInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`داخلي — لا يُطبع أبدًا`)
+	return /** @type {LocalizedString} */ (`داخلي، لا يُطبع أبدًا`)
 };
 
 export const page_quote_no_portal = /** @type {(inputs: Page_Quote_No_PortalInputs) => LocalizedString} */ () => {
@@ -12487,6 +12757,10 @@ export const profit_col_rate = /** @type {(inputs: Profit_Col_RateInputs) => Loc
 	return /** @type {LocalizedString} */ (`السعر`)
 };
 
+export const profit_col_realised = /** @type {(inputs: Profit_Col_RealisedInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`محقق`)
+};
+
 export const profit_col_receipt = /** @type {(inputs: Profit_Col_ReceiptInputs) => LocalizedString} */ () => {
 	return /** @type {LocalizedString} */ (`المقبوض`)
 };
@@ -12631,6 +12905,10 @@ export const project_col_checked = /** @type {(inputs: Project_Col_CheckedInputs
 	return /** @type {LocalizedString} */ (`فُحص مباشرة`)
 };
 
+export const project_col_open = /** @type {(inputs: Project_Col_OpenInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`فتح`)
+};
+
 export const project_col_requirement = /** @type {(inputs: Project_Col_RequirementInputs) => LocalizedString} */ () => {
 	return /** @type {LocalizedString} */ (`من متطلباتكم`)
 };
@@ -12724,7 +13002,7 @@ export const roles_failing = /** @type {(inputs: Roles_FailingInputs) => Localiz
 };
 
 export const roles_in_hours_text = /** @type {(inputs: Roles_In_Hours_TextInputs) => LocalizedString} */ (i) => {
-	return /** @type {LocalizedString} */ (`${i?.reason} ساعات الدوام — يتولاه مسؤول الملف؛ لا حاجة إلى تنبيه.`)
+	return /** @type {LocalizedString} */ (`${i?.reason} ساعات الدوام: يتولاه مسؤول الملف؛ لا حاجة إلى تنبيه.`)
 };
 
 export const roles_office_hours = /** @type {(inputs: Roles_Office_HoursInputs) => LocalizedString} */ () => {
@@ -12736,19 +13014,19 @@ export const roles_open_pricing = /** @type {(inputs: Roles_Open_PricingInputs) 
 };
 
 export const roles_preset_friday = /** @type {(inputs: Roles_Preset_FridayInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`الجمعة 20 نوفمبر 10:00 — عطلة نهاية الأسبوع`)
+	return /** @type {LocalizedString} */ (`الجمعة 20 نوفمبر 10:00، عطلة نهاية الأسبوع`)
 };
 
 export const roles_preset_office = /** @type {(inputs: Roles_Preset_OfficeInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`الثلاثاء 17 نوفمبر 11:30 — ساعات الدوام`)
+	return /** @type {LocalizedString} */ (`الثلاثاء 17 نوفمبر 11:30، ساعات الدوام`)
 };
 
 export const roles_preset_saturday = /** @type {(inputs: Roles_Preset_SaturdayInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`السبت 21 نوفمبر 14:00 — عطلة نهاية الأسبوع`)
+	return /** @type {LocalizedString} */ (`السبت 21 نوفمبر 14:00، عطلة نهاية الأسبوع`)
 };
 
 export const roles_preset_sunday = /** @type {(inputs: Roles_Preset_SundayInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`الأحد 22 نوفمبر 06:30 — قبل الدوام`)
+	return /** @type {LocalizedString} */ (`الأحد 22 نوفمبر 06:30، قبل الدوام`)
 };
 
 export const roles_preset_tonight = /** @type {(inputs: Roles_Preset_TonightInputs) => LocalizedString} */ () => {
@@ -12780,7 +13058,7 @@ export const roles_step_senior = /** @type {(inputs: Roles_Step_SeniorInputs) =>
 };
 
 export const roles_try_it = /** @type {(inputs: Roles_Try_ItInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`جرّب: بدّل المستخدم الحالي إلى Soaad Amer (المبيعات) وافتح تبويب التسعير في GS-RFQ-0142 — تختفي التكاليف وهوامش الربح.`)
+	return /** @type {LocalizedString} */ (`جرّب: بدّل المستخدم الحالي إلى Soaad Amer (المبيعات) وافتح تبويب التسعير في GS-RFQ-0142. تختفي التكاليف وهوامش الربح.`)
 };
 
 export const roles_verified = /** @type {(inputs: Roles_VerifiedInputs) => LocalizedString} */ () => {
@@ -12932,7 +13210,7 @@ export const sourcing_draft_rfqs_prompt = /** @type {(inputs: Sourcing_Draft_Rfq
 };
 
 export const sourcing_drafts_discarded = /** @type {(inputs: Sourcing_Drafts_DiscardedInputs) => LocalizedString} */ () => {
-	return /** @type {LocalizedString} */ (`حُذفت المسودات — لم يُرسل شيء`)
+	return /** @type {LocalizedString} */ (`حُذفت المسودات، ولم يُرسل شيء`)
 };
 
 export const sourcing_full = /** @type {(inputs: Sourcing_FullInputs) => LocalizedString} */ () => {
@@ -13069,34 +13347,34 @@ export const sourcing_send_n = /** @type {(inputs: Sourcing_Send_NInputs) => Loc
 
 export const sourcing_send_text = /** @type {(inputs: Sourcing_Send_TextInputs) => LocalizedString} */ (i) => {
 	const nPlural = __paraglideRegistry.plural("ar", i?.n, {}, true);
-	if (nPlural === "zero") return /** @type {LocalizedString} */ (`${i?.count} طلب إلى ${i?.suppliers} — الرد قبل ${i?.due}.
+	if (nPlural === "zero") return /** @type {LocalizedString} */ (`${i?.count} طلب إلى ${i?.suppliers}، والرد قبل ${i?.due}.
 
 حُذف اسم العميل والسفينة وملفاته. تُرسل التذكيرات بعد 24 ساعة و48 ساعة، وتتوقف فور ردّ المورّد، ويُنبَّه صاحب الملف بعد التذكير الثاني.`);
-	if (nPlural === "one") return /** @type {LocalizedString} */ (`طلب واحد إلى ${i?.suppliers} — الرد قبل ${i?.due}.
+	if (nPlural === "one") return /** @type {LocalizedString} */ (`طلب واحد إلى ${i?.suppliers}، والرد قبل ${i?.due}.
 
 حُذف اسم العميل والسفينة وملفاته. تُرسل التذكيرات بعد 24 ساعة و48 ساعة، وتتوقف فور ردّ المورّد، ويُنبَّه صاحب الملف بعد التذكير الثاني.`);
-	if (nPlural === "two") return /** @type {LocalizedString} */ (`طلبان إلى ${i?.suppliers} — الرد قبل ${i?.due}.
+	if (nPlural === "two") return /** @type {LocalizedString} */ (`طلبان إلى ${i?.suppliers}، والرد قبل ${i?.due}.
 
 حُذف اسم العميل والسفينة وملفاته. تُرسل التذكيرات بعد 24 ساعة و48 ساعة، وتتوقف فور ردّ المورّد، ويُنبَّه صاحب الملف بعد التذكير الثاني.`);
-	if (nPlural === "few") return /** @type {LocalizedString} */ (`${i?.count} طلبات إلى ${i?.suppliers} — الرد قبل ${i?.due}.
+	if (nPlural === "few") return /** @type {LocalizedString} */ (`${i?.count} طلبات إلى ${i?.suppliers}، والرد قبل ${i?.due}.
 
 حُذف اسم العميل والسفينة وملفاته. تُرسل التذكيرات بعد 24 ساعة و48 ساعة، وتتوقف فور ردّ المورّد، ويُنبَّه صاحب الملف بعد التذكير الثاني.`);
-	if (nPlural === "many") return /** @type {LocalizedString} */ (`${i?.count} طلبًا إلى ${i?.suppliers} — الرد قبل ${i?.due}.
+	if (nPlural === "many") return /** @type {LocalizedString} */ (`${i?.count} طلبًا إلى ${i?.suppliers}، والرد قبل ${i?.due}.
 
 حُذف اسم العميل والسفينة وملفاته. تُرسل التذكيرات بعد 24 ساعة و48 ساعة، وتتوقف فور ردّ المورّد، ويُنبَّه صاحب الملف بعد التذكير الثاني.`);
-	return /** @type {LocalizedString} */ (`${i?.count} طلب إلى ${i?.suppliers} — الرد قبل ${i?.due}.
+	return /** @type {LocalizedString} */ (`${i?.count} طلب إلى ${i?.suppliers}، والرد قبل ${i?.due}.
 
 حُذف اسم العميل والسفينة وملفاته. تُرسل التذكيرات بعد 24 ساعة و48 ساعة، وتتوقف فور ردّ المورّد، ويُنبَّه صاحب الملف بعد التذكير الثاني.`)
 };
 
 export const sourcing_sent = /** @type {(inputs: Sourcing_SentInputs) => LocalizedString} */ (i) => {
 	const nPlural = __paraglideRegistry.plural("ar", i?.n, {}, true);
-	if (nPlural === "zero") return /** @type {LocalizedString} */ (`أُرسل ${i?.count} طلب إلى الموردين — ستُطابَق الردود تلقائيًا`);
-	if (nPlural === "one") return /** @type {LocalizedString} */ (`أُرسل طلب واحد إلى الموردين — ستُطابَق الردود تلقائيًا`);
-	if (nPlural === "two") return /** @type {LocalizedString} */ (`أُرسل طلبان إلى الموردين — ستُطابَق الردود تلقائيًا`);
-	if (nPlural === "few") return /** @type {LocalizedString} */ (`أُرسلت ${i?.count} طلبات إلى الموردين — ستُطابَق الردود تلقائيًا`);
-	if (nPlural === "many") return /** @type {LocalizedString} */ (`أُرسل ${i?.count} طلبًا إلى الموردين — ستُطابَق الردود تلقائيًا`);
-	return /** @type {LocalizedString} */ (`أُرسل ${i?.count} طلب إلى الموردين — ستُطابَق الردود تلقائيًا`)
+	if (nPlural === "zero") return /** @type {LocalizedString} */ (`أُرسل ${i?.count} طلب إلى الموردين، وستُطابَق الردود تلقائيًا`);
+	if (nPlural === "one") return /** @type {LocalizedString} */ (`أُرسل طلب واحد إلى الموردين، وستُطابَق الردود تلقائيًا`);
+	if (nPlural === "two") return /** @type {LocalizedString} */ (`أُرسل طلبان إلى الموردين، وستُطابَق الردود تلقائيًا`);
+	if (nPlural === "few") return /** @type {LocalizedString} */ (`أُرسلت ${i?.count} طلبات إلى الموردين، وستُطابَق الردود تلقائيًا`);
+	if (nPlural === "many") return /** @type {LocalizedString} */ (`أُرسل ${i?.count} طلبًا إلى الموردين، وستُطابَق الردود تلقائيًا`);
+	return /** @type {LocalizedString} */ (`أُرسل ${i?.count} طلب إلى الموردين، وستُطابَق الردود تلقائيًا`)
 };
 
 export const sourcing_skipped = /** @type {(inputs: Sourcing_SkippedInputs) => LocalizedString} */ (i) => {
@@ -13125,6 +13403,762 @@ export const sourcing_system_chooses = /** @type {(inputs: Sourcing_System_Choos
 
 export const sourcing_vessel_removed = /** @type {(inputs: Sourcing_Vessel_RemovedInputs) => LocalizedString} */ () => {
 	return /** @type {LocalizedString} */ (`حُذفت السفينة`)
+};
+
+export const tour_close_1_body = /** @type {(inputs: Tour_Close_1_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`الربح الموعود عند التسعير مقابل النتيجة الفعلية: كلّف اللنش أكثر من التقدير بعد فوترته.`)
+};
+
+export const tour_close_1_target = /** @type {(inputs: Tour_Close_1_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`التكلفة المتوقعة مقابل الفعلية`)
+};
+
+export const tour_close_1_title = /** @type {(inputs: Tour_Close_1_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`التقديرات تصبح فعلية`)
+};
+
+export const tour_close_2_body = /** @type {(inputs: Tour_Close_2_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`وصل USD 10,000 بسعر 48.80 مقابل 48.60 المسعّر — ربح EGP 2,000، على الملف الذي حدث فيه.`)
+};
+
+export const tour_close_2_target = /** @type {(inputs: Tour_Close_2_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`فروق أسعار الصرف`)
+};
+
+export const tour_close_2_title = /** @type {(inputs: Tour_Close_2_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`فروق الصرف أموال حقيقية`)
+};
+
+export const tour_close_3_body = /** @type {(inputs: Tour_Close_3_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`انشرخت خوذتان أثناء النقل؛ ويسوّي إشعار الدائن من المورّد المطالبة.`)
+};
+
+export const tour_close_3_target = /** @type {(inputs: Tour_Close_3_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`المطالبات`)
+};
+
+export const tour_close_3_title = /** @type {(inputs: Tour_Close_3_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`تُسوّى المطالبات مقابل إشعارات الدائن`)
+};
+
+export const tour_close_4_body = /** @type {(inputs: Tour_Close_4_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`فواتير مطابقة، وتسليمات موقّعة، وفواتير قبلتها مصلحة الضرائب ودُفعت، ومطالبات مسوّاة — ثم يمكن إغلاق الملف.`)
+};
+
+export const tour_close_4_target = /** @type {(inputs: Tour_Close_4_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`قائمة فحوص الإغلاق`)
+};
+
+export const tour_close_4_title = /** @type {(inputs: Tour_Close_4_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`لا إغلاق إلا بالأخضر`)
+};
+
+export const tour_close_summary = /** @type {(inputs: Tour_Close_SummaryInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`تتحول التقديرات إلى أرقام فعلية، وتُحتسب فروق الصرف والمطالبات، ولا يُغلق الملف إلا بالفحوص الخضراء.`)
+};
+
+export const tour_close_title = /** @type {(inputs: Tour_Close_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`تسوية الملف وإغلاقه`)
+};
+
+export const tour_control_room_1_body = /** @type {(inputs: Tour_Control_Room_1_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`يُكتب الساعة 07:00 من السجلات الحية، مع روابط إلى مصادره.`)
+};
+
+export const tour_control_room_1_target = /** @type {(inputs: Tour_Control_Room_1_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`الموجز اليومي من الذكاء الاصطناعي`)
+};
+
+export const tour_control_room_1_title = /** @type {(inputs: Tour_Control_Room_1_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`ملخص قبل القهوة`)
+};
+
+export const tour_control_room_2_body = /** @type {(inputs: Tour_Control_Room_2_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`يُجاب عن الأسئلة من البيانات الحية، وتستشهد كل إجابة بالسجلات التي استخدمتها.`)
+};
+
+export const tour_control_room_2_click = /** @type {(inputs: Tour_Control_Room_2_ClickInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`من يدين لنا بالمال؟`)
+};
+
+export const tour_control_room_2_target = /** @type {(inputs: Tour_Control_Room_2_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`اسأل Golden Sea`)
+};
+
+export const tour_control_room_2_title = /** @type {(inputs: Tour_Control_Room_2_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`اسأل أي شيء`)
+};
+
+export const tour_control_room_3_body = /** @type {(inputs: Tour_Control_Room_3_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`الهامش حسب القسم مقابل الحد الأدنى 15%، إضافة إلى المسار والسرعة والنقد وأداء الموردين.`)
+};
+
+export const tour_control_room_3_target = /** @type {(inputs: Tour_Control_Room_3_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`هامش الربح حسب الفئة`)
+};
+
+export const tour_control_room_3_title = /** @type {(inputs: Tour_Control_Room_3_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`السياسة في الأرقام`)
+};
+
+export const tour_control_room_4_body = /** @type {(inputs: Tour_Control_Room_4_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`مسجّلًا الدخول باسم سعاد عامر، يرفض المساعد نفسه الأسئلة عن التكاليف والهوامش.`)
+};
+
+export const tour_control_room_4_target = /** @type {(inputs: Tour_Control_Room_4_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`اسأل Golden Sea`)
+};
+
+export const tour_control_room_4_title = /** @type {(inputs: Tour_Control_Room_4_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`المبيعات لا ترى الهوامش أبدًا`)
+};
+
+export const tour_control_room_summary = /** @type {(inputs: Tour_Control_Room_SummaryInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`غرفة تحكم الرئيس التنفيذي و«اسأل Golden Sea» — وما لا يُقال للمبيعات أبدًا.`)
+};
+
+export const tour_control_room_title = /** @type {(inputs: Tour_Control_Room_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`العمل مباشرةً — ملخص الساعة 07:00`)
+};
+
+export const tour_delivery_to_cash_1_body = /** @type {(inputs: Tour_Delivery_To_Cash_1_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`الميناء وموعد الوصول والوكيل والشاحنة وطاقم الصعود واللنش في خطة واحدة. عندما يغيّر الوكيل موعد الوصول، يُعاد تخطيط الدفعة 2 ويُنبَّه المالك.`)
+};
+
+export const tour_delivery_to_cash_1_target = /** @type {(inputs: Tour_Delivery_To_Cash_1_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`خطة التسليم للسفينة`)
+};
+
+export const tour_delivery_to_cash_1_title = /** @type {(inputs: Tour_Delivery_To_Cash_1_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`السفينة تتحرك، والخطة تتبعها`)
+};
+
+export const tour_delivery_to_cash_2_body = /** @type {(inputs: Tour_Delivery_To_Cash_2_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`دفعتان لطلب واحد. لا تُحتسب الدفعة مسلّمة إلا بإذن التسليم الموقّع من السفينة.`)
+};
+
+export const tour_delivery_to_cash_2_target = /** @type {(inputs: Tour_Delivery_To_Cash_2_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`الشحنات وإثبات التسليم`)
+};
+
+export const tour_delivery_to_cash_2_title = /** @type {(inputs: Tour_Delivery_To_Cash_2_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`لا إثبات، لا «تم التسليم»`)
+};
+
+export const tour_delivery_to_cash_3_body = /** @type {(inputs: Tour_Delivery_To_Cash_3_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`لا يُفوتر إلا ما سُلّم، وتذهب كل فاتورة إلى مصلحة الضرائب المصرية، ويحصل الرفض أو الانقطاع على إعادة محاولة آمنة.`)
+};
+
+export const tour_delivery_to_cash_3_target = /** @type {(inputs: Tour_Delivery_To_Cash_3_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`فواتير العملاء والمدفوعات`)
+};
+
+export const tour_delivery_to_cash_3_title = /** @type {(inputs: Tour_Delivery_To_Cash_3_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`فوتر ما سُلّم، ثم الفاتورة الإلكترونية`)
+};
+
+export const tour_delivery_to_cash_4_body = /** @type {(inputs: Tour_Delivery_To_Cash_4_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`المستحقات والمدفوعات جنبًا إلى جنب. تنتظر مدفوعات الموردين المدير المالي أو الرئيس التنفيذي.`)
+};
+
+export const tour_delivery_to_cash_4_target = /** @type {(inputs: Tour_Delivery_To_Cash_4_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`مدفوعات تحتاج إلى موافقة`)
+};
+
+export const tour_delivery_to_cash_4_title = /** @type {(inputs: Tour_Delivery_To_Cash_4_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`شخص يعتمد، والمالية تدفع`)
+};
+
+export const tour_delivery_to_cash_5_body = /** @type {(inputs: Tour_Delivery_To_Cash_5_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`الحساب البنكي الجديد للمورّد يحتاج معاودة اتصال بالرقم المسجّل ومعتمدَين — المالية والرئيس التنفيذي.`)
+};
+
+export const tour_delivery_to_cash_5_target = /** @type {(inputs: Tour_Delivery_To_Cash_5_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`التغيير المطلوب`)
+};
+
+export const tour_delivery_to_cash_5_title = /** @type {(inputs: Tour_Delivery_To_Cash_5_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`شخصان مختلفان، دائمًا`)
+};
+
+export const tour_delivery_to_cash_summary = /** @type {(inputs: Tour_Delivery_To_Cash_SummaryInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`تغيّر موعد الوصول يعيد تخطيط التسليم، وإثبات التسليم يفتح الفاتورة، والمالية تحصّل وتدفع.`)
+};
+
+export const tour_delivery_to_cash_title = /** @type {(inputs: Tour_Delivery_To_Cash_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`من الرصيف إلى البنك`)
+};
+
+export const tour_exceptions_1_body = /** @type {(inputs: Tour_Exceptions_1_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`رمز Outlook منتهٍ وخدمة توقيع فواتير إلكترونية متعذرة تنتظران في قائمة لها مالك — لا في سجل لا يقرؤه أحد.`)
+};
+
+export const tour_exceptions_1_target = /** @type {(inputs: Tour_Exceptions_1_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`قائمة الاستثناءات`)
+};
+
+export const tour_exceptions_1_title = /** @type {(inputs: Tour_Exceptions_1_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`الإخفاقات ظاهرة`)
+};
+
+export const tour_exceptions_2_body = /** @type {(inputs: Tour_Exceptions_2_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`نتائج الذكاء الاصطناعي غير المؤكدة لا تُطبَّق تلقائيًا أبدًا؛ يراجعها أحد هنا.`)
+};
+
+export const tour_exceptions_2_target = /** @type {(inputs: Tour_Exceptions_2_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`قائمة مراجعة الذكاء الاصطناعي`)
+};
+
+export const tour_exceptions_2_title = /** @type {(inputs: Tour_Exceptions_2_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`الثقة المنخفضة تنتظر شخصًا`)
+};
+
+export const tour_exceptions_3_body = /** @type {(inputs: Tour_Exceptions_3_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`المُشغِّل والمالك وموعد الاستحقاق والموافقة وسلوك إعادة المحاولة وشرط التوقف لكل قاعدة — تفعّلها الإدارة وتوقفها، ويُسجَّل ذلك.`)
+};
+
+export const tour_exceptions_3_target = /** @type {(inputs: Tour_Exceptions_3_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`سجل القواعد`)
+};
+
+export const tour_exceptions_3_title = /** @type {(inputs: Tour_Exceptions_3_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`كل أتمتة صريحة`)
+};
+
+export const tour_exceptions_4_body = /** @type {(inputs: Tour_Exceptions_4_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`خارج ساعات العمل من الأحد إلى الخميس، تذهب طلبات العروض العاجلة إلى المناوب، مع احتياطي إذا لم يرد أحد.`)
+};
+
+export const tour_exceptions_4_target = /** @type {(inputs: Tour_Exceptions_4_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`التوجيه بعد ساعات العمل`)
+};
+
+export const tour_exceptions_4_title = /** @type {(inputs: Tour_Exceptions_4_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`طلبات العروض العاجلة بعد الدوام`)
+};
+
+export const tour_exceptions_summary = /** @type {(inputs: Tour_Exceptions_SummaryInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`صندوق بريد معطّل ونتيجة ذكاء اصطناعي منخفضة الثقة، يُعالجان بأمان؛ وتصل طلبات العروض العاجلة إلى المناوب.`)
+};
+
+export const tour_exceptions_title = /** @type {(inputs: Tour_Exceptions_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`لا شيء يفشل بصمت`)
+};
+
+export const tour_growth_1_body = /** @type {(inputs: Tour_Growth_1_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`مديرو السفن من أول تعارف حتى الحساب النشط؛ ويُعلَّم العملاء المحتملون المتعثرون.`)
+};
+
+export const tour_growth_1_target = /** @type {(inputs: Tour_Growth_1_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`مسار النمو`)
+};
+
+export const tour_growth_1_title = /** @type {(inputs: Tour_Growth_1_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`مسار يتجاوز طلبات العروض`)
+};
+
+export const tour_growth_2_body = /** @type {(inputs: Tour_Growth_2_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`لكل خطوة تالية نص قصير. وتسجيل النتيجة يخطط للخطوة التالية.`)
+};
+
+export const tour_growth_2_target = /** @type {(inputs: Tour_Growth_2_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`خطوات المبيعات التالية`)
+};
+
+export const tour_growth_2_title = /** @type {(inputs: Tour_Growth_2_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`اعرف ماذا تقول`)
+};
+
+export const tour_growth_3_body = /** @type {(inputs: Tour_Growth_3_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`المستندات ومواعيد اللجان للانضمام إلى قائمة الموردين المعتمدين لدى كل مدير سفن.`)
+};
+
+export const tour_growth_3_target = /** @type {(inputs: Tour_Growth_3_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`تسجيلات الموردين`)
+};
+
+export const tour_growth_3_title = /** @type {(inputs: Tour_Growth_3_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`تسجيلات متابَعة`)
+};
+
+export const tour_growth_summary = /** @type {(inputs: Tour_Growth_SummaryInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`العملاء المحتملون والأساطيل وتسجيلات الموردين — مع ما يُقال في المكالمة التالية.`)
+};
+
+export const tour_growth_title = /** @type {(inputs: Tour_Growth_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`تنمية قاعدة العملاء`)
+};
+
+export const tour_handover_1_body = /** @type {(inputs: Tour_Handover_1_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`من أول بريد حتى آخر دفعة، كل شيء يحدث على ملف واحد. GS-RFQ-0142 في مرحلة مقارنة العروض.`)
+};
+
+export const tour_handover_1_target = /** @type {(inputs: Tour_Handover_1_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`دورة الملف`)
+};
+
+export const tour_handover_1_title = /** @type {(inputs: Tour_Handover_1_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`ملف واحد، ست عشرة خطوة`)
+};
+
+export const tour_handover_2_body = /** @type {(inputs: Tour_Handover_2_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`ثلاثة من ستة بنود جاهزة وواحد متوقف بسبب توضيح — لا يبدو الملف مكتملًا إلا باكتمال كل بند.`)
+};
+
+export const tour_handover_2_target = /** @type {(inputs: Tour_Handover_2_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`تقدّم البنود`)
+};
+
+export const tour_handover_2_title = /** @type {(inputs: Tour_Handover_2_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`لا اكتمال قبل الأوان أبدًا`)
+};
+
+export const tour_handover_3_body = /** @type {(inputs: Tour_Handover_3_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`إعادة الإسناد تطلب من الذكاء الاصطناعي مذكرة تسليم — الأسئلة المفتوحة، والمهام، وقاعدة التواصل مع العميل. يعدّلها شخص ويؤكدها.`)
+};
+
+export const tour_handover_3_target = /** @type {(inputs: Tour_Handover_3_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`المسؤول والبديل`)
+};
+
+export const tour_handover_3_title = /** @type {(inputs: Tour_Handover_3_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`الذكاء الاصطناعي يصوغ مذكرة التسليم`)
+};
+
+export const tour_handover_4_body = /** @type {(inputs: Tour_Handover_4_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`الخطوات التلقائية تذكر القاعدة التي عملت؛ والخطوات البشرية تذكر الشخص. هذا هو سجل التدقيق.`)
+};
+
+export const tour_handover_4_target = /** @type {(inputs: Tour_Handover_4_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`سجل النشاط`)
+};
+
+export const tour_handover_4_title = /** @type {(inputs: Tour_Handover_4_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`كل خطوة مسجّلة`)
+};
+
+export const tour_handover_summary = /** @type {(inputs: Tour_Handover_SummaryInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`ملف واحد من أول بريد حتى آخر دفعة، ومذكرة تسليم يصوغها الذكاء الاصطناعي ليؤكدها شخص.`)
+};
+
+export const tour_handover_title = /** @type {(inputs: Tour_Handover_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`تسليم دون فقدان شيء`)
+};
+
+export const tour_morning_1_body = /** @type {(inputs: Tour_Morning_1_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`هذا كريم يوسف، سلسلة التوريد. لوحة تحكم Golden Sea مبنية للشخص المسجّل دخوله: ما ينتظره، وقائمته، ومتابعاته.`)
+};
+
+export const tour_morning_1_title = /** @type {(inputs: Tour_Morning_1_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`لكل دور يومه الخاص`)
+};
+
+export const tour_morning_2_body = /** @type {(inputs: Tour_Morning_2_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`لكل ملف حي مالك وموعد نهائي وإجراء تالٍ. تأتي الملفات المتوقفة والمعرضة للخطر أولًا، ثم الأقرب موعدًا.`)
+};
+
+export const tour_morning_2_target = /** @type {(inputs: Tour_Morning_2_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`قائمتي`)
+};
+
+export const tour_morning_2_title = /** @type {(inputs: Tour_Morning_2_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`قائمة مرتبة حسب المخاطر`)
+};
+
+export const tour_morning_3_body = /** @type {(inputs: Tour_Morning_3_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`ما تغيّر خلال الليل وما يحتاجه اليوم: المواعيد النهائية، وعدم تطابق أمر شراء، ومورّد لم يرد، وتكاملات فاشلة.`)
+};
+
+export const tour_morning_3_target = /** @type {(inputs: Tour_Morning_3_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`الموجز اليومي`)
+};
+
+export const tour_morning_3_title = /** @type {(inputs: Tour_Morning_3_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`ملخص الساعة 07:00`)
+};
+
+export const tour_morning_4_body = /** @type {(inputs: Tour_Morning_4_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`تسجّل سعاد عامر الدخول. قائمتها بلا قيم أو تكاليف أو هوامش: لا ترى المبيعات أبدًا ما تدفعه Golden Sea لمورّديها.`)
+};
+
+export const tour_morning_4_target = /** @type {(inputs: Tour_Morning_4_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`قائمتي`)
+};
+
+export const tour_morning_4_title = /** @type {(inputs: Tour_Morning_4_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`المبيعات ترى الملفات نفسها — دون التكاليف`)
+};
+
+export const tour_morning_5_body = /** @type {(inputs: Tour_Morning_5_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`يرى كريم بلباع ما ينتظره أولًا — استثناء هامش من سعاد، ودفعة مقدمة لمورّد، وسعر صرف، وتغيير بنك حصل بالفعل على إحدى موافقتيه.`)
+};
+
+export const tour_morning_5_target = /** @type {(inputs: Tour_Morning_5_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`بانتظار قرارك`)
+};
+
+export const tour_morning_5_title = /** @type {(inputs: Tour_Morning_5_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`الرئيس التنفيذي يبدأ بالقرارات`)
+};
+
+export const tour_morning_6_body = /** @type {(inputs: Tour_Morning_6_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`يرى محمد حلمي المدفوعات والدفعات المقدمة فقط. وقد وافق على تغيير البنك بعد معاودة الاتصال؛ وهو الآن ينتظر الرئيس التنفيذي — شخصان، دائمًا.`)
+};
+
+export const tour_morning_6_target = /** @type {(inputs: Tour_Morning_6_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`بانتظار قرارك`)
+};
+
+export const tour_morning_6_title = /** @type {(inputs: Tour_Morning_6_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`المالية تعتمد المدفوعات`)
+};
+
+export const tour_morning_7_body = /** @type {(inputs: Tour_Morning_7_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`الإشعارات والإشارات المرجعية والعدادات في هذه اللوحة تخص الشخص المسجّل دخوله. عدنا إلى كريم يوسف — وإشعاراته عن ملفاته.`)
+};
+
+export const tour_morning_7_target = /** @type {(inputs: Tour_Morning_7_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`الإشعارات`)
+};
+
+export const tour_morning_7_title = /** @type {(inputs: Tour_Morning_7_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`إشعارات خاصة بكل شخص`)
+};
+
+export const tour_morning_summary = /** @type {(inputs: Tour_Morning_SummaryInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`المشتري والمبيعات والرئيس التنفيذي والمالية يبدؤون يومهم — كلٌّ يرى فقط ما يحتاجه.`)
+};
+
+export const tour_morning_title = /** @type {(inputs: Tour_Morning_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`صباح واحد، أربعة أشخاص`)
+};
+
+export const tour_po_check_1_body = /** @type {(inputs: Tour_Po_Check_1_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`يُطابق أمر شراء Nordvik مع إصدار عرض السعر المعتمد. حجم عبوة قديم، وسعر v1 منتهٍ، و15 خوذة بدلًا من 10 توقف الالتزام حتى يوافق العميل كتابيًا.`)
+};
+
+export const tour_po_check_1_target = /** @type {(inputs: Tour_Po_Check_1_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`مراجعة أمر شراء العميل`)
+};
+
+export const tour_po_check_1_title = /** @type {(inputs: Tour_Po_Check_1_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`يُفحص أمر الشراء بندًا بندًا`)
+};
+
+export const tour_po_check_2_body = /** @type {(inputs: Tour_Po_Check_2_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`البنود التي لم يطلبها العميل تبقى مفتوحة للمراجعة أو تُغلق بسبب مسجّل.`)
+};
+
+export const tour_po_check_2_target = /** @type {(inputs: Tour_Po_Check_2_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`الترسية الجزئية`)
+};
+
+export const tour_po_check_2_title = /** @type {(inputs: Tour_Po_Check_2_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`ترسية جزئية، لا تمر بصمت أبدًا`)
+};
+
+export const tour_po_check_3_body = /** @type {(inputs: Tour_Po_Check_3_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`بعد الاتفاق على أمر الشراء، تُعدّ أوامر شراء الموردين — بالشحن المباشر أو عبر المستودع — ويُراجع كلٌّ منها أولًا مقابل أحدث عرض.`)
+};
+
+export const tour_po_check_3_target = /** @type {(inputs: Tour_Po_Check_3_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`أوامر الشراء للموردين`)
+};
+
+export const tour_po_check_3_title = /** @type {(inputs: Tour_Po_Check_3_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`أوامر شراء لكل مورّد`)
+};
+
+export const tour_po_check_4_body = /** @type {(inputs: Tour_Po_Check_4_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`تُطابق كل فاتورة مورّد مع أمر شرائها والبضاعة المستلمة؛ وتُرفض الفاتورة المكررة.`)
+};
+
+export const tour_po_check_4_target = /** @type {(inputs: Tour_Po_Check_4_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`فواتير الموردين`)
+};
+
+export const tour_po_check_4_title = /** @type {(inputs: Tour_Po_Check_4_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`مطابقة ثلاثية`)
+};
+
+export const tour_po_check_5_body = /** @type {(inputs: Tour_Po_Check_5_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`مسجّلًا الدخول كالرئيس التنفيذي: يظهر تغيّر سعر معلَّم في أمر شراء مورّد قبل أن يلتزم، وتنتظر الدفعات المقدمة موافقة دفع.`)
+};
+
+export const tour_po_check_5_target = /** @type {(inputs: Tour_Po_Check_5_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`أوامر الشراء للموردين`)
+};
+
+export const tour_po_check_5_title = /** @type {(inputs: Tour_Po_Check_5_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`كريم بلباع يؤكد`)
+};
+
+export const tour_po_check_summary = /** @type {(inputs: Tour_Po_Check_SummaryInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`أمر شراء عميل بسعر قديم وكمية خاطئة يُكتشف قبل طلب أي شيء.`)
+};
+
+export const tour_po_check_title = /** @type {(inputs: Tour_Po_Check_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`أمر الشراء لا يطابق العرض`)
+};
+
+export const tour_quote_1_body = /** @type {(inputs: Tour_Quote_1_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`يُوحَّد كل عرض إلى جنيه لكل وحدة أساسية. بدّل إلى التكلفة الواصلة فيعيد الشحن إلى بورسعيد ترتيبها.`)
+};
+
+export const tour_quote_1_click = /** @type {(inputs: Tour_Quote_1_ClickInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`التكلفة حتى التسليم`)
+};
+
+export const tour_quote_1_target = /** @type {(inputs: Tour_Quote_1_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`كيف تُقارَن العروض`)
+};
+
+export const tour_quote_1_title = /** @type {(inputs: Tour_Quote_1_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`الأرخص ليس دائمًا الأرخص على متن السفينة`)
+};
+
+export const tour_quote_2_body = /** @type {(inputs: Tour_Quote_2_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`عُرض 242 لبند يتطلب القطعة 243 نفسها، فأُوقف البند عن التسعير. يُحفظ v1 للسجل؛ ويُستخدم v2 المصحَّح.`)
+};
+
+export const tour_quote_2_target = /** @type {(inputs: Tour_Quote_2_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`مثبّت براغي LOCTITE 243`)
+};
+
+export const tour_quote_2_title = /** @type {(inputs: Tour_Quote_2_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`تُكتشف القطعة الخاطئة`)
+};
+
+export const tour_quote_3_body = /** @type {(inputs: Tour_Quote_3_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`مخزون الإسكندرية الأرخص للوحدة لكنه الأغلى عند التسليم. يقسّم الاقتراح 10 + 5 على موردَين، وكلاهما قبل موعد وصول السفينة.`)
+};
+
+export const tour_quote_3_target = /** @type {(inputs: Tour_Quote_3_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`خوذة سلامة EN 397`)
+};
+
+export const tour_quote_3_title = /** @type {(inputs: Tour_Quote_3_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`المخزون الخاص والتوريد المجزّأ`)
+};
+
+export const tour_quote_4_body = /** @type {(inputs: Tour_Quote_4_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`تُوزَّع الرسوم المشتركة على البنود؛ وتُفحص السياسة على الهامش، ويعرض كل بند التكلفة والرسوم والربح.`)
+};
+
+export const tour_quote_4_target = /** @type {(inputs: Tour_Quote_4_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`هامش الربح = الربح ÷ سعر البيع`)
+};
+
+export const tour_quote_4_title = /** @type {(inputs: Tour_Quote_4_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`الهامش لا نسبة الإضافة`)
+};
+
+export const tour_quote_5_body = /** @type {(inputs: Tour_Quote_5_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`يذهب عرض السعر واستثناءاته إلى كريم بلباع بنقرة واحدة. الذكاء الاصطناعي لا يسعّر وحده أبدًا.`)
+};
+
+export const tour_quote_5_target = /** @type {(inputs: Tour_Quote_5_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`الموافقة`)
+};
+
+export const tour_quote_5_title = /** @type {(inputs: Tour_Quote_5_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`شخص يعتمد`)
+};
+
+export const tour_quote_6_body = /** @type {(inputs: Tour_Quote_6_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`يرى كريم بلباع ما يقرره ولماذا — الهامش، وسعر الصرف، والدفعة المقدمة، وتغيير البنك الذي وافق عليه محمد حلمي بالفعل.`)
+};
+
+export const tour_quote_6_target = /** @type {(inputs: Tour_Quote_6_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`بانتظارك`)
+};
+
+export const tour_quote_6_title = /** @type {(inputs: Tour_Quote_6_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`الإثبات أولًا`)
+};
+
+export const tour_quote_7_body = /** @type {(inputs: Tour_Quote_7_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`عرض السعر نفسه بتنسيق Golden Sea الخاص، بالإنجليزية أو العربية، بالجنيه أو الدولار. لا يذهب شيء إلى العميل حتى يؤكد شخص البريد.`)
+};
+
+export const tour_quote_7_click = /** @type {(inputs: Tour_Quote_7_ClickInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`العربية`)
+};
+
+export const tour_quote_7_target = /** @type {(inputs: Tour_Quote_7_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`حالة القرار`)
+};
+
+export const tour_quote_7_title = /** @type {(inputs: Tour_Quote_7_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`تنسيقهم، ولغتهم`)
+};
+
+export const tour_quote_summary = /** @type {(inputs: Tour_Quote_SummaryInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`المشتري يقارن ويسعّر، والرئيس التنفيذي يعتمد، والعميل يتلقى تنسيق Golden Sea الخاص.`)
+};
+
+export const tour_quote_title = /** @type {(inputs: Tour_Quote_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`من العروض إلى عرض سعر معتمد`)
+};
+
+export const tour_replies_1_body = /** @type {(inputs: Tour_Replies_1_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`تُقسّم البنود حسب الفئة ولا يرى كل مورّد إلا بنوده — دون العميل أو السفينة أبدًا.`)
+};
+
+export const tour_replies_1_target = /** @type {(inputs: Tour_Replies_1_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`يرى كل مورّد البنود التي يمكنه تسعيرها فقط`)
+};
+
+export const tour_replies_1_title = /** @type {(inputs: Tour_Replies_1_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`يبقى العميل مخفيًا`)
+};
+
+export const tour_replies_2_body = /** @type {(inputs: Tour_Replies_2_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`تصل الردود بمواضيع متغيرة؛ ويُطابق كلٌّ منها مع طلب عرضه بمرجعه، وتتوقف التذكيرات لذلك المورّد.`)
+};
+
+export const tour_replies_2_click = /** @type {(inputs: Tour_Replies_2_ClickInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`محاكاة الردود`)
+};
+
+export const tour_replies_2_target = /** @type {(inputs: Tour_Replies_2_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`الردود الواردة`)
+};
+
+export const tour_replies_2_title = /** @type {(inputs: Tour_Replies_2_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`مطابقة بالمرجع`)
+};
+
+export const tour_replies_3_body = /** @type {(inputs: Tour_Replies_3_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`ردّ مورّد لم تشترِ منه Golden Sea قط. يُنشأ تلقائيًا، مع سعره وتاريخه وصلاحيته.`)
+};
+
+export const tour_replies_3_target = /** @type {(inputs: Tour_Replies_3_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`قدّم عرضًا ولم يُطلب منه بعد`)
+};
+
+export const tour_replies_3_title = /** @type {(inputs: Tour_Replies_3_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`محفوظ دون طلب`)
+};
+
+export const tour_replies_4_body = /** @type {(inputs: Tour_Replies_4_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`وحدة السعر غير الواضحة لا تُستخدم حتى يؤكدها أحد.`)
+};
+
+export const tour_replies_4_target = /** @type {(inputs: Tour_Replies_4_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`تحتاج إلى شخص`)
+};
+
+export const tour_replies_4_title = /** @type {(inputs: Tour_Replies_4_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`شخص يؤكد غير المؤكد`)
+};
+
+export const tour_replies_5_body = /** @type {(inputs: Tour_Replies_5_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`المحرك نفسه يقرأ صناديق البريد القديمة إلى عملاء وسفن وموردين وأسعار مؤرخة. لا يُحفظ شيء حتى يوافق كريم بلباع.`)
+};
+
+export const tour_replies_5_target = /** @type {(inputs: Tour_Replies_5_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`التنظيم والاعتماد`)
+};
+
+export const tour_replies_5_title = /** @type {(inputs: Tour_Replies_5_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`سنوات من البريد، منظمة`)
+};
+
+export const tour_replies_summary = /** @type {(inputs: Tour_Replies_SummaryInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`تُرسل طلبات عروض الموردين دون اسم العميل؛ وتُطابق الردود حتى بمواضيع جديدة.`)
+};
+
+export const tour_replies_title = /** @type {(inputs: Tour_Replies_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`كل رد مطابق، وكل سعر محفوظ`)
+};
+
+export const tour_rfq_to_case_1_body = /** @type {(inputs: Tour_Rfq_To_Case_1_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`Outlook وGmail ونموذج طلب العرض السريع على الموقع وواتساب كلها تصل إلى قائمة واحدة — لا شيء يبقى في بريد شخصي.`)
+};
+
+export const tour_rfq_to_case_1_target = /** @type {(inputs: Tour_Rfq_To_Case_1_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`القنوات المتصلة`)
+};
+
+export const tour_rfq_to_case_1_title = /** @type {(inputs: Tour_Rfq_To_Case_1_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`صندوق وارد واحد لكل القنوات`)
+};
+
+export const tour_rfq_to_case_2_body = /** @type {(inputs: Tour_Rfq_To_Case_2_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`يصل طلب عرض جديد للسفينة MV Aurora Crest مع قائمة Excel وملف PDF وصورة واتساب. يبقى البريد وكل ملف مع الملف.`)
+};
+
+export const tour_rfq_to_case_2_click = /** @type {(inputs: Tour_Rfq_To_Case_2_ClickInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`محاكاة رسالة جديدة`)
+};
+
+export const tour_rfq_to_case_2_target = /** @type {(inputs: Tour_Rfq_To_Case_2_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`الرسالة الأصلية`)
+};
+
+export const tour_rfq_to_case_2_title = /** @type {(inputs: Tour_Rfq_To_Case_2_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`يُحفظ الأصل`)
+};
+
+export const tour_rfq_to_case_3_body = /** @type {(inputs: Tour_Rfq_To_Case_3_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`يحصل كل بند على رمز IMPA والكمية والوحدة والملف الذي جاء منه، مع درجة ثقة. ويُعلَّم بند الصورة بثقة 62% ليراجعه شخص.`)
+};
+
+export const tour_rfq_to_case_3_click = /** @type {(inputs: Tour_Rfq_To_Case_3_ClickInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`استخراج بالذكاء الاصطناعي`)
+};
+
+export const tour_rfq_to_case_3_target = /** @type {(inputs: Tour_Rfq_To_Case_3_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`بنود المسودة`)
+};
+
+export const tour_rfq_to_case_3_title = /** @type {(inputs: Tour_Rfq_To_Case_3_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`الذكاء الاصطناعي يقرأ، والناس يقررون`)
+};
+
+export const tour_rfq_to_case_4_body = /** @type {(inputs: Tour_Rfq_To_Case_4_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`تتحول التفاصيل الناقصة إلى مسودة توضيح للعميل — مسودة، لا تُرسل.`)
+};
+
+export const tour_rfq_to_case_4_target = /** @type {(inputs: Tour_Rfq_To_Case_4_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`ناقص أو غير واضح`)
+};
+
+export const tour_rfq_to_case_4_title = /** @type {(inputs: Tour_Rfq_To_Case_4_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`لا شيء بالتخمين`)
+};
+
+export const tour_rfq_to_case_5_body = /** @type {(inputs: Tour_Rfq_To_Case_5_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`تقترح قواعد الإسناد المالك والاحتياطي؛ ويأتي الموعد النهائي من طلب العميل.`)
+};
+
+export const tour_rfq_to_case_5_target = /** @type {(inputs: Tour_Rfq_To_Case_5_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`المسؤول والبديل والموعد النهائي`)
+};
+
+export const tour_rfq_to_case_5_title = /** @type {(inputs: Tour_Rfq_To_Case_5_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`المالك والاحتياطي والموعد النهائي`)
+};
+
+export const tour_rfq_to_case_6_body = /** @type {(inputs: Tour_Rfq_To_Case_6_BodyInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`التأكيد ينشئ الملف ببنوده، ويربط البريد، ويرسل إشعار استلام واحدًا بهوية الشركة.`)
+};
+
+export const tour_rfq_to_case_6_target = /** @type {(inputs: Tour_Rfq_To_Case_6_TargetInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`الخطوة التالية`)
+};
+
+export const tour_rfq_to_case_6_title = /** @type {(inputs: Tour_Rfq_To_Case_6_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`نقرة واحدة إلى ملف`)
+};
+
+export const tour_rfq_to_case_summary = /** @type {(inputs: Tour_Rfq_To_Case_SummaryInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`بريد طلب عرض مع Excel وPDF وصورة يصبح ملفًا واحدًا نظيفًا — الذكاء الاصطناعي يقرأ، والشخص يقرر.`)
+};
+
+export const tour_rfq_to_case_title = /** @type {(inputs: Tour_Rfq_To_Case_TitleInputs) => LocalizedString} */ () => {
+	return /** @type {LocalizedString} */ (`أي صيغة تدخل، ملف واحد يخرج`)
 };
 
 export const visuals_ack = /** @type {(inputs: Visuals_AckInputs) => LocalizedString} */ () => {

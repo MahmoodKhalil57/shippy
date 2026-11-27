@@ -1,6 +1,6 @@
 import type { Endpoint, PayloadRequest } from "payload";
 import type { Doc } from "saastemlycrm-design-system/contracts";
-import { logActivity } from "../collections/shared.ts";
+import { activeRate, type FxRate, logActivity } from "../collections/shared.ts";
 import { IS_MOCK, NotConnectedError } from "../flags.ts";
 import {
   FINANCE_ROLES,
@@ -224,12 +224,8 @@ function costingOf(caseId: string): Costing | undefined {
 const CLOSED = "Closed — settled";
 const MATCHED = ["Matched", "Approved for payment", "Paid"];
 
-const latestRate = (fx: Record<string, unknown>, currency: string, fallback: number) => {
-  const rates = ((fx.rates as { currency?: string; egpPerUnit?: number; date?: string }[] | undefined) ?? [])
-    .filter((r) => r.currency === currency && r.egpPerUnit)
-    .sort((a, b) => str(b.date).localeCompare(str(a.date)));
-  return rates[0]?.egpPerUnit ?? fallback;
-};
+const latestRate = (fx: Record<string, unknown>, currency: string, fallback: number) =>
+  activeRate(fx.rates as FxRate[] | undefined, currency)?.egpPerUnit || fallback;
 
 export async function caseProfit(req: PayloadRequest, id: string): Promise<CaseProfit | null> {
   const c = (await req.payload

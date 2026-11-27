@@ -3,6 +3,8 @@ import { html } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { expect } from "storybook/test";
 import "./bullet.ts";
+import type { UiBullet } from "./bullet.ts";
+import { auditLayout } from "../../../lib/base/layout.ts";
 
 const meta = preview.meta({
   title: "Primitives/Data/Bullet",
@@ -332,5 +334,26 @@ export const EmptyRangePointer = meta.story({
     await expect(meter.parentElement!.querySelector("[aria-live]")).toHaveTextContent("0");
     await userEvent.unhover(meter);
     await expect(meter.parentElement!.querySelector("[aria-live]")).toHaveTextContent("");
+  },
+});
+
+const words = (n: number) => "$389k across every open stage this quarter ".repeat(3).slice(0, n).trim();
+
+export const LongValueKeepsTheHeading = meta.story({
+  name: "Long value keeps the heading readable",
+  globals: { viewport: { value: "mobile1", isRotated: false } },
+  play: async ({ canvasElement }) => {
+    const el = canvasElement.querySelector<UiBullet>("ui-bullet")!;
+    const squeezed: string[] = [];
+    for (let n = 1; n <= 80; n++) {
+      el.valueText = words(n);
+      await el.updateComplete;
+      squeezed.push(
+        ...auditLayout(canvasElement)
+          .filter((i) => i.kind === "squeezed")
+          .map((i) => `${n}: ${i.detail}`),
+      );
+    }
+    await expect(squeezed).toEqual([]);
   },
 });

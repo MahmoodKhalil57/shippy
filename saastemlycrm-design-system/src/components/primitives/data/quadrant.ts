@@ -7,7 +7,7 @@ import { LightElement } from "../../base/light-element.ts";
 import { motion } from "../../../lib/base/motion-queue.ts";
 import { heightOf, median, paddedExtent, position, quadrantOf, sizeStep } from "../../../lib/base/quadrant.ts";
 import { rcva } from "../../../lib/base/variants.ts";
-import { row, rowLine, stack, text } from "../../../styles/algebra.ts";
+import { row, rowFill, stack, text } from "../../../styles/algebra.ts";
 
 export const quadrant = rcva(`${stack} w-full gap-1`);
 export const quadrantYLabel = rcva(`${text.line} text-label-sm text-on-surface-variant`);
@@ -49,7 +49,7 @@ export const quadrantDot = rcva(
   },
 );
 export const quadrantFoot = rcva(`${row} items-baseline gap-x-3 gap-y-1`);
-export const quadrantReadout = rcva(`${rowLine} text-label-md tabular-nums text-on-surface-variant`);
+export const quadrantReadout = rcva(`${rowFill} truncate text-label-md tabular-nums text-on-surface-variant`);
 export const quadrantXLabel = rcva(`${text.label} text-label-sm text-end text-on-surface-variant`);
 
 export interface QuadrantPoint {

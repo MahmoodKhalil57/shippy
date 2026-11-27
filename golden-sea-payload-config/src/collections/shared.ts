@@ -103,17 +103,24 @@ export const SUPPLIER_RFQ_STATUSES = [
   "Awaiting reply",
   "Partial reply",
   "Clarification needed",
+  "Escalated",
   "Replied",
   "Revised offer received",
   "Declined",
   "No response",
 ];
+export const WAITING_RFQ_STATUSES = ["Sent", "Awaiting reply", "Escalated"];
+export const AWAITING_REPLY_STATUSES = ["Awaiting reply", "Escalated"];
+export const UNANSWERED_RFQ_STATUSES = [...WAITING_RFQ_STATUSES, "No response"];
+export const OPEN_RFQ_STATUSES = [...WAITING_RFQ_STATUSES, "Partial reply", "Clarification needed"];
+export const OUTSTANDING_RFQ_STATUSES = [...OPEN_RFQ_STATUSES, "No response"];
 export const SUPPLIER_RFQ_STATUS_OPTIONS = choices(SUPPLIER_RFQ_STATUSES, {
   Draft: "مسودة",
   Sent: "مُرسل",
   "Awaiting reply": "بانتظار الرد",
   "Partial reply": "رد جزئي",
   "Clarification needed": "يحتاج توضيحًا",
+  Escalated: "مُصعَّد",
   Replied: "تم الرد",
   "Revised offer received": "وصل عرض معدّل",
   Declined: "اعتذر",
@@ -216,6 +223,27 @@ export const computed = <F extends Field>(
     },
   }) as F;
 
+export interface FxRate {
+  currency?: string;
+  egpPerUnit?: number;
+  date?: string;
+  status?: string;
+}
+
+export const activeRate = <R extends FxRate>(rates: R[] | undefined, currency: string): R | undefined =>
+  (rates ?? [])
+    .filter((r) => r.currency === currency && r.status === "Active")
+    .sort((a, b) => String(b.date ?? "").localeCompare(String(a.date ?? "")))[0];
+
+export const activeRates = (rates: FxRate[] | undefined): Record<string, number> => {
+  const out: Record<string, number> = {};
+  for (const currency of new Set((rates ?? []).map((r) => r.currency).filter((c): c is string => Boolean(c)))) {
+    const rate = activeRate(rates, currency);
+    if (rate) out[currency] = Number(rate.egpPerUnit) || 1;
+  }
+  return out;
+};
+
 export async function fxRates(req: PayloadRequest): Promise<Record<string, number>> {
   const ctx = (req.context ??= {}) as { fx?: Promise<Record<string, number>> };
   ctx.fx ??= (async () => {
@@ -225,11 +253,8 @@ export async function fxRates(req: PayloadRequest): Promise<Record<string, numbe
         locale: req.locale,
         slug: "fx-rates" as never,
         depth: 0,
-      } as never)) as {
-        rates?: { currency?: string; egpPerUnit?: number; status?: string }[];
-      };
-      for (const r of g.rates ?? [])
-        if (r.status === "Active" && r.currency) out[r.currency] = Number(r.egpPerUnit) || 1;
+      } as never)) as { rates?: FxRate[] };
+      Object.assign(out, activeRates(g.rates));
     } catch {}
     return out;
   })();

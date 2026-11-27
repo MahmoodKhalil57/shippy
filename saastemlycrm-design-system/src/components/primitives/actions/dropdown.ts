@@ -341,7 +341,7 @@ export class UiDropdown extends LightElement {
     const isMenu = this._kind === "menu";
     const look = dropdownContent({ class: this._look(this.mode === "popover") });
     const onToggle = (e: ToggleEvent) => {
-      this.open = e.newState === "open";
+      this.open = (e.currentTarget as HTMLElement).matches(":popover-open");
       if (this.open && isMenu) this._focusFirst();
     };
     const place = float({

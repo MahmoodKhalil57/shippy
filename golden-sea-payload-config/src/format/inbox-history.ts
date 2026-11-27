@@ -2,7 +2,7 @@ import type { Cell, Figure, KindData, ViewHeader } from "saastemlycrm-design-sys
 import { organise } from "../actions/inbox-history.ts";
 import type { HistoryPayload } from "../endpoints/sourcing.ts";
 import { m } from "../i18n/paraglide/messages.js";
-import { count, dateFormat } from "./index.ts";
+import { count, dateFormat, numberLocale } from "./index.ts";
 
 export { count };
 export const dated = (v: string) =>
@@ -99,7 +99,10 @@ export const importApproval = (d: HistoryPayload): KindData<"text"> => {
     text: m.inbox_history_approval_text(),
     note: d.canApprove
       ? undefined
-      : m.inbox_history_approval_waiting({ blocked: blocked || m.inbox_history_approval_ready() }),
+      : m.inbox_history_approval_waiting({
+          approvers: d.approvers.join(numberLocale().startsWith("ar") ? "، " : ", ") || m.inbox_history_management(),
+          blocked: blocked || m.inbox_history_approval_ready(),
+        }),
     alerts: d.canApprove && blocked ? [{ tone: "warning", text: blocked }] : undefined,
     actions: d.canApprove
       ? [

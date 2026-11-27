@@ -4,13 +4,13 @@ import { formatInt, m } from "../../../lib/i18n/index.ts";
 import { LightElement } from "../../base/light-element.ts";
 import { rcva } from "../../../lib/base/variants.ts";
 import { range } from "../forms/range.ts";
-import { inlineRow, inset, pad, row, rowFill, rowLine, stack, text } from "../../../styles/algebra.ts";
+import { inlineRow, inset, pad, row, rowFill, stack, text } from "../../../styles/algebra.ts";
 
 export const whatif = rcva(`${stack} w-full gap-3`);
 export const whatifInputs = rcva(`${stack} gap-2`);
 export const whatifInput = rcva(`${stack} gap-1`);
 export const whatifInputHead = rcva(`${row} items-baseline gap-x-2`);
-export const whatifInputLabel = rcva(`${rowLine} text-body-md text-on-surface`);
+export const whatifInputLabel = rcva(`${rowFill} truncate text-body-md text-on-surface`);
 export const whatifInputValue = rcva(`${text.label} text-label-lg tabular-nums text-on-surface-variant`);
 export const whatifOutputs = rcva(`${row} gap-2`);
 export const whatifOutput = rcva(

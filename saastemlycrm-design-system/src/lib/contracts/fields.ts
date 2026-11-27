@@ -128,9 +128,7 @@ function single(f: FieldLike): z.ZodType {
     case "email":
       return z.email({ error: () => m.field_error_email() });
     case "number": {
-      let n = z
-        .number({ error: () => m.field_error_number() })
-        .refine(Number.isFinite, { error: () => m.field_error_number() });
+      let n = z.number({ error: () => m.field_error_number() });
       if (f.min != null) n = n.refine((v) => v >= f.min!, { error: () => m.field_error_min({ min: f.min! }) });
       if (f.max != null) n = n.refine((v) => v <= f.max!, { error: () => m.field_error_max({ max: f.max! }) });
       return n;
@@ -222,7 +220,7 @@ export function fieldProblems(config: {
     typeof v === "string"
       ? v
       : v && typeof v === "object" && typeof (v as Record<string, unknown>)[l] === "string"
-        ? ((v as Record<string, string>)[l] ?? "")
+        ? ((v as Record<string, unknown>)[l] as string)
         : "";
   const languages = codes.length ? ` in ${codes.join(" and ")}` : "";
   const walk = (fields: FieldLike[], where: string) => {
@@ -272,7 +270,7 @@ export function fieldProblems(config: {
       out.push({ at, problem: `action ${what} needs ${codes.join(" and ")}` });
     };
     for (const a of actions as Record<string, unknown>[]) {
-      const name = words(a.label, codes[0] ?? "") || words(a.label, "");
+      const name = words(a.label, codes[0]!) || words(a.label, "");
       check(a.label, `"${name}" label`);
       for (const k of ["done", "prompt", "reason"]) check(a[k], `"${name}" ${k}`);
       const confirm = a.confirm as Record<string, unknown> | undefined;

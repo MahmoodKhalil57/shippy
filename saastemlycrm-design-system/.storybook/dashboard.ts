@@ -11,6 +11,8 @@ import "../src/components/dashboard/dashboard-provider.ts";
 import type { AiPort, Dashboard, NotifyAction, Site, Tone } from "../src/lib/dashboard/context.ts";
 import { memoryData, type MemoryData } from "../src/lib/dashboard/memory.ts";
 import { createProject, type SeedUser } from "../src/lib/dashboard/project.ts";
+import type { Place } from "../src/lib/dashboard/address.ts";
+import { place as memory } from "./address.ts";
 
 export interface TestDashboard extends Dashboard {
   navigations: { to: string; replace: boolean }[];
@@ -24,6 +26,7 @@ export function testDashboard({
   ai = {},
   site = {},
   base = "",
+  place = memory,
 }: {
   config: MockConfig;
   seedUsers?: SeedUser[];
@@ -31,11 +34,13 @@ export function testDashboard({
   ai?: Partial<AiPort>;
   site?: Partial<Site>;
   base?: string;
+  place?: Place;
 }): TestDashboard {
   const navigations: TestDashboard["navigations"] = [];
   const notices: TestDashboard["notices"] = [];
+  const project = createProject({ config, seedUsers, base });
   return {
-    project: createProject({ config, seedUsers, base }),
+    project,
     site: {
       branding: { name: "Sample workspace", icon: "grid", backgrounds: [] },
       assistant: {
@@ -54,7 +59,13 @@ export function testDashboard({
     data: memoryData(data),
     stores: createDashboardStores({ persist: false }),
     ai: { builtIn, codex, identity, polyfill, webmcp, ...ai },
-    navigate: (to, replace = false) => navigations.push({ to, replace }),
+    address: () => place.address(),
+    navigate: (to, replace = false) => {
+      navigations.push({ to, replace });
+      place.go(project.withBase(to), replace);
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    },
+    back: () => place.back(),
     notify: (message, tone = "success", action) => notices.push({ message, tone, action }),
     navigations,
     notices,

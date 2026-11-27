@@ -93,6 +93,7 @@
   "frame_drag_to_close": "اسحب لإغلاق {what}",
   "frame_drag_to_open": "اسحب لفتح {what}",
   "frame_expand": "توسيع {what}",
+  "frame_panes": "أحجام الأجزاء",
   "frame_resize": "تغيير الحجم",
   "frame_resize_to_close": "غيّر الحجم لإغلاق {what}",
   "frame_resize_to_open": "غيّر الحجم لفتح {what}",

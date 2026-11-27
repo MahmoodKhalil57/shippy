@@ -13,6 +13,7 @@ import {
 import { mine } from "../queries/cases.ts";
 import { openTasks, toTriage } from "../queries/work.ts";
 import { m } from "../i18n/paraglide/messages.js";
+import { AWAITING_REPLY_STATUSES } from "../collections/shared.ts";
 
 const forRole =
   (r?: string) =>
@@ -94,7 +95,7 @@ const followUps: Counter = {
 const rfqsWaiting: Counter = {
   label: m.page_aside_rfqs_waiting(),
   collection: "supplier-rfqs",
-  where: { status: { equals: "Awaiting reply" } },
+  where: { status: { in: AWAITING_REPLY_STATUSES } },
   note: m.page_aside_rfqs_waiting_note(),
   tone: "warning",
 };

@@ -6,12 +6,12 @@ import { isRtl } from "../../../lib/base/reading.ts";
 import { LightElement } from "../../base/light-element.ts";
 import { motion } from "../../../lib/base/motion-queue.ts";
 import { rcva } from "../../../lib/base/variants.ts";
-import { row, rowLine, stack, text } from "../../../styles/algebra.ts";
+import { row, rowFill, stack, text } from "../../../styles/algebra.ts";
 import { bandsOf, fraction, indexAt, percentOf, percentText, type Quality } from "../../../lib/base/visual-math.ts";
 
 export const bullet = rcva(`${stack} w-full gap-1`);
 export const bulletHead = rcva(`${row} items-baseline gap-x-2`);
-export const bulletHeading = rcva(`${rowLine} text-body-md text-on-surface`);
+export const bulletHeading = rcva(`${rowFill} truncate text-body-md text-on-surface`);
 export const bulletValue = rcva(`${text.label} text-title-sm tabular-nums text-on-surface`);
 export const bulletTrack = rcva(
   "relative h-6 w-full overflow-hidden [--clips:bar] rounded-xs bg-surface-container-highest",

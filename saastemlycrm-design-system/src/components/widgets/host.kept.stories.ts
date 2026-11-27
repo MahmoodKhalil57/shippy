@@ -18,6 +18,7 @@ import {
 import * as k from "../../lib/widgets/kinds.ts";
 import { widgets, type Widget, type WidgetPage } from "../../lib/widgets/widget.ts";
 import "./host.ts";
+import { visit } from "../../../.storybook/address.ts";
 
 const bench = hostBench();
 const board = () => bench.boards();
@@ -74,7 +75,7 @@ export const KeptLink = meta.story({
   },
 });
 
-const atReports = () => history.replaceState(null, "", "/reports");
+const atReports = () => visit("/reports");
 
 export const KeepableReports = meta.story({
   name: "Tiles that can be kept elsewhere",

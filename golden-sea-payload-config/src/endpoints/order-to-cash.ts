@@ -207,6 +207,7 @@ export const orderToCashEndpoints: Endpoint[] = [
           } as never,
         });
       } catch (e) {
+        if ((e as { status?: number }).status === 403) return failWith(errorText(e), 403);
         return failWith(m.api_order_to_cash_duplicate_bill({ reason: errorText(e) }, loc(req)));
       }
       return Response.json({ ok: true });

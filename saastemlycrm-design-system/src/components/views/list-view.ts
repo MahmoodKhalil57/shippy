@@ -71,16 +71,16 @@ const isPerson = (project: Project, f: FieldLike) => {
   const target = relatedSlug(f);
   return !!target && !f.hasMany && !!project.collectionOf(target)?.auth;
 };
-const urlQuery = () =>
-  parse(location.search, { ignoreQueryPrefix: true, depth: 6, arrayLimit: 200 }) as Record<string, unknown>;
-const ownQuery = (key: string): Record<string, unknown> | undefined => {
-  const raw = urlQuery();
+const urlQuery = (search: string) =>
+  parse(search, { ignoreQueryPrefix: true, depth: 6, arrayLimit: 200 }) as Record<string, unknown>;
+const ownQuery = (search: string, key: string): Record<string, unknown> | undefined => {
+  const raw = urlQuery(search);
   if (!key) return raw;
   const own = raw[key];
   return own && typeof own === "object" ? (own as Record<string, unknown>) : undefined;
 };
-const readOpen = (key: string) => {
-  const open = ownQuery(key)?.open;
+const readOpen = (search: string, key: string) => {
+  const open = ownQuery(search, key)?.open;
   return typeof open === "string" ? open : "";
 };
 
@@ -155,8 +155,8 @@ const countOf = (count: number, singular: string, plural: string) =>
   m.list_view_count_of({ count, singular: singular.toLowerCase(), plural: plural.toLowerCase() });
 const DEFAULTS: ListQuery = { q: "", sort: "", page: 1, limit: "10", filters: [], match: "and" };
 
-function readQuery(key: string, spec: CollectionViewSpec | null): ListQuery {
-  const own = ownQuery(key);
+function readQuery(search: string, key: string, spec: CollectionViewSpec | null): ListQuery {
+  const own = ownQuery(search, key);
   const raw: Record<string, unknown> = own ?? {
     sort: spec?.sort,
     limit: spec?.limit !== undefined ? String(spec.limit) : undefined,
@@ -228,6 +228,8 @@ export class DashboardListView extends LightElement {
   #request = 0;
   #loaded: Promise<void> = Promise.resolve();
   #searching = false;
+  #pushed = false;
+  #moving = false;
   #download = "";
   #watched?: Dashboard["stores"]["preferences"];
   #unwatch?: () => void;
@@ -275,13 +277,13 @@ export class DashboardListView extends LightElement {
   protected willUpdate(changed: PropertyValues<this>) {
     if ((changed as Map<PropertyKey, unknown>).has("dashboard")) this._watch();
     if (changed.has("slug") || changed.has("stateKey") || changed.has("spec")) {
-      this.query = readQuery(this.stateKey, this.spec);
+      this.query = readQuery(this.dashboard.address().search, this.stateKey, this.spec);
       this.typed = this.query.q;
       this.selected = [];
       this.allMatching = false;
       if (changed.has("slug")) this.result = null;
       this.relatedOptions = {};
-      this.openId = this.sheetId = readOpen(this.stateKey);
+      this.openId = this.sheetId = readOpen(this.dashboard.address().search, this.stateKey);
       this.doc = null;
       this.leaving = null;
       void this._loadRelatedOptions();
@@ -297,7 +299,7 @@ export class DashboardListView extends LightElement {
     this.query = { ...this.query, ...("page" in next ? {} : { page: 1 }), ...next };
     this.selected = [];
     this.allMatching = false;
-    history.replaceState(history.state, "", this._url());
+    this._go(this._url(), true);
   }
 
   private async _search() {
@@ -327,9 +329,12 @@ export class DashboardListView extends LightElement {
         open: open || undefined,
       }).filter(([, v]) => v !== undefined),
     );
-    const all = this.stateKey ? { ...urlQuery(), [this.stateKey]: Object.keys(mine).length ? mine : undefined } : mine;
+    const { pathname, search } = this.dashboard.address();
+    const all = this.stateKey
+      ? { ...urlQuery(search), [this.stateKey]: Object.keys(mine).length ? mine : undefined }
+      : mine;
     const qs = stringify(all, { addQueryPrefix: true, encodeValuesOnly: true });
-    return `${location.pathname}${qs}`;
+    return `${pathname}${qs}`;
   }
 
   private _leave(then: () => void) {
@@ -340,36 +345,48 @@ export class DashboardListView extends LightElement {
   private _open(id: string) {
     if (id === this.openId) return;
     this._leave(() => {
-      const replace = !!this.openId && !!(history.state as { sheet?: boolean } | null)?.sheet;
+      const replace = !!this.openId && this.#pushed;
       this.openId = this.sheetId = id;
       this.doc = null;
-      if (replace) history.replaceState({ sheet: true }, "", this._url());
-      else history.pushState({ sheet: true }, "", this._url());
+      this.#pushed = true;
+      this._go(this._url(), replace);
     });
   }
 
   private _closed() {
     if (this.openId) {
       this.openId = "";
-      if ((history.state as { sheet?: boolean } | null)?.sheet) history.back();
-      else history.replaceState(history.state, "", this._url());
+      if (this.#pushed) {
+        this.#pushed = false;
+        this.dashboard.back();
+      } else this._go(this._url(), true);
     }
     this.doc = null;
   }
 
+  private _go(url: string, replace: boolean) {
+    this.#moving = true;
+    this.dashboard.navigate(url, replace);
+    this.#moving = false;
+  }
+
   private _onPop = () => {
-    const open = readOpen(this.stateKey);
+    if (this.#moving) return;
+    const { search } = this.dashboard.address();
+    const open = readOpen(search, this.stateKey);
     if (this.openId && open !== this.openId && this.doc?.dirty) {
-      history.pushState({ sheet: true }, "", this._url());
+      this.#pushed = true;
+      this._go(this._url(), false);
       this.leaving = () => (open ? this._open(open) : this._closed());
       return;
     }
-    const query = readQuery(this.stateKey, this.spec);
+    const query = readQuery(search, this.stateKey, this.spec);
     if (JSON.stringify(query) !== JSON.stringify(this.query)) {
       this.query = query;
       this.typed = query.q;
     }
     if (open === this.openId) return;
+    this.#pushed = false;
     this.openId = open;
     this.doc = null;
     if (open) this.sheetId = open;
@@ -404,7 +421,9 @@ export class DashboardListView extends LightElement {
   }
 
   private get prefKey() {
-    return this.spec && !this.spec.home ? `${this.slug}@${location.pathname}#${this.stateKey}` : this.slug;
+    return this.spec && !this.spec.home
+      ? `${this.slug}@${this.dashboard.address().pathname}#${this.stateKey}`
+      : this.slug;
   }
 
   private get hiddenDefaults() {
@@ -890,7 +909,7 @@ export class DashboardListView extends LightElement {
       }),
     }));
     return html`<ui-kanban
-      level=${this.tile ? 3 : 2}
+      level=${this.tile && !this.spec?.home ? 3 : 2}
       ?movable=${movable}
       .label=${m.list_view_by({ things: labels(c).plural, field: labelOf(f).toLowerCase() })}
       .columns=${items}
@@ -1734,6 +1753,7 @@ export class DashboardListView extends LightElement {
               <ui-pagination
                 size="sm"
                 prev-next
+                .label=${m.list_view_pages({ what: this.heading || plural })}
                 .page=${r?.page ?? 1}
                 .total=${Math.max(1, r?.totalPages ?? 1)}
                 @ui-change=${(e: CustomEvent<{ page: number }>) => this._set({ page: e.detail.page })}

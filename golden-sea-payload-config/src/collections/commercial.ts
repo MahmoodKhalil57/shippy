@@ -1,5 +1,7 @@
 import type { CollectionConfig, PayloadRequest } from "payload";
 import {
+  activeRate,
+  type FxRate,
   CURRENCIES,
   QUOTE_DECISION_OPTIONS,
   ROLES,
@@ -71,7 +73,7 @@ export const Quotations: CollectionConfig = {
   } satisfies CollectionSettings,
   admin: {
     useAsTitle: "number",
-    defaultColumns: ["number", "case", "version", "status", "totalExVat", "currency", "validUntil"],
+    defaultColumns: ["number", "case", "version", "status", "decision", "totalExVat", "currency", "validUntil"],
     group: { en: "Commercial", ar: "التجاري" },
     components: {
       views: {
@@ -911,8 +913,14 @@ function shared(req: PayloadRequest) {
   return ctx.approvalRefs;
 }
 
+const quotationSubject = (a: Json | undefined) =>
+  (a?.subject as { relationTo?: string } | undefined)?.relationTo === "quotations";
+
+const hiddenFromSales = ({ req, doc }: { req: PayloadRequest; doc?: Json }) =>
+  (req.user as { role?: string } | null | undefined)?.role !== "sales" || (doc !== undefined && !quotationSubject(doc));
+
 async function quotationOf(req: PayloadRequest, a: Json): Promise<Json | null> {
-  if (!/quotation|discount/i.test(scalar(a.type))) return null;
+  if (!/quotation|discount/i.test(scalar(a.type)) && !quotationSubject(a)) return null;
   const subject = idOf((a.subject as { value?: unknown } | undefined)?.value);
   const caseId = idOf(a.case);
   const quotes = caseId ? await all(req, "quotations", { case: { equals: caseId } }) : [];
@@ -1003,7 +1011,7 @@ async function compute(
     const d = decisions.find((x) => idOf(x.user) === id);
     return { id, name: name(id), decision: d?.decision, at: d?.at };
   });
-  const type = scalar(a.type);
+  const type = me?.role === "sales" && quotationSubject(a) ? "Customer quotation" : scalar(a.type);
   const status = scalar(a.status) || "Pending";
   const done = FINAL_APPROVAL.includes(status);
   const needed = a.twoPerson ? 2 : 1;
@@ -1084,7 +1092,7 @@ async function compute(
   } else if (type === "Exchange rate") {
     const rates = ((await global(req, "fx-rates")).rates as Json[] | undefined) ?? [];
     const proposed = rates.find((r) => r.status === "Awaiting approval");
-    const active = rates.find((r) => r.status === "Active" && r.currency === (proposed?.currency ?? "USD"));
+    const active = activeRate(rates as FxRate[], scalar(proposed?.currency) || "USD") as Json | undefined;
     if (proposed && active) {
       const change = ((num(proposed.egpPerUnit) - num(active.egpPerUnit)) / num(active.egpPerUnit, 1)) * 100;
       evidence.push([
@@ -1194,7 +1202,8 @@ async function compute(
       );
     }
   }
-  if (a.detail) evidence.push([say("Note from requester", "ملاحظة مقدّم الطلب"), scalar(a.detail)]);
+  if (a.detail && !(sales && quotationSubject(a)))
+    evidence.push([say("Note from requester", "ملاحظة مقدّم الطلب"), scalar(a.detail)]);
 
   const deciders = approvers.map((x) => x.name).join(a.twoPerson ? " + " : or);
   return {
@@ -1426,8 +1435,8 @@ export const Approvals: CollectionConfig = {
           ar: "ملخص في سطر واحد يقرؤه المعتمد في قائمة الانتظار.",
         },
         placeholder: words({
-          en: "e.g. Approve GS-Q-0142 v2 at 11% margin",
-          ar: "مثال: اعتماد GS-Q-0142 v2 بهامش 11%",
+          en: "e.g. Quote GS-Q-0142 v2 to Nordvik Ship Management",
+          ar: "مثال: عرض السعر GS-Q-0142 v2 إلى Nordvik Ship Management",
         }),
       },
     },
@@ -1438,6 +1447,7 @@ export const Approvals: CollectionConfig = {
           name: "type",
           type: "select",
           required: true,
+          access: { read: hiddenFromSales },
           label: { en: "Type", ar: "النوع" },
           admin: {
             description: { en: "What kind of decision is being asked for.", ar: "نوع القرار المطلوب." },
@@ -1456,12 +1466,13 @@ export const Approvals: CollectionConfig = {
       name: "detail",
       type: "textarea",
       localized: true,
+      access: { read: hiddenFromSales },
       label: { en: "Detail", ar: "التفاصيل" },
       admin: {
         description: { en: "Context the approver needs to decide.", ar: "السياق الذي يحتاجه المعتمد ليقرّر." },
         placeholder: words({
-          en: "e.g. Customer wants the ESAB alternative, margin drops to 11%.",
-          ar: "مثال: العميل يريد بديل ESAB، وينخفض الهامش إلى 11%.",
+          en: "e.g. Customer wants the ESAB alternative and accepts the longer lead time.",
+          ar: "مثال: العميل يريد بديل ESAB ويقبل مدة التوريد الأطول.",
         }),
       },
     },

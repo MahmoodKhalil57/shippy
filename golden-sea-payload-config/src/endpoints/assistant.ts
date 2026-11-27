@@ -24,14 +24,17 @@ import {
   nameOf,
   num,
   pct,
+  quoteDue,
   relative,
   optionLabel,
   str,
   unauthorized,
 } from "./insights-shared.ts";
 import { logAiCall } from "../collections/shared.ts";
+import { pendingApproval } from "../queries/aside.ts";
 import { IS_MOCK, NotConnectedError } from "../flags.ts";
 import * as link from "../links.ts";
+import { OUTSTANDING_RFQ_STATUSES, UNANSWERED_RFQ_STATUSES } from "../collections/shared.ts";
 
 export interface BriefingItem {
   tone: Tone;
@@ -91,7 +94,6 @@ const wordsOf = (req: PayloadRequest): Words => {
 };
 
 const LIVE_END = ["Closed — settled", "Lost", "Expired"];
-const PRE_QUOTE = /New|Validating|Sourcing|Awaiting supplier|Comparing|corrected|approval|Revision/;
 const sep = (t: Words) => (t.lang === "ar" ? "؛ " : "; ");
 const some = (t: Words, xs: string[], n = 3) =>
   xs.length > n
@@ -141,15 +143,14 @@ const totalsText = (t: Words, invoices: Doc[]) => {
   return [...totals].map(([cur, n]) => t.money(cur, n)).join(" + ");
 };
 const caseSource = (c: Doc): Source => ({ label: str(c.caseId), href: docHref("cases", c.id) });
-const pending = (w: World) =>
-  w.approvals.filter((a) => str(a.status ?? "Pending").startsWith("Pending") || /of 2/.test(str(a.status)));
+const pending = (w: World) => w.approvals.filter(pendingApproval);
 const balance = (i: Doc) => Math.max(0, num(i.balance ?? num(i.amount) - num(i.paid)));
 const receivable = (w: World) =>
   w.invoices.filter((i) => balance(i) > 0 && i.status !== "Cancelled" && i.status !== "Draft");
 const silentRfqs = (w: World) =>
   w.rfqs.filter(
     (r) =>
-      ["Sent", "Awaiting reply", "No response"].includes(str(r.status)) &&
+      UNANSWERED_RFQ_STATUSES.includes(str(r.status)) &&
       (r.dueAt ? new Date(str(r.dueAt)) < NOW : r.status === "No response"),
   );
 const dueSoon = (w: World) =>
@@ -160,14 +161,11 @@ const dueSoon = (w: World) =>
         !LIVE_END.includes(str(c.stage)) &&
         d &&
         Math.floor(d.getTime() / DAY) - Math.floor(NOW.getTime() / DAY) <= 1 &&
-        PRE_QUOTE.test(str(c.stage))
+        quoteDue(c)
       );
     })
     .sort((a, b) => str(a.deadline).localeCompare(str(b.deadline)));
-const awaitingRfqs = (w: World) =>
-  w.rfqs.filter((r) =>
-    ["Sent", "Awaiting reply", "Partial reply", "No response", "Clarification needed"].includes(str(r.status)),
-  );
+const awaitingRfqs = (w: World) => w.rfqs.filter((r) => OUTSTANDING_RFQ_STATUSES.includes(str(r.status)));
 const lateReceipts = (w: World) => w.receipts.filter((r) => r.backorderDate || /late/i.test(str(r.claim)));
 const pendingRate = (w: World) =>
   ((w.fx.rates as { currency?: string; egpPerUnit?: number; status?: string }[] | undefined) ?? []).find(
@@ -365,9 +363,7 @@ export async function briefing(req: PayloadRequest, refresh = false): Promise<Br
       text: m.api_assistant_exceptions(
         {
           count: ex.length,
-          list: ex
-            .map((x) => `${t.opt("integration-exceptions", "source", x.source)} — ${str(x.summary)}`)
-            .join(sep(t)),
+          list: ex.map((x) => `${t.opt("integration-exceptions", "source", x.source)}: ${str(x.summary)}`).join(sep(t)),
         },
         o,
       ),
@@ -401,8 +397,127 @@ export async function briefing(req: PayloadRequest, refresh = false): Promise<Br
   };
 }
 
-const has = (q: string, ...words: (string | RegExp)[]) =>
-  words.some((w) => (typeof w === "string" ? q.includes(w) : w.test(q)));
+type Topic = Exclude<Answer["intent"], "case" | "refused" | "help">;
+const MARGIN_WORDS = [
+  "margin",
+  "profit",
+  "cost",
+  "markup",
+  " gp",
+  /^gp\b/,
+  "earn",
+  "هامش",
+  "ربح",
+  "أرباح",
+  "تكلف",
+  "تكاليف",
+];
+export const TOPICS: [Topic, (string | RegExp)[]][] = [
+  ["margin", MARGIN_WORDS],
+  [
+    "approvals",
+    [
+      "approv",
+      "sign off",
+      "sign-off",
+      "waiting for me",
+      "my decision",
+      "decisions waiting",
+      "decisions are waiting",
+      "موافق",
+      "اعتماد",
+      "قراري",
+    ],
+  ],
+  [
+    "cash",
+    [
+      "owe",
+      "cash",
+      "receivable",
+      "collect",
+      "invoice",
+      "paid",
+      "payment",
+      "debt",
+      "overdue",
+      "يدين",
+      "ندين",
+      "مدين",
+      "مستحق",
+      "تحصيل",
+      "فاتور",
+      "سداد",
+      "دفع",
+      "سيولة",
+      "نقد",
+      "دين",
+    ],
+  ],
+  [
+    "suppliers",
+    [
+      "supplier",
+      "vendor",
+      "late",
+      "slow",
+      "reply",
+      "replied",
+      "respond",
+      "مورد",
+      "مورّد",
+      "متأخر",
+      "تأخر",
+      "بطيء",
+      "يرد",
+      "الرد",
+      "ردود",
+    ],
+  ],
+  [
+    "pipeline",
+    [
+      "pipeline",
+      "growth",
+      "prospect",
+      "opportunit",
+      "lead",
+      "registration",
+      "win rate",
+      "conversion",
+      "sales",
+      "مسار",
+      "نمو",
+      "النمو",
+      "فرص",
+      "فرصة",
+      "محتمل",
+      "تسجيل",
+      "نسبة الفوز",
+      "تحويل",
+      "مبيعات",
+    ],
+  ],
+  [
+    "deadlines",
+    ["due", "deadline", "today", "urgent", "risk", "blocked", "موعد", "مواعيد", "اليوم", "عاجل", "خطر", "متوقف"],
+  ],
+];
+const hits = (q: string, words: (string | RegExp)[]) =>
+  words.filter((w) => (typeof w === "string" ? q.includes(w) : w.test(q))).length;
+export const topicOf = (question: string): Topic | undefined => {
+  const q = question.toLowerCase().trim();
+  let best: Topic | undefined;
+  let score = 0;
+  for (const [topic, words] of TOPICS) {
+    const n = hits(q, words);
+    if (n > score) {
+      best = topic;
+      score = n;
+    }
+  }
+  return best;
+};
 
 function findCase(w: World, q: string): Doc | undefined {
   const num4 = /(\d{4})/.exec(q)?.[1];
@@ -417,7 +532,9 @@ function findCase(w: World, q: string): Doc | undefined {
       .split(/[^a-z0-9]+/)
       .filter((x) => x.length > 3 && !["rig", "support", "ship", "management", "shipping", "services"].includes(x));
   const live = [...w.cases].sort(
-    (a, b) => Number(LIVE_END.includes(str(a.stage))) - Number(LIVE_END.includes(str(b.stage))),
+    (a, b) =>
+      Number(LIVE_END.includes(str(a.stage))) - Number(LIVE_END.includes(str(b.stage))) ||
+      str(b.caseId).localeCompare(str(a.caseId)),
   );
   const byVessel = live.find((c) => {
     const v = words(str(c.vessel));
@@ -435,9 +552,7 @@ async function answerCase(req: PayloadRequest, w: World, c: Doc, role: string): 
   const lines = c.lines as { ready?: number; waiting?: number; blocked?: number; noOffer?: number } | undefined;
   const total = lines ? num(lines.ready) + num(lines.waiting) + num(lines.blocked) + num(lines.noOffer) : 0;
   const rfqs = w.rfqs.filter((r) => idOf(r.case) === c.id);
-  const waiting = rfqs.filter((r) =>
-    ["Sent", "Awaiting reply", "No response", "Partial reply"].includes(str(r.status)),
-  );
+  const waiting = rfqs.filter((r) => OUTSTANDING_RFQ_STATUSES.includes(str(r.status)));
   const approvals = pending(w).filter((a) => idOf(a.case) === c.id);
   const invoices = w.invoices.filter((i) => idOf(i.case) === c.id);
   const t = wordsOf(req);
@@ -458,7 +573,7 @@ async function answerCase(req: PayloadRequest, w: World, c: Doc, role: string): 
       { next: str(c.nextAction), hasBlocker: c.blocker ? "yes" : "no", blocker: str(c.blocker) },
       o,
     ),
-    deadline && PRE_QUOTE.test(str(c.stage))
+    deadline && quoteDue(c)
       ? m.api_assistant_case_deadline(
           {
             day: fmtDay(deadline, t.lang),
@@ -545,15 +660,17 @@ export async function ask(req: PayloadRequest, question: string): Promise<Answer
   const comma = t.lang === "ar" ? "، " : ", ";
   const reply = (a: Omit<Answer, "question">): Answer => ({ question, ...a });
 
-  if (has(q, "margin", "profit", "cost", "markup", " gp", /^gp\b/, "earn", "هامش", "ربح", "أرباح", "تكلف", "تكاليف")) {
-    if (role === "sales")
-      return reply({
-        intent: "refused",
-        refused: true,
-        answer: m.api_assistant_refused({}, o),
-        points: [m.api_assistant_refused_hint({}, o)],
-        sources: [],
-      });
+  if (role === "sales" && hits(q, MARGIN_WORDS))
+    return reply({
+      intent: "refused",
+      refused: true,
+      answer: m.api_assistant_refused({}, o),
+      points: [m.api_assistant_refused_hint({}, o)],
+      sources: [],
+    });
+  const topic = topicOf(q);
+
+  if (topic === "margin") {
     const c = findCase(w, q);
     if (c) {
       const p = await caseProfit(req, c.id);
@@ -624,7 +741,7 @@ export async function ask(req: PayloadRequest, question: string): Promise<Answer
     });
   }
 
-  if (has(q, "approv", "sign off", "sign-off", "waiting for me", "decision", "موافق", "اعتماد", "قرار")) {
+  if (topic === "approvals") {
     const ap = pending(w);
     return reply({
       intent: "approvals",
@@ -647,31 +764,7 @@ export async function ask(req: PayloadRequest, question: string): Promise<Answer
     });
   }
 
-  if (
-    has(
-      q,
-      "owe",
-      "cash",
-      "receivable",
-      "collect",
-      "invoice",
-      "paid",
-      "payment",
-      "debt",
-      "overdue",
-      "يدين",
-      "ندين",
-      "مدين",
-      "مستحق",
-      "تحصيل",
-      "فاتور",
-      "سداد",
-      "دفع",
-      "سيولة",
-      "نقد",
-      "دين",
-    )
-  ) {
+  if (topic === "cash") {
     const rec = receivable(w).sort((x, y) => str(x.dueDate).localeCompare(str(y.dueDate)));
     const overdue = rec.filter((i) => i.dueDate && new Date(str(i.dueDate)) < NOW);
     const shown = rec.slice(0, 6);
@@ -720,26 +813,7 @@ export async function ask(req: PayloadRequest, question: string): Promise<Answer
     });
   }
 
-  if (
-    has(
-      q,
-      "supplier",
-      "vendor",
-      "late",
-      "slow",
-      "reply",
-      "replied",
-      "respond",
-      "مورد",
-      "مورّد",
-      "متأخر",
-      "تأخر",
-      "بطيء",
-      "يرد",
-      "الرد",
-      "ردود",
-    )
-  ) {
+  if (topic === "suppliers") {
     const named = w.suppliers.find((s) =>
       str(s.name)
         .toLowerCase()
@@ -817,30 +891,7 @@ export async function ask(req: PayloadRequest, question: string): Promise<Answer
     });
   }
 
-  if (
-    has(
-      q,
-      "pipeline",
-      "growth",
-      "prospect",
-      "opportunit",
-      "lead",
-      "registration",
-      "win rate",
-      "conversion",
-      "sales",
-      "مسار",
-      "نمو",
-      "النمو",
-      "فرص",
-      "فرصة",
-      "محتمل",
-      "تسجيل",
-      "نسبة الفوز",
-      "تحويل",
-      "مبيعات",
-    )
-  ) {
+  if (topic === "pipeline") {
     const open = w.opportunities.filter((o) => o.stage !== "Closed");
     const noNext = open.filter((o) => !o.nextStep && o.stage !== "Active account");
     const inquiries = H.inquiries.reduce((s, v) => s + v, 0);
@@ -881,9 +932,7 @@ export async function ask(req: PayloadRequest, question: string): Promise<Answer
     });
   }
 
-  if (
-    has(q, "due", "deadline", "today", "urgent", "risk", "blocked", "موعد", "مواعيد", "اليوم", "عاجل", "خطر", "متوقف")
-  ) {
+  if (topic === "deadlines") {
     const live = w.cases.filter((c) => !LIVE_END.includes(str(c.stage)));
     const risky = live
       .filter((c) => dueSoon(w).includes(c) || c.tone === "danger" || c.tone === "warn" || c.urgent)
@@ -939,7 +988,13 @@ async function answer(req: PayloadRequest, question: string): Promise<Answer> {
   }
 }
 
-const summarised = new Map<string, string>();
+async function summarisedAt(req: PayloadRequest): Promise<string | undefined> {
+  const user = (await req.payload
+    .findByID({ collection: "users", id: str(meOf(req)!.id), depth: 0, disableErrors: true } as never)
+    .catch(() => null)) as Doc | null;
+  const at = str(user?.briefingSummarisedAt);
+  return at ? fmtTime(new Date(at), langOf(req)) : undefined;
+}
 
 export const assistantEndpoints: Endpoint[] = [
   {
@@ -948,7 +1003,7 @@ export const assistantEndpoints: Endpoint[] = [
     handler: async (req) => {
       if (!meOf(req)) return unauthorized(langOf(req));
       const q = (req.query ?? {}) as Record<string, unknown>;
-      const again = summarised.get(String(meOf(req)!.id));
+      const again = q.refresh ? undefined : await summarisedAt(req);
       const b = await writeBriefing(req, Boolean(q.refresh));
       return Response.json(again && !q.refresh ? { ...b, at: again } : b);
     },
@@ -960,7 +1015,11 @@ export const assistantEndpoints: Endpoint[] = [
       const o = { locale: langOf(req) };
       if (!meOf(req)) return unauthorized(o.locale);
       const b = await writeBriefing(req, true);
-      summarised.set(String(meOf(req)!.id), b.at);
+      await req.payload.update({
+        collection: "users",
+        id: str(meOf(req)!.id),
+        data: { briefingSummarisedAt: new Date().toISOString() } as never,
+      } as never);
       await logAiCall(req, {
         task: "Write the briefing",
         subject: m.api_assistant_briefing_subject({ count: b.read }, o),

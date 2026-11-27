@@ -4,8 +4,11 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { expect, fireEvent, fn, waitFor } from "storybook/test";
 import "./table.ts";
 import "./tag.ts";
+import "../layout/container.ts";
+import "../actions/button.ts";
 import type { TableColumn, TableGroup, TableRowData, UiTable } from "./table.ts";
 import { COLUMN_MIN_WIDTH } from "../../../lib/base/columns.ts";
+import { auditLayout } from "../../../lib/base/layout.ts";
 import type { Tone } from "./tag.ts";
 
 const money = new Intl.NumberFormat("en", { style: "currency", currency: "USD" });
@@ -698,6 +701,29 @@ export const OneLinePerRow = meta.story({
   `,
 });
 
+export const FixedWidths = meta.story({
+  name: "Fixed widths",
+  parameters: {
+    docs: { description: { story: "width sets the table's own width; narrower containers still win." } },
+    canvas: "column",
+  },
+  render: () => html`
+    <div style="inline-size: 60rem">
+      <ui-table bordered width="md" .columns=${noted} .rows=${notes}></ui-table>
+      <ui-table bordered width="lg" .columns=${noted} .rows=${notes}></ui-table>
+    </div>
+    <div style="inline-size: 15rem"><ui-table bordered width="lg" .columns=${noted} .rows=${notes}></ui-table></div>
+  `,
+  play: async ({ canvasElement }) => {
+    const [md, lg, narrow] = [...canvasElement.querySelectorAll("ui-table")].map(
+      (t) => t.querySelector<HTMLElement>(":scope > div")!.getBoundingClientRect().width,
+    );
+    await expect(Math.round(md!)).toBe(320);
+    await expect(Math.round(lg!)).toBe(384);
+    await expect(Math.round(narrow!)).toBe(240);
+  },
+});
+
 export const NoWrapping = meta.story({
   name: "No wrapping",
   parameters: {
@@ -1265,5 +1291,59 @@ export const CutOffHints = meta.story({
     const head = canvas.getByText("INV-20418");
     await userEvent.hover(head);
     await expect(head).not.toHaveAttribute("title");
+  },
+});
+
+const people = [
+  {
+    title: "Spares for the Aurora Crest, with the courier waybill and the customs note",
+    owner: "Leila Haddad",
+    initials: "LH",
+  },
+  { title: "Quick quote for life jackets", owner: "Omar Farouk", initials: "OF" },
+];
+
+export const NarrowScrollingTable = meta.story({
+  name: "Narrow scrolling table",
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A table too wide for its box scrolls sideways and takes focus so keys can scroll it; names keep room beside their avatar, long links stay inside their cut-off cell, and an action column keeps a header name it does not show.",
+      },
+    },
+  },
+  render: () => {
+    const columns = [
+      { key: "title", label: "Subject", render: (r: TableRowData) => html`<a class="link" href="#">${r.title}</a>` },
+      {
+        key: "owner",
+        label: "Owner",
+        avatar: (r: TableRowData) => ({ initials: String(r.initials) }),
+        render: (r: TableRowData) => html`<a class="link link-hover" href="#">${r.owner}</a>`,
+      },
+      { key: "open", label: "Open", hideLabel: true, render: () => html`<a class="link" href="#">Open</a>` },
+      { key: "more", hideLabel: true, render: () => html`<a class="link" href="#">More</a>` },
+      {
+        key: "act",
+        label: "Actions",
+        render: (r: TableRowData) =>
+          html`<ui-button size="xs">Internal reminder</ui-button>
+            <ui-button size="xs">Record payment for ${r.owner}</ui-button>`,
+      },
+    ];
+    return html`<ui-container width="sm" .centered=${false}>
+      <ui-table nowrap .columns=${columns} .rows=${people}></ui-table>
+      <ui-table lines="one" .columns=${columns} .rows=${people}></ui-table>
+      <ui-table lines="one" .columnWidths=${{ title: 160 }} .columns=${columns} .rows=${people}></ui-table>
+    </ui-container>`;
+  },
+  play: async ({ canvas, canvasElement }) => {
+    for (const head of canvas.getAllByRole("columnheader", { name: "Open" }))
+      await expect(head.querySelector(".sr-only")).toHaveTextContent("Open");
+    await expect(canvas.getAllByRole("columnheader", { name: "more" })).toHaveLength(3);
+    const scrolling = canvasElement.querySelector("ui-table > div");
+    await waitFor(() => expect(scrolling).toHaveAttribute("tabindex", "0"));
+    await expect(auditLayout(canvasElement).map((i) => `${i.kind} ${i.detail}`)).toEqual([]);
   },
 });

@@ -8,11 +8,13 @@ import type { MockConfig } from "../lib/contracts/config.ts";
 import { dir, locale, localizeConfig } from "../lib/i18n/index.ts";
 import { bookmarks, notifications, palette, preferences, tour } from "../lib/stores/index.ts";
 import "../components/dashboard/dashboard-provider.ts";
+import { browserPlace, type Place } from "../lib/dashboard/address.ts";
 import type { Dashboard, DataPort, Site } from "../lib/dashboard/context.ts";
 import { createProject, type SeedUser } from "../lib/dashboard/project.ts";
 import { loadGuide, loadSite, loadTours, resetSite, site } from "./site.ts";
 
 export type { SeedUser };
+export { browserPlace, memoryPlace, type MemoryPlace, type Place } from "../lib/dashboard/address.ts";
 
 const data: DataPort = {
   ...api,
@@ -35,7 +37,14 @@ const siteOf = (): Site => ({
   guide: loadGuide,
 });
 
-export function dashboardOf(options: { config: MockConfig; seedUsers?: SeedUser[] }): Dashboard {
+export function dashboardOf({
+  place = browserPlace,
+  ...options
+}: {
+  config: MockConfig;
+  seedUsers?: SeedUser[];
+  place?: Place;
+}): Dashboard {
   const project = createProject({ ...options, base: DASHBOARD_ROUTE, apiRoute: API_ROUTE });
   return {
     project,
@@ -43,12 +52,12 @@ export function dashboardOf(options: { config: MockConfig; seedUsers?: SeedUser[
     data,
     stores: { preferences, notifications, palette, tour, bookmarks },
     ai: { builtIn, codex, identity, polyfill, webmcp },
+    address: () => place.address(),
     navigate: (to, replace = false) => {
-      const path = project.withBase(to);
-      if (replace) history.replaceState(null, "", path);
-      else history.pushState(null, "", path);
+      place.go(project.withBase(to), replace);
       window.dispatchEvent(new PopStateEvent("popstate"));
     },
+    back: () => place.back(),
     notify: (message, tone = "success", action) =>
       void document
         .querySelector("ui-snackbar")

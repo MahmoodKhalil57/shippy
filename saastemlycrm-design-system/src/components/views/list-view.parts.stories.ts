@@ -196,6 +196,34 @@ export const KeptToolbar = meta.story({
   },
 });
 
+export const PagerNamedByItsList = meta.story({
+  name: "Names its pager after the list, so two lists on a page tell theirs apart",
+  render: listRender({ tile: true, spec: { layout: "table" } }),
+  play: async ({ canvasElement }) => {
+    const { view } = await shown(canvasElement);
+    const pager = () => view.querySelector("ui-pagination nav")!;
+    await expect(pager()).toHaveAccessibleName("Tasks pages");
+    (view as unknown as { heading: string }).heading = "Overdue tasks";
+    await view.updateComplete;
+    await waitFor(() => expect(pager()).toHaveAccessibleName("Overdue tasks pages"));
+  },
+});
+
+export const BoardHeadingsFollowTheTile = meta.story({
+  name: "Heads its board columns one level under the tile or page title",
+  render: listRender({ tile: true, spec: { layout: "board", home: true } }),
+  play: async ({ canvasElement }) => {
+    const levels = (host: Element) => [
+      ...new Set([...host.querySelectorAll("ui-kanban :is(h2,h3)")].map((h) => h.tagName)),
+    ];
+    const home = await shown(canvasElement);
+    await expect(levels(home.view)).toEqual(["H2"]);
+    const tile = await show({ tile: true, spec: { layout: "board" } });
+    await expect(levels(tile.view)).toEqual(["H3"]);
+    unmount();
+  },
+});
+
 export const OffHome = meta.story({
   name: "Titles a page off the collection's home without breadcrumbs",
   render: listRender({ spec: { home: false } }),

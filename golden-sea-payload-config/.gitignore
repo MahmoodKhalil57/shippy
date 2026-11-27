@@ -8,3 +8,5 @@ mock
 !.vscode/extensions.json
 .wrangler
 .env.*
+.vitest/attachments/
+.test-impact.json

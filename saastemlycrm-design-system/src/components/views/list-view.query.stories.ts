@@ -21,6 +21,7 @@ import {
 } from "../../../.storybook/fixtures/list-view.ts";
 import { frames } from "../../lib/dashboard/tiling.ts";
 import "./list-view.ts";
+import { here } from "../../../.storybook/address.ts";
 
 const meta = preview.meta({
   component: "dashboard-list-view",
@@ -115,7 +116,7 @@ export const WholeQuery = meta.story({
     const select = view.querySelector<HTMLSelectElement>("ui-select[leading=Rows] select")!;
     select.value = "25";
     select.dispatchEvent(new Event("change", { bubbles: true }));
-    await expect(location.search).toBe("?q=laptops&limit=25");
+    await expect(here().search).toBe("?q=laptops&limit=25");
   },
 });
 
@@ -138,7 +139,7 @@ export const WritesDifferences = meta.story({
     await expect(own().get("k[match]")).toBeNull();
     fire(builder, "ui-change", { value: [], match: "and" });
     await settled(view);
-    await expect(location.search).toBe("?other=1");
+    await expect(here().search).toBe("?other=1");
   },
 });
 

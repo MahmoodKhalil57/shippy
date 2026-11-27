@@ -7,6 +7,7 @@ import { ApiError } from "../../lib/api/errors.ts";
 import type { Access } from "../../lib/dashboard/context.ts";
 import type { DashboardEditView } from "./edit-view.ts";
 import "./edit-view.ts";
+import { visit } from "../../../.storybook/address.ts";
 
 interface Setup {
   slug?: string;
@@ -87,18 +88,14 @@ const hero = (host: HTMLElement) =>
     meta: string;
   };
 
-const at = (url: string) => () => {
-  const before = location.href;
-  history.replaceState(null, "", url);
-  return () => history.replaceState(null, "", before);
-};
+const at = (url: string) => () => visit(url);
 
 const meta = preview.meta({
   component: "dashboard-edit-view",
   parameters: { layout: "fullscreen" },
 });
 
-const on = (s: Setup, play: (m: Opened) => Promise<void>, beforeEach?: () => () => void) => ({
+const on = (s: Setup, play: (m: Opened) => Promise<void>, beforeEach?: () => void) => ({
   beforeEach,
   render: () => html`<dashboard-provider .dashboard=${dashboardFor(s)}>${template(s)}</dashboard-provider>`,
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => play(await opened(canvasElement)),
@@ -246,10 +243,10 @@ export const TabFromAddress = meta.story({
     { stateKey: "deal", tile: true },
     async (m) => {
       await expect(m.host.querySelector("demo-activity-tab")).not.toBeNull();
-      history.replaceState(null, "", "?deal=plain");
+      visit("?deal=plain");
       window.dispatchEvent(new PopStateEvent("popstate"));
       await waitFor(() => expect(m.host.querySelector("demo-activity-tab")).toBeNull());
-      history.replaceState(null, "", "?deal[tab][x]=1");
+      visit("?deal[tab][x]=1");
       window.dispatchEvent(new PopStateEvent("popstate"));
       await m.view.updateComplete;
       await expect(m.inner.urlTab).toBe("");
@@ -283,6 +280,35 @@ export const HiddenParts = meta.story({
       await expect(home.host.querySelector("ui-breadcrumbs")).not.toBeNull();
     } finally {
       home.remove();
+    }
+  }),
+});
+
+export const HomeNamesThePage = meta.story({
+  name: "A home screen names the page with its one heading",
+  ...on({ tile: true, spec: { collection: "deals", id: "d1", home: true } }, async (m) => {
+    const titles = (host: HTMLElement) => [...host.querySelectorAll("h1")].map((h) => h.textContent!.trim());
+    await expect(titles(m.host)).toEqual([hero(m.host).record.title]);
+    const views: Setup[] = [
+      { tile: true, docId: "", spec: { collection: "deals", id: "create", home: true } },
+      { tile: true, spec: { collection: "deals", id: "d1", home: true, hide: ["summary"] } },
+      { tile: true, tab: "history", spec: { collection: "deals", id: "d1", home: true } },
+      { tile: true, slug: "", docId: "", globalSlug: "settings", spec: { global: "settings", home: true } },
+    ];
+    for (const s of views) {
+      const view = await open(s);
+      try {
+        await expect(titles(view.host)).toHaveLength(1);
+        await expect(view.host.querySelector("h1")).toBeVisible();
+      } finally {
+        view.remove();
+      }
+    }
+    const plain = await open({ tile: true, spec: { collection: "deals", id: "d1" } });
+    try {
+      await expect(titles(plain.host)).toEqual([]);
+    } finally {
+      plain.remove();
     }
   }),
 });

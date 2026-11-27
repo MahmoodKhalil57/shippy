@@ -233,7 +233,6 @@ export const homePage = widgets({
       subhead: m.page_home_this_morning(),
       size: "s",
       skeleton: "list",
-      visible: (s) => s.user.role !== "office-admin",
       data: home,
       empty: { when: (h) => !fmt.homePart(h, "briefing"), heading: m.page_home_nothing_morning() },
       format: fmt.briefing,

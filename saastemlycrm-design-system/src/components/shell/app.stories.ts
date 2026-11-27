@@ -2,7 +2,7 @@ import preview from "#.storybook/preview";
 import { html } from "lit";
 import { expect, waitFor } from "storybook/test";
 import "./app.ts";
-import { appShell, current, ready, withShell } from "../../../.storybook/fixtures/shell.ts";
+import { appShell, ready, withShell } from "../../../.storybook/fixtures/shell.ts";
 
 const meta = preview.type<{ args: { at: string } }>().meta({
   title: "Shell/App",
@@ -25,7 +25,7 @@ const meta = preview.type<{ args: { at: string } }>().meta({
       description: "The address the dashboard opens at.",
     },
   },
-  render: () => html`<dashboard-app .address=${current.address}></dashboard-app>`,
+  render: () => html`<dashboard-app></dashboard-app>`,
 });
 
 export const Playground = meta.story({

@@ -4,7 +4,9 @@ import { WAITS, relativeDue } from "../collections/cases.ts";
 import { TODAY } from "../collections/shared.ts";
 import { m } from "../i18n/paraglide/messages.js";
 import { history as H, historyLabel } from "./history.ts";
-import { intlLocale, langOf, optionLabel } from "./insights-shared.ts";
+import { intlLocale, langOf, optionLabel, quoteDue, relativeArrival } from "./insights-shared.ts";
+import { pendingApproval } from "../queries/aside.ts";
+import { AWAITING_REPLY_STATUSES } from "../collections/shared.ts";
 
 export const DEMO_NOW = TODAY;
 
@@ -164,7 +166,7 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
           str(a.deadline).localeCompare(str(b.deadline)),
       );
 
-    const pending = approvals.filter((a) => !["Approved", "Rejected"].includes(str(a.status ?? "Pending")));
+    const pending = approvals.filter(pendingApproval);
     const decided = (a: Doc, id: string) =>
       ((a.decisions as { user?: unknown }[] | undefined) ?? []).some((d) => idOf(d.user) === id);
     const forMe = pending.filter(
@@ -176,7 +178,7 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
     const desk = ["supply-chain", "management", "sales", "office-admin"];
     for (const c of live) {
       const d = date(c.deadline);
-      if (soon(d) && /Comparing|Awaiting|Sourcing|Validating|New|Revision/.test(str(c.stage)))
+      if (soon(d) && quoteDue(c))
         briefing.push({
           for: [...desk, idOf(c.owner) === me.id ? role : ""],
           tone: "error",
@@ -200,14 +202,14 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
         briefing.push({
           for: ["supply-chain", "operations", "management"],
           tone: "warning",
-          title: m.api_home_arrives_when({ vessel: str(c.vessel), when: relative(eta!, req) }, o),
+          title: m.api_home_arrives_when({ vessel: str(c.vessel), when: relativeArrival(eta!, lang) }, o),
           sub: `${str(c.caseId)} · ${str(c.port ?? "")} · ${str(c.nextAction ?? "")}`,
           href: path("collections", "cases", c.id),
         });
     }
     for (const r of rfqs) {
       const due = date(r.dueAt);
-      if (r.status === "Awaiting reply" && due && due < DEMO_NOW)
+      if (AWAITING_REPLY_STATUSES.includes(String(r.status)) && due && due < DEMO_NOW)
         briefing.push({
           for: ["supply-chain", "management"],
           tone: "warning",
@@ -243,17 +245,16 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
       });
     for (const inv of receivable) {
       const due = date(inv.dueDate);
+      const overdue = inv.status === "Overdue";
+      const owed = {
+        customer: nameOf(inv.customer),
+        amount: `${str(inv.currency) || "USD"} ${int(Number(inv.balance ?? 0))}`,
+        day: due ? fmtDay(due, lang) : "—",
+      };
       briefing.push({
         for: ["operations", "finance-director", "management"],
-        tone: "info",
-        title: m.api_home_invoice_due(
-          {
-            customer: nameOf(inv.customer),
-            amount: `${str(inv.currency) || "USD"} ${int(Number(inv.balance ?? 0))}`,
-            day: due ? fmtDay(due, lang) : "—",
-          },
-          o,
-        ),
+        tone: overdue ? "warning" : "info",
+        title: overdue ? m.api_home_invoice_overdue(owed, o) : m.api_home_invoice_due(owed, o),
         sub:
           typeof inv.paid === "number" && inv.paid
             ? m.api_home_invoice_sub_paid(
@@ -422,7 +423,7 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
       targetLabel: m.api_home_target_1_day({}, o),
     };
 
-    const awaitingReply = rfqs.filter((r) => r.status === "Awaiting reply").length;
+    const awaitingReply = rfqs.filter((r) => AWAITING_REPLY_STATUSES.includes(String(r.status))).length;
 
     const today = Math.floor(DEMO_NOW.getTime() / DAY) * DAY;
     const within = (d?: Date): d is Date => !!d && d.getTime() >= today && d.getTime() < today + 7 * DAY;
@@ -448,7 +449,7 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
     }
     for (const r of rfqs) {
       const at = date(r.dueAt);
-      if (r.status === "Awaiting reply" && within(at))
+      if (AWAITING_REPLY_STATUSES.includes(String(r.status)) && within(at))
         due.push({
           at,
           for: ["supply-chain", "management"].includes(role),
@@ -459,7 +460,7 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
     }
     for (const c of live) {
       const deadline = date(c.deadline);
-      if (within(deadline) && /Comparing|Awaiting|Sourcing|Validating|New|Revision/.test(str(c.stage)))
+      if (within(deadline) && quoteDue(c))
         due.push({
           at: deadline,
           for: everyones || (["supply-chain", "sales"].includes(role) && own(c)),
@@ -567,10 +568,7 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
       empty: m.api_home_nothing_needs_you({}, o),
     };
     const quotesDue = live.filter(
-      (c) =>
-        soon(date(c.deadline), 2) &&
-        date(c.deadline)! >= DEMO_NOW &&
-        /Comparing|Awaiting|Sourcing|Validating|New|Revision/.test(str(c.stage)),
+      (c) => soon(date(c.deadline), 2) && date(c.deadline)! >= DEMO_NOW && quoteDue(c),
     ).length;
     const inProgress = deliveries.filter((d) => !str(d.status).startsWith("Delivered"));
     const myLive = live.filter(own);
@@ -814,6 +812,7 @@ export async function homeData(req: PayloadRequest): Promise<Home | Response> {
               ],
             },
             agenda,
+            briefingList,
             { kind: "charts", id: "desk", charts: [afterHours, ack] },
           ],
         };

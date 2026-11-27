@@ -26,7 +26,7 @@ const meta = preview.type<{ args: { at: string } }>().meta({
       description: "The address the dashboard opens at.",
     },
   },
-  render: () => html`<dashboard-app .address=${current.address}></dashboard-app>`,
+  render: () => html`<dashboard-app></dashboard-app>`,
 });
 
 const view = (key: string, params: Record<string, string> = {}): Route => ({ name: "view", key, params });

@@ -112,7 +112,8 @@ export const Bordered = meta.story({
   args: { border: true, surface: "base-100", rounded: "none" },
   play: async ({ canvasElement }) => {
     const style = getComputedStyle(inner(canvasElement));
-    await expect(style.borderTopWidth).toBe("1px");
+    await expect(style.borderTopWidth).toBe("0px");
+    await expect(style.boxShadow).toMatch(/ 0px 0px 0px 1px inset/);
     await expect(style.borderTopLeftRadius).toBe("0px");
   },
 });
@@ -365,5 +366,22 @@ export const ScrollFocusFollowsContent = meta.story({
     const misplaced = () => render(html`<div class=${scrollFocus()}></div>`, document.createElement("div"));
     await expect(misplaced).toThrow("scrollFocus() goes on the scroll container itself.");
     await expect(canvasElement.querySelectorAll("[role=region]")).toHaveLength(0);
+  },
+});
+
+export const BorderKeepsTheMeasure = meta.story({
+  name: "A border keeps the content measure",
+  globals: { viewport: { value: "mobile1", isRotated: false } },
+  render: () =>
+    html`<ui-box padding="16" width="full"
+      ><ui-box padding="16" width="full"
+        ><ui-box border padding="6" width="full"
+          ><p data-measure>Valid until 30 November; may be renewed.</p></ui-box
+        ></ui-box
+      ></ui-box
+    >`,
+  play: async ({ canvasElement }) => {
+    const p = canvasElement.querySelector("[data-measure]")!;
+    await expect(p.getBoundingClientRect().width).toBeGreaterThanOrEqual(7 * 16);
   },
 });

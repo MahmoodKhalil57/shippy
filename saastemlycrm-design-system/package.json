@@ -31,11 +31,13 @@
     "check": "vp check",
     "i18n": "vpx vite/compile-i18n.ts . src/lib/i18n/paraglide",
     "storybook": "storybook dev -p 6006",
-    "test": "vp test",
-    "test:coverage": "vp test --coverage",
+    "test": "node node_modules/test-runner/src/impact/cli.ts --project storybook --project storybook-serial --project unit --project zoned",
+    "test:all": "vp test run --project storybook --project storybook-serial --project unit --project zoned",
+    "test:coverage": "vp test run --coverage.enabled",
     "build-storybook": "storybook build",
     "test:stories": "storybook tools test run",
-    "test:changed": "storybook tools test run --changed"
+    "test:changed": "vp test run --changed",
+    "test:fit": "vp test run --project storybook-fit"
   },
   "dependencies": {
     "@faker-js/faker": "10.6.0",

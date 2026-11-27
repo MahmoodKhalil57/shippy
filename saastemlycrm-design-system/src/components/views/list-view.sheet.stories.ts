@@ -47,11 +47,13 @@ const dirty = (view: DashboardListView, state: Partial<Record<string, unknown>> 
 export const OpenFromLink = meta.story({
   name: "Opens a record from its link, saves, closes on the way back",
   play: async ({ canvasElement }) => {
-    const { view } = await shown(canvasElement);
+    const browser = [location.href, history.length];
+    const { view, dashboard } = await shown(canvasElement);
     link(view, "/collections/tasks/t1").click();
     await view.updateComplete;
     await expect(peek(view).openId).toBe("t1");
     await expect(own().get("k[open]")).toBe("t1");
+    await expect(dashboard.navigations).toEqual([{ to: "/?k[open]=t1", replace: false }]);
     const sheet = view.querySelector("ui-sheet")!;
     await expect(sheet.getAttribute("label") ?? (sheet as unknown as { label: string }).label).toBe(
       "Draft the launch plan",
@@ -79,6 +81,7 @@ export const OpenFromLink = meta.story({
     await expect(peek(view).openId).toBe("");
     await expect(peek(view).sheetId).toBe("");
     await expect(own().get("k[open]")).toBeNull();
+    await expect([location.href, history.length]).toEqual(browser);
   },
 });
 
@@ -131,7 +134,10 @@ export const UnsavedGuard = meta.story({
     inside.click();
     await view.updateComplete;
     fire(discard, "ui-confirm");
-    await expect(dashboard.navigations).toEqual([{ to: "/collections/people/p1?tab=x", replace: false }]);
+    await expect(dashboard.navigations).toEqual([
+      { to: "/?k[open]=t2", replace: false },
+      { to: "/collections/people/p1?tab=x", replace: false },
+    ]);
     await dirty(view);
     const outside = document.createElement("a");
     outside.href = "/elsewhere/nowhere";

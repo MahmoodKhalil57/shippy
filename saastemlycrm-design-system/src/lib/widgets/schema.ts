@@ -148,6 +148,7 @@ export interface Stat {
 export interface Column {
   key: string;
   label: string;
+  hideLabel?: boolean;
   align?: "start" | "end";
   supporting?: string;
 }

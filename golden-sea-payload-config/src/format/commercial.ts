@@ -783,7 +783,7 @@ export const portalCheck = (v: QuoteView): KindData<"table"> => {
       { key: "field", label: m.commercial_col_field() },
       { key: "portal", label: m.commercial_col_portal() },
       { key: "quote", label: m.commercial_col_approved_quote() },
-      { key: "matches", label: "" },
+      { key: "matches", label: m.commercial_col_match(), hideLabel: true },
     ],
     rows: rows.map((r) => ({
       field: r.field,

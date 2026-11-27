@@ -305,7 +305,14 @@ export const Invoices: CollectionConfig = {
           data.amount;
         data.balance = Math.max(0, (Number(data.amount) || 0) - (Number(data.paid) || 0));
         if (data.status !== "Draft" && data.status !== "Cancelled")
-          data.status = data.balance === 0 ? "Paid" : Number(data.paid) > 0 ? "Partially paid" : "Open";
+          data.status =
+            data.balance === 0
+              ? "Paid"
+              : daysSince(data.dueDate) > 0
+                ? "Overdue"
+                : Number(data.paid) > 0
+                  ? "Partially paid"
+                  : "Open";
         if (data.case && !req.context?.seed) {
           const { docs } = await req.payload.find({
             locale: req.locale,

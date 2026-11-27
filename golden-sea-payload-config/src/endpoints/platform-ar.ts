@@ -56,7 +56,7 @@ export const PLATFORM_AR: Record<string, string> = {
   "Mailboxes, existing Odoo database, products, suppliers":
     "صناديق البريد، وقاعدة بيانات Odoo الحالية، والأصناف، والموردون",
   "Baseline KPIs and phase plan": "مؤشرات الأداء الأساسية وخطة المراحل",
-  "Turnaround, touches per RFQ, conversion — measured before go-live":
+  "Turnaround, touches per RFQ, conversion: measured before go-live":
     "مدة الإنجاز، وعدد مرات التدخل لكل طلب، ونسبة التحويل، تُقاس قبل التشغيل",
   "Phase 1 · Email intake → approved quotation": "المرحلة 1 · من استلام البريد إلى عرض سعر معتمد",
   "Weeks 2–7": "الأسابيع 2–7",

@@ -25,7 +25,7 @@ const meta = preview.type<{ args: { at: string } }>().meta({
       description: "The address the dashboard opens at.",
     },
   },
-  render: () => html`<dashboard-app .address=${current.address}></dashboard-app>`,
+  render: () => html`<dashboard-app></dashboard-app>`,
 });
 
 export const SignedOut = meta.story({

@@ -183,6 +183,24 @@ export const Empty = meta.story({
   },
 });
 
+const emptyFormat = fn(() => ({ head: { tags: [{ label: "Draft" }] }, items: [] }));
+
+export const EmptyUnread = meta.story({
+  name: "Empty without formatting its data",
+  render: () =>
+    page(
+      pageOf({
+        ...k.list({ title: "Draft lines", size: "s", skeleton: "list", format: emptyFormat }),
+        empty: { when: () => true, heading: "No draft yet" },
+      } as Widget),
+    ),
+  play: async ({ canvas }) => {
+    await waitFor(async () => expect(await canvas.findByText("No draft yet")).toBeVisible());
+    await expect(canvas.queryByText("Draft")).toBeNull();
+    await expect(emptyFormat).not.toHaveBeenCalled();
+  },
+});
+
 export const Denied = meta.story({
   name: "Denied",
   decorators: [

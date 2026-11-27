@@ -51,16 +51,17 @@ function drop(value: unknown, select: Select): unknown {
   return out;
 }
 
-export function parseSelect(raw: unknown): Select | undefined {
-  if (!isObject(raw)) return undefined;
+function readSelect(raw: Record<string, unknown>): Select {
   const out: Select = {};
   for (const [k, v] of Object.entries(raw)) {
     if (v === true || v === "true") out[k] = true;
     else if (v === false || v === "false") out[k] = false;
-    else if (isObject(v)) out[k] = parseSelect(v) ?? {};
+    else if (isObject(v)) out[k] = readSelect(v);
   }
   return out;
 }
+
+export const parseSelect = (raw: unknown): Select | undefined => (isObject(raw) ? readSelect(raw) : undefined);
 
 export function parsePopulate(raw: unknown): Record<string, Select> | undefined {
   if (!isObject(raw)) return undefined;

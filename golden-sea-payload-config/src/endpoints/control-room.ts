@@ -4,6 +4,7 @@ import { m } from "../i18n/paraglide/messages.js";
 import { history as H, historyLabel, inquiriesDaily } from "./history.ts";
 import { type Lang, MONEY_ROLES, NOW, all, langOf, meOf, num, str, unauthorized } from "./insights-shared.ts";
 import * as link from "../links.ts";
+import { OUTSTANDING_RFQ_STATUSES } from "../collections/shared.ts";
 
 export type Unit = "count" | "days" | "minutes" | "usd-k" | "egp-k" | "pct";
 export type Period = "4w" | "12w" | "6m";
@@ -93,9 +94,7 @@ export function controlRoom(
 
   const live = data.cases.filter((c) => !LIVE_END.includes(str(c.stage)));
   const waitingSuppliers = live.filter((c) => c.wait === "Awaiting supplier").length;
-  const rfqsOpen = data.rfqs.filter((r) =>
-    ["Sent", "Awaiting reply", "Partial reply", "No response"].includes(str(r.status)),
-  );
+  const rfqsOpen = data.rfqs.filter((r) => OUTSTANDING_RFQ_STATUSES.includes(str(r.status)));
   const quoted = sum(wk(H.quoted));
   const won = sum(wk(H.won));
   const receivable = data.invoices.filter((i) => balance(i) > 0 && !["Draft", "Cancelled"].includes(str(i.status)));

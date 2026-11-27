@@ -4,6 +4,8 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { expect, fn, waitFor, type Mock } from "storybook/test";
 import "./field.ts";
 import "./combobox.ts";
+import "../layout/box.ts";
+import { auditLayout } from "../../../lib/base/layout.ts";
 import type { ComboboxOption } from "./combobox.ts";
 
 const people: ComboboxOption[] = [
@@ -465,5 +467,32 @@ export const ClosedBeforeItOpens = meta.story({
     await canvasElement.querySelector("ui-combobox")!.updateComplete;
     await expect(input).toHaveAttribute("aria-expanded", "false");
     await expect(canvasElement.querySelector("[popover]")!.matches(":popover-open")).toBe(false);
+  },
+});
+
+const questions: ComboboxOption[] = [
+  { value: "late", label: "Which suppliers are late this week?" },
+  { value: "waiting", label: "Which quotations are waiting for the customer to answer?" },
+  { value: "next", label: "Which deliveries are coming up next?" },
+];
+
+export const LongChipsInANarrowField = meta.story({
+  name: "Long chips in a narrow field",
+  globals: { viewport: { value: "mobile1", isRotated: false } },
+  render: () =>
+    html`<ui-box padding="16" width="full"
+      ><ui-box padding="16" width="full"
+        ><ui-combobox
+          aria-label="Suggested questions"
+          multiple
+          .options=${questions}
+          .value=${questions.map((q) => q.value)}
+        ></ui-combobox></ui-box
+    ></ui-box>`,
+  play: async ({ canvas, canvasElement }) => {
+    await expect(
+      canvas.getByRole("button", { name: "Remove Which quotations are waiting for the customer to answer?" }),
+    ).toBeInTheDocument();
+    await expect(auditLayout(canvasElement).map((i) => `${i.kind} ${i.detail}`)).toEqual([]);
   },
 });

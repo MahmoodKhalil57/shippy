@@ -347,7 +347,7 @@ const recheckColumns = () => [
   { key: "item", label: m.order_to_cash_col_item() },
   { key: "atQuotation", label: m.order_to_cash_col_at_quotation() },
   { key: "now", label: m.order_to_cash_col_now() },
-  { key: "ok", label: "" },
+  { key: "ok", label: m.order_to_cash_col_check(), hideLabel: true },
 ];
 
 const recheckRequest = (p: OpsPO): KindData<"table"> => ({
@@ -372,11 +372,7 @@ const recheckResult = (p: OpsPO, d: CaseOps): KindData<"table"> => {
     ? {
         label: m.order_to_cash_approve_confirm({ number: p.number }),
         main: true,
-        call: {
-          method: "PATCH",
-          path: `/purchase-orders/${encodeURIComponent(p.id)}`,
-          body: { status: "Confirmed", recheckDone: true },
-        },
+        call: { path: "/operations/po-confirm", body: { po: p.id } },
         confirm: {
           heading: m.order_to_cash_confirm_heading({ number: p.number }),
           text: m.order_to_cash_confirm_text({ number: p.number, supplier: p.supplierName }),

@@ -49,7 +49,7 @@ async function quiet(host: HTMLElement) {
 
 async function fit({ at, signedIn, nav, aside }: FitCase): Promise<string[]> {
   const s = shell({ at, user: signedIn ? undefined : null });
-  const { host, remove } = await mount(html`<dashboard-app .address=${s.address}></dashboard-app>`, s.dashboard);
+  const { host, remove } = await mount(html`<dashboard-app></dashboard-app>`, s.dashboard);
   try {
     await waitFor(() => expect(host.querySelector(signedIn ? "ui-app-shell" : "dashboard-login")).not.toBeNull(), {
       timeout: 5000,

@@ -3,7 +3,9 @@ import { html } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { expect } from "storybook/test";
 import "./quadrant.ts";
-import type { QuadrantPoint } from "./quadrant.ts";
+import "../containers/tile.ts";
+import { auditLayout } from "../../../lib/base/layout.ts";
+import type { QuadrantPoint, UiQuadrant } from "./quadrant.ts";
 
 const accounts: QuadrantPoint[] = [
   { label: "Account 1041", x: 82, y: 24, size: 410 },
@@ -305,5 +307,34 @@ export const TiesRightToLeft = meta.story({
     await expect(canvas.getByText("South · 20 · 5")).toBeInTheDocument();
     await userEvent.unhover(canvas.getByRole("list"));
     await expect(canvas.getByText(/^Split at/)).toBeInTheDocument();
+  },
+});
+
+const words = (n: number) => "$389k across every open stage this quarter ".repeat(3).slice(0, n).trim();
+
+export const LongAxisKeepsTheReadout = meta.story({
+  name: "Long axis name keeps the readout readable",
+  globals: { viewport: { value: "mobile1", isRotated: false } },
+  render: (args) =>
+    html`<ui-tile size="s" heading="Suppliers">
+      <ui-quadrant
+        .points=${args.points}
+        label=${ifDefined(args.label)}
+        x-label=${ifDefined(args.xLabel)}
+      ></ui-quadrant>
+    </ui-tile>`,
+  play: async ({ canvasElement }) => {
+    const el = canvasElement.querySelector<UiQuadrant>("ui-quadrant")!;
+    const squeezed: string[] = [];
+    for (let n = 1; n <= 80; n++) {
+      el.xLabel = words(n);
+      await el.updateComplete;
+      squeezed.push(
+        ...auditLayout(canvasElement)
+          .filter((i) => i.kind === "squeezed")
+          .map((i) => `${n}: ${i.detail}`),
+      );
+    }
+    await expect(squeezed).toEqual([]);
   },
 });

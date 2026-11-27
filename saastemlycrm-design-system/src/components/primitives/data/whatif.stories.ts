@@ -3,7 +3,8 @@ import { html } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { expect, fireEvent, fn } from "storybook/test";
 import "./whatif.ts";
-import type { WhatifInput, WhatifOutput } from "./whatif.ts";
+import { auditLayout } from "../../../lib/base/layout.ts";
+import type { WhatifInput, WhatifOutput, UiWhatif } from "./whatif.ts";
 
 const money = new Intl.NumberFormat("en", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 const pct = (n: number) => `${n}%`;
@@ -230,5 +231,26 @@ export const NoModel = meta.story({
     await canvasElement.querySelector("ui-whatif")!.updateComplete;
     await expect(canvas.getByRole("slider", { name: "Sales reps" })).toHaveAttribute("aria-valuetext", "8");
     await expect(canvasElement.querySelector("[data-output]")).toBeNull();
+  },
+});
+
+const words = (n: number) => "$389k across every open stage this quarter ".repeat(3).slice(0, n).trim();
+
+export const LongValueKeepsTheLabel = meta.story({
+  name: "Long value keeps the input label readable",
+  globals: { viewport: { value: "mobile1", isRotated: false } },
+  play: async ({ canvasElement }) => {
+    const el = canvasElement.querySelector<UiWhatif>("ui-whatif")!;
+    const squeezed: string[] = [];
+    for (let n = 1; n <= 80; n++) {
+      el.inputs = pricing.map((i) => ({ ...i, format: () => words(n) }));
+      await el.updateComplete;
+      squeezed.push(
+        ...auditLayout(canvasElement)
+          .filter((i) => i.kind === "squeezed")
+          .map((i) => `${n}: ${i.detail}`),
+      );
+    }
+    await expect(squeezed).toEqual([]);
   },
 });

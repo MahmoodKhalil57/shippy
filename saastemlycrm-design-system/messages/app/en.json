@@ -236,6 +236,7 @@
   "field_error_option": "Pick one of the options.",
   "field_error_required": "Fill this in to save.",
   "field_error_text": "Text only.",
+  "list_view_pages": "{what} pages",
   "list_view_by": "{things} by {field}",
   "list_view_calendar_count": "{count} by {field}",
   "list_view_calendar_label": "{things} by {field}, {month}",

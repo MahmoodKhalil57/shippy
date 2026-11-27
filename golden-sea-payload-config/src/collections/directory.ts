@@ -13,17 +13,16 @@ import {
   idOf,
   isManagement,
   logActivity,
+  OUTSTANDING_RFQ_STATUSES,
   words,
 } from "./shared.ts";
-
-export const OPEN_RFQ_STATUSES = ["Sent", "Awaiting reply", "Partial reply", "No response"];
 
 async function openRfqs(req: PayloadRequest): Promise<Record<string, unknown>[]> {
   const ctx = (req.context ??= {}) as { openRfqs?: Promise<Record<string, unknown>[]> };
   ctx.openRfqs ??= req.payload
     .find({
       collection: "supplier-rfqs",
-      where: { status: { in: OPEN_RFQ_STATUSES } },
+      where: { status: { in: OUTSTANDING_RFQ_STATUSES } },
       limit: 0,
       depth: 0,
       pagination: false,

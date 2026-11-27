@@ -2,8 +2,8 @@
   {
     "id": "ap-margin-0137",
     "title": {
-      "en": "Quote v2 to Mare Nostrum — 12.4% margin (min 15%)",
-      "ar": "عرض الإصدار 2 إلى Mare Nostrum — هامش 12.4% (الحد الأدنى 15%)"
+      "en": "Quote GS-Q-0137 v2 to Mare Nostrum Shipping",
+      "ar": "عرض السعر GS-Q-0137 v2 إلى Mare Nostrum Shipping"
     },
     "type": "Quotation margin exception",
     "case": "gs-rfq-0137",
@@ -76,8 +76,8 @@
   {
     "id": "ap-quote-0135",
     "title": {
-      "en": "Quote GS-Q-0135 v2 to Delta Offshore Services — USD 4,082.00",
-      "ar": "عرض GS-Q-0135 v2 إلى Delta Offshore Services — USD 4,082.00"
+      "en": "Quote GS-Q-0135 v2 to Delta Offshore Services, USD 4,082.00",
+      "ar": "عرض GS-Q-0135 v2 إلى Delta Offshore Services، USD 4,082.00"
     },
     "type": "Customer quotation",
     "case": "gs-rfq-0135",
@@ -110,8 +110,8 @@
   {
     "id": "ap-quote-0139",
     "title": {
-      "en": "Quote GS-Q-0139 v1 to Atlas Tankers — USD 4,666.40",
-      "ar": "عرض GS-Q-0139 v1 إلى Atlas Tankers — USD 4,666.40"
+      "en": "Quote GS-Q-0139 v1 to Atlas Tankers, USD 4,666.40",
+      "ar": "عرض GS-Q-0139 v1 إلى Atlas Tankers، USD 4,666.40"
     },
     "type": "Customer quotation",
     "case": "gs-rfq-0139",

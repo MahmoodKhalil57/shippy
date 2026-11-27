@@ -4,6 +4,9 @@ import { recommended } from "saastemlycrm-design-system/lint";
 import { designSystem, i18n, localeText, STATIC_LOCALE } from "saastemlycrm-design-system/vite";
 import mockBackend from "mock-runner/vite";
 import { cfBackend } from "cf-runner/vite";
+import { testRunner } from "test-runner/vite";
+import { impactCoverage } from "test-runner/impact";
+import { playwright } from "vite-plus/test/browser-playwright";
 import { defineConfig, loadEnv, type Plugin } from "vite-plus";
 import { readBuildEnv, readPublicEnv } from "./src/env.ts";
 
@@ -48,6 +51,16 @@ export default defineConfig(({ command, isPreview, mode }) => {
       ...(cf ? [cfBackend()] : mockBackend({ config: "./src/config.ts", seed: "./src/seed.ts", banner: license })),
       brandedPage,
     ],
+    test: {
+      projects: testRunner({
+        config: "./src/config.ts",
+        seed: "./src/seed.ts",
+        steps: ["./features/steps/index.ts"],
+        tours: { features: "./features/tours", messages: "./messages/tours", seed: "./src/seed/tours.json" },
+        playwright,
+      }),
+      coverage: impactCoverage(),
+    },
     build: {
       outDir: cf ? "dist" : "mock",
       emptyOutDir: cf || !build.I18N_APPEND,

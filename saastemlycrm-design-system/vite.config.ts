@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
 import { playwright } from "vite-plus/test/browser-playwright";
 import { defineConfig } from "vite-plus";
+import { impactCoverage, impactPlugin } from "test-runner/impact";
 import { designSystem } from "./vite/index.ts";
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -46,6 +47,12 @@ const COVERED = [
   "src/lib/widgets/**/*.ts",
   "src/lib/shell/**/*.ts",
   "src/styles/algebra.ts",
+  "src/lib/contracts/**/*.ts",
+  "src/lib/payload/**/*.ts",
+  "src/lib/api/**/*.ts",
+  "src/lib/stores/**/*.ts",
+  "src/lib/i18n/index.ts",
+  "src/app/**/*.ts",
 ];
 
 const browser = (timezoneId: string) => ({
@@ -75,10 +82,16 @@ const stories = (name: string, fileParallelism: boolean, exclude: string[]) => (
 });
 
 export default defineConfig({
+  plugins: [impactPlugin()],
   test: {
     maxWorkers: 10,
     projects: [
-      stories("storybook", true, SERIAL),
+      stories("storybook", true, [...SERIAL, "src/**/*.fit.stories.ts", "src/**/*.fit.*.stories.ts"]),
+      stories("storybook-fit", true, [
+        "src/components/!(widgets|views|shell)/**",
+        "src/components/*/*/**",
+        "src/components/*/!(*.fit.stories.ts|*.fit.*.stories.ts)",
+      ]),
       stories("storybook-serial", false, [
         "src/components/!(primitives)/**",
         "src/components/primitives/!(media)/**",
@@ -101,7 +114,7 @@ export default defineConfig({
       },
     ],
     coverage: {
-      provider: "v8",
+      ...impactCoverage(),
       include: COVERED,
       exclude: ["**/*.stories.ts", "**/*.test.ts"],
       thresholds: Object.fromEntries(

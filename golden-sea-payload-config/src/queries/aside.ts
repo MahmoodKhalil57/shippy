@@ -1,11 +1,14 @@
 import { LIVE, mine, type Where } from "./cases.ts";
+import { FINAL_APPROVAL } from "../collections/commercial.ts";
 import { m } from "../i18n/paraglide/messages.js";
 
 export type Counter = { label: string; collection: string; where: Where; note: string; tone?: "warning" };
 
 export const ROLES = ["management", "finance-director", "operations", "sales", "office-admin"];
 
-const PENDING: Where = { status: { not_in: ["Approved", "Rejected"] } };
+export const PENDING: Where = { status: { not_in: FINAL_APPROVAL } };
+export const pendingApproval = (a: Record<string, unknown>) =>
+  !FINAL_APPROVAL.includes(typeof a.status === "string" && a.status ? a.status : "Pending");
 
 export const myDecisions: Counter = {
   label: m.page_aside_my_decisions(),

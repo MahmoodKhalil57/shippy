@@ -134,7 +134,7 @@ export const STAGE_STEP: Record<string, number> = {
   Purchasing: 10,
   "Customs clearance": 11,
   "Held for vessel": 11,
-  "Delivering (drop 1 of 2)": 12,
+  Delivering: 12,
   Delivered: 13,
   "Invoiced — partially paid": 14,
   "Closed — settled": 15,
@@ -504,13 +504,14 @@ const reassign: Endpoint = {
     if (target.id === o.owner?.id)
       return deny(m.api_platform_already_owns({ name: target.name, caseId: o.caseId }, t), 400);
     if (!str(note).trim()) return deny(m.api_platform_note_required({}, t), 400);
+    if (str(backup) && !o.team.some((p) => p.id === str(backup))) return deny(m.api_platform_pick_someone({}, t), 400);
     const previous = o.owner;
     await req.payload.update({
       collection: "cases",
       id,
       data: {
         owner: target.id,
-        backup: str(backup) || (previous && previous.id !== target.id ? previous.id : o.backup?.id),
+        backup: str(backup) || (o.backup && o.backup.id !== target.id ? o.backup.id : previous?.id) || null,
         handoverNote: str(note).trim(),
       } as never,
       req,
@@ -652,6 +653,7 @@ export async function safeRetry(req: Req, id: string) {
         t,
       ),
     };
+  if (x.status === "Waiting for review") return { status: 409, message: m.api_platform_needs_a_person({}, t) };
   const detail = (x.payload as Record<string, unknown> | undefined) ?? {};
   let message: string;
   if (key.startsWith("mailbox:")) {
@@ -1280,7 +1282,7 @@ export const PLAN: Plan = {
         },
         {
           name: "Baseline KPIs and phase plan",
-          detail: "Turnaround, touches per RFQ, conversion — measured before go-live",
+          detail: "Turnaround, touches per RFQ, conversion: measured before go-live",
           href: "/control-room",
         },
       ],

@@ -2,6 +2,7 @@ import type { CollectionConfig, GlobalConfig } from "payload";
 import { collectionPage, documentPage, globalPage, widgets, type PageView } from "saastemlycrm-design-system/contracts";
 import { m } from "./i18n/paraglide/messages.js";
 import { LIST_PAGES } from "./pages/records.ts";
+import { WAITING_RFQ_STATUSES } from "./collections/shared.ts";
 
 export function pages(collections: CollectionConfig[], globals: GlobalConfig[]): Record<string, PageView> {
   const lists = collections.filter((c) => c.admin?.hidden !== true);
@@ -44,7 +45,7 @@ export const sourcingPipeline: PageView = {
           collection: "supplier-rfqs",
           key: "rfqs",
           layout: "list",
-          where: { status: { in: ["Sent", "Awaiting reply"] } },
+          where: { status: { in: WAITING_RFQ_STATUSES } },
           columns: ["reference", "case", "supplier", "dueAt", "reminders"],
           sort: "dueAt",
           hide: ["export", "around", "select", "create"],

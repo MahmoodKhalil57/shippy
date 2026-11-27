@@ -28,7 +28,7 @@ const meta = preview.type<{ args: { at: string } }>().meta({
       description: "The address the dashboard opens at.",
     },
   },
-  render: () => html`<dashboard-app .address=${current.address}></dashboard-app>`,
+  render: () => html`<dashboard-app></dashboard-app>`,
 });
 
 const originalSetLocale = setLocale;
@@ -95,11 +95,12 @@ export const SameLanguage = meta.story({
   },
 });
 
-export const BrowserAddress = meta.story({
-  name: "Reads the browser address by default",
+export const DashboardAddress = meta.story({
+  name: "Reads the address from the dashboard",
+  args: { at: "/collections/invoices" },
   render: () => html`<dashboard-app></dashboard-app>`,
   play: async ({ canvasElement }) => {
     await ready(canvasElement);
-    await expect(current.dashboard.ai.webmcp.agentContext()?.path).toBe(location.pathname);
+    await expect(current.dashboard.ai.webmcp.agentContext()?.path).toBe("/collections/invoices");
   },
 });

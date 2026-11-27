@@ -52,7 +52,11 @@ export class UiEmptyState extends LightElement {
     const size = this.size ?? "md";
     const heading = this.heading || (this.hasContent ? this.slotted() : "");
     const icon = this.icon ?? (this.tone === "error" ? "warning" : undefined);
-    return html`<div class=${emptyState({ size })} role=${this.tone === "error" ? "alert" : nothing}>
+    return html`<div
+      class=${emptyState({ size })}
+      role=${this.tone === "error" ? "alert" : nothing}
+      aria-busy=${this.loading ? "true" : nothing}
+    >
       ${
         this.loading
           ? html`<span

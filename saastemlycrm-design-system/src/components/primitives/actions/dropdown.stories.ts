@@ -502,6 +502,22 @@ export const OpenProperty = meta.story({
   },
 });
 
+export const LateToggleEvent = meta.story({
+  name: "Late toggle event",
+  parameters: {
+    docs: { description: { story: "A toggle event that arrives after the menu closed doesn't open it again." } },
+  },
+  render: () => html`<ui-dropdown label="Actions" trigger-variant="outlined" .items=${simple}></ui-dropdown>`,
+  play: async ({ canvasElement }) => {
+    const host = canvasElement.querySelector("ui-dropdown")!;
+    await host.updateComplete;
+    const panel = host.querySelector<HTMLElement>("[popover]")!;
+    panel.dispatchEvent(new ToggleEvent("toggle", { oldState: "closed", newState: "open" }));
+    await host.updateComplete;
+    await expect(host.open).toBe(false);
+  },
+});
+
 export const SlottedTriggerLabel = meta.story({
   name: "Slotted trigger label",
   parameters: {

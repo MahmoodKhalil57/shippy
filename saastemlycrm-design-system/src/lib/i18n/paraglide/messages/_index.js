@@ -501,6 +501,7 @@ import { getLocale, experimentalStaticLocale, isDevelopment } from "../runtime.j
 /** @typedef {{ what: NonNullable<unknown> }} Frame_Drag_To_CloseInputs */
 /** @typedef {{ what: NonNullable<unknown> }} Frame_Drag_To_OpenInputs */
 /** @typedef {{ what: NonNullable<unknown> }} Frame_ExpandInputs */
+/** @typedef {{}} Frame_PanesInputs */
 /** @typedef {{}} Frame_ResizeInputs */
 /** @typedef {{ what: NonNullable<unknown> }} Frame_Resize_To_CloseInputs */
 /** @typedef {{ what: NonNullable<unknown> }} Frame_Resize_To_OpenInputs */
@@ -575,6 +576,7 @@ import { getLocale, experimentalStaticLocale, isDevelopment } from "../runtime.j
 /** @typedef {{ field: NonNullable<unknown> }} List_View_None_InlineInputs */
 /** @typedef {{}} List_View_OpenInputs */
 /** @typedef {{}} List_View_Open_FullInputs */
+/** @typedef {{ what: NonNullable<unknown> }} List_View_PagesInputs */
 /** @typedef {{ at: NonNullable<unknown>, total: NonNullable<unknown> }} List_View_PositionInputs */
 /** @typedef {{}} List_View_PreviousInputs */
 /** @typedef {{}} List_View_Previous_MonthInputs */
@@ -6723,6 +6725,18 @@ export const frame_expand = /** @type {((inputs: Frame_ExpandInputs, options?: {
 });
 /**
 
+* @param {Frame_PanesInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const frame_panes = /** @type {((inputs?: Frame_PanesInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Frame_PanesInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs = {}, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.frame_panes(inputs)
+	return __en.frame_panes(inputs)
+});
+/**
+
 * @param {Frame_ResizeInputs} inputs
 * @param {{ locale?: "en" | "ar" }} options
 * @returns {LocalizedString}
@@ -7608,6 +7622,18 @@ export const list_view_open_full = /** @type {((inputs?: List_View_Open_FullInpu
 	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
 	if (locale === "ar") return __ar.list_view_open_full(inputs)
 	return __en.list_view_open_full(inputs)
+});
+/**
+
+* @param {List_View_PagesInputs} inputs
+* @param {{ locale?: "en" | "ar" }} options
+* @returns {LocalizedString}
+*/
+export const list_view_pages = /** @type {((inputs: List_View_PagesInputs, options?: { locale?: "en" | "ar" }) => LocalizedString) & import('../runtime.js').MessageMetadata<List_View_PagesInputs, { locale?: "en" | "ar" }, {}>} */ ((inputs, options = {}) => {
+	const locale = /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ ?? options.locale ?? getLocale()
+	if (isDevelopment && /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__ !== undefined && options.locale !== undefined && options.locale !== /** @type {any} */ (globalThis).__PARAGLIDE_STATIC_LOCALE__) console.warn("Paraglide: options.locale cannot override a locale-specialized client bundle; use a full document navigation to switch locales.")
+	if (locale === "ar") return __ar.list_view_pages(inputs)
+	return __en.list_view_pages(inputs)
 });
 /**
 

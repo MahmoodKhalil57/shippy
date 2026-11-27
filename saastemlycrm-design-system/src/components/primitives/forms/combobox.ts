@@ -28,6 +28,8 @@ export const combobox = rcva(
 export const comboboxInput = rcva(
   "min-w-[min(100%,5rem)] flex-1 bg-transparent caret-primary outline-none [--focus:field]",
 );
+export const comboboxChip = rcva("min-w-0");
+export const comboboxChipLabel = rcva(text.line);
 export const comboboxIcon = rcva(`${row} ${rowEnd} items-center gap-0.5 text-on-surface-variant`);
 export const comboboxClear = rcva(
   "touch-target grid size-6 place-items-center rounded-full state-layer hover:text-on-surface",
@@ -214,8 +216,8 @@ export class UiCombobox extends LightElement {
           this.multiple
             ? values.map(
                 (v) =>
-                  html`<span class=${chip({ variant: "input", size: "sm", removable: !locked })}
-                    >${this._labelOf(v)}${
+                  html`<span class=${chip({ variant: "input", size: "sm", removable: !locked, class: comboboxChip() })}
+                    ><span class=${comboboxChipLabel()} title=${this._labelOf(v)}>${this._labelOf(v)}</span>${
                       locked
                         ? nothing
                         : html`<button

@@ -5,12 +5,12 @@ import { formatInt } from "../../../lib/i18n/index.ts";
 import { LightElement } from "../../base/light-element.ts";
 import { motion } from "../../../lib/base/motion-queue.ts";
 import { rcva } from "../../../lib/base/variants.ts";
-import { fixed, inlineRow, row, rowLine, stack, text } from "../../../styles/algebra.ts";
+import { fixed, inlineRow, row, rowFill, stack, text } from "../../../styles/algebra.ts";
 import { foldParts, percentText, sharePercents, type Slot } from "../../../lib/base/visual-math.ts";
 
 export const shareBar = rcva(`${stack} w-full gap-1.5`);
 export const shareBarHead = rcva(`${row} items-baseline gap-x-2`);
-export const shareBarLabel = rcva(`${rowLine} text-label-md text-on-surface-variant`);
+export const shareBarLabel = rcva(`${rowFill} truncate text-label-md text-on-surface-variant`);
 export const shareBarTotal = rcva(`${text.label} text-title-sm tabular-nums text-on-surface`);
 export const shareBarTrack = rcva(`${row} h-3 w-full gap-0.5 overflow-hidden [--clips:bar] rounded-full`);
 export const shareBarSegment = rcva(

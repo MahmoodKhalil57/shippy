@@ -91,6 +91,7 @@ export type TileVariants = VariantProps<typeof tile>;
 export class UiTile extends LightElement {
   @property() size: TileSize = "s";
   @property() heading: Renderable = "";
+  @property({ type: Number }) level: 1 | 2 = 2;
   @property() subhead: Renderable = "";
   @property({ type: Number }) count?: number;
   @property({ attribute: "count-tone" }) countTone: BadgeVariants["tone"];
@@ -164,7 +165,13 @@ export class UiTile extends LightElement {
       this.heading || trailing || this.count !== undefined
         ? html`<div class=${cardHeader()}>
             <div class=${cardHeadingGroup()}>
-              ${this.heading ? html`<h2 class=${cardTitle({ class: tileTitle() })}>${this.heading}</h2>` : nothing}
+              ${
+                !this.heading
+                  ? nothing
+                  : this.level === 1
+                    ? html`<h1 class=${cardTitle({ class: tileTitle() })}>${this.heading}</h1>`
+                    : html`<h2 class=${cardTitle({ class: tileTitle() })}>${this.heading}</h2>`
+              }
               ${
                 this.count !== undefined
                   ? html`<span class=${badge({ kind: "count", tone: this.countTone })}>${this.count}</span>`

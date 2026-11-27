@@ -14,6 +14,7 @@ import {
   meOf,
   nameOf,
   optionLabel,
+  quoteDue,
   str,
   unauthorized,
 } from "./insights-shared.ts";
@@ -41,7 +42,7 @@ export interface Visuals {
   gp: { label: string; value: number; total?: boolean }[];
 }
 
-const MINE_ROLES = ["sales", "sourcing"];
+const MINE_ROLES = ["sales", "supply-chain"];
 const last = (a: number[]) => a[a.length - 1] ?? 0;
 const sum = (a: number[]) => a.reduce((t, v) => t + v, 0);
 const iso = (d: Date) => d.toISOString();
@@ -82,7 +83,7 @@ export function visuals(
   const deadlines: Visuals["deadlines"] = [];
   for (const c of mine) {
     const due = date(c.deadline);
-    if (due) {
+    if (due && quoteDue(c)) {
       deadlines.push({
         label: m.api_visuals_quote_due({ name: caseName(c) }, o),
         due: iso(due),
@@ -109,7 +110,7 @@ export function visuals(
   const inMonth = (d?: Date) => !!d && dayOf(d).startsWith(month);
   for (const c of mine) {
     const due = date(c.deadline);
-    if (inMonth(due)) {
+    if (inMonth(due) && quoteDue(c)) {
       const left = (due!.getTime() - NOW.getTime()) / DAY;
       calendar.push({
         date: dayOf(due!),
@@ -137,7 +138,7 @@ export function visuals(
           o,
         ),
         href: link.doc("deliveries", str(d.id)),
-        tone: str(d.status) === "Delivered" ? "success" : "neutral",
+        tone: str(d.status).startsWith("Delivered") ? "success" : "neutral",
       });
   }
   if (money)

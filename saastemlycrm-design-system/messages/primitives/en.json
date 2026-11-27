@@ -93,6 +93,7 @@
   "frame_drag_to_close": "Drag to close {what}",
   "frame_drag_to_open": "Drag to open {what}",
   "frame_expand": "Expand {what}",
+  "frame_panes": "Pane sizes",
   "frame_resize": "Resize",
   "frame_resize_to_close": "Resize to close {what}",
   "frame_resize_to_open": "Resize to open {what}",
