@@ -16,3 +16,6 @@
 [submodule "projects/omnisaas"]
 	path = projects/omnisaas
 	url = https://github.com/MahmoodKhalil57/omnisaas.git
+[submodule "runners/tauri-runner"]
+	path = runners/tauri-runner
+	url = https://github.com/MahmoodKhalil57/tauri-runner.git
